@@ -570,7 +570,7 @@ describe('minting for a retired cluster', () => {
     await flushPromises()
     // both groups come from the one fresh listing, never the app-load list
     const active = w.findAll('select#mint-cluster > option').map((o) => o.text())
-    expect(active).toEqual(['alpha'])
+    expect(active).toEqual(['alpha', 'New cluster…'])
     const group = w.find('select#mint-cluster optgroup')
     expect(group.attributes('label')).toBe('Retired')
     expect(group.findAll('option').map((o) => o.text())).toEqual(['old (retired)'])

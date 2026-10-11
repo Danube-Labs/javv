@@ -19,6 +19,7 @@ import ScannerConfigCard, {
   type EffectiveConfig,
 } from '@/components/settings/ScannerConfigCard.vue'
 import SaveBar from '@/components/settings/SaveBar.vue'
+import NoClusterState from '@/components/settings/NoClusterState.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsInput from '@/components/settings/SettingsInput.vue'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
@@ -156,8 +157,9 @@ function discard() {
       title="Staleness timers"
       subtitle="the two-timer model: drives the stale state and the inventory banners"
     >
+      <NoClusterState v-if="clusterStore.none" />
       <UiSkeleton
-        v-if="loading"
+        v-else-if="loading"
         :height="180"
         radius="sm"
         label="Loading timers"

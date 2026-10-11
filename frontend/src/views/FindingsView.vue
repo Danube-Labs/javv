@@ -262,8 +262,8 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
       <div class="head-card">
         <h1>Findings</h1>
         <p class="head-stat">
-          <!-- a count before the first read is not zero, it is unknown -->
-          <template v-if="grid.settled">{{ grid.total.toLocaleString('en-US') }}</template
+          <!-- a count before the first read, or after a refused one, is not zero: it is unknown -->
+          <template v-if="grid.settled && !grid.failed">{{ grid.total.toLocaleString('en-US') }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> findings</span>
         </p>
         <p class="head-note">kept per-scanner, no cross-merge</p>
@@ -348,6 +348,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           :order="grid.order"
           :loading="grid.loading"
           :settled="grid.settled"
+          :failed="grid.failed"
           :hidden="hiddenCols"
           :col-order="colOrder"
           :selections="filters.selections"

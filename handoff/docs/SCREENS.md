@@ -225,6 +225,10 @@ dropped (contract is cursor paging).
   in the grid area + global banner.
 - **429 PIT cap** (`JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL`) — "too many open searches/exports,
   retry in Ns" honoring `Retry-After`.
+- **Any refused read**: the alert names the reason; the head count shows "-" and the grid row
+  reads "Findings could not be loaded.", never "0 findings" or "No findings yet" (issue 817). Audit
+  log, Contributors and Approvals follow the same rule for their counts (Audit's row: "Events could
+  not be loaded.").
 - 403-capability-hidden — bulk-triage bar and row checkboxes absent without `can_triage`.
 - Bulk 413 — inline error offering to narrow the selection.
 - Zero-vs-nonzero scanner pair (M9b update, #156-4): one scanner's 0 is **never** a green "clean"
@@ -522,6 +526,12 @@ sections**. Editable in MVP (C-4): **SLA policy · Users/Roles · Tokens · Scan
 OpenSearch (retention) · Staleness timers**. Everything else is read-only display with an
 **"operator-managed (GitOps)"** affordance.
 
+**Before any cluster is listed** (a fresh install): Scan scope, the Scanning page's staleness
+timers and the settings of Data & OpenSearch read per cluster, so they have nothing to read. Each
+shows an empty state instead of its loading placeholder: *Settings for a cluster appear once it has
+a scanner token. Mint one under Access & tokens.* A failed cluster list is not this state; the
+shell reports that failure (issue 817).
+
 ### 13.1 Scan scope — editable (D43/FR-24)
 **Data:** session read of the scan-scope doc — **D-2, planned, BLOCKED until it lands** (the
 bearer `GET /api/v1/scan-scope` stays scanner-only; never widened). Write:
@@ -556,6 +566,11 @@ to the Decisions queue (screen 9) — decisions carry scope/justification/expiry
 Retired clusters (issue 765, `GET /api/v1/clusters?include_retired=true`) are named in the table
 and listed apart in the mint picker under **Retired**; picking one says its first scan on the new
 token brings it back to the cluster list (operator ruling 2026-10-07).
+The mint picker always ends with **New cluster…**, which opens a Cluster ID field (the UID of the
+cluster's `kube-system` namespace, with the `kubectl` command that prints it) checked against the
+backend's ID rule. On a fresh install it is the only choice. A cluster is listed once its first
+token exists, so after that mint the cluster list is re-read and the new cluster shows in the
+switcher at once (operator ruling 2026-10-11 on a built A/B, option A; issue 817).
 If a mint or rotate succeeds but its reply arrives with a body that could not be read, the token
 exists and its value is lost. An error toast then says: *The token was created, but its value did
 not reach this page. Rotate it to get a value you can copy.* (operator ruling 2026-10-10, issue 749).

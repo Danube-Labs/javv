@@ -11,7 +11,8 @@ cluster or at each place that the scanners can reach over HTTP.
 ## Install
 
 Each scanner needs its own ingest token for this cluster. Make it in JAVV: **Settings › Access &
-tokens › Mint token**, with the cluster id from the first command and the name of the scanner.
+tokens › Mint token**. For the first token, select **New cluster…** and enter the cluster id from
+the first command. Then select the name of the scanner.
 
 ```bash
 kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'   # the id of this cluster in JAVV

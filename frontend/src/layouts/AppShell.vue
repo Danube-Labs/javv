@@ -7,7 +7,7 @@
  * health-polling lifecycle.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import ClusterSwitcher from '@/components/chrome/ClusterSwitcher.vue'
 import CommandPalette from '@/components/chrome/CommandPalette.vue'
@@ -37,6 +37,7 @@ const clusterStore = useClusterStore()
 const health = useHealthStore()
 const timeTravel = useTimeTravelStore()
 const route = useRoute()
+const router = useRouter()
 
 /* ---- the global range ⇄ URL (restorable-state rule, audit 343) ---- */
 // restore BEFORE child views mount, so their first reads already carry the range
@@ -64,12 +65,7 @@ useGlobalUrlStamp()
 
 /** Zero-clusters cold start (M9f) — which sections stay live lives in `isColdStart`. */
 const coldStart = computed(() =>
-  isColdStart({
-    loaded: clusterStore.loaded,
-    failed: clusterStore.failed,
-    clusterCount: clusterStore.clusters.length,
-    section: route.meta.section as string | undefined,
-  }),
+  isColdStart({ none: clusterStore.none, section: route.meta.section as string | undefined }),
 )
 
 /** Section identity echo (§8.5 specimen): the route's sidebar-group accent, exposed as a CSS
@@ -143,9 +139,13 @@ onUnmounted(() => {
           title="No clusters registered yet"
           hint="JAVV fills in once the first scanner envelope lands. Create a scanner token, deploy the scanner CronJobs to a cluster, and the first committed cycle appears here."
         >
-          <RouterLink v-if="auth.hasCapability('can_manage_tokens')" to="/settings/tokens" class="es-link">
-            <UiButton variant="primary">Create a scanner token</UiButton>
-          </RouterLink>
+          <UiButton
+            v-if="auth.hasCapability('can_manage_tokens')"
+            variant="primary"
+            @click="router.push('/settings/tokens')"
+          >
+            Create a scanner token
+          </UiButton>
         </EmptyState>
         <CrashBoundary v-else>
           <RouterView />
@@ -255,10 +255,6 @@ onUnmounted(() => {
 .icon-btn:disabled {
   cursor: default;
   opacity: 0.6;
-}
-/* router-link wrapper inside the cold-start action row — the button carries the affordance */
-.es-link {
-  text-decoration: none;
 }
 
 /* ---- banners + content ---- */
