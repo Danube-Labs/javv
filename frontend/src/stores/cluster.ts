@@ -29,6 +29,8 @@ export const useClusterStore = defineStore('cluster', {
   }),
   getters: {
     selected: (s) => s.clusters.find((c) => c.cluster_id === s.selectedId) ?? null,
+    /** The list answered and is empty: per-cluster reads have no id to send. */
+    none: (s) => s.loaded && !s.failed && s.clusters.length === 0,
   },
   actions: {
     /** `preferredId` = a deep link's `?cluster=` (issue 433). Precedence: valid link > remembered

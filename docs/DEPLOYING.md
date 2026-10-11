@@ -309,8 +309,10 @@ network. Each pair of a cluster and a scanner has its own token.
     ```bash
     kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
     ```
-2. In JAVV, go to **Settings › Access & tokens › Mint token**. Enter the cluster ID and the scanner
-    (`trivy` or `grype`). JAVV shows the token only one time.
+2. In JAVV, go to **Settings › Access & tokens › Mint token**. In **Cluster**, select
+    **New cluster…** and enter the cluster ID. Select the scanner (`trivy` or `grype`). JAVV shows
+    the token only one time. After the first token, the cluster is in the list: select it for the
+    second scanner's token.
 
 3. Install the `javv-scanner` chart in that cluster. Put each token in its own Secret. Set the JAVV
     address that this cluster can connect to:

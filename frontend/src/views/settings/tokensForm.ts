@@ -42,3 +42,21 @@ export function mintExpiry(
   if (Number.isNaN(parsed.getTime()) || parsed <= now) return { kind: 'invalid' }
   return { kind: 'iso', iso: parsed.toISOString() }
 }
+
+/** The mint picker's "New cluster…" choice. A `+` can never start a cluster id, so it cannot
+ * collide with a listed one. */
+export const NEW_CLUSTER = '+new'
+
+/** Mirrors the backend's `CLUSTER_ID_RE` (`core/identifiers.py`; a spec pins the two), so a typed
+ * id the API would 422 never rides the mint. */
+export const CLUSTER_ID = /^[a-z0-9][a-z0-9-]{7,63}$/
+
+export const CLUSTER_ID_PROBLEM =
+  'A cluster ID is 8 to 64 characters: lowercase letters, digits and dashes, starting with a letter or digit.'
+
+/** The cluster a mint targets: the picked one, or the typed id once it is well-formed. */
+export function mintClusterId(choice: string, typed: string): string | null {
+  if (choice !== NEW_CLUSTER) return choice === '' ? null : choice
+  const id = typed.trim()
+  return CLUSTER_ID.test(id) ? id : null
+}

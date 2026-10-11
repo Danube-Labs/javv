@@ -26,6 +26,7 @@ import DotWord from '@/components/chips/DotWord.vue'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
+import SettingsInput from '@/components/settings/SettingsInput.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -38,7 +39,15 @@ import { useClusterStore } from '@/stores/cluster'
 import { useToastStore } from '@/stores/toast'
 
 import { useFleetClusters } from './clusterRetirement'
-import { mintExpiry, TOKEN_STATUS_TONE, tokenStatus, type TokenRow } from './tokensForm'
+import {
+  CLUSTER_ID_PROBLEM,
+  mintClusterId,
+  mintExpiry,
+  NEW_CLUSTER,
+  TOKEN_STATUS_TONE,
+  tokenStatus,
+  type TokenRow,
+} from './tokensForm'
 
 const clusterStore = useClusterStore()
 const toast = useToastStore()
@@ -97,6 +106,7 @@ const clusterName = (id: string) =>
 // ── mint ────────────────────────────────────────────────────────────────────────────────
 const mintOpen = ref(false)
 const mintCluster = ref('')
+const mintNewId = ref('')
 const mintScanner = ref('trivy')
 const mintExpiryParts = ref({ date: '', time: '' }) // both empty = non-expiring token
 const mintError = ref('')
@@ -107,9 +117,19 @@ const SCANNER_OPTS = [
 
 const mintExpiryInvalid = computed(() => mintExpiry(mintExpiryParts.value, now()).kind === 'invalid')
 const mintRetired = computed(() => retiredClusters.value.find((c) => c.cluster_id === mintCluster.value) ?? null)
+const mintTarget = computed(() => mintClusterId(mintCluster.value, mintNewId.value))
+// said once something is typed: an empty field is unfinished, not wrong
+const mintIdProblem = computed(() =>
+  mintCluster.value === NEW_CLUSTER && mintNewId.value.trim() !== '' && mintTarget.value === null
+    ? CLUSTER_ID_PROBLEM
+    : null,
+)
+const CLUSTER_ID_COMMAND = "kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'"
 
 function openMint() {
-  mintCluster.value = clusterStore.selectedId ?? clusterStore.clusters[0]?.cluster_id ?? ''
+  // a cluster is listed once its first token exists, so a new one can only be typed in
+  mintCluster.value = clusterStore.selectedId ?? clusterStore.clusters[0]?.cluster_id ?? NEW_CLUSTER
+  mintNewId.value = ''
   mintScanner.value = 'trivy'
   mintExpiryParts.value = { date: '', time: '' }
   mintError.value = ''
@@ -123,12 +143,14 @@ const copied = ref(false)
 
 async function submitMint() {
   const expiry = mintExpiry(mintExpiryParts.value, now())
-  if (!mintCluster.value || expiry.kind === 'invalid') return
+  const clusterId = mintTarget.value
+  if (clusterId === null || expiry.kind === 'invalid') return
+  const isNew = mintCluster.value === NEW_CLUSTER
   busy.value = true
   const { data, response } = await mintApiV1AdminTokensPost({
     client,
     body: {
-      cluster_id: mintCluster.value,
+      cluster_id: clusterId,
       scanner: mintScanner.value,
       ...(expiry.kind === 'iso' ? { expiry: expiry.iso } : {}),
     },
@@ -146,6 +168,8 @@ async function submitMint() {
   copied.value = false
   showMinted(data)
   await load()
+  // the token is what lists a new cluster: show it in the switcher now, not after a reload
+  if (isNew) await Promise.all([clusterStore.refresh(), fleet.load()])
 }
 
 // the token exists once the reply is OK, but its value arrives only in the body: a reply whose body
@@ -283,6 +307,7 @@ const fmt = (iso: string | null) =>
           <option v-for="c in activeClusters" :key="c.cluster_id" :value="c.cluster_id">
             {{ c.cluster_name }}
           </option>
+          <option :value="NEW_CLUSTER">New cluster…</option>
           <optgroup v-if="retiredClusters.length" label="Retired">
             <option v-for="c in retiredClusters" :key="c.cluster_id" :value="c.cluster_id">
               {{ c.cluster_name }} (retired)
@@ -294,6 +319,17 @@ const fmt = (iso: string | null) =>
         {{ mintRetired.cluster_name }} is retired. Its first scan on this token brings it back to the cluster
         list.
       </p>
+      <UiField
+        v-if="mintCluster === NEW_CLUSTER"
+        label="Cluster ID"
+        hint="the UID of its kube-system namespace"
+        for="mint-cluster-id"
+      >
+        <SettingsInput id="mint-cluster-id" v-model="mintNewId" :invalid="mintIdProblem !== null" />
+        <p v-if="mintIdProblem" class="modal-error" role="alert">{{ mintIdProblem }}</p>
+        <p class="fld-hint">Run this in the cluster to print it:</p>
+        <div class="raw-token mono-cell sm cmd">{{ CLUSTER_ID_COMMAND }}</div>
+      </UiField>
       <UiField label="Scanner" hint="per-scanner is sacred: one token each">
         <UiSegControl v-model="mintScanner" :options="SCANNER_OPTS" />
       </UiField>
@@ -304,7 +340,7 @@ const fmt = (iso: string | null) =>
       <p v-if="mintError" class="modal-error" role="alert">{{ mintError }}</p>
       <template #actions>
         <UiButton variant="ghost" @click="mintOpen = false">Cancel</UiButton>
-        <UiButton variant="primary" :disabled="busy || !mintCluster || mintExpiryInvalid" @click="submitMint">
+        <UiButton variant="primary" :disabled="busy || mintTarget === null || mintExpiryInvalid" @click="submitMint">
           {{ busy ? 'Minting…' : 'Mint token' }}
         </UiButton>
       </template>
@@ -398,6 +434,15 @@ const fmt = (iso: string | null) =>
   margin: 8px 0 0;
   font-size: var(--text-sm);
   color: var(--soft);
+}
+/* the command to copy: the raw-token block, tighter, under its hint, on one line at the dialog's
+   width (the token's break-all would split it mid-word) */
+.raw-token.cmd {
+  margin-top: 4px;
+  padding: 7px 10px;
+  font-size: var(--text-sm);
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 .empty-note,
 .cap-note {
