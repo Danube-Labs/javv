@@ -92,3 +92,46 @@ def test_discover_pulls_pods_from_the_api_and_dedups() -> None:
     assert len(targets) == 1
     assert isinstance(targets[0], ImageTarget)
     assert targets[0].pod_count == 2
+
+
+# Verbatim from a k3s 1.35 / containerd node (issue 817, finding 2): a pod started as
+# `nginx@sha256:65645c…` reports the bare config id as `status.image`, which no registry serves.
+NGINX_REPO_DIGEST = "sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10"
+NGINX_CONFIG_ID = "sha256:6769dc3a703c719c1d2756bda113659be28ae16cf0da58dd5fd823d6b9a050ea"
+NGINX_IMAGE_ID = f"docker.io/library/nginx@{NGINX_REPO_DIGEST}"
+
+
+def test_a_digest_pinned_pod_is_pulled_by_its_image_id_reference() -> None:
+    pods = [pod("hunt-probe", "by-digest", [cstatus("c", NGINX_CONFIG_ID, NGINX_IMAGE_ID)])]
+    [target] = running_images(pods)
+    assert target.image_digest == NGINX_REPO_DIGEST
+    assert target.image_ref == NGINX_IMAGE_ID
+
+
+def test_the_docker_pullable_scheme_is_stripped_from_the_fallback() -> None:
+    pods = [pod("ns", "p", [cstatus("c", DIG_PY, f"docker-pullable://python@{DIG_PY}")])]
+    assert running_images(pods)[0].image_ref == f"python@{DIG_PY}"
+
+
+def test_a_tag_pinned_pod_keeps_its_own_reference() -> None:
+    busybox = "docker.io/library/busybox:1.36"
+    image_id = "docker.io/library/busybox@sha256:" + "7" * 64
+    assert (
+        running_images([pod("ns", "p", [cstatus("c", busybox, image_id)])])[0].image_ref == busybox
+    )
+
+
+def test_a_bare_id_in_both_fields_stays_as_reported() -> None:
+    # nothing pullable to fall back to: the scan fails and is logged, as before
+    pods = [pod("ns", "p", [cstatus("c", DIG_ALPINE, DIG_ALPINE)])]
+    assert running_images(pods)[0].image_ref == DIG_ALPINE
+
+
+def test_a_tagged_pod_names_a_digest_whichever_pod_comes_first() -> None:
+    by_digest = cstatus("c", NGINX_CONFIG_ID, NGINX_IMAGE_ID)
+    by_tag = cstatus("c", "docker.io/library/nginx:1.27", NGINX_IMAGE_ID)
+    for order in ([by_digest, by_tag], [by_tag, by_digest]):
+        pods = [pod("ns", f"p{i}", [cs]) for i, cs in enumerate(order)]
+        [target] = running_images(pods)
+        assert target.image_ref == "docker.io/library/nginx:1.27"
+        assert target.pod_count == 2

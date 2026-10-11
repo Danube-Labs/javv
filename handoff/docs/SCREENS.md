@@ -359,6 +359,9 @@ or admin).
 **Columns:** Image (`image_repo` + registry mono) · Tag · Namespace · Replicas (M8c inventory
 read) · per-scanner finding counts (`T n / G n / Δ` — never a merged total) · Severity mix
 (labeled MixBar, per scanner) · Scanners · Last seen.
+A digest-pinned image (`repo@sha256:…`) has no tag anywhere in Kubernetes: its Tag cell shows the
+empty-value dash with the title "Pinned by digest: the pod names no tag." (operator ruling
+2026-10-11, issue 817).
 
 **States:** loading; empty/first-run; **scanner-silent** banner ("Inventory as of T; scanner
 silent since…"); **last-run-incomplete** banner ("showing the last complete inventory"); `T<now`

@@ -2,8 +2,10 @@
 
 The scanner is stateless: every cycle it lists running pods, pulls each container's
 content-addressed digest from `container_statuses.image_id`, and collapses pods sharing a digest
-into one scan target (N pods → 1 scan). All distinct digests are returned every cycle — there is
-no skip-unchanged. The kube client is injected so this is unit-testable without a live cluster.
+into one scan target (N pods → 1 scan). The reference to pull is `status.image`, or the
+`repo@sha256:…` in `image_id` when the runtime reports only a bare id (`_pull_ref`). All distinct
+digests are returned every cycle — there is no skip-unchanged. The kube client is injected so this
+is unit-testable without a live cluster.
 """
 
 from collections.abc import Iterable
@@ -56,6 +58,16 @@ def _digest(image_id: str) -> str | None:
     return s if s.startswith("sha256:") else None
 
 
+def _pull_ref(image: str, image_id: str) -> tuple[str, bool]:
+    """(the reference to pull, whether it fell back to `image_id`). For a pod started by digest,
+    containerd reports `status.image` as the bare config id (`sha256:…`), which no registry serves;
+    the pullable `repo@sha256:…` is then in `image_id` (issue 817, finding 2)."""
+    if not image.startswith("sha256:"):
+        return image, False
+    pullable = image_id.split("://", 1)[1] if "://" in image_id else image_id
+    return (pullable, True) if "@" in pullable else (image, True)
+
+
 def _owner_kinds(pod: Any) -> list[str]:
     """The pod's owner-reference kinds (e.g. ReplicaSet, Job, DaemonSet) for scope kind-filtering.
     Immediate owner only — a Deployment-managed pod reads as `ReplicaSet`, a CronJob's as `Job`."""
@@ -77,10 +89,14 @@ def running_images(pods: Iterable[Any] | None, scope: ScanScope | None = None) -
         if not scope.kinds_allowed(_owner_kinds(p)):
             continue
         for cs in getattr(status, "container_statuses", None) or []:
-            digest = _digest(getattr(cs, "image_id", "") or "")
+            image_id = getattr(cs, "image_id", "") or ""
+            digest = _digest(image_id)
             if digest is None:
                 continue
-            entry = by_digest.setdefault(digest, {"ref": cs.image or "", "locs": set()})
+            ref, fallback = _pull_ref(cs.image or "", image_id)
+            entry = by_digest.setdefault(digest, {"ref": ref, "fallback": fallback, "locs": set()})
+            if entry["fallback"] and not fallback:  # the runtime's own name keeps the tag, if any
+                entry["ref"], entry["fallback"] = ref, False
             entry["locs"].add(
                 Location(namespace=p.metadata.namespace, pod=p.metadata.name, container=cs.name)
             )
