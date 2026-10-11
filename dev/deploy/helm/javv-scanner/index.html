@@ -1051,7 +1051,8 @@ cluster or at each place that the scanners can reach over HTTP.
 <a href="../../../docs/DEPLOYING/#connect-the-scanners">Connect the scanners</a> gives the full procedure.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <p>Each scanner needs its own ingest token for this cluster. Make it in JAVV: <strong>Settings › Access &amp;
-tokens › Mint token</strong>, with the cluster id from the first command and the name of the scanner.</p>
+tokens › Mint token</strong>. For the first token, select <strong>New cluster…</strong> and enter the cluster id from
+the first command. Then select the name of the scanner.</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>namespace<span class="w"> </span>kube-system<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.metadata.uid}'</span><span class="w">   </span><span class="c1"># the id of this cluster in JAVV</span>
 
 kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>javv-scanner
