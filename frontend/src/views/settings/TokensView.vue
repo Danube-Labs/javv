@@ -435,10 +435,14 @@ const fmt = (iso: string | null) =>
   font-size: var(--text-sm);
   color: var(--soft);
 }
-/* the command to copy: the raw-token block, tighter, under its hint */
-.cmd {
+/* the command to copy: the raw-token block, tighter, under its hint, on one line at the dialog's
+   width (the token's break-all would split it mid-word) */
+.raw-token.cmd {
   margin-top: 4px;
   padding: 7px 10px;
+  font-size: var(--text-sm);
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 .empty-note,
 .cap-note {
