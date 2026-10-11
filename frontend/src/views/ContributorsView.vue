@@ -143,8 +143,9 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
       <div class="head-card">
         <h1>Contributors</h1>
         <p class="head-stat">
-          {{ board.length }}<span class="head-unit">
-            contributor{{ board.length === 1 ? '' : 's' }}</span
+          <template v-if="!failed">{{ board.length }}</template
+          ><span v-else class="muted-dash">-</span><span class="head-unit">
+            contributor{{ board.length === 1 && !failed ? '' : 's' }}</span
           >
         </p>
         <p class="head-note">derived from the audit trail · triage actions, not scan deltas</p>

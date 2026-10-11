@@ -32,6 +32,8 @@ import type { FilterMode, Modes } from '@/stores/filters'
 const props = defineProps<{
   rows: AuditEvent[]
   loading?: boolean
+  /** the read was refused: the table has no answer, so it must not say "no activity" */
+  failed?: boolean
   filtered?: boolean
   /** active selections + modes, so a cell action shows which side it already sits on */
   selections?: Selections
@@ -173,6 +175,7 @@ function onRowClick(row: AuditEvent) {
         <!-- while a fresh lens loads (rows just cleared), say loading — "no activity" would lie -->
         <div class="empty-row">
           {{ props.loading ? 'Loading events…'
+            : props.failed ? 'Events could not be loaded.'
             : filtered ? 'No events match these filters.'
             : 'No journaled activity for this cluster yet. Triage actions, decisions and config edits will land here.' }}
         </div>

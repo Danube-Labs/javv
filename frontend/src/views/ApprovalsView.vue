@@ -234,9 +234,9 @@ const fmt = (n: number) => n.toLocaleString('en-US')
       <div class="head-card">
         <h1>Approvals</h1>
         <p class="head-stat">
-          <template v-if="timeTravel.isNow">{{ fmt(total) }}</template
+          <template v-if="timeTravel.isNow && !failed">{{ fmt(total) }}</template
           ><span v-else class="muted-dash">-</span
-          ><span class="head-unit"> standing acceptance{{ total === 1 && timeTravel.isNow ? '' : 's' }}</span>
+          ><span class="head-unit"> standing acceptance{{ total === 1 && timeTravel.isNow && !failed ? '' : 's' }}</span>
         </p>
         <p class="head-note">review queue · active risk-accepts, soonest expiry first · revoked never listed</p>
       </div>
