@@ -100,7 +100,7 @@ withDefaults(
   box-shadow: 0 0 0 5px var(--coral-drop);
   opacity: 0;
   pointer-events: none;
-  transition: opacity calc(var(--dur-panel) * 2) var(--ease-out);
+  transition: opacity var(--dur-panel) var(--ease-out);
 }
 .ui-btn--primary:active:not(:disabled) {
   transform: translateY(1px) scale(0.97);
