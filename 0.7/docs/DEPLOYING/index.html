@@ -391,6 +391,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#two-installations-on-one-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two installations on one machine
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#http-or-https" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1102,6 +1113,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#two-installations-on-one-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two installations on one machine
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#http-or-https" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1376,6 +1398,24 @@ docker<span class="w"> </span>compose<span class="w"> </span>ps<span class="w"> 
 make the images first with <code>development/scripts/build-app-images.sh</code>. The script gives the images
 the names that the compose file uses. Then <code>docker compose up -d</code> runs these images, and it pulls
 nothing.</p>
+<h3 id="two-installations-on-one-machine">Two installations on one machine<a class="headerlink" href="#two-installations-on-one-machine" title="Permanent link">&para;</a></h3>
+<p>The compose file gives each installation the project name <code>javv</code>. Docker Compose puts this name
+on the containers, the volumes and the network. A second installation with the same name in a
+different folder uses the containers and the volumes of the first.</p>
+<p>To run a second installation on the same machine:</p>
+<ol>
+<li>Put the two files of the release in a different folder, with its own <code>.env</code>.</li>
+<li>In that <code>.env</code>, add a project name for this installation:
+    <div class="highlight"><pre><span></span><code><span class="nv">COMPOSE_PROJECT_NAME</span><span class="o">=</span>javv-test
+</code></pre></div></li>
+<li>In that <code>compose.yaml</code>, change the host port of <code>frontend</code> (the left side of <code>"8080:8080"</code>),
+    for example to <code>"8090:8080"</code>.</li>
+<li>Run each <code>docker compose</code> command for this installation in its folder. Compose reads the project
+    name from the <code>.env</code> in that folder.</li>
+</ol>
+<p>Each installation runs its own OpenSearch, so the machine needs the memory for both.</p>
+<p>Do not change the project name of an installation that has data. Its volumes have the old name, and
+under a new name JAVV starts with empty volumes.</p>
 <h3 id="http-or-https">http or https<a class="headerlink" href="#http-or-https" title="Permanent link">&para;</a></h3>
 <p>By default, the session cookie has the <code>Secure</code> flag. A browser keeps a <code>Secure</code> cookie only from
 <code>https</code> or from <code>localhost</code>.</p>
@@ -1534,8 +1574,10 @@ network. Each pair of a cluster and a scanner has its own token.</p>
     <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>namespace<span class="w"> </span>kube-system<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.metadata.uid}'</span>
 </code></pre></div></li>
 <li>
-<p>In JAVV, go to <strong>Settings › Access &amp; tokens › Mint token</strong>. Enter the cluster ID and the scanner
-    (<code>trivy</code> or <code>grype</code>). JAVV shows the token only one time.</p>
+<p>In JAVV, go to <strong>Settings › Access &amp; tokens › Mint token</strong>. In <strong>Cluster</strong>, select
+    <strong>New cluster…</strong> and enter the cluster ID. Select the scanner (<code>trivy</code> or <code>grype</code>). JAVV shows
+    the token only one time. After the first token, the cluster is in the list: select it for the
+    second scanner's token.</p>
 </li>
 <li>
 <p>Install the <code>javv-scanner</code> chart in that cluster. Put each token in its own Secret. Set the JAVV

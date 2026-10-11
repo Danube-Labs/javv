@@ -13,6 +13,9 @@
 # PR moves both tags. To run a checkout that is not a release, build them first with
 # development/scripts/build-app-images.sh, which tags them with the names below.
 
+# The project name prefixes every volume. A second installation on this machine sets its own
+# COMPOSE_PROJECT_NAME in its .env (docs/DEPLOYING.md); renaming an installation with data here
+# would start it on empty volumes.
 name: javv
 
 services:
@@ -99,7 +102,7 @@ services:
       start_period: 30s
 
   backend:
-    image: ghcr.io/danube-labs/javv-backend:0.7.1 # x-release-please-version
+    image: ghcr.io/danube-labs/javv-backend:0.7.2 # x-release-please-version
     restart: unless-stopped
     depends_on:
       opensearch:
@@ -220,7 +223,7 @@ services:
     #   - "8000:8000"
 
   frontend:
-    image: ghcr.io/danube-labs/javv-frontend:0.7.1 # x-release-please-version
+    image: ghcr.io/danube-labs/javv-frontend:0.7.2 # x-release-please-version
     restart: unless-stopped
     depends_on:
       backend:

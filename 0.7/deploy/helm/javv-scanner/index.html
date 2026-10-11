@@ -1043,7 +1043,7 @@
 
 
 <h1 id="javv-scanner">javv-scanner<a class="headerlink" href="#javv-scanner" title="Permanent link">&para;</a></h1>
-<p><img alt="Version: 0.7.1" src="https://img.shields.io/badge/Version-0.7.1-informational?style=flat-square" /> <img alt="AppVersion: 0.7.1" src="https://img.shields.io/badge/AppVersion-0.7.1-informational?style=flat-square" /></p>
+<p><img alt="Version: 0.7.2" src="https://img.shields.io/badge/Version-0.7.2-informational?style=flat-square" /> <img alt="AppVersion: 0.7.2" src="https://img.shields.io/badge/AppVersion-0.7.2-informational?style=flat-square" /></p>
 <p>This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
 CronJob. Each scanner pushes its own results to JAVV. JAVV never merges them. Install the chart in
 each cluster that you scan. JAVV itself, the <a href="../javv/"><code>javv</code></a> chart, can run in that
@@ -1051,7 +1051,8 @@ cluster or at each place that the scanners can reach over HTTP.
 <a href="../../../docs/DEPLOYING/#connect-the-scanners">Connect the scanners</a> gives the full procedure.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <p>Each scanner needs its own ingest token for this cluster. Make it in JAVV: <strong>Settings › Access &amp;
-tokens › Mint token</strong>, with the cluster id from the first command and the name of the scanner.</p>
+tokens › Mint token</strong>. For the first token, select <strong>New cluster…</strong> and enter the cluster id from
+the first command. Then select the name of the scanner.</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>namespace<span class="w"> </span>kube-system<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.metadata.uid}'</span><span class="w">   </span><span class="c1"># the id of this cluster in JAVV</span>
 
 kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>javv-scanner
