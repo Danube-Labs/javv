@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import { isColdStart } from '@/system/coldStart'
 
-const empty = { loaded: true, failed: false, clusterCount: 0 }
+const empty = { none: true }
 
 describe('isColdStart', () => {
   it('holds a data screen while the registry is loaded, healthy and empty', () => {
@@ -20,9 +20,7 @@ describe('isColdStart', () => {
     expect(isColdStart({ ...empty, section: 'help' })).toBe(false)
   })
 
-  it('needs an answered, non-failed, empty registry', () => {
-    expect(isColdStart({ ...empty, loaded: false, section: 'monitor' })).toBe(false)
-    expect(isColdStart({ ...empty, failed: true, section: 'monitor' })).toBe(false)
-    expect(isColdStart({ ...empty, clusterCount: 1, section: 'monitor' })).toBe(false)
+  it('needs the registry to have answered empty (the store\'s `none`, pinned in cluster-store.spec)', () => {
+    expect(isColdStart({ none: false, section: 'monitor' })).toBe(false)
   })
 })

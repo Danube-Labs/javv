@@ -21,6 +21,7 @@ import { client } from '@/api/client'
 import DotWord from '@/components/chips/DotWord.vue'
 import OpensearchRuntimeCard from '@/components/settings/OpensearchRuntimeCard.vue'
 import SaveBar from '@/components/settings/SaveBar.vue'
+import NoClusterState from '@/components/settings/NoClusterState.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsInput from '@/components/settings/SettingsInput.vue'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
@@ -185,7 +186,8 @@ function discard() {
       The daily lifecycle sweep reads these settings live, so an edit applies at its next run.
     </div>
 
-    <UiSkeleton v-if="loading" :height="180" radius="sm" label="Loading data settings" />
+    <NoClusterState v-if="clusterStore.none" />
+    <UiSkeleton v-else-if="loading" :height="180" radius="sm" label="Loading data settings" />
     <p v-else-if="failed" class="load-error" role="alert">
       Data settings unavailable. Check the backend connection.
     </p>

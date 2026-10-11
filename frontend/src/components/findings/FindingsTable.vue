@@ -49,6 +49,8 @@ const props = withDefaults(
     loading: boolean
     /** a read has come back at least once; before that the grid has no answer to report */
     settled?: boolean
+    /** the read was refused: the grid has no answer, so it must not say "no findings" */
+    failed?: boolean
     /** keys from FINDINGS_COLUMNS hidden via the Columns menu (cve/severity/state are fixed) */
     hidden?: ReadonlySet<string>
     /** FINDINGS_COLUMNS keys in display order (hidden keys keep their slot) */
@@ -317,6 +319,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
              the window before the cluster resolves, when no request has started yet. -->
         <div class="empty-row">
           {{ props.loading || props.settled === false ? 'Loading findings…'
+            : props.failed ? 'Findings could not be loaded.'
             : filtered ? 'No findings match these filters.'
             : 'No findings yet. The first committed scan populates this grid.' }}
         </div>

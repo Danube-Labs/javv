@@ -200,7 +200,8 @@ const fmt = (n: number) => n.toLocaleString('en-US')
         </template>
         <template #body="{ data }">
           <span v-if="key === 'tag'" class="cell-actionable">
-            <span class="mono-cell sm">{{ data.tag }}</span>
+            <span v-if="data.tag" class="mono-cell sm">{{ data.tag }}</span>
+            <span v-else class="muted-dash" title="Pinned by digest: the pod names no tag.">-</span>
             <ValueActions
               v-if="data.tag"
               class="val-act-reveal"

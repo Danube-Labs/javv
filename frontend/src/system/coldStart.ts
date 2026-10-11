@@ -7,15 +7,9 @@
 const LIVE_WITHOUT_CLUSTERS = new Set(['configure', 'help'])
 
 export function isColdStart(state: {
-  loaded: boolean
-  failed: boolean
-  clusterCount: number
+  /** the cluster store's `none`: the registry answered, healthy and empty */
+  none: boolean
   section: string | undefined
 }): boolean {
-  return (
-    state.loaded &&
-    !state.failed &&
-    state.clusterCount === 0 &&
-    !LIVE_WITHOUT_CLUSTERS.has(state.section ?? '')
-  )
+  return state.none && !LIVE_WITHOUT_CLUSTERS.has(state.section ?? '')
 }

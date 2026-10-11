@@ -13,6 +13,9 @@
 # PR moves both tags. To run a checkout that is not a release, build them first with
 # development/scripts/build-app-images.sh, which tags them with the names below.
 
+# The project name prefixes every volume. A second installation on this machine sets its own
+# COMPOSE_PROJECT_NAME in its .env (docs/DEPLOYING.md); renaming an installation with data here
+# would start it on empty volumes.
 name: javv
 
 services:

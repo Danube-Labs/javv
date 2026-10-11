@@ -117,6 +117,29 @@ make the images first with `development/scripts/build-app-images.sh`. The script
 the names that the compose file uses. Then `docker compose up -d` runs these images, and it pulls
 nothing.
 
+### Two installations on one machine
+
+The compose file gives each installation the project name `javv`. Docker Compose puts this name
+on the containers, the volumes and the network. A second installation with the same name in a
+different folder uses the containers and the volumes of the first.
+
+To run a second installation on the same machine:
+
+1. Put the two files of the release in a different folder, with its own `.env`.
+2. In that `.env`, add a project name for this installation:
+    ```bash
+    COMPOSE_PROJECT_NAME=javv-test
+    ```
+3. In that `compose.yaml`, change the host port of `frontend` (the left side of `"8080:8080"`),
+    for example to `"8090:8080"`.
+4. Run each `docker compose` command for this installation in its folder. Compose reads the project
+    name from the `.env` in that folder.
+
+Each installation runs its own OpenSearch, so the machine needs the memory for both.
+
+Do not change the project name of an installation that has data. Its volumes have the old name, and
+under a new name JAVV starts with empty volumes.
+
 ### http or https
 
 By default, the session cookie has the `Secure` flag. A browser keeps a `Secure` cookie only from
@@ -286,8 +309,10 @@ network. Each pair of a cluster and a scanner has its own token.
     ```bash
     kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
     ```
-2. In JAVV, go to **Settings › Access & tokens › Mint token**. Enter the cluster ID and the scanner
-    (`trivy` or `grype`). JAVV shows the token only one time.
+2. In JAVV, go to **Settings › Access & tokens › Mint token**. In **Cluster**, select
+    **New cluster…** and enter the cluster ID. Select the scanner (`trivy` or `grype`). JAVV shows
+    the token only one time. After the first token, the cluster is in the list: select it for the
+    second scanner's token.
 
 3. Install the `javv-scanner` chart in that cluster. Put each token in its own Secret. Set the JAVV
     address that this cluster can connect to:
