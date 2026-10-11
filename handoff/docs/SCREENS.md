@@ -225,6 +225,10 @@ dropped (contract is cursor paging).
   in the grid area + global banner.
 - **429 PIT cap** (`JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL`) — "too many open searches/exports,
   retry in Ns" honoring `Retry-After`.
+- **Any refused read**: the alert names the reason; the head count shows "-" and the grid row
+  reads "Findings could not be loaded.", never "0 findings" or "No findings yet" (issue 817). Audit
+  log, Contributors and Approvals follow the same rule for their counts (Audit's row: "Events could
+  not be loaded.").
 - 403-capability-hidden — bulk-triage bar and row checkboxes absent without `can_triage`.
 - Bulk 413 — inline error offering to narrow the selection.
 - Zero-vs-nonzero scanner pair (M9b update, #156-4): one scanner's 0 is **never** a green "clean"
