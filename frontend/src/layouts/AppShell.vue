@@ -65,12 +65,7 @@ useGlobalUrlStamp()
 
 /** Zero-clusters cold start (M9f) — which sections stay live lives in `isColdStart`. */
 const coldStart = computed(() =>
-  isColdStart({
-    loaded: clusterStore.loaded,
-    failed: clusterStore.failed,
-    clusterCount: clusterStore.clusters.length,
-    section: route.meta.section as string | undefined,
-  }),
+  isColdStart({ none: clusterStore.none, section: route.meta.section as string | undefined }),
 )
 
 /** Section identity echo (§8.5 specimen): the route's sidebar-group accent, exposed as a CSS

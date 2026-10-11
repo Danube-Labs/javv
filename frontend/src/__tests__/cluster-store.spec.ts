@@ -62,3 +62,33 @@ describe('cluster store — deep-link selection precedence (issue 433)', () => {
     expect(s.selectedId).toBe('c-alpha-11')
   })
 })
+
+// one home for "no cluster yet": the cold start and the per-cluster settings both read it (issue 817)
+describe('cluster store — none', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    listMock.mockReset()
+  })
+
+  it('is false until the registry has answered', () => {
+    expect(useClusterStore().none).toBe(false)
+  })
+
+  it('is true when the registry answered empty', async () => {
+    listMock.mockResolvedValue(ok({ clusters: [] }) as never)
+    await useClusterStore().fetchClusters(null)
+    expect(useClusterStore().none).toBe(true)
+  })
+
+  it('is false when the registry has a cluster', async () => {
+    listMock.mockResolvedValue(REGISTRY as never)
+    await useClusterStore().fetchClusters(null)
+    expect(useClusterStore().none).toBe(false)
+  })
+
+  it('is false when the registry read failed: that is not an empty answer', async () => {
+    listMock.mockResolvedValue({ response: { ok: false, status: 503 } } as never)
+    await useClusterStore().fetchClusters(null)
+    expect(useClusterStore().none).toBe(false)
+  })
+})
