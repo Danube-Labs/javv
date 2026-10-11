@@ -78,11 +78,36 @@ withDefaults(
 }
 /* FLAT solid primary (operator 2026-07-17, Nuxt solid grammar): coral fill + inverted text,
    NO gloss — the inset highlight + drop shadow were the "plasticky" read, not the hue.
-   (A soft-wash variant was tried and ruled too muted.) */
+   (A soft-wash variant was tried and ruled too muted.)
+   Press (operator 2026-10-11, variant E on built specimens, issue 817): it sinks 1px and shrinks
+   to 97%, and a coral ring shows and fades on release, so a click lands with force. The ring is a
+   pseudo-element whose opacity animates: the motion layer moves transform and opacity only. */
 .ui-btn--primary {
+  position: relative;
   border-color: var(--coral);
   background: var(--coral);
   color: var(--kev-fg);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    transform var(--dur-quick) var(--ease-out);
+}
+.ui-btn--primary::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 5px var(--coral-drop);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity calc(var(--dur-panel) * 2) var(--ease-out);
+}
+.ui-btn--primary:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+}
+.ui-btn--primary:active:not(:disabled)::after {
+  opacity: 1;
+  transition: none;
 }
 .ui-btn--primary:hover:not(:disabled) {
   background: var(--coral-dd);
@@ -96,8 +121,13 @@ withDefaults(
   width: 100%;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ui-btn {
+  .ui-btn,
+  .ui-btn--primary::after {
     transition: none;
+  }
+  /* no movement; the darker fill and the ring still say the press landed */
+  .ui-btn--primary:active:not(:disabled) {
+    transform: none;
   }
 }
 </style>

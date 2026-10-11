@@ -243,6 +243,12 @@ never the cursor (Linear-style desktop-app convention). **One ruled exception (o
 menu grip rows. Drag is a different verb than click; the arrow there hid a real affordance.
 `pointer` stays banned (enforced by the style rules test).
 
+**Primary button press (operator ruling 2026-10-11, variant E chosen from five built specimens,
+issue 817):** on press the primary button sinks 1px and shrinks to 97%, and a coral ring
+(`--coral-drop`) shows and fades on release, so a click lands with force. The ring is a
+pseudo-element whose opacity animates (transform and opacity only). Under reduced motion nothing
+moves; the darker fill and the ring still show the press. Owned by `UiButton`.
+
 ### Motion (#319) — the one scale, applied through the kit
 
 Durations/curves come from the motion tokens (`--ease-out`, `--dur-quick` 120ms,
