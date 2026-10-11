@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.2](https://github.com/Danube-Labs/javv-poc/compare/v0.7.1...v0.7.2) (2026-10-11)
+
+
+### Bug Fixes
+
+* a fresh install can mint its first token and read its settings pages ([#820](https://github.com/Danube-Labs/javv-poc/issues/820)) ([436e91e](https://github.com/Danube-Labs/javv-poc/commit/436e91e265124da8a0f9e5eda35a55dcbb4750f0))
+* a refused read no longer reads as an empty answer ([#821](https://github.com/Danube-Labs/javv-poc/issues/821)) ([601385e](https://github.com/Danube-Labs/javv-poc/commit/601385ef07521a0309f6326a49582d37f39ff356))
+* scan pods started by digest through the pullable image_id reference ([#819](https://github.com/Danube-Labs/javv-poc/issues/819)) ([2b0e9c2](https://github.com/Danube-Labs/javv-poc/commit/2b0e9c2ee25f7171784bee309cb084987346381a))
+* the primary button presses in with a ring ([#824](https://github.com/Danube-Labs/javv-poc/issues/824)) ([373254e](https://github.com/Danube-Labs/javv-poc/commit/373254e37217594c9171932d88aa4e175c826761))
+
 ## [0.7.1](https://github.com/Danube-Labs/javv-poc/compare/v0.7.0...v0.7.1) (2026-10-10)
 
 
