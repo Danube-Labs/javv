@@ -17,6 +17,7 @@ import {
 import { client } from '@/api/client'
 import ChipsInput from '@/components/settings/ChipsInput.vue'
 import SaveBar from '@/components/settings/SaveBar.vue'
+import NoClusterState from '@/components/settings/NoClusterState.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -109,8 +110,9 @@ function discard() {
 <template>
   <div>
     <SettingsCard title="Scan scope" subtitle="what the scanner module discovers and scans">
+      <NoClusterState v-if="clusterStore.none" />
       <UiSkeleton
-        v-if="loading"
+        v-else-if="loading"
         :height="280"
         radius="sm"
         label="Loading scan scope"
