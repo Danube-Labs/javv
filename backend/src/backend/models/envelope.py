@@ -9,10 +9,16 @@ integrity check; the server RE-derives the canonical severity + rank from the ve
 (D16) — the client's `severity_canonical` is accepted on the wire but never trusted.
 """
 
-from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from backend.core.identifiers import CLUSTER_ID_RE as _CLUSTER_ID
 
@@ -149,10 +155,10 @@ class IngestEnvelope(BaseModel):
     replicas: int = Field(ge=0)
     scan_run_id: str = Field(min_length=1, max_length=128)
     scan_order: int = Field(ge=0)
-    last_seen_at: datetime
+    last_seen_at: AwareDatetime  # the contract: every time carries a zone
     scanner_version: str | None = Field(default=None, max_length=128)
     scanner_db_version: str | None = Field(default=None, max_length=128)
-    scanner_db_built: datetime | None = None
+    scanner_db_built: AwareDatetime | None = None
     effective_config: IngestEffectiveConfig  # required in v3 (D44) — no silent omission
     counts: IngestCounts
     findings: list[IngestFinding] = Field(max_length=100_000)

@@ -109,7 +109,13 @@ async def test_post_rejects_malformed_bodies() -> None:
         extra = await c.post(
             "/api/v1/inventory-runs", json={**_body(), "cluster_id": "evil"}, headers=headers
         )
+        no_zone = await c.post(
+            "/api/v1/inventory-runs",
+            json={**_body(), "started_at": "2026-07-07T12:00:00"},
+            headers=headers,
+        )
     assert negative.status_code == 422
+    assert no_zone.status_code == 422  # every time on the ingest contract carries a zone
     assert extra.status_code == 422  # extra=forbid: no payload cluster_id, ever (SEC-3)
 
 

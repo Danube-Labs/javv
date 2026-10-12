@@ -7,11 +7,10 @@ Token-authenticated with the same SEC-3 binding as ingest/scan-runs: the manifes
 the token's own `cluster_id`. Best-effort on the scanner side — a failed commit just leaves the
 run uncertified (reads fall back to the prior committed run + the staleness banner)."""
 
-from datetime import datetime
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from backend.core.auth import require_token
 from backend.snapshots.inventory_runs import commit_inventory_run
@@ -24,7 +23,7 @@ class CommitInventoryRun(BaseModel):
 
     scan_run_id: str = Field(min_length=1, max_length=128)  # = the cycle's inventory_run_id
     expected_count: int = Field(ge=0, le=1_000_000)  # images scanned this cycle
-    started_at: datetime
+    started_at: AwareDatetime  # the contract: every time carries a zone
 
 
 @router.post("/inventory-runs")
