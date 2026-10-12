@@ -36,6 +36,7 @@ export const AUDIT_ACTIONS = [
   'cluster_retire',
   'cluster_unretire',
   'cluster_delete',
+  'cluster_delete_recheck',
   // auth + admin (entity_type=user/token)
   'login',
   'logout',

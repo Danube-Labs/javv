@@ -22,6 +22,7 @@ export const ACTION_LABELS: Record<string, string> = {
   cluster_retire: 'Cluster retired',
   cluster_unretire: 'Cluster un-retired',
   cluster_delete: 'Cluster deleted',
+  cluster_delete_recheck: 'Leftover rows deleted',
   pwd_change: 'Password changed',
   pwd_reset: 'Password reset',
   role_change: 'Role changed',
