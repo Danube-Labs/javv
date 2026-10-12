@@ -66,7 +66,7 @@
 
   /* -- typography (two families, fixed scale) --------------------------- */
   --font-ui: 'Hanken Grotesk', sans-serif; /* operator-picked 2026-07-09 (A/B vs Space/Schibsted Grotesk) */
-  --font-mono: 'Space Mono', monospace;
+  --font-mono: 'Spline Sans Mono', monospace; /* operator-picked 2026-10-12 on a built specimen (issue 818) */
   --text-page-title: 23px; /* h1, weight 600, -.01em */
   --text-card-title: 14px; /* h3, weight 600 */
   --text-body: 13px; /* base, line-height 1.5 */

@@ -806,7 +806,7 @@ lists are drawn elsewhere.
 - First-run/empty states on every data screen (M9f owns the shared components).
 - Capability gating on every mutating affordance — from `/auth/me` capabilities (A-4); client
   gate is convenience, server is authority.
-- All timestamps/IDs/versions in Space Mono; severity colors from the token map only; coral/amber
+- All timestamps/IDs/versions in the mono face (`--font-mono`); severity colors from the token map only; coral/amber
   never encode severity (ui-foundations).
 
 ## RESOLVED register (all six DECIDEs ruled by the operator 2026-07-07, #237)

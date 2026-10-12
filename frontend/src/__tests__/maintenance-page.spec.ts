@@ -51,4 +51,12 @@ describe('public/maintenance.html', () => {
     const body = page.replace(/:root\s*\{[^}]*\}/, '').replace(/<svg[\s\S]*<\/svg>/, '')
     expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i)
   })
+
+  it('names the two token families in its font stacks', () => {
+    const stacks = [...page.matchAll(/font-family:\s*'([^']+)'/g)].map(([, family]) => family)
+    for (const token of ['font-ui', 'font-mono']) {
+      const family = tokens.match(new RegExp(`--${token}:\\s*'([^']+)'`))![1]
+      expect(stacks, `--${token}`).toContain(family)
+    }
+  })
 })

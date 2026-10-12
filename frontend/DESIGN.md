@@ -170,7 +170,8 @@ never re-implement it.
 ## 3. Typography — two families, fixed scale
 
 **Hanken Grotesk** (`var(--font-ui)`, operator A/B ruling 2026-07-09) = all UI text.
-**Space Mono** (`var(--font-mono)`) =
+**Spline Sans Mono** (`var(--font-mono)`, operator ruling 2026-10-12 on a built specimen against
+Space Mono, Red Hat Mono, Azeret Mono and JetBrains Mono, issue 818) =
 code-like data: CVE IDs, versions, namespaces, image refs, counts, timestamps, table headers,
 IDs. No third family, no ad-hoc sizes — the scale tokens:
 
@@ -190,6 +191,16 @@ title that sits straight under it is an `h2`, styled by its own class (`.card-he
 `--text-card-title`); a title nested inside such a section is an `h3`. Never pick the tag for
 its default size. `tests/e2e/headings.spec.ts` walks every screen and fails on a skipped level
 (issue 681).
+
+**The app serves its own fonts** (issue 818). An outside font stylesheet blocks the first paint, and
+behind a firewall that drops outside traffic it held the sign-in page blank for 21.8 s. The faces
+ship as Fontsource packages, declared in `src/styles/fonts.css`: latin and latin-ext only, each
+face with its `unicode-range` (without one, the later subset shadows the earlier), UI 400 to 700,
+mono 400 and 700. Spline Sans Mono is close to Space Mono's width (0.600 em digits against
+0.612 em, about 2% narrower), so mono cells truncate no sooner than before. `index-html.spec.ts` fails a link to another origin
+or a token family without its faces; `tests/e2e/fonts-offline.spec.ts` loads the sign-in page with
+every outside host unanswered. Neither face is on the vendored detector's overused-font list, so
+§9 carries no font row.
 
 ## 4. Layout & density
 
@@ -412,7 +423,6 @@ reflex defaults (operator ruling 2026-07-09):
 
 | Finding | Ruling |
 |---|---|
-| `overused-font: Hanken Grotesk` | The brand UI face (operator-picked 2026-07-09, A/B vs Space/Schibsted Grotesk). Only changes by an operator-approved token swap. |
 | `cream-palette` (`--bg` #efeadf / `--panel` #fbfaf6) | The warm-paper identity — deliberate palette, not a default. |
 | `tiny-text 10–11.5px` on mono micro-scale | Ops-tool density (table headers, counts, chips) per the v4 scale. Body text stays ≥13px. |
 | `low-contrast` white-on-coral (login/action buttons) | Prototype button treatment; 13px/600 button label, not body text. |

@@ -20,6 +20,22 @@ Grype (javv-scanner-grype)
   Licensed under the Apache License, Version 2.0.
   https://github.com/anchore/grype
 
+Fonts (the javv-frontend image)
+-------------------------------
+
+The frontend serves two typefaces from its own files, taken from the Fontsource packages
+(@fontsource/hanken-grotesk, @fontsource/spline-sans-mono). Both are licensed under the SIL Open
+Font License, Version 1.1 (https://openfontlicense.org). Each font file carries its copyright line
+and the license URL in its own metadata, and each package carries the full license text.
+
+Hanken Grotesk
+  Copyright 2021 The Hanken Grotesk Project Authors
+  https://github.com/marcologous/hanken-grotesk
+
+Spline Sans Mono
+  Copyright 2022 The Spline Sans Mono Project Authors
+  https://github.com/SorkinType/SplineSansMono
+
 Libraries
 ---------
 

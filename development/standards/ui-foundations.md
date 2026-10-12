@@ -19,8 +19,9 @@ How JAVV keeps **one** visual system instead of a thousand ad-hoc fonts, sizes, 
 
 ## Typography - two families, fixed scale
 - **Hanken Grotesk** = all UI text/headings/body (operator A/B ruling 2026-07-09, replacing Space
-  Grotesk). **Space Mono** = code-like data (CVE IDs, versions, namespaces, image refs, counts,
-  timestamps, IDs). **No third family. No ad-hoc sizes** - use the type-scale tokens (page `h1`,
+  Grotesk). **Spline Sans Mono** = code-like data (CVE IDs, versions, namespaces, image refs,
+  counts, timestamps, IDs; operator ruling 2026-10-12 on a built specimen, replacing Space Mono).
+  Both are served by the app itself (`src/styles/fonts.css`), never from a font host. **No third family. No ad-hoc sizes** - use the type-scale tokens (page `h1`,
   card title, body, KPI number, table header, mono data cell, …).
 
 ## Contrast - AA is the floor (ruled 2026-07-09)

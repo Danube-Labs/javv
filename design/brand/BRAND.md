@@ -41,10 +41,18 @@ badge must never be confusable.
 
 ## Type
 
-- **Space Grotesk 700** - wordmark (`javv`), headings. Letter-spacing ≈ −0.045em.
-- **Space Mono 400/700** - credit line, taglines, code. Credit format:
+The brand uses the app's two faces, so the logo and the product read the same:
+
+- **Hanken Grotesk 700** - wordmark (`javv`), headings. Letter-spacing -0.03em, the same as the
+  app's sidebar wordmark.
+- **Spline Sans Mono 400/700** - credit line, taglines, code. Credit format:
   `by ` (regular, muted) + `Danube Labs` (bold, slightly stronger).
-- Both are free Google Fonts (OFL).
+- Both are free fonts under the SIL Open Font License. The app serves its own copies
+  (`frontend/src/styles/fonts.css`); the text-bearing SVGs here name the families in a `<style>`
+  and need them installed to render as designed.
+- Until 2026-10 the brand used Space Grotesk and Space Mono. The app moved to Hanken Grotesk
+  (2026-07-09) and Spline Sans Mono (2026-10-12) by operator rulings on built specimens, and the
+  brand followed (issue 818).
 
 ## Usage rules
 
@@ -74,5 +82,5 @@ there is a second product. It has no source file in this folder; it lives only a
 uploaded org image on GitHub. Add it here if it ever needs to be reproduced.
 
 To hand-edit text-bearing SVGs in a vector tool without the webfont installed,
-install Space Grotesk / Space Mono locally first (or outline the text to paths
+install Hanken Grotesk / Spline Sans Mono locally first (or outline the text to paths
 before sending to anyone who won't have them).
