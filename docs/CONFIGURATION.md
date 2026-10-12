@@ -141,7 +141,7 @@ the code.
 | `JAVV_JOB_STALENESS_SWEEP_CRON` | `0 2 * * *` | When the staleness sweep runs. It marks findings stale on the two [staleness](#staleness) timers. It also opens findings again when their risk acceptance expires. |
 | `JAVV_JOB_LIFECYCLE_SWEEP_CRON` | `0 3 * * *` | When the lifecycle sweep runs. It starts new history indices (rollover), and it deletes the indices that are older than the [retention](#retention-and-rollover) of each cluster. |
 | `JAVV_JOB_FINDINGS_CLEANUP_CRON` | `0 4 * * *` | When the findings cleanup runs. It deletes rows of the `findings` cache that no scan found for longer than the [cleanup window](#findings-cleanup). |
-| `JAVV_JOB_CLUSTER_RETIREMENT_CRON` | `15 4 * * *` | When the retirement sweep runs. It retires the clusters that sent no scan for longer than their [window](#cluster-retirement-window). It returns the clusters that scan again. It also deletes the rows that arrived after the deletion of their cluster. |
+| `JAVV_JOB_CLUSTER_RETIREMENT_CRON` | `15 4 * * *` | When the retirement sweep runs. It retires the clusters that sent no scan for longer than their [window](#cluster-retirement-window). It returns the clusters that scan again. It also deletes the rows that arrived after the deletion of their cluster, and first writes an audit row with their counts. |
 | `JAVV_JOB_SESSION_SWEEP_CRON` | `30 4 * * *` | When the session sweep runs. It deletes the sessions that expired longer ago than `JAVV_SESSION_SWEEP_GRACE_HOURS`. |
 
 ### Job schedules and the time zone

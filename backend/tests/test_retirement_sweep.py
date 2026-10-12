@@ -223,6 +223,9 @@ async def test_the_sweep_retires_brings_back_and_journals(real_os) -> None:
         "announced": 0,
         "withdrawn": 0,
         "delete_rechecked": 0,
+        "delete_with_leftovers": 0,
+        "delete_dropped": 0,
+        "delete_failed": 0,
     }
     records = await read_retirements(client, prefix=prefix)
     assert records["c-gone-0001"].mode == "auto" and records["c-gone-0001"].retired_at == NOW
@@ -237,6 +240,9 @@ async def test_the_sweep_retires_brings_back_and_journals(real_os) -> None:
         "announced": 0,
         "withdrawn": 0,
         "delete_rechecked": 0,
+        "delete_with_leftovers": 0,
+        "delete_dropped": 0,
+        "delete_failed": 0,
     }
     await client.indices.refresh(index=f"{prefix}system-audit-log-*")
     rows = await client.search(
@@ -266,6 +272,9 @@ async def test_the_sweep_holds_when_every_cluster_is_silent(real_os) -> None:
         "announced": 0,
         "withdrawn": 0,
         "delete_rechecked": 0,
+        "delete_with_leftovers": 0,
+        "delete_dropped": 0,
+        "delete_failed": 0,
     }
     assert await read_retirements(client, prefix=prefix) == {}
     assert _held() == before + 1

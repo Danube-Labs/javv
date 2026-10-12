@@ -28,10 +28,14 @@ finished replaces that tombstone with its own marker (issue 833).
 778): a push already past its token check when the tokens went can still write after a step's
 pass, and once the retirement record is gone no route reaches those rows. For every tombstone
 whose cluster nothing names any more (no token, no registry name, no retirement record), the
-pass re-runs steps 1 to 3, warns and counts when it found rows, and drops the tombstone once a
-second pass finds nothing. A cluster onboarded again under the same id keeps its data and loses
-the tombstone. A marker that never finished (a delete that stopped after its retirement record)
-is handled the same way.
+pass counts what steps 2 and 3 would delete. When it finds rows, it writes an audit row with
+the counts first (actor `system`), deletes them, warns and counts; it drops the tombstone once a
+second pass finds nothing. It skips step 1: no token was left when it looked, and a token
+minted since is a new cluster's. A cluster onboarded again under the same id keeps its data and
+loses the tombstone; a mint drops it too, and the pass checks the tombstone before each step,
+so it stops when a mint lands during it. A marker that never finished (a delete that stopped
+after its retirement record) is handled the same way. Each marker is rechecked on its own: one
+that fails is logged and counted, and the others still run.
 
 **`delete_by_query` here is a sanctioned use** (operator ruling on issue 765, named in the backend
 rules): every query is an exact `term` on `cluster_id`, so it can only ever match that tenant (the
@@ -42,6 +46,7 @@ Snapshots taken before the delete still hold the data; deleting does not reach t
 
 import contextlib
 import re
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import Any
 
@@ -60,7 +65,7 @@ from backend.admin.cluster_retirement import (
 from backend.admin.retirement_notices import warned_doc_id
 from backend.admin.scan_scope import scan_scope_doc_id
 from backend.audit.writer import append_field_change
-from backend.core.metrics import CLUSTER_DELETE_LEFTOVERS
+from backend.core.metrics import CLUSTER_DELETE_LEFTOVERS, CLUSTER_DELETE_RECHECK_FAILURES
 from backend.jobs.findings_cleanup import FINDINGS_CLEANUP_KEY
 from backend.jobs.lifecycle import LIFECYCLE_KEY, SERIES
 from backend.jobs.staleness import STALENESS_KEY
@@ -217,13 +222,27 @@ async def _report_ids(client: AsyncOpenSearch, cluster_id: str, prefix: str) -> 
     return [d["report_id"] for d in docs if d.get("report_id")]
 
 
-async def _delete_data(client: AsyncOpenSearch, cluster_id: str, prefix: str) -> dict[str, int]:
-    """Steps 1 to 3: the tokens, the history series and the shared-index rows. Returns what went."""
+async def _delete_data(
+    client: AsyncOpenSearch,
+    cluster_id: str,
+    prefix: str,
+    *,
+    tokens: bool = True,
+    before_step: Callable[[], Awaitable[None]] | None = None,
+) -> dict[str, int]:
+    """Steps 1 to 3: the tokens, the history series and the shared-index rows. Returns what went.
+    `before_step` runs before each step and may raise to stop the rest."""
     term = {"term": {"cluster_id": cluster_id}}
     counts: dict[str, int] = {}
 
-    counts["tokens"] = await _delete_rows(client, f"{prefix}system-tokens", term)
+    async def step() -> None:
+        if before_step is not None:
+            await before_step()
 
+    if tokens:
+        counts["tokens"] = await _delete_rows(client, f"{prefix}system-tokens", term)
+
+    await step()
     indices = await _history_indices(client, cluster_id, prefix)
     for name in indices:
         with contextlib.suppress(NotFoundError):  # a retry after this drop landed
@@ -232,14 +251,29 @@ async def _delete_data(client: AsyncOpenSearch, cluster_id: str, prefix: str) ->
     counts["history_indices"] = len(indices)
 
     for index in SHARED_INDICES:
+        await step()
         counts[index] = await _delete_rows(client, f"{prefix}{index}", term)
 
+    await step()
     report_ids = await _report_ids(client, cluster_id, prefix)
     if report_ids:
         counts[REPORT_CHUNKS_INDEX] = await _delete_rows(
             client, f"{prefix}{REPORT_CHUNKS_INDEX}", {"terms": {"report_id": report_ids}}
         )
     counts[REPORTS_INDEX] = await _delete_rows(client, f"{prefix}{REPORTS_INDEX}", term)
+    return counts
+
+
+async def _count_data(client: AsyncOpenSearch, cluster_id: str, prefix: str) -> dict[str, int]:
+    """What steps 2 and 3 would delete now, without the tokens: the counts the next-night pass
+    journals before it deletes."""
+    term = {"query": {"term": {"cluster_id": cluster_id}}}
+    counts = {"history_indices": len(await _history_indices(client, cluster_id, prefix))}
+    for index in (*SHARED_INDICES, REPORTS_INDEX):
+        got = await client.count(
+            index=f"{prefix}{index}", body=term, params={"ignore_unavailable": "true"}
+        )
+        counts[index] = int(got["count"])
     return counts
 
 
@@ -336,12 +370,17 @@ async def clear_for_onboarding(
     return True
 
 
+class _Onboarded(Exception):
+    """The tombstone went during the pass: a token was minted for the id, so its data is new."""
+
+
 async def recheck_deleted(
     client: AsyncOpenSearch, *, now: datetime | None = None, prefix: str = ""
 ) -> dict[str, int]:
     """The next-night pass over deleted clusters (module docstring). Returns counts
-    {rechecked, with_leftovers, dropped}."""
-    out = {"rechecked": 0, "with_leftovers": 0, "dropped": 0}
+    {rechecked, with_leftovers, dropped, failed}. One marker that fails is counted and logged,
+    and the pass goes on to the next one."""
+    out = {"rechecked": 0, "with_leftovers": 0, "dropped": 0, "failed": 0}
     marks = await _markers(client, prefix)
     if not marks:
         return out
@@ -350,28 +389,85 @@ async def recheck_deleted(
     retirements = await read_retirements(client, prefix=prefix)
     for mark in marks:
         cluster_id = mark["key"].removeprefix(DELETE_MARKER_PREFIX)
-        tokens = await client.count(
-            index=f"{prefix}system-tokens",
-            body={"query": {"term": {"cluster_id": cluster_id}}},
-            params={"ignore_unavailable": "true"},
-        )
-        if cluster_id in retirements or cluster_id in names or tokens["count"]:
-            # named again after its delete: its data is new, keep it. Unfinished: the delete,
-            # or its retry from the route, still owns it
-            if _finished(mark):
-                await _drop(client, cluster_id, prefix)
-                out["dropped"] += 1
+        try:
+            outcome = await _recheck_one(client, mark, cluster_id, names, retirements, at, prefix)
+        except _Onboarded:
+            log.info("cluster delete tombstone dropped", cluster_id=cluster_id, reason="onboarded")
             continue
-        counts = await _delete_data(client, cluster_id, prefix)
-        out["rechecked"] += 1
-        if any(counts.values()):
-            out["with_leftovers"] += 1
-            CLUSTER_DELETE_LEFTOVERS.inc()
-            log.warning("cluster delete leftovers removed", cluster_id=cluster_id, counts=counts)
-        elif (mark.get("value") or {}).get("rechecked_at"):
+        except Exception as exc:  # noqa: BLE001 - one marker must not stop the others
+            out["failed"] += 1
+            CLUSTER_DELETE_RECHECK_FAILURES.inc()
+            log.warning(
+                "deleted cluster not rechecked",
+                cluster_id=cluster_id,
+                error=f"{type(exc).__name__}: {exc}",
+            )
+            continue
+        for key in outcome:
+            out[key] += 1
+    return out
+
+
+async def _recheck_one(
+    client: AsyncOpenSearch,
+    mark: dict[str, Any],
+    cluster_id: str,
+    names: dict[str, str],
+    retirements: dict[str, Any],
+    at: str,
+    prefix: str,
+) -> list[str]:
+    tokens = await client.count(
+        index=f"{prefix}system-tokens",
+        body={"query": {"term": {"cluster_id": cluster_id}}},
+        params={"ignore_unavailable": "true"},
+    )
+    if cluster_id in retirements or cluster_id in names or tokens["count"]:
+        # named again after its delete: its data is new, keep it. Unfinished: the delete,
+        # or its retry from the route, still owns it
+        if not _finished(mark):
+            return []
+        await _drop(client, cluster_id, prefix)
+        log.info("cluster delete tombstone dropped", cluster_id=cluster_id, reason="onboarded")
+        return ["dropped"]
+
+    found = await _count_data(client, cluster_id, prefix)
+    if not any(found.values()):
+        if (mark.get("value") or {}).get("rechecked_at"):
             await _drop(client, cluster_id, prefix)
-            out["dropped"] += 1
-            continue
+            log.info("cluster delete tombstone dropped", cluster_id=cluster_id, reason="clean")
+            return ["rechecked", "dropped"]
         finished = (mark.get("value") or {}).get("finished_at") or at
         await _stamp(client, cluster_id, prefix, finished_at=finished, rechecked_at=at)
-    return out
+        return ["rechecked"]
+
+    # journal first (D17): the row names what is about to go, then it goes
+    await append_field_change(
+        client,
+        actor="system",
+        action="cluster_delete_recheck",
+        entity_type="config",
+        entity_id=f"cluster:{cluster_id}",
+        field="leftovers",
+        old_value=None,
+        new_value="deleted",
+        revision=1,
+        cluster_id=cluster_id,
+        new_value_json=found,
+        prefix=prefix,
+    )
+
+    async def still_tombstoned() -> None:
+        # a mint drops the tombstone (`clear_for_onboarding`): stop before the new data goes
+        if not await client.exists(index=f"{prefix}system-config", id=delete_marker_id(cluster_id)):
+            raise _Onboarded(cluster_id)
+
+    # no tokens step: none was left when the pass looked, and a token minted since is new
+    counts = await _delete_data(
+        client, cluster_id, prefix, tokens=False, before_step=still_tombstoned
+    )
+    CLUSTER_DELETE_LEFTOVERS.inc()
+    log.warning("cluster delete leftovers removed", cluster_id=cluster_id, counts=counts)
+    finished = (mark.get("value") or {}).get("finished_at") or at
+    await _stamp(client, cluster_id, prefix, finished_at=finished, rechecked_at=at)
+    return ["rechecked", "with_leftovers"]

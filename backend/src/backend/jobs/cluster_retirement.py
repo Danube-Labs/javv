@@ -237,8 +237,9 @@ async def run_retirement_sweep(
     announce the ones entering their warning window, withdrawing the notices that stopped being
     true, then pass over deleted clusters for rows written after their delete
     (`admin/cluster_delete.py`). Returns counts {retired, returned, held, announced, withdrawn,
-    delete_rechecked}. A failed announcement or pass does not fail the run: the retirements are
-    done, and the next run tries again (its notification ids repeat none)."""
+    delete_rechecked, delete_with_leftovers, delete_dropped, delete_failed}. A failed
+    announcement or pass does not fail the run: the retirements are done, and the next run tries
+    again (its notification ids repeat none)."""
     now = now or datetime.now(UTC)
     activity = await token_activity(client, prefix=prefix)
     retirements = await read_retirements(client, prefix=prefix)
@@ -305,9 +306,9 @@ async def run_retirement_sweep(
             clusters=len(plan.warn),
             error=f"{type(exc).__name__}: {exc}",
         )
-    rechecked = 0
+    recheck = {"rechecked": 0, "with_leftovers": 0, "dropped": 0, "failed": 0}
     try:
-        rechecked = (await recheck_deleted(client, now=now, prefix=prefix))["rechecked"]
+        recheck = await recheck_deleted(client, now=now, prefix=prefix)
     except Exception as exc:  # noqa: BLE001 - the run's retirements stand; the next run retries
         CLUSTER_DELETE_RECHECK_FAILURES.inc()
         log.warning("deleted clusters not rechecked", error=f"{type(exc).__name__}: {exc}")
@@ -317,7 +318,7 @@ async def run_retirement_sweep(
         "held": len(plan.held),
         "announced": announced,
         "withdrawn": withdrawn,
-        "delete_rechecked": rechecked,
+        **{f"delete_{key}": n for key, n in recheck.items()},
     }
 
 

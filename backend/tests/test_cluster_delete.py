@@ -381,14 +381,107 @@ async def test_the_next_pass_removes_what_a_late_push_left(real_os) -> None:
 
     first = await recheck_deleted(client, prefix=prefix)
 
-    assert first == {"rechecked": 1, "with_leftovers": 1, "dropped": 0}
+    assert first == {"rechecked": 1, "with_leftovers": 1, "dropped": 0, "failed": 0}
     assert _leftovers() == before + 1
     assert await _left(client, prefix, GONE) == []
     assert await _snapshot(client, prefix, KEPT) == kept
     assert await _tombstoned(client, prefix, GONE)  # one more clean pass before it goes
     second = await recheck_deleted(client, prefix=prefix)
-    assert second == {"rechecked": 1, "with_leftovers": 0, "dropped": 1}
+    assert second == {"rechecked": 1, "with_leftovers": 0, "dropped": 1, "failed": 0}
     assert not await _tombstoned(client, prefix, GONE)
+
+
+async def _recheck_rows(client: AsyncOpenSearch, prefix: str, cid: str) -> list[dict[str, Any]]:
+    await client.indices.refresh(index=f"{prefix}system-audit-log-*")
+    rows = await client.search(
+        index=f"{prefix}system-audit-log-*",
+        body={
+            "size": 10,
+            "query": {
+                "bool": {
+                    "filter": [
+                        {"term": {"cluster_id": cid}},
+                        {"term": {"action": "cluster_delete_recheck"}},
+                    ]
+                }
+            },
+        },
+    )
+    return [h["_source"] for h in rows["hits"]["hits"]]
+
+
+async def test_the_pass_journals_what_it_deletes_before_it_deletes(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    await delete_cluster(client, GONE, actor="t", prefix=prefix)
+    await recheck_deleted(client, prefix=prefix)  # a clean pass journals nothing
+    assert await _recheck_rows(client, prefix, GONE) == []
+    await _late_push(client, prefix, GONE)
+    real_delete_data = cluster_delete._delete_data
+    journaled_first: list[int] = []
+
+    async def deleting(*args: Any, **kwargs: Any) -> dict[str, int]:
+        journaled_first.append(len(await _recheck_rows(client, prefix, GONE)))
+        return await real_delete_data(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_delete_data", deleting)
+    await recheck_deleted(client, prefix=prefix)
+
+    assert journaled_first == [1]
+    (row,) = await _recheck_rows(client, prefix, GONE)
+    assert row["actor"] == "system" and row["entity_id"] == f"cluster:{GONE}"
+    assert row["new_value_json"]["findings"] == 1
+    assert row["new_value_json"]["history_indices"] == 1
+
+
+async def test_a_mint_during_the_pass_stops_it_before_the_new_data(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    await delete_cluster(client, GONE, actor="t", prefix=prefix)
+    await _late_push(client, prefix, GONE)
+    real_history = cluster_delete._history_indices
+
+    async def minted_now(*args: Any, **kwargs: Any) -> list[str]:
+        # an admin mints a token for the id while the pass runs, and its first scan lands
+        assert await cluster_delete.clear_for_onboarding(client, GONE, prefix=prefix)
+        await _put(client, f"{prefix}findings", f"new-{GONE}", {"cluster_id": GONE})
+        return await real_history(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_history_indices", minted_now)
+    out = await recheck_deleted(client, prefix=prefix)
+
+    assert out == {"rechecked": 0, "with_leftovers": 0, "dropped": 0, "failed": 0}
+    assert await client.exists(index=f"{prefix}findings", id=f"new-{GONE}")
+    assert not await _tombstoned(client, prefix, GONE)
+
+
+async def test_one_marker_that_fails_does_not_stop_the_others(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    other = "c-del-zz000001"  # sorts after GONE: the failing marker comes first
+    for cid in (GONE, other):
+        await _seed(client, prefix, cid)
+        await retire_cluster(client, cid, actor="t", mode="manual", prefix=prefix)
+        await delete_cluster(client, cid, actor="t", prefix=prefix)
+        await _late_push(client, prefix, cid)
+    real_count = cluster_delete._count_data
+
+    async def gone_fails(client_: Any, cid: str, prefix_: str) -> dict[str, int]:
+        if cid == GONE:
+            raise ConnectionTimeout("TIMEOUT", "read timed out", None)
+        return await real_count(client_, cid, prefix_)
+
+    monkeypatch.setattr(cluster_delete, "_count_data", gone_fails)
+    before = REGISTRY.get_sample_value("javv_cluster_delete_recheck_failures_total") or 0.0
+
+    out = await recheck_deleted(client, prefix=prefix)
+
+    assert out == {"rechecked": 1, "with_leftovers": 1, "dropped": 0, "failed": 1}
+    after = REGISTRY.get_sample_value("javv_cluster_delete_recheck_failures_total") or 0.0
+    assert after == before + 1
+    assert await _left(client, prefix, other) == []
+    assert await client.exists(index=f"{prefix}findings", id=f"late-{GONE}")  # next night
 
 
 async def test_a_cluster_onboarded_again_keeps_its_data(real_os) -> None:
@@ -409,6 +502,7 @@ async def test_a_cluster_onboarded_again_keeps_its_data(real_os) -> None:
         "rechecked": 0,
         "with_leftovers": 0,
         "dropped": 1,
+        "failed": 0,
     }
     assert await client.exists(index=f"{prefix}findings", id=f"new-{GONE}")
     assert not await _tombstoned(client, prefix, GONE)
@@ -454,7 +548,8 @@ async def test_the_retirement_sweep_runs_the_pass(real_os) -> None:
 
     counts = await run_retirement_sweep(client, prefix=prefix)
 
-    assert counts["delete_rechecked"] == 1
+    assert (counts["delete_rechecked"], counts["delete_with_leftovers"]) == (1, 1)
+    assert (counts["delete_dropped"], counts["delete_failed"]) == (0, 0)
     assert await _left(client, prefix, GONE) == []
 
 
