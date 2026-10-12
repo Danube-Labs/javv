@@ -63,17 +63,26 @@ fi
 # 2+3. per cluster: an ingest token, the envelope, and the inventory-run commit (status must come
 # back committed)
 seed_cluster() {
-  local envelope="$1" cluster_id scanner token status
+  local envelope="$1" cluster_id scanner token status order now pushed
   cluster_id="$(jq -r .cluster_id "$envelope")"
   scanner="$(jq -r .scanner "$envelope")"
   token="$(curl -sf -b "$COOKIES" -X POST "$BACKEND/api/v1/admin/tokens" -H 'content-type: application/json' \
     -d "{\"cluster_id\":\"$cluster_id\",\"scanner\":\"$scanner\"}" | jq -r .token)"
   [ -n "$token" ] && [ "$token" != null ] || fail "token mint ($cluster_id)"
+  # the contract's cycle: the order comes from scan-runs, and the scan time is now (the backend
+  # refuses an order it never handed out, and a time older than the staleness period)
+  order="$(curl -sf -X POST "$BACKEND/api/v1/scan-runs" -H "Authorization: Bearer $token" | jq -r .scan_order)"
+  [ -n "$order" ] && [ "$order" != null ] || fail "scan-runs ($cluster_id)"
+  now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  pushed="$(mktemp)"
+  jq --argjson order "$order" --arg now "$now" '.scan_order = $order | .last_seen_at = $now' \
+    "$envelope" > "$pushed"
   curl -sf -X POST "$BACKEND/api/v1/ingest/scan" -H "Authorization: Bearer $token" \
-    -H 'content-type: application/json' --data-binary "@$envelope" >/dev/null || fail "envelope ingest ($cluster_id)"
+    -H 'content-type: application/json' --data-binary "@$pushed" >/dev/null || fail "envelope ingest ($cluster_id)"
+  rm -f "$pushed"
   status="$(curl -sf -X POST "$BACKEND/api/v1/inventory-runs" -H "Authorization: Bearer $token" \
     -H 'content-type: application/json' \
-    -d "{\"scan_run_id\":\"$(jq -r .scan_run_id "$envelope")\",\"expected_count\":1,\"started_at\":\"$(jq -r .last_seen_at "$envelope")\"}" \
+    -d "{\"scan_run_id\":\"$(jq -r .scan_run_id "$envelope")\",\"expected_count\":1,\"started_at\":\"$now\"}" \
     | jq -r .status)"
   [ "$status" = committed ] || fail "inventory run not committed for $cluster_id (status=$status)"
   echo "seed: cluster $cluster_id seeded — $(jq -r '.findings | length' "$envelope") findings, inventory committed"
