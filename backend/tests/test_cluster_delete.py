@@ -13,7 +13,10 @@ removing rows a push in flight wrote after the delete, until a second pass finds
 cluster onboarded again keeps its data and loses the tombstone.
 The 401/403 axes live in the RBAC/IDOR suite."""
 
+import gzip
+import json
 import uuid
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -40,6 +43,8 @@ from backend.admin.cluster_retirement import (
     unretire_cluster,
 )
 from backend.auth.passwords import hash_password
+from backend.core.security import hash_token, mint_token
+from backend.core.settings import get_settings
 from backend.jobs import cluster_retirement
 from backend.jobs.cluster_retirement import run_retirement_sweep
 from backend.jobs.lifecycle import SERIES
@@ -52,6 +57,7 @@ pytestmark = requires_opensearch
 
 GONE = "c-del-abcdefgh"
 KEPT = "c-del-abcdefgh-1234"  # GONE is a prefix of it: a wildcard on GONE would match KEPT
+GOLDEN_ENVELOPE = Path(__file__).parent / "fixtures/envelope-trivy-golden.json"
 CONFIG_KINDS = ("staleness", "lifecycle", "findings_cleanup", "retirement", "retirement-warned")
 
 
@@ -599,6 +605,52 @@ async def test_a_delete_that_lost_to_a_bring_back_answers_409(env, monkeypatch) 
     monkeypatch.setattr(clusters_router, "delete_cluster", lost)
     r = await http.delete(f"/api/v1/clusters/{cid}")
     assert (r.status_code, r.json()["title"]) == (409, "cluster is not retired")
+
+
+async def test_a_push_after_the_delete_gets_401_and_writes_nothing(env) -> None:
+    """Issue 787 item 3, closed by this: once the delete took the tokens, a scanner still
+    pushing cannot write, so nothing is left behind for the next-night pass to miss."""
+    http, client = env
+    cid = f"c-delr-{uuid.uuid4().hex[:8]}"
+    raw = mint_token()
+    await _put(
+        client,
+        "system-tokens",
+        f"tok-{cid}",
+        {
+            "token_hash": hash_token(raw, pepper=get_settings().secret_key),
+            "cluster_id": cid,
+            "scanner": "trivy",
+            "disabled": False,
+        },
+    )
+    envelope = json.loads(GOLDEN_ENVELOPE.read_text()) | {"cluster_id": cid}
+
+    async def push() -> int:
+        r = await http.post(
+            "/api/v1/ingest/scan",
+            content=gzip.compress(json.dumps(envelope).encode()),
+            headers={
+                "Authorization": f"Bearer {raw}",
+                "Content-Type": "application/json",
+                "Content-Encoding": "gzip",
+            },
+        )
+        return r.status_code
+
+    assert await push() == 202  # the control: this token and envelope are accepted
+    # the push stamps its token without a refresh; until one, every delete pass conflicts with it
+    await client.indices.refresh(index="system-tokens")
+    # an automatic retire keeps the token live, so only the delete stands between it and a push
+    await retire_cluster(client, cid, actor="t", mode="auto")
+    assert (await http.delete(f"/api/v1/clusters/{cid}")).status_code == 200
+
+    assert await push() == 401
+    assert await _left(client, "", cid) == []
+    history = await client.indices.get(
+        index=f"javv-*-{cid}*", params={"allow_no_indices": "true", "ignore_unavailable": "true"}
+    )
+    assert list(history) == []
 
 
 async def test_a_live_cluster_with_a_stray_marker_is_not_retired(env) -> None:
