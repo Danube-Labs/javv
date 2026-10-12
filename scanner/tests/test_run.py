@@ -234,6 +234,15 @@ def test_main_rejects_malformed_cluster_id(
     assert "JAVV_CLUSTER_ID" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("bad", ["abc", "0", "-1"])
+def test_main_rejects_a_bad_retry_budget(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], bad: str
+) -> None:
+    monkeypatch.setenv("JAVV_PUSH_RETRY_BUDGET_SECONDS", bad)
+    assert run.main() == 2  # before the scanner reads the cluster
+    assert "JAVV_PUSH_RETRY_BUDGET_SECONDS" in capsys.readouterr().out
+
+
 # --- cluster identity is asserted, not assumed (issue 470) -------------------
 
 

@@ -30,7 +30,7 @@ from scanner.inventory import commit_inventory
 from scanner.models import ScanResult
 from scanner.normalize import COUNT_COLUMN, SEVERITIES
 from scanner.orders import fetch_scan_order
-from scanner.push import push_envelope
+from scanner.push import RetryBudget, push_envelope
 from scanner.run import ScanFn, read_backend_env, scan_all, scan_wiring
 from scanner.scope import fetch_scan_scope
 
@@ -138,6 +138,7 @@ def push_compat(
         pull_ref=image,
         locations=(Location(namespace="javv-compat", pod="compat", container=scanner),),
     )
+    budget = RetryBudget.from_env()
     results = scan_all(
         [target],
         scanner=scanner,
@@ -145,7 +146,7 @@ def push_compat(
         scan_fn=scan_and_keep,
         push_fn=lambda e: (
             pushed.append(e),
-            push_envelope(e, client=http, dead_letter_path=dead_letter, token=token),
+            push_envelope(e, client=http, dead_letter_path=dead_letter, budget=budget, token=token),
         )[1],
         scan_order=scan_order,
         effective_config=EffectiveConfig(tuning=tuning, scope=scope),
@@ -156,6 +157,7 @@ def push_compat(
                 scan_run_id=run_id,
                 expected_count=expected,
                 started_at=started,
+                budget=budget,
             )
         ),
     )
