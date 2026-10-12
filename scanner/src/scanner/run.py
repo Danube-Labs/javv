@@ -200,8 +200,10 @@ def main() -> int:
         return 2
     backend, token, env_cluster_id = target.url, target.token, target.cluster_id
     dead_letter = Path(os.environ.get("JAVV_DEAD_LETTER", f"{scanner}.dead-letter.jsonl"))
+    # every setting is checked before the cluster is read: a bad one is exit 2, named in the log
     try:
         budget = RetryBudget.from_env(os.environ)  # shared by every push and the commit
+        scan_fn, tuning = scan_wiring(scanner)
     except ValueError as exc:
         log.error("invalid setting", error=str(exc))
         return 2
@@ -237,8 +239,6 @@ def main() -> int:
         kube_context=kube_context or "in-cluster",
         api_server=cast(Any, api.api_client.configuration).host,
     )
-
-    scan_fn, tuning = scan_wiring(scanner)
 
     with httpx.Client(base_url=backend, timeout=30.0) as http:
         # D43/FR-24: fetch the cluster's scan scope first. Fail-closed — if the backend is

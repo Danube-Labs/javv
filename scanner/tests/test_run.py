@@ -608,3 +608,24 @@ def test_the_scan_pulls_the_digest_and_the_envelope_shows_the_tag() -> None:
 
     assert pulled == [tgt.pull_ref]
     assert pushed[0].image_ref == "registry.io/app:1"
+
+
+@pytest.mark.parametrize(
+    ("env", "named"),
+    [
+        ({"JAVV_TRIVY_SCANNERS": "bogus"}, "JAVV_TRIVY_SCANNERS"),
+        ({"JAVV_SCANNER": "grype", "JAVV_GRYPE_SCOPE": "everything"}, "JAVV_GRYPE_SCOPE"),
+    ],
+)
+def test_main_rejects_a_bad_scan_setting_with_exit_2(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    env: dict[str, str],
+    named: str,
+) -> None:
+    # CONFIGURATION.md: a value that is not valid stops the scanner with exit code 2
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    assert run.main() == 2  # before the scanner reads the cluster
+    out = capsys.readouterr().out
+    assert named in out and "Traceback" not in out
