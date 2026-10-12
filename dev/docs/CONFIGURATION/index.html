@@ -2204,6 +2204,11 @@ the code.</p>
 <td><code>120</code></td>
 <td>Pushes for each token in one minute.</td>
 </tr>
+<tr>
+<td><code>JAVV_INGEST_FUTURE_TOLERANCE_MINUTES</code></td>
+<td><code>15</code></td>
+<td>How far ahead of the backend's clock a scan time (<code>last_seen_at</code>) can be. A push with a later time gets 422 (<code>clock_skew</code>): with it, the finding would stay open until that date. A scan time older than the cluster's staleness period also gets 422, so a wrong clock cannot make findings stale either.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="triage-search-and-exports">Triage, search and exports<a class="headerlink" href="#triage-search-and-exports" title="Permanent link">&para;</a></h3>
@@ -3234,6 +3239,11 @@ the value stays in the code: fix the bug. For example, the bulk limit is a setti
 <td><strong>Shape of a client-events request:</strong> the contract of the API, not a dial</td>
 <td><code>routers/client_events._MAX_BATCH</code> (20), <code>_MAX_KEYS_PER_OBJECT</code> (25), <code>_MAX_DEPTH</code> (3), <code>_MAX_KEY_CHARS</code> (64), <code>_MAX_VALUE_CHARS</code> (512), <code>_MAX_LIST_ITEMS</code> (20), <code>_EVENT_NAME</code> (<code>^[a-z0-9][a-z0-9 ._-]{0,63}$</code>)</td>
 <td>These values are the OpenAPI schema. They are in the generated client, so a change is a contract change for the backend and the frontend. As settings, they would make a 422 depend on the deployment. The input comes from the browser and is not trusted, so the check of value types is an allowlist. The name pattern accepts spaces, as in <code>backend degraded</code>. It refuses newlines, tabs, quotes and control characters, which could break the <code>client.&lt;name&gt;</code> name. The rate limit for each user is a setting (<code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code>).</td>
+</tr>
+<tr>
+<td><strong>Store warning window:</strong> how frequently the backend logs that OpenSearch is not reachable</td>
+<td><code>core/errors.STORE_WARN_WINDOW_S</code> (10 s)</td>
+<td>Any sender can repeat a request while OpenSearch is away, so the warning must not follow the requests. The counter <code>javv_store_unavailable_total</code> counts each one. The frontend server logs its 502 with the same window.</td>
 </tr>
 <tr>
 <td><strong>Password length:</strong> the rule for each local password</td>

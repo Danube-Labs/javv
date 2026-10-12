@@ -1203,11 +1203,17 @@ refusal, not a warning. JAVV refuses the envelope with <code>422</code> in these
   Grype settings.</li>
 <li><strong><code>schema_version</code></strong> is not 3 or 4. Version 4 added <code>ptype</code>. Version 3 findings have no <code>ptype</code>.</li>
 <li><strong>A time has no time zone.</strong></li>
+<li><strong><code>scan_order</code> is larger than the largest one that step 1 gave</strong> to this cluster and scanner.
+  Thus a value that you make up cannot move the sequence of your scans.</li>
+<li><strong><code>last_seen_at</code> is wrong for the backend's clock:</strong> more than 15 minutes ahead (the
+  <code>JAVV_INGEST_FUTURE_TOLERANCE_MINUTES</code> setting), or older than the staleness period of the cluster
+  (3 days by default, set in <strong>Settings</strong>). Keep the clocks of your scan hosts correct.</li>
 </ul>
 <p><a href="../API/#ingest-a-scan"><code>API.md</code></a> has the full list of errors for
 <code>POST /ingest/scan</code>: 400, 401, 403, 413, 422, 429 and 503, gzip and the size limits. On success,
 JAVV replies <code>202</code> with <code>{accepted, findings, commit}</code>. JAVV makes the same document IDs from the
-same data. Thus you can send a failed cycle again with no risk.</p>
+same data. Thus you can send a failed cycle again with no risk, while its <code>last_seen_at</code> is newer
+than the staleness period of the cluster. After that, scan again.</p>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <p>This example is a complete envelope with one finding. The example is a real finding, and a test
 validates it. For a larger example with 29 findings, see

@@ -3051,6 +3051,10 @@ and an example.</p>
 <li>The body is JSON.</li>
 <li>The envelope is valid. A field that the schema does not have makes it not valid.</li>
 <li>The <code>cluster_id</code> and <code>scanner</code> of the envelope are the ones of the token.</li>
+<li>The <code>scan_order</code> is not larger than the largest one that <code>POST /api/v1/scan-runs</code> gave to this
+   cluster and scanner.</li>
+<li>The <code>last_seen_at</code> is not more than <code>JAVV_INGEST_FUTURE_TOLERANCE_MINUTES</code> ahead of the
+    backend's clock, and not older than the staleness period of the cluster.</li>
 </ol>
 <p>Then the backend writes the findings. Each finding has a fixed id. Thus when a scanner sends the
 same envelope again, JAVV keeps one copy.</p>
@@ -3084,7 +3088,7 @@ same envelope again, JAVV keeps one copy.</p>
 </tr>
 <tr>
 <td>422</td>
-<td>The envelope is not valid. Examples: a field that the schema does not have, a <code>cluster_id</code> that is not valid, or counts that do not agree. A <code>schema_version</code> that is not 3 or 4 also gets 422.</td>
+<td>The envelope is not valid. Examples: a field that the schema does not have, a <code>cluster_id</code> that is not valid, counts that do not agree, or a time with no time zone. A <code>schema_version</code> that is not 3 or 4 also gets 422. So does a <code>scan_order</code> that <code>POST /api/v1/scan-runs</code> did not give (<code>reason</code> <code>unallocated_order</code>), a <code>last_seen_at</code> too far ahead or too old (<code>clock_skew</code>), and a value that OpenSearch refuses to store. The scanner does not try again.</td>
 </tr>
 <tr>
 <td>429</td>
@@ -3092,7 +3096,7 @@ same envelope again, JAVV keeps one copy.</p>
 </tr>
 <tr>
 <td>503</td>
-<td>OpenSearch could not keep the data. The scanner tries again.</td>
+<td>OpenSearch could not keep the data, or OpenSearch is not reachable. The scanner tries again.</td>
 </tr>
 </tbody>
 </table>
@@ -3104,7 +3108,10 @@ warning has these fields:</p>
 <ul>
 <li>always: <code>reason</code>, <code>status</code>, the <code>cluster_id</code> and <code>scanner</code> of the token, and <code>failure_id</code></li>
 <li>on a 413: <code>limit_bytes</code></li>
-<li>on a 422: <code>errors</code>, the count of errors</li>
+<li>on a 422 for an envelope that is not valid: <code>errors</code>, the count of errors</li>
+<li>on a 422 for <code>unallocated_order</code>: <code>scan_order</code>, and <code>max_allocated</code>, the largest order given</li>
+<li>on a 422 for <code>clock_skew</code>: <code>last_seen_at</code>, and <code>freshness_days</code> when the time is too old</li>
+<li>on a 503 because OpenSearch is not reachable: <code>error</code>, the kind of the connection error</li>
 <li>on a 403: <code>payload_cluster_id</code> and <code>payload_scanner</code>.</li>
 </ul>
 <p>The backend never logs the token. A 429 writes one warning for each token in each minute, at
@@ -3140,7 +3147,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_ingest_rejected_total</code></td>
 <td>counter</td>
 <td><code>reason</code></td>
-<td>Envelopes that the backend refused. <code>reason</code> is <code>bad_token</code>, <code>rate_limited</code>, <code>too_large</code>, <code>bad_gzip</code>, <code>bad_json</code>, <code>invalid_envelope</code>, <code>scope_mismatch</code> or <code>storage_error</code>.</td>
+<td>Envelopes that the backend refused. <code>reason</code> is <code>bad_token</code>, <code>rate_limited</code>, <code>too_large</code>, <code>bad_gzip</code>, <code>bad_json</code>, <code>invalid_envelope</code>, <code>unallocated_order</code>, <code>clock_skew</code>, <code>scope_mismatch</code> or <code>storage_error</code>.</td>
 </tr>
 <tr>
 <td><code>javv_ingest_failures_unrecorded_total</code></td>
@@ -3243,6 +3250,12 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td>counter</td>
 <td>none</td>
 <td>Retirement sweeps that retired nothing, because no cluster sent an accepted scan in its scanner-down time. This points at JAVV, an outage or a refused scanner version, not at the clusters. Each one also logs a warning.</td>
+</tr>
+<tr>
+<td><code>javv_store_unavailable_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs <code>store unavailable</code> at most once in 10 seconds, with <code>held_back</code>, the count since the line before: any sender can repeat a request while OpenSearch is away.</td>
 </tr>
 <tr>
 <td><code>javv_cluster_delete_incomplete_total</code></td>
