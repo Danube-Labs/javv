@@ -135,6 +135,7 @@ def push_compat(
     target = ImageTarget(
         image_digest=digest,
         image_ref=image,
+        pull_ref=image,
         locations=(Location(namespace="javv-compat", pod="compat", container=scanner),),
     )
     results = scan_all(

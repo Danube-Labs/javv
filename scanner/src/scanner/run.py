@@ -77,16 +77,18 @@ def scan_all(
         log.info(
             "scanning image",
             image_ref=t.image_ref,
+            pull_ref=t.pull_ref,
             image_digest=t.image_digest,
             position=f"{i}/{len(targets)}",
         )
         started = time.monotonic()
         try:
-            scanned = scan_fn(t.image_ref)
+            scanned = scan_fn(t.pull_ref)
         except Exception as exc:
             log.warning(
                 "scan failed, image skipped",
                 image_ref=t.image_ref,
+                pull_ref=t.pull_ref,
                 image_digest=t.image_digest,
                 **failure_detail(exc),
                 exc_info=True,

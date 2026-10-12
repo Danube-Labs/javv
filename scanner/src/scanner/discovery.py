@@ -2,10 +2,11 @@
 
 The scanner is stateless: every cycle it lists running pods, pulls each container's
 content-addressed digest from `container_statuses.image_id`, and collapses pods sharing a digest
-into one scan target (N pods → 1 scan). The reference to pull is `status.image`, or the
-`repo@sha256:…` in `image_id` when the runtime reports only a bare id (`_pull_ref`). All distinct
-digests are returned every cycle — there is no skip-unchanged. The kube client is injected so this
-is unit-testable without a live cluster.
+into one scan target (N pods → 1 scan). The reference to pull is the `repo@sha256:…` in
+`image_id`: a tag can have moved since the pod started, and only the digest names the image that
+runs (issue 833, B5). The name shown is the tag when any pod of the digest reports one
+(`_display_ref`). All distinct digests are returned every cycle — there is no skip-unchanged. The
+kube client is injected so this is unit-testable without a live cluster.
 """
 
 from collections.abc import Iterable
@@ -28,7 +29,8 @@ class ImageTarget(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     image_digest: str  # content-addressed (sha256:…)
-    image_ref: str  # human tag, e.g. nginx:1.21.6
+    image_ref: str  # the name shown and matched by scope globs, e.g. nginx:1.21.6
+    pull_ref: str  # what the scan pulls: repo@sha256:… whenever the runtime reports one
     locations: tuple[Location, ...]  # every pod/container running this digest
 
     @property
@@ -58,14 +60,19 @@ def _digest(image_id: str) -> str | None:
     return s if s.startswith("sha256:") else None
 
 
-def _pull_ref(image: str, image_id: str) -> tuple[str, bool]:
-    """(the reference to pull, whether it fell back to `image_id`). For a pod started by digest,
-    containerd reports `status.image` as the bare config id (`sha256:…`), which no registry serves;
-    the pullable `repo@sha256:…` is then in `image_id` (issue 817, finding 2)."""
+def _pullable(image_id: str) -> str | None:
+    """The `repo@sha256:…` in a container status `image_id`, or None for a bare id."""
+    pullable = image_id.split("://", 1)[1] if "://" in image_id else image_id
+    return pullable if "@" in pullable else None
+
+
+def _display_ref(image: str, image_id: str) -> tuple[str, bool]:
+    """(the name to show, whether it fell back to `image_id`). For a pod started by digest,
+    containerd reports `status.image` as the bare config id (`sha256:…`), which names nothing; the
+    `repo@sha256:…` is then in `image_id` (issue 817, finding 2)."""
     if not image.startswith("sha256:"):
         return image, False
-    pullable = image_id.split("://", 1)[1] if "://" in image_id else image_id
-    return (pullable, True) if "@" in pullable else (image, True)
+    return _pullable(image_id) or image, True
 
 
 def _owner_kinds(pod: Any) -> list[str]:
@@ -93,10 +100,13 @@ def running_images(pods: Iterable[Any] | None, scope: ScanScope | None = None) -
             digest = _digest(image_id)
             if digest is None:
                 continue
-            ref, fallback = _pull_ref(cs.image or "", image_id)
-            entry = by_digest.setdefault(digest, {"ref": ref, "fallback": fallback, "locs": set()})
+            ref, fallback = _display_ref(cs.image or "", image_id)
+            entry = by_digest.setdefault(
+                digest, {"ref": ref, "fallback": fallback, "pull": None, "locs": set()}
+            )
             if entry["fallback"] and not fallback:  # the runtime's own name keeps the tag, if any
                 entry["ref"], entry["fallback"] = ref, False
+            entry["pull"] = entry["pull"] or _pullable(image_id)
             entry["locs"].add(
                 Location(namespace=p.metadata.namespace, pod=p.metadata.name, container=cs.name)
             )
@@ -104,6 +114,7 @@ def running_images(pods: Iterable[Any] | None, scope: ScanScope | None = None) -
         ImageTarget(
             image_digest=digest,
             image_ref=entry["ref"],
+            pull_ref=entry["pull"] or entry["ref"],
             locations=tuple(
                 sorted(entry["locs"], key=lambda loc: (loc.namespace, loc.pod, loc.container))
             ),
