@@ -121,7 +121,7 @@ def register_error_handlers(app: FastAPI) -> None:
         return problem_response(
             503,
             title="Search backend unavailable",
-            detail="OpenSearch is not reachable.",
+            detail="The search backend is not reachable.",
             request_id=request_id,
             headers={"X-Request-ID": request_id} if request_id else None,
         )

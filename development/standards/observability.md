@@ -69,7 +69,7 @@ Two distinct failure modes, deliberately handled differently:
 Every non-2xx JSON response uses **one** problem-details-style body — routers never hand-roll error shapes:
 ```json
 { "type": "about:blank|<slug>", "title": "Search backend unavailable",
-  "status": 503, "detail": "OpenSearch is not reachable.", "request_id": "<uuid>" }
+  "status": 503, "detail": "The search backend is not reachable.", "request_id": "<uuid>" }
 ```
 `request_id` matches the logged line, so a user-reported error maps to exact logs. Taxonomy (stable `status`):
 `400` validation (`extra="forbid"` / bad `cluster_id`) · `401/403` auth/capability · `404` not found ·

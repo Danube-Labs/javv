@@ -59,8 +59,9 @@ async def test_an_unreachable_store_is_a_503_envelope(exc: Exception) -> None:
     body = r.json()
     assert (body["title"], body["detail"]) == (
         "Search backend unavailable",
-        "OpenSearch is not reachable.",
+        "The search backend is not reachable.",
     )
+    assert "opensearch" not in r.text.lower()  # the body names no internals
     assert body["request_id"]
     assert _unavailable() == before + 1
     (line,) = [e for e in logs if e["event"] == "store unavailable"]
