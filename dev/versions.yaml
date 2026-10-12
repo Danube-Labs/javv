@@ -44,7 +44,7 @@ toolchain:
   # renovate: datasource=github-releases depName=astral-sh/uv
   uv: "0.12.24"
   # renovate: datasource=pypi depName=ruff
-  ruff: "0.16.10"
+  ruff: "0.17.0"
   # renovate: datasource=npm depName=pyright
   pyright: "1.1.414"
   # renovate: datasource=pypi depName=pre-commit
