@@ -223,6 +223,37 @@ async def test_a_delete_marks_its_start_before_the_tokens_go(real_os, monkeypatc
     assert tomb["_source"]["value"]["finished_at"]
 
 
+async def test_a_second_delete_of_the_same_id_starts_its_own_marker(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    await delete_cluster(client, GONE, actor="t", prefix=prefix)
+    await recheck_deleted(client, prefix=prefix)  # one clean pass: `rechecked_at` on the tombstone
+    # onboarded again under the same id before the tombstone went, retired, and deleted again
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+
+    async def stopped(*_args: Any, **_kwargs: Any) -> list[str]:
+        raise cluster_delete.DeleteIncomplete("stopped after the tokens")
+
+    monkeypatch.setattr(cluster_delete, "_history_indices", stopped)
+    with pytest.raises(cluster_delete.DeleteIncomplete):
+        await delete_cluster(client, GONE, actor="second-admin", prefix=prefix)
+
+    # the half-deleted cluster reads as such: bringing it back stays refused
+    assert await deletes_started(client, prefix=prefix) == {GONE}
+    mark = (await client.get(index=f"{prefix}system-config", id=delete_marker_id(GONE)))["_source"]
+    assert mark["value"]["by"] == "second-admin"
+    assert "finished_at" not in mark["value"] and "rechecked_at" not in mark["value"]
+
+    monkeypatch.undo()
+    await delete_cluster(client, GONE, actor="second-admin", prefix=prefix)
+    # a fresh tombstone: two clean passes before it goes, as for any delete
+    assert (await recheck_deleted(client, prefix=prefix))["dropped"] == 0
+    assert await _tombstoned(client, prefix, GONE)
+    assert (await recheck_deleted(client, prefix=prefix))["dropped"] == 1
+
+
 async def test_the_marker_outlives_the_retirement_record(real_os, monkeypatch) -> None:
     client, prefix = real_os
     await _seed(client, prefix, GONE)

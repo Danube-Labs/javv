@@ -105,22 +105,36 @@ async def deletes_started(client: AsyncOpenSearch, *, prefix: str = "") -> set[s
 
 
 async def _mark_started(client: AsyncOpenSearch, cluster_id: str, actor: str, prefix: str) -> None:
+    """A retry keeps the first start and who made it. A finished marker is the tombstone of an
+    earlier delete of the same id (the cluster was onboarded again): this delete replaces it, or
+    the half-deleted cluster would read as deleted and could be brought back."""
     doc_id = delete_marker_id(cluster_id)
     now = datetime.now(UTC).isoformat()
-    # a retry keeps the first start and who made it
-    with contextlib.suppress(ConflictError):
+    body = {
+        "key": doc_id,
+        "cluster_id": cluster_id,
+        "value": {"started_at": now, "by": actor},
+        "updated_at": now,
+        "updated_by": actor,
+    }
+    index = f"{prefix}system-config"
+    try:
         await client.index(
-            index=f"{prefix}system-config",
-            id=doc_id,
-            body={
-                "key": doc_id,
-                "cluster_id": cluster_id,
-                "value": {"started_at": now, "by": actor},
-                "updated_at": now,
-                "updated_by": actor,
-            },
-            params={"op_type": "create", "refresh": "true"},
+            index=index, id=doc_id, body=body, params={"op_type": "create", "refresh": "true"}
         )
+        return
+    except ConflictError:
+        pass
+    try:
+        got = await client.get(index=index, id=doc_id)
+    except NotFoundError:  # dropped since: start again from nothing
+        return await _mark_started(client, cluster_id, actor, prefix)
+    if not _finished(got["_source"]):
+        return
+    cas = {"if_seq_no": got["_seq_no"], "if_primary_term": got["_primary_term"]}
+    # a conflict: another delete of this id replaced it first, and that start stands, as for a retry
+    with contextlib.suppress(ConflictError):
+        await client.index(index=index, id=doc_id, body=body, params={"refresh": "true", **cas})
 
 
 class DeleteIncomplete(Exception):
