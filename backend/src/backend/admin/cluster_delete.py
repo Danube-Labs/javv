@@ -367,6 +367,7 @@ async def clear_for_onboarding(
     if not _finished(got["_source"]):
         return False
     await _drop(client, cluster_id, prefix)
+    log.info("cluster delete tombstone dropped", cluster_id=cluster_id, reason="onboarded")
     return True
 
 
@@ -391,8 +392,8 @@ async def recheck_deleted(
         cluster_id = mark["key"].removeprefix(DELETE_MARKER_PREFIX)
         try:
             outcome = await _recheck_one(client, mark, cluster_id, names, retirements, at, prefix)
-        except _Onboarded:
-            log.info("cluster delete tombstone dropped", cluster_id=cluster_id, reason="onboarded")
+        except _Onboarded:  # the mint that dropped the tombstone logged it
+            log.info("deleted cluster recheck stopped", cluster_id=cluster_id, reason="onboarded")
             continue
         except Exception as exc:  # noqa: BLE001 - one marker must not stop the others
             out["failed"] += 1
