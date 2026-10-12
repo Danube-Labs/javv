@@ -261,7 +261,7 @@ in a scan cycle.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET/POST | `/api/v1/admin/tokens` | `can_manage_tokens` | GET lists the scanner tokens, newest first, with `size` (1 to 1000, default 100), `offset` (0 to 9000) and an optional `cluster_id`. POST makes a token for `{cluster_id, scanner, expiry}`. The answer shows the token one time only. |
+| GET/POST | `/api/v1/admin/tokens` | `can_manage_tokens` | GET lists the scanner tokens, newest first, with `size` (1 to 1000, default 100), `offset` (0 to 9000) and an optional `cluster_id`. POST makes a token for `{cluster_id, scanner, expiry}`. The answer shows the token one time only. A cluster with a delete that did not finish gets 409. A token for a deleted cluster's ID onboards that cluster again: JAVV then keeps its new data. |
 | POST | `/api/v1/admin/tokens/{token_id}/revoke` | `can_manage_tokens` | Disables a token |
 | POST | `/api/v1/admin/tokens/{token_id}/rotate` | `can_manage_tokens` | Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. |
 | GET/POST | `/api/v1/admin/users` | `can_manage_users` | GET lists the users, with `size` (1 to 1000, default 100) and `offset` (0 to 9000). POST makes a user with `{username, temp_password, role}`. The usernames `system` and `fleet` get 422. |

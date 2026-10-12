@@ -283,6 +283,23 @@ async def _drop(client: AsyncOpenSearch, cluster_id: str, prefix: str) -> None:
         )
 
 
+async def clear_for_onboarding(
+    client: AsyncOpenSearch, cluster_id: str, *, prefix: str = ""
+) -> bool:
+    """Before a token is minted for `cluster_id`. False while a delete of that id has started
+    and not finished: a live token would sit on a half-deleted cluster. A finished marker is the
+    tombstone of a deleted cluster now onboarded again: it is dropped, so the next-night pass
+    leaves the new cluster's token and data alone."""
+    try:
+        got = await client.get(index=f"{prefix}system-config", id=delete_marker_id(cluster_id))
+    except NotFoundError:
+        return True
+    if not _finished(got["_source"]):
+        return False
+    await _drop(client, cluster_id, prefix)
+    return True
+
+
 async def recheck_deleted(
     client: AsyncOpenSearch, *, now: datetime | None = None, prefix: str = ""
 ) -> dict[str, int]:

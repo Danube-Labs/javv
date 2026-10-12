@@ -17,6 +17,7 @@ from opensearchpy import AsyncOpenSearch
 
 from backend.auth.passwords import hash_password
 from backend.main import create_app
+from backend.routers import tokens as tokens_router
 from os_env import OS_URL, requires_opensearch
 
 PASSWORD = "correct horse battery staple"
@@ -272,3 +273,68 @@ async def test_mint_not_left_unjournaled_on_audit_failure(admin_client, monkeypa
     await client.indices.refresh(index="system-tokens")
     assert (await client.count(index="system-tokens", body=q))["count"] == 1
     assert len(await _audit_rows(client, action="token_mint", entity_id=r.json()["id"])) == 1
+
+
+async def _put_marker(client: AsyncOpenSearch, cluster: str, value: dict[str, Any]) -> str:
+    doc_id = f"cluster-delete:{cluster}"
+    await client.index(
+        index="system-config",
+        id=doc_id,
+        body={"key": doc_id, "cluster_id": cluster, "value": value},
+        params={"refresh": "true"},
+    )
+    return doc_id
+
+
+async def test_mint_is_refused_for_a_cluster_whose_delete_did_not_finish(admin_client) -> None:
+    http, client, _ = admin_client
+    cluster = _cluster()
+    marker = await _put_marker(client, cluster, {"started_at": "2026-10-12T00:00:00+00:00"})
+
+    r = await http.post("/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "trivy"})
+
+    assert (r.status_code, r.json()["title"]) == (409, "its delete did not finish: delete it again")
+    count = await client.count(
+        index="system-tokens", body={"query": {"term": {"cluster_id": cluster}}}
+    )
+    assert count["count"] == 0
+    assert await client.exists(index="system-config", id=marker)  # the delete still owns it
+    await client.delete(index="system-config", id=marker, params={"refresh": "true"})
+
+
+async def test_a_mint_for_a_deleted_cluster_id_ends_its_tombstone(admin_client) -> None:
+    http, client, _ = admin_client
+    cluster = _cluster()
+    marker = await _put_marker(
+        client,
+        cluster,
+        {"started_at": "2026-10-12T00:00:00+00:00", "finished_at": "2026-10-12T00:01:00+00:00"},
+    )
+
+    r = await http.post("/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "trivy"})
+
+    assert r.status_code == 201
+    # onboarded again: the next-night pass must leave the new cluster's token and data alone
+    assert not await client.exists(index="system-config", id=marker)
+    assert await client.exists(index="system-tokens", id=r.json()["id"])
+
+
+async def test_a_delete_that_starts_during_the_mint_still_refuses_it(
+    admin_client, monkeypatch
+) -> None:
+    http, client, _ = admin_client
+    cluster = _cluster()
+    marker = await _put_marker(client, cluster, {"started_at": "2026-10-12T00:00:00+00:00"})
+
+    async def not_yet(*_args: Any, **_kwargs: Any) -> set[str]:
+        return set()  # the first look ran before the delete wrote its marker
+
+    monkeypatch.setattr(tokens_router, "deletes_started", not_yet)
+    r = await http.post("/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "trivy"})
+
+    assert r.status_code == 409
+    count = await client.count(
+        index="system-tokens", body={"query": {"term": {"cluster_id": cluster}}}
+    )
+    assert count["count"] == 0
+    await client.delete(index="system-config", id=marker, params={"refresh": "true"})
