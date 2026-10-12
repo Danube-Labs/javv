@@ -21,6 +21,8 @@
     "gen:api": "openapi-ts"
   },
   "dependencies": {
+    "@fontsource/hanken-grotesk": "^5.3.0",
+    "@fontsource/spline-sans-mono": "^5.3.0",
     "@primeuix/themes": "^2.0.3",
     "echarts": "^6.1.0",
     "pinia": "^3.0.4",
