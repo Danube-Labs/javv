@@ -511,12 +511,17 @@ in the audit log. Snapshots from before keep the data.
 6. It marks the delete as finished.
 
 - A cluster that is not retired gets 409. A cluster that does not exist gets 404.
+- If an admin brings the cluster back while the delete starts, only one of the two goes ahead.
+  When the delete loses, it gets 409 and deletes nothing. When the bring back loses, it gets 409,
+  and the delete continues.
 - If a step cannot finish, or OpenSearch is not available, the request gets 503. Send the request
   again. The delete continues from the step that stopped.
 - The answer is `{cluster_id, deleted: {<what>: count}}`.
 - The marker stays. Each night, the retirement sweep deletes the rows that a push wrote after the
   delete. After a second pass with no rows, or if the cluster comes back, the sweep deletes the
-  marker.
+  marker. A new token for the cluster's ID also deletes the marker: the cluster is back, and JAVV
+  keeps its new data.
+- A second delete of the same ID, after the cluster came back, writes its own marker.
 
 ### Saved views
 

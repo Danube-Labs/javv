@@ -34,6 +34,7 @@ from pydantic import BaseModel
 from backend.admin.cluster_delete import recheck_deleted
 from backend.admin.cluster_retirement import (
     WINDOW_KEY,
+    DeleteUnderway,
     Retirement,
     RetirementWindow,
     read_retirements,
@@ -249,14 +250,19 @@ async def run_retirement_sweep(
     returned = 0
     for cid in plan.bring_back:
         # returned at its scan, not at this run: its silence is counted from that scan
-        if await unretire_cluster(
-            client,
-            cid,
-            actor="system",
-            at=activity[cid].last_scan_at,
-            expected=retirements[cid],
-            prefix=prefix,
-        ):
+        try:
+            brought = await unretire_cluster(
+                client,
+                cid,
+                actor="system",
+                at=activity[cid].last_scan_at,
+                expected=retirements[cid],
+                prefix=prefix,
+            )
+        except DeleteUnderway:
+            log.info("cluster not brought back: its delete has started", cluster_id=cid)
+            continue
+        if brought:
             returned += 1
             log.info("cluster back from retirement", cluster_id=cid)
     for cid in plan.retire:

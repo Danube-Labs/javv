@@ -4,7 +4,11 @@ cluster is retired; the route checks both.
 
 **What goes, in this order**, after a `system-config` marker `cluster-delete:<cluster_id>` that
 says the delete has started (issue 778): while it stands, the cluster cannot be brought back, so a
-half-deleted cluster is never put back on the list with part of its data gone.
+half-deleted cluster is never put back on the list with part of its data gone. The retirement
+record is read before the marker is written and rewritten under that read's CAS after it, and
+un-retire reads the record before it looks for the marker, so when the two race, the later write
+conflicts and only one goes ahead (issue 787). A second delete of an id whose earlier delete
+finished replaces that tombstone with its own marker (issue 833).
 1. its token docs, first, so a scanner still pushing gets 401 from here on;
 2. its five history series (occurrences, scan-events, images, inventory runs, ingest failures),
    as whole-index drops. Indices are matched by exact name, `<series>-<cluster_id>-NNNNNN`, never
@@ -46,7 +50,13 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 from opensearchpy.exceptions import ConflictError
 
 from backend.admin.cluster_registry import read_registry, set_registry_name
-from backend.admin.cluster_retirement import WINDOW_KEY, read_retirements, retirement_doc_id
+from backend.admin.cluster_retirement import (
+    WINDOW_KEY,
+    confirm_retired,
+    read_retirements,
+    retired_record,
+    retirement_doc_id,
+)
 from backend.admin.retirement_notices import warned_doc_id
 from backend.admin.scan_scope import scan_scope_doc_id
 from backend.audit.writer import append_field_change
@@ -104,10 +114,11 @@ async def deletes_started(client: AsyncOpenSearch, *, prefix: str = "") -> set[s
     }
 
 
-async def _mark_started(client: AsyncOpenSearch, cluster_id: str, actor: str, prefix: str) -> None:
-    """A retry keeps the first start and who made it. A finished marker is the tombstone of an
-    earlier delete of the same id (the cluster was onboarded again): this delete replaces it, or
-    the half-deleted cluster would read as deleted and could be brought back."""
+async def _mark_started(client: AsyncOpenSearch, cluster_id: str, actor: str, prefix: str) -> bool:
+    """True when this call wrote the marker. A retry keeps the first start and who made it. A
+    finished marker is the tombstone of an earlier delete of the same id (the cluster was
+    onboarded again): this delete replaces it, or the half-deleted cluster would read as deleted
+    and could be brought back."""
     doc_id = delete_marker_id(cluster_id)
     now = datetime.now(UTC).isoformat()
     body = {
@@ -122,7 +133,7 @@ async def _mark_started(client: AsyncOpenSearch, cluster_id: str, actor: str, pr
         await client.index(
             index=index, id=doc_id, body=body, params={"op_type": "create", "refresh": "true"}
         )
-        return
+        return True
     except ConflictError:
         pass
     try:
@@ -130,11 +141,17 @@ async def _mark_started(client: AsyncOpenSearch, cluster_id: str, actor: str, pr
     except NotFoundError:  # dropped since: start again from nothing
         return await _mark_started(client, cluster_id, actor, prefix)
     if not _finished(got["_source"]):
-        return
+        return False
     cas = {"if_seq_no": got["_seq_no"], "if_primary_term": got["_primary_term"]}
-    # a conflict: another delete of this id replaced it first, and that start stands, as for a retry
-    with contextlib.suppress(ConflictError):
+    try:
         await client.index(index=index, id=doc_id, body=body, params={"refresh": "true", **cas})
+    except ConflictError:
+        return False  # another delete of this id replaced it first: that start stands
+    return True
+
+
+class NotRetired(Exception):
+    """The cluster was brought back before the delete could start: nothing was deleted."""
 
 
 class DeleteIncomplete(Exception):
@@ -225,7 +242,13 @@ async def _delete_data(client: AsyncOpenSearch, cluster_id: str, prefix: str) ->
 async def delete_cluster(
     client: AsyncOpenSearch, cluster_id: str, *, actor: str, prefix: str = ""
 ) -> dict[str, int]:
-    """Delete everything for one retired cluster but its audit rows. Returns what went."""
+    """Delete everything for one retired cluster but its audit rows. Returns what went. Raises
+    `NotRetired` when the cluster was brought back first: the record is read before the start is
+    marked and rewritten under that read's CAS after it, as un-retire reads the record before it
+    looks for the marker, so whichever of the two writes lands second conflicts."""
+    held = await retired_record(client, cluster_id, prefix=prefix)
+    if held is not None and held[0].returned_at is not None:
+        raise NotRetired(cluster_id)
     await append_field_change(
         client,
         actor=actor,
@@ -239,7 +262,16 @@ async def delete_cluster(
         cluster_id=cluster_id,
         prefix=prefix,
     )
-    await _mark_started(client, cluster_id, actor, prefix)
+    marked = await _mark_started(client, cluster_id, actor, prefix)
+    # no record: a retry after step 5, with nothing left to bring back
+    if held is not None and not await confirm_retired(
+        client, cluster_id, held, actor=actor, prefix=prefix
+    ):
+        again = await retired_record(client, cluster_id, prefix=prefix)
+        if again is not None and again[0].returned_at is not None:
+            if marked:
+                await _drop(client, cluster_id, prefix)
+            raise NotRetired(cluster_id)
     counts = await _delete_data(client, cluster_id, prefix)
 
     config_ids = [scan_scope_doc_id(cluster_id), warned_doc_id(cluster_id)] + [

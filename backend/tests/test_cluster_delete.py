@@ -23,6 +23,7 @@ from opensearchpy.exceptions import ConnectionTimeout, RequestError
 from prometheus_client import REGISTRY
 
 from backend.admin import cluster_delete
+from backend.admin import cluster_retirement as retirement_admin
 from backend.admin.cluster_delete import (
     SHARED_INDICES,
     delete_cluster,
@@ -31,13 +32,20 @@ from backend.admin.cluster_delete import (
     recheck_deleted,
 )
 from backend.admin.cluster_registry import read_registry, set_registry_name
-from backend.admin.cluster_retirement import read_retirements, retire_cluster, retirement_doc_id
+from backend.admin.cluster_retirement import (
+    DeleteUnderway,
+    read_retirements,
+    retire_cluster,
+    retirement_doc_id,
+    unretire_cluster,
+)
 from backend.auth.passwords import hash_password
 from backend.jobs import cluster_retirement
 from backend.jobs.cluster_retirement import run_retirement_sweep
 from backend.jobs.lifecycle import SERIES
 from backend.main import create_app
 from backend.reports.models import NOTIFICATIONS_INDEX, REPORT_CHUNKS_INDEX, REPORTS_INDEX
+from backend.routers import clusters as clusters_router
 from os_env import OS_URL, requires_opensearch
 
 pytestmark = requires_opensearch
@@ -269,6 +277,50 @@ async def test_the_marker_outlives_the_retirement_record(real_os, monkeypatch) -
     with pytest.raises(cluster_delete.DeleteIncomplete):
         await delete_cluster(client, GONE, actor="t", prefix=prefix)
     assert GONE in await read_retirements(client, prefix=prefix)
+    assert await deletes_started(client, prefix=prefix) == {GONE}
+
+
+async def test_a_bring_back_that_lands_first_stops_the_delete(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    real_mark = cluster_delete._mark_started
+
+    async def bring_back_first(*args: Any, **kwargs: Any) -> Any:
+        # an admin brought it back after this delete read the record, before its mark
+        assert await unretire_cluster(client, GONE, actor="other-admin", prefix=prefix)
+        return await real_mark(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_mark_started", bring_back_first)
+    with pytest.raises(cluster_delete.NotRetired):
+        await delete_cluster(client, GONE, actor="t", prefix=prefix)
+
+    assert not await _tombstoned(client, prefix, GONE)  # its own marker went with it
+    assert await client.exists(index=f"{prefix}findings", id=f"findings-{GONE}")
+    assert (await read_retirements(client, prefix=prefix))[GONE].returned_at is not None
+
+
+async def test_a_delete_that_lands_first_stops_the_bring_back(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    real_journal = retirement_admin.append_field_change
+
+    async def stopped(*_args: Any, **_kwargs: Any) -> list[str]:
+        raise cluster_delete.DeleteIncomplete("stopped after the tokens")
+
+    async def delete_in_between(*args: Any, **kwargs: Any) -> Any:
+        # the bring back has read the record and found no marker; a delete starts now
+        with pytest.raises(cluster_delete.DeleteIncomplete):
+            await delete_cluster(client, GONE, actor="t", prefix=prefix)
+        return await real_journal(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_history_indices", stopped)
+    monkeypatch.setattr(retirement_admin, "append_field_change", delete_in_between)
+    with pytest.raises(DeleteUnderway):
+        await unretire_cluster(client, GONE, actor="other-admin", prefix=prefix)
+
+    assert (await read_retirements(client, prefix=prefix))[GONE].returned_at is None
     assert await deletes_started(client, prefix=prefix) == {GONE}
 
 
@@ -534,6 +586,19 @@ async def test_bring_back_is_refused_once_a_delete_has_started(env, monkeypatch)
     monkeypatch.undo()
     assert (await http.delete(f"/api/v1/clusters/{cid}")).status_code == 200
     assert (await http.post(f"/api/v1/clusters/{cid}/unretire")).status_code == 404
+
+
+async def test_a_delete_that_lost_to_a_bring_back_answers_409(env, monkeypatch) -> None:
+    http, client = env
+    cid = await _route_cluster(client)
+    assert (await http.post(f"/api/v1/clusters/{cid}/retire")).status_code == 200
+
+    async def lost(*_args: Any, **_kwargs: Any) -> dict[str, int]:
+        raise cluster_delete.NotRetired
+
+    monkeypatch.setattr(clusters_router, "delete_cluster", lost)
+    r = await http.delete(f"/api/v1/clusters/{cid}")
+    assert (r.status_code, r.json()["title"]) == (409, "cluster is not retired")
 
 
 async def test_a_live_cluster_with_a_stray_marker_is_not_retired(env) -> None:

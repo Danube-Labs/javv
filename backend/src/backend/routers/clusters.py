@@ -28,9 +28,15 @@ from opensearchpy.exceptions import ConnectionError as OSConnectionError
 from opensearchpy.exceptions import TransportError
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.admin.cluster_delete import DeleteIncomplete, delete_cluster, deletes_started
+from backend.admin.cluster_delete import (
+    DeleteIncomplete,
+    NotRetired,
+    delete_cluster,
+    deletes_started,
+)
 from backend.admin.cluster_registry import read_registry, set_registry_name
 from backend.admin.cluster_retirement import (
+    DeleteUnderway,
     Retirement,
     read_retirements,
     retire_cluster,
@@ -151,10 +157,12 @@ async def unretire(
     client = cast(Any, request.app.state.opensearch)
     if cluster_id not in await _require_known(client, cluster_id):
         raise HTTPException(409, "cluster is not retired")
-    if cluster_id in await deletes_started(client):
+    try:
+        brought = await unretire_cluster(client, cluster_id, actor=principal.user_id)
+    except DeleteUnderway:
         # its tokens and part of its data are gone: bringing it back would list a broken cluster
-        raise HTTPException(409, "its delete did not finish: delete it again")
-    if not await unretire_cluster(client, cluster_id, actor=principal.user_id):
+        raise HTTPException(409, "its delete did not finish: delete it again") from None
+    if not brought:
         raise HTTPException(409, "cluster is not retired")  # a concurrent write got there first
     return {"cluster_id": cluster_id, "retired": False}
 
@@ -172,6 +180,8 @@ async def delete_retired_cluster(
         raise HTTPException(409, "retire the cluster before deleting it")
     try:
         counts = await delete_cluster(client, cluster_id, actor=principal.user_id)
+    except NotRetired:
+        raise HTTPException(409, "cluster is not retired") from None  # brought back first
     except (DeleteIncomplete, TransportError) as exc:
         if isinstance(exc, TransportError) and not _retryable(exc):
             raise

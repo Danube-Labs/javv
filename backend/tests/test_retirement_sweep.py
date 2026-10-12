@@ -318,3 +318,24 @@ async def test_a_bring_back_never_undoes_a_retire_that_landed_after_the_plan(rea
     assert brought is False
     record = (await read_retirements(client, prefix=prefix))["c-race-0001"]
     assert record.mode == "manual" and record.returned_at is None
+
+
+@requires_opensearch
+async def test_the_sweep_does_not_bring_back_a_cluster_mid_delete(real_os) -> None:
+    client, prefix = real_os
+    await _token(client, prefix, "c-mid-00001", last=_ago(1), made=_ago(90))
+    await retire_cluster(
+        client, "c-mid-00001", actor="system", mode="auto", at=_ago(5), prefix=prefix
+    )
+    marker = "cluster-delete:c-mid-00001"
+    await client.index(
+        index=f"{prefix}system-config",
+        id=marker,
+        body={"key": marker, "cluster_id": "c-mid-00001", "value": {"started_at": "x"}},
+        params={"refresh": "true"},
+    )
+
+    counts = await run_retirement_sweep(client, now=NOW, prefix=prefix)
+
+    assert counts["returned"] == 0  # its scan came in, but its delete owns it now
+    assert (await read_retirements(client, prefix=prefix))["c-mid-00001"].returned_at is None
