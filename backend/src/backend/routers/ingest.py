@@ -11,7 +11,7 @@ failed-ingests table (`services/ingest_failures.py`, issue 357) without changing
 import json
 import uuid
 import zlib
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, TypedDict, cast
 
 import structlog
@@ -23,6 +23,7 @@ from backend.core.metrics import FINDINGS_WRITTEN, INGEST_ACCEPTED, INGEST_REJEC
 from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.security import hash_token, token_expired, tokens_match
 from backend.core.settings import get_settings
+from backend.jobs.staleness import read_staleness_timers
 from backend.models.envelope import IngestEnvelope
 from backend.repositories.bulk import BulkError
 from backend.services.ingest import ingest_envelope
@@ -115,6 +116,34 @@ def _mapping_refusal(exc: BulkError) -> str | None:
         if kind in _MAPPING_REFUSALS:
             return str(kind)
     return None
+
+
+async def _check_clock(client: Any, env: IngestEnvelope, scope: _Scope) -> None:
+    """The scanner's clock decides `last_seen_at`, and so when a finding goes stale (issue 832).
+    Ahead past the tolerance, the finding would stay open until that date; older than the
+    cluster's staleness period, it would go stale on the next sweep."""
+    now = datetime.now(UTC)
+    ahead = timedelta(minutes=get_settings().ingest_future_tolerance_minutes)
+    if env.last_seen_at > now + ahead:
+        raise _reject(
+            422,
+            "clock_skew",
+            "last_seen_at is ahead of the server's clock",
+            image_ref=env.image_ref,
+            last_seen_at=env.last_seen_at.isoformat(),
+            scope=scope,
+        )
+    timers = await read_staleness_timers(client, cluster_id=env.cluster_id)
+    if env.last_seen_at < now - timedelta(days=timers.freshness_days):
+        raise _reject(
+            422,
+            "clock_skew",
+            "last_seen_at is older than the staleness period",
+            image_ref=env.image_ref,
+            last_seen_at=env.last_seen_at.isoformat(),
+            freshness_days=timers.freshness_days,
+            scope=scope,
+        )
 
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"])
@@ -263,6 +292,8 @@ async def _ingest_authenticated(
             max_allocated=allocated,
             scope=scope,
         )
+
+    await _check_clock(client, env, scope)
 
     structlog.contextvars.bind_contextvars(cluster_id=env.cluster_id, scanner=env.scanner)
     try:

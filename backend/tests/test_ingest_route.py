@@ -4,6 +4,7 @@
 import gzip
 import json
 import uuid
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +21,9 @@ from backend.repositories.bulk import BulkError
 from backend.routers import ingest as ingest_mod
 from os_env import OS_URL, requires_opensearch
 
-GOLDEN = (Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text()
+_FIXTURE = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text())
+# the fixture's scan is months old; the route refuses one older than the staleness period
+GOLDEN = json.dumps(_FIXTURE | {"last_seen_at": datetime.now(UTC).isoformat()})
 CLUSTER = json.loads(GOLDEN)["cluster_id"]
 GOLDEN_ORDER = json.loads(GOLDEN)["scan_order"]
 PEPPER = get_settings().secret_key
@@ -148,6 +151,30 @@ async def test_an_order_scan_runs_never_handed_out_writes_nothing() -> None:
         r = await post(c, gz(json.dumps(made_up)), t)
     assert r.status_code == 422
     assert fake.bulks == [] and fake.updates == []  # no data, no counter, no catalog moved
+
+
+async def test_a_clock_within_the_tolerance_is_accepted() -> None:
+    t = mint_token()
+    async with app_with(FakeOS(token_doc(t))) as c:
+        r = await post(c, gz(_stamped(timedelta(minutes=14))), t)
+    assert r.status_code == 202
+
+
+async def test_the_clusters_own_staleness_period_bounds_an_old_scan() -> None:
+    class OneDay(FakeOS):
+        async def get(self, **kw: Any) -> dict[str, Any]:
+            if kw.get("id") == f"staleness:{CLUSTER}":  # this cluster's own timers
+                return {"_source": {"value": {"freshness_days": 1, "scanner_down_days": 7}}}
+            return await super().get(**kw)
+
+    t = mint_token()
+    two_days_old = gz(_stamped(-timedelta(days=2)))  # inside the fleet default of 3 days
+    async with app_with(FakeOS(token_doc(t))) as c:
+        assert (await post(c, two_days_old, t)).status_code == 202
+    async with app_with(OneDay(token_doc(t))) as c:
+        r = await post(c, two_days_old, t)
+    assert r.status_code == 422
+    assert r.json()["title"] == "last_seen_at is older than the staleness period"
 
 
 async def test_missing_or_unknown_token_is_generic_401() -> None:
@@ -363,9 +390,18 @@ POST_AUTH_REJECTIONS = [
     ("extra_field", 422, "invalid_envelope"),
     ("wrong_scanner", 403, "scope_mismatch"),
     ("unallocated_order", 422, "unallocated_order"),
+    ("clock_ahead", 422, "clock_skew"),
+    ("clock_behind", 422, "clock_skew"),
     ("mapping_refused", 422, "invalid_envelope"),
     ("storage_down", 503, "storage_error"),
 ]
+
+
+def _stamped(offset: timedelta, envelope: str = GOLDEN) -> str:
+    """The envelope with `last_seen_at` at the server's now plus `offset`."""
+    return json.dumps(
+        json.loads(envelope) | {"last_seen_at": (datetime.now(UTC) + offset).isoformat()}
+    )
 
 
 def _rejected_push(case: str, t: str, monkeypatch: Any) -> tuple[dict[str, Any], bytes]:
@@ -384,6 +420,8 @@ def _rejected_push(case: str, t: str, monkeypatch: Any) -> tuple[dict[str, Any],
         # an order scan-runs never handed out (made up, or from a poisoned pusher)
         "unallocated_order": gz(json.dumps({**json.loads(GOLDEN), "scan_order": GOLDEN_ORDER + 1})),
         "mapping_refused": gz(GOLDEN),
+        "clock_ahead": gz(_stamped(timedelta(minutes=16))),
+        "clock_behind": gz(_stamped(-timedelta(days=4))),  # the default period is 3 days
     }[case]
     if case == "mapping_refused":
 
@@ -437,6 +475,7 @@ STAGE = {
     "bad_json": "decode",
     "invalid_envelope": "validate",
     "unallocated_order": "validate",
+    "clock_skew": "validate",
     "scope_mismatch": "authorize",
     "storage_error": "store",
 }
@@ -470,6 +509,8 @@ async def test_every_rejection_after_the_token_check_is_recorded_under_the_token
         "storage_down",
         "unallocated_order",
         "mapping_refused",
+        "clock_ahead",
+        "clock_behind",
     )
     assert rec["image_ref"] == (GOLDEN_IMAGE if parsed_as_object else None)
     if case == "extra_field":  # the first validation error names its location, never the input

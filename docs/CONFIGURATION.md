@@ -95,6 +95,7 @@ the code.
 | `JAVV_INGEST_MAX_COMPRESSED_BYTES` | `10485760` (10 MiB) | The largest push on the wire. The backend counts the bytes while it reads them. |
 | `JAVV_INGEST_MAX_BODY_BYTES` | `62914560` (60 MiB) | The largest push after decompression. This limit stops a zip bomb. |
 | `JAVV_INGEST_RATE_LIMIT_PER_MINUTE` | `120` | Pushes for each token in one minute. |
+| `JAVV_INGEST_FUTURE_TOLERANCE_MINUTES` | `15` | How far ahead of the backend's clock a scan time (`last_seen_at`) can be. A push with a later time gets 422 (`clock_skew`): with it, the finding would stay open until that date. A scan time older than the cluster's staleness period also gets 422, so a wrong clock cannot make findings stale either. |
 
 ### Triage, search and exports
 

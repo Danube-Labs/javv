@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     ingest_max_compressed_bytes: int = Field(default=10 * 1024 * 1024, gt=0)  # 10 MiB on the wire
     ingest_max_body_bytes: int = Field(default=60 * 1024 * 1024, gt=0)  # decompressed (zip-bomb)
     ingest_rate_limit_per_minute: int = Field(default=120, ge=1)
+    # a scanner clock this far ahead is refused (issue 832); behind, the staleness period decides
+    ingest_future_tolerance_minutes: float = Field(default=15, gt=0)
     # human sessions (M5a/SEC-5): server-side TTL — the cookie's own lifetime is advisory
     session_ttl_hours: float = Field(default=24.0, gt=0)
     # the session cookie's Secure flag. A browser keeps a Secure cookie only from https or

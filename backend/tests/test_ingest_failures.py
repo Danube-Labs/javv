@@ -54,6 +54,7 @@ def test_every_post_auth_reason_has_a_stage_and_no_pre_auth_one_does() -> None:
         "bad_json",
         "invalid_envelope",
         "unallocated_order",
+        "clock_skew",
         "scope_mismatch",
         "storage_error",
     }
