@@ -2513,6 +2513,11 @@ do not set always has the default in the table.</p>
 <td><code>&lt;scanner&gt;.dead-letter.jsonl</code>. The images set <code>/var/lib/javv/&lt;scanner&gt;.dead-letter.jsonl</code>.</td>
 <td>The file for the images whose scan failed. The scanner writes the failure there and continues with the next image.</td>
 </tr>
+<tr>
+<td><code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code></td>
+<td><code>360</code></td>
+<td>How long one cycle can try again, in total, when JAVV does not accept a push or the inventory commit (a 429, a 5xx or no answer). The scanner waits longer each time, at most 30 seconds. The time counts from the first failure of a push to its end. When the cycle has used all of it, a push that fails goes to the dead-letter file with no wait, and the log shows <code>push retry budget spent</code> one time. The default is longer than the 300 seconds that a <code>helm upgrade</code> of JAVV gives the backend to start. A value that is not a whole number above 0 stops the scanner with exit code 2.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="files-that-the-scanner-writes">Files that the scanner writes<a class="headerlink" href="#files-that-the-scanner-writes" title="Permanent link">&para;</a></h3>
@@ -2553,6 +2558,14 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
   <a href="#scan-scope">runtime setting</a>. At the start of each cycle, the scanner gets the scope from JAVV
   (<code>GET /api/v1/scan-scope</code>). The scanner never reads OpenSearch. If JAVV does not reply, the
   scanner skips the cycle. An empty scope means: scan all.</li>
+<li><strong>What the scanner scans:</strong> the containers of the pods that run. It does not scan init
+  containers or ephemeral containers. It pulls each image by the digest that the pod runs
+  (<code>repo@sha256:…</code>), so a tag that moved since the pod started does not change the scan. If the
+  registry no longer has that digest, the scanner skips the image and logs a warning.</li>
+<li><strong>Image entries of the scope</strong> (<code>exclude_images</code>) are globs on the name of the image that JAVV
+  shows. For a pod started by a tag, the name is the tag, for example <code>registry.io/app:1.2</code>. For a
+  pod started by a digest, the name is <code>registry.io/app@sha256:…</code>. Thus, to skip a repository with
+  any tag or digest, add two entries: <code>registry.io/app:*</code> and <code>registry.io/app@*</code>.</li>
 <li><strong>Scan settings</strong> (the <a href="#trivy-settings">Trivy</a> and <a href="#grype-settings">Grype</a> tables) are
   environment variables only. The web app shows them on the card of each scanner, but it cannot
   change them. Each push holds the scan settings and the scope of its cycle, and JAVV keeps them
@@ -2563,8 +2576,8 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
 <h3 id="the-javv-scanner-chart">The javv-scanner chart<a class="headerlink" href="#the-javv-scanner-chart" title="Permanent link">&para;</a></h3>
 <p>The <code>javv-scanner</code> chart runs one CronJob for each scanner in a cluster that you scan. Each scanner
 block (<code>trivy</code>, <code>grype</code>) has its own image, token, schedule, database source and cache. Each block
-also has <code>config</code>: its settings from the <a href="#trivy-settings">Trivy</a> or <a href="#grype-settings">Grype</a> table
-and <code>JAVV_LOG_LEVEL</code>, by environment name, at their defaults. An empty value means not set.
+also has <code>config</code>: its settings from the <a href="#trivy-settings">Trivy</a> or <a href="#grype-settings">Grype</a> table,
+<code>JAVV_LOG_LEVEL</code> and <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code>, by environment name, at their defaults. An empty value means not set.
 <code>scanner/tests/test_helm_config.py</code> keeps them equal to the code. The other values:</p>
 <table>
 <thead>
@@ -3224,6 +3237,11 @@ the value stays in the code: fix the bug. For example, the bulk limit is a setti
 <td><strong>Scanner error text in the log:</strong> how much of the error output of a failed scan one log line holds</td>
 <td><code>scanner/run.STDERR_TAIL_LINES</code> (5), <code>STDERR_TAIL_CHARS</code> (1000)</td>
 <td>These values bound one log line. The scanner writes its final error last. JAVV does not keep the full output of the scanner.</td>
+</tr>
+<tr>
+<td><strong>Scanner waits between tries:</strong> the first wait and the longest one</td>
+<td><code>scanner/push.FIRST_WAIT_S</code> (0.5 s), <code>WAIT_CAP_S</code> (30 s)</td>
+<td>The setting <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code> decides how long the scanner tries. These values only space the tries: each wait is a random time up to its limit, which doubles from the first.</td>
 </tr>
 <tr>
 <td><strong>Read page size:</strong> the reader reads in pages, so this value is a batch size, not a limit on results</td>
