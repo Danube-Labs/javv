@@ -7,7 +7,7 @@
 <link rel="icon" href="favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   :root{
     --slate:#16232F; --slate6:#21384A; --peach:#F7B57E; --coral:#EC7E54;
@@ -15,20 +15,20 @@
     --ink:#16232F; --soft:#5C6B77; --bg:#E9E4DC; --line:#E0D8CC; --card:#FCFBF8;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
   .wrap{max-width:1080px;margin:0 auto;padding:60px 32px 96px;}
-  .kick{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);}
+  .kick{font-family:"Spline Sans Mono",monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);}
   h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:8px 0 6px;}
   h1 span{color:var(--coral);}
   .sub{color:var(--soft);max-width:660px;}
-  h2{font-size:13px;font-family:"Space Mono",monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin:0 0 18px;font-weight:700;}
+  h2{font-size:13px;font-family:"Spline Sans Mono",monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin:0 0 18px;font-weight:700;}
   section{margin-top:54px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:0 18px 40px -34px rgba(22,35,47,.4);}
   .row{display:flex;align-items:center;gap:40px;flex-wrap:wrap;}
   .tile{background:var(--paper);border:1px solid var(--line);border-radius:16px;display:flex;align-items:center;justify-content:center;}
   .tile.dark{background:var(--slate);border-color:#27323d;}
   .tile.darker{background:#0B141C;border-color:#1b2630;}
-  .cap{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.12em;color:var(--soft);text-transform:uppercase;margin-top:10px;display:block;text-align:center;}
+  .cap{font-family:"Spline Sans Mono",monospace;font-size:10.5px;letter-spacing:.12em;color:var(--soft);text-transform:uppercase;margin-top:10px;display:block;text-align:center;}
   .col{display:flex;flex-direction:column;align-items:center;}
   img.px{display:block;}
 
@@ -37,7 +37,7 @@
   .sw .chip{height:78px;}
   .sw .meta{padding:10px 12px;}
   .sw .nm{font-size:13px;font-weight:600;}
-  .sw .hex{font-family:"Space Mono",monospace;font-size:11.5px;color:var(--soft);text-transform:uppercase;}
+  .sw .hex{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--soft);text-transform:uppercase;}
   .note{margin-top:18px;padding:16px 18px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:13.5px;color:var(--soft);display:flex;gap:12px;}
   .note .dot{width:9px;height:9px;border-radius:50%;background:var(--coral);margin-top:6px;flex:none;}
   .note b{color:var(--ink);}
@@ -56,10 +56,10 @@
   .type-row{display:flex;gap:30px;flex-wrap:wrap;}
   .type-card{flex:1;min-width:260px;border:1px solid var(--line);border-radius:12px;padding:20px 22px;background:#fff;}
   .type-card .big{font-size:34px;font-weight:700;letter-spacing:-.02em;}
-  .type-card.mono .big{font-family:"Space Mono",monospace;font-size:26px;font-weight:700;letter-spacing:0;}
-  .type-card .role{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin-top:8px;}
+  .type-card.mono .big{font-family:"Spline Sans Mono",monospace;font-size:26px;font-weight:700;letter-spacing:0;}
+  .type-card .role{font-family:"Spline Sans Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin-top:8px;}
 
-  .files{font-family:"Space Mono",monospace;font-size:12.5px;color:var(--soft);line-height:2;}
+  .files{font-family:"Spline Sans Mono",monospace;font-size:12.5px;color:var(--soft);line-height:2;}
   .files b{color:var(--ink);font-weight:700;}
 </style>
 </head>
@@ -108,8 +108,8 @@
     <h2>Wordmark</h2>
     <div class="card">
       <div class="row">
-        <div class="col"><div class="tile" style="width:320px;height:190px"><svg viewBox="0 0 214 152" width="214" height="152"><text x="18" y="96" fill="#16232F" style="font-family:'Space Grotesk';font-weight:700;font-size:88px;letter-spacing:-4px">javv</text><text x="20" y="138" fill="#94A0AA" style="font-family:'Space Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#6B7882">Danube Labs</tspan></text></svg></div><span class="cap">wordmark.svg</span></div>
-        <div class="col"><div class="tile dark" style="width:320px;height:190px"><svg viewBox="0 0 214 152" width="214" height="152"><text x="18" y="96" fill="#F3EEE6" style="font-family:'Space Grotesk';font-weight:700;font-size:88px;letter-spacing:-4px">javv</text><text x="20" y="138" fill="#6E7C86" style="font-family:'Space Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#9AA7B1">Danube Labs</tspan></text></svg></div><span class="cap">wordmark-dark.svg</span></div>
+        <div class="col"><div class="tile" style="width:320px;height:190px"><svg viewBox="0 0 214 152" width="214" height="152"><text x="18" y="96" fill="#16232F" style="font-family:'Hanken Grotesk';font-weight:700;font-size:88px;letter-spacing:-0.03em">javv</text><text x="20" y="138" fill="#94A0AA" style="font-family:'Spline Sans Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#6B7882">Danube Labs</tspan></text></svg></div><span class="cap">wordmark.svg</span></div>
+        <div class="col"><div class="tile dark" style="width:320px;height:190px"><svg viewBox="0 0 214 152" width="214" height="152"><text x="18" y="96" fill="#F3EEE6" style="font-family:'Hanken Grotesk';font-weight:700;font-size:88px;letter-spacing:-0.03em">javv</text><text x="20" y="138" fill="#6E7C86" style="font-family:'Spline Sans Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#9AA7B1">Danube Labs</tspan></text></svg></div><span class="cap">wordmark-dark.svg</span></div>
       </div>
     </div>
   </section>
@@ -123,16 +123,16 @@
           <svg viewBox="0 0 392 140" width="392" height="140">
             <defs><linearGradient id="skL1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7B57E"></stop><stop offset="1" stop-color="#EC7E54"></stop></linearGradient><linearGradient id="rvL1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C1"></stop><stop offset="1" stop-color="#F4A368"></stop></linearGradient><clipPath id="lnL1"><circle cx="27" cy="26" r="13"></circle></clipPath></defs>
             <g transform="translate(8,10) scale(1.875)"><rect width="64" height="64" rx="16" fill="#16232F"></rect><line x1="30" y1="29" x2="51" y2="50" stroke="#F4A368" stroke-width="6.6" stroke-linecap="round"></line><g clip-path="url(#lnL1)"><rect x="13" y="12" width="28" height="14.4" fill="url(#skL1)"></rect><rect x="13" y="26.4" width="28" height="13.6" fill="#21384A"></rect><circle cx="27" cy="21" r="4.4" fill="#FCE7C1"></circle><path d="M13 26.4 Q20 23.8 27 25.6 Q34 27.2 41 24.8 L41 27.2 L13 27.2 Z" fill="#C76A55" opacity="0.55"></path><path d="M26.5 27.2 C26 30 23.5 31.4 24 34 C24.4 37 24.2 38.8 25.2 40.6 L30.8 40.6 C31.6 38.6 28 37 27.5 34 C27 31 29 30 28.5 27.2 Z" fill="url(#rvL1)"></path></g><circle cx="27" cy="26" r="13" fill="none" stroke="#F4A368" stroke-width="3.3"></circle></g>
-            <text x="148" y="80" fill="#16232F" style="font-family:'Space Grotesk';font-weight:700;font-size:78px;letter-spacing:-4px">javv</text>
-            <text x="151" y="116" fill="#94A0AA" style="font-family:'Space Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#6B7882">Danube Labs</tspan></text>
+            <text x="148" y="80" fill="#16232F" style="font-family:'Hanken Grotesk';font-weight:700;font-size:78px;letter-spacing:-0.03em">javv</text>
+            <text x="151" y="116" fill="#94A0AA" style="font-family:'Spline Sans Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#6B7882">Danube Labs</tspan></text>
           </svg>
         </div>
         <div class="tile dark" style="height:170px">
           <svg viewBox="0 0 392 140" width="392" height="140">
             <defs><linearGradient id="skL2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7B57E"></stop><stop offset="1" stop-color="#EC7E54"></stop></linearGradient><linearGradient id="rvL2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C1"></stop><stop offset="1" stop-color="#F4A368"></stop></linearGradient><clipPath id="lnL2"><circle cx="27" cy="26" r="13"></circle></clipPath></defs>
             <g transform="translate(8,10) scale(1.875)"><rect width="64" height="64" rx="16" fill="#16232F"></rect><line x1="30" y1="29" x2="51" y2="50" stroke="#F4A368" stroke-width="6.6" stroke-linecap="round"></line><g clip-path="url(#lnL2)"><rect x="13" y="12" width="28" height="14.4" fill="url(#skL2)"></rect><rect x="13" y="26.4" width="28" height="13.6" fill="#21384A"></rect><circle cx="27" cy="21" r="4.4" fill="#FCE7C1"></circle><path d="M13 26.4 Q20 23.8 27 25.6 Q34 27.2 41 24.8 L41 27.2 L13 27.2 Z" fill="#C76A55" opacity="0.55"></path><path d="M26.5 27.2 C26 30 23.5 31.4 24 34 C24.4 37 24.2 38.8 25.2 40.6 L30.8 40.6 C31.6 38.6 28 37 27.5 34 C27 31 29 30 28.5 27.2 Z" fill="url(#rvL2)"></path></g><circle cx="27" cy="26" r="13" fill="none" stroke="#F4A368" stroke-width="3.3"></circle><rect x="0.6" y="0.6" width="62.8" height="62.8" rx="15.4" fill="none" stroke="#F3EEE6" stroke-opacity="0.14" stroke-width="1.2"></rect></g>
-            <text x="148" y="80" fill="#F3EEE6" style="font-family:'Space Grotesk';font-weight:700;font-size:78px;letter-spacing:-4px">javv</text>
-            <text x="151" y="116" fill="#6E7C86" style="font-family:'Space Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#9AA7B1">Danube Labs</tspan></text>
+            <text x="148" y="80" fill="#F3EEE6" style="font-family:'Hanken Grotesk';font-weight:700;font-size:78px;letter-spacing:-0.03em">javv</text>
+            <text x="151" y="116" fill="#6E7C86" style="font-family:'Spline Sans Mono';font-weight:400;font-size:11px;letter-spacing:1.5px">by <tspan font-weight="700" fill="#9AA7B1">Danube Labs</tspan></text>
           </svg>
         </div>
       </div>
@@ -167,8 +167,8 @@
     <h2>Typography</h2>
     <div class="card">
       <div class="type-row">
-        <div class="type-card"><div class="big">Space Grotesk</div><div class="role">Wordmark &amp; headings · 700</div></div>
-        <div class="type-card mono"><div class="big">Space Mono</div><div class="role">Credit line, taglines, code · 400 / 700</div></div>
+        <div class="type-card"><div class="big">Hanken Grotesk</div><div class="role">Wordmark &amp; headings · 700</div></div>
+        <div class="type-card mono"><div class="big">Spline Sans Mono</div><div class="role">Credit line, taglines, code · 400 / 700</div></div>
       </div>
     </div>
   </section>

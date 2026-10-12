@@ -9,7 +9,7 @@
       <stop offset="1" stop-color="#F4A368"></stop>
     </linearGradient>
     <clipPath id="lens"><circle cx="27" cy="26" r="13"></circle></clipPath>
-    
+    <style>.wm{font-family:'Hanken Grotesk',sans-serif;font-weight:700;letter-spacing:-0.03em;font-size:78px}.by{font-family:'Spline Sans Mono',monospace;font-weight:400;font-size:11px;letter-spacing:1.5px}</style>
   </defs>
 
   <g transform="translate(8,10) scale(1.875)">
