@@ -208,7 +208,8 @@ async def _ingest_authenticated(
 
     try:
         parsed = json.loads(raw)
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+    # RecursionError: valid JSON nested past the decoder's limit, which no envelope needs
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
         raise _reject(400, "bad_json", "body is not valid JSON", scope=scope) from exc
     try:
         env = IngestEnvelope.model_validate(parsed)
