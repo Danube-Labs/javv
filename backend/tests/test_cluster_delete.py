@@ -730,8 +730,8 @@ async def test_a_delete_that_lost_to_a_bring_back_answers_409(env, monkeypatch) 
 
 
 async def test_a_push_after_the_delete_gets_401_and_writes_nothing(env) -> None:
-    """Issue 787 item 3, closed by this: once the delete took the tokens, a scanner still
-    pushing cannot write, so nothing is left behind for the next-night pass to miss."""
+    """Once the delete took the tokens, a scanner still pushing cannot write, so nothing is
+    left behind for the next-night pass to miss (issue 787 item 3)."""
     http, client = env
     cid = f"c-delr-{uuid.uuid4().hex[:8]}"
     raw = mint_token()
