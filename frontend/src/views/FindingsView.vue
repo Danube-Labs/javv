@@ -33,7 +33,7 @@ import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { captureLens } from '@/findings/savedViews'
 import { reorderFromDrag, restoreOrder } from '@/system/columnOrder'
-import { FAILURE_COPY, failureKind } from '@/findings/failureCopy'
+import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
@@ -56,6 +56,7 @@ const router = useRouter()
 
 const facets = ref<FacetsResponse>({})
 const facetsFailed = ref(false)
+const facetsFailedStatus = ref<number | null>(null)
 
 filters.fromQuery(route.query)
 
@@ -69,17 +70,21 @@ const facetsQuery = computed(() =>
     : null,
 )
 
+let facetsSeq = 0
 async function loadFacets(q: typeof facetsQuery.value) {
   if (!q) return
+  const mine = ++facetsSeq
   const response = await facetFindingsApiV1FindingsFacetsGet({
     // builder output is a generic param record; the endpoint type is the precise contract
     query: q as FacetFindingsApiV1FindingsFacetsGetData['query'],
   })
+  if (mine !== facetsSeq) return // a newer read owns the rail now
   if (response.response?.ok && response.data) {
     facets.value = (response.data as { facets: FacetsResponse }).facets
     facetsFailed.value = false
   } else {
     facetsFailed.value = true
+    facetsFailedStatus.value = response.response?.status ?? null
     logger.warn('findings_facets_failed', { status: response.response?.status })
   }
 }
@@ -134,8 +139,11 @@ async function loadRows(q: typeof rowsQuery.value) {
     logger.warn('findings_search_failed', { status: response.response?.status, page: grid.page })
   }
 }
-const failureMessage = computed(
-  () => FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null)],
+// the rows' failure names the whole grid; the counts alone failing leaves the rows standing (F9)
+const failureMessage = computed(() =>
+  grid.failed
+    ? FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null)]
+    : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 watch(
   rowsQuery,
@@ -284,6 +292,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         :fields="FINDINGS_FIELDS"
         :selections="filters.selections"
         :facets="facets"
+        :counts-unknown="facetsFailed"
         :modes="filters.modes"
         @toggle="filters.toggle"
         @pick="filters.pickValue"
@@ -302,6 +311,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :selections="filters.selections"
             :modes="filters.modes"
             :facets="facets"
+            :counts-unknown="facetsFailed"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"

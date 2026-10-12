@@ -20,6 +20,8 @@ const props = defineProps<{
   selections: Selections
   modes?: Modes
   facets: FacetsResponse
+  /** the counts read was refused: the menu shows no count (issue 833, F9) */
+  countsUnknown?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -197,7 +199,7 @@ function onKeydown(e: KeyboardEvent) {
                 <span class="facet-check" />
                 <span class="facet-label">{{ it.label }}</span>
                 <span v-if="it.count !== null" class="facet-count">{{
-                  it.count.toLocaleString('en-US')
+                  countsUnknown ? '-' : it.count.toLocaleString('en-US')
                 }}</span>
               </button>
             </div>

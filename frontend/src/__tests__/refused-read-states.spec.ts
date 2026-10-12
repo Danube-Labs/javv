@@ -23,7 +23,7 @@ vi.mock('@/api/generated', async (importOriginal) => {
 })
 vi.mock('@/api/client', () => ({ client: {} }))
 
-import { searchFindingsApiV1FindingsGet } from '@/api/generated'
+import { facetFindingsApiV1FindingsFacetsGet, searchFindingsApiV1FindingsGet } from '@/api/generated'
 import AuditTable from '@/components/audit/AuditTable.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
@@ -171,6 +171,57 @@ describe('Findings: a refused read never leaves the last answer on screen (issue
     const text = w.text()
     expect(text).toContain('The search backend is busy.')
     expect(text).not.toContain('CVE-2026-0002')
+  })
+})
+
+describe('Findings: only the filter counts refused (issue 833, F9 under G2)', () => {
+  const facetsOk = {
+    data: { facets: { severity: [{ key: 'low', count: 435, by_scanner: { trivy: 435 } }] } },
+    request: {},
+    response: { ok: true, status: 200 },
+  }
+
+  it.each([
+    [429, 'Filter counts could not be loaded. The search backend is busy. Try again in a few seconds.'],
+    [503, 'Filter counts could not be loaded. Check the backend connection.'],
+  ])('a %s: the rows stay, the alert names the counts, the rail shows "-"', async (status, copy) => {
+    vi.mocked(facetFindingsApiV1FindingsFacetsGet)
+      .mockResolvedValueOnce(facetsOk as never)
+      .mockResolvedValueOnce(refusedWith(status) as never)
+    vi.mocked(searchFindingsApiV1FindingsGet)
+      .mockResolvedValueOnce(findingsPage('CVE-2026-0001', 435, null) as never)
+      .mockResolvedValueOnce(findingsPage('CVE-2026-0003', 7, null) as never)
+    const w = await mountRouted(FindingsView as Component)
+    await flushPromises()
+    expect(w.find('.facet-count').text()).toBe('435')
+    makeFiltersStore('findings-filters', FINDINGS_FIELDS)().toggle('severity', 'low')
+    await flushPromises()
+    expect(w.find('.load-error').text()).toBe(copy)
+    expect(w.text()).toContain('CVE-2026-0003')
+    expect(w.findAll('.facet-count').map((c) => c.text())).toEqual(['-'])
+  })
+  it('a slow counts answer for an older filter does not replace a newer refusal', async () => {
+    let answerOld: (v: unknown) => void = () => {}
+    vi.mocked(facetFindingsApiV1FindingsFacetsGet)
+      .mockResolvedValueOnce(facetsOk as never)
+      .mockImplementationOnce(() => new Promise((resolve) => (answerOld = resolve)) as never)
+      .mockResolvedValueOnce(refusedWith(503) as never)
+    const page = findingsPage('CVE-2026-0001', 435, null) as never
+    vi.mocked(searchFindingsApiV1FindingsGet)
+      .mockResolvedValueOnce(page)
+      .mockResolvedValueOnce(page)
+      .mockResolvedValueOnce(page)
+    const w = await mountRouted(FindingsView as Component)
+    await flushPromises()
+    const f = makeFiltersStore('findings-filters', FINDINGS_FIELDS)()
+    f.toggle('severity', 'high')
+    await flushPromises()
+    f.toggle('severity', 'low')
+    await flushPromises()
+    answerOld(facetsOk)
+    await flushPromises()
+    expect(w.find('.load-error').text()).toContain('Filter counts could not be loaded.')
+    expect(w.findAll('.facet-count').map((c) => c.text())).toEqual(['-'])
   })
 })
 
