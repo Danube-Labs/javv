@@ -2288,7 +2288,7 @@ in a scan cycle.</p>
 <td>GET/POST</td>
 <td><code>/api/v1/admin/tokens</code></td>
 <td><code>can_manage_tokens</code></td>
-<td>GET lists the scanner tokens, newest first, with <code>size</code> (1 to 1000, default 100), <code>offset</code> (0 to 9000) and an optional <code>cluster_id</code>. POST makes a token for <code>{cluster_id, scanner, expiry}</code>. The answer shows the token one time only.</td>
+<td>GET lists the scanner tokens, newest first, with <code>size</code> (1 to 1000, default 100), <code>offset</code> (0 to 9000) and an optional <code>cluster_id</code>. POST makes a token for <code>{cluster_id, scanner, expiry}</code>. The answer shows the token one time only. A cluster with a delete that did not finish gets 409. A token for a deleted cluster's ID onboards that cluster again: JAVV then keeps its new data.</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -2895,12 +2895,17 @@ in the audit log. Snapshots from before keep the data.</p>
 <li>
 <p>A cluster that is not retired gets 409. A cluster that does not exist gets 404.</p>
 </li>
+<li>If an admin brings the cluster back while the delete starts, only one of the two goes ahead.
+  When the delete loses, it gets 409 and deletes nothing. When the bring back loses, it gets 409,
+  and the delete continues.</li>
 <li>If a step cannot finish, or OpenSearch is not available, the request gets 503. Send the request
   again. The delete continues from the step that stopped.</li>
 <li>The answer is <code>{cluster_id, deleted: {&lt;what&gt;: count}}</code>.</li>
 <li>The marker stays. Each night, the retirement sweep deletes the rows that a push wrote after the
-  delete. After a second pass with no rows, or if the cluster comes back, the sweep deletes the
-  marker.</li>
+  delete. Before it deletes them, it writes an audit row with their counts. After a second pass with no rows, or if the cluster comes back, the sweep deletes the
+  marker. A new token for the cluster's ID also deletes the marker: the cluster is back, and JAVV
+  keeps its new data.</li>
+<li>A second delete of the same ID, after the cluster came back, writes its own marker.</li>
 </ol>
 <h3 id="saved-views">Saved views<a class="headerlink" href="#saved-views" title="Permanent link">&para;</a></h3>
 <table>
@@ -3249,13 +3254,13 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_cluster_delete_leftovers_total</code></td>
 <td>counter</td>
 <td>none</td>
-<td>Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows. Each one also logs a warning.</td>
+<td>Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows, after it wrote an audit row with their counts (action <code>cluster_delete_recheck</code>). Each one also logs a warning.</td>
 </tr>
 <tr>
 <td><code>javv_cluster_delete_recheck_failures_total</code></td>
 <td>counter</td>
 <td>none</td>
-<td>Retirement sweeps that could not check the deleted clusters. The next run checks them again. Each one also logs a warning.</td>
+<td>Deleted clusters that the retirement sweep could not check, or sweeps that could not check any. The sweep goes on to the next deleted cluster, and the next run checks them again. Each one also logs a warning.</td>
 </tr>
 <tr>
 <td><code>javv_cluster_retirement_notify_failures_total</code></td>

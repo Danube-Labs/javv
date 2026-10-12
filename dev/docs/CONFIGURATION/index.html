@@ -2372,7 +2372,7 @@ the code.</p>
 <tr>
 <td><code>JAVV_JOB_CLUSTER_RETIREMENT_CRON</code></td>
 <td><code>15 4 * * *</code></td>
-<td>When the retirement sweep runs. It retires the clusters that sent no scan for longer than their <a href="#cluster-retirement-window">window</a>. It returns the clusters that scan again. It also deletes the rows that arrived after the deletion of their cluster.</td>
+<td>When the retirement sweep runs. It retires the clusters that sent no scan for longer than their <a href="#cluster-retirement-window">window</a>. It returns the clusters that scan again. It also deletes the rows that arrived after the deletion of their cluster, and first writes an audit row with their counts.</td>
 </tr>
 <tr>
 <td><code>JAVV_JOB_SESSION_SWEEP_CRON</code></td>
@@ -3227,8 +3227,8 @@ the value stays in the code: fix the bug. For example, the bulk limit is a setti
 </tr>
 <tr>
 <td><strong>Conflict retries:</strong> a guard against a loop, not a dial</td>
-<td><code>decisions/reproject._CONFLICT_RETRIES</code> (8), <code>services/reconcile._CONFLICT_RETRIES</code> (10), <code>services/merge._CONFLICT_RETRIES</code> (10), <code>decisions/lifecycle._CAS_RETRIES</code> (8), <code>triage/service._CAS_RETRIES</code> (8), <code>services/scan_orders._CAS_RETRIES</code> (32), <code>services/watermarks._CAS_RETRIES</code> (32)</td>
-<td>Real contention is about 1: one CronJob for each scanner, with <code>Forbid</code>. A run that gets to the limit shows a fault to examine. A larger limit would hide the fault. The two values of 10 guard the same commit race from the two sides. They wait longer after each retry with <code>repositories/bulk.race_backoff_delay</code>: from 0.02 s to 2 s, about 8.5 s in total. This total is longer than the <code>_bulk</code> backoff of a racing pass, 7.5 s at most.</td>
+<td><code>decisions/reproject._CONFLICT_RETRIES</code> (8), <code>services/reconcile._CONFLICT_RETRIES</code> (10), <code>services/merge._CONFLICT_RETRIES</code> (10), <code>decisions/lifecycle._CAS_RETRIES</code> (8), <code>triage/service._CAS_RETRIES</code> (8), <code>services/scan_orders._CAS_RETRIES</code> (32), <code>services/watermarks._CAS_RETRIES</code> (32), <code>admin/cluster_delete._RETRIES</code> (5)</td>
+<td>Real contention is about 1: one CronJob for each scanner, with <code>Forbid</code>. A run that gets to the limit shows a fault to examine. A larger limit would hide the fault. A cluster delete refreshes the index before each retry, because a row that changed since the last refresh conflicts with every pass until then. The two values of 10 guard the same commit race from the two sides. They wait longer after each retry with <code>repositories/bulk.race_backoff_delay</code>: from 0.02 s to 2 s, about 8.5 s in total. This total is longer than the <code>_bulk</code> backoff of a racing pass, 7.5 s at most.</td>
 </tr>
 <tr>
 <td><strong>Shape of a client-events request:</strong> the contract of the API, not a dial</td>
