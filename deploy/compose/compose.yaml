@@ -162,6 +162,8 @@ services:
       JAVV_INGEST_MAX_BODY_BYTES: ${JAVV_INGEST_MAX_BODY_BYTES:-62914560}
       # pushes per token per minute
       JAVV_INGEST_RATE_LIMIT_PER_MINUTE: ${JAVV_INGEST_RATE_LIMIT_PER_MINUTE:-120}
+      # minutes a scan time may be ahead of the backend's clock
+      JAVV_INGEST_FUTURE_TOLERANCE_MINUTES: ${JAVV_INGEST_FUTURE_TOLERANCE_MINUTES:-15}
 
       # --- triage, search and exports ---
       # a bulk action on at most this many findings applies at once; more is refused

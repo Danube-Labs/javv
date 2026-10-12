@@ -70,6 +70,14 @@ def test_cluster_id_shape_is_enforced() -> None:
             IngestEnvelope.model_validate({**GOLDEN, "cluster_id": bad})
 
 
+@pytest.mark.parametrize("field", ["last_seen_at", "scanner_db_built"])
+def test_a_time_needs_a_time_zone(field: str) -> None:
+    with pytest.raises(ValidationError):
+        IngestEnvelope.model_validate({**GOLDEN, field: "2026-07-10T12:00:00"})
+    for zoned in ("2026-07-10T12:00:00Z", "2026-07-10T14:00:00+02:00"):
+        assert IngestEnvelope.model_validate({**GOLDEN, field: zoned})
+
+
 def test_counts_invariant_is_enforced() -> None:
     # total must equal the bucket sum — cheap integrity check on untrusted input
     bad = {**GOLDEN, "counts": {**GOLDEN["counts"], "total": GOLDEN["counts"]["total"] + 1}}

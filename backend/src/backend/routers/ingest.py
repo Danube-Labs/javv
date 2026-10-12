@@ -11,22 +11,25 @@ failed-ingests table (`services/ingest_failures.py`, issue 357) without changing
 import json
 import uuid
 import zlib
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, TypedDict, cast
 
 import structlog
 from fastapi import APIRouter, HTTPException, Request
-from opensearchpy.exceptions import ConflictError
+from opensearchpy.exceptions import ConflictError, TransportError
 from pydantic import ValidationError
 
+from backend.core.errors import store_unavailable
 from backend.core.metrics import FINDINGS_WRITTEN, INGEST_ACCEPTED, INGEST_REJECTED
 from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.security import hash_token, token_expired, tokens_match
 from backend.core.settings import get_settings
+from backend.jobs.staleness import read_staleness_timers
 from backend.models.envelope import IngestEnvelope
 from backend.repositories.bulk import BulkError
 from backend.services.ingest import ingest_envelope
 from backend.services.ingest_failures import clean_text, record_ingest_failure
+from backend.services.scan_orders import max_allocated
 
 log = structlog.get_logger()
 
@@ -104,6 +107,46 @@ def _first_error(exc: ValidationError) -> str:
     return f"{loc}: {first['type']}" if loc else first["type"]
 
 
+_MAPPING_REFUSALS = frozenset({"mapper_parsing_exception", "document_parsing_exception"})
+
+
+def _mapping_refusal(exc: BulkError) -> str | None:
+    """The error type when the store refused an item for its content, not for its own state."""
+    for item in exc.items:
+        kind = (item.get("error") or {}).get("type")
+        if kind in _MAPPING_REFUSALS:
+            return str(kind)
+    return None
+
+
+async def _check_clock(client: Any, env: IngestEnvelope, scope: _Scope) -> None:
+    """The scanner's clock decides `last_seen_at`, and so when a finding goes stale (issue 832).
+    Ahead past the tolerance, the finding would stay open until that date; older than the
+    cluster's staleness period, it would go stale on the next sweep."""
+    now = datetime.now(UTC)
+    ahead = timedelta(minutes=get_settings().ingest_future_tolerance_minutes)
+    if env.last_seen_at > now + ahead:
+        raise _reject(
+            422,
+            "clock_skew",
+            "last_seen_at is ahead of the server's clock",
+            image_ref=env.image_ref,
+            last_seen_at=env.last_seen_at.isoformat(),
+            scope=scope,
+        )
+    timers = await read_staleness_timers(client, cluster_id=env.cluster_id)
+    if env.last_seen_at < now - timedelta(days=timers.freshness_days):
+        raise _reject(
+            422,
+            "clock_skew",
+            "last_seen_at is older than the staleness period",
+            image_ref=env.image_ref,
+            last_seen_at=env.last_seen_at.isoformat(),
+            freshness_days=timers.freshness_days,
+            scope=scope,
+        )
+
+
 router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"])
 
 # Its own instance, keyed on token hashes: an unauthenticated flood here must never spend the
@@ -139,6 +182,48 @@ def _decompress_capped(raw: bytes, cap: int, scope: _Scope) -> bytes:
             413, "too_large", "decompressed body too large", limit_bytes=cap, scope=scope
         )
     return out
+
+
+async def _store_envelope(client: Any, env: IngestEnvelope, scope: _Scope) -> int:
+    """The checks that read the store, then the writes. Returns the findings written."""
+    # the contract's "do not make up a value": an order above what scan-runs handed out would move
+    # the pair's sequence past every real cycle (issue 831: one push of 2^63-1 broke scan-runs)
+    allocated = await max_allocated(client, env.cluster_id, env.scanner)
+    if env.scan_order > allocated:
+        raise _reject(
+            422,
+            "unallocated_order",
+            "scan_order was not handed out by POST /api/v1/scan-runs",
+            image_ref=env.image_ref,
+            scan_order=env.scan_order,
+            max_allocated=allocated,
+            scope=scope,
+        )
+
+    await _check_clock(client, env, scope)
+
+    structlog.contextvars.bind_contextvars(cluster_id=env.cluster_id, scanner=env.scanner)
+    try:
+        written = await ingest_envelope(client, env)
+    except BulkError as exc:
+        refused = _mapping_refusal(exc)
+        if refused is not None:  # the data can never be stored: a retry would fail the same way
+            raise _reject(
+                422,
+                "invalid_envelope",
+                "envelope rejected: the store refused a field",
+                record=f"the store refused a field: {refused}",
+                image_ref=env.image_ref,
+                scope=scope,
+            ) from exc
+        raise _reject(
+            503,
+            "storage_error",
+            "storage temporarily unavailable",
+            image_ref=env.image_ref,
+            scope=scope,
+        ) from exc
+    return written
 
 
 @router.post("/scan", status_code=202)
@@ -208,7 +293,8 @@ async def _ingest_authenticated(
 
     try:
         parsed = json.loads(raw)
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+    # RecursionError: valid JSON nested past the decoder's limit, which no envelope needs
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
         raise _reject(400, "bad_json", "body is not valid JSON", scope=scope) from exc
     try:
         env = IngestEnvelope.model_validate(parsed)
@@ -236,15 +322,18 @@ async def _ingest_authenticated(
             scope=scope,
         )
 
-    structlog.contextvars.bind_contextvars(cluster_id=env.cluster_id, scanner=env.scanner)
     try:
-        written = await ingest_envelope(client, env)
-    except BulkError as exc:
+        written = await _store_envelope(client, env, scope)
+    except TransportError as exc:
+        if not store_unavailable(exc):
+            raise
+        # the store went away mid-push: the scanner retries this, as for a bulk failure
         raise _reject(
             503,
             "storage_error",
             "storage temporarily unavailable",
             image_ref=env.image_ref,
+            error=type(exc).__name__,
             scope=scope,
         ) from exc
 

@@ -587,6 +587,10 @@ The backend does these checks in this order:
 6. The body is JSON.
 7. The envelope is valid. A field that the schema does not have makes it not valid.
 8. The `cluster_id` and `scanner` of the envelope are the ones of the token.
+9. The `scan_order` is not larger than the largest one that `POST /api/v1/scan-runs` gave to this
+   cluster and scanner.
+10. The `last_seen_at` is not more than `JAVV_INGEST_FUTURE_TOLERANCE_MINUTES` ahead of the
+    backend's clock, and not older than the staleness period of the cluster.
 
 Then the backend writes the findings. Each finding has a fixed id. Thus when a scanner sends the
 same envelope again, JAVV keeps one copy.
@@ -598,9 +602,9 @@ same envelope again, JAVV keeps one copy.
 | 401 | The token is missing, not valid, disabled or expired. Each of these gets the same answer. |
 | 403 | The `cluster_id` or the `scanner` of the envelope is not the one of the token. |
 | 413 | The compressed body or the body after gzip is larger than its limit. |
-| 422 | The envelope is not valid. Examples: a field that the schema does not have, a `cluster_id` that is not valid, or counts that do not agree. A `schema_version` that is not 3 or 4 also gets 422. |
+| 422 | The envelope is not valid. Examples: a field that the schema does not have, a `cluster_id` that is not valid, counts that do not agree, or a time with no time zone. A `schema_version` that is not 3 or 4 also gets 422. So does a `scan_order` that `POST /api/v1/scan-runs` did not give (`reason` `unallocated_order`), a `last_seen_at` too far ahead or too old (`clock_skew`), and a value that OpenSearch refuses to store. The scanner does not try again. |
 | 429 | The token is over its rate limit. |
-| 503 | OpenSearch could not keep the data. The scanner tries again. |
+| 503 | OpenSearch could not keep the data, or OpenSearch is not reachable. The scanner tries again. |
 
 [Configuring JAVV](CONFIGURATION.md#scanner-pushes) gives the limits and their defaults.
 
@@ -612,7 +616,10 @@ warning has these fields:
 
 - always: `reason`, `status`, the `cluster_id` and `scanner` of the token, and `failure_id`
 - on a 413: `limit_bytes`
-- on a 422: `errors`, the count of errors
+- on a 422 for an envelope that is not valid: `errors`, the count of errors
+- on a 422 for `unallocated_order`: `scan_order`, and `max_allocated`, the largest order given
+- on a 422 for `clock_skew`: `last_seen_at`, and `freshness_days` when the time is too old
+- on a 503 because OpenSearch is not reachable: `error`, the kind of the connection error
 - on a 403: `payload_cluster_id` and `payload_scanner`.
 
 The backend never logs the token. A 429 writes one warning for each token in each minute, at
@@ -637,7 +644,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | Metric | Type | Labels | What it counts |
 |---|---|---|---|
 | `javv_ingest_accepted_total` | counter | `scanner` | Envelopes that the backend accepted and wrote |
-| `javv_ingest_rejected_total` | counter | `reason` | Envelopes that the backend refused. `reason` is `bad_token`, `rate_limited`, `too_large`, `bad_gzip`, `bad_json`, `invalid_envelope`, `scope_mismatch` or `storage_error`. |
+| `javv_ingest_rejected_total` | counter | `reason` | Envelopes that the backend refused. `reason` is `bad_token`, `rate_limited`, `too_large`, `bad_gzip`, `bad_json`, `invalid_envelope`, `unallocated_order`, `clock_skew`, `scope_mismatch` or `storage_error`. |
 | `javv_ingest_failures_unrecorded_total` | counter | `reason` | Refused pushes with no record ([Records of a refused push](#records-of-a-refused-push)). A value larger than 0 means that the **Failed ingests** table does not show all the refused pushes. |
 | `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote |
 | `javv_http_request_duration_seconds` | histogram | `method`, `route`, `status` | The time of each request. `route` is the route pattern, not the full path. A path with no route counts as `unmatched`. `/metrics` and the probes are not counted. |
@@ -655,6 +662,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_job_last_success_timestamp_seconds` | gauge | `kind` | The Unix time of the last successful scheduled run in this process. It is 0 after a restart, until a run succeeds. Alert on `time() - value`, against the schedule of the job. |
 | `javv_scheduler_tick_errors_total` | counter | none | Scheduler ticks that failed before a job started, usually because OpenSearch was not available. A steady rate means that no job runs. |
 | `javv_cluster_retirement_held_total` | counter | none | Retirement sweeps that retired nothing, because no cluster sent an accepted scan in its scanner-down time. This points at JAVV, an outage or a refused scanner version, not at the clusters. Each one also logs a warning. |
+| `javv_store_unavailable_total` | counter | none | Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs `store unavailable` at most once in 10 seconds, with `held_back`, the count since the line before: any sender can repeat a request while OpenSearch is away. |
 | `javv_cluster_delete_incomplete_total` | counter | none | Cluster deletes that stopped and answered 503. Send the delete again to finish it. Each one also logs a warning. |
 | `javv_cluster_delete_leftovers_total` | counter | none | Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows, after it wrote an audit row with their counts (action `cluster_delete_recheck`). Each one also logs a warning. |
 | `javv_cluster_delete_recheck_failures_total` | counter | none | Deleted clusters that the retirement sweep could not check, or sweeps that could not check any. The sweep goes on to the next deleted cluster, and the next run checks them again. Each one also logs a warning. |

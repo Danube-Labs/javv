@@ -16,6 +16,7 @@ The 401/403 axes live in the RBAC/IDOR suite."""
 import gzip
 import json
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -745,14 +746,21 @@ async def test_a_push_after_the_delete_gets_401_and_writes_nothing(env) -> None:
             "disabled": False,
         },
     )
-    envelope = json.loads(GOLDEN_ENVELOPE.read_text()) | {"cluster_id": cid}
+    auth = {"Authorization": f"Bearer {raw}"}
+    # a scanner's cycle: the order comes from scan-runs and the scan time is now
+    order = (await http.post("/api/v1/scan-runs", headers=auth)).json()["scan_order"]
+    envelope = json.loads(GOLDEN_ENVELOPE.read_text()) | {
+        "cluster_id": cid,
+        "scan_order": order,
+        "last_seen_at": datetime.now(UTC).isoformat(),
+    }
 
     async def push() -> int:
         r = await http.post(
             "/api/v1/ingest/scan",
             content=gzip.compress(json.dumps(envelope).encode()),
             headers={
-                "Authorization": f"Bearer {raw}",
+                **auth,
                 "Content-Type": "application/json",
                 "Content-Encoding": "gzip",
             },

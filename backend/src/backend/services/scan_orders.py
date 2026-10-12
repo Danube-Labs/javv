@@ -61,6 +61,18 @@ async def _max_committed(
     return int(hits[0]["_source"]["scan_order"]) if hits else 0
 
 
+async def max_allocated(
+    client: AsyncOpenSearch, cluster_id: str, scanner: str, *, prefix: str = ""
+) -> int:
+    """The highest order `allocate_scan_order` has handed out for the pair; 0 before any. A
+    get by id, so an allocation made a moment ago is already seen."""
+    try:
+        got = await client.get(index=f"{prefix}{INDEX}", id=_doc_id(cluster_id, scanner))
+    except NotFoundError:
+        return 0
+    return int(got["_source"]["max_allocated_scan_order"])
+
+
 async def allocate_scan_order(
     client: AsyncOpenSearch, cluster_id: str, scanner: str, *, prefix: str = ""
 ) -> int:

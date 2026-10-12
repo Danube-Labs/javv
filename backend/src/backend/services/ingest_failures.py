@@ -37,6 +37,8 @@ STAGES: dict[str, str] = {
     "bad_gzip": "decode",
     "bad_json": "decode",
     "invalid_envelope": "validate",
+    "unallocated_order": "validate",
+    "clock_skew": "validate",
     "scope_mismatch": "authorize",
     "storage_error": "store",
 }
