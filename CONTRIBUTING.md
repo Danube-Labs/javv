@@ -89,7 +89,7 @@ ruled exceptions, which are settled.
 **Tokens, not literals.** Colors come from the right bucket and the wrong bucket is a bug: brand
 (`--coral`, `--amber`, `--teal`) is chrome and must never encode severity; `--sev-*` is data only;
 `--state-*`/`--health-*`/`--kev-*` carry workflow and status. From script use `SEV_COLOR`/`CHART_SEV`
-from `@/styles/tokens`. Two families only: Hanken Grotesk for UI, Space Mono for code-like data
+from `@/styles/tokens`. Two families only: Hanken Grotesk for UI, Spline Sans Mono for code-like data
 (CVE ids, digests, timestamps, counts). No raw hex, no ad-hoc sizes, AA contrast is the floor.
 
 **Every interactive element ships hover (wash *and* border, never border-only), pressed, and focus

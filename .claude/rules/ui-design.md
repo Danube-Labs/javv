@@ -46,9 +46,10 @@ operator ruling on a **built specimen** (DESIGN.md §8.5), not an argument in a 
 - No raw hex in components. AA contrast is the floor, not a target.
 
 **Type — two families, fixed scale (§3)**
-**Hanken Grotesk** (`--font-ui`) for all UI text; **Space Mono** (`--font-mono`) for code-like data:
+**Hanken Grotesk** (`--font-ui`) for all UI text; **Spline Sans Mono** (`--font-mono`) for code-like data:
 CVE ids, versions, namespaces, image refs, counts, timestamps, table headers, ids. No third family,
 no ad-hoc sizes — use the scale tokens (`--text-page-title`, `--text-card-title`, `--text-body`, …).
+Both are served by the app (`src/styles/fonts.css`, Fontsource); a font host link fails `index-html.spec.ts`.
 
 **Reuse before building — the kit already solves most of it**
 `components/ui/` (UiButton · UiField · UiDropdown · UiSegControl · UiDateTime · ModalShell ·
