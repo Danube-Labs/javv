@@ -13,8 +13,10 @@ from typing import Any
 
 import httpx
 import pytest
+import structlog
 from opensearchpy import AsyncOpenSearch
 
+from backend.admin import cluster_delete
 from backend.auth.passwords import hash_password
 from backend.main import create_app
 from backend.routers import tokens as tokens_router
@@ -302,8 +304,12 @@ async def test_mint_is_refused_for_a_cluster_whose_delete_did_not_finish(admin_c
     await client.delete(index="system-config", id=marker, params={"refresh": "true"})
 
 
-async def test_a_mint_for_a_deleted_cluster_id_ends_its_tombstone(admin_client) -> None:
+async def test_a_mint_for_a_deleted_cluster_id_ends_its_tombstone(
+    admin_client, monkeypatch
+) -> None:
     http, client, _ = admin_client
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(cluster_delete, "log", structlog.wrap_logger(None, processors=[capture]))
     cluster = _cluster()
     marker = await _put_marker(
         client,
@@ -317,6 +323,8 @@ async def test_a_mint_for_a_deleted_cluster_id_ends_its_tombstone(admin_client) 
     # onboarded again: the next-night pass must leave the new cluster's token and data alone
     assert not await client.exists(index="system-config", id=marker)
     assert await client.exists(index="system-tokens", id=r.json()["id"])
+    dropped = [e for e in capture.entries if e["event"] == "cluster delete tombstone dropped"]
+    assert [(e["cluster_id"], e["reason"]) for e in dropped] == [(cluster, "onboarded")]
 
 
 async def test_a_delete_that_starts_during_the_mint_still_refuses_it(

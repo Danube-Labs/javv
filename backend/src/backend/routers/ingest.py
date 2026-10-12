@@ -187,7 +187,8 @@ def _decompress_capped(raw: bytes, cap: int, scope: _Scope) -> bytes:
 async def _store_envelope(client: Any, env: IngestEnvelope, scope: _Scope) -> int:
     """The checks that read the store, then the writes. Returns the findings written."""
     # the contract's "do not make up a value": an order above what scan-runs handed out would move
-    # the pair's sequence past every real cycle (issue 831: one push of 2^63-1 broke scan-runs)
+    # the pair's sequence past every real cycle, up to where scan-runs can allocate no more
+    # (issue 831)
     allocated = await max_allocated(client, env.cluster_id, env.scanner)
     if env.scan_order > allocated:
         raise _reject(

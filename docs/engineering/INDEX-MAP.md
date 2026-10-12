@@ -173,7 +173,8 @@ cluster_id        keyword       the TOKEN's cluster (tenant + routing)
 scanner           keyword       the TOKEN's scanner - a field, never in the index name (D38)
 stage             keyword       receive | decode | validate | authorize | store
 reason            keyword       the javv_ingest_rejected_total label: too_large | bad_gzip | bad_json |
-                                invalid_envelope | scope_mismatch | storage_error
+                                invalid_envelope | unallocated_order | clock_skew | scope_mismatch |
+                                storage_error
 status            short         the HTTP status the scanner was sent
 error             keyword       index:false, doc_values:false - display only. Server-authored: the
                                 response text, plus the first validation error's location + type

@@ -22,6 +22,7 @@ from typing import Any, cast
 
 import httpx
 import pytest
+import structlog
 from opensearchpy import AsyncOpenSearch, NotFoundError
 from opensearchpy.exceptions import ConnectionTimeout, RequestError
 from prometheus_client import REGISTRY
@@ -451,11 +452,19 @@ async def test_a_mint_during_the_pass_stops_it_before_the_new_data(real_os, monk
         return await real_history(*args, **kwargs)
 
     monkeypatch.setattr(cluster_delete, "_history_indices", minted_now)
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(cluster_delete, "log", structlog.wrap_logger(None, processors=[capture]))
     out = await recheck_deleted(client, prefix=prefix)
 
     assert out == {"rechecked": 0, "with_leftovers": 0, "dropped": 0, "failed": 0}
     assert await client.exists(index=f"{prefix}findings", id=f"new-{GONE}")
     assert not await _tombstoned(client, prefix, GONE)
+    # the drop is logged once, by the mint that made it; the pass says it stopped
+    events = [(e["event"], e["cluster_id"], e["reason"]) for e in capture.entries]
+    assert events == [
+        ("cluster delete tombstone dropped", GONE, "onboarded"),
+        ("deleted cluster recheck stopped", GONE, "onboarded"),
+    ]
 
 
 async def test_one_marker_that_fails_does_not_stop_the_others(real_os, monkeypatch) -> None:
@@ -730,8 +739,8 @@ async def test_a_delete_that_lost_to_a_bring_back_answers_409(env, monkeypatch) 
 
 
 async def test_a_push_after_the_delete_gets_401_and_writes_nothing(env) -> None:
-    """Issue 787 item 3, closed by this: once the delete took the tokens, a scanner still
-    pushing cannot write, so nothing is left behind for the next-night pass to miss."""
+    """Once the delete took the tokens, a scanner still pushing cannot write, so nothing is
+    left behind for the next-night pass to miss (issue 787 item 3)."""
     http, client = env
     cid = f"c-delr-{uuid.uuid4().hex[:8]}"
     raw = mint_token()
