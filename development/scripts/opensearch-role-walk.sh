@@ -109,7 +109,12 @@ push() {  # an envelope on stdin; prints the status code
   curl -s -o /dev/null -w '%{http_code}' -X POST "$BACKEND/api/v1/ingest/scan" \
     -H "Authorization: Bearer $token" -H 'content-type: application/json' --data-binary @-
 }
-code=$(jq '.scan_run_id = "walkrun0002"' "$FIXTURE" | push)
+# the order comes from scan-runs and the scan time is now, as in seed-smoke.sh
+order=$(curl -sf -X POST "$BACKEND/api/v1/scan-runs" -H "Authorization: Bearer $token" |
+  jq -r .scan_order)
+[ -n "$order" ] && [ "$order" != null ] || fail "scan-runs"
+code=$(jq --argjson order "$order" --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '.scan_run_id = "walkrun0002" | .scan_order = $order | .last_seen_at = $now' "$FIXTURE" | push)
 [[ $code == 2* ]] || fail "second scan run: $code"
 # recorded in javv-ingest-failures-*, which the scanners screen reads back
 code=$(jq '.findings = "not a list"' "$FIXTURE" | push)
