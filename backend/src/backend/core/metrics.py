@@ -142,6 +142,10 @@ CLUSTER_DELETE_LEFTOVERS = Counter(
     "Deleted clusters whose next-night pass found rows written after the delete (issue 778), a"
     " push in flight or a job running at the time; the pass removed them",
 )
+STORE_UNAVAILABLE = Counter(
+    "javv_store_unavailable_total",
+    "Requests answered 503 because OpenSearch was not reachable or still starting (issue 832)",
+)
 CLUSTER_DELETE_RECHECK_FAILURES = Counter(
     "javv_cluster_delete_recheck_failures_total",
     "Retirement sweeps whose pass over deleted clusters failed (issue 778); the run's retirements"

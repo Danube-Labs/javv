@@ -53,7 +53,11 @@ Two distinct failure modes, deliberately handled differently:
 - **At runtime** (was healthy, store drops): **do NOT crash.** The API stays up, `/readyz` flips to `503`,
   data endpoints return the **503 error envelope** (below), and the **frontend shows a global banner**
   ("Search backend unavailable — check OpenSearch health") instead of blank screens or cryptic errors.
-  Recovers automatically when `/readyz` returns `200` again.
+  Recovers automatically when `/readyz` returns `200` again. The envelope comes from one handler
+  (`core/errors.py`, issue 832): a connection error, a timeout, or a 502/503/504 from OpenSearch
+  answers 503 "Search backend unavailable", counted in `javv_store_unavailable_total`, with one
+  `store unavailable` warning per 10 s at most (a sender can repeat requests while the store is
+  away) and no traceback. Ingest keeps its own `storage_error` record.
 - **The backend itself gone** (the process is down, or the proxy in front of it answers `502`/`504`):
   the frontend cannot get a `503` from a backend that is not there, so it reads the failure's shape
   (`downReason` in `frontend/src/stores/health.ts`). A `503` means the store; no answer or any other

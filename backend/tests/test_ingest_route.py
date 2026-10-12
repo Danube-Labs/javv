@@ -12,6 +12,7 @@ import httpx
 import pytest
 import structlog
 from opensearchpy import AsyncOpenSearch, NotFoundError
+from opensearchpy.exceptions import ConnectionError as OSConnectionError
 
 from backend.core.metrics import INGEST_FAILURES_UNRECORDED, INGEST_REJECTED
 from backend.core.security import hash_token, mint_token
@@ -394,6 +395,7 @@ POST_AUTH_REJECTIONS = [
     ("clock_behind", 422, "clock_skew"),
     ("mapping_refused", 422, "invalid_envelope"),
     ("storage_down", 503, "storage_error"),
+    ("store_unreachable", 503, "storage_error"),
 ]
 
 
@@ -420,9 +422,16 @@ def _rejected_push(case: str, t: str, monkeypatch: Any) -> tuple[dict[str, Any],
         # an order scan-runs never handed out (made up, or from a poisoned pusher)
         "unallocated_order": gz(json.dumps({**json.loads(GOLDEN), "scan_order": GOLDEN_ORDER + 1})),
         "mapping_refused": gz(GOLDEN),
+        "store_unreachable": gz(GOLDEN),
         "clock_ahead": gz(_stamped(timedelta(minutes=16))),
         "clock_behind": gz(_stamped(-timedelta(days=4))),  # the default period is 3 days
     }[case]
+    if case == "store_unreachable":
+
+        async def _unreachable(*_: Any, **__: Any) -> int:
+            raise OSConnectionError("N/A", "connection refused", None)
+
+        monkeypatch.setattr(ingest_mod, "ingest_envelope", _unreachable)
     if case == "mapping_refused":
 
         async def _refused(*_: Any, **__: Any) -> int:
@@ -509,6 +518,7 @@ async def test_every_rejection_after_the_token_check_is_recorded_under_the_token
         "storage_down",
         "unallocated_order",
         "mapping_refused",
+        "store_unreachable",
         "clock_ahead",
         "clock_behind",
     )

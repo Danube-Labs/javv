@@ -5,14 +5,19 @@ client error maps 1:1 to logs via `request_id`: the id the request-line middlewa
 inbound `X-Request-ID` if well-formed, else minted) and logged the request under.
 """
 
+import time
 from collections.abc import Mapping
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from opensearchpy.exceptions import ConnectionError as OSConnectionError
+from opensearchpy.exceptions import TransportError
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from backend.core.metrics import STORE_UNAVAILABLE
 
 PROBLEM_MEDIA_TYPE = "application/problem+json"
 
@@ -47,6 +52,49 @@ def _request_id(request: Request) -> str | None:
     return getattr(request.state, "request_id", None)
 
 
+# the same window as the frontend server's 502 (.claude/rules/logging.md): any sender can repeat a
+# request while the store is down, so it must not choose our log volume
+STORE_WARN_WINDOW_S = 10.0
+
+
+def store_unavailable(exc: BaseException) -> bool:
+    """The store is away or still starting: a connection error or timeout, or a 502, 503 or 504
+    from OpenSearch ("Security not initialized" while it starts). Its own refusals are not."""
+    if isinstance(exc, OSConnectionError):
+        return True
+    return isinstance(exc, TransportError) and exc.status_code in (502, 503, 504)
+
+
+def _now() -> float:
+    return time.monotonic()
+
+
+class _StoreWarnings:
+    """At most one warning per window, with the count held back since the last one."""
+
+    def __init__(self) -> None:
+        self.last: float | None = None
+        self.held = 0
+
+    def note(self, request: Request, exc: BaseException) -> None:
+        STORE_UNAVAILABLE.inc()
+        now = _now()
+        if self.last is not None and now - self.last < STORE_WARN_WINDOW_S:
+            self.held += 1
+            return
+        log.warning(
+            "store unavailable",
+            error=type(exc).__name__,
+            path=request.url.path,
+            held_back=self.held,
+            request_id=_request_id(request),
+        )
+        self.last, self.held = now, 0
+
+
+_store_warned = _StoreWarnings()
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def _http(request: Request, exc: StarletteHTTPException) -> JSONResponse:
@@ -62,6 +110,20 @@ def register_error_handlers(app: FastAPI) -> None:
     async def _validation(request: Request, exc: RequestValidationError) -> JSONResponse:
         return problem_response(
             422, title="Validation error", detail=str(exc.errors()), request_id=_request_id(request)
+        )
+
+    @app.exception_handler(TransportError)
+    async def _store(request: Request, exc: TransportError) -> JSONResponse:
+        if not store_unavailable(exc):
+            return await _unhandled(request, exc)
+        _store_warned.note(request, exc)
+        request_id = _request_id(request)
+        return problem_response(
+            503,
+            title="Search backend unavailable",
+            detail="OpenSearch is not reachable.",
+            request_id=request_id,
+            headers={"X-Request-ID": request_id} if request_id else None,
         )
 
     @app.exception_handler(Exception)

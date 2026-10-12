@@ -16,9 +16,10 @@ from typing import Any, TypedDict, cast
 
 import structlog
 from fastapi import APIRouter, HTTPException, Request
-from opensearchpy.exceptions import ConflictError
+from opensearchpy.exceptions import ConflictError, TransportError
 from pydantic import ValidationError
 
+from backend.core.errors import store_unavailable
 from backend.core.metrics import FINDINGS_WRITTEN, INGEST_ACCEPTED, INGEST_REJECTED
 from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.security import hash_token, token_expired, tokens_match
@@ -183,6 +184,48 @@ def _decompress_capped(raw: bytes, cap: int, scope: _Scope) -> bytes:
     return out
 
 
+async def _store_envelope(client: Any, env: IngestEnvelope, scope: _Scope) -> int:
+    """The checks that read the store, then the writes. Returns the findings written."""
+    # the contract's "do not make up a value": an order above what scan-runs handed out would move
+    # the pair's sequence past every real cycle (issue 831: one push of 2^63-1 broke scan-runs)
+    allocated = await max_allocated(client, env.cluster_id, env.scanner)
+    if env.scan_order > allocated:
+        raise _reject(
+            422,
+            "unallocated_order",
+            "scan_order was not handed out by POST /api/v1/scan-runs",
+            image_ref=env.image_ref,
+            scan_order=env.scan_order,
+            max_allocated=allocated,
+            scope=scope,
+        )
+
+    await _check_clock(client, env, scope)
+
+    structlog.contextvars.bind_contextvars(cluster_id=env.cluster_id, scanner=env.scanner)
+    try:
+        written = await ingest_envelope(client, env)
+    except BulkError as exc:
+        refused = _mapping_refusal(exc)
+        if refused is not None:  # the data can never be stored: a retry would fail the same way
+            raise _reject(
+                422,
+                "invalid_envelope",
+                "envelope rejected: the store refused a field",
+                record=f"the store refused a field: {refused}",
+                image_ref=env.image_ref,
+                scope=scope,
+            ) from exc
+        raise _reject(
+            503,
+            "storage_error",
+            "storage temporarily unavailable",
+            image_ref=env.image_ref,
+            scope=scope,
+        ) from exc
+    return written
+
+
 @router.post("/scan", status_code=202)
 async def ingest_scan(request: Request) -> dict[str, Any]:
     settings = get_settings()
@@ -279,41 +322,18 @@ async def _ingest_authenticated(
             scope=scope,
         )
 
-    # the contract's "do not make up a value": an order above what scan-runs handed out would move
-    # the pair's sequence past every real cycle (issue 831: one push of 2^63-1 broke scan-runs)
-    allocated = await max_allocated(client, env.cluster_id, env.scanner)
-    if env.scan_order > allocated:
-        raise _reject(
-            422,
-            "unallocated_order",
-            "scan_order was not handed out by POST /api/v1/scan-runs",
-            image_ref=env.image_ref,
-            scan_order=env.scan_order,
-            max_allocated=allocated,
-            scope=scope,
-        )
-
-    await _check_clock(client, env, scope)
-
-    structlog.contextvars.bind_contextvars(cluster_id=env.cluster_id, scanner=env.scanner)
     try:
-        written = await ingest_envelope(client, env)
-    except BulkError as exc:
-        refused = _mapping_refusal(exc)
-        if refused is not None:  # the data can never be stored: a retry would fail the same way
-            raise _reject(
-                422,
-                "invalid_envelope",
-                "envelope rejected: the store refused a field",
-                record=f"the store refused a field: {refused}",
-                image_ref=env.image_ref,
-                scope=scope,
-            ) from exc
+        written = await _store_envelope(client, env, scope)
+    except TransportError as exc:
+        if not store_unavailable(exc):
+            raise
+        # the store went away mid-push: the scanner retries this, as for a bulk failure
         raise _reject(
             503,
             "storage_error",
             "storage temporarily unavailable",
             image_ref=env.image_ref,
+            error=type(exc).__name__,
             scope=scope,
         ) from exc
 
