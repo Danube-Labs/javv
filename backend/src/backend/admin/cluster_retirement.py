@@ -33,6 +33,10 @@ def retirement_doc_id(cluster_id: str) -> str:
     return f"{RETIREMENT_PREFIX}{cluster_id}"
 
 
+class DeleteUnderway(Exception):
+    """A delete of the cluster has started: bringing it back would list a half-deleted cluster."""
+
+
 class Retirement(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -169,11 +173,16 @@ async def unretire_cluster(
     prefix: str = "",
 ) -> bool:
     """Bring a retired cluster back to the list; False when there was nothing to bring back. Its
-    revoked tokens stay revoked: a scanner needs a new token to push again.
+    revoked tokens stay revoked: a scanner needs a new token to push again. Raises
+    `DeleteUnderway` when a delete of the cluster has started.
 
     `expected` is the record the caller planned on (the sweep's read): if another write replaced
     it since, such as an admin retiring the cluster by hand, nothing changes. The write itself is
-    a seq_no CAS, so a retire landing between this read and the write is never overwritten."""
+    a seq_no CAS, so a retire landing between this read and the write is never overwritten. The
+    delete marker is checked after that read, and a delete rewrites the record under its own
+    CAS after marking its start, so of the two writes the later one always conflicts."""
+    from backend.admin.cluster_delete import deletes_started  # it imports this module
+
     try:
         got = await client.get(index=f"{prefix}system-config", id=retirement_doc_id(cluster_id))
     except NotFoundError:
@@ -183,6 +192,8 @@ async def unretire_cluster(
     )
     if current.returned_at is not None or (expected is not None and current != expected):
         return False
+    if cluster_id in await deletes_started(client, prefix=prefix):
+        raise DeleteUnderway(cluster_id)
     await append_field_change(
         client,
         actor=actor,
@@ -204,6 +215,42 @@ async def unretire_cluster(
         # journaled, then lost to a concurrent write: that write is the newer truth
         CAS_CONFLICTS.labels("retirement").inc()
         log.warning("un-retire lost a write race", cluster_id=cluster_id)
+        if cluster_id in await deletes_started(client, prefix=prefix):
+            raise DeleteUnderway(cluster_id) from None
+        return False
+    return True
+
+
+async def retired_record(
+    client: AsyncOpenSearch, cluster_id: str, *, prefix: str = ""
+) -> tuple[Retirement, dict[str, Any]] | None:
+    """The cluster's retirement record and the CAS params of this read, for a delete that must
+    not run on a cluster brought back meanwhile; None when there is no record."""
+    try:
+        got = await client.get(index=f"{prefix}system-config", id=retirement_doc_id(cluster_id))
+    except NotFoundError:
+        return None
+    record = parse_stored_setting(
+        Retirement, got["_source"]["value"], key=retirement_doc_id(cluster_id)
+    )
+    return record, {"if_seq_no": got["_seq_no"], "if_primary_term": got["_primary_term"]}
+
+
+async def confirm_retired(
+    client: AsyncOpenSearch,
+    cluster_id: str,
+    held: tuple[Retirement, dict[str, Any]],
+    *,
+    actor: str,
+    prefix: str = "",
+) -> bool:
+    """Rewrite the record unchanged under the CAS of `retired_record`'s read. False when another
+    write landed since, such as a bring back, which then wins."""
+    record, cas = held
+    try:
+        await _write_retirement(client, cluster_id, record, actor, prefix, cas)
+    except ConflictError:
+        CAS_CONFLICTS.labels("retirement").inc()
         return False
     return True
 

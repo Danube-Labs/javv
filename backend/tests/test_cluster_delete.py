@@ -13,8 +13,11 @@ removing rows a push in flight wrote after the delete, until a second pass finds
 cluster onboarded again keeps its data and loses the tombstone.
 The 401/403 axes live in the RBAC/IDOR suite."""
 
+import gzip
+import json
 import uuid
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -23,6 +26,7 @@ from opensearchpy.exceptions import ConnectionTimeout, RequestError
 from prometheus_client import REGISTRY
 
 from backend.admin import cluster_delete
+from backend.admin import cluster_retirement as retirement_admin
 from backend.admin.cluster_delete import (
     SHARED_INDICES,
     delete_cluster,
@@ -31,19 +35,29 @@ from backend.admin.cluster_delete import (
     recheck_deleted,
 )
 from backend.admin.cluster_registry import read_registry, set_registry_name
-from backend.admin.cluster_retirement import read_retirements, retire_cluster, retirement_doc_id
+from backend.admin.cluster_retirement import (
+    DeleteUnderway,
+    read_retirements,
+    retire_cluster,
+    retirement_doc_id,
+    unretire_cluster,
+)
 from backend.auth.passwords import hash_password
+from backend.core.security import hash_token, mint_token
+from backend.core.settings import get_settings
 from backend.jobs import cluster_retirement
 from backend.jobs.cluster_retirement import run_retirement_sweep
 from backend.jobs.lifecycle import SERIES
 from backend.main import create_app
 from backend.reports.models import NOTIFICATIONS_INDEX, REPORT_CHUNKS_INDEX, REPORTS_INDEX
+from backend.routers import clusters as clusters_router
 from os_env import OS_URL, requires_opensearch
 
 pytestmark = requires_opensearch
 
 GONE = "c-del-abcdefgh"
 KEPT = "c-del-abcdefgh-1234"  # GONE is a prefix of it: a wildcard on GONE would match KEPT
+GOLDEN_ENVELOPE = Path(__file__).parent / "fixtures/envelope-trivy-golden.json"
 CONFIG_KINDS = ("staleness", "lifecycle", "findings_cleanup", "retirement", "retirement-warned")
 
 
@@ -223,6 +237,37 @@ async def test_a_delete_marks_its_start_before_the_tokens_go(real_os, monkeypatc
     assert tomb["_source"]["value"]["finished_at"]
 
 
+async def test_a_second_delete_of_the_same_id_starts_its_own_marker(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    await delete_cluster(client, GONE, actor="t", prefix=prefix)
+    await recheck_deleted(client, prefix=prefix)  # one clean pass: `rechecked_at` on the tombstone
+    # onboarded again under the same id before the tombstone went, retired, and deleted again
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+
+    async def stopped(*_args: Any, **_kwargs: Any) -> list[str]:
+        raise cluster_delete.DeleteIncomplete("stopped after the tokens")
+
+    monkeypatch.setattr(cluster_delete, "_history_indices", stopped)
+    with pytest.raises(cluster_delete.DeleteIncomplete):
+        await delete_cluster(client, GONE, actor="second-admin", prefix=prefix)
+
+    # the half-deleted cluster reads as such: bringing it back stays refused
+    assert await deletes_started(client, prefix=prefix) == {GONE}
+    mark = (await client.get(index=f"{prefix}system-config", id=delete_marker_id(GONE)))["_source"]
+    assert mark["value"]["by"] == "second-admin"
+    assert "finished_at" not in mark["value"] and "rechecked_at" not in mark["value"]
+
+    monkeypatch.undo()
+    await delete_cluster(client, GONE, actor="second-admin", prefix=prefix)
+    # a fresh tombstone: two clean passes before it goes, as for any delete
+    assert (await recheck_deleted(client, prefix=prefix))["dropped"] == 0
+    assert await _tombstoned(client, prefix, GONE)
+    assert (await recheck_deleted(client, prefix=prefix))["dropped"] == 1
+
+
 async def test_the_marker_outlives_the_retirement_record(real_os, monkeypatch) -> None:
     client, prefix = real_os
     await _seed(client, prefix, GONE)
@@ -239,6 +284,76 @@ async def test_the_marker_outlives_the_retirement_record(real_os, monkeypatch) -
         await delete_cluster(client, GONE, actor="t", prefix=prefix)
     assert GONE in await read_retirements(client, prefix=prefix)
     assert await deletes_started(client, prefix=prefix) == {GONE}
+
+
+async def test_a_bring_back_that_lands_first_stops_the_delete(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    real_mark = cluster_delete._mark_started
+
+    async def bring_back_first(*args: Any, **kwargs: Any) -> Any:
+        # an admin brought it back after this delete read the record, before its mark
+        assert await unretire_cluster(client, GONE, actor="other-admin", prefix=prefix)
+        return await real_mark(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_mark_started", bring_back_first)
+    with pytest.raises(cluster_delete.NotRetired):
+        await delete_cluster(client, GONE, actor="t", prefix=prefix)
+
+    assert not await _tombstoned(client, prefix, GONE)  # its own marker went with it
+    assert await client.exists(index=f"{prefix}findings", id=f"findings-{GONE}")
+    assert (await read_retirements(client, prefix=prefix))[GONE].returned_at is not None
+
+
+async def test_a_delete_that_lands_first_stops_the_bring_back(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    real_journal = retirement_admin.append_field_change
+
+    async def stopped(*_args: Any, **_kwargs: Any) -> list[str]:
+        raise cluster_delete.DeleteIncomplete("stopped after the tokens")
+
+    async def delete_in_between(*args: Any, **kwargs: Any) -> Any:
+        # the bring back has read the record and found no marker; a delete starts now
+        with pytest.raises(cluster_delete.DeleteIncomplete):
+            await delete_cluster(client, GONE, actor="t", prefix=prefix)
+        return await real_journal(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_history_indices", stopped)
+    monkeypatch.setattr(retirement_admin, "append_field_change", delete_in_between)
+    with pytest.raises(DeleteUnderway):
+        await unretire_cluster(client, GONE, actor="other-admin", prefix=prefix)
+
+    assert (await read_retirements(client, prefix=prefix))[GONE].returned_at is None
+    assert await deletes_started(client, prefix=prefix) == {GONE}
+
+
+class _ConflictsOnce:
+    """A store whose first delete pass hits a doc updated since the last refresh."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+        self.indices = self
+
+    async def delete_by_query(self, **_kw: Any) -> dict[str, int]:
+        self.calls.append("delete")
+        conflicted = self.calls.count("refresh") == 0
+        return {"deleted": 0 if conflicted else 1, "version_conflicts": 1 if conflicted else 0}
+
+    async def refresh(self, **_kw: Any) -> dict[str, Any]:
+        self.calls.append("refresh")
+        return {}
+
+
+async def test_a_pass_that_conflicts_refreshes_before_the_next() -> None:
+    store = _ConflictsOnce()
+    deleted = await cluster_delete._delete_rows(
+        cast(Any, store), "system-tokens", {"term": {"cluster_id": GONE}}
+    )
+    assert deleted == 1
+    assert store.calls == ["delete", "refresh", "delete"]
 
 
 def _leftovers() -> float:
@@ -266,14 +381,107 @@ async def test_the_next_pass_removes_what_a_late_push_left(real_os) -> None:
 
     first = await recheck_deleted(client, prefix=prefix)
 
-    assert first == {"rechecked": 1, "with_leftovers": 1, "dropped": 0}
+    assert first == {"rechecked": 1, "with_leftovers": 1, "dropped": 0, "failed": 0}
     assert _leftovers() == before + 1
     assert await _left(client, prefix, GONE) == []
     assert await _snapshot(client, prefix, KEPT) == kept
     assert await _tombstoned(client, prefix, GONE)  # one more clean pass before it goes
     second = await recheck_deleted(client, prefix=prefix)
-    assert second == {"rechecked": 1, "with_leftovers": 0, "dropped": 1}
+    assert second == {"rechecked": 1, "with_leftovers": 0, "dropped": 1, "failed": 0}
     assert not await _tombstoned(client, prefix, GONE)
+
+
+async def _recheck_rows(client: AsyncOpenSearch, prefix: str, cid: str) -> list[dict[str, Any]]:
+    await client.indices.refresh(index=f"{prefix}system-audit-log-*")
+    rows = await client.search(
+        index=f"{prefix}system-audit-log-*",
+        body={
+            "size": 10,
+            "query": {
+                "bool": {
+                    "filter": [
+                        {"term": {"cluster_id": cid}},
+                        {"term": {"action": "cluster_delete_recheck"}},
+                    ]
+                }
+            },
+        },
+    )
+    return [h["_source"] for h in rows["hits"]["hits"]]
+
+
+async def test_the_pass_journals_what_it_deletes_before_it_deletes(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    await delete_cluster(client, GONE, actor="t", prefix=prefix)
+    await recheck_deleted(client, prefix=prefix)  # a clean pass journals nothing
+    assert await _recheck_rows(client, prefix, GONE) == []
+    await _late_push(client, prefix, GONE)
+    real_delete_data = cluster_delete._delete_data
+    journaled_first: list[int] = []
+
+    async def deleting(*args: Any, **kwargs: Any) -> dict[str, int]:
+        journaled_first.append(len(await _recheck_rows(client, prefix, GONE)))
+        return await real_delete_data(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_delete_data", deleting)
+    await recheck_deleted(client, prefix=prefix)
+
+    assert journaled_first == [1]
+    (row,) = await _recheck_rows(client, prefix, GONE)
+    assert row["actor"] == "system" and row["entity_id"] == f"cluster:{GONE}"
+    assert row["new_value_json"]["findings"] == 1
+    assert row["new_value_json"]["history_indices"] == 1
+
+
+async def test_a_mint_during_the_pass_stops_it_before_the_new_data(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _seed(client, prefix, GONE)
+    await retire_cluster(client, GONE, actor="t", mode="manual", prefix=prefix)
+    await delete_cluster(client, GONE, actor="t", prefix=prefix)
+    await _late_push(client, prefix, GONE)
+    real_history = cluster_delete._history_indices
+
+    async def minted_now(*args: Any, **kwargs: Any) -> list[str]:
+        # an admin mints a token for the id while the pass runs, and its first scan lands
+        assert await cluster_delete.clear_for_onboarding(client, GONE, prefix=prefix)
+        await _put(client, f"{prefix}findings", f"new-{GONE}", {"cluster_id": GONE})
+        return await real_history(*args, **kwargs)
+
+    monkeypatch.setattr(cluster_delete, "_history_indices", minted_now)
+    out = await recheck_deleted(client, prefix=prefix)
+
+    assert out == {"rechecked": 0, "with_leftovers": 0, "dropped": 0, "failed": 0}
+    assert await client.exists(index=f"{prefix}findings", id=f"new-{GONE}")
+    assert not await _tombstoned(client, prefix, GONE)
+
+
+async def test_one_marker_that_fails_does_not_stop_the_others(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    other = "c-del-zz000001"  # sorts after GONE: the failing marker comes first
+    for cid in (GONE, other):
+        await _seed(client, prefix, cid)
+        await retire_cluster(client, cid, actor="t", mode="manual", prefix=prefix)
+        await delete_cluster(client, cid, actor="t", prefix=prefix)
+        await _late_push(client, prefix, cid)
+    real_count = cluster_delete._count_data
+
+    async def gone_fails(client_: Any, cid: str, prefix_: str) -> dict[str, int]:
+        if cid == GONE:
+            raise ConnectionTimeout("TIMEOUT", "read timed out", None)
+        return await real_count(client_, cid, prefix_)
+
+    monkeypatch.setattr(cluster_delete, "_count_data", gone_fails)
+    before = REGISTRY.get_sample_value("javv_cluster_delete_recheck_failures_total") or 0.0
+
+    out = await recheck_deleted(client, prefix=prefix)
+
+    assert out == {"rechecked": 1, "with_leftovers": 1, "dropped": 0, "failed": 1}
+    after = REGISTRY.get_sample_value("javv_cluster_delete_recheck_failures_total") or 0.0
+    assert after == before + 1
+    assert await _left(client, prefix, other) == []
+    assert await client.exists(index=f"{prefix}findings", id=f"late-{GONE}")  # next night
 
 
 async def test_a_cluster_onboarded_again_keeps_its_data(real_os) -> None:
@@ -294,6 +502,7 @@ async def test_a_cluster_onboarded_again_keeps_its_data(real_os) -> None:
         "rechecked": 0,
         "with_leftovers": 0,
         "dropped": 1,
+        "failed": 0,
     }
     assert await client.exists(index=f"{prefix}findings", id=f"new-{GONE}")
     assert not await _tombstoned(client, prefix, GONE)
@@ -339,7 +548,8 @@ async def test_the_retirement_sweep_runs_the_pass(real_os) -> None:
 
     counts = await run_retirement_sweep(client, prefix=prefix)
 
-    assert counts["delete_rechecked"] == 1
+    assert (counts["delete_rechecked"], counts["delete_with_leftovers"]) == (1, 1)
+    assert (counts["delete_dropped"], counts["delete_failed"]) == (0, 0)
     assert await _left(client, prefix, GONE) == []
 
 
@@ -503,6 +713,65 @@ async def test_bring_back_is_refused_once_a_delete_has_started(env, monkeypatch)
     monkeypatch.undo()
     assert (await http.delete(f"/api/v1/clusters/{cid}")).status_code == 200
     assert (await http.post(f"/api/v1/clusters/{cid}/unretire")).status_code == 404
+
+
+async def test_a_delete_that_lost_to_a_bring_back_answers_409(env, monkeypatch) -> None:
+    http, client = env
+    cid = await _route_cluster(client)
+    assert (await http.post(f"/api/v1/clusters/{cid}/retire")).status_code == 200
+
+    async def lost(*_args: Any, **_kwargs: Any) -> dict[str, int]:
+        raise cluster_delete.NotRetired
+
+    monkeypatch.setattr(clusters_router, "delete_cluster", lost)
+    r = await http.delete(f"/api/v1/clusters/{cid}")
+    assert (r.status_code, r.json()["title"]) == (409, "cluster is not retired")
+
+
+async def test_a_push_after_the_delete_gets_401_and_writes_nothing(env) -> None:
+    """Issue 787 item 3, closed by this: once the delete took the tokens, a scanner still
+    pushing cannot write, so nothing is left behind for the next-night pass to miss."""
+    http, client = env
+    cid = f"c-delr-{uuid.uuid4().hex[:8]}"
+    raw = mint_token()
+    await _put(
+        client,
+        "system-tokens",
+        f"tok-{cid}",
+        {
+            "token_hash": hash_token(raw, pepper=get_settings().secret_key),
+            "cluster_id": cid,
+            "scanner": "trivy",
+            "disabled": False,
+        },
+    )
+    envelope = json.loads(GOLDEN_ENVELOPE.read_text()) | {"cluster_id": cid}
+
+    async def push() -> int:
+        r = await http.post(
+            "/api/v1/ingest/scan",
+            content=gzip.compress(json.dumps(envelope).encode()),
+            headers={
+                "Authorization": f"Bearer {raw}",
+                "Content-Type": "application/json",
+                "Content-Encoding": "gzip",
+            },
+        )
+        return r.status_code
+
+    # the control: this token and envelope are accepted. The push also stamps the token without
+    # a refresh, which the delete right after must get past (its passes refresh before a retry)
+    assert await push() == 202
+    # an automatic retire keeps the token live, so only the delete stands between it and a push
+    await retire_cluster(client, cid, actor="t", mode="auto")
+    assert (await http.delete(f"/api/v1/clusters/{cid}")).status_code == 200
+
+    assert await push() == 401
+    assert await _left(client, "", cid) == []
+    history = await client.indices.get(
+        index=f"javv-*-{cid}*", params={"allow_no_indices": "true", "ignore_unavailable": "true"}
+    )
+    assert list(history) == []
 
 
 async def test_a_live_cluster_with_a_stray_marker_is_not_retired(env) -> None:

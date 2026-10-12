@@ -38,6 +38,7 @@ describe('display names for stored values', () => {
     expect(items).toHaveLength(AUDIT_ACTIONS.length)
     for (const i of items) expect(mount(ActionTag, { props: { action: i.value } }).text()).toBe(i.label)
     expect(items.find((i) => i.value === 'risk_accept')!.label).toBe('Risk accepted')
+    expect(items.find((i) => i.value === 'cluster_delete_recheck')!.label).toBe('Leftover rows deleted')
   })
 
   it('an action with no entry reads as its words, never as snake_case', () => {

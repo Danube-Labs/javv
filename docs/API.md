@@ -261,7 +261,7 @@ in a scan cycle.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET/POST | `/api/v1/admin/tokens` | `can_manage_tokens` | GET lists the scanner tokens, newest first, with `size` (1 to 1000, default 100), `offset` (0 to 9000) and an optional `cluster_id`. POST makes a token for `{cluster_id, scanner, expiry}`. The answer shows the token one time only. |
+| GET/POST | `/api/v1/admin/tokens` | `can_manage_tokens` | GET lists the scanner tokens, newest first, with `size` (1 to 1000, default 100), `offset` (0 to 9000) and an optional `cluster_id`. POST makes a token for `{cluster_id, scanner, expiry}`. The answer shows the token one time only. A cluster with a delete that did not finish gets 409. A token for a deleted cluster's ID onboards that cluster again: JAVV then keeps its new data. |
 | POST | `/api/v1/admin/tokens/{token_id}/revoke` | `can_manage_tokens` | Disables a token |
 | POST | `/api/v1/admin/tokens/{token_id}/rotate` | `can_manage_tokens` | Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. |
 | GET/POST | `/api/v1/admin/users` | `can_manage_users` | GET lists the users, with `size` (1 to 1000, default 100) and `offset` (0 to 9000). POST makes a user with `{username, temp_password, role}`. The usernames `system` and `fleet` get 422. |
@@ -511,12 +511,17 @@ in the audit log. Snapshots from before keep the data.
 6. It marks the delete as finished.
 
 - A cluster that is not retired gets 409. A cluster that does not exist gets 404.
+- If an admin brings the cluster back while the delete starts, only one of the two goes ahead.
+  When the delete loses, it gets 409 and deletes nothing. When the bring back loses, it gets 409,
+  and the delete continues.
 - If a step cannot finish, or OpenSearch is not available, the request gets 503. Send the request
   again. The delete continues from the step that stopped.
 - The answer is `{cluster_id, deleted: {<what>: count}}`.
 - The marker stays. Each night, the retirement sweep deletes the rows that a push wrote after the
-  delete. After a second pass with no rows, or if the cluster comes back, the sweep deletes the
-  marker.
+  delete. Before it deletes them, it writes an audit row with their counts. After a second pass with no rows, or if the cluster comes back, the sweep deletes the
+  marker. A new token for the cluster's ID also deletes the marker: the cluster is back, and JAVV
+  keeps its new data.
+- A second delete of the same ID, after the cluster came back, writes its own marker.
 
 ### Saved views
 
@@ -659,8 +664,8 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_cluster_retirement_held_total` | counter | none | Retirement sweeps that retired nothing, because no cluster sent an accepted scan in its scanner-down time. This points at JAVV, an outage or a refused scanner version, not at the clusters. Each one also logs a warning. |
 | `javv_store_unavailable_total` | counter | none | Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs `store unavailable` at most once in 10 seconds, with `held_back`, the count since the line before: any sender can repeat a request while OpenSearch is away. |
 | `javv_cluster_delete_incomplete_total` | counter | none | Cluster deletes that stopped and answered 503. Send the delete again to finish it. Each one also logs a warning. |
-| `javv_cluster_delete_leftovers_total` | counter | none | Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows. Each one also logs a warning. |
-| `javv_cluster_delete_recheck_failures_total` | counter | none | Retirement sweeps that could not check the deleted clusters. The next run checks them again. Each one also logs a warning. |
+| `javv_cluster_delete_leftovers_total` | counter | none | Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows, after it wrote an audit row with their counts (action `cluster_delete_recheck`). Each one also logs a warning. |
+| `javv_cluster_delete_recheck_failures_total` | counter | none | Deleted clusters that the retirement sweep could not check, or sweeps that could not check any. The sweep goes on to the next deleted cluster, and the next run checks them again. Each one also logs a warning. |
 | `javv_cluster_retirement_notify_failures_total` | counter | none | Retirement sweeps that could not write or delete their notifications. The retirements stay, and the next run tries again. Each one also logs a warning. |
 
 The backend also gives the default process and garbage collection metrics of `prometheus_client`.
