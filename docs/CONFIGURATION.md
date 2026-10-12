@@ -233,6 +233,14 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
   [runtime setting](#scan-scope). At the start of each cycle, the scanner gets the scope from JAVV
   (`GET /api/v1/scan-scope`). The scanner never reads OpenSearch. If JAVV does not reply, the
   scanner skips the cycle. An empty scope means: scan all.
+- **What the scanner scans:** the containers of the pods that run. It does not scan init
+  containers or ephemeral containers. It pulls each image by the digest that the pod runs
+  (`repo@sha256:…`), so a tag that moved since the pod started does not change the scan. If the
+  registry no longer has that digest, the scanner skips the image and logs a warning.
+- **Image entries of the scope** (`exclude_images`) are globs on the name of the image that JAVV
+  shows. For a pod started by a tag, the name is the tag, for example `registry.io/app:1.2`. For a
+  pod started by a digest, the name is `registry.io/app@sha256:…`. Thus, to skip a repository with
+  any tag or digest, add two entries: `registry.io/app:*` and `registry.io/app@*`.
 - **Scan settings** (the [Trivy](#trivy-settings) and [Grype](#grype-settings) tables) are
   environment variables only. The web app shows them on the card of each scanner, but it cannot
   change them. Each push holds the scan settings and the scope of its cycle, and JAVV keeps them

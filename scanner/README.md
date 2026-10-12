@@ -118,6 +118,7 @@ Status: ✅ implemented (M0/M0b; M10's CronJobs, vuln-DB cache and RBAC in the `
 | Pod pending / digest unresolved | Image **ignored this cycle**, retried next once `image_id` resolves | discovery requires a `sha256:` digest | ✅ |
 | Pod started by tag (`repo:tag`) | Scanned by the `repo@sha256:…` reference in `image_id`, the image that runs; the tag is the name shown and the one that scope globs match. If the registry no longer has that digest (the tag moved and the old image was deleted), the image is skipped and logged, as for any image that cannot be pulled. An `image_id` with no repository (a bare `sha256:…`) leaves the tag as the pull | the tag can have moved since the pod started (issue 833, B5) | ✅ |
 | Pod started by digest (`repo@sha256:…`) | Scanned by the `repo@sha256:…` reference in `image_id`: containerd reports `status.image` as the bare config id there, which names nothing. If another pod runs the same digest by tag, that tag is the name shown | a pull needs a repository name (issue 817) | ✅ |
+| Init and ephemeral containers | **Not scanned**: discovery reads only `container_statuses` of `Running` pods | out of scope (operator ruling on issue 833) | ✅ |
 | N replicas of one image | Scanned **once**, attributed to all locations | digest-dedup (D30) | ✅ |
 | Same digest across namespaces | One scan target spanning both | dedup keyed on digest | ✅ |
 | kube API unreachable at start | Discovery raises → run fails fast → next CronJob retry | injected client; fail-fast | ✅ / 🏗 retry |
