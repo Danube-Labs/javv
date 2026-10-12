@@ -27,6 +27,7 @@ from backend.models.envelope import IngestEnvelope
 from backend.repositories.bulk import BulkError
 from backend.services.ingest import ingest_envelope
 from backend.services.ingest_failures import clean_text, record_ingest_failure
+from backend.services.scan_orders import max_allocated
 
 log = structlog.get_logger()
 
@@ -102,6 +103,18 @@ def _first_error(exc: ValidationError) -> str:
     first = exc.errors()[0]
     loc = ".".join(clean_text(str(part))[:64] for part in first["loc"])
     return f"{loc}: {first['type']}" if loc else first["type"]
+
+
+_MAPPING_REFUSALS = frozenset({"mapper_parsing_exception", "document_parsing_exception"})
+
+
+def _mapping_refusal(exc: BulkError) -> str | None:
+    """The error type when the store refused an item for its content, not for its own state."""
+    for item in exc.items:
+        kind = (item.get("error") or {}).get("type")
+        if kind in _MAPPING_REFUSALS:
+            return str(kind)
+    return None
 
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"])
@@ -237,10 +250,34 @@ async def _ingest_authenticated(
             scope=scope,
         )
 
+    # the contract's "do not make up a value": an order above what scan-runs handed out would move
+    # the pair's sequence past every real cycle (issue 831: one push of 2^63-1 broke scan-runs)
+    allocated = await max_allocated(client, env.cluster_id, env.scanner)
+    if env.scan_order > allocated:
+        raise _reject(
+            422,
+            "unallocated_order",
+            "scan_order was not handed out by POST /api/v1/scan-runs",
+            image_ref=env.image_ref,
+            scan_order=env.scan_order,
+            max_allocated=allocated,
+            scope=scope,
+        )
+
     structlog.contextvars.bind_contextvars(cluster_id=env.cluster_id, scanner=env.scanner)
     try:
         written = await ingest_envelope(client, env)
     except BulkError as exc:
+        refused = _mapping_refusal(exc)
+        if refused is not None:  # the data can never be stored: a retry would fail the same way
+            raise _reject(
+                422,
+                "invalid_envelope",
+                "envelope rejected: the store refused a field",
+                record=f"the store refused a field: {refused}",
+                image_ref=env.image_ref,
+                scope=scope,
+            ) from exc
         raise _reject(
             503,
             "storage_error",

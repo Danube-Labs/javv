@@ -582,6 +582,8 @@ The backend does these checks in this order:
 6. The body is JSON.
 7. The envelope is valid. A field that the schema does not have makes it not valid.
 8. The `cluster_id` and `scanner` of the envelope are the ones of the token.
+9. The `scan_order` is not larger than the largest one that `POST /api/v1/scan-runs` gave to this
+   cluster and scanner.
 
 Then the backend writes the findings. Each finding has a fixed id. Thus when a scanner sends the
 same envelope again, JAVV keeps one copy.
@@ -593,7 +595,7 @@ same envelope again, JAVV keeps one copy.
 | 401 | The token is missing, not valid, disabled or expired. Each of these gets the same answer. |
 | 403 | The `cluster_id` or the `scanner` of the envelope is not the one of the token. |
 | 413 | The compressed body or the body after gzip is larger than its limit. |
-| 422 | The envelope is not valid. Examples: a field that the schema does not have, a `cluster_id` that is not valid, or counts that do not agree. A `schema_version` that is not 3 or 4 also gets 422. |
+| 422 | The envelope is not valid. Examples: a field that the schema does not have, a `cluster_id` that is not valid, counts that do not agree, or a time with no time zone. A `schema_version` that is not 3 or 4 also gets 422. So does a `scan_order` that `POST /api/v1/scan-runs` did not give (`reason` `unallocated_order`), and a value that OpenSearch refuses to store. The scanner does not try again. |
 | 429 | The token is over its rate limit. |
 | 503 | OpenSearch could not keep the data. The scanner tries again. |
 
@@ -607,7 +609,8 @@ warning has these fields:
 
 - always: `reason`, `status`, the `cluster_id` and `scanner` of the token, and `failure_id`
 - on a 413: `limit_bytes`
-- on a 422: `errors`, the count of errors
+- on a 422 for an envelope that is not valid: `errors`, the count of errors
+- on a 422 for `unallocated_order`: `scan_order`, and `max_allocated`, the largest order given
 - on a 403: `payload_cluster_id` and `payload_scanner`.
 
 The backend never logs the token. A 429 writes one warning for each token in each minute, at
@@ -632,7 +635,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | Metric | Type | Labels | What it counts |
 |---|---|---|---|
 | `javv_ingest_accepted_total` | counter | `scanner` | Envelopes that the backend accepted and wrote |
-| `javv_ingest_rejected_total` | counter | `reason` | Envelopes that the backend refused. `reason` is `bad_token`, `rate_limited`, `too_large`, `bad_gzip`, `bad_json`, `invalid_envelope`, `scope_mismatch` or `storage_error`. |
+| `javv_ingest_rejected_total` | counter | `reason` | Envelopes that the backend refused. `reason` is `bad_token`, `rate_limited`, `too_large`, `bad_gzip`, `bad_json`, `invalid_envelope`, `unallocated_order`, `scope_mismatch` or `storage_error`. |
 | `javv_ingest_failures_unrecorded_total` | counter | `reason` | Refused pushes with no record ([Records of a refused push](#records-of-a-refused-push)). A value larger than 0 means that the **Failed ingests** table does not show all the refused pushes. |
 | `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote |
 | `javv_http_request_duration_seconds` | histogram | `method`, `route`, `status` | The time of each request. `route` is the route pattern, not the full path. A path with no route counts as `unmatched`. `/metrics` and the probes are not counted. |

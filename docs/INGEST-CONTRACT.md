@@ -67,6 +67,8 @@ refusal, not a warning. JAVV refuses the envelope with `422` in these conditions
   Grype settings.
 - **`schema_version`** is not 3 or 4. Version 4 added `ptype`. Version 3 findings have no `ptype`.
 - **A time has no time zone.**
+- **`scan_order` is larger than the largest one that step 1 gave** to this cluster and scanner.
+  Thus a value that you make up cannot move the sequence of your scans.
 
 [`API.md`](API.md#ingest-a-scan) has the full list of errors for
 `POST /ingest/scan`: 400, 401, 403, 413, 422, 429 and 503, gzip and the size limits. On success,

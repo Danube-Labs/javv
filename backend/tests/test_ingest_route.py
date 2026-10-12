@@ -22,6 +22,7 @@ from os_env import OS_URL, requires_opensearch
 
 GOLDEN = (Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text()
 CLUSTER = json.loads(GOLDEN)["cluster_id"]
+GOLDEN_ORDER = json.loads(GOLDEN)["scan_order"]
 PEPPER = get_settings().secret_key
 
 
@@ -51,7 +52,9 @@ class FakeOS:
         self.updates.append(kw)
         return {}
 
-    async def get(self, **_: Any) -> dict[str, Any]:
+    async def get(self, **kw: Any) -> dict[str, Any]:
+        if kw.get("index") == "javv-scan-orders":  # the order the golden cycle was handed
+            return {"_source": {"max_allocated_scan_order": GOLDEN_ORDER}}
         raise NotFoundError(404, "not_found", {})  # first commit: watermark doc absent
 
     async def index(self, **kw: Any) -> dict[str, Any]:
@@ -135,6 +138,16 @@ async def test_last_ingest_stamp_conflict_never_fails_a_committed_ingest() -> No
     async with app_with(ConflictingOS(token_doc(t))) as c:
         r = await post(c, gz(GOLDEN), t)
     assert r.status_code == 202  # committed data is reported committed, conflict or not
+
+
+async def test_an_order_scan_runs_never_handed_out_writes_nothing() -> None:
+    t = mint_token()
+    fake = FakeOS(token_doc(t))
+    made_up = {**json.loads(GOLDEN), "scan_order": 2**63 - 1}
+    async with app_with(fake) as c:
+        r = await post(c, gz(json.dumps(made_up)), t)
+    assert r.status_code == 422
+    assert fake.bulks == [] and fake.updates == []  # no data, no counter, no catalog moved
 
 
 async def test_missing_or_unknown_token_is_generic_401() -> None:
@@ -349,6 +362,8 @@ POST_AUTH_REJECTIONS = [
     ("deep_nesting", 400, "bad_json"),
     ("extra_field", 422, "invalid_envelope"),
     ("wrong_scanner", 403, "scope_mismatch"),
+    ("unallocated_order", 422, "unallocated_order"),
+    ("mapping_refused", 422, "invalid_envelope"),
     ("storage_down", 503, "storage_error"),
 ]
 
@@ -366,7 +381,16 @@ def _rejected_push(case: str, t: str, monkeypatch: Any) -> tuple[dict[str, Any],
         "extra_field": gz(json.dumps({**json.loads(GOLDEN), "extra": 1})),
         "wrong_scanner": gz(GOLDEN),
         "storage_down": gz(GOLDEN),
+        # an order scan-runs never handed out (made up, or from a poisoned pusher)
+        "unallocated_order": gz(json.dumps({**json.loads(GOLDEN), "scan_order": GOLDEN_ORDER + 1})),
+        "mapping_refused": gz(GOLDEN),
     }[case]
+    if case == "mapping_refused":
+
+        async def _refused(*_: Any, **__: Any) -> int:
+            raise BulkError([{"status": 400, "error": {"type": "mapper_parsing_exception"}}])
+
+        monkeypatch.setattr(ingest_mod, "ingest_envelope", _refused)
     if case == "storage_down":
 
         async def _fail(*_: Any, **__: Any) -> int:
@@ -412,6 +436,7 @@ STAGE = {
     "bad_gzip": "decode",
     "bad_json": "decode",
     "invalid_envelope": "validate",
+    "unallocated_order": "validate",
     "scope_mismatch": "authorize",
     "storage_error": "store",
 }
@@ -439,10 +464,18 @@ async def test_every_rejection_after_the_token_check_is_recorded_under_the_token
     assert line["failure_id"] == rec["failure_id"]
     assert t not in repr(rec) and doc["token_hash"] not in repr(rec)
     # the image is known once the body parsed as an object; before that it is honestly absent
-    parsed_as_object = case in ("extra_field", "wrong_scanner", "storage_down")
+    parsed_as_object = case in (
+        "extra_field",
+        "wrong_scanner",
+        "storage_down",
+        "unallocated_order",
+        "mapping_refused",
+    )
     assert rec["image_ref"] == (GOLDEN_IMAGE if parsed_as_object else None)
     if case == "extra_field":  # the first validation error names its location, never the input
         assert rec["error"] == "envelope rejected: 1 error(s); first: extra: extra_forbidden"
+    elif case == "mapping_refused":  # the store's error type, which the response leaves out
+        assert rec["error"] == "the store refused a field: mapper_parsing_exception"
     else:
         assert rec["error"] == r.json()["title"]  # the text the scanner itself was sent
 
