@@ -181,7 +181,11 @@ async def _history_indices(client: AsyncOpenSearch, cluster_id: str, prefix: str
 
 async def _delete_rows(client: AsyncOpenSearch, index: str, query: dict[str, Any]) -> int:
     deleted = 0
-    for _ in range(_RETRIES):
+    for attempt in range(_RETRIES):
+        if attempt:
+            # a doc updated without a refresh (a push stamps its token so) conflicts with every
+            # pass until the next refresh: make it visible, so this pass can delete it
+            await client.indices.refresh(index=index, params={"ignore_unavailable": "true"})
         try:
             resp = await client.delete_by_query(
                 index=index,

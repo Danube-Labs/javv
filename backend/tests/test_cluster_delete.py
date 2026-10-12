@@ -17,7 +17,7 @@ import gzip
 import json
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -330,6 +330,32 @@ async def test_a_delete_that_lands_first_stops_the_bring_back(real_os, monkeypat
     assert await deletes_started(client, prefix=prefix) == {GONE}
 
 
+class _ConflictsOnce:
+    """A store whose first delete pass hits a doc updated since the last refresh."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+        self.indices = self
+
+    async def delete_by_query(self, **_kw: Any) -> dict[str, int]:
+        self.calls.append("delete")
+        conflicted = self.calls.count("refresh") == 0
+        return {"deleted": 0 if conflicted else 1, "version_conflicts": 1 if conflicted else 0}
+
+    async def refresh(self, **_kw: Any) -> dict[str, Any]:
+        self.calls.append("refresh")
+        return {}
+
+
+async def test_a_pass_that_conflicts_refreshes_before_the_next() -> None:
+    store = _ConflictsOnce()
+    deleted = await cluster_delete._delete_rows(
+        cast(Any, store), "system-tokens", {"term": {"cluster_id": GONE}}
+    )
+    assert deleted == 1
+    assert store.calls == ["delete", "refresh", "delete"]
+
+
 def _leftovers() -> float:
     return REGISTRY.get_sample_value("javv_cluster_delete_leftovers_total") or 0.0
 
@@ -638,9 +664,9 @@ async def test_a_push_after_the_delete_gets_401_and_writes_nothing(env) -> None:
         )
         return r.status_code
 
-    assert await push() == 202  # the control: this token and envelope are accepted
-    # the push stamps its token without a refresh; until one, every delete pass conflicts with it
-    await client.indices.refresh(index="system-tokens")
+    # the control: this token and envelope are accepted. The push also stamps the token without
+    # a refresh, which the delete right after must get past (its passes refresh before a retry)
+    assert await push() == 202
     # an automatic retire keeps the token live, so only the delete stands between it and a push
     await retire_cluster(client, cid, actor="t", mode="auto")
     assert (await http.delete(f"/api/v1/clusters/{cid}")).status_code == 200
