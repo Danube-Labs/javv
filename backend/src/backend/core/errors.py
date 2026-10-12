@@ -115,7 +115,7 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(TransportError)
     async def _store(request: Request, exc: TransportError) -> JSONResponse:
         if not store_unavailable(exc):
-            return await _unhandled(request, exc)
+            raise exc  # the generic handler below, as before this one existed: logged, then a 500
         _store_warned.note(request, exc)
         request_id = _request_id(request)
         return problem_response(
