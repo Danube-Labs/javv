@@ -149,16 +149,28 @@ async def _login(http: httpx.AsyncClient) -> dict[str, str]:
     return _session_header(r)
 
 
+async def _scan_order(http: httpx.AsyncClient, token: str) -> int:
+    # the scanner's cycle start: ingest refuses an order scan-runs never handed out
+    r = await http.post(
+        f"{BACKEND}/api/v1/scan-runs", headers={"authorization": f"Bearer {token}"}
+    )
+    r.raise_for_status()
+    return int(r.json()["scan_order"])
+
+
 async def _cycle(
-    http: httpx.AsyncClient, tokens: dict[tuple[str, str], str], run: str, order: int
+    http: httpx.AsyncClient, tokens: dict[tuple[str, str], str], run: str
 ) -> dict[str, Any]:
     jobs = [(cid_scanner, d) for cid_scanner in tokens for d in range(DIGESTS)]
     latencies: list[float] = []
     sem = asyncio.Semaphore(CONCURRENCY)
+    orders = {cs: await _scan_order(http, tok) for cs, tok in tokens.items()}
 
     async def push(cid_scanner: tuple[str, str], digest_i: int) -> None:
         cid, scanner = cid_scanner
-        body = _envelope(cid, scanner, digest_i, f"{run}-{cid}-{scanner}", order)
+        body = _envelope(
+            cid, scanner, digest_i, f"{run}-{cid}-{scanner}", orders[cid_scanner]
+        )
         async with sem:
             t0 = time.perf_counter()
             r = await http.post(
@@ -210,15 +222,14 @@ async def main() -> None:
                 r.raise_for_status()
                 tokens[(cid, scanner)] = r.json()["token"]
 
-        order = int(time.time())  # monotonic across bench re-runs (watermark CAS)
-        run = f"bench-{order}"
+        run = f"bench-{int(time.time())}"
         print(
             f"scale: {CLUSTERS} clusters x {len(SCANNERS)} scanners x {DIGESTS} digests "
             f"x {FINDINGS} findings, concurrency {CONCURRENCY}",
             file=sys.stderr,
         )
-        c1 = await _cycle(http, tokens, f"{run}-c1", order)
-        c2 = await _cycle(http, tokens, f"{run}-c2", order + 1)
+        c1 = await _cycle(http, tokens, f"{run}-c1")
+        c2 = await _cycle(http, tokens, f"{run}-c2")
         docs = (await http.get(f"{OS_URL}/findings/_count")).json()["count"]
         print(
             json.dumps(

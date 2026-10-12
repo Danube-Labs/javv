@@ -218,6 +218,15 @@ async def mint_tokens(
     return tokens
 
 
+async def scan_order(http: httpx.AsyncClient, token: str) -> int:
+    """The scanner's cycle start: ingest refuses an order scan-runs never handed out."""
+    r = await http.post(
+        f"{BACKEND}/api/v1/scan-runs", headers={"authorization": f"Bearer {token}"}
+    )
+    r.raise_for_status()
+    return int(r.json()["scan_order"])
+
+
 async def store_vitals(http: httpx.AsyncClient, phase: str) -> dict[str, Any]:
     """heap %, index count, findings docs, open PITs — the trend line that made the 839-index /
     heap-80% incident invisible until the suite went red. Logged before/after every phase."""
@@ -252,7 +261,7 @@ async def store_vitals(http: httpx.AsyncClient, phase: str) -> dict[str, Any]:
 
 # ── phase: LOAD ─────────────────────────────────────────────────────────────────────────────────
 async def phase_load(
-    http: httpx.AsyncClient, tokens: dict[tuple[str, str], str], base_order: int
+    http: httpx.AsyncClient, tokens: dict[tuple[str, str], str]
 ) -> dict[str, Any]:
     """CYCLES of concurrent pushes across the fleet. Mixed v3/v4 (alternating cycles). 429/503 are
     backpressure, not failure; a 5xx other than 503, or any non-2xx/429/503, IS a failure."""
@@ -307,12 +316,16 @@ async def phase_load(
         # backpressure, not failure: a real scanner CronJob retries next cycle. Reported, not fatal.
         shed.append({"cid": cid, "scanner": scanner, "digest": digest_i})
 
+    # every cycle's order up front, so the flood's 429s never land on an allocation
+    orders = {
+        cs: [await scan_order(http, tok) for _ in range(CYCLES)]
+        for cs, tok in tokens.items()
+    }
     t0 = time.perf_counter()
     for c in range(CYCLES):
         schema = 3 if c % 2 == 0 else 4  # interleave the vocabulary/rollout window
-        order = base_order + c
         jobs = [
-            push(cid, scanner, d, order, schema)
+            push(cid, scanner, d, orders[(cid, scanner)][c], schema)
             for (cid, scanner) in tokens
             for d in range(DIGESTS)
         ]
@@ -426,7 +439,6 @@ async def phase_break(
     hdr: dict[str, str],
     tokens: dict[tuple[str, str], str],
     cid: str,
-    base_order: int,
 ) -> dict[str, Any]:
     """Named abuse cases. Each records (name, expected, actual, PASS/FAIL). A 500 anywhere, or an
     internals leak in an error body, is a FAIL."""
@@ -440,7 +452,8 @@ async def phase_break(
         json={"cluster_id": bcid, "scanner": "trivy"},
     )
     r.raise_for_status()
-    auth = {"authorization": f"Bearer {r.json()['token']}"}
+    btoken = r.json()["token"]
+    auth = {"authorization": f"Bearer {btoken}"}
 
     def record(name: str, ok: bool, detail: str) -> None:
         results.append({"name": name, "pass": ok, "detail": detail})
@@ -453,7 +466,8 @@ async def phase_break(
         h = auth if headers is None else headers
         return await http.post(f"{BACKEND}/api/v1/ingest/scan", json=body, headers=h)
 
-    good = envelope(bcid, "trivy", 0, "break-good", base_order + 100, 4)
+    good_order = await scan_order(http, btoken)
+    good = envelope(bcid, "trivy", 0, "break-good", good_order, 4)
 
     # 1. malformed: extra field (extra=forbid), bad type, illegal ptype pattern, bad schema_version
     for name, mutate in [
@@ -509,10 +523,10 @@ async def phase_break(
     # envelopes for a different cluster / scanner — they must 403 on the scope check. Inputs
     # must be otherwise-valid or they'd 422 on validation BEFORE reaching authz (a valid-shape cid,
     # and a real grype envelope — not a trivy body with scanner flipped (fails tuning validation).
-    other = envelope("c-load-other", "trivy", 0, "break-tenant", base_order + 101, 4)
+    other = envelope("c-load-other", "trivy", 0, "break-tenant", good_order, 4)
     r = await ingest(other)
     record("scope:wrong_cluster", r.status_code == 403, f"{r.status_code} (expect 403)")
-    r = await ingest(envelope(bcid, "grype", 0, "break-scanner", base_order + 102, 4))
+    r = await ingest(envelope(bcid, "grype", 0, "break-scanner", good_order, 4))
     record("scope:wrong_scanner", r.status_code == 403, f"{r.status_code} (expect 403)")
 
     # 5. cursor tampering on the read surface: garbage cursor → 422, never a 500
@@ -542,7 +556,8 @@ async def phase_break(
     # state can't guard a create, so the watermark does. On the FRESH break token (no load noise),
     # so the setup pushes land; assert each committed (202) before trusting the observable present=.
     d_digest = 7
-    hi = base_order + 200
+    # three orders in a row; the first is the stale one, as a delayed cycle's would be
+    stale_order, hi, hi2 = [await scan_order(http, btoken) for _ in range(3)]
     full = envelope(bcid, "trivy", d_digest, f"replay-hi-{hi}", hi, 4)
     # keep ONE finding — and rebuild counts to match it (the envelope validates counts vs findings,
     # so a total=1 with the old per-severity tallies would 422 before ever reaching the watermark)
@@ -557,15 +572,15 @@ async def phase_break(
     kept_counts |= {"total": len(kept), "fixable": sum(1 for f in kept if f["fixable"])}
     shrunk = {
         **full,
-        "scan_run_id": f"replay-hi2-{hi + 1}",
-        "scan_order": hi + 1,
+        "scan_run_id": f"replay-hi2-{hi2}",
+        "scan_order": hi2,
         "findings": kept,
         "counts": kept_counts,
     }
     stale = {
         **full,
-        "scan_run_id": f"replay-stale-{hi - 50}",
-        "scan_order": hi - 50,
+        "scan_run_id": f"replay-stale-{stale_order}",
+        "scan_order": stale_order,
     }  # old order
     setup = [(await ingest(full)).status_code, (await ingest(shrunk)).status_code]
     r = await ingest(stale)
@@ -799,7 +814,6 @@ async def chaos_store(
     http: httpx.AsyncClient,
     tokens: dict[tuple[str, str], str],
     cid: str,
-    base_order: int,
 ) -> dict[str, Any]:
     """Pause OpenSearch mid-flight → the backend must 503 without internals and /readyz degrade;
     unpause → recovery WITHOUT a backend restart. The #249 'chaos of the real deployment'."""
@@ -810,6 +824,7 @@ async def chaos_store(
         ).returncode
 
     result: dict[str, Any] = {}
+    order = await scan_order(http, tokens[(cid, "trivy")])  # before the store goes away
     if docker("pause", OS_CONTAINER) != 0:
         return {"verdict": "SKIP", "detail": f"could not pause {OS_CONTAINER}"}
     try:
@@ -817,7 +832,7 @@ async def chaos_store(
         ready = (await http.get(f"{BACKEND}/readyz")).status_code
         ing = await http.post(
             f"{BACKEND}/api/v1/ingest/scan",
-            json=envelope(cid, "trivy", 0, "chaos", base_order + 300, 4),
+            json=envelope(cid, "trivy", 0, "chaos", order, 4),
             headers={"authorization": f"Bearer {tokens[(cid, 'trivy')]}"},
         )
         leak = any(
@@ -886,7 +901,6 @@ async def run(args: argparse.Namespace) -> int:
         cids = [f"c-load-{i:02d}" for i in range(CLUSTERS)]
         cid0 = cids[0]
         tokens = await mint_tokens(http, hdr, cids)
-        base_order = int(time.time())  # monotonic across re-runs (watermark CAS)
         metrics_before = (await http.get(f"{BACKEND}/metrics")).text
 
         sections: dict[str, Any] = {}
@@ -895,7 +909,7 @@ async def run(args: argparse.Namespace) -> int:
         if "load" in phases or "capture" in phases:
             # capture-under-load: run a capture pass concurrently with the flood, then a quiet one
             load_task = (
-                asyncio.create_task(phase_load(http, tokens, base_order))
+                asyncio.create_task(phase_load(http, tokens))
                 if "load" in phases
                 else None
             )
@@ -913,7 +927,7 @@ async def run(args: argparse.Namespace) -> int:
                 )
 
         if "break" in phases:
-            sections["break"] = await phase_break(http, hdr, tokens, cid0, base_order)
+            sections["break"] = await phase_break(http, hdr, tokens, cid0)
             await store_vitals(http, "post_break")
 
         if "lifecycle" in phases:
@@ -922,7 +936,7 @@ async def run(args: argparse.Namespace) -> int:
             )
 
         if args.chaos_store:
-            sections["chaos_store"] = await chaos_store(http, tokens, cid0, base_order)
+            sections["chaos_store"] = await chaos_store(http, tokens, cid0)
 
         if "invariants" in phases:
             sections["invariants"] = await phase_invariants(
