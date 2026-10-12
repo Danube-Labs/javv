@@ -39,6 +39,7 @@ def test_dedups_replicas_of_one_image_to_a_single_target() -> None:
     assert set(by_digest) == {DIG_NGINX, DIG_PY}
     assert by_digest[DIG_NGINX].pod_count == 3
     assert by_digest[DIG_NGINX].image_ref == "nginx:1.21.6"
+    assert by_digest[DIG_NGINX].pull_ref == f"nginx@{DIG_NGINX}"
     assert by_digest[DIG_PY].pod_count == 1
 
 
@@ -105,26 +106,34 @@ def test_a_digest_pinned_pod_is_pulled_by_its_image_id_reference() -> None:
     pods = [pod("hunt-probe", "by-digest", [cstatus("c", NGINX_CONFIG_ID, NGINX_IMAGE_ID)])]
     [target] = running_images(pods)
     assert target.image_digest == NGINX_REPO_DIGEST
-    assert target.image_ref == NGINX_IMAGE_ID
+    assert (target.image_ref, target.pull_ref) == (NGINX_IMAGE_ID, NGINX_IMAGE_ID)
 
 
 def test_the_docker_pullable_scheme_is_stripped_from_the_fallback() -> None:
     pods = [pod("ns", "p", [cstatus("c", DIG_PY, f"docker-pullable://python@{DIG_PY}")])]
-    assert running_images(pods)[0].image_ref == f"python@{DIG_PY}"
+    [target] = running_images(pods)
+    assert (target.image_ref, target.pull_ref) == (f"python@{DIG_PY}", f"python@{DIG_PY}")
 
 
-def test_a_tag_pinned_pod_keeps_its_own_reference() -> None:
+def test_a_tagged_pod_is_pulled_by_the_digest_it_runs_and_shows_its_tag() -> None:
+    # the tag can have moved since the pod started: only the digest names the image that runs
     busybox = "docker.io/library/busybox:1.36"
     image_id = "docker.io/library/busybox@sha256:" + "7" * 64
-    assert (
-        running_images([pod("ns", "p", [cstatus("c", busybox, image_id)])])[0].image_ref == busybox
-    )
+    [target] = running_images([pod("ns", "p", [cstatus("c", busybox, image_id)])])
+    assert (target.image_ref, target.pull_ref) == (busybox, image_id)
+
+
+def test_a_tagged_pod_with_a_bare_image_id_is_pulled_by_its_tag() -> None:
+    # nothing else names a pullable image for it
+    [target] = running_images([pod("ns", "p", [cstatus("c", "python:3.9", DIG_PY)])])
+    assert (target.image_ref, target.pull_ref) == ("python:3.9", "python:3.9")
 
 
 def test_a_bare_id_in_both_fields_stays_as_reported() -> None:
     # nothing pullable to fall back to: the scan fails and is logged, as before
     pods = [pod("ns", "p", [cstatus("c", DIG_ALPINE, DIG_ALPINE)])]
-    assert running_images(pods)[0].image_ref == DIG_ALPINE
+    [target] = running_images(pods)
+    assert (target.image_ref, target.pull_ref) == (DIG_ALPINE, DIG_ALPINE)
 
 
 def test_a_tagged_pod_names_a_digest_whichever_pod_comes_first() -> None:
@@ -134,4 +143,5 @@ def test_a_tagged_pod_names_a_digest_whichever_pod_comes_first() -> None:
         pods = [pod("ns", f"p{i}", [cs]) for i, cs in enumerate(order)]
         [target] = running_images(pods)
         assert target.image_ref == "docker.io/library/nginx:1.27"
+        assert target.pull_ref == NGINX_IMAGE_ID
         assert target.pod_count == 2

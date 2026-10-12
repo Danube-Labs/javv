@@ -176,9 +176,10 @@ the scanner pushes on to the backend. To use a different host port, change the l
   verify the certificate, and it logs one warning about this at start. The network holds only the
   three JAVV containers. Do not publish the OpenSearch port.
 - **Scanner pushes go through the frontend container.** When the frontend container restarts, the
-  push that is in progress stops. The scanner tries the push again, with a longer wait each time.
-  When all tries fail, the scanner writes the envelope to its dead-letter file. In its next cycle,
-  it scans and pushes that image again.
+  push that is in progress stops. The scanner tries the push again, with a longer wait each time,
+  for up to 6 minutes in each cycle (`JAVV_PUSH_RETRY_BUDGET_SECONDS`). When all tries fail, the
+  scanner writes the envelope to its dead-letter file. In its next cycle, it scans and pushes that
+  image again.
 
 ### Settings
 

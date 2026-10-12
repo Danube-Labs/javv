@@ -46,6 +46,7 @@ def target(digest: str, ref: str) -> ImageTarget:
     return ImageTarget(
         image_digest=digest,
         image_ref=ref,
+        pull_ref=ref,
         locations=(Location(namespace="javv-smoke", pod="p", container="c"),),
     )
 
@@ -114,6 +115,7 @@ def test_scan_all_stamps_observed_topology_from_discovery() -> None:
     tgt = ImageTarget(
         image_digest="sha256:a",
         image_ref="nginx:1.21.6",
+        pull_ref="nginx@sha256:a",
         locations=(
             Location(namespace="team-a", pod="p1", container="c"),
             Location(namespace="team-a", pod="p2", container="c"),
@@ -230,6 +232,15 @@ def test_main_rejects_malformed_cluster_id(
     monkeypatch.setenv("JAVV_CLUSTER_ID", "Bad_Cluster!")
     assert run.main() == 2
     assert "JAVV_CLUSTER_ID" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("bad", ["abc", "0", "-1"])
+def test_main_rejects_a_bad_retry_budget(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], bad: str
+) -> None:
+    monkeypatch.setenv("JAVV_PUSH_RETRY_BUDGET_SECONDS", bad)
+    assert run.main() == 2  # before the scanner reads the cluster
+    assert "JAVV_PUSH_RETRY_BUDGET_SECONDS" in capsys.readouterr().out
 
 
 # --- cluster identity is asserted, not assumed (issue 470) -------------------
@@ -573,3 +584,48 @@ def test_failure_detail_names_a_timeout() -> None:
 
 def test_failure_detail_for_any_other_error_claims_nothing_about_the_scanner() -> None:
     assert failure_detail(json.JSONDecodeError("bad", "", 0)) == {"reason": "error"}
+
+
+def test_the_scan_pulls_the_digest_and_the_envelope_shows_the_tag() -> None:
+    tgt = ImageTarget(
+        image_digest="sha256:" + "d" * 64,
+        image_ref="registry.io/app:1",
+        pull_ref="registry.io/app@sha256:" + "d" * 64,
+        locations=(Location(namespace="ns", pod="p", container="c"),),
+    )
+    pulled: list[str] = []
+    pushed: list[Envelope] = []
+
+    def scan_fn(ref: str) -> ScanResult:
+        pulled.append(ref)
+        return ScanResult()
+
+    def push_fn(env: Envelope) -> PushResult:
+        pushed.append(env)
+        return PushResult(delivered=True, attempts=1, dead_lettered=False)
+
+    scan_all([tgt], scanner="trivy", cluster_id="c", scan_fn=scan_fn, push_fn=push_fn, scan_order=1)
+
+    assert pulled == [tgt.pull_ref]
+    assert pushed[0].image_ref == "registry.io/app:1"
+
+
+@pytest.mark.parametrize(
+    ("env", "named"),
+    [
+        ({"JAVV_TRIVY_SCANNERS": "bogus"}, "JAVV_TRIVY_SCANNERS"),
+        ({"JAVV_SCANNER": "grype", "JAVV_GRYPE_SCOPE": "everything"}, "JAVV_GRYPE_SCOPE"),
+    ],
+)
+def test_main_rejects_a_bad_scan_setting_with_exit_2(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    env: dict[str, str],
+    named: str,
+) -> None:
+    # CONFIGURATION.md: a value that is not valid stops the scanner with exit code 2
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    assert run.main() == 2  # before the scanner reads the cluster
+    out = capsys.readouterr().out
+    assert named in out and "Traceback" not in out

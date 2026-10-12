@@ -210,6 +210,7 @@ do not set always has the default in the table.
 | `JAVV_CLUSTER_ID` | the UID of `kube-system` | The id of the cluster in JAVV: the UID of the `kube-system` namespace, which never changes. JAVV never uses the cluster name for this. When you set it, the scanner compares it with the UID of the cluster that it connected to. If the two are different, the scanner stops the cycle with exit code 2. |
 | `JAVV_KUBE_CONTEXT` | the current context | Only outside a cluster: the kubeconfig context to scan. Inside a cluster, the scanner ignores it. When you do not set it, the scanner uses the current context. For this reason, `JAVV_CLUSTER_ID` can check the cluster. |
 | `JAVV_DEAD_LETTER` | `<scanner>.dead-letter.jsonl`. The images set `/var/lib/javv/<scanner>.dead-letter.jsonl`. | The file for the images whose scan failed. The scanner writes the failure there and continues with the next image. |
+| `JAVV_PUSH_RETRY_BUDGET_SECONDS` | `360` | How long one cycle can try again, in total, when JAVV does not accept a push or the inventory commit (a 429, a 5xx or no answer). The scanner waits longer each time, at most 30 seconds. The time counts from the first failure of a push to its end. When the cycle has used all of it, a push that fails goes to the dead-letter file with no wait, and the log shows `push retry budget spent` one time. The default is longer than the 300 seconds that a `helm upgrade` of JAVV gives the backend to start. A value that is not a whole number above 0 stops the scanner with exit code 2. |
 
 ### Files that the scanner writes
 
@@ -232,6 +233,14 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
   [runtime setting](#scan-scope). At the start of each cycle, the scanner gets the scope from JAVV
   (`GET /api/v1/scan-scope`). The scanner never reads OpenSearch. If JAVV does not reply, the
   scanner skips the cycle. An empty scope means: scan all.
+- **What the scanner scans:** the containers of the pods that run. It does not scan init
+  containers or ephemeral containers. It pulls each image by the digest that the pod runs
+  (`repo@sha256:…`), so a tag that moved since the pod started does not change the scan. If the
+  registry no longer has that digest, the scanner skips the image and logs a warning.
+- **Image entries of the scope** (`exclude_images`) are globs on the name of the image that JAVV
+  shows. For a pod started by a tag, the name is the tag, for example `registry.io/app:1.2`. For a
+  pod started by a digest, the name is `registry.io/app@sha256:…`. Thus, to skip a repository with
+  any tag or digest, add two entries: `registry.io/app:*` and `registry.io/app@*`.
 - **Scan settings** (the [Trivy](#trivy-settings) and [Grype](#grype-settings) tables) are
   environment variables only. The web app shows them on the card of each scanner, but it cannot
   change them. Each push holds the scan settings and the scope of its cycle, and JAVV keeps them
@@ -243,8 +252,8 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
 
 The `javv-scanner` chart runs one CronJob for each scanner in a cluster that you scan. Each scanner
 block (`trivy`, `grype`) has its own image, token, schedule, database source and cache. Each block
-also has `config`: its settings from the [Trivy](#trivy-settings) or [Grype](#grype-settings) table
-and `JAVV_LOG_LEVEL`, by environment name, at their defaults. An empty value means not set.
+also has `config`: its settings from the [Trivy](#trivy-settings) or [Grype](#grype-settings) table,
+`JAVV_LOG_LEVEL` and `JAVV_PUSH_RETRY_BUDGET_SECONDS`, by environment name, at their defaults. An empty value means not set.
 `scanner/tests/test_helm_config.py` keeps them equal to the code. The other values:
 
 | Value | Default | What it does |
@@ -573,6 +582,7 @@ the value stays in the code: fix the bug. For example, the bulk limit is a setti
 | **Scheduler tick:** how frequently the backend looks for a due job | `jobs/scheduler.TICK_SECONDS` (30 s) | A schedule is a minute or longer, so two looks each minute never miss one. A shorter tick gives nothing. A longer tick can start a job late. The schedules themselves are settings (`JAVV_JOB_<KIND>_CRON`). |
 | **Queue order:** the due job that starts first | `jobs/schedule.FIRST_IN_QUEUE` (`report_drain`), then the order of `jobs/registry.JOBS` | A person waits for an export. Nobody waits for a sweep. |
 | **Scanner error text in the log:** how much of the error output of a failed scan one log line holds | `scanner/run.STDERR_TAIL_LINES` (5), `STDERR_TAIL_CHARS` (1000) | These values bound one log line. The scanner writes its final error last. JAVV does not keep the full output of the scanner. |
+| **Scanner waits between tries:** the first wait and the longest one | `scanner/push.FIRST_WAIT_S` (0.5 s), `WAIT_CAP_S` (30 s) | The setting `JAVV_PUSH_RETRY_BUDGET_SECONDS` decides how long the scanner tries. These values only space the tries: each wait is a random time up to its limit, which doubles from the first. |
 | **Read page size:** the reader reads in pages, so this value is a batch size, not a limit on results | `decisions/reproject._PAGE` (10k), `triage/bulk._FREEZE_PAGE` (10k), `services/disagreement._SEARCH_PAGE` (10k), `jobs/rebuild_state._PAGE` (1k), `export/sweep._PAGE_SIZE` (500), `routers/findings._GROUP_CLOCK_PAGE` (1k), `routers/contributors._ROWS_PAGE_SIZE` (10k), `query/pit._ROW_PAGE` (10k), `query/human_at._ROW_PAGE` (10k), and the row walks of `jobs/rebuild_state` and `jobs/staleness` (10k). All `search_after` walks use `query/paging.search_to_exhaustion`. | Each value is at or below the `from`/`size` limit of OpenSearch, 10k. A sweep uses a smaller value to keep its memory constant. The caller reads pages until there are no more, so each value gives complete results. A value changes only the number of round trips and the memory. |
 | **Conflict retries:** a guard against a loop, not a dial | `decisions/reproject._CONFLICT_RETRIES` (8), `services/reconcile._CONFLICT_RETRIES` (10), `services/merge._CONFLICT_RETRIES` (10), `decisions/lifecycle._CAS_RETRIES` (8), `triage/service._CAS_RETRIES` (8), `services/scan_orders._CAS_RETRIES` (32), `services/watermarks._CAS_RETRIES` (32), `admin/cluster_delete._RETRIES` (5) | Real contention is about 1: one CronJob for each scanner, with `Forbid`. A run that gets to the limit shows a fault to examine. A larger limit would hide the fault. A cluster delete refreshes the index before each retry, because a row that changed since the last refresh conflicts with every pass until then. The two values of 10 guard the same commit race from the two sides. They wait longer after each retry with `repositories/bulk.race_backoff_delay`: from 0.02 s to 2 s, about 8.5 s in total. This total is longer than the `_bulk` backoff of a racing pass, 7.5 s at most. |
 | **Shape of a client-events request:** the contract of the API, not a dial | `routers/client_events._MAX_BATCH` (20), `_MAX_KEYS_PER_OBJECT` (25), `_MAX_DEPTH` (3), `_MAX_KEY_CHARS` (64), `_MAX_VALUE_CHARS` (512), `_MAX_LIST_ITEMS` (20), `_EVENT_NAME` (`^[a-z0-9][a-z0-9 ._-]{0,63}$`) | These values are the OpenAPI schema. They are in the generated client, so a change is a contract change for the backend and the frontend. As settings, they would make a 422 depend on the deployment. The input comes from the browser and is not trusted, so the check of value types is an allowlist. The name pattern accepts spaces, as in `backend degraded`. It refuses newlines, tabs, quotes and control characters, which could break the `client.<name>` name. The rate limit for each user is a setting (`JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE`). |

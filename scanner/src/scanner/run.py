@@ -22,7 +22,7 @@ from scanner.envelope import EffectiveConfig, Envelope, Scanner, build_envelope,
 from scanner.inventory import commit_inventory
 from scanner.models import ScanResult
 from scanner.orders import fetch_scan_order
-from scanner.push import PushResult, push_envelope
+from scanner.push import PushResult, RetryBudget, push_envelope
 from scanner.scope import fetch_scan_scope
 
 ScanFn = Callable[[str], ScanResult]
@@ -77,16 +77,18 @@ def scan_all(
         log.info(
             "scanning image",
             image_ref=t.image_ref,
+            pull_ref=t.pull_ref,
             image_digest=t.image_digest,
             position=f"{i}/{len(targets)}",
         )
         started = time.monotonic()
         try:
-            scanned = scan_fn(t.image_ref)
+            scanned = scan_fn(t.pull_ref)
         except Exception as exc:
             log.warning(
                 "scan failed, image skipped",
                 image_ref=t.image_ref,
+                pull_ref=t.pull_ref,
                 image_digest=t.image_digest,
                 **failure_detail(exc),
                 exc_info=True,
@@ -198,6 +200,13 @@ def main() -> int:
         return 2
     backend, token, env_cluster_id = target.url, target.token, target.cluster_id
     dead_letter = Path(os.environ.get("JAVV_DEAD_LETTER", f"{scanner}.dead-letter.jsonl"))
+    # every setting is checked before the cluster is read: a bad one is exit 2, named in the log
+    try:
+        budget = RetryBudget.from_env(os.environ)  # shared by every push and the commit
+        scan_fn, tuning = scan_wiring(scanner)
+    except ValueError as exc:
+        log.error("invalid setting", error=str(exc))
+        return 2
 
     # `or None` — an empty value (a blank Helm value, an exported-but-unset var) means "current
     # context", not a context literally named "", which kube_config raises on.
@@ -231,8 +240,6 @@ def main() -> int:
         api_server=cast(Any, api.api_client.configuration).host,
     )
 
-    scan_fn, tuning = scan_wiring(scanner)
-
     with httpx.Client(base_url=backend, timeout=30.0) as http:
         # D43/FR-24: fetch the cluster's scan scope first. Fail-closed — if the backend is
         # unreachable we can't confirm what to scan (and couldn't push anyway), so skip the cycle.
@@ -253,7 +260,7 @@ def main() -> int:
             cluster_id=cluster_id,
             scan_fn=scan_fn,
             push_fn=lambda e: push_envelope(
-                e, client=http, dead_letter_path=dead_letter, token=token
+                e, client=http, dead_letter_path=dead_letter, budget=budget, token=token
             ),
             scan_order=scan_order,
             # D44/FR-25: stamp what this cycle ran with (tuning flags + the applied scope)
@@ -265,6 +272,7 @@ def main() -> int:
                 scan_run_id=run_id,
                 expected_count=expected,
                 started_at=started,
+                budget=budget,
             ),
         )
 

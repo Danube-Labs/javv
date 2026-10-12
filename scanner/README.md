@@ -44,8 +44,8 @@ unavailable the cycle is skipped (logged at `error`, exit 0) and nothing is scan
    means scan everything; an unreachable backend means scan nothing.
 2. `POST /api/v1/scan-runs` — the backend allocates this cycle's `scan_order` (D45).
 
-At the end, `POST /api/v1/inventory-runs` certifies the cycle's inventory (best effort; a failure leaves
-the run uncertified and is logged as a warning).
+At the end, `POST /api/v1/inventory-runs` certifies the cycle's inventory (best effort, retried within
+the cycle's retry budget; a failure leaves the run uncertified and is logged as a warning).
 ## Trivy and Grype are two separate CronJobs
 Each scanner is its own self-built image (`Dockerfile.trivy`, `Dockerfile.grype`, pinned binary) run as its
 **own CronJob** — independent, never merged. Each emits its own envelope stream with a monotonic `scan_order`
@@ -108,15 +108,17 @@ Status: ✅ implemented (M0/M0b; M10's CronJobs, vuln-DB cache and RBAC in the `
 
 | Scenario | What happens | Mechanism / decision | Status |
 |---|---|---|---|
-| Push fails transiently (429/5xx, network) | Retry with **exponential backoff + jitter**; same envelope re-sent | only flow control without a broker | ✅ |
-| Push fails permanently (other 4xx, retries exhausted) | Envelope written to a **dead-letter sink** (`*.dead-letter.jsonl`); run continues | nothing silently lost | ✅ |
+| Push fails transiently (429/5xx, network) | Retry with **exponential backoff + jitter**, each wait at most 30 s, while the cycle's **retry budget** lasts (`JAVV_PUSH_RETRY_BUDGET_SECONDS`, 360 s); same envelope re-sent. The cycle-end inventory commit retries within what is left | only flow control without a broker; a store restart outlasted 5 fixed tries (issue 832) | ✅ |
+| Push fails permanently (other 4xx), or the budget is spent | Envelope written to a **dead-letter sink** (`*.dead-letter.jsonl`); run continues. Once the budget is spent, a failing push is dead-lettered with no wait, so a dead backend costs the cycle about the budget | nothing silently lost | ✅ |
 | Push "timed out" but backend got it | Safe re-push — gzipped body is byte-identical; backend **upserts by deterministic `_id`** | idempotent appends (D18); server-side M1 | ✅ / M1 |
 | Backend down at cycle start | Scope fetch fails → cycle **skipped** before any scan (logged at `error`, exit 0) | fail-closed scan scope (D43) | ✅ |
 | Backend lost mid-cycle | Pushes retry → dead-letter; the cycle finishes (exit 0); "running at T" still shows last committed run | commit-then-cache: no push = no partial state (D39) | ✅ / M1 |
 | An image cannot be scanned (its registry no longer serves it, the scanner exits non-zero, the scan times out) | The image is **skipped** and logged at `warning` with the scanner's own error text; the rest of the cycle runs. The image is **left out of the inventory run's expected count**, so the run still commits: the image leaves Running images and its findings go stale on the normal timer. Nothing on screen names it; the reason is in this log. **If no image scanned at all**, the run keeps the discovered count and stays partial, so the last good inventory keeps answering instead of an empty one | a failed scan must not freeze the inventory (issue 633) | ✅ |
 | Clean image (0 vulns) | **Still emits a full envelope** (`total:0`) | no skip-unchanged (D30); catalog needs the marker | ✅ |
 | Pod pending / digest unresolved | Image **ignored this cycle**, retried next once `image_id` resolves | discovery requires a `sha256:` digest | ✅ |
-| Pod started by digest (`repo@sha256:…`) | Scanned by the pullable `repo@sha256:…` reference in `image_id`: containerd reports `status.image` as the bare config id there, which no registry serves. If another pod runs the same digest by tag, the tagged reference is used | a pull needs a repository name (issue 817) | ✅ |
+| Pod started by tag (`repo:tag`) | Scanned by the `repo@sha256:…` reference in `image_id`, the image that runs; the tag is the name shown and the one that scope globs match. If the registry no longer has that digest (the tag moved and the old image was deleted), the image is skipped and logged, as for any image that cannot be pulled. An `image_id` with no repository (a bare `sha256:…`) leaves the tag as the pull | the tag can have moved since the pod started (issue 833, B5) | ✅ |
+| Pod started by digest (`repo@sha256:…`) | Scanned by the `repo@sha256:…` reference in `image_id`: containerd reports `status.image` as the bare config id there, which names nothing. If another pod runs the same digest by tag, that tag is the name shown | a pull needs a repository name (issue 817) | ✅ |
+| Init and ephemeral containers | **Not scanned**: discovery reads only `container_statuses` of `Running` pods | out of scope (operator ruling on issue 833) | ✅ |
 | N replicas of one image | Scanned **once**, attributed to all locations | digest-dedup (D30) | ✅ |
 | Same digest across namespaces | One scan target spanning both | dedup keyed on digest | ✅ |
 | kube API unreachable at start | Discovery raises → run fails fast → next CronJob retry | injected client; fail-fast | ✅ / 🏗 retry |

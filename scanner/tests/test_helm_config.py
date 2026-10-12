@@ -17,6 +17,7 @@ import pytest
 import yaml
 
 from scanner.config import GrypeConfig, TrivyConfig
+from scanner.push import RetryBudget
 
 ROOT = Path(__file__).resolve().parents[2]
 VALUES = ROOT / "deploy" / "helm" / "javv-scanner" / "values.yaml"
@@ -32,7 +33,8 @@ ELSEWHERE = {
     "JAVV_KUBE_CONTEXT": "out of a cluster only; in one the scanner uses its ServiceAccount",
 }
 OWN_PREFIX = {"trivy": "JAVV_TRIVY_", "grype": "JAVV_GRYPE_"}
-SHARED = {"JAVV_LOG_LEVEL"}  # read by javv_common's logging, one per scanner block
+# one per scanner block: javv_common's logging, and the cycle's retry budget
+SHARED = {"JAVV_LOG_LEVEL", "JAVV_PUSH_RETRY_BUDGET_SECONDS"}
 
 
 def _config(scanner: str) -> dict[str, str]:
@@ -52,6 +54,7 @@ def test_each_block_is_the_code_default() -> None:
     assert GrypeConfig.from_env(_config("grype")) == GrypeConfig()
     for scanner in OWN_PREFIX:
         assert _config(scanner)["JAVV_LOG_LEVEL"] == "info"  # javv_common's default
+        assert RetryBudget.from_env(_config(scanner)) == RetryBudget.from_env({})
 
 
 @pytest.mark.parametrize("scanner", list(OWN_PREFIX))

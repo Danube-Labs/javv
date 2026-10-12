@@ -4,12 +4,16 @@ counts what actually landed and writes the manifest — `committed` only when co
 
 Best-effort, unlike the fail-CLOSED cycle-start calls (scope/scan_order): by commit time every
 envelope is already pushed, so a failed commit loses nothing — the run just stays uncertified and
-inventory reads fall back to the prior committed run (+ the staleness banner). Log and move on."""
+inventory reads fall back to the prior committed run (+ the staleness banner). Log and move on. A
+transient failure is retried while the cycle's retry budget lasts (issue 832: a store restart
+that the pushes outlasted would otherwise still leave the run uncertified)."""
 
 from datetime import datetime
 
 import httpx
 import structlog
+
+from scanner.push import RetryBudget, send_with_retries
 
 log = structlog.get_logger()
 
@@ -21,19 +25,21 @@ def commit_inventory(
     scan_run_id: str,
     expected_count: int,
     started_at: datetime,
+    budget: RetryBudget,
 ) -> bool:
     """Certify the cycle's inventory. True when the backend answered `status=committed`."""
     headers = {"Authorization": f"Bearer {token}"} if token else {}
+    body = {
+        "scan_run_id": scan_run_id,
+        "expected_count": expected_count,
+        "started_at": started_at.isoformat(),
+    }
     try:
-        resp = http.post(
-            "/api/v1/inventory-runs",
-            headers=headers,
-            json={
-                "scan_run_id": scan_run_id,
-                "expected_count": expected_count,
-                "started_at": started_at.isoformat(),
-            },
+        resp, _ = send_with_retries(
+            lambda: http.post("/api/v1/inventory-runs", headers=headers, json=body), budget=budget
         )
+        if resp is None:
+            raise httpx.TransportError("no answer from the backend")
         resp.raise_for_status()
         manifest = resp.json()
     except Exception:
