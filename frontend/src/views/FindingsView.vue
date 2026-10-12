@@ -109,31 +109,29 @@ const rowsQuery = computed(() =>
     : null,
 )
 
+let rowsSeq = 0
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
+  const mine = ++rowsSeq
   grid.loading = true
-    const response = await searchFindingsApiV1FindingsGet({
-      query: q as SearchFindingsApiV1FindingsGetData['query'],
-    })
-    grid.loading = false
-    if (response.response?.ok && response.data) {
-      const body = response.data as {
-        data: FindingRow[]
-        total: { value: number }
-        next_cursor: string | null
-      }
-      grid.setResult(body.data, body.total.value, body.next_cursor)
-      grid.failed = false
-      grid.failedStatus = null
-    } else if (grid.page > 0) {
-      // stale PIT cursor is the usual culprit — rebuild from page 0
-      logger.warn('findings_page_failed_reset', { status: response.response?.status })
-      grid.resetPaging()
+  const response = await searchFindingsApiV1FindingsGet({
+    query: q as SearchFindingsApiV1FindingsGetData['query'],
+  })
+  if (mine !== rowsSeq) return // a newer read owns the grid now
+  grid.loading = false
+  if (response.response?.ok && response.data) {
+    const body = response.data as {
+      data: FindingRow[]
+      total: { value: number }
+      next_cursor: string | null
+    }
+    grid.setResult(body.data, body.total.value, body.next_cursor)
+    grid.failed = false
+    grid.failedStatus = null
   } else {
-    grid.failed = true
-    grid.failedStatus = response.response?.status ?? null
-    grid.markSettled()
-    logger.warn('findings_search_failed', { status: response.response?.status })
+    // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
+    grid.setFailed(response.response?.status ?? null)
+    logger.warn('findings_search_failed', { status: response.response?.status, page: grid.page })
   }
 }
 const failureMessage = computed(
@@ -322,7 +320,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :fields="FINDINGS_FIELDS"
             :selections="filters.selections"
             :modes="filters.modes"
-            :total="grid.total"
+            :total="grid.settled && !grid.failed ? grid.total : null"
             :can-triage="auth.hasCapability('can_triage')"
             :can-accept-final="auth.hasCapability('can_accept_audit_final')"
             :historical="timeTravel.t !== null"
@@ -367,6 +365,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           :page="grid.page"
           :size="grid.size"
           :shown="grid.rows.length"
+          :failed="grid.failed"
           :has-prev="grid.hasPrev"
           :has-next="grid.hasNext"
           @prev="grid.goPrev()"

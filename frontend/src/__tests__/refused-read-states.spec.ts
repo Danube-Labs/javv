@@ -6,6 +6,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import PrimeVue from 'primevue/config'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Component } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -22,9 +23,13 @@ vi.mock('@/api/generated', async (importOriginal) => {
 })
 vi.mock('@/api/client', () => ({ client: {} }))
 
+import { searchFindingsApiV1FindingsGet } from '@/api/generated'
 import AuditTable from '@/components/audit/AuditTable.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
+import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { useClusterStore } from '@/stores/cluster'
+import { makeFiltersStore } from '@/stores/filters'
+import { useFindingsStore } from '@/stores/findings'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
 import ContributorsView from '@/views/ContributorsView.vue'
@@ -36,10 +41,13 @@ const CLUSTER = 'c-k3d-0001'
 async function mountRouted(component: Component, props: Record<string, unknown> = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }],
+    routes: [
+      { path: '/findings/:cveId', name: 'finding', component: { template: '<div />' } },
+      { path: '/:any(.*)*', component: { template: '<div />' } },
+    ],
   })
   await router.push('/')
-  return mount(component, { props, global: { plugins: [router], stubs: { EChart: true } } })
+  return mount(component, { props, global: { plugins: [router, [PrimeVue, { unstyled: true }]], stubs: { EChart: true } } })
 }
 
 beforeEach(() => {
@@ -71,6 +79,98 @@ describe('a grid whose read is refused says so, and claims no empty answer', () 
     expect(text).toContain(failure)
     expect(text).not.toMatch(zeroCount)
     expect(emptyClaims.filter((claim) => text.includes(claim))).toEqual([])
+  })
+})
+
+const refusedWith = (status: number) => ({
+  error: { title: 'refused' },
+  request: {},
+  response: { ok: false, status },
+})
+const findingsPage = (cve: string, total: number, next: string | null) => ({
+  data: {
+    data: [
+      {
+        finding_key: `k-${cve}`,
+        cve_id: cve,
+        scanner: 'trivy',
+        severity: 'low',
+        severity_canonical: 'low',
+        image_repo: 'repo',
+        tag: '1',
+        package_name: 'pkg',
+        installed_version: '1.0',
+        fixed_version: null,
+        fixable: false,
+        epss: null,
+        kev: false,
+        ptype: null,
+        state: 'open',
+        overdue: false,
+        due_at: null,
+      },
+    ],
+    total: { value: total, relation: 'eq' },
+    next_cursor: next,
+  },
+  request: {},
+  response: { ok: true, status: 200 },
+})
+
+describe('Findings: a refused read never leaves the last answer on screen (issue 833)', () => {
+  const search = () => vi.mocked(searchFindingsApiV1FindingsGet)
+  const filters = () => makeFiltersStore('findings-filters', FINDINGS_FIELDS)()
+
+  async function mountWithFirstPage(next: string | null = 'cur-2') {
+    search().mockResolvedValueOnce(findingsPage('CVE-2026-0001', 435, next) as never)
+    const w = await mountRouted(FindingsView as Component)
+    await flushPromises()
+    expect(w.text()).toContain('CVE-2026-0001')
+    return w
+  }
+
+  it('a refused read after a good one clears the rows and the count', async () => {
+    const w = await mountWithFirstPage()
+    search().mockResolvedValueOnce(refusedWith(429) as never)
+    filters().toggle('severity', 'critical')
+    await flushPromises()
+    const text = w.text()
+    expect(text).toContain('The search backend is busy.')
+    expect(text).toContain('Findings could not be loaded.')
+    expect(text).not.toContain('CVE-2026-0001')
+    expect(text).not.toMatch(/435/)
+  })
+
+  it.each([
+    [503, 'Findings unavailable. Check the backend connection.'],
+    [410, 'These results expired. Reload the page to start again.'],
+  ])('a %s on page 2 stays on page 2, says so, and keeps Prev', async (status, copy) => {
+    const w = await mountWithFirstPage()
+    search().mockResolvedValueOnce(refusedWith(status) as never)
+    useFindingsStore().goNext()
+    await flushPromises()
+    const text = w.text()
+    expect(text).toContain(copy)
+    expect(text).toContain('Findings could not be loaded.')
+    expect(text).toContain('Showing 26–50 of 435')
+    const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Prev')!
+    expect(prev.attributes('disabled')).toBeUndefined()
+  })
+
+  it('a slow answer for an older filter does not replace a newer refusal', async () => {
+    const w = await mountWithFirstPage()
+    let answerOld: (v: unknown) => void = () => {}
+    search().mockImplementationOnce(() => new Promise((resolve) => (answerOld = resolve)) as never)
+    filters().toggle('severity', 'high')
+    await flushPromises()
+    search().mockResolvedValueOnce(refusedWith(429) as never)
+    filters().toggle('severity', 'critical')
+    await flushPromises()
+    answerOld(findingsPage('CVE-2026-0002', 12, null))
+    await flushPromises()
+    const text = w.text()
+    expect(text).toContain('The search backend is busy.')
+    expect(text).not.toContain('CVE-2026-0002')
   })
 })
 

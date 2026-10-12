@@ -220,15 +220,20 @@ dropped (contract is cursor paging).
 **States**
 - loading — skeleton rows; empty/first-run — "no sweep yet" friendly state; filtered-empty —
   "no findings match" + clear-filters.
-- **410 cursor expired** (A-m1) — silently re-run the search from the current filters; toast if
-  the position was lost. **422 tampered cursor** — reset to first page. **503** — degraded state
-  in the grid area + global banner.
+- **A refused later page stays where it is** (operator ruling 2026-10-12, issue 833 G1): the
+  alert, the grid's "could not be loaded" row, and the pager still on that page's range with Prev
+  usable. A **410** (the page's search expired after the keep-alive) says "These results expired.
+  Reload the page to start again.", since its cursor cannot be asked for again. **503**: the same,
+  plus the global banner.
 - **429 PIT cap** (`JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL`) — "too many open searches/exports,
   retry in Ns" honoring `Retry-After`.
 - **Any refused read**: the alert names the reason; the head count shows "-" and the grid row
   reads "Findings could not be loaded.", never "0 findings" or "No findings yet" (issue 817). Audit
   log, Contributors and Approvals follow the same rule for their counts (Audit's row: "Events could
-  not be loaded.").
+  not be loaded."). A refused read after a good one clears the rows: they answered another
+  query (issue 833 F1). An answer to an older request is dropped, so it never replaces a newer
+  one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
+  current filters answers.
 - 403-capability-hidden — bulk-triage bar and row checkboxes absent without `can_triage`.
 - Bulk 413 — inline error offering to narrow the selection.
 - Zero-vs-nonzero scanner pair (M9b update, #156-4): one scanner's 0 is **never** a green "clean"

@@ -11,6 +11,7 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(failureKind(422, true)).toBe('past_t') // the reader's unrecorded-filter 422
     expect(failureKind(501, false)).toBe('past_t')
     expect(failureKind(429, false)).toBe('busy')
+    expect(failureKind(410, false)).toBe('expired') // a later page whose search context ended
     expect(failureKind(503, false)).toBe('backend')
     expect(failureKind(null, false)).toBe('backend')
   })

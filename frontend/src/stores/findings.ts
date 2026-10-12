@@ -60,8 +60,14 @@ export const useFindingsStore = defineStore('findings', () => {
     settled.value = true
     pager.landed(nextCursor)
   }
-  /** A read finished without rows to show (a failure) — the grid is answered, not pending. */
-  function markSettled() {
+  /** A read was refused: no rows are shown, since they answered another query or page. A refused
+   * first page drops the total too; a refused later page keeps it, because page 1 of the same
+   * query answered it, so the pager can stay on that page. */
+  function setFailed(status: number | null) {
+    rows.value = []
+    if (pager.page.value === 0) total.value = 0
+    failed.value = true
+    failedStatus.value = status
     settled.value = true
   }
   function setSort(field: SortField) {
@@ -97,7 +103,7 @@ export const useFindingsStore = defineStore('findings', () => {
     /** Cursor to fetch the CURRENT page with. */
     activeCursor: pager.cursor,
     setResult,
-    markSettled,
+    setFailed,
     goNext: pager.next,
     goPrev: pager.prev,
     setSort,
