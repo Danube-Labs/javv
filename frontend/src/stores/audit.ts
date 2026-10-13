@@ -48,7 +48,11 @@ export const useAuditStore = defineStore('audit', () => {
   const total = ref(0)
   const totalIsLowerBound = ref(false)
   const loading = ref(false)
+  /** A read for the current query has come back at least once: before that the count is
+   * unknown, not zero (issue 833, G3). */
+  const settled = ref(false)
   const failed = ref(false)
+  const failedStatus = ref<number | null>(null)
 
   function setResult(
     newRows: AuditEvent[],
@@ -58,7 +62,22 @@ export const useAuditStore = defineStore('audit', () => {
     rows.value = newRows
     total.value = newTotal.value
     totalIsLowerBound.value = newTotal.relation !== 'eq'
+    settled.value = true
+    failed.value = false
+    failedStatus.value = null
     pager.landed(nextCursor)
+  }
+  /** A read was refused: no rows are shown, since they answered another query or page. A refused
+   * first page drops the total too; a refused later page keeps it, so the pager stays there. */
+  function setFailed(status: number | null) {
+    rows.value = []
+    if (pager.page.value === 0) {
+      total.value = 0
+      totalIsLowerBound.value = false
+    }
+    failed.value = true
+    failedStatus.value = status
+    settled.value = true
   }
   /** Cluster or T switched — the held rows belong to another tenant/world; drop them so the
    * loading state shows instead of readable stale data while the new read is in flight. */
@@ -66,6 +85,7 @@ export const useAuditStore = defineStore('audit', () => {
     rows.value = []
     total.value = 0
     totalIsLowerBound.value = false
+    settled.value = false
     pager.reset()
   }
 
@@ -76,12 +96,15 @@ export const useAuditStore = defineStore('audit', () => {
     size: pager.size,
     page: pager.page,
     loading,
+    settled,
     failed,
+    failedStatus,
     hasPrev: pager.hasPrev,
     hasNext: pager.hasNext,
     /** Cursor to fetch the CURRENT page with. */
     activeCursor: pager.cursor,
     setResult,
+    setFailed,
     goNext: pager.next,
     goPrev: pager.prev,
     setSize: pager.setSize,

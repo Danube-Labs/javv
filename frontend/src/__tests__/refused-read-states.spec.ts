@@ -23,10 +23,17 @@ vi.mock('@/api/generated', async (importOriginal) => {
 })
 vi.mock('@/api/client', () => ({ client: {} }))
 
-import { facetFindingsApiV1FindingsFacetsGet, searchFindingsApiV1FindingsGet } from '@/api/generated'
+import {
+  auditFacetsApiV1AuditFacetsGet,
+  facetFindingsApiV1FindingsFacetsGet,
+  readAuditLogApiV1AuditGet,
+  searchFindingsApiV1FindingsGet,
+} from '@/api/generated'
 import AuditTable from '@/components/audit/AuditTable.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { AUDIT_FIELDS } from '@/audit/fields.config'
+import { useAuditStore } from '@/stores/audit'
 import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useFindingsStore } from '@/stores/findings'
@@ -64,7 +71,7 @@ describe('a grid whose read is refused says so, and claims no empty answer', () 
     // alert right, but "0 findings" and "No findings yet. The first committed scan…" under it
     ['Findings', FindingsView, 'The search backend is busy.', /(?<!\d)0 findings/, ['No findings yet']],
     // "0 events" and "No journaled activity for this cluster yet."
-    ['Audit log', AuditTrailView, 'Audit log unavailable.', /(?<!\d)0 events/, ['No journaled activity']],
+    ['Audit log', AuditTrailView, 'The search backend is busy.', /(?<!\d)0 events/, ['No journaled activity']],
     // "0 contributors"
     ['Contributors', ContributorsView, 'Contributors unavailable.', /(?<!\d)0 contributors/, []],
     // "0 standing acceptances"
@@ -222,6 +229,104 @@ describe('Findings: only the filter counts refused (issue 833, F9 under G2)', ()
     await flushPromises()
     expect(w.find('.load-error').text()).toContain('Filter counts could not be loaded.')
     expect(w.findAll('.facet-count').map((c) => c.text())).toEqual(['-'])
+  })
+})
+
+const auditPage = (actor: string, total: number, next: string | null) => ({
+  data: {
+    data: [
+      {
+        event_id: `e-${actor}`,
+        '@timestamp': '2026-10-12T10:00:00Z',
+        actor,
+        action: 'triage',
+        entity_type: 'finding',
+        entity_id: 'f-1',
+      },
+    ],
+    total: { value: total, relation: 'eq' },
+    next_cursor: next,
+  },
+  request: {},
+  response: { ok: true, status: 200 },
+})
+
+describe('Audit log: the same rules as Findings (issue 833)', () => {
+  const read = () => vi.mocked(readAuditLogApiV1AuditGet)
+  const filters = () => makeFiltersStore('audit-filters', AUDIT_FIELDS)()
+  const ROWS_DOWN = 'Audit log unavailable. Check the backend connection, then retry.'
+
+  async function mountWithFirstPage() {
+    read().mockResolvedValueOnce(auditPage('alice-old', 60, 'cur-2') as never)
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValueOnce({
+      data: { facets: { entity_type: [{ key: 'finding', count: 60 }] } },
+      request: {},
+      response: { ok: true, status: 200 },
+    } as never)
+    const w = await mountRouted(AuditTrailView as Component)
+    await flushPromises()
+    expect(w.text()).toContain('alice-old')
+    return w
+  }
+
+  it('G3: the count is "-" until the first read answers', async () => {
+    read().mockImplementationOnce(() => new Promise(() => {}) as never)
+    const w = await mountRouted(AuditTrailView as Component)
+    await flushPromises()
+    expect(w.find('.head-stat').text()).toBe('- events')
+  })
+
+  it('F1 and G2: a refused read after a good one clears the rows and says busy', async () => {
+    const w = await mountWithFirstPage()
+    read().mockResolvedValueOnce(refusedWith(429) as never)
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValueOnce(refusedWith(429) as never)
+    filters().toggle('action', 'triage')
+    await flushPromises()
+    const text = w.text()
+    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(text).toContain('Events could not be loaded.')
+    expect(text).not.toContain('alice-old')
+    expect(w.find('.head-stat').text()).toBe('- events')
+  })
+
+  it.each([
+    [503, ROWS_DOWN],
+    [410, 'These results expired. Reload the page to start again.'],
+  ])('G1: a %s on page 2 stays on page 2 and keeps Prev', async (status, copy) => {
+    const w = await mountWithFirstPage()
+    read().mockResolvedValueOnce(refusedWith(status) as never)
+    useAuditStore().goNext()
+    await flushPromises()
+    expect(w.find('.load-error').text()).toBe(copy)
+    expect(w.text()).toContain('Showing 26–50 of 60')
+    const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Prev')!
+    expect(prev.attributes('disabled')).toBeUndefined()
+  })
+
+  it('F9 ruled for this rail too: only the counts refused leaves the rows', async () => {
+    const w = await mountWithFirstPage()
+    read().mockResolvedValueOnce(auditPage('bob-new', 3, null) as never)
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValueOnce(refusedWith(503) as never)
+    filters().toggle('action', 'triage')
+    await flushPromises()
+    expect(w.find('.load-error').text()).toBe('Filter counts could not be loaded. Check the backend connection.')
+    expect(w.text()).toContain('bob-new')
+    expect(w.findAll('.facet-count').map((c) => c.text())).toContain('-')
+  })
+
+  it('F3: a slow answer for an older filter does not replace a newer refusal', async () => {
+    const w = await mountWithFirstPage()
+    let answerOld: (v: unknown) => void = () => {}
+    read().mockImplementationOnce(() => new Promise((resolve) => (answerOld = resolve)) as never)
+    filters().toggle('action', 'triage')
+    await flushPromises()
+    read().mockResolvedValueOnce(refusedWith(503) as never)
+    filters().toggle('actor', 'carol')
+    await flushPromises()
+    answerOld(auditPage('dave-stale', 2, null))
+    await flushPromises()
+    expect(w.text()).not.toContain('dave-stale')
+    expect(w.text()).toContain('Events could not be loaded.')
   })
 })
 

@@ -22,7 +22,10 @@ export const FAILURE_COPY: Record<FailureKind, string> = {
 }
 
 /** Every read's alert (issue 833, G2): a 429 is the per-user search budget, never a broken
- * connection, so it gets the busy copy; any other failure keeps the screen's own copy. */
+ * connection, so it gets the busy copy; a 410 is a later page whose search expired; any other
+ * failure keeps the screen's own copy. */
 export function readFailureCopy(status: number | null, fallback: string): string {
-  return status === 429 ? FAILURE_COPY.busy : fallback
+  if (status === 429) return FAILURE_COPY.busy
+  if (status === 410) return FAILURE_COPY.expired
+  return fallback
 }

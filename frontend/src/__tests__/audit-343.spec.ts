@@ -16,8 +16,9 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(failureKind(null, false)).toBe('backend')
   })
 
-  it('any read: a 429 is the busy backend, anything else keeps the screen copy (issue 833, G2)', () => {
+  it('any read: a 429 is busy, a 410 expired, anything else keeps the screen copy (issue 833, G2)', () => {
     expect(readFailureCopy(429, 'Contributors unavailable.')).toBe(FAILURE_COPY.busy)
+    expect(readFailureCopy(410, 'Audit log unavailable.')).toBe(FAILURE_COPY.expired)
     for (const status of [500, 503, null]) {
       expect(readFailureCopy(status, 'Contributors unavailable.')).toBe('Contributors unavailable.')
     }

@@ -443,7 +443,11 @@ re-evaluated selector) · Detail. **Click-through only where `entity_type=="find
 Task column dropped (no field; Jira linkage is v1.1 — V4-DELTA-1).
 
 **States:** loading; empty; degraded; retention note ("audit window bounded by
-`system-audit-log` retention").
+`system-audit-log` retention"). The count shows "-" until the first read answers (issue 833 G3).
+A refused read follows the Findings rules in §3 (issue 833): the rows clear, a refused later
+page stays put with Prev, a 429 says busy and a 410 says the results expired, an older answer
+never replaces a newer one, and refused filter counts alone leave the rows and show "-" in the
+rail (operator ruling 2026-10-12: F9's rule applies here too).
 
 **Default view (issue 681):** the sidebar and command palette open the log at
 `/audit?action=!login`, so it starts with a removable "Action is not Login" pill and the first

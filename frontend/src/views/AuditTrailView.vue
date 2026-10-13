@@ -27,6 +27,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
+import { readFailureCopy } from '@/findings/failureCopy'
 import type { FacetsResponse } from '@/filters/facets'
 import { logger } from '@/lib/logger'
 import { useAuditStore, type AuditEvent } from '@/stores/audit'
@@ -50,6 +51,7 @@ filters.fromQuery(route.query)
 /* ---- facets (M9a module; audit rework — live rail counts) ---- */
 const facets = ref<FacetsResponse>({})
 const facetsFailed = ref(false)
+const facetsFailedStatus = ref<number | null>(null)
 
 const facetsQuery = computed(() =>
   clusterStore.selectedId
@@ -57,16 +59,20 @@ const facetsQuery = computed(() =>
     : null,
 )
 
+let facetsSeq = 0
 async function loadFacets(q: typeof facetsQuery.value) {
   if (!q) return
+  const mine = ++facetsSeq
   const response = await auditFacetsApiV1AuditFacetsGet({
     query: q as AuditFacetsApiV1AuditFacetsGetData['query'],
   })
+  if (mine !== facetsSeq) return // a newer read owns the rail now
   if (response.response?.ok && response.data) {
     facets.value = (response.data as { facets: FacetsResponse }).facets
     facetsFailed.value = false
   } else {
     facetsFailed.value = true
+    facetsFailedStatus.value = response.response?.status ?? null
     logger.warn('audit_facets_failed', { status: response.response?.status })
   }
 }
@@ -90,12 +96,15 @@ const rowsQuery = computed(() => {
   return { ...q, size: grid.size, ...(grid.activeCursor ? { cursor: grid.activeCursor } : {}) }
 })
 
+let rowsSeq = 0
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
+  const mine = ++rowsSeq
   grid.loading = true
   const response = await readAuditLogApiV1AuditGet({
     query: q as ReadAuditLogApiV1AuditGetData['query'],
   })
+  if (mine !== rowsSeq) return // a newer read owns the grid now
   grid.loading = false
   if (response.response?.ok && response.data) {
     const body = response.data as unknown as {
@@ -104,16 +113,19 @@ async function loadRows(q: typeof rowsQuery.value) {
       next_cursor: string | null
     }
     grid.setResult(body.data, body.total, body.next_cursor)
-    grid.failed = false
-  } else if (grid.page > 0) {
-    // stale PIT cursor (410) is the usual culprit — rebuild the walk from page 0
-    logger.warn('audit_page_failed_reset', { status: response.response?.status })
-    grid.resetPaging()
   } else {
-    grid.failed = true
-    logger.warn('audit_load_failed', { status: response.response?.status })
+    // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
+    grid.setFailed(response.response?.status ?? null)
+    logger.warn('audit_load_failed', { status: response.response?.status, page: grid.page })
   }
 }
+
+// the rows' failure names the whole log; the counts alone failing leaves the rows standing
+const failureMessage = computed(() =>
+  grid.failed
+    ? readFailureCopy(grid.failedStatus, 'Audit log unavailable. Check the backend connection, then retry.')
+    : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
+)
 watch(
   rowsQuery,
   (q, old) => {
@@ -194,7 +206,7 @@ async function exportCsv() {
       <div class="head-card">
         <h1>Audit log</h1>
         <p class="head-stat">
-          <template v-if="!grid.failed">{{ totalLabel }}</template
+          <template v-if="grid.settled && !grid.failed">{{ totalLabel }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> events</span>
         </p>
         <p class="head-note">immutable, per user · window bounded by audit-log retention</p>
@@ -208,6 +220,7 @@ async function exportCsv() {
           :fields="AUDIT_FIELDS"
           :selections="filters.selections"
           :facets="facets"
+          :counts-unknown="facetsFailed"
           :modes="filters.modes"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
@@ -221,6 +234,7 @@ async function exportCsv() {
             :selections="filters.selections"
             :modes="filters.modes"
             :facets="facets"
+            :counts-unknown="facetsFailed"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"
@@ -234,7 +248,7 @@ async function exportCsv() {
         </div>
 
         <p v-if="grid.failed || facetsFailed" class="load-error" role="alert">
-          Audit log unavailable. Check the backend connection, then retry.
+          {{ failureMessage }}
         </p>
 
         <div class="tbl-card">
@@ -254,6 +268,7 @@ async function exportCsv() {
           :page="grid.page"
           :size="grid.size"
           :shown="grid.rows.length"
+          :failed="grid.failed"
           :has-prev="grid.hasPrev"
           :has-next="grid.hasNext"
           @prev="grid.goPrev()"
