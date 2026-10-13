@@ -138,6 +138,9 @@ Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 **T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1
 metrics rollup" (C-5/D39) — the current-state table is replaced by the notice, never a wrong or
 expensive query.
+The cold-start state ("No clusters registered yet") is the whole page on the nine data routes,
+so its title is the page's one h1 in the page-title style (issue 829; operator ruling
+2026-10-12).
 
 **Changed vs SCREENS.md**
 - Fleet KPI strip severity buckets: lowercase + `negligible` (A-1); per-scanner, never summed.

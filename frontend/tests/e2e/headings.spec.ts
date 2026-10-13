@@ -43,3 +43,22 @@ test('no screen skips a heading level', async ({ page }) => {
   }
   expect(found).toEqual([])
 })
+
+// issue 829: before the first cluster, nine routes show only the cold-start state, whose title
+// was an h2 with no h1 above it
+test('the cold-start screen has its one h1 on every route that shows it', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.route(
+    (url) => url.pathname === '/api/v1/clusters',
+    (route) => route.fulfill({ json: { clusters: [] } }),
+  )
+  await login(page)
+  const wrong: string[] = []
+  for (const path of ['/overview', '/findings', '/images', '/scanner-status', '/clusters', '/audit', '/contributors', '/approvals', '/views']) {
+    await page.goto(`${BASE}${path}`)
+    await page.getByText('No clusters registered yet').waitFor({ timeout: 20_000 })
+    const h1s = await page.locator('main h1').allTextContents()
+    if (h1s.length !== 1 || h1s[0]!.trim() !== 'No clusters registered yet') wrong.push(`${path}: ${JSON.stringify(h1s)}`)
+  }
+  expect(wrong).toEqual([])
+})
