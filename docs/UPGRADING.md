@@ -147,15 +147,29 @@ these steps on the real compose files, from an OpenSearch that a `main` checkout
 
 Each release publishes the JAVV chart and the OpenSearch chart
 ([`DEPLOYING.md`](DEPLOYING.md#install-on-kubernetes-with-helm)) at `oci://ghcr.io/danube-labs/charts`,
-with the version of the release. Keep your settings in your own values file. Then each upgrade uses
-the chart of the new release with the same file:
+with the version of the release. Keep your settings in your own values files. An install with
+`--set`, as in `DEPLOYING.md`, writes no values file. Thus, before the first upgrade, write the
+values of each release to a file:
+
+```bash
+helm get values store -o yaml > my-store-values.yaml
+helm get values javv -o yaml > my-javv-values.yaml
+helm get values scanner -n javv-scanner -o yaml > my-scanner-values.yaml   # in each scanned cluster
+```
+
+These files hold each value that you set, the passwords included. Keep them as safe as your
+Secrets. Then each upgrade uses the chart of the new release with the same files:
 
 ```bash
 helm upgrade store oci://ghcr.io/danube-labs/charts/javv-opensearch --version <new version> \
-  -f my-store-values.yaml   # only when the OpenSearch chart changed
+  -f my-store-values.yaml
 helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version <new version> -f my-javv-values.yaml
 helm test javv
 ```
+
+Do the `store` upgrade when the release changed the OpenSearch chart.
+[Version notes](#version-notes) tells you which releases did. It is safe to do it when the chart did
+not change: then the upgrade changes only labels, and OpenSearch does not restart.
 
 The backend runs as one pod with `strategy: Recreate`. The backend runs the background jobs, so
 two backends must never run at the same time. Kubernetes stops the old pod before it starts the new
@@ -273,6 +287,7 @@ A release gets an entry here when it needs something from you. These are the con
 - The store schema changed (`mapping_version`).
 - The report formats that the backend accepts changed (`envelope_versions`).
 - The scanner images must be published again, or changed together with the release.
+- The OpenSearch chart (`javv-opensearch`) changed. Then do the `store` upgrade.
 
 The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.
@@ -280,6 +295,9 @@ applied it automatically on the first start.
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
 | *(no entries yet)* | | | |
+
+No release up to and including 0.7.2 changed the OpenSearch chart. Only its version number
+changed.
 
 ### 0.7.3: a bootstrap admin password longer than 256 characters stops the backend
 
@@ -309,9 +327,9 @@ start, and it shows the new name.
   in `.env` has no effect on it.
 - **Helm, with the value in your values file:** change the name `secrets.tokenPepper` to
   `secrets.secretKey`, and keep its value. Until you do this, the upgrade stops with
-  `additional properties 'tokenPepper' not allowed`. If you set the value with `--set`, get your
-  values first (`helm get values javv -o yaml > values.yaml`). Change the name in that file. Then
-  upgrade with `-f values.yaml`.
+  `additional properties 'tokenPepper' not allowed`. If you set the value with `--set`, write your
+  values to a file first (see [On Kubernetes (Helm)](#on-kubernetes-helm)). Change the name in
+  `my-javv-values.yaml`. Then upgrade with `-f my-javv-values.yaml`.
 - **Helm, with `secrets.existingSecret`:** the chart now reads the key `secret-key` from that
   Secret. Before the upgrade, copy the value of `token-pepper` into it:
   ```bash
