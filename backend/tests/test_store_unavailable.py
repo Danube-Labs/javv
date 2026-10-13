@@ -10,6 +10,7 @@ A write the store's full disk blocks (its flood-stage watermark) answers 503 "Th
 read-only: its disk is full" with the problem type `store-read-only`, by the same window rule
 (issue 832). The bodies below are what OpenSearch answered in an experiment on a real store."""
 
+import uuid
 from typing import Any
 
 import httpx
@@ -21,6 +22,7 @@ from prometheus_client import REGISTRY
 
 from backend.core import errors as core_errors
 from backend.main import create_app
+from os_env import OS_URL, requires_opensearch
 
 
 def _unavailable() -> float:
@@ -223,3 +225,32 @@ async def test_the_busy_warning_is_written_once_per_window(monkeypatch) -> None:
             clock[0] += core_errors.STORE_WARN_WINDOW_S
             assert (await client.get("/reads")).status_code == 429
     assert [e["held_back"] for e in logs if e["event"] == "store busy"] == [0, 2]
+
+
+# --- the client's expected answers log no warning (issue 831) ------------------------------
+
+
+@requires_opensearch
+async def test_the_real_clients_404_and_409_log_no_warning_and_a_bad_query_does(capsys) -> None:
+    """Through opensearch-py itself, so a change in how it logs a failed request breaks this."""
+    from javv_common.logging import configure_logging
+    from opensearchpy import AsyncOpenSearch, ConflictError, NotFoundError
+
+    configure_logging(level="info")  # the stderr handler is made here, inside capsys
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    index = f"t-logs-{uuid.uuid4().hex[:8]}"
+    try:
+        await client.index(index=index, id="a", body={"x": 1}, params={"refresh": "true"})
+        with pytest.raises(NotFoundError):
+            await client.get(index=index, id="missing")
+        with pytest.raises(ConflictError):
+            await client.index(index=index, id="a", body={"x": 1}, params={"op_type": "create"})
+        quiet = capsys.readouterr().err
+        with pytest.raises(RequestError):
+            await client.search(index=index, body={"query": {"no_such_query": {}}})
+        loud = capsys.readouterr().err
+    finally:
+        await client.indices.delete(index=index, params={"ignore_unavailable": "true"})
+        await client.close()
+    assert "status:404" not in quiet and "status:409" not in quiet
+    assert "status:400" in loud and '"level": "warning"' in loud

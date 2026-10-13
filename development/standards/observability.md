@@ -23,6 +23,9 @@ and the app **degrades loudly, not blindly** when its datastore is unavailable.
 - **Levels:** `debug` (dev detail) · `info` (lifecycle + each request) · `warning` (handled-but-notable:
   429/503 backpressure, `_bulk` partial failures, retries) · `error` (unhandled / dropped work — always with
   `request_id` + stack). Reserve `error` for things a human should see; don't cry-wolf.
+  The OpenSearch client logs every failed request at `warning`; the shared library drops its 404
+  and 409 lines, which the callers expect and handle (a first watermark read, the roles seeded with
+  `op_type=create` at each start), so a client warning still means degraded service (issue 831).
 - **Never log** (NFR-5): passwords, ingest tokens, session cookies, raw `Authorization` headers, full scanner
   payloads. Log *shapes/sizes/ids*, not secrets. A redaction processor enforces this — tested.
 

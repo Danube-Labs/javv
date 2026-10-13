@@ -30,6 +30,7 @@ def _reset_logging():
     for name in ("opensearch", "opensearchpy.trace", "uvicorn", "uvicorn.access", "test.bridge"):
         lg = logging.getLogger(name)
         lg.handlers.clear()
+        lg.filters.clear()
         lg.setLevel(logging.NOTSET)
         lg.propagate = True
 
@@ -183,6 +184,40 @@ def test_opensearch_bodies_never_emit_even_at_debug(capsys) -> None:
     configure_logging(level="debug")
     logging.getLogger("opensearch").debug('> {"huge": "request body"}')
     assert _lines(capsys.readouterr().err) == []
+
+
+def _client_failure(status: object) -> None:
+    """A failed request exactly as opensearch-py logs it (`Connection.log_request_fail`)."""
+    logging.getLogger("opensearch").warning(
+        "%s %s [status:%s request:%.3fs]",
+        "GET",
+        "http://os:9200/system-users/_doc/x",
+        status,
+        0.004,
+    )
+
+
+@pytest.mark.parametrize("status", [404, 409])
+def test_the_clients_expected_404_and_409_lines_are_dropped(capsys, status: int) -> None:
+    # a first push reads a watermark that does not exist yet (404), and every start re-seeds the
+    # roles with op_type=create (409): answers the code expects, not degraded service (issue 831)
+    configure_logging(level="info")
+    _client_failure(status)
+    assert _lines(capsys.readouterr().err) == []
+
+
+@pytest.mark.parametrize("status", [400, 429, 503, "N/A"])
+def test_every_other_failed_request_keeps_its_warning(capsys, status: object) -> None:
+    configure_logging(level="info")
+    _client_failure(status)
+    (line,) = _lines(capsys.readouterr().err)
+    assert line["level"] == "warning" and f"[status:{status} " in line["event"]
+
+
+def test_configuring_twice_adds_the_filter_once() -> None:
+    configure_logging(level="info")
+    configure_logging(level="info")
+    assert len(logging.getLogger("opensearch").filters) == 1
 
 
 # --- exceptions: the traceback is rendered text, and redacted ---------------------
