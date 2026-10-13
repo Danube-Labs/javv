@@ -7,7 +7,9 @@ Sign in as {{ .Values.backend.config.JAVV_BOOTSTRAP_ADMIN_USERNAME }} with the p
 
 To look before anything is in front of it:
   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "javv.fullname" . }} 8080:{{ .Values.frontend.service.port }}
-  (plain http to localhost: set backend.config.JAVV_SESSION_COOKIE_SECURE=false for that)
+and open http://localhost:8080. Chromium (Chrome) and Firefox keep the Secure cookie from
+localhost, so no setting changes. Safari is not tested: if it does not keep you signed in, set
+backend.config.JAVV_SESSION_COOKIE_SECURE=false.
 
 OpenSearch: {{ .Values.backend.config.JAVV_OPENSEARCH_URL }}, {{ if .Values.opensearch.caSecret.name }}its certificate checked against {{ .Values.opensearch.caSecret.name }}{{ else }}its certificate NOT checked (demo certificates; set opensearch.caSecret for your own){{ end }}.
 
