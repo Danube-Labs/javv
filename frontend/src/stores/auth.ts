@@ -7,7 +7,7 @@
 import { defineStore } from 'pinia'
 
 import { client } from '@/api/client'
-import { detailOr } from '@/api/problem'
+import { detailOr, STORE_READ_ONLY_TYPE } from '@/api/problem'
 import {
   loginAuthLoginPost,
   logoutAuthLogoutPost,
@@ -30,6 +30,9 @@ export function serverFailed(status: number | undefined): boolean {
 }
 
 export const SERVER_DOWN_COPY = 'The server is not answering. This page checks again on its own.'
+
+/** Sign-in writes a session, so a store whose disk is full refuses it (issue 832, ruled copy). */
+export const READ_ONLY_COPY = 'The store is read-only: its disk is full.'
 
 export const SESSION_ENDED_COPY = 'Your session ended. Sign in again.'
 export const PASSWORD_CHANGED_COPY = 'Password changed. Sign in again.'
@@ -77,7 +80,15 @@ export const useAuthStore = defineStore('auth', {
     },
     /** Returns null on success, or user-facing error copy (generic — no user-existence hints). */
     async login(username: string, password: string): Promise<string | null> {
-      const { response } = await loginAuthLoginPost({ client, body: { username, password } })
+      const { error, response } = await loginAuthLoginPost({
+        client,
+        body: { username, password },
+      })
+      // the server answers and only cannot save: not "not answering", and no re-check loop
+      if ((error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE) {
+        this.unreachable = false
+        return READ_ONLY_COPY
+      }
       this.unreachable = serverFailed(response?.status)
       const failure = loginFailure(response?.status)
       if (failure !== null) return failure

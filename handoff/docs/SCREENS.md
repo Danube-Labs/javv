@@ -44,7 +44,14 @@ Place the real brand SVGs (`brand/lockup.svg`, dark variants in dark chrome) —
   say what is down (issue 675): a `503` is the backend reporting its store ("Search backend
   unavailable. Check OpenSearch health.", footer "Store degraded"); no answer or a proxy error is
   the backend itself ("The backend is not answering. Screens cannot load until it is back.",
-  footer "Backend not answering").
+  footer "Backend not answering"). A store that answers but cannot serve everything gets the
+  **amber** line (`tone-degraded`, `role="status"`) instead of the red one (issue 832; tone and
+  read-only copy ruled on the A/B deck 2026-10-12, red copy ruled on the plan 2026-10-13):
+  read-only, from `/readyz`'s `checks.store: "read-only"` or a `503` with the problem type
+  `store-read-only`, says "The store is read-only: its disk is full. Reads work; changes are not
+  saved."; red, from `checks.store: "red"`, says "Part of the store is not available. Some screens
+  and changes can fail until it recovers." The footer keeps "Store degraded" for both (ruling:
+  no change).
 - `GET /api/v1/scanners/freshness?cluster_id=…` — per-(cluster, scanner) `last_ingest_at` +
   `silent_for_seconds`; drives the **ScannerFreshnessBanner** ("data as of T; scanner silent
   since T′") and the sidebar sweep-health chip. Never-ingested → nulls → "no data yet" chip, not
@@ -98,7 +105,10 @@ oracle), forced password change (SEC-6: bootstrap admin / temp password), **serv
 "The server is not answering. This page checks again on its own." in place of any credential
 error; the page asks `/readyz` every 30 seconds, and when the server returns it re-checks the
 session, so a visitor whose session is still good goes straight to Overview. A failed session
-check is not remembered as signed out: the next navigation asks again).
+check is not remembered as signed out: the next navigation asks again), **store read-only**
+(issue 832: a sign-in the full disk refuses, a `503` with the problem type `store-read-only`,
+shows "The store is read-only: its disk is full." and starts no re-check, since the server
+answers).
 **Rulings (operator, on built specimens, 2026-10-02):** the server-down message on the login page
 is the form's plain red line (A of two; B was a tinted box). The banner for a backend that is gone
 reads "The backend is not answering. Screens cannot load until it is back." (A of two; B ended
