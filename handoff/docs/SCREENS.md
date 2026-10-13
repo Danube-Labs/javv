@@ -296,7 +296,12 @@ the next state change, or on leaving the finding.
 **States:** loading; 403-capability-hidden (triage controls disabled-with-tooltip without
 `can_triage`; risk-accept without `can_accept_audit_final`); CAS conflict on save → "changed by
 someone else — reload and retry" (no silent overwrite); `T<now` — panel read-only ("viewing
-history"); `present=false` row visible **only** in history views (A-2).
+history"); `present=false` row visible **only** in history views (A-2). **A refused card read**
+(operator ruling 2026-10-12, issue 833 F2): the Affected components, Activity and Decisions cards
+each say "Could not be loaded.", never their empty-state copy; the Affected badge shows "-";
+"New decision" is disabled while the decisions read is refused; a refused read never leaves the
+previous CVE's rows, and a late answer for the previous CVE never lands on the next one. A
+refused read of the finding itself follows the G2 rule (§3).
 
 **Changed vs SCREENS.md:** A-2 (6 states + justification flow), A-3 (evidence = sibling query),
 B-2/B-3 (metadata cuts), B-5 (server SLA), V4-DELTA-1 (old triage fields removed), D40

@@ -7,7 +7,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Component } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -28,6 +28,8 @@ import {
   auditFacetsApiV1AuditFacetsGet,
   contributorsApiV1ContributorsGet,
   facetFindingsApiV1FindingsFacetsGet,
+  listDecisionsApiV1DecisionsGet,
+  readAuditLogApiV1AuditGet as readActivity,
   readAuditLogApiV1AuditGet,
   searchFindingsApiV1FindingsGet,
 } from '@/api/generated'
@@ -37,6 +39,7 @@ import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { APPROVAL_FIELDS } from '@/approvals/fields.config'
 import { AUDIT_FIELDS } from '@/audit/fields.config'
 import { useAuditStore } from '@/stores/audit'
+import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useFindingsStore } from '@/stores/findings'
@@ -44,6 +47,7 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
 import ContributorsView from '@/views/ContributorsView.vue'
+import FindingDetailView from '@/views/FindingDetailView.vue'
 import FindingsView from '@/views/FindingsView.vue'
 import ImagesView from '@/views/ImagesView.vue'
 
@@ -386,6 +390,115 @@ describe('Contributors and Approvals: the reason, and the newest answer (issue 8
     await flushPromises()
     expect(w.find('.load-error').exists()).toBe(true)
     expect(w.find('.head-stat').text()).not.toMatch(/5/)
+  })
+})
+
+describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
+  const DETAIL = '/findings/CVE-2026-0001?digest=sha256:abc&scanner=trivy&pkg=pkg&ver=1.0'
+  const ok = (data: unknown) => ({ data, request: {}, response: { ok: true, status: 200 } })
+
+  async function mountDetail(path = DETAIL) {
+    useAuthStore().user = { username: 'admin', capabilities: ['*'] } as never
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/findings/:cveId', name: 'finding', component: FindingDetailView },
+        { path: '/:any(.*)*', component: { template: '<div />' } },
+      ],
+    })
+    await router.push(path)
+    const w = mount({ template: '<router-view />' }, {
+      global: { plugins: [router, [PrimeVue, { unstyled: true }]], stubs: { EChart: true } },
+    })
+    await flushPromises()
+    return { w, router }
+  }
+  afterEach(() => {
+    vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async () => refusedWith(429) as never)
+  })
+
+  /** The page reads the finding itself (size 10) and its occurrences (size 200), in no fixed order. */
+  function answerSearch(cve: string, occurrences: unknown) {
+    vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(
+      async (opts) =>
+        ((opts as { query: { size: number } }).query.size === 10
+          ? findingsPage(cve, 1, null)
+          : occurrences) as never,
+    )
+  }
+
+  it('each card says "Could not be loaded.", the badge shows "-", New decision is off', async () => {
+    answerSearch('CVE-2026-0001', refusedWith(429))
+    // the activity and decisions reads keep the default refusal
+    const { w } = await mountDetail()
+    const text = w.text()
+    expect(text).not.toContain('No occurrences returned.')
+    expect(text).not.toContain('No triage actions yet.')
+    expect(text).not.toContain('No decisions on this CVE yet.')
+    expect(text.match(/Could not be loaded\./g)).toHaveLength(3)
+    expect(w.find('.count-badge').text()).toBe('-')
+    const newDecision = w.findAll('button').find((b) => b.text().includes('New decision'))!
+    expect(newDecision.attributes('disabled')).toBeDefined()
+  })
+
+  it('a refused read for another CVE drops the decisions of the one before', async () => {
+    const decision = { decision_id: 'd-old', type: 'risk_accepted', created_by: 'erin-old' }
+    answerSearch('CVE-2026-0001', ok({ data: [], total: 0 }))
+    vi.mocked(listDecisionsApiV1DecisionsGet).mockResolvedValueOnce(ok({ decisions: [decision] }) as never)
+    const { w, router } = await mountDetail()
+    expect(w.text()).toContain('erin-old')
+    answerSearch('CVE-2026-0009', ok({ data: [], total: 0 }))
+    await router.push(DETAIL.replace('CVE-2026-0001', 'CVE-2026-0009'))
+    await flushPromises()
+    expect(w.text()).toContain('CVE-2026-0009') // the cards are on screen, for the new CVE
+    expect(w.text()).not.toContain('erin-old')
+  })
+
+  it('F3: late answers for the previous CVE never land on the next one', async () => {
+    const held: ((v: unknown) => void)[] = []
+    const hold = () => new Promise((resolve) => held.push(resolve)) as never
+    vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async (opts) => {
+      const q = (opts as { query: { cve_id: string; size: number } }).query
+      if (q.cve_id === 'CVE-2026-0001') return q.size === 10 ? (findingsPage('CVE-2026-0001', 1, null) as never) : hold()
+      return (q.size === 10 ? findingsPage('CVE-2026-0009', 1, null) : refusedWith(503)) as never
+    })
+    vi.mocked(listDecisionsApiV1DecisionsGet).mockImplementationOnce(hold)
+    vi.mocked(readActivity).mockImplementationOnce(hold)
+    const { w, router } = await mountDetail()
+    await router.push(DETAIL.replace('CVE-2026-0001', 'CVE-2026-0009'))
+    await flushPromises()
+    const stale = { decision_id: 'd-old', type: 'risk_accepted', created_by: 'erin-old' }
+    const oldOcc = { ...findingsPage('CVE-2026-0001', 1, null).data, total: 1 }
+    for (const answer of held) {
+      answer(ok({ data: oldOcc.data, total: 1, decisions: [stale] }))
+    }
+    await flushPromises()
+    expect(w.text()).toContain('CVE-2026-0009')
+    expect(w.text()).not.toContain('erin-old')
+    expect(w.text().match(/Could not be loaded\./g)).toHaveLength(3)
+  })
+
+  it('F3: a late answer for the previous CVE never replaces the finding on screen', async () => {
+    let answerOld: (v: unknown) => void = () => {}
+    vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async (opts) => {
+      const q = (opts as { query: { cve_id: string; size: number } }).query
+      if (q.size !== 10) return ok({ data: [], total: 0 }) as never
+      if (q.cve_id === 'CVE-2026-0001') return new Promise((resolve) => (answerOld = resolve)) as never
+      return findingsPage('CVE-2026-0009', 1, null) as never
+    })
+    const { w, router } = await mountDetail()
+    await router.push(DETAIL.replace('CVE-2026-0001', 'CVE-2026-0009'))
+    await flushPromises()
+    const before = w.text()
+    answerOld(refusedWith(503))
+    await flushPromises()
+    expect(w.find('.load-error').exists()).toBe(false)
+    expect(w.text()).toBe(before)
+  })
+
+  it('a busy pair read says busy, not a broken connection (G2)', async () => {
+    const { w } = await mountDetail()
+    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
   })
 })
 
