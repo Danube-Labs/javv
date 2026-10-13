@@ -5,7 +5,7 @@
  * server reads the Findings screen uses (`image_digest` + `scanner` scoped), so the two
  * screens can never disagree; `as_of` rides every query via withGlobals.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { SearchFindingsApiV1FindingsGetData } from '@/api/generated'
@@ -52,12 +52,14 @@ const baseQuery = computed(() =>
 async function loadRows() {
   if (!baseQuery.value) return
   loading.value = true
+  const live = !baseQuery.value.as_of // a past-T page holds no search on the server
   const { data, response } = await searchFindingsApiV1FindingsGet({
     query: {
       ...baseQuery.value,
       sort: sort.value,
       order: order.value,
       size: size.value,
+      keep_open: true, // the last page keeps its search, so Prev from it works
       ...(pager.cursor.value ? { cursor: pager.cursor.value } : {}),
     } as SearchFindingsApiV1FindingsGetData['query'],
   })
@@ -66,7 +68,7 @@ async function loadRows() {
     const body = data as { data: FindingRow[]; total: { value: number }; next_cursor: string | null }
     rows.value = body.data
     total.value = body.total.value
-    pager.landed(body.next_cursor)
+    pager.landed(body.next_cursor, live)
     failed.value = false
   } else {
     failed.value = true
@@ -91,6 +93,9 @@ function onSort(field: SortField) {
     order.value = 'desc'
   }
 }
+// the panel's walk is its own: leaving the image closes it, whatever comes next
+onUnmounted(() => pager.reset())
+
 function goNext() {
   if (pager.next()) void loadRows()
 }

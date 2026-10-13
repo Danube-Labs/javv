@@ -10,6 +10,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { closeUnpaged } from '@/api/cursors'
 import {
   readAuditLogApiV1AuditGet,
   listDecisionsApiV1DecisionsGet,
@@ -86,6 +87,7 @@ watch(
     const response = await searchFindingsApiV1FindingsGet({
       query: q as SearchFindingsApiV1FindingsGetData['query'],
     })
+    closeUnpaged(response.data?.next_cursor, !q.as_of) // one page only: never paged
     if (mine !== pairSeq) return // a newer read owns the page now
     loading.value = false
     if (response.response?.ok && response.data) {
@@ -116,6 +118,7 @@ watch(
     const response = await searchFindingsApiV1FindingsGet({
       query: q as SearchFindingsApiV1FindingsGetData['query'],
     })
+    closeUnpaged(response.data?.next_cursor, !q.as_of) // one page only: never paged
     if (mine !== occSeq) return // a newer read owns the card now
     affectedFailed.value = !response.response?.ok || !response.data
     if (!affectedFailed.value) {
@@ -268,6 +271,7 @@ async function fetchActivity() {
       size: 50,
     } as never,
   })
+  closeUnpaged(response.data?.next_cursor, true) // one page only: never paged
   if (mine !== activitySeq) return // a newer read owns the card now
   activityFailed.value = !response.response?.ok || !response.data
   if (!activityFailed.value) {

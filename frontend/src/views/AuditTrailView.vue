@@ -8,9 +8,10 @@
  * log). Click-through only where entity_type=="finding" (A-5), through the row's read-time
  * decoration — an aged-out finding row stays inert and accurate.
  */
-import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
+import { closeUnpaged } from '@/api/cursors'
 import { auditFacetsApiV1AuditFacetsGet, readAuditLogApiV1AuditGet } from '@/api/generated'
 import type {
   AuditFacetsApiV1AuditFacetsGetData,
@@ -101,10 +102,15 @@ async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
   const mine = ++rowsSeq
   grid.loading = true
+  // keep_open: the last page keeps its search, so Prev from it works (the pager closes the walk)
   const response = await readAuditLogApiV1AuditGet({
-    query: q as ReadAuditLogApiV1AuditGetData['query'],
+    query: { ...q, keep_open: true } as ReadAuditLogApiV1AuditGetData['query'],
   })
-  if (mine !== rowsSeq) return // a newer read owns the grid now
+  if (mine !== rowsSeq) {
+    // a newer read owns the grid now; a first page it replaced opened a walk nobody will page
+    if (!q.cursor) closeUnpaged(response.data?.next_cursor, true)
+    return
+  }
   grid.loading = false
   if (response.response?.ok && response.data) {
     const body = response.data as unknown as {
@@ -112,7 +118,7 @@ async function loadRows(q: typeof rowsQuery.value) {
       total: { value: number; relation: string }
       next_cursor: string | null
     }
-    grid.setResult(body.data, body.total, body.next_cursor)
+    grid.setResult(body.data, body.total, body.next_cursor, true) // every audit walk holds a search
   } else {
     // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
     grid.setFailed(response.response?.status ?? null)
@@ -134,6 +140,16 @@ watch(
   },
   { immediate: true },
 )
+
+// opening a finding keeps the walk, so Back lands on the same page; leaving for any other screen
+// closes it, and the grid comes back on page 1 with its filters (ruling on issue 832)
+let keepWalk = false
+onBeforeRouteLeave((to) => {
+  keepWalk = to.name === 'finding'
+})
+onUnmounted(() => {
+  if (!keepWalk) grid.clearResults()
+})
 
 /* ---- URL sync (M9a); rewrite only this screen's own keys — foreign params survive ---- */
 const OWN_KEYS = AUDIT_FIELDS.map((f) => f.key)
