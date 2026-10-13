@@ -38,7 +38,7 @@ Authenticated = Annotated[Principal, Depends(get_current_principal)]
 
 async def _enforce_export_bounds(
     client: Any, *, cluster_id: str, filters: Any, principal: Principal, fmt: str
-) -> None:
+) -> pit_guard.Slot:
     """Shared inline-export guards (audit A-M6/A-m12/#189): 413 if the lens exceeds the row cap
     (checked BEFORE any PIT/stream via a cheap count), then reserve a per-principal PIT slot (429
     if the principal is at its concurrent-PIT cap). The caller releases the slot when done."""
@@ -53,7 +53,7 @@ async def _enforce_export_bounds(
             "narrow the filters, or use M7's scheduled export",
         )
     try:
-        pit_guard.acquire(principal.user_id)
+        return pit_guard.acquire(principal.user_id)
     except pit_guard.PitCapExceeded as exc:
         log.warning("PIT cap reached for principal", format=fmt)
         raise HTTPException(429, str(exc), headers={"Retry-After": "5"}) from exc
@@ -73,7 +73,7 @@ async def export_csv(
         raise HTTPException(501, "export at a past as_of lands with M8b reconstruction")
     client = cast(Any, request.app.state.opensearch)
     # no read-side refresh (audit A-m2/#191): reads observe committed state; writers refresh
-    await _enforce_export_bounds(
+    slot = await _enforce_export_bounds(
         client, cluster_id=cluster_id, filters=filters, principal=principal, fmt="csv"
     )
 
@@ -89,7 +89,7 @@ async def export_csv(
                 size += len(line)
                 yield line
         finally:
-            pit_guard.release_one(principal.user_id)
+            pit_guard.release(principal.user_id, slot)
             EXPORT_ROWS.labels("csv").inc(max(0, rows - 1))  # minus the header line
             EXPORT_BYTES.labels("csv").inc(size)
 
@@ -120,7 +120,7 @@ async def export_vex(
         raise HTTPException(422, "VEX export requires a scanner filter (per-scanner is sacred)")
     client = cast(Any, request.app.state.opensearch)
     # no read-side refresh (audit A-m2/#191): reads observe committed state; writers refresh
-    await _enforce_export_bounds(
+    slot = await _enforce_export_bounds(
         client, cluster_id=cluster_id, filters=filters, principal=principal, fmt=format
     )
     try:
@@ -136,4 +136,4 @@ async def export_vex(
             generated_at=datetime.now(UTC),
         )
     finally:
-        pit_guard.release_one(principal.user_id)
+        pit_guard.release(principal.user_id, slot)

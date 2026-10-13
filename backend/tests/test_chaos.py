@@ -142,14 +142,10 @@ async def test_pit_killed_under_a_live_cursor_is_410_and_releases_the_slot(
     assert body["status"] == 410 and "Traceback" not in gone.text
     assert gone.headers.get("x-request-id")
 
-    # The walk-opening slot is deliberately NOT released on a continuation's 410: the guard
-    # frees the OLDEST slot, which may belong to a different live walk — so the dead walk's
-    # slot is left to free itself at the keep-alive horizon (pit_guard's documented 'leaky but
-    # bounded' shape). Pin that contract: at cap=1 the follow-up search is a clean 429 with
-    # Retry-After — budget spent until the horizon, never a 500, never permanent.
+    # A walk's slot records its PIT, so the 410 frees exactly the dead walk's slot and never
+    # another live walk's (issue 832): at cap=1 the follow-up search fits.
     fresh = await http.get("/api/v1/findings", params={"cluster_id": cid, "size": 2})
-    assert fresh.status_code == 429
-    assert fresh.headers.get("retry-after")
+    assert fresh.status_code == 200
 
 
 async def test_store_down_mid_session_degrades_and_recovers_without_restart(env) -> None:

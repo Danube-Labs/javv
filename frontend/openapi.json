@@ -217,6 +217,22 @@
         "title": "ClientEventBatch",
         "type": "object"
       },
+      "CloseCursor": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Cursor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cursor"
+        ],
+        "title": "CloseCursor",
+        "type": "object"
+      },
       "CommitInventoryRun": {
         "additionalProperties": false,
         "properties": {
@@ -3675,6 +3691,40 @@
         "summary": "Export Contributors Csv",
         "tags": [
           "contributors"
+        ]
+      }
+    },
+    "/api/v1/cursors/close": {
+      "post": {
+        "operationId": "close_cursor_api_v1_cursors_close_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseCursor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Close Cursor",
+        "tags": [
+          "cursors"
         ]
       }
     },

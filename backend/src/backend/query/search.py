@@ -306,6 +306,11 @@ def decode_cursor(cursor: str) -> tuple[str, list[Any], str, str, dict[str, str]
     return pit_id, search_after, sort, order, sla_cutoffs
 
 
+def cursor_pit_id(cursor: str) -> str:
+    """The PIT a findings or audit cursor walks; `ValueError` for a cursor that does not decode."""
+    return decode_cursor(cursor)[0]
+
+
 async def run_search(
     client: AsyncOpenSearch,
     *,

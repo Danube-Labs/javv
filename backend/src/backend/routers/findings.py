@@ -41,7 +41,7 @@ from backend.query.aggs import (
     encode_after,
 )
 from backend.query.as_of import AsOfTReader, AsOfTUnavailable, as_of_t_reader, parse_as_of
-from backend.query.search import CursorExpired, SearchFilters, run_search
+from backend.query.search import CursorExpired, SearchFilters, cursor_pit_id, run_search
 from backend.sla.overdue import compute_overdue, overdue_cutoffs
 from backend.sla.policy import read_sla_policy
 from backend.tenancy.read_path import tenant_search
@@ -361,10 +361,10 @@ async def search_findings(
     # no read-side refresh (audit A-m2/#191): reads observe what's committed; triage writes with
     # refresh=wait_for and ingest refreshes post-merge, so a forced per-read Lucene refresh on the
     # hottest index was belt-and-suspenders that any cheap poll could turn into cluster work.
-    opened = cursor is None  # a cursor-less page opens a fresh PIT; a continuation reuses one
-    if opened:
+    slot: pit_guard.Slot | None = None  # a cursor-less page opens a fresh PIT and takes a slot
+    if cursor is None:
         try:
-            pit_guard.acquire(principal.user_id)  # A-m12/#189: bound concurrent PITs per principal
+            slot = pit_guard.acquire(principal.user_id)  # A-m12/#189: bound concurrent PITs
         except pit_guard.PitCapExceeded as exc:
             log.warning("PIT cap reached for principal", format="findings_page")
             raise HTTPException(429, str(exc), headers={"Retry-After": "5"}) from exc
@@ -379,25 +379,28 @@ async def search_findings(
             cursor=cursor,
         )
     except CursorExpired as exc:  # A-m1: idled past keep_alive → 410 Gone, restart the walk
-        if opened:
-            pit_guard.release_one(principal.user_id)
+        pit_guard.release(principal.user_id, slot)
+        if cursor is not None:  # the walk's PIT is gone, so its slot is too
+            pit_guard.release_pit(principal.user_id, cursor_pit_id(cursor))
         raise HTTPException(410, str(exc)) from exc
     except ValueError as exc:  # tampered/undecodable cursor or bad sort/order — 422, not a 500
-        if opened:
-            pit_guard.release_one(principal.user_id)  # nothing usable to page — free the slot
+        pit_guard.release(principal.user_id, slot)  # nothing usable to page — free the slot
         raise HTTPException(422, str(exc)) from exc
     except (OSConnectionError, ConnectionTimeout) as exc:  # A-m1: cluster down/slow → 503, not 500
-        if opened:
-            pit_guard.release_one(principal.user_id)
+        pit_guard.release(principal.user_id, slot)
         kind = "timeout" if isinstance(exc, ConnectionTimeout) else "conn"
         OS_REQUEST_ERRORS.labels(kind).inc()  # M-2 (#220)
         raise HTTPException(503, "search backend unavailable — retry") from exc
     except BaseException:
-        if opened:
-            pit_guard.release_one(principal.user_id)
+        pit_guard.release(principal.user_id, slot)
         raise
-    if out["next_cursor"] is None:  # PIT closed this request (final page) — release its slot
-        pit_guard.release_one(principal.user_id)
+    walk = out["next_cursor"] or cursor
+    pit_guard.settle(
+        principal.user_id,
+        slot,
+        cursor_pit_id(walk) if walk else None,
+        ended=out["next_cursor"] is None,  # the final page closed its PIT (D38)
+    )
     await _decorate_overdue(client, cluster_id, out["data"])
     await _decorate_images_affected(client, cluster_id, out["data"])
     return out

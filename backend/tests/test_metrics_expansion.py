@@ -89,13 +89,13 @@ def test_pit_guard_publishes_the_open_gauge_and_counts_cap_hits(monkeypatch) -> 
     get_settings.cache_clear()
     pit_guard._slots.clear()
     try:
-        pit_guard.acquire("metrics-user")
+        slot = pit_guard.acquire("metrics-user")
         assert _pits_open() == 1
         before = LIMIT_REJECTIONS.labels("pit_cap")._value.get()
         with pytest.raises(pit_guard.PitCapExceeded):
             pit_guard.acquire("metrics-user")
         assert LIMIT_REJECTIONS.labels("pit_cap")._value.get() == before + 1
-        pit_guard.release_one("metrics-user")
+        pit_guard.release("metrics-user", slot)
         assert _pits_open() == 0
     finally:
         pit_guard._slots.clear()
