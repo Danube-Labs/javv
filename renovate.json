@@ -21,11 +21,12 @@
   },
   "customManagers": [
     {
-      "description": "versions.yaml single source of truth (D42) — bump the annotated `current` pins",
+      "description": "versions.yaml single source of truth (D42): bump the annotated `current` pins; a `tag@sha256:` pin gets its digest moved with its tag (issue 833)",
       "customType": "regex",
       "managerFilePatterns": ["/^versions\\.yaml$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+\\S+:\\s*\"(?<currentValue>[^\"]+)\""
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+\\S+:\\s*\"(?<currentValue>[^\"@]+)\"",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+\\S+:\\s*\"(?<currentValue>[^\"@]+)@(?<currentDigest>sha256:[0-9a-f]{64})\""
       ]
     }
   ],
@@ -73,6 +74,12 @@
       "matchManagers": ["dockerfile"],
       "matchPackageNames": ["anchore/grype"],
       "enabled": false
+    },
+    {
+      "description": "Grype moves as one PR: the scanner version and the scanner-images self-scan pin in versions.yaml, which check-versions.sh holds equal",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["anchore/grype"],
+      "groupName": "grype"
     },
     {
       "description": "Stay on Python 3.12 (requires-python, the scanner images, .python-version) until a deliberate upgrade",

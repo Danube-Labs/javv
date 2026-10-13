@@ -6,11 +6,12 @@
 # and commit it is under any tag. Builds only: the release workflow smokes the images before it
 # pushes them, and CI builds them with this same script.
 #
-#   development/scripts/build-app-images.sh
+#   development/scripts/build-app-images.sh [backend|frontend ...]   # both when none is named
 #
 # Env: REGISTRY (default ghcr.io/danube-labs, the registry deploy/compose/compose.yaml names)
 #      SOURCE   (default https://github.com/Danube-Labs/javv-poc)
-# Prints the two image references, backend first. Requires: docker, jq, git.
+# Prints the image references in the order asked, backend first by default.
+# Requires: docker, jq, git.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -23,7 +24,10 @@ revision=$(git rev-parse HEAD)
   exit 1
 }
 
-for app in backend frontend; do
+apps=("$@")
+[ ${#apps[@]} -gt 0 ] || apps=(backend frontend)
+for app in "${apps[@]}"; do
+  case $app in backend | frontend) ;; *) echo "build-app-images: no app '$app'" >&2; exit 2 ;; esac
   ref="$registry/javv-$app:$version"
   docker build -f "$app/Dockerfile" -t "$ref" \
     --label "org.opencontainers.image.version=$version" \

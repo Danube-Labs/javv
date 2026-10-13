@@ -250,11 +250,12 @@ jobs:
       # Supply-chain (M0b DoD, issue 74): an SBOM + a report-only self-scan of each pushed image, then a
       # keyless cosign signature + signed SBOM attestation. Everything works on the pushed DIGEST
       # (from the bake metadata), never a tag, so what is signed is exactly what was pushed.
-      - name: Install syft + grype (versions.yaml, from their official images)
+      # by digest (versions.yaml `tag@sha256:`): this job can sign, so it runs no tag that can move
+      - name: Install syft + grype (versions.yaml, from their official images, by digest)
         run: |
           syft=$(yq -r '.supply_chain.syft' versions.yaml)
-          grype=$(yq -r '.scanners.grype.current' versions.yaml)
-          for pair in "syft:anchore/syft:v$syft" "grype:anchore/grype:v$grype"; do
+          grype=$(yq -r '.supply_chain.grype' versions.yaml)
+          for pair in "syft:anchore/syft:$syft" "grype:anchore/grype:$grype"; do
             bin=${pair%%:*}; img=${pair#*:}
             cid=$(docker create "$img")
             docker cp "$cid:/$bin" "$bin" && docker rm "$cid" >/dev/null

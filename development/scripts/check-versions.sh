@@ -139,6 +139,18 @@ check "Dockerfile.grype python" "$python" scanner/Dockerfile.grype \
 check "backend Dockerfile python" "$python" backend/Dockerfile \
   'FROM python:\K[0-9.]+(?=-slim)' "s/^FROM python:[^ ]+/FROM python:$python-slim/"
 
+# The self-scan grype is pinned by digest (issue 833), so --fix cannot move it: a new tag needs
+# its own digest. Renovate moves it with scanners.grype.current; a hand edit gets the command.
+selfscan=$(yq -r '.supply_chain.grype' "$V")
+if [ "${selfscan%%@*}" = "v$grype" ]; then
+  printf '  \033[1;32mok\033[0m   %-26s %s\n' "self-scan grype" "v$grype"
+else
+  printf '  \033[1;31mDRIFT\033[0m %-26s %s=%s but supply_chain.grype is %s\n' \
+    "self-scan grype" "$V" "v$grype" "${selfscan%%@*}"
+  echo "         set it to v$grype@<digest>: docker buildx imagetools inspect anchore/grype:v$grype"
+  fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   echo
   echo "Pins drifted from versions.yaml. Run: development/scripts/check-versions.sh --fix"

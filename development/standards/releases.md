@@ -27,7 +27,10 @@ discipline (see [git-workflow.md](git-workflow.md)) is the input that drives all
   say so at the top. The `Publish docs` job runs last: it publishes the release's operator docs
   as its `major.minor` version and as `latest`, which the docs site opens on (issue 639). It adds
   no note when it fails; the site keeps opening the version before until the job is re-run. When the cause is outside the workflow (a registry or Sigstore outage), re-run
-  the failed jobs once it clears, then delete the note. A re-run uses the workflow as it was at the
+  the failed jobs once it clears, then delete the note. A re-run builds only the images not yet
+  published: one the first run pushed is pulled, smoked and signed as it is, so its tag keeps the
+  digest it had (issue 833). The note says which case it is: not published, or published but not
+  yet signed. A re-run uses the workflow as it was at the
   release commit, so a cause in the workflow itself can only be fixed by a fix on `main` and the
   next release. 0.6.0's smoke step lacked a variable compose requires, so 0.6.0 published nothing
   and its fix went into the release after it.

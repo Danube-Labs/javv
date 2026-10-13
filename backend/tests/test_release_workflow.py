@@ -6,7 +6,8 @@ exercise it. These tests hold its shape instead:
 - only the two publishing jobs can get a signing identity;
 - each pushed image digest gets an SBOM, a signature and an attestation, before anyone pulls it;
 - the charts publish only after the images, and each pushed chart digest is signed;
-- the release verifies, signed out, with the identity `docs/DEPLOYING.md` gives operators.
+- the release verifies, signed out, with the identity `docs/DEPLOYING.md` gives operators;
+- a re-run builds only what is not published (issue 833, B4), and its note says which case it is.
 The chart packaging itself is `test_helm_publish.py`.
 """
 
@@ -60,13 +61,48 @@ def test_each_pushed_digest_is_signed_and_attested_before_anyone_pulls_it() -> N
 
     # the push step records digests, the SBOM step reads those, and the action signs its list
     push = _step("publish-app-images", "Push both images")
-    assert '"$app=$REGISTRY/javv-$app@$digest"' in push["run"]
+    # the script prints app=<repo>@<digest> (pinned in test_release_app_images.py)
+    assert (
+        'release-app-images.sh push "$RUNNER_TEMP/app-images" > "$RUNNER_TEMP/pushed.txt"'
+        in (push["run"])
+    )
+    assert 'cat "$RUNNER_TEMP/pushed.txt" >> "$GITHUB_OUTPUT"' in push["run"]
     sbom = _step("publish-app-images", "An SBOM of each pushed digest")
     assert sbom["env"] == {
         "BACKEND": "${{ steps.push.outputs.backend }}",
         "FRONTEND": "${{ steps.push.outputs.frontend }}",
     }
     assert sign["with"]["images"] == "${{ steps.sbom.outputs.images }}"
+
+
+def test_a_rerun_signs_the_published_images_instead_of_building_new_ones() -> None:
+    """Issue 833, B4: the build step builds only what is not published, so a re-run after a failed
+    signature signs the digests the first run pushed. It reads the registry signed in: a private
+    package must read as published, not as missing and be pushed over."""
+    steps = _steps("publish-app-images")
+    names = [s.get("name") or s.get("uses") for s in steps]
+    login = next(i for i, s in enumerate(steps) if "docker/login-action" in (s.get("uses") or ""))
+    build = names.index("Build the images not yet published")
+    assert login < build < names.index("Smoke the release's compose file")
+    assert sum("docker/login-action" in (s.get("uses") or "") for s in steps) == 1
+    assert steps[build]["run"] == (
+        'development/scripts/release-app-images.sh prepare "$RUNNER_TEMP/app-images"'
+    )
+    assert not any("build-app-images.sh" in s.get("run", "") for s in steps)
+
+
+def test_the_release_note_says_whether_the_images_were_published() -> None:
+    note = _step(
+        "publish-app-images", "Say on the release that its images were not published, or not signed"
+    )
+    assert note["if"] == "failure()"
+    assert note["env"]["PUSHED"] == "${{ steps.push.outcome == 'success' }}"
+    published, not_published = note["run"].split("else", 1)
+    assert 'if [ "$PUSHED" = true ]' in published
+    assert "were published but are not signed and verified yet" in published
+    assert "the re-run signs the images already" in published
+    assert "were not published and signed" in not_published
+    assert "were not published" not in published
 
 
 def test_the_charts_publish_after_the_images_and_each_pushed_digest_is_signed() -> None:

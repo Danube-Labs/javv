@@ -76,7 +76,8 @@ are scanned **sequentially** (stateless; intra-run parallelism is a possible lat
   image's inputs** (`versions.yaml`, the Dockerfiles/bake file, scanner source and dependencies, the shared lib),
   so a merged scanner bump has its signed image minutes later; also on a `scanner-v*` tag or manual dispatch.
   Builds locally → **publish-smoke**
-  (runs each image's entrypoint before pushing) → pushes → **SBOM (`syft`) + self-scan (`grype`, report-only)**
+  (runs each image's entrypoint before pushing) → pushes → **SBOM (`syft`) + self-scan (`grype`, report-only)**,
+  both tools taken by image digest from `versions.yaml` `supply_chain` (issue 833),
   uploaded as a CI artifact → **cosign keyless signature + signed SBOM attestation**, both by the pushed digest
   ([verify one](#verify-a-published-image)).
 - **Published images:** `ghcr.io/danube-labs/javv-scanner-{trivy,grype}:<ver>` (moving) + `:<ver>-<git-sha>`
