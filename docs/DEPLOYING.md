@@ -278,8 +278,10 @@ of its values. These are the steps:
 4. **Sign in** through the `javv` Service on port 8080, as `admin`, with the bootstrap password.
     Nothing is in front of the Service. For `https`, put your own Ingress, gateway or load balancer
     in front of it, and keep the session cookie `Secure` ([http or https](#http-or-https) applies in
-    the same way). To look at JAVV before you do this, run `kubectl port-forward svc/javv 8080`, and
-    set `backend.config.JAVV_SESSION_COOKIE_SECURE=false`.
+    the same way). To look at JAVV before you do this, run `kubectl port-forward svc/javv 8080`,
+    and open `http://localhost:8080`. Chromium (Chrome) and Firefox keep the `Secure` cookie from
+    `localhost`, so you do not change a setting. We did not test Safari. If Safari does not keep
+    you signed in, set `backend.config.JAVV_SESSION_COOKIE_SECURE=false`.
 
 **What the `javv` chart runs:**
 
