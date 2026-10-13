@@ -207,8 +207,8 @@ secrets:
   # and keep it. If you change it, each scanner gets 401, and each user must sign in again. Each
   # scanner then needs a new token. The chart puts the key in a Secret.
   secretKey: ""
-  # -- The password of the first JAVV admin, 12 characters or more. The backend uses it one time,
-  # when that admin does not exist.
+  # -- The password of the first JAVV admin, 12 to 256 characters. A longer password stops the
+  # backend at start. The backend uses it one time, when that admin does not exist.
   bootstrapAdminPassword: ""
 
 opensearch:

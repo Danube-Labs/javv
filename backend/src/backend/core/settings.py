@@ -21,6 +21,7 @@ from urllib.parse import SplitResult, urlsplit
 from pydantic import Field, SecretStr, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from backend.auth.passwords import MAX_LENGTH as PASSWORD_MAX_LENGTH
 from backend.jobs.schedule import validate_cron
 
 
@@ -85,8 +86,10 @@ class Settings(BaseSettings):
     client_events_rate_limit_per_minute: int = Field(default=60, ge=1)
     # bootstrap admin (M5a/SEC-6): password from a mounted k8s Secret; empty = don't seed.
     # Seed-once — rotating the mounted value later has no effect on an existing admin by design.
+    # Past the sign-in cap the admin could never sign in, so start-up refuses it (issue 833); the
+    # 12-character minimum does not apply to it (issue 724).
     bootstrap_admin_username: str = "admin"
-    bootstrap_admin_password: str = ""
+    bootstrap_admin_password: str = Field(default="", max_length=PASSWORD_MAX_LENGTH)
     # scheduled reports (M7/#32): results are stored IN OpenSearch (chunked) and TTL-swept.
     export_ttl_hours: int = Field(default=24, ge=1)  # completed export deleted this long after
     export_max_bytes: int = Field(default=500 * 1024 * 1024, ge=1)  # per-export ceiling → failed

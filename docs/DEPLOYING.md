@@ -55,6 +55,7 @@ the release names these images.
     - `JAVV_SECRET_KEY`: the secret key of the backend. Use a long random string
         (`openssl rand -hex 32`). Keep it for the life of the installation (see the warning below).
     - `JAVV_BOOTSTRAP_ADMIN_PASSWORD`: the password of the first JAVV admin. JAVV uses it one time.
+        Use 12 to 256 characters. A longer password stops the backend at start.
     - `JAVV_OPENSEARCH_ADMIN_PASSWORD`: the password of the OpenSearch admin. Only OpenSearch and its
         `healthcheck` use it. JAVV never gets it. OpenSearch reads it one time, at its first start.
         OpenSearch does not start with a weak password. The rules are:
