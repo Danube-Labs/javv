@@ -23,6 +23,9 @@ and the app **degrades loudly, not blindly** when its datastore is unavailable.
 - **Levels:** `debug` (dev detail) · `info` (lifecycle + each request) · `warning` (handled-but-notable:
   429/503 backpressure, `_bulk` partial failures, retries) · `error` (unhandled / dropped work — always with
   `request_id` + stack). Reserve `error` for things a human should see; don't cry-wolf.
+  The OpenSearch client logs every failed request at `warning`; the shared library drops its 404
+  and 409 lines, which the callers expect and handle (a first watermark read, the roles seeded with
+  `op_type=create` at each start), so a client warning still means degraded service (issue 831).
 - **Never log** (NFR-5): passwords, ingest tokens, session cookies, raw `Authorization` headers, full scanner
   payloads. Log *shapes/sizes/ids*, not secrets. A redaction processor enforces this — tested.
 
@@ -41,10 +44,19 @@ and the app **degrades loudly, not blindly** when its datastore is unavailable.
 | Endpoint | Means | Depends on OpenSearch? | Used by |
 |---|---|---|---|
 | `/healthz` | **Liveness** — the process is up and the event loop responds | **No** | k8s liveness probe (restart if failing) |
-| `/readyz` | **Readiness** — can actually serve: OpenSearch reachable + cluster not red | **Yes** (cheap cached ping) | k8s readiness probe + the **FE degraded banner** |
+| `/readyz` | **Readiness** — can actually serve: OpenSearch answers | **Yes** (a ping, then the cluster health and the blocks of JAVV's indices) | k8s readiness probe + the **FE degraded banner** |
 
-`/readyz` returns `200 {status:"ready"}` or `503 {status:"degraded", checks:{opensearch:"unreachable"|"red", ...}}`.
-The OpenSearch check is **cached briefly** (a few seconds) so probes/polling don't hammer the cluster.
+`/readyz` returns one of three answers (issue 832, operator ruling 2026-10-12):
+- `200 {status:"ready"}`: OpenSearch answers and is neither red nor read-only.
+- `200 {status:"ready", checks:{store:"read-only"|"red"}}`: OpenSearch answers, but a JAVV index
+  carries the flood-stage block (its disk is full, so writes are refused) or the cluster is red
+  (part of the data is not available). Red wins when both hold. Reads still work, so the pod stays
+  in service: a 503 here would take the only backend pod out of its Service. The banner says so.
+- `503 {status:"degraded", opensearch:"unreachable"}`: OpenSearch does not answer.
+
+A check that fails (a timeout, a refusal) leaves the answer at `ready`; it counts in
+`javv_opensearch_request_errors_total{kind="other"}` and logs `store check failed` at most once per
+10 s. Nothing is cached: each call pings and makes the two cluster reads.
 
 ## 3. Boot vs runtime — fail-fast, then degrade
 Two distinct failure modes, deliberately handled differently:
@@ -57,7 +69,12 @@ Two distinct failure modes, deliberately handled differently:
   (`core/errors.py`, issue 832): a connection error, a timeout, or a 502/503/504 from OpenSearch
   answers 503 "Search backend unavailable", counted in `javv_store_unavailable_total`, with one
   `store unavailable` warning per 10 s at most (a sender can repeat requests while the store is
-  away) and no traceback. Ingest keeps its own `storage_error` record.
+  away) and no traceback. Ingest keeps its own `storage_error` record. Two more answers come from
+  the same handler, by the same window rule: a write the store's full disk refuses answers 503
+  "The store is read-only: its disk is full" (problem type `store-read-only`, counted in
+  `javv_store_read_only_total`), and OpenSearch's own 429 (a full queue, a circuit breaker)
+  answers 429 "The search backend is busy" with `Retry-After: 5`, counted in
+  `javv_opensearch_request_errors_total{kind="429"}`.
 - **The backend itself gone** (the process is down, or the proxy in front of it answers `502`/`504`):
   the frontend cannot get a `503` from a backend that is not there, so it reads the failure's shape
   (`downReason` in `frontend/src/stores/health.ts`). A `503` means the store; no answer or any other

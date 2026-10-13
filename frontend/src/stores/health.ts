@@ -5,12 +5,14 @@
  * auto-clears when /readyz returns 200. Chrome stays up; data areas show degraded states.
  */
 import { defineStore } from 'pinia'
+import { STORE_READ_ONLY_TYPE } from '@/api/problem'
 import { logger } from '@/lib/logger'
 
 export const POLL_MS = 30_000
 
-/** What is down: the backend itself, or the store behind a backend that still answers. */
-export type DownReason = 'backend' | 'store'
+/** What is down: the backend itself, or the store behind a backend that still answers. A store
+ * that answers but is read-only (its disk full) or red still serves reads (issue 832). */
+export type DownReason = 'backend' | 'store' | 'read-only' | 'red'
 
 /**
  * Reads one failed answer. The backend answers a 503 itself when OpenSearch is unreachable, and
@@ -34,6 +36,27 @@ export function isBackendJson(response: Response): boolean {
  */
 export function isBackendProblem(response: Response): boolean {
   return /^application\/problem\+json\b/i.test(response.headers.get('content-type') ?? '')
+}
+
+/** True when an API answer is the backend saying a write was refused because the store's disk is
+ * full. Reads a copy, so the caller still gets the body. */
+export async function isReadOnlyRefusal(response: Response): Promise<boolean> {
+  if (response.status !== 503 || !isBackendProblem(response)) return false
+  try {
+    return ((await response.clone().json()) as { type?: unknown }).type === STORE_READ_ONLY_TYPE
+  } catch {
+    return false
+  }
+}
+
+/** `read-only` or `red` from a /readyz 200 (`checks.store`), else null. */
+async function readyzStoreState(response: Response): Promise<'read-only' | 'red' | null> {
+  try {
+    const store = ((await response.json()) as { checks?: { store?: unknown } }).checks?.store
+    return store === 'read-only' || store === 'red' ? store : null
+  } catch {
+    return null
+  }
 }
 
 /** True when a /readyz answer is the backend reporting its store down. */
@@ -68,6 +91,11 @@ export const useHealthStore = defineStore('health', {
       try {
         const res = await fetch('/readyz', { credentials: 'same-origin' })
         if (res.ok) {
+          const store = await readyzStoreState(res)
+          if (store) {
+            this.markDegraded(store, 'readyz')
+            return
+          }
           if (this.degraded) logger.info('backend recovered')
           this.degraded = false
           this.reason = null

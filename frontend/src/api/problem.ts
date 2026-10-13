@@ -2,6 +2,10 @@
  * `problem.spec.ts`). */
 export const VALIDATION_TITLE = 'Validation error'
 
+/** The problem `type` of a write the store refused because its disk is full (`core/errors.py`,
+ * pinned by `problem.spec.ts`). */
+export const STORE_READ_ONLY_TYPE = 'store-read-only'
+
 /** Server messages (409 last-admin, 422 policy) surface VERBATIM — the backend speaks RFC-7807
  * and an HTTPException's text lands in the problem's `title`. Pydantic validation 422s only say
  * "Validation error" (their detail is a repr, not user copy) — those get the caller's fallback.

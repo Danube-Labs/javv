@@ -12,7 +12,9 @@ through the same processors, so the whole process emits ONE redacted JSON stream
 contextvars (request_id, scanner, scan_run_id, …) appear on foreign lines too. Two library
 loggers get special handling: `opensearch` per-request lines are DEBUG-gated (at info they'd log
 every touch, drowning the stream), and `opensearchpy.trace` — which logs full request BODIES —
-is always off (bodies can carry payload data no redaction regex should be trusted with).
+is always off (bodies can carry payload data no redaction regex should be trusted with). The
+`opensearch` logger also drops its failed-request warnings for 404 and 409, which the callers
+expect and handle (issue 831); every other failed request keeps its warning.
 """
 
 import logging
@@ -79,6 +81,25 @@ def _resolve_level(level: str | None) -> int:
     return _LEVELS[name]
 
 
+class _ExpectedStoreAnswers(logging.Filter):
+    """Drops opensearch-py's failed-request warning when the status is 404 or 409. The client logs
+    `"%s %s [status:%s request:%.3fs]"` with the status third; a 404 is a read of something not
+    there yet (a first watermark) and a 409 an `op_type=create` that lost (the seeded roles on
+    every start). Both reach their caller as an exception it handles."""
+
+    _FORMAT = "%s %s [status:%s request:%.3fs]"
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        expected = (
+            record.msg == self._FORMAT
+            and isinstance(args, tuple)
+            and len(args) == 4
+            and args[2] in (404, 409)
+        )
+        return not expected
+
+
 def configure_logging(level: str | None = None) -> None:
     """Configure the process-wide pipeline. Idempotent — safe to call again (tests, reloads)."""
     threshold = _resolve_level(level)
@@ -126,7 +147,8 @@ def configure_logging(level: str | None = None) -> None:
     # Bodies NEVER — the client logs full request/response bodies at its DEBUG level (one scan
     # cycle produced a 6 MB log), so the logger is capped at INFO even under JAVV_LOG_LEVEL=debug;
     # `opensearchpy.trace` (the curl-style body mirror) is always off for the same reason.
-    logging.getLogger("opensearch").setLevel(
-        logging.INFO if threshold <= logging.DEBUG else logging.WARNING
-    )
+    client_logger = logging.getLogger("opensearch")
+    client_logger.setLevel(logging.INFO if threshold <= logging.DEBUG else logging.WARNING)
+    if not any(isinstance(f, _ExpectedStoreAnswers) for f in client_logger.filters):
+        client_logger.addFilter(_ExpectedStoreAnswers())
     logging.getLogger("opensearchpy.trace").setLevel(logging.CRITICAL + 1)

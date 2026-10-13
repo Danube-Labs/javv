@@ -113,7 +113,10 @@ watermark of OpenSearch. When it occurs:
   `storage_error`.
 - The scanners try the push again, with a longer wait each time. When all tries fail, a scanner
   keeps the push in its dead-letter file. In its next cycle, it scans the image again.
+- In the web app, reads work. Sign-in and each change fail with "The store is read-only: its disk
+  is full", and a banner on each screen says so.
 - OpenSearch keeps all the data that it stored before. New scans wait until there is disk space.
+- When there is disk space again, OpenSearch lifts the block itself. JAVV needs no restart.
 
 To prevent this condition:
 

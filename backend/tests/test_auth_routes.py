@@ -155,6 +155,29 @@ async def test_lockout_answers_429_even_for_the_correct_password(auth_client) ->
     assert r.status_code == 429
 
 
+async def test_a_sign_in_the_full_disk_blocks_says_the_store_is_read_only(
+    auth_client, monkeypatch
+) -> None:
+    """Sign-in writes a session first, so a store past its flood-stage watermark refuses it. That
+    was a 500; it says why now (issue 832)."""
+    from backend.routers import auth as auth_module
+    from test_store_unavailable import FLOOD_BLOCK
+
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+
+    async def blocked(*args, **kwargs):
+        raise FLOOD_BLOCK
+
+    monkeypatch.setattr(auth_module, "mint_session", blocked)
+    r = await _login(http, user)
+
+    assert r.status_code == 503
+    assert r.json()["type"] == "store-read-only"
+    assert r.json()["title"] == "The store is read-only: its disk is full"
+
+
 # --- session round-trip -------------------------------------------------------------
 
 

@@ -99,6 +99,37 @@ describe('the /readyz poll', () => {
   })
 })
 
+// issue 832: a store that answers but is read-only (its disk full) or red stays in service, and
+// /readyz says so in a 200 with `checks.store`
+describe('a read-only or red store', () => {
+  it.each(['read-only', 'red'] as const)('a /readyz 200 with checks.store %s marks it', async (store) => {
+    fetchMock.mockResolvedValueOnce(json(200, JSON.stringify({ status: 'ready', checks: { store } })))
+    const health = useHealthStore()
+    await health.check()
+    expect([health.degraded, health.reason]).toEqual([true, store])
+  })
+
+  it('a /readyz 200 with no checks clears it', async () => {
+    const health = useHealthStore()
+    health.markDegraded('read-only', 'api')
+    fetchMock.mockResolvedValueOnce(json(200, '{"status":"ready"}'))
+    await health.check()
+    expect([health.degraded, health.reason]).toEqual([false, null])
+  })
+
+  it('a write the full disk refused marks it, and the caller still reads the answer', async () => {
+    const body = '{"type":"store-read-only","title":"The store is read-only: its disk is full","status":503}'
+    const answer = json(503, body, 'application/problem+json')
+    const result = await client.post({
+      baseUrl: 'http://localhost',
+      url: '/api/v1/findings/bulk-triage',
+      fetch: () => Promise.resolve(answer),
+    })
+    expect(useHealthStore().reason).toBe('read-only')
+    expect((result.error as { title?: string }).title).toBe('The store is read-only: its disk is full')
+  })
+})
+
 describe('the API client', () => {
   it.each([
     { name: 'the error envelope', reply: () => json(503, '{"status":503}', 'application/problem+json'), reason: 'store' },
@@ -135,5 +166,21 @@ describe('BackendHealthBanner', () => {
   it('names OpenSearch when the store is down', () => {
     useHealthStore().markDegraded('store', 'api')
     expect(mount(BackendHealthBanner).get('[role="alert"]').text()).toContain('Check OpenSearch health')
+  })
+
+  it.each([
+    ['read-only', 'The store is read-only: its disk is full. Reads work; changes are not saved.'],
+    ['red', 'Part of the store is not available. Some screens and changes can fail until it recovers.'],
+  ] as const)('a %s store is the amber line with its ruled copy', (reason, copy) => {
+    useHealthStore().markDegraded(reason, 'readyz')
+    const line = mount(BackendHealthBanner).get('.sys-line')
+    expect(line.text()).toContain(copy)
+    expect(line.classes()).toContain('tone-degraded')
+    expect(line.classes()).not.toContain('tone-down')
+  })
+
+  it('an outage stays the red line', () => {
+    useHealthStore().markDegraded('store', 'api')
+    expect(mount(BackendHealthBanner).get('.sys-line').classes()).toContain('tone-down')
   })
 })
