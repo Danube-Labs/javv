@@ -169,7 +169,7 @@ helm test javv
 
 Do the `store` upgrade when the release changed the OpenSearch chart.
 [Version notes](#version-notes) tells you which releases did. It is safe to do it when the chart did
-not change: then the upgrade changes only labels, and OpenSearch does not restart.
+not change. Then the upgrade changes only labels, and OpenSearch does not restart.
 
 The backend runs as one pod with `strategy: Recreate`. The backend runs the background jobs, so
 two backends must never run at the same time. Kubernetes stops the old pod before it starts the new
