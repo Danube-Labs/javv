@@ -147,6 +147,10 @@ STORE_UNAVAILABLE = Counter(
     "javv_store_unavailable_total",
     "Requests answered 503 because OpenSearch was not reachable or still starting (issue 832)",
 )
+STORE_READ_ONLY = Counter(
+    "javv_store_read_only_total",
+    "Writes answered 503 because OpenSearch's disk is past its flood-stage watermark (issue 832)",
+)
 CLUSTER_DELETE_RECHECK_FAILURES = Counter(
     "javv_cluster_delete_recheck_failures_total",
     "Retirement sweeps whose pass over deleted clusters failed (issue 778); the run's retirements"

@@ -188,6 +188,8 @@ Each answer that is not a success has the same body, with the type `application/
 {"type": "about:blank", "title": "invalid credentials", "status": 401, "detail": null, "request_id": "b169be4a30444fdc"}
 ```
 
+- `type`: `about:blank`, or `store-read-only` on a 503 for a write that OpenSearch refused
+  because its disk is full.
 - `title`: a short text that names the error.
 - `detail`: on a 422 from a field check, the list of the fields that are not valid. Else it is
   `null`.
@@ -207,7 +209,7 @@ Each answer that is not a success has the same body, with the type `application/
 | 415 | The sign-in body has a JSON type that is not `application/json`. |
 | 422 | A field is not valid. `detail` names the field. |
 | 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. |
-| 503 | OpenSearch is not available. Do the request again later. |
+| 503 | OpenSearch is not available. Do the request again later. With the type `store-read-only` and the title "The store is read-only: its disk is full", OpenSearch is past its flood-stage disk watermark: reads work, and a change that OpenSearch refuses, a sign-in included, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
 
 ## List responses
 
@@ -680,6 +682,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_scheduler_tick_errors_total` | counter | none | Scheduler ticks that failed before a job started, usually because OpenSearch was not available. A steady rate means that no job runs. |
 | `javv_cluster_retirement_held_total` | counter | none | Retirement sweeps that retired nothing, because no cluster sent an accepted scan in its scanner-down time. This points at JAVV, an outage or a refused scanner version, not at the clusters. Each one also logs a warning. |
 | `javv_store_unavailable_total` | counter | none | Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs `store unavailable` at most once in 10 seconds, with `held_back`, the count since the line before: any sender can repeat a request while OpenSearch is away. |
+| `javv_store_read_only_total` | counter | none | Writes that got 503 `store-read-only` because the disk of OpenSearch is past its flood-stage watermark. Each one is counted. The backend logs `store read-only` at most once in 10 seconds, with `held_back`. |
 | `javv_cluster_delete_incomplete_total` | counter | none | Cluster deletes that stopped and answered 503. Send the delete again to finish it. Each one also logs a warning. |
 | `javv_cluster_delete_leftovers_total` | counter | none | Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows, after it wrote an audit row with their counts (action `cluster_delete_recheck`). Each one also logs a warning. |
 | `javv_cluster_delete_recheck_failures_total` | counter | none | Deleted clusters that the retirement sweep could not check, or sweeps that could not check any. The sweep goes on to the next deleted cluster, and the next run checks them again. Each one also logs a warning. |

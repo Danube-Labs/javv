@@ -4,7 +4,11 @@ Pins: a connection error, a timeout, or a 502/503/504 from OpenSearch (its "Secu
 initialized" while it starts) answers the problem envelope with 503 "Search backend
 unavailable", never a traceback; every one counts in `javv_store_unavailable_total`; the warning
 is written at most once per window with the count it held back, since any sender can repeat the
-request while the store is down; any other store error stays the app's 500."""
+request while the store is down; any other store error stays the app's 500.
+
+A write the store's full disk blocks (its flood-stage watermark) answers 503 "The store is
+read-only: its disk is full" with the problem type `store-read-only`, by the same window rule
+(issue 832). The bodies below are what OpenSearch answered in an experiment on a real store."""
 
 from typing import Any
 
@@ -23,6 +27,29 @@ def _unavailable() -> float:
     return REGISTRY.get_sample_value("javv_store_unavailable_total") or 0.0
 
 
+def _read_only() -> float:
+    return REGISTRY.get_sample_value("javv_store_read_only_total") or 0.0
+
+
+_FLOOD = (
+    "index [system-sessions] blocked by: [TOO_MANY_REQUESTS/12/disk usage exceeded flood-stage"
+    " watermark, index has read-only-allow-delete block];"
+)
+# an index, an op_type=create or an update into a blocked index: all three answered this
+FLOOD_BLOCK = TransportError(
+    429,
+    "cluster_block_exception",
+    {
+        "error": {
+            "root_cause": [{"type": "cluster_block_exception", "reason": _FLOOD}],
+            "type": "cluster_block_exception",
+            "reason": _FLOOD,
+        },
+        "status": 429,
+    },
+)
+
+
 def _app_raising(exc: Exception) -> httpx.AsyncClient:
     app = create_app()
 
@@ -36,7 +63,11 @@ def _app_raising(exc: Exception) -> httpx.AsyncClient:
 
 @pytest.fixture(autouse=True)
 def _fresh_window(monkeypatch: Any) -> None:
-    monkeypatch.setattr(core_errors, "_store_warned", core_errors._StoreWarnings())
+    for name in ("_store_warned", "_read_only_warned"):
+        fresh = core_errors._StoreWarnings(
+            getattr(core_errors, name).event, getattr(core_errors, name).counter
+        )
+        monkeypatch.setattr(core_errors, name, fresh)
     monkeypatch.setattr(core_errors, "log", structlog.get_logger())
 
 
@@ -88,3 +119,34 @@ async def test_the_warning_is_written_once_per_window_with_the_count_it_held(mon
     lines = [e for e in logs if e["event"] == "store unavailable"]
     assert [e["held_back"] for e in lines] == [0, 2]
     assert _unavailable() == before + 4  # the counter counts every one
+
+
+async def test_a_write_the_full_disk_blocks_is_a_503_read_only() -> None:
+    before, unavailable = _read_only(), _unavailable()
+    async with _app_raising(FLOOD_BLOCK) as client:
+        with structlog.testing.capture_logs() as logs:
+            r = await client.get("/reads")
+    assert r.status_code == 503
+    body = r.json()
+    assert body["type"] == "store-read-only"
+    assert body["title"] == "The store is read-only: its disk is full"
+    assert "opensearch" not in r.text.lower()
+    assert _read_only() == before + 1
+    assert _unavailable() == unavailable  # not counted as an unreachable store
+    (line,) = [e for e in logs if e["event"] == "store read-only"]
+    assert line["log_level"] == "warning" and line["held_back"] == 0
+    assert not [e for e in logs if e["log_level"] == "error"]
+
+
+async def test_the_read_only_warning_is_written_once_per_window(monkeypatch) -> None:
+    clock = [1000.0]
+    monkeypatch.setattr(core_errors, "_now", lambda: clock[0])
+    before = _read_only()
+    async with _app_raising(FLOOD_BLOCK) as client:
+        with structlog.testing.capture_logs() as logs:
+            for _ in range(3):
+                assert (await client.get("/reads")).status_code == 503
+            clock[0] += core_errors.STORE_WARN_WINDOW_S
+            assert (await client.get("/reads")).status_code == 503
+    assert [e["held_back"] for e in logs if e["event"] == "store read-only"] == [0, 2]
+    assert _read_only() == before + 4
