@@ -250,6 +250,44 @@ async def test_password_change_enforces_the_policy(auth_client) -> None:
     assert r.status_code == 422
 
 
+# JSON source text, so the escape stays unpaired. Request validation refuses it before the
+# password policy or the hash sees it; FastAPI's default 422 handler would then fail to encode
+# the echoed input and answer 500, so these pin the app's own handler too.
+LONE_SURROGATE = "correct horse \\ud800 staple"
+
+
+async def test_password_change_refuses_a_lone_surrogate_with_422(auth_client) -> None:
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+    await _login(http, user)
+    before = (await client.get(index="system-users", id=user))["_source"]["password_hash"]
+
+    r = await http.post(
+        "/auth/password",
+        content=f'{{"current_password": "{PASSWORD}", "new_password": "{LONE_SURROGATE}"}}',
+        headers={"content-type": "application/json"},
+    )
+
+    assert r.status_code == 422
+    after = (await client.get(index="system-users", id=user))["_source"]["password_hash"]
+    assert after == before
+
+
+async def test_login_with_a_lone_surrogate_is_422(auth_client) -> None:
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+
+    r = await http.post(
+        "/auth/login",
+        content=f'{{"username": "{user}", "password": "{LONE_SURROGATE}"}}',
+        headers={"content-type": "application/json"},
+    )
+
+    assert r.status_code == 422
+
+
 async def test_password_change_without_a_session_is_401(auth_client) -> None:
     http, _ = auth_client
     r = await http.post(
