@@ -1,7 +1,8 @@
 /**
  * Sign-in writes a session first, so a store whose disk is full refuses it (issue 832). The form
  * says why in the ruled words, not "The server is not answering", and it does not start the
- * server-down re-check: the server answers, it only cannot save.
+ * server-down re-check: the server answers, it only cannot save. The forced password change on
+ * the same page says the same (operator ruling on the PR, 2026-10-13).
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -12,10 +13,12 @@ import LoginView from '@/views/LoginView.vue'
 
 type Answer = { data?: unknown; error?: unknown; response?: { ok: boolean; status: number } }
 const login = vi.fn<() => Promise<Answer>>()
+const changePassword = vi.fn<() => Promise<Answer>>()
 vi.mock('@/api/generated', async (importOriginal) =>
   (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
     meAuthMeGet: vi.fn<() => Promise<Answer>>(),
     loginAuthLoginPost: () => login(),
+    changePasswordAuthPasswordPost: () => changePassword(),
     logoutAuthLogoutPost: vi.fn<() => Promise<Answer>>(),
   }),
 )
@@ -39,6 +42,7 @@ async function signIn() {
 beforeEach(() => {
   setActivePinia(createPinia())
   login.mockReset()
+  changePassword.mockReset()
 })
 
 describe('sign-in against a read-only store', () => {
@@ -56,5 +60,23 @@ describe('sign-in against a read-only store', () => {
     login.mockResolvedValueOnce(refused({ title: 'Search backend unavailable', status: 503 }))
     const w = await signIn()
     expect(w.get('[role="alert"]').text()).toBe(SERVER_DOWN_COPY)
+  })
+})
+
+describe('the forced password change against a read-only store', () => {
+  it('says the store is read-only, stays on the form, and is not "the server is down"', async () => {
+    changePassword.mockResolvedValueOnce(
+      refused({ type: 'store-read-only', title: 'The store is read-only: its disk is full', status: 503 }),
+    )
+    useAuthStore().user = { username: 'admin', role: 'admin', capabilities: ['*'], must_change: true }
+    const w = mount(LoginView)
+    await w.get('#current').setValue('the temporary one')
+    await w.get('#new').setValue('a brand new passphrase')
+    await w.get('#confirm').setValue('a brand new passphrase')
+    await w.get('form').trigger('submit')
+    await flushPromises()
+    expect(w.get('[role="alert"]').text()).toBe(READ_ONLY_COPY)
+    expect(w.get('button').text()).toBe('Change password')
+    expect(useAuthStore().unreachable).toBe(false)
   })
 })

@@ -106,9 +106,9 @@ oracle), forced password change (SEC-6: bootstrap admin / temp password), **serv
 error; the page asks `/readyz` every 30 seconds, and when the server returns it re-checks the
 session, so a visitor whose session is still good goes straight to Overview. A failed session
 check is not remembered as signed out: the next navigation asks again), **store read-only**
-(issue 832: a sign-in the full disk refuses, a `503` with the problem type `store-read-only`,
-shows "The store is read-only: its disk is full." and starts no re-check, since the server
-answers).
+(issue 832: a sign-in or a forced password change the full disk refuses, a `503` with the
+problem type `store-read-only`, shows "The store is read-only: its disk is full." and starts no
+re-check, since the server answers; the password change by operator ruling on PR 843).
 **Rulings (operator, on built specimens, 2026-10-02):** the server-down message on the login page
 is the form's plain red line (A of two; B was a tinted box). The banner for a backend that is gone
 reads "The backend is not answering. Screens cannot load until it is back." (A of two; B ended

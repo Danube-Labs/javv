@@ -31,8 +31,12 @@ export function serverFailed(status: number | undefined): boolean {
 
 export const SERVER_DOWN_COPY = 'The server is not answering. This page checks again on its own.'
 
-/** Sign-in writes a session, so a store whose disk is full refuses it (issue 832, ruled copy). */
+/** Sign-in and the password change write, so a store whose disk is full refuses them (issue 832,
+ * ruled copy). The server answers; it only cannot save. */
 export const READ_ONLY_COPY = 'The store is read-only: its disk is full.'
+
+const refusedReadOnly = (error: unknown): boolean =>
+  (error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE
 
 export const SESSION_ENDED_COPY = 'Your session ended. Sign in again.'
 export const PASSWORD_CHANGED_COPY = 'Password changed. Sign in again.'
@@ -85,7 +89,7 @@ export const useAuthStore = defineStore('auth', {
         body: { username, password },
       })
       // the server answers and only cannot save: not "not answering", and no re-check loop
-      if ((error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE) {
+      if (refusedReadOnly(error)) {
         this.unreachable = false
         return READ_ONLY_COPY
       }
@@ -101,6 +105,10 @@ export const useAuthStore = defineStore('auth', {
         client,
         body: { current_password: currentPassword, new_password: newPassword },
       })
+      if (refusedReadOnly(error)) {
+        this.unreachable = false
+        return READ_ONLY_COPY
+      }
       this.unreachable = serverFailed(response?.status)
       if (this.unreachable) return SERVER_DOWN_COPY
       if (response?.status === 422) {
