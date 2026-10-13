@@ -556,6 +556,12 @@ admin does not exist.
 
 ## Known limits
 
+- **A full OpenSearch disk makes JAVV read-only.** Past the flood-stage disk watermark (95% by
+  default), OpenSearch refuses writes. Reads still work. Sign-in and each change fail with "The
+  store is read-only: its disk is full", and a banner says so on each screen. Scanner pushes fail
+  and the scanner tries again in its retry budget. Free disk space, or add disk: OpenSearch then
+  lifts the block itself, and JAVV needs no restart. See the
+  [sizing runbook](runbooks/opensearch-sizing.md).
 - **amd64 only.** The images and the scanner images are for amd64.
 - **Releases with published images:** 0.5.1, and the releases after 0.6.0. 0.5.0 has no images.
   The release run of 0.6.0 stopped before it published (its compose test had no value for a

@@ -91,7 +91,7 @@ def _now() -> float:
     return time.monotonic()
 
 
-class _StoreWarnings:
+class StoreWarnings:
     """Counts every one; at most one warning per window, with the count held back since the last
     one."""
 
@@ -117,9 +117,9 @@ class _StoreWarnings:
         self.last, self.held = now, 0
 
 
-_store_warned = _StoreWarnings("store unavailable", STORE_UNAVAILABLE.inc)
-_read_only_warned = _StoreWarnings("store read-only", STORE_READ_ONLY.inc)
-_busy_warned = _StoreWarnings("store busy", OS_REQUEST_ERRORS.labels("429").inc)
+_store_warned = StoreWarnings("store unavailable", STORE_UNAVAILABLE.inc)
+_read_only_warned = StoreWarnings("store read-only", STORE_READ_ONLY.inc)
+_busy_warned = StoreWarnings("store busy", OS_REQUEST_ERRORS.labels("429").inc)
 
 
 def register_error_handlers(app: FastAPI) -> None:

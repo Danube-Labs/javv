@@ -108,7 +108,7 @@ def _app_raising(exc: Exception) -> httpx.AsyncClient:
 @pytest.fixture(autouse=True)
 def _fresh_window(monkeypatch: Any) -> None:
     for name in ("_store_warned", "_read_only_warned", "_busy_warned"):
-        fresh = core_errors._StoreWarnings(
+        fresh = core_errors.StoreWarnings(
             getattr(core_errors, name).event, getattr(core_errors, name).counter
         )
         monkeypatch.setattr(core_errors, name, fresh)

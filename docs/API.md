@@ -248,7 +248,7 @@ of the data inspector.
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/healthz` | none | Liveness. It answers 200 while the process runs. It does not use OpenSearch. |
-| GET | `/readyz` | none | Readiness. It answers 200 `{"status": "ready"}` when OpenSearch answers, else 503 `{"status": "degraded"}`. |
+| GET | `/readyz` | none | Readiness. It answers 200 `{"status": "ready"}` when OpenSearch answers, else 503 `{"status": "degraded"}`. When OpenSearch answers but is read-only (its disk is past the flood-stage watermark) or red (part of its data is not available), the answer is 200 with `"checks": {"store": "read-only"}` or `"red"`: reads still work, so the backend stays in service. |
 | GET | `/metrics` | none | The metrics, in the Prometheus format ([Metrics](#metrics)) |
 | GET | `/api/v1/meta` | session | The versions that the backend runs: `version` (the JAVV release), `mapping_version`, `envelope_versions` (the ingest schema versions that it accepts), `opensearch_version` and `python_version`. If OpenSearch does not answer, `opensearch_version` is `null`. |
 

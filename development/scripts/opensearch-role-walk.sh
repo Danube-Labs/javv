@@ -100,6 +100,11 @@ api GET /auth/me | jq -e '.user.must_change == false' >/dev/null || fail "me"
 
 step "readiness, version, clusters"
 curl -sf "$BACKEND/readyz" >/dev/null || fail "readyz"
+# /readyz answers ready even when its store checks are refused, so ask for them as javv directly
+os_as "$OS_JAVV_LOGIN" -sf "$OS_URL/_cluster/health" >/dev/null || fail "cluster health as javv"
+os_as "$OS_JAVV_LOGIN" -sf \
+  "$OS_URL/_cluster/state/blocks/findings,javv-*,system-*?ignore_unavailable=true&allow_no_indices=true" \
+  >/dev/null || fail "index blocks as javv"
 api GET /api/v1/meta >/dev/null
 api GET /api/v1/clusters >/dev/null
 
