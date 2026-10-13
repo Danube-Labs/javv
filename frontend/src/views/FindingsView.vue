@@ -269,7 +269,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         <h1>Findings</h1>
         <p class="head-stat">
           <!-- a count before the first read, or after a refused one, is not zero: it is unknown -->
-          <template v-if="grid.settled && !grid.failed">{{ grid.total.toLocaleString('en-US') }}</template
+          <template v-if="grid.totalKnown">{{ grid.total.toLocaleString('en-US') }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> findings</span>
         </p>
         <p class="head-note">kept per-scanner, no cross-merge</p>
@@ -330,7 +330,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :fields="FINDINGS_FIELDS"
             :selections="filters.selections"
             :modes="filters.modes"
-            :total="grid.settled && !grid.failed ? grid.total : null"
+            :total="grid.totalKnown ? grid.total : null"
             :can-triage="auth.hasCapability('can_triage')"
             :can-accept-final="auth.hasCapability('can_accept_audit_final')"
             :historical="timeTravel.t !== null"

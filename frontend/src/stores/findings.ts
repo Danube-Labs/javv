@@ -9,7 +9,7 @@
  * caller resets to page 0 (`resetPaging`).
  */
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useCursorPager } from '@/composables/useCursorPager'
 import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
@@ -53,6 +53,9 @@ export const useFindingsStore = defineStore('findings', () => {
   const settled = ref(false)
   const failed = ref(false)
   const failedStatus = ref<number | null>(null)
+  /** The total belongs to the current filters: answered, or a refused later page of the same
+   * query, whose total page 1 already gave (operator ruling 2026-10-13, issue 833). */
+  const totalKnown = computed(() => settled.value && (!failed.value || pager.page.value > 0))
 
   function setResult(newRows: FindingRow[], newTotal: number, nextCursor: string | null) {
     rows.value = newRows
@@ -98,6 +101,7 @@ export const useFindingsStore = defineStore('findings', () => {
     settled,
     failed,
     failedStatus,
+    totalKnown,
     hasPrev: pager.hasPrev,
     hasNext: pager.hasNext,
     /** Cursor to fetch the CURRENT page with. */

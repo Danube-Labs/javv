@@ -206,7 +206,7 @@ async function exportCsv() {
       <div class="head-card">
         <h1>Audit log</h1>
         <p class="head-stat">
-          <template v-if="grid.settled && !grid.failed">{{ totalLabel }}</template
+          <template v-if="grid.totalKnown">{{ totalLabel }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> events</span>
         </p>
         <p class="head-note">immutable, per user · window bounded by audit-log retention</p>

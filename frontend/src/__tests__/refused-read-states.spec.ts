@@ -172,6 +172,8 @@ describe('Findings: a refused read never leaves the last answer on screen (issue
     expect(text).toContain(copy)
     expect(text).toContain('Findings could not be loaded.')
     expect(text).toContain('Showing 26–50 of 435')
+    // the total is still this query's, from page 1 (operator ruling 2026-10-13)
+    expect(w.find('.head-stat').text()).toBe('435 findings')
     const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Prev')!
     expect(prev.attributes('disabled')).toBeUndefined()
   })
@@ -311,6 +313,7 @@ describe('Audit log: the same rules as Findings (issue 833)', () => {
     await flushPromises()
     expect(w.find('.load-error').text()).toBe(copy)
     expect(w.text()).toContain('Showing 26–50 of 60')
+    expect(w.find('.head-stat').text()).toBe('60 events')
     const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Prev')!
     expect(prev.attributes('disabled')).toBeUndefined()
   })
@@ -365,6 +368,21 @@ describe('Contributors and Approvals: the reason, and the newest answer (issue 8
     const w = await mountRouted(ApprovalsView as Component)
     await flushPromises()
     expect(w.find('.load-error').text()).toBe(copy)
+  })
+
+  it('Approvals: a refused read leaves the rail values with "-" counts (operator ruling 2026-10-13)', async () => {
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet)
+      .mockResolvedValueOnce(ok({ approvals: [], total: 5, facets: { status: [{ key: 'active', count: 5 }] } }) as never)
+      .mockResolvedValueOnce(refusedWith(503) as never)
+    const w = await mountRouted(ApprovalsView as Component)
+    await flushPromises()
+    expect(w.findAll('.facet-count').map((c) => c.text())).toContain('5')
+    makeFiltersStore('approvals-filters', APPROVAL_FIELDS)().toggle('scanner', 'trivy')
+    await flushPromises()
+    expect(w.find('.load-error').exists()).toBe(true)
+    const counts = w.findAll('.facet-count').map((c) => c.text())
+    expect(counts).not.toContain('5')
+    expect(counts).toContain('-')
   })
 
   it('Contributors: a slow answer for an older window does not replace a newer refusal', async () => {

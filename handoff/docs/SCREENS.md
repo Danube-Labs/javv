@@ -225,7 +225,8 @@ dropped (contract is cursor paging).
   "no findings match" + clear-filters.
 - **A refused later page stays where it is** (operator ruling 2026-10-12, issue 833 G1): the
   alert, the grid's "could not be loaded" row, and the pager still on that page's range with Prev
-  usable. A **410** (the page's search expired after the keep-alive) says "These results expired.
+  usable. The head count keeps the total, which page 1 of the same query gave (operator ruling
+  2026-10-13). A **410** (the page's search expired after the keep-alive) says "These results expired.
   Reload the page to start again.", since its cursor cannot be asked for again. **503**: the same,
   plus the global banner.
 - **429 PIT cap** (`JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL`) — "too many open searches/exports,
@@ -430,7 +431,9 @@ conflict 2).
 justification · approver · **expiry** (expired decisions resurface) · status (active / revoked
 struck-through / expired) · when. Row → finding detail's "Decisions on this CVE".
 
-**States:** loading; empty ("no pending decisions"); 403 (nav hidden); degraded.
+**States:** loading; empty ("no pending decisions"); 403 (nav hidden); degraded. A refused read
+keeps the rail's values with "-" for each count, since the counts come with the rows (operator
+ruling 2026-10-13, issue 833).
 
 **Changed vs SCREENS.md:** decisions shape replaces approval fields (V4-DELTA-2); capability
 gate + nav hiding (A-4); revoke+new editing (D40).

@@ -4,7 +4,7 @@
  * identity (`finding`/`decision` sub-objects — null when the doc aged out of the store or the
  * event was a bulk marker). */
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useCursorPager } from '@/composables/useCursorPager'
 
@@ -53,6 +53,9 @@ export const useAuditStore = defineStore('audit', () => {
   const settled = ref(false)
   const failed = ref(false)
   const failedStatus = ref<number | null>(null)
+  /** The total belongs to the current filters: answered, or a refused later page of the same
+   * query, whose total page 1 already gave (operator ruling 2026-10-13, issue 833). */
+  const totalKnown = computed(() => settled.value && (!failed.value || pager.page.value > 0))
 
   function setResult(
     newRows: AuditEvent[],
@@ -99,6 +102,7 @@ export const useAuditStore = defineStore('audit', () => {
     settled,
     failed,
     failedStatus,
+    totalKnown,
     hasPrev: pager.hasPrev,
     hasNext: pager.hasNext,
     /** Cursor to fetch the CURRENT page with. */
