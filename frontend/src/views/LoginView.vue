@@ -120,8 +120,8 @@ async function submitChange() {
         {{ mode === 'login' ? 'Sign in' : 'Change password' }}
       </button>
       <p v-if="mode === 'login'" class="note">
-        Forgot your password? Ask an admin to reset it. If no admin can sign in, the deploy guide
-        (DEPLOYING.md) shows how to reset one.
+        Forgot your password? Ask an admin to reset it. If no admin can sign in, see
+        <em>A forgotten password</em> in the Deploying guide.
       </p>
     </form>
   </main>

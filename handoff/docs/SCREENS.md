@@ -114,8 +114,9 @@ with no cookie) also turns the form into sign-in, with "Password changed. Sign i
 by the operator on the issue, 2026-10-12.
 **A forgotten password** (issue 761): the sign-in screen carries a note under **Sign in**, in the
 prototype's `login-note` place (small, muted, centered): "Forgot your password? Ask an admin to
-reset it. If no admin can sign in, the deploy guide (DEPLOYING.md) shows how to reset one." It is
-the same for every visitor (no user-existence hint) and is not on the forced change. Ruling
+reset it. If no admin can sign in, see *A forgotten password* in the Deploying guide." The page is
+named in words, the title in italics: no URL and no repository path (operator ruling, issue 833).
+It is the same for every visitor (no user-existence hint) and is not on the forced change. Ruling
 (operator, on built specimens, 2026-10-06): A, the note always shown, of two; B hid it behind a
 "Forgot your password?" button. No self-service reset: users have no email and JAVV no mail server,
 and OIDC (#131) moves those passwords to the identity provider.
