@@ -231,8 +231,8 @@ dropped (contract is cursor paging).
   reads "Findings could not be loaded.", never "0 findings" or "No findings yet" (issue 817). Audit
   log, Contributors and Approvals follow the same rule for their counts (Audit's row: "Events could
   not be loaded."). A refused read after a good one clears the rows: they answered another
-  query (issue 833 F1). An answer to an older request is dropped, so it never replaces a newer
-  one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
+  query (issue 833 F1). On all four screens an answer to an older request is dropped, so it never
+  replaces a newer one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
   current filters answers.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
   the alert says "Filter counts could not be loaded." with the reason, and the rail and the

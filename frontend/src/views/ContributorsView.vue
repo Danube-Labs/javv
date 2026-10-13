@@ -35,6 +35,7 @@ import {
   type TeamTotals,
 } from '@/contributors/viewModel'
 import { logger } from '@/lib/logger'
+import { readFailureCopy } from '@/findings/failureCopy'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
@@ -55,6 +56,7 @@ const board = ref<BoardRow[]>([])
 const totals = ref<TeamTotals | null>(null)
 const handledSeries = ref<ActivityPoint[]>([])
 const failed = ref(false)
+const failedStatus = ref<number | null>(null)
 const settled = ref(false)
 
 const query = computed(() =>
@@ -63,10 +65,12 @@ const query = computed(() =>
     : null,
 )
 
+let seq = 0
 watch(
   query,
   async (q, old) => {
     if (!q) return
+    const mine = ++seq
     if (old && old.cluster_id !== q.cluster_id) {
       settled.value = false
       board.value = []
@@ -76,7 +80,9 @@ watch(
     const response = await contributorsApiV1ContributorsGet({
       query: q as ContributorsApiV1ContributorsGetData['query'],
     })
+    if (mine !== seq) return // a newer read owns the board now
     failed.value = !response.response?.ok || !response.data
+    failedStatus.value = response.response?.status ?? null
     if (failed.value) {
       logger.warn('contributors_load_failed', { status: response.response?.status })
     } else {
@@ -159,7 +165,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
     </div>
 
     <p v-else-if="failed" class="load-error" role="alert">
-      Contributors unavailable. Check the backend connection.
+      {{ readFailureCopy(failedStatus, 'Contributors unavailable. Check the backend connection.') }}
     </p>
 
     <div v-else-if="board.length === 0" class="not-found" role="status">

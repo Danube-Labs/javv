@@ -24,7 +24,9 @@ vi.mock('@/api/generated', async (importOriginal) => {
 vi.mock('@/api/client', () => ({ client: {} }))
 
 import {
+  approvalListApiV1DecisionsApprovalsGet,
   auditFacetsApiV1AuditFacetsGet,
+  contributorsApiV1ContributorsGet,
   facetFindingsApiV1FindingsFacetsGet,
   readAuditLogApiV1AuditGet,
   searchFindingsApiV1FindingsGet,
@@ -32,11 +34,13 @@ import {
 import AuditTable from '@/components/audit/AuditTable.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { APPROVAL_FIELDS } from '@/approvals/fields.config'
 import { AUDIT_FIELDS } from '@/audit/fields.config'
 import { useAuditStore } from '@/stores/audit'
 import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useFindingsStore } from '@/stores/findings'
+import { useTimeTravelStore } from '@/stores/timeTravel'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
 import ContributorsView from '@/views/ContributorsView.vue'
@@ -73,9 +77,9 @@ describe('a grid whose read is refused says so, and claims no empty answer', () 
     // "0 events" and "No journaled activity for this cluster yet."
     ['Audit log', AuditTrailView, 'The search backend is busy.', /(?<!\d)0 events/, ['No journaled activity']],
     // "0 contributors"
-    ['Contributors', ContributorsView, 'Contributors unavailable.', /(?<!\d)0 contributors/, []],
+    ['Contributors', ContributorsView, 'The search backend is busy.', /(?<!\d)0 contributors/, []],
     // "0 standing acceptances"
-    ['Approvals', ApprovalsView, 'Could not load the queue.', /(?<!\d)0 standing acceptances/, []],
+    ['Approvals', ApprovalsView, 'The search backend is busy.', /(?<!\d)0 standing acceptances/, []],
     // already right: no count, no empty claim
     ['Running images', ImagesView, 'Inventory unavailable.', /(?<!\d)0 images/, []],
   ] as const)('%s', async (_name, view, failure, zeroCount, emptyClaims) => {
@@ -327,6 +331,61 @@ describe('Audit log: the same rules as Findings (issue 833)', () => {
     await flushPromises()
     expect(w.text()).not.toContain('dave-stale')
     expect(w.text()).toContain('Events could not be loaded.')
+  })
+})
+
+describe('Contributors and Approvals: the reason, and the newest answer (issue 833, G2 and F3)', () => {
+  const ok = (data: unknown) => ({ data, request: {}, response: { ok: true, status: 200 } })
+  const contributorsOk = ok({ leaderboard: [], handled_over_time: [], totals: null })
+  const approvalsOk = ok({ approvals: [], total: 5, facets: {} })
+
+  it.each([
+    [429, 'The search backend is busy. Try again in a few seconds.'],
+    [503, 'Contributors unavailable. Check the backend connection.'],
+  ])('Contributors, a %s', async (status, copy) => {
+    vi.mocked(contributorsApiV1ContributorsGet).mockResolvedValueOnce(refusedWith(status) as never)
+    const w = await mountRouted(ContributorsView as Component)
+    await flushPromises()
+    expect(w.find('.load-error').text()).toBe(copy)
+  })
+
+  it.each([
+    [429, 'The search backend is busy. Try again in a few seconds.'],
+    [503, 'Could not load the queue. Check the backend connection.'],
+  ])('Approvals, a %s', async (status, copy) => {
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValueOnce(refusedWith(status) as never)
+    const w = await mountRouted(ApprovalsView as Component)
+    await flushPromises()
+    expect(w.find('.load-error').text()).toBe(copy)
+  })
+
+  it('Contributors: a slow answer for an older window does not replace a newer refusal', async () => {
+    let answerOld: (v: unknown) => void = () => {}
+    vi.mocked(contributorsApiV1ContributorsGet)
+      .mockImplementationOnce(() => new Promise((resolve) => (answerOld = resolve)) as never)
+      .mockResolvedValueOnce(refusedWith(503) as never)
+    const w = await mountRouted(ContributorsView as Component)
+    await flushPromises()
+    useTimeTravelStore().setWindow(7)
+    await flushPromises()
+    answerOld(contributorsOk)
+    await flushPromises()
+    expect(w.find('.head-stat').text()).toBe('- contributors')
+  })
+
+  it('Approvals: a slow answer for an older filter does not replace a newer refusal', async () => {
+    let answerOld: (v: unknown) => void = () => {}
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet)
+      .mockImplementationOnce(() => new Promise((resolve) => (answerOld = resolve)) as never)
+      .mockResolvedValueOnce(refusedWith(503) as never)
+    const w = await mountRouted(ApprovalsView as Component)
+    await flushPromises()
+    makeFiltersStore('approvals-filters', APPROVAL_FIELDS)().toggle('scanner', 'trivy')
+    await flushPromises()
+    answerOld(approvalsOk)
+    await flushPromises()
+    expect(w.find('.load-error').exists()).toBe(true)
+    expect(w.find('.head-stat').text()).not.toMatch(/5/)
   })
 })
 
