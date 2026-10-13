@@ -2100,8 +2100,8 @@ a hyphen.</p>
 </ul>
 </li>
 <li><code>title</code>: a short text that names the error.</li>
-<li><code>detail</code>: on a 422 from a field check, the list of the fields that are not valid. Else it is
-  <code>null</code>.</li>
+<li><code>detail</code>: on a 422 from a field check, the list of the fields that are not valid, with the
+  reason for each. It does not hold the value that you sent. Else it is <code>null</code>.</li>
 <li><code>request_id</code>: the id of the request in the backend log. The <code>X-Request-ID</code> header of the answer
   also has it, on each answer. To set the id yourself, send <code>X-Request-ID</code> with 1 to 64 letters,
   digits or hyphens. If you send no id, or an id that is not valid, the backend makes one.</li>
