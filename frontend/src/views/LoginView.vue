@@ -29,6 +29,10 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 
 const mode = computed(() => (auth.mustChange ? 'change' : 'login'))
+// a forced change that ends in sign-in must not leave the current password in the sign-in field
+watch(mode, (now) => {
+  if (now === 'login') password.value = newPassword.value = confirm.value = ''
+})
 
 const health = useHealthStore()
 let recheck: ReturnType<typeof setInterval> | 0 = 0

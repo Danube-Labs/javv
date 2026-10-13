@@ -20,9 +20,11 @@ import LoginView from '@/views/LoginView.vue'
 
 type Answer = { data?: unknown; error?: unknown; response?: { ok: boolean; status: number } }
 const changePassword = vi.fn<(opts: { body: unknown }) => Promise<Answer>>()
+const me = vi.fn<() => Promise<Answer>>()
+const push = vi.fn<(to: unknown) => Promise<void>>(() => Promise.resolve())
 vi.mock('@/api/generated', async (importOriginal) =>
   (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
-    meAuthMeGet: vi.fn<() => Promise<Answer>>(),
+    meAuthMeGet: () => me(),
     loginAuthLoginPost: vi.fn<() => Promise<Answer>>(),
     changePasswordAuthPasswordPost: (opts: { body: unknown }) => changePassword(opts),
     logoutAuthLogoutPost: vi.fn<() => Promise<Answer>>(),
@@ -31,7 +33,7 @@ vi.mock('@/api/generated', async (importOriginal) =>
 vi.mock('@/api/client', () => ({ client: {} }))
 vi.mock('vue-router', async (orig) => ({
   ...(await orig<typeof import('vue-router')>()),
-  useRouter: () => ({ push: vi.fn<(to: unknown) => Promise<void>>(() => Promise.resolve()) }),
+  useRouter: () => ({ push }),
 }))
 
 const refused = (status: number, error?: unknown): Answer => ({
@@ -39,9 +41,16 @@ const refused = (status: number, error?: unknown): Answer => ({
   response: { ok: false, status },
 })
 
+const signedIn = (mustChange: boolean): Answer => ({
+  data: { user: { username: 'admin', role: 'admin', capabilities: ['*'], must_change: mustChange } },
+  response: { ok: true, status: 200 },
+})
+
 beforeEach(() => {
   setActivePinia(createPinia())
   changePassword.mockReset()
+  me.mockReset().mockResolvedValue(signedIn(true)) // the session is live unless a test says not
+  push.mockClear()
 })
 
 function mountChange() {
@@ -124,12 +133,48 @@ describe('a password the server refuses', () => {
     )
   })
 
-  it('a 401 says to check the current password, not the server title', async () => {
+  it('a 401 with the session still live says to check the current password', async () => {
     changePassword.mockResolvedValueOnce(refused(401, { title: 'invalid credentials' }))
+    me.mockResolvedValueOnce(signedIn(true))
     const w = mountChange()
     await submit(w, 'x'.repeat(PASSWORD_MIN_LENGTH))
     expect(w.get('[role="alert"]').text()).toBe(
       'Password change failed. Check the current password.',
     )
+    expect(w.get('button').text()).toBe('Change password')
+  })
+})
+
+// issue 833, F4: a dead session and a wrong current password are the same 401, and a session
+// reset by an admin while the form was open read as a wrong password until a reload
+describe('the session behind the form', () => {
+  it('a 401 with the session ended turns the form into sign-in, emptied', async () => {
+    changePassword.mockResolvedValueOnce(refused(401, { title: 'invalid credentials' }))
+    me.mockResolvedValueOnce(refused(401))
+    const w = mountChange()
+    await submit(w, 'x'.repeat(PASSWORD_MIN_LENGTH))
+    expect(w.get('[role="alert"]').text()).toBe('Your session ended. Sign in again.')
+    expect(w.get('button').text()).toBe('Sign in')
+    expect((w.get('#password').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('a change that landed with no new session asks for a sign-in, not Overview', async () => {
+    changePassword.mockResolvedValueOnce({ data: {}, response: { ok: true, status: 200 } })
+    me.mockResolvedValueOnce(refused(401))
+    const w = mountChange()
+    await submit(w, 'x'.repeat(PASSWORD_MIN_LENGTH))
+    expect(w.get('[role="alert"]').text()).toBe('Password changed. Sign in again.')
+    expect(w.get('button').text()).toBe('Sign in')
+    expect((w.get('#password').element as HTMLInputElement).value).toBe('')
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('a change with its new session goes to Overview', async () => {
+    changePassword.mockResolvedValueOnce({ data: {}, response: { ok: true, status: 200 } })
+    me.mockResolvedValueOnce(signedIn(false))
+    const w = mountChange()
+    await submit(w, 'x'.repeat(PASSWORD_MIN_LENGTH))
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    expect(push).toHaveBeenCalledWith('/overview')
   })
 })

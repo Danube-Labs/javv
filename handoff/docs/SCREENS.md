@@ -106,6 +106,12 @@ reads "The backend is not answering. Screens cannot load until it is back." (A o
 **The password rule** (issue 726): the forced change states it under the fields, as the
 prototype does ("At least 12 characters. Your current password stops working once you set the new
 one."), refuses a shorter password before sending it, and shows the server's own reason for a `422`.
+**An ended session on the forced change** (issue 833): a wrong current password and an ended session
+are the same `401`, so the page asks `GET /auth/me`. With the session ended, the form turns into
+sign-in, emptied, with "Your session ended. Sign in again."; with it live, the message stays "Password
+change failed. Check the current password." A change that landed but got no new session (a `200`
+with no cookie) also turns the form into sign-in, with "Password changed. Sign in again." Copy ruled
+by the operator on the issue, 2026-10-12.
 **A forgotten password** (issue 761): the sign-in screen carries a note under **Sign in**, in the
 prototype's `login-note` place (small, muted, centered): "Forgot your password? Ask an admin to
 reset it. If no admin can sign in, the deploy guide (DEPLOYING.md) shows how to reset one." It is
