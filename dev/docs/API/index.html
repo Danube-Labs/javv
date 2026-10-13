@@ -2087,6 +2087,8 @@ a hyphen.</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"about:blank"</span><span class="p">,</span><span class="w"> </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"invalid credentials"</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">401</span><span class="p">,</span><span class="w"> </span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">"request_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"b169be4a30444fdc"</span><span class="p">}</span>
 </code></pre></div>
 <ul>
+<li><code>type</code>: <code>about:blank</code>, or <code>store-read-only</code> on a 503 for a write that OpenSearch refused
+  because its disk is full.</li>
 <li><code>title</code>: a short text that names the error.</li>
 <li><code>detail</code>: on a 422 from a field check, the list of the fields that are not valid. Else it is
   <code>null</code>.</li>
@@ -2140,11 +2142,11 @@ a hyphen.</p>
 </tr>
 <tr>
 <td>429</td>
-<td>Too many requests. Some answers have a <code>Retry-After</code> header with the seconds to wait.</td>
+<td>Too many requests. Some answers have a <code>Retry-After</code> header with the seconds to wait. With the title "The search backend is busy", OpenSearch itself is overloaded (a full queue or a circuit breaker): the answer has <code>Retry-After: 5</code>.</td>
 </tr>
 <tr>
 <td>503</td>
-<td>OpenSearch is not available. Do the request again later.</td>
+<td>OpenSearch is not available. Do the request again later. With the type <code>store-read-only</code> and the title "The store is read-only: its disk is full", OpenSearch is past its flood-stage disk watermark: reads work, and a change that OpenSearch refuses, a sign-in included, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead (<a href="#ingest-a-scan">Ingest a scan</a>).</td>
 </tr>
 </tbody>
 </table>
@@ -2217,7 +2219,7 @@ of the data inspector.</p>
 <td>GET</td>
 <td><code>/readyz</code></td>
 <td>none</td>
-<td>Readiness. It answers 200 <code>{"status": "ready"}</code> when OpenSearch answers, else 503 <code>{"status": "degraded"}</code>.</td>
+<td>Readiness. It answers 200 <code>{"status": "ready"}</code> when OpenSearch answers, else 503 <code>{"status": "degraded"}</code>. When OpenSearch answers but is read-only (its disk is past the flood-stage watermark) or red (part of its data is not available), the answer is 200 with <code>"checks": {"store": "read-only"}</code> or <code>"red"</code>: reads still work, so the backend stays in service.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3209,7 +3211,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_opensearch_request_errors_total</code></td>
 <td>counter</td>
 <td><code>kind</code></td>
-<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes</td>
+<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes. <code>429</code> also counts each request that got 429 "The search backend is busy"; the backend logs <code>store busy</code> for these at most once in 10 seconds, with <code>held_back</code>.</td>
 </tr>
 <tr>
 <td><code>javv_opensearch_backoff_retries_total</code></td>
@@ -3294,6 +3296,12 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td>counter</td>
 <td>none</td>
 <td>Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs <code>store unavailable</code> at most once in 10 seconds, with <code>held_back</code>, the count since the line before: any sender can repeat a request while OpenSearch is away.</td>
+</tr>
+<tr>
+<td><code>javv_store_read_only_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Writes that got 503 <code>store-read-only</code> because the disk of OpenSearch is past its flood-stage watermark. Each one is counted. The backend logs <code>store read-only</code> at most once in 10 seconds, with <code>held_back</code>.</td>
 </tr>
 <tr>
 <td><code>javv_cluster_delete_incomplete_total</code></td>
