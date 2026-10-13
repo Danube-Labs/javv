@@ -1207,7 +1207,7 @@ with a wrong name to the backend, and the backend ignores it.
 <td>secrets.bootstrapAdminPassword</td>
 <td>string</td>
 <td><code>""</code></td>
-<td>The password of the first JAVV admin, 12 characters or more. The backend uses it one time, when that admin does not exist.</td>
+<td>The password of the first JAVV admin, 12 to 256 characters. A longer password stops the backend at start. The backend uses it one time, when that admin does not exist.</td>
 </tr>
 <tr>
 <td>secrets.existingSecret</td>

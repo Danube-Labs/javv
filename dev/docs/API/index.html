@@ -880,6 +880,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#a-password-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A password change
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1428,6 +1439,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#a-password-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A password change
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1960,6 +1982,22 @@ endpoint answers a well-formed request with 403 <code>password change required</
 body that is not valid JSON gets 422 first.</p>
 <p>Each refusal logs a <code>password change required</code> warning with the username. It also increments
 <code>javv_auth_failures_total{reason="must_change"}</code>.</p>
+<h3 id="a-password-change">A password change<a class="headerlink" href="#a-password-change" title="Permanent link">&para;</a></h3>
+<p><code>POST /auth/password</code> changes the password of the user of the session.</p>
+<ul>
+<li><strong>The new password</strong> has 12 to 256 characters. Each character counts as one, also a character
+  outside ASCII.</li>
+<li><strong>401:</strong> the current password is wrong, or the session has ended. The two get the same answer.</li>
+<li><strong>403:</strong> an identity provider manages the password of the user.</li>
+<li><strong>422:</strong> the new password has fewer than 12 or more than 256 characters, or the body is not
+  valid.</li>
+<li><strong>The audit row comes first.</strong> JAVV writes a <code>pwd_change</code> row to the audit log before it changes
+  the password. If JAVV cannot write the row, the password does not change, and the answer is an
+  error.</li>
+<li><strong>200 with no cookie:</strong> the password changed, but JAVV could not make the new session. Each old
+  session has ended, so sign in again with the new password. JAVV logs a <code>password changed, no new
+  session</code> warning and increments <code>javv_auth_failures_total{reason="session_not_minted"}</code>.</li>
+</ul>
 <h2 id="roles-and-permissions">Roles and permissions<a class="headerlink" href="#roles-and-permissions" title="Permanent link">&para;</a></h2>
 <p>Some endpoints need a permission. The tables in <a href="#endpoints">Endpoints</a> name it. A user gets the
 permissions of its role. The web app uses the <code>capabilities</code> from <code>GET /auth/me</code> to show or hide
@@ -2263,7 +2301,7 @@ in a scan cycle.</p>
 <td>POST</td>
 <td><code>/auth/password</code></td>
 <td>session</td>
-<td>Changes your password. Body: <code>{current_password, new_password}</code>. It ends each session of the user and sets a new cookie.</td>
+<td>Changes your password. Body: <code>{current_password, new_password}</code>. It ends each session of the user and sets a new cookie. The rules and the refusals are in <a href="#a-password-change">A password change</a>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3213,7 +3251,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_auth_failures_total</code></td>
 <td>counter</td>
 <td><code>reason</code></td>
-<td><code>bad_credentials</code>, <code>locked_out</code>, <code>expired_session</code>, <code>missing_capability</code> or <code>must_change</code> (a session with a temporary password). The labels never show a username.</td>
+<td><code>bad_credentials</code>, <code>locked_out</code>, <code>expired_session</code>, <code>missing_capability</code>, <code>must_change</code> (a session with a temporary password) or <code>session_not_minted</code> (a password change with no new session). The labels never show a username.</td>
 </tr>
 <tr>
 <td><code>javv_config_warnings_total</code></td>

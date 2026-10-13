@@ -1333,7 +1333,8 @@ the release names these images.</p>
 <ul>
 <li><code>JAVV_SECRET_KEY</code>: the secret key of the backend. Use a long random string
     (<code>openssl rand -hex 32</code>). Keep it for the life of the installation (see the warning below).</li>
-<li><code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>: the password of the first JAVV admin. JAVV uses it one time.</li>
+<li><code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>: the password of the first JAVV admin. JAVV uses it one time.
+    Use 12 to 256 characters. A longer password stops the backend at start.</li>
 <li>
 <p><code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code>: the password of the OpenSearch admin. Only OpenSearch and its
     <code>healthcheck</code> use it. JAVV never gets it. OpenSearch reads it one time, at its first start.
@@ -1783,6 +1784,9 @@ for a new password before you can do other work. The command also ends all sessi
 It writes a <code>pwd_reset</code> row to the audit log, with <code>system</code> as the actor.</p>
 <ul>
 <li>The command refuses a user whose password belongs to an identity provider.</li>
+<li>If the command cannot end the sessions, it still shows the new password, says that the sessions
+  were not ended, and stops with exit code 1. Run it again: it gives a new password and ends the
+  sessions.</li>
 <li>A user that too many failed sign-ins locked out stays locked out for <code>JAVV_LOGIN_LOCKOUT_MINUTES</code>
   (15 by default). The lockout is in the memory of the running backend. Wait until it ends, or
   restart the backend.</li>

@@ -2091,7 +2091,7 @@ the code.</p>
 <tr>
 <td><code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code></td>
 <td>empty: no first admin</td>
-<td><strong>Secret.</strong> The password of the first admin. The backend uses it only when that admin does not exist. A later change of this value has no effect: change the password in the web app. The first admin must change the password at the first sign-in.</td>
+<td><strong>Secret.</strong> The password of the first admin. The backend uses it only when that admin does not exist. A later change of this value has no effect: change the password in the web app. The first admin must change the password at the first sign-in. At most 256 characters: a longer value stops the backend at start. Fewer than 12 characters are accepted, because the first sign-in changes the password.</td>
 </tr>
 </tbody>
 </table>

@@ -846,6 +846,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#073-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.7.3: a bootstrap admin password longer than 256 characters stops the backend
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#070-javv_token_pepper-is-now-javv_secret_key" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1241,6 +1252,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#073-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.7.3: a bootstrap admin password longer than 256 characters stops the backend
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#070-javv_token_pepper-is-now-javv_secret_key" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1588,6 +1610,14 @@ applied it automatically on the first start.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="073-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend">0.7.3: a bootstrap admin password longer than 256 characters stops the backend<a class="headerlink" href="#073-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" title="Permanent link">&para;</a></h3>
+<p>A sign-in accepts a password of 256 characters at most. A first admin with a longer
+<code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code> could never sign in. The backend now refuses such a value at start,
+and shows <code>invalid settings: JAVV_BOOTSTRAP_ADMIN_PASSWORD: String should have at most 256
+characters</code>. It does this also when the first admin exists, because the backend reads the setting
+at each start.</p>
+<p>If you see this error, set a password of 256 characters or fewer. A new value does not change
+the password of an admin that exists.</p>
 <h3 id="070-javv_token_pepper-is-now-javv_secret_key">0.7.0: <code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code><a class="headerlink" href="#070-javv_token_pepper-is-now-javv_secret_key" title="Permanent link">&para;</a></h3>
 <p>Only the name changes. <strong>Keep the same value.</strong> If you change the value, every scanner gets 401,
 every user must sign in again, and every open download link stops working. The stored data cannot
