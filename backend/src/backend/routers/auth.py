@@ -161,9 +161,15 @@ async def change_password(
 ) -> dict[str, Any]:
     """First-login `must_change` exit + regular self-service change. Verifies the CURRENT password
     (a hijacked cookie alone can't rotate credentials), then revokes every session of the user and
-    mints a fresh one — a concurrently-stolen session dies with the old password."""
+    mints a fresh one — a concurrently-stolen session dies with the old password.
+
+    The audit row is strict and written first (D17; issue 833 moved password changes out of the
+    #188 fire-and-forget split), so a change the log cannot record does not happen. A new session
+    that cannot be made after the update is still a 200, with no cookie: the password has changed
+    and every old session is gone, so the user signs in again with the new one."""
     client = _os(request)
-    user = await _load_user(request, session["user_id"])
+    user_id = session["user_id"]
+    user = await _load_user(request, user_id)
     if user.get("auth_source", "local") != "local":
         raise HTTPException(403, "password is managed by the identity provider")
     if not verify_password(body.current_password, user.get("password_hash") or ""):
@@ -172,21 +178,28 @@ async def change_password(
         check_policy(body.new_password)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+    await append_auth_event(
+        client,
+        actor=user_id,
+        action="pwd_change",
+        entity_type="user",
+        entity_id=user_id,
+        strict=True,
+    )
     await client.update(
         index=USERS_INDEX,
-        id=session["user_id"],
+        id=user_id,
         body={"doc": {"password_hash": hash_password(body.new_password), "must_change": False}},
         params={"refresh": "true"},
     )
-    await revoke_all_for_user(client, session["user_id"])
-    _set_session_cookie(response, await mint_session(client, session["user_id"]))
-    await append_auth_event(
-        client,
-        actor=session["user_id"],
-        action="pwd_change",
-        entity_type="user",
-        entity_id=session["user_id"],
-    )
+    await revoke_all_for_user(client, user_id)
+    try:
+        raw = await mint_session(client, user_id)
+    except Exception as exc:  # noqa: BLE001 — whatever failed, the change itself has landed
+        log.warning("password changed, no new session", username=user_id, error=type(exc).__name__)
+        AUTH_FAILURES.labels("session_not_minted").inc()
+    else:
+        _set_session_cookie(response, raw)
     return {"user": _public_user({**user, "must_change": False})}
 
 

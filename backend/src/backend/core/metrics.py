@@ -109,7 +109,8 @@ EXPORT_BYTES = Counter("javv_export_bytes_total", "Bytes actually streamed", ["f
 AUTH_FAILURES = Counter(
     "javv_auth_failures_total",
     "Authentication/authorization failures by reason — NEVER labeled by username (PII + unbounded)",
-    # bad_credentials | locked_out | expired_session | missing_capability | must_change
+    # bad_credentials | locked_out | expired_session | missing_capability | must_change |
+    # session_not_minted (a password change landed, its new session could not be made)
     ["reason"],
 )
 

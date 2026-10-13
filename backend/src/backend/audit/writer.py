@@ -11,12 +11,14 @@ Writes go through the `system-audit-log` write alias (M4 convention).
 the caller's retry may produce a duplicate row for the same `revision`, which replay tolerates:
 latest-per-field by revision is idempotent to duplicates).
 
-`append_auth_event` has TWO policies (audit #188): **fire-and-forget for the login path**
+`append_auth_event` has TWO policies (audit #188): **fire-and-forget for sign-in and sign-out**
 (`strict=False`, default — an audit hiccup must never take down login/logout, an availability
-tradeoff), and **strict for admin/token/config mutations** (`strict=True` — those are
-correctness-critical audit trails; a mutation must never be left applied-but-unjournaled, so the
-append raises and the caller journals BEFORE it mutates). Callers on the mutation paths append
-first, so an audit failure means the mutation never happens and a retry re-drives it cleanly.
+tradeoff), and **strict for admin/token/config mutations and every password change**
+(`strict=True` — those are correctness-critical audit trails; a mutation must never be left
+applied-but-unjournaled, so the append raises and the caller journals BEFORE it mutates). A user's
+own password change, the forced first one included, joined the strict side by operator ruling
+(issue 833); #188 had left it with sign-in. Callers on the mutation paths append first, so an audit
+failure means the mutation never happens and a retry re-drives it cleanly.
 
 An optional explicit `event_id` makes an append **idempotent** (op_type=create → a duplicate id is
 a replay, not a failure): a deterministic id lets a one-shot mutation (e.g. a decision revoke)
@@ -135,9 +137,9 @@ async def append_auth_event(
     prefix: str = "",
 ) -> None:
     """Auth/admin events. `strict=False` (login/logout) is fire-and-forget — an audit hiccup must
-    never take down auth. `strict=True` (admin/token/config mutations, audit #188) RE-RAISES after
-    logging, so the caller — which journals BEFORE it mutates — leaves no applied-but-unjournaled
-    change (D17)."""
+    never take down auth. `strict=True` (admin/token/config mutations, audit #188, and password
+    changes, issue 833) RE-RAISES after logging, so the caller — which journals BEFORE it mutates —
+    leaves no applied-but-unjournaled change (D17)."""
     try:
         await _append(
             client,

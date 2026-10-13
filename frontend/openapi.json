@@ -9403,7 +9403,7 @@
     },
     "/auth/password": {
       "post": {
-        "description": "First-login `must_change` exit + regular self-service change. Verifies the CURRENT password\n(a hijacked cookie alone can't rotate credentials), then revokes every session of the user and\nmints a fresh one \u2014 a concurrently-stolen session dies with the old password.",
+        "description": "First-login `must_change` exit + regular self-service change. Verifies the CURRENT password\n(a hijacked cookie alone can't rotate credentials), then revokes every session of the user and\nmints a fresh one \u2014 a concurrently-stolen session dies with the old password.\n\nThe audit row is strict and written first (D17; issue 833 moved password changes out of the\n#188 fire-and-forget split), so a change the log cannot record does not happen. A new session\nthat cannot be made after the update is still a 200, with no cookie: the password has changed\nand every old session is gone, so the user signs in again with the new one.",
         "operationId": "change_password_auth_password_post",
         "requestBody": {
           "content": {

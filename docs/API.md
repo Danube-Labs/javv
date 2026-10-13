@@ -131,6 +131,23 @@ body that is not valid JSON gets 422 first.
 Each refusal logs a `password change required` warning with the username. It also increments
 `javv_auth_failures_total{reason="must_change"}`.
 
+### A password change
+
+`POST /auth/password` changes the password of the user of the session.
+
+- **The new password** has 12 to 256 characters. Each character counts as one, also a character
+  outside ASCII.
+- **401:** the current password is wrong, or the session has ended. The two get the same answer.
+- **403:** an identity provider manages the password of the user.
+- **422:** the new password has fewer than 12 or more than 256 characters, or the body is not
+  valid.
+- **The audit row comes first.** JAVV writes a `pwd_change` row to the audit log before it changes
+  the password. If JAVV cannot write the row, the password does not change, and the answer is an
+  error.
+- **200 with no cookie:** the password changed, but JAVV could not make the new session. Each old
+  session has ended, so sign in again with the new password. JAVV logs a `password changed, no new
+  session` warning and increments `javv_auth_failures_total{reason="session_not_minted"}`.
+
 ## Roles and permissions
 
 Some endpoints need a permission. The tables in [Endpoints](#endpoints) name it. A user gets the
@@ -254,7 +271,7 @@ in a scan cycle.
 |---|---|---|---|
 | POST | `/auth/login` | none | Signs in and sets the session cookie. A wrong username or password gets 401. Too many failures get 429 ([Authentication](#authentication)). |
 | POST | `/auth/logout` | session | Signs out and ends the session on the server |
-| POST | `/auth/password` | session | Changes your password. Body: `{current_password, new_password}`. It ends each session of the user and sets a new cookie. |
+| POST | `/auth/password` | session | Changes your password. Body: `{current_password, new_password}`. It ends each session of the user and sets a new cookie. The rules and the refusals are in [A password change](#a-password-change). |
 | GET | `/auth/me` | session | Your user: `username`, `role`, `capabilities` and `must_change` |
 
 ### Admin
@@ -655,7 +672,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_limit_rejections_total` | counter | `limit` | Requests that a limit refused: `pit_cap`, `export_rows`, `bulk_targets`, `bulk_inline`, `client_events` and `inspect_bytes` |
 | `javv_pits_open` | gauge | none | The cursors and exports that are open now |
 | `javv_export_rows_total` / `javv_export_bytes_total` | counter | `format` | The rows and bytes that the exports sent. If a client stops the download, the count shows what it received. |
-| `javv_auth_failures_total` | counter | `reason` | `bad_credentials`, `locked_out`, `expired_session`, `missing_capability` or `must_change` (a session with a temporary password). The labels never show a username. |
+| `javv_auth_failures_total` | counter | `reason` | `bad_credentials`, `locked_out`, `expired_session`, `missing_capability`, `must_change` (a session with a temporary password) or `session_not_minted` (a password change with no new session). The labels never show a username. |
 | `javv_config_warnings_total` | counter | `setting` | Starts with a weak connection to OpenSearch: `JAVV_OPENSEARCH_VERIFY_CERTS` (the certificate is not checked on `https`) or `JAVV_OPENSEARCH_URL` (a password over plain `http`). Each one also logs a warning at the start. |
 | `javv_stored_setting_unknown_fields_total` | counter | `setting` | Reads of a runtime setting that had fields this release does not know. The backend ignores these fields. After a rollback, a value larger than 0 means that a newer release saved that setting. `setting` is `sla`, `scan_scope`, `snapshot_repo`, `report_ttl`, `lifecycle`, `findings_cleanup`, `staleness`, `retirement` or `cluster-retirement`. |
 | `javv_job_runs_total` | counter | `kind`, `outcome` | Background jobs that the scheduler started. `outcome` is `done`, `failed` or `skipped`. `skipped` means that a different run held the job. A steady `failed` rate is a job that fails each time. No `done` over the schedule of a job is a job that does not run. |
