@@ -54,8 +54,16 @@ def _drop_expired(principal: str, now: float) -> list[float]:
     return live
 
 
-def _publish_gauge() -> None:
-    PITS_OPEN.set(sum(len(q) for q in _slots.values()))  # per pod, like the guard itself (#220)
+def _live_slots() -> int:
+    """The slots still inside their horizon, across principals. The gauge reads this at each
+    scrape: an abandoned slot expires without a take or a release, so a value set only on those
+    two kept counting it (issue 832). Per pod, like the guard itself."""
+    now = time.monotonic()
+    horizon = _keep_alive_s() + _EXPIRY_MARGIN_S
+    return sum(1 for q in list(_slots.values()) for t in q if now - t < horizon)
+
+
+PITS_OPEN.set_function(_live_slots)
 
 
 def acquire(principal: str) -> None:
@@ -69,7 +77,6 @@ def acquire(principal: str) -> None:
         while len(_slots) >= _MAX_KEYS:  # FIFO hard-evict — the map can never exceed the cap
             del _slots[next(iter(_slots))]
     _slots.setdefault(principal, []).append(now)
-    _publish_gauge()
 
 
 def release_one(principal: str) -> None:
@@ -81,4 +88,3 @@ def release_one(principal: str) -> None:
         q.pop(0)
         if not q:
             del _slots[principal]
-    _publish_gauge()
