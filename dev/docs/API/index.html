@@ -2092,8 +2092,13 @@ a hyphen.</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"about:blank"</span><span class="p">,</span><span class="w"> </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"invalid credentials"</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">401</span><span class="p">,</span><span class="w"> </span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">"request_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"b169be4a30444fdc"</span><span class="p">}</span>
 </code></pre></div>
 <ul>
-<li><code>type</code>: <code>about:blank</code>, or <code>store-read-only</code> on a 503 for a write that OpenSearch refused
-  because its disk is full.</li>
+<li><code>type</code>: <code>about:blank</code>, or one of these. Match on <code>type</code>, not on <code>title</code>: the title can change.<ul>
+<li><code>store-read-only</code> on a 503 for a write that OpenSearch refused because its disk is full.</li>
+<li><code>cluster-delete-unfinished</code> on a 409 for a cluster whose delete did not finish: a bring
+  back (<code>POST /api/v1/clusters/{cluster_id}/unretire</code>) or a new token
+  (<code>POST /api/v1/admin/tokens</code>). Delete the cluster again to finish it.</li>
+</ul>
+</li>
 <li><code>title</code>: a short text that names the error.</li>
 <li><code>detail</code>: on a 422 from a field check, the list of the fields that are not valid. Else it is
   <code>null</code>.</li>
@@ -3064,7 +3069,7 @@ goes to the user.</p>
 <td>GET</td>
 <td><code>/api/v1/notifications</code></td>
 <td>session</td>
-<td>Your 50 newest notifications, and <code>unread</code>, the count of the unread ones</td>
+<td>Your 50 newest notifications, and <code>unread</code>, the count of the unread ones. Each item has <code>cluster_name</code>: the name of its cluster now, the <code>cluster_id</code> if the cluster has no name, or <code>null</code> if the item has no cluster.</td>
 </tr>
 <tr>
 <td>PATCH</td>
