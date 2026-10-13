@@ -282,6 +282,34 @@ async def test_run_search_resumes_from_cursor() -> None:
     assert out["next_cursor"] is None and fake.deleted == ["pit-live"]
 
 
+async def test_keep_open_keeps_a_continuations_pit_past_its_final_page() -> None:
+    """Issue 832: a client that may page back keeps the walk's PIT and closes it itself. A first
+    page that is also its last still closes it: the client has no cursor to close it by."""
+    cur = encode_cursor(
+        pit_id="pit-live", search_after=[4, "fk-1"], sort="severity_rank", order="desc"
+    )
+    kept = _PitOS(pages=[[_doc(2)]])
+    out = await run_search(
+        kept,  # type: ignore[arg-type]
+        cluster_id="c-unit-search",
+        filters=SearchFilters(),
+        size=2,
+        cursor=cur,
+        keep_open=True,
+    )
+    assert out["next_cursor"] is None and kept.deleted == []
+
+    first = _PitOS(pages=[[_doc(0)]])
+    out = await run_search(
+        first,  # type: ignore[arg-type]
+        cluster_id="c-unit-search",
+        filters=SearchFilters(),
+        size=2,
+        keep_open=True,
+    )
+    assert out["next_cursor"] is None and first.deleted == ["pit-1"]
+
+
 async def test_run_search_deletes_a_fresh_pit_on_error(monkeypatch) -> None:
     class _Boom(_PitOS):
         async def search(self, **kw: Any) -> dict[str, Any]:

@@ -217,6 +217,22 @@
         "title": "ClientEventBatch",
         "type": "object"
       },
+      "CloseCursor": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Cursor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cursor"
+        ],
+        "title": "CloseCursor",
+        "type": "object"
+      },
       "CommitInventoryRun": {
         "additionalProperties": false,
         "properties": {
@@ -2878,6 +2894,16 @@
               ],
               "title": "As Of"
             }
+          },
+          {
+            "in": "query",
+            "name": "keep_open",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Keep Open",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -3678,6 +3704,40 @@
         ]
       }
     },
+    "/api/v1/cursors/close": {
+      "post": {
+        "operationId": "close_cursor_api_v1_cursors_close_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseCursor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Close Cursor",
+        "tags": [
+          "cursors"
+        ]
+      }
+    },
     "/api/v1/decisions": {
       "get": {
         "operationId": "list_decisions_api_v1_decisions_get",
@@ -4348,6 +4408,16 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keep_open",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Keep Open",
+              "type": "boolean"
             }
           },
           {

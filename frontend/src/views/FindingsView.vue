@@ -6,9 +6,10 @@
  * `GET /api/v1/findings/facets`. Everything carries cluster_id + as_of; grid queries add
  * present=true. Detail panel + triage land in the next M9b slices.
  */
-import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
+import { closeUnpaged } from '@/api/cursors'
 import { facetFindingsApiV1FindingsFacetsGet, searchFindingsApiV1FindingsGet } from '@/api/generated'
 import type {
   FacetFindingsApiV1FindingsFacetsGetData,
@@ -119,10 +120,16 @@ async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
   const mine = ++rowsSeq
   grid.loading = true
+  // keep_open: the last page keeps its search, so Prev from it works (the pager closes the walk)
   const response = await searchFindingsApiV1FindingsGet({
-    query: q as SearchFindingsApiV1FindingsGetData['query'],
+    query: { ...q, keep_open: true } as SearchFindingsApiV1FindingsGetData['query'],
   })
-  if (mine !== rowsSeq) return // a newer read owns the grid now
+  const live = !q.as_of // a past-T page holds no search on the server
+  if (mine !== rowsSeq) {
+    // a newer read owns the grid now; a first page it replaced opened a walk nobody will page
+    if (!q.cursor) closeUnpaged(response.data?.next_cursor, live)
+    return
+  }
   grid.loading = false
   if (response.response?.ok && response.data) {
     const body = response.data as {
@@ -130,7 +137,7 @@ async function loadRows(q: typeof rowsQuery.value) {
       total: { value: number }
       next_cursor: string | null
     }
-    grid.setResult(body.data, body.total.value, body.next_cursor)
+    grid.setResult(body.data, body.total.value, body.next_cursor, live)
     grid.failed = false
     grid.failedStatus = null
   } else {
@@ -153,6 +160,15 @@ watch(
   },
   { immediate: true },
 )
+// opening a finding keeps the walk, so Back lands on the same page; leaving for any other screen
+// closes it, and the grid comes back on page 1 with its filters and sort (ruling on issue 832)
+let keepWalk = false
+onBeforeRouteLeave((to) => {
+  keepWalk = to.name === 'finding'
+})
+onUnmounted(() => {
+  if (!keepWalk) grid.clearResults()
+})
 
 /** A bulk apply changed rows under the current lens — reload both surfaces in place. */
 function applySearch(value: string) {

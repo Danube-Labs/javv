@@ -61,6 +61,7 @@ export const useAuditStore = defineStore('audit', () => {
     newRows: AuditEvent[],
     newTotal: { value: number; relation: string },
     nextCursor: string | null,
+    live = false,
   ) {
     rows.value = newRows
     total.value = newTotal.value
@@ -68,7 +69,7 @@ export const useAuditStore = defineStore('audit', () => {
     settled.value = true
     failed.value = false
     failedStatus.value = null
-    pager.landed(nextCursor)
+    pager.landed(nextCursor, live)
   }
   /** A read was refused: no rows are shown, since they answered another query or page. A refused
    * first page drops the total too; a refused later page keeps it, so the pager stays there. */

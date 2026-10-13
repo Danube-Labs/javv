@@ -135,10 +135,12 @@ async def run_audit_search(
     order: str = "desc",
     cursor: str | None = None,
     prefix: str = "",
+    keep_open: bool = False,
 ) -> dict[str, Any]:
     """One page — `{data, next_cursor, total}`; `next_cursor=None` ends the walk. Same PIT
     lifecycle discipline as `run_search` (D38): the PIT dies with the final page, and any error
-    on a page we opened it for reclaims it; a client-owned cursor PIT lives to `keep_alive`."""
+    on a page we opened it for reclaims it; a client-owned cursor PIT lives to `keep_alive`.
+    `keep_open` keeps a continuation's PIT past its final page, as in `run_search`."""
     keep_alive = get_settings().search_pit_keep_alive
     search_after: list[Any] | None = None
     if cursor is not None:
@@ -181,8 +183,9 @@ async def run_audit_search(
         raise
 
     hits = resp["hits"]["hits"]
-    if len(hits) < size:  # final page — the PIT dies with it (D38)
-        await client.delete_pit(body={"pit_id": [pit_id]})
+    if len(hits) < size:  # final page — the PIT dies with it (D38), unless the client keeps it
+        if opened_here or not keep_open:  # a first page gave the client no cursor to close it by
+            await client.delete_pit(body={"pit_id": [pit_id]})
         next_cursor = None
     else:
         next_cursor = encode_cursor(

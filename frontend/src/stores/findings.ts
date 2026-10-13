@@ -3,7 +3,8 @@
  * search_after) — there is no offset, so no random page jumps: the pager walks prev/next over a
  * cursor stack kept by `useCursorPager`. Everything displayed (rows, total) is the server's —
  * nothing is counted or paged client-side. A store, not component state, so the grid keeps its
- * page and sort across a navigation away and back.
+ * page and sort when the user opens a finding and comes back. Leaving for any other screen closes
+ * the walk and brings the grid back on page 1 (`FindingsView`, ruling on issue 832).
  *
  * Cursors embed a PIT that the server expires after a while — a stale-cursor fetch fails and the
  * caller resets to page 0 (`resetPaging`).
@@ -57,11 +58,17 @@ export const useFindingsStore = defineStore('findings', () => {
    * query, whose total page 1 already gave (operator ruling 2026-10-13, issue 833). */
   const totalKnown = computed(() => settled.value && (!failed.value || pager.page.value > 0))
 
-  function setResult(newRows: FindingRow[], newTotal: number, nextCursor: string | null) {
+  /** `live`: a read at T=now, whose walk holds a search the pager closes when it drops it. */
+  function setResult(
+    newRows: FindingRow[],
+    newTotal: number,
+    nextCursor: string | null,
+    live = false,
+  ) {
     rows.value = newRows
     total.value = newTotal
     settled.value = true
-    pager.landed(nextCursor)
+    pager.landed(nextCursor, live)
   }
   /** A read was refused: no rows are shown, since they answered another query or page. A refused
    * first page drops the total too; a refused later page keeps it, because page 1 of the same

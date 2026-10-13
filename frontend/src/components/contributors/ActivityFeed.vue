@@ -9,6 +9,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { closeUnpaged } from '@/api/cursors'
 import { readAuditLogApiV1AuditGet } from '@/api/generated'
 import type { ReadAuditLogApiV1AuditGetData } from '@/api/generated'
 import ActionTag from '@/components/chips/ActionTag.vue'
@@ -43,6 +44,7 @@ watch(
     const response = await readAuditLogApiV1AuditGet({
       query: { ...q, size: FEED_SIZE } as ReadAuditLogApiV1AuditGetData['query'],
     })
+    closeUnpaged(response.data?.next_cursor, true) // the feed shows one page and never pages
     failed.value = !response.response?.ok || !response.data
     if (failed.value) {
       logger.warn('contrib_feed_failed', { status: response.response?.status })

@@ -6,15 +6,19 @@ the bounded label sets on the counters. Scrape stays storage-free (no OpenSearch
 
 import httpx
 import pytest
+from prometheus_client import REGISTRY
 
 from backend.core.metrics import (
     AUTH_FAILURES,
     CAS_CONFLICTS,
     LIMIT_REJECTIONS,
     OS_BACKOFF_RETRIES,
-    PITS_OPEN,
 )
 from backend.main import create_app
+
+
+def _pits_open() -> float | None:
+    return REGISTRY.get_sample_value("javv_pits_open")
 
 
 async def _scrape(c: httpx.AsyncClient) -> str:
@@ -85,14 +89,47 @@ def test_pit_guard_publishes_the_open_gauge_and_counts_cap_hits(monkeypatch) -> 
     get_settings.cache_clear()
     pit_guard._slots.clear()
     try:
-        pit_guard.acquire("metrics-user")
-        assert PITS_OPEN._value.get() >= 1
+        slot = pit_guard.acquire("metrics-user")
+        assert _pits_open() == 1
         before = LIMIT_REJECTIONS.labels("pit_cap")._value.get()
         with pytest.raises(pit_guard.PitCapExceeded):
             pit_guard.acquire("metrics-user")
         assert LIMIT_REJECTIONS.labels("pit_cap")._value.get() == before + 1
-        pit_guard.release_one("metrics-user")
-        assert PITS_OPEN._value.get() == 0
+        pit_guard.release("metrics-user", slot)
+        assert _pits_open() == 0
+    finally:
+        pit_guard._slots.clear()
+        get_settings.cache_clear()
+
+
+async def test_the_open_gauge_drops_a_slot_at_its_horizon_with_no_take_or_release(
+    monkeypatch,
+) -> None:
+    """Issue 832: an abandoned slot expires on its own, so the gauge must stop counting it then,
+    not at the next take or release. Read through the real app's /metrics."""
+    from backend.core.settings import get_settings
+    from backend.query import pit_guard
+
+    class _Clock:
+        now = 1000.0
+
+        def monotonic(self) -> float:
+            return self.now
+
+    clock = _Clock()
+    monkeypatch.setattr(pit_guard, "time", clock)
+    monkeypatch.setenv("JAVV_SEARCH_PIT_KEEP_ALIVE", "2m")
+    get_settings.cache_clear()
+    pit_guard._slots.clear()
+    try:
+        pit_guard.acquire("left-a-list")
+        pit_guard.acquire("left-a-list")
+        async with _client() as c:
+            assert "javv_pits_open 2.0" in await _scrape(c)
+            clock.now += 120 + 30 - 1  # just inside keep_alive + margin: still live
+            assert "javv_pits_open 2.0" in await _scrape(c)
+            clock.now += 2  # past it, and nothing took or released a slot
+            assert "javv_pits_open 0.0" in await _scrape(c)
     finally:
         pit_guard._slots.clear()
         get_settings.cache_clear()

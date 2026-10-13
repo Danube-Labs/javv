@@ -237,6 +237,15 @@ Assignee.
 with rows-per-page (10/25/50); total from the server agg. Numbered random-access pages from v4 are
 dropped (contract is cursor paging).
 
+**The open search** (operator rulings on the issue 832 plan, 2026-10-13): each walk holds one of
+the user's open searches until the grid closes it.
+- Prev from the last page works: the grid reads with `keep_open`, so the last page keeps the search.
+- Opening a finding keeps the walk, so Back lands on the same page.
+- Leaving for any other screen closes it: the grid comes back on page 1, with its filters and sort.
+- A change of filter, sort, page size, cluster or T, and Prev back to page 1, close it too: each
+  starts a new walk.
+- A reload or a closed tab closes it as the page goes.
+
 **States**
 - loading — skeleton rows; empty/first-run — "no sweep yet" friendly state; filtered-empty —
   "no findings match" + clear-filters.
@@ -475,6 +484,8 @@ Task column dropped (no field; Jira linkage is v1.1 — V4-DELTA-1).
 
 **States:** loading; empty; degraded; retention note ("audit window bounded by
 `system-audit-log` retention"). The count shows "-" until the first read answers (issue 833 G3).
+Paging and the open search follow the Findings rules in §3 (issue 832): Back from a finding
+keeps the page, and leaving for another screen brings the log back on page 1.
 A refused read follows the Findings rules in §3 (issue 833): the rows clear, a refused later
 page stays put with Prev, a 429 says busy and a 410 says the results expired, an older answer
 never replaces a newer one, and refused filter counts alone leave the rows and show "-" in the

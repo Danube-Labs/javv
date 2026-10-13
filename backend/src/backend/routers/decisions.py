@@ -231,7 +231,7 @@ async def export_approvals_csv(
             f"{n} acceptances exceed the inline export limit ({max_rows}) — narrow the filters",
         )
     try:
-        pit_guard.acquire(principal.user_id)
+        slot = pit_guard.acquire(principal.user_id)
     except pit_guard.PitCapExceeded as exc:
         log.warning("PIT cap reached for principal", format="approvals")
         raise HTTPException(429, str(exc), headers={"Retry-After": "5"}) from exc
@@ -248,7 +248,7 @@ async def export_approvals_csv(
                 size += len(line)
                 yield line
         finally:
-            pit_guard.release_one(principal.user_id)
+            pit_guard.release(principal.user_id, slot)
             EXPORT_ROWS.labels("approvals_csv").inc(max(0, rows - 1))  # minus the header line
             EXPORT_BYTES.labels("approvals_csv").inc(size)
 

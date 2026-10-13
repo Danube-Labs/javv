@@ -79,6 +79,13 @@ a list. This procedure reads all the findings of one cluster with the cursor.
 
 A cursor stays valid for a short time only. If a page answers 410, start again at step 4.
 
+To stop before the last page, close the cursor. Until then, it keeps one of your open-cursor
+slots ([Exports and reports](#exports-and-reports)):
+```bash
+jq -n --arg c "$cursor" '{cursor: $c}' |
+  curl -sf -b jar -X POST "$JAVV/api/v1/cursors/close" -H 'Content-Type: application/json' -d @-
+```
+
 ## Scrape the metrics
 
 The backend gives its metrics at `/metrics`, in the Prometheus format. This path needs no sign-in.
@@ -356,11 +363,12 @@ cron expressions.
 
 ### Findings: read
 
-These endpoints need a session only. Each one needs `cluster_id`.
+These endpoints need a session only. Each one needs `cluster_id`, except
+`POST /api/v1/cursors/close`.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET | `/api/v1/findings` | session | One page of findings, with a cursor ([Read a list page by page](#read-a-list-page-by-page)). `size` is 1 to 500, default 50. `sort` is `severity_rank`, `first_seen_at`, `last_scan_at`, `cvss` or `epss`. |
+| GET | `/api/v1/findings` | session | One page of findings, with a cursor ([Read a list page by page](#read-a-list-page-by-page)). `size` is 1 to 500, default 50. `sort` is `severity_rank`, `first_seen_at`, `last_scan_at`, `cvss` or `epss`. The last page closes the search of the cursor. With `keep_open=true`, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with `POST /api/v1/cursors/close`. |
 | GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. |
 | GET | `/api/v1/findings/groups` | session | Findings in groups, page by page with a cursor. `by` is `image_repo`, `image_digest`, `namespaces`, `cve_id`, `assignee`, `app` or `ptype`. |
 | GET | `/api/v1/findings/top-components` | session | The packages with the most findings, and the count of different CVEs for each scanner. A past `as_of` gets 422. |
@@ -371,7 +379,8 @@ These endpoints need a session only. Each one needs `cluster_id`.
 | GET | `/api/v1/scanners/freshness` | session | For each scanner of the cluster: `last_ingest_at` and `silent_for_seconds`. With no push yet, both are `null`. |
 | GET | `/api/v1/scanners/ingest-failures` | session | The pushes that the ingest refused after the token check, newest first. `scanner` is necessary. `days` is 1 to 365 (default 30), and `size` is 1 to 100 (default 25). [Failed pushes](#failed-pushes) gives the fields. |
 | GET | `/api/v1/scanners/provenance` | session | For each scanner: the versions and `effective_config` of the last committed run, and the last `runs` runs (1 to 50, default 10) |
-| GET | `/api/v1/audit` | session | The audit log, page by page with a cursor. Filters: `entity_type`, `action`, `actor` and `finding_key`, each with an `exclude_` form except `finding_key`. `order` is `desc` (default) or `asc`. Each row also shows the CVE, image and scanner of the finding or decision that it changed. |
+| GET | `/api/v1/audit` | session | The audit log, page by page with a cursor. Filters: `entity_type`, `action`, `actor` and `finding_key`, each with an `exclude_` form except `finding_key`. `order` is `desc` (default) or `asc`. `keep_open` is as in `/findings`. Each row also shows the CVE, image and scanner of the finding or decision that it changed. |
+| POST | `/api/v1/cursors/close` | session | Closes a cursor of `/findings` or `/audit` before its last page. Body: `{cursor}`. It closes the search of the cursor and frees your slot ([Exports and reports](#exports-and-reports)), and answers 204. A cursor of a different user, of a list that ended, or that expired also gets 204, and nothing changes. A cursor that is not valid gets 422. |
 | GET | `/api/v1/audit/facets` | session | The counts of `entity_type`, `action` and `actor`, with the same filters. With `interval` (`day` or `hour`) and `window_days`, it also gives `activity`: the events in each interval. |
 | GET | `/api/v1/audit/export.csv` | session | The audit log as CSV, with the same filters. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
 | GET | `/api/v1/images` | session | The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, `inventory` is `null`. |
@@ -565,7 +574,9 @@ In each CSV file, JAVV puts an apostrophe before a cell that starts with `=`, `+
 or a carriage return. Thus a spreadsheet does not run the cell as a formula.
 
 Each user can have `JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL` (default 10) open cursors and exports
-at the same time. One more gets 429 with `Retry-After`. JAVV keeps the result of a report in
+at the same time. One more gets 429 with `Retry-After`. A cursor is open from its first page until
+its last page, until you close it with `POST /api/v1/cursors/close`, or until
+`JAVV_SEARCH_PIT_KEEP_ALIVE` plus 30 seconds after the last page that you read. JAVV keeps the result of a report in
 OpenSearch for `JAVV_EXPORT_TTL_HOURS` (default 24). The `report_drain` job runs the queue, on
 `JAVV_JOB_REPORT_DRAIN_CRON` (default every 5 minutes). A result larger than
 `JAVV_EXPORT_MAX_BYTES` makes the job fail. At the end of a job, a `report_ready` notification
@@ -672,7 +683,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_sla_clock_missing_total` | counter | none | Pages of findings with a row that has no `sla_clock_at`. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the `rebuild_state` job. |
 | `javv_cas_conflicts_total` | counter | `site` | Writes that lost a race to a different writer: `watermarks`, `scan_orders`, `inventory_orders`, `reconcile`, `reproject`, `merge`, `report_claim` and `retirement`. A high rate means many writers on the same data. |
 | `javv_limit_rejections_total` | counter | `limit` | Requests that a limit refused: `pit_cap`, `export_rows`, `bulk_targets`, `bulk_inline`, `client_events` and `inspect_bytes` |
-| `javv_pits_open` | gauge | none | The cursors and exports that are open now |
+| `javv_pits_open` | gauge | none | The cursors and exports that are open now. A cursor that a client stopped using counts until `JAVV_SEARCH_PIT_KEEP_ALIVE` plus 30 seconds after the last page that the client read, and then stops counting. |
 | `javv_export_rows_total` / `javv_export_bytes_total` | counter | `format` | The rows and bytes that the exports sent. If a client stops the download, the count shows what it received. |
 | `javv_auth_failures_total` | counter | `reason` | `bad_credentials`, `locked_out`, `expired_session`, `missing_capability`, `must_change` (a session with a temporary password) or `session_not_minted` (a password change with no new session). The labels never show a username. |
 | `javv_config_warnings_total` | counter | `setting` | Starts with a weak connection to OpenSearch: `JAVV_OPENSEARCH_VERIFY_CERTS` (the certificate is not checked on `https`) or `JAVV_OPENSEARCH_URL` (a password over plain `http`). Each one also logs a warning at the start. |

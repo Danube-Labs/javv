@@ -309,6 +309,11 @@ EXEMPT_ROUTE_PATHS: frozenset[tuple[str, str]] = frozenset(
         # it carries instead — 401 anonymous, 403 on a must_change session (SEC-6), and the
         # per-principal rate cap — is asserted in test_client_events_route.
         ("POST", "/api/v1/client-events"),
+        # issue 832 — closing a cursor walk: any signed-in user closes only a walk that one of
+        # their OWN PIT slots holds; another user's cursor answers the same 204 and closes nothing.
+        # No capability to withhold, so the "WITHOUT the capability → 403" axis does not apply.
+        # 401 anonymous, 403 must_change and the cross-user case are in test_cursor_close_route.
+        ("POST", "/api/v1/cursors/close"),
     }
 )
 

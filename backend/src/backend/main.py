@@ -16,6 +16,7 @@ from backend.routers import (
     client_events,
     clusters,
     contributors,
+    cursors,
     data_settings,
     decisions,
     exports,
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
     app.include_router(clusters.router)
     app.include_router(views.router)
     app.include_router(client_events.router)
+    app.include_router(cursors.router)
     app.include_router(sla_routes.router)
     app.include_router(staleness_settings.router)
     app.include_router(retirement_settings.router)

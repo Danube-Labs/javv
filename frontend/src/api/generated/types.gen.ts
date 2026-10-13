@@ -121,6 +121,16 @@ export type ClientEventBatch = {
 };
 
 /**
+ * CloseCursor
+ */
+export type CloseCursor = {
+    /**
+     * Cursor
+     */
+    cursor: string;
+};
+
+/**
  * CommitInventoryRun
  */
 export type CommitInventoryRun = {
@@ -1460,6 +1470,10 @@ export type ReadAuditLogApiV1AuditGetData = {
          * As Of
          */
         as_of?: string | null;
+        /**
+         * Keep Open
+         */
+        keep_open?: boolean;
     };
     url: '/api/v1/audit';
 };
@@ -1885,6 +1899,31 @@ export type ExportContributorsCsvApiV1ContributorsExportCsvGetResponses = {
     200: unknown;
 };
 
+export type CloseCursorApiV1CursorsClosePostData = {
+    body: CloseCursor;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cursors/close';
+};
+
+export type CloseCursorApiV1CursorsClosePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CloseCursorApiV1CursorsClosePostError = CloseCursorApiV1CursorsClosePostErrors[keyof CloseCursorApiV1CursorsClosePostErrors];
+
+export type CloseCursorApiV1CursorsClosePostResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type CloseCursorApiV1CursorsClosePostResponse = CloseCursorApiV1CursorsClosePostResponses[keyof CloseCursorApiV1CursorsClosePostResponses];
+
 export type ListDecisionsApiV1DecisionsGetData = {
     body?: never;
     path?: never;
@@ -2190,6 +2229,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          * Cursor
          */
         cursor?: string | null;
+        /**
+         * Keep Open
+         */
+        keep_open?: boolean;
         /**
          * Severity
          */
