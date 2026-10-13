@@ -149,7 +149,8 @@ Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 - Retirement countdown (issue 765): a status chip under the cluster's name, "retires in 5 days"
   (amber) or, on the last day and past its date, red ("retirement due" once past it), from the
   cluster list's `warns_at` / `retires_at`; nothing outside the warning window, and none for the
-  only cluster listed.
+  only cluster listed. It moves on the banner's 10-minute tick, from the list the banner re-reads,
+  so a cluster that scans again loses its chip without a reload.
 
 **States:** loading (skeleton rows); empty (no clusters registered — cold-start copy); degraded;
 **T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1

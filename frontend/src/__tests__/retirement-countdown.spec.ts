@@ -1,7 +1,8 @@
 /**
  * The retirement countdown (issue 765): the pure status off one cluster listing row, the banner
- * line for the selected cluster, and the chip on All clusters. Dates come from the backend's
- * schedule; nothing here re-derives a window.
+ * line for the selected cluster, and the chip on All clusters, which moves on the banner's tick
+ * from the list the banner re-reads (issue 787). Dates come from the backend's schedule; nothing
+ * here re-derives a window.
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -317,5 +318,35 @@ describe('All clusters countdown chip', () => {
     const [beta, alpha] = w.findAll('tbody tr')
     expect(beta!.find('.cluster-info').text()).toContain('retires in 5 days')
     expect(alpha!.text()).not.toContain('retires in')
+  })
+
+  const alpha = row(5, { cluster_id: 'c-alpha', cluster_name: 'alpha', warns_at: at(30) })
+  const chip = (w: ReturnType<typeof mount>) => w.findAll('tbody tr')[0]!.find('.cluster-info').text()
+
+  it("moves on the banner's 10-minute tick while the page stays open (issue 787)", async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ['Date', 'setInterval', 'clearInterval'] })
+    // 1 day and 5 minutes left: 2 days rounded up, then 1 day once the tick has passed
+    const beta = row(1, { retires_at: new Date(NOW + DAY + 5 * 60_000).toISOString() })
+    vi.mocked(sdk.listClustersApiV1ClustersGet).mockResolvedValue(ok({ clusters: [beta, alpha] }))
+    const w = mount(AllClustersView, { global: { plugins: [router] } })
+    await flushPromises()
+    expect(chip(w)).toContain('retires in 2 days')
+    vi.advanceTimersByTime(10 * 60_000)
+    await flushPromises()
+    expect(chip(w)).toContain('retires in 1 day')
+    expect(sdk.facetFindingsApiV1FindingsFacetsGet).toHaveBeenCalledTimes(2) // no reload
+    w.unmount()
+  })
+
+  it('reads the cluster list the banner re-reads: a cluster that scanned loses its chip', async () => {
+    vi.mocked(sdk.listClustersApiV1ClustersGet).mockResolvedValue(ok({ clusters: [row(5), alpha] }))
+    const w = mount(AllClustersView, { global: { plugins: [router] } })
+    await flushPromises()
+    expect(chip(w)).toContain('retires in 5 days')
+    // the banner's re-read: beta scanned, its schedule left the warning window
+    useClusterStore().clusters = [row(5, { last_scan_at: at(0), warns_at: at(38), retires_at: at(45) }), alpha]
+    await flushPromises()
+    expect(chip(w)).not.toContain('retires in')
+    w.unmount()
   })
 })

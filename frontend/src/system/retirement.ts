@@ -6,6 +6,10 @@
  */
 const DAY_MS = 86_400_000
 
+/** How often an open page moves its countdowns and re-reads the cluster list: the banner and the
+ * All clusters chip share it, on the freshness banner's cadence. Fixed in code, as ruled. */
+export const RETIREMENT_TICK_MS = 10 * 60_000
+
 export interface RetirementSchedule {
   retired?: boolean
   last_scan_at?: string | null
