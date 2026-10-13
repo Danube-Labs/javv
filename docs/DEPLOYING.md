@@ -55,6 +55,7 @@ the release names these images.
     - `JAVV_SECRET_KEY`: the secret key of the backend. Use a long random string
         (`openssl rand -hex 32`). Keep it for the life of the installation (see the warning below).
     - `JAVV_BOOTSTRAP_ADMIN_PASSWORD`: the password of the first JAVV admin. JAVV uses it one time.
+        Use 12 to 256 characters. A longer password stops the backend at start.
     - `JAVV_OPENSEARCH_ADMIN_PASSWORD`: the password of the OpenSearch admin. Only OpenSearch and its
         `healthcheck` use it. JAVV never gets it. OpenSearch reads it one time, at its first start.
         OpenSearch does not start with a weak password. The rules are:
@@ -543,6 +544,9 @@ for a new password before you can do other work. The command also ends all sessi
 It writes a `pwd_reset` row to the audit log, with `system` as the actor.
 
 - The command refuses a user whose password belongs to an identity provider.
+- If the command cannot end the sessions, it still shows the new password, says that the sessions
+  were not ended, and stops with exit code 1. Run it again: it gives a new password and ends the
+  sessions.
 - A user that too many failed sign-ins locked out stays locked out for `JAVV_LOGIN_LOCKOUT_MINUTES`
   (15 by default). The lockout is in the memory of the running backend. Wait until it ends, or
   restart the backend.

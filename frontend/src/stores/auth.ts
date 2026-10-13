@@ -31,6 +31,9 @@ export function serverFailed(status: number | undefined): boolean {
 
 export const SERVER_DOWN_COPY = 'The server is not answering. This page checks again on its own.'
 
+export const SESSION_ENDED_COPY = 'Your session ended. Sign in again.'
+export const PASSWORD_CHANGED_COPY = 'Password changed. Sign in again.'
+
 /** Mirror `MIN_LENGTH` and `MAX_LENGTH` in `backend/src/backend/auth/passwords.py`
  * (CONFIGURATION.md, "Fixed values"), so the form can say the rule and refuse a short password
  * before sending it. The server stays the authority; `password-change.spec.ts` fails when they
@@ -93,9 +96,18 @@ export const useAuthStore = defineStore('auth', {
         const rule = `Use ${PASSWORD_MIN_LENGTH} to ${PASSWORD_MAX_LENGTH} characters.`
         return detailOr(error, `The new password was refused. ${rule}`)
       }
+      if (response?.status === 401) {
+        // a wrong current password and an ended session are the same 401; the session check
+        // tells them apart, and an ended one signs the user out, so the form becomes sign-in
+        await this.fetchMe()
+        if (this.unreachable) return SERVER_DOWN_COPY
+        if (this.user === null) return SESSION_ENDED_COPY
+      }
       if (!response?.ok) return 'Password change failed. Check the current password.'
       logger.info('password changed')
       await this.fetchMe()
+      // the change landed, but the server could not make the new session (a 200 with no cookie)
+      if (this.user === null) return PASSWORD_CHANGED_COPY
       return null
     },
     async logout(): Promise<void> {

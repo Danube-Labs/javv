@@ -704,6 +704,11 @@ export const meAuthMeGet = <ThrowOnError extends boolean = false>(options?: Opti
  * First-login `must_change` exit + regular self-service change. Verifies the CURRENT password
  * (a hijacked cookie alone can't rotate credentials), then revokes every session of the user and
  * mints a fresh one — a concurrently-stolen session dies with the old password.
+ *
+ * The audit row is strict and written first (D17; issue 833 moved password changes out of the
+ * #188 fire-and-forget split), so a change the log cannot record does not happen. A new session
+ * that cannot be made after the update is still a 200, with no cookie: the password has changed
+ * and every old session is gone, so the user signs in again with the new one.
  */
 export const changePasswordAuthPasswordPost = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordAuthPasswordPostData, ThrowOnError>): RequestResult<ChangePasswordAuthPasswordPostResponses, ChangePasswordAuthPasswordPostErrors, ThrowOnError> => (options.client ?? client).post<ChangePasswordAuthPasswordPostResponses, ChangePasswordAuthPasswordPostErrors, ThrowOnError>({
     url: '/auth/password',

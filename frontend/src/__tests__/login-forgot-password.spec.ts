@@ -20,8 +20,8 @@ vi.mock('vue-router', async (orig) => ({
 }))
 
 const NOTE =
-  'Forgot your password? Ask an admin to reset it. If no admin can sign in, the deploy guide ' +
-  '(DEPLOYING.md) shows how to reset one.'
+  'Forgot your password? Ask an admin to reset it. If no admin can sign in, see ' +
+  'A forgotten password in the Deploying guide.'
 
 const noteText = (wrapper: ReturnType<typeof mount>) =>
   wrapper.find('.note').exists() ? wrapper.find('.note').text().replace(/\s+/g, ' ') : null
@@ -36,6 +36,13 @@ describe('the forgotten-password note', () => {
     expect(noteText(wrapper)).toBe(NOTE)
     const order = wrapper.findAll('button, .note').map((el) => el.text().slice(0, 7))
     expect(order).toEqual(['Sign in', 'Forgot '])
+  })
+
+  // issue 833, F10: the docs site is live, so the note names the page in words, never a file
+  it('names the page in words: no repository path and no URL', () => {
+    const wrapper = mount(LoginView)
+    expect(wrapper.get('.note em').text()).toBe('A forgotten password')
+    expect(noteText(wrapper)).not.toMatch(/\.md|\/|http/)
   })
 
   it('is not on the forced password change', () => {

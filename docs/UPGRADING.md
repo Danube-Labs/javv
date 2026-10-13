@@ -266,6 +266,17 @@ applied it automatically on the first start.
 |---|---|---|---|
 | *(no entries yet)* | | | |
 
+### 0.7.3: a bootstrap admin password longer than 256 characters stops the backend
+
+A sign-in accepts a password of 256 characters at most. A first admin with a longer
+`JAVV_BOOTSTRAP_ADMIN_PASSWORD` could never sign in. The backend now refuses such a value at start,
+and shows `invalid settings: JAVV_BOOTSTRAP_ADMIN_PASSWORD: String should have at most 256
+characters`. It does this also when the first admin exists, because the backend reads the setting
+at each start.
+
+If you see this error, set a password of 256 characters or fewer. A new value does not change
+the password of an admin that exists.
+
 ### 0.7.0: `JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`
 
 Only the name changes. **Keep the same value.** If you change the value, every scanner gets 401,

@@ -19,7 +19,12 @@ from structlog.typing import EventDict
 
 from backend.auth import reset_password as cli
 from backend.auth.passwords import MIN_LENGTH, hash_password, verify_password
-from backend.auth.reset_password import ResetRefused, reset_password, temporary_password
+from backend.auth.reset_password import (
+    ResetRefused,
+    SessionsNotEnded,
+    reset_password,
+    temporary_password,
+)
 from backend.auth.sessions import lookup_session, mint_session
 from os_env import OS_URL, requires_opensearch
 
@@ -149,6 +154,36 @@ async def test_without_its_audit_row_the_reset_does_not_happen(
     assert await lookup_session(client, session, prefix=prefix) is not None
 
 
+async def test_sessions_that_cannot_be_ended_still_hand_over_the_password(
+    real_os, captured, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The hash is written before the sessions end (a sign-in between the two would otherwise
+    keep its session), so a failed revoke must not lose the password it set (issue 833)."""
+    client, prefix = real_os
+    username = await _seed(client, prefix)
+
+    async def failing_revoke(*args: Any, **kwargs: Any) -> int:
+        raise RuntimeError("sessions store unavailable")
+
+    monkeypatch.setattr(cli, "revoke_all_for_user", failing_revoke)
+    with pytest.raises(SessionsNotEnded) as caught:
+        await reset_password(client, username, prefix=prefix)
+
+    user = await _user(client, prefix, username)
+    assert verify_password(caught.value.password, user["password_hash"])
+    assert user["must_change"] is True
+    assert caught.value.password not in str(caught.value)
+    assert captured == [
+        {
+            "event": "password reset, sessions not ended",
+            "log_level": "warning",
+            "username": username,
+            "actor": "system",
+            "error": "RuntimeError",
+        }
+    ]
+
+
 def _run_command(username: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "backend.auth.reset_password", username],
@@ -183,3 +218,30 @@ def test_the_command_exits_1_for_an_unknown_user_and_prints_no_password() -> Non
     assert done.returncode == 1
     assert done.stdout == ""
     assert "not reset: no user named" in done.stderr
+
+
+@pytest.mark.serial  # blocks writes to the shared sessions index while the command runs
+async def test_the_command_prints_the_password_and_exits_1_when_sessions_stay() -> None:
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    try:
+        username = await _seed(client, "")
+        await mint_session(client, username)
+        await client.indices.put_settings(
+            index="system-sessions", body={"index.blocks.write": True}
+        )
+        try:
+            done = _run_command(username)
+        finally:
+            await client.indices.put_settings(
+                index="system-sessions", body={"index.blocks.write": None}
+            )
+        user = await _user(client, "", username)
+    finally:
+        await client.close()
+
+    assert done.returncode == 1
+    lines = done.stdout.splitlines()
+    assert len(lines) == 1
+    assert verify_password(lines[0], user["password_hash"])
+    assert "sessions were not ended" in done.stderr
+    assert lines[0] not in done.stderr

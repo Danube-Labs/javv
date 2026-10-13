@@ -29,6 +29,10 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 
 const mode = computed(() => (auth.mustChange ? 'change' : 'login'))
+// a forced change that ends in sign-in must not leave the current password in the sign-in field
+watch(mode, (now) => {
+  if (now === 'login') password.value = newPassword.value = confirm.value = ''
+})
 
 const health = useHealthStore()
 let recheck: ReturnType<typeof setInterval> | 0 = 0
@@ -116,8 +120,8 @@ async function submitChange() {
         {{ mode === 'login' ? 'Sign in' : 'Change password' }}
       </button>
       <p v-if="mode === 'login'" class="note">
-        Forgot your password? Ask an admin to reset it. If no admin can sign in, the deploy guide
-        (DEPLOYING.md) shows how to reset one.
+        Forgot your password? Ask an admin to reset it. If no admin can sign in, see
+        <em>A forgotten password</em> in the Deploying guide.
       </p>
     </form>
   </main>

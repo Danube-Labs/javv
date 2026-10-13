@@ -202,3 +202,27 @@ def test_the_retirement_seeds_reach_the_window_and_zero_means_never(monkeypatch)
     finally:
         monkeypatch.undo()
         get_settings.cache_clear()
+
+
+# --- the bootstrap admin password (issue 833) -------------------------------------------
+
+
+async def test_a_bootstrap_password_sign_in_could_never_take_aborts_startup(monkeypatch) -> None:
+    """Sign-in caps a password at 256 characters, so a longer bootstrap one could never sign in.
+    The error names the variable and never holds the value."""
+    from backend.main import create_app
+
+    secret = "s3cret-" + "x" * 250  # 257 characters
+    monkeypatch.setenv("JAVV_BOOTSTRAP_ADMIN_PASSWORD", secret)
+    app = create_app()
+    with pytest.raises(RuntimeError, match="JAVV_BOOTSTRAP_ADMIN_PASSWORD") as caught:
+        async with app.router.lifespan_context(app):
+            pass
+    assert "s3cret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("length", [256, 11], ids=["at-the-cap", "under-the-minimum"])
+def test_a_bootstrap_password_up_to_the_cap_is_accepted(monkeypatch, length: int) -> None:
+    # under 12 stays allowed: it is a first-login password, changed at once (issue 724)
+    monkeypatch.setenv("JAVV_BOOTSTRAP_ADMIN_PASSWORD", "y" * length)
+    assert len(get_settings().bootstrap_admin_password) == length

@@ -375,6 +375,29 @@ async def test_password_reset_refuses_externally_managed_users(admin_env) -> Non
     assert r.status_code == 403
 
 
+async def test_create_and_reset_refuse_a_lone_surrogate_with_422(admin_env) -> None:
+    make_http, client = admin_env
+    admin = make_http()
+    await _seed_and_login(admin, client, capabilities=["can_manage_users"])
+    target = await _seed_and_login(make_http(), client, capabilities=[])
+    temp = "a temporary \\ud800 horse"  # JSON source text: the escape stays unpaired
+    json_ = {"content-type": "application/json"}
+
+    created = await admin.post(
+        "/api/v1/admin/users",
+        content=f'{{"username": "{_name()}", "temp_password": "{temp}", "role": "viewer"}}',
+        headers=json_,
+    )
+    reset = await admin.post(
+        f"/api/v1/admin/users/{target}/password-reset",
+        content=f'{{"temp_password": "{temp}"}}',
+        headers=json_,
+    )
+
+    assert created.status_code == reset.status_code == 422
+    assert (await _doc(client, target))["must_change"] is False  # the reset changed nothing
+
+
 async def test_user_list_paginates(admin_env) -> None:
     # task E (#142): the same pagination the token list gained
     make_http, client = admin_env

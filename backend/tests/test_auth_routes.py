@@ -250,12 +250,149 @@ async def test_password_change_enforces_the_policy(auth_client) -> None:
     assert r.status_code == 422
 
 
+# JSON source text, so the escape stays unpaired. Request validation refuses it before the
+# password policy or the hash sees it; FastAPI's default 422 handler would then fail to encode
+# the echoed input and answer 500, so these pin the app's own handler too.
+LONE_SURROGATE = "correct horse \\ud800 staple"
+
+
+async def test_password_change_refuses_a_lone_surrogate_with_422(auth_client) -> None:
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+    await _login(http, user)
+    before = (await client.get(index="system-users", id=user))["_source"]["password_hash"]
+
+    r = await http.post(
+        "/auth/password",
+        content=f'{{"current_password": "{PASSWORD}", "new_password": "{LONE_SURROGATE}"}}',
+        headers={"content-type": "application/json"},
+    )
+
+    assert r.status_code == 422
+    after = (await client.get(index="system-users", id=user))["_source"]["password_hash"]
+    assert after == before
+
+
+async def test_login_with_a_lone_surrogate_is_422(auth_client) -> None:
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+
+    r = await http.post(
+        "/auth/login",
+        content=f'{{"username": "{user}", "password": "{LONE_SURROGATE}"}}',
+        headers={"content-type": "application/json"},
+    )
+
+    assert r.status_code == 422
+
+
 async def test_password_change_without_a_session_is_401(auth_client) -> None:
     http, _ = auth_client
     r = await http.post(
         "/auth/password", json={"current_password": PASSWORD, "new_password": "whatever works ok"}
     )
     assert r.status_code == 401
+
+
+async def _audit_actions(client, entity_id: str) -> list[str]:
+    await client.indices.refresh(index="system-audit-log-*")
+    hits = await client.search(
+        index="system-audit-log-*",
+        body={"size": 20, "query": {"term": {"entity_id": entity_id}}},
+    )
+    return [h["_source"]["action"] for h in hits["hits"]["hits"]]
+
+
+@pytest.mark.parametrize("must_change", [True, False], ids=["forced", "later"])
+async def test_every_password_change_writes_its_audit_row(auth_client, must_change) -> None:
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user, must_change=must_change)
+    await _login(http, user)
+
+    r = await http.post(
+        "/auth/password",
+        json={"current_password": PASSWORD, "new_password": "an entirely new passphrase"},
+    )
+
+    assert r.status_code == 200
+    assert (await _audit_actions(client, user)).count("pwd_change") == 1
+
+
+async def test_a_password_change_the_audit_log_cannot_record_does_not_happen(
+    auth_client, monkeypatch
+) -> None:
+    """Strict and written first (issue 833, amending the #188 split): a failed audit append leaves
+    the password and the sessions as they were, and a retry changes it with one row."""
+    from backend.audit import writer
+
+    http, client = auth_client
+    user = _u()
+    new_password = "an entirely new passphrase"
+    await _seed_user(client, user)
+    await _login(http, user)
+    real = writer._append
+
+    async def failing(*args, **kwargs):
+        raise RuntimeError("audit index hiccup")
+
+    monkeypatch.setattr(writer, "_append", failing)
+    body = {"current_password": PASSWORD, "new_password": new_password}
+    with pytest.raises(RuntimeError):  # a strict audit failure fails the request (500)
+        await http.post("/auth/password", json=body)
+    monkeypatch.setattr(writer, "_append", real)
+
+    assert (await http.get("/auth/me")).status_code == 200  # the session was not revoked
+    fresh = httpx.AsyncClient(transport=http._transport, base_url="https://t")
+    async with fresh:
+        assert (await _login(fresh, user, PASSWORD)).status_code == 200  # nor the password
+    assert "pwd_change" not in await _audit_actions(client, user)
+
+    assert (await http.post("/auth/password", json=body)).status_code == 200
+    assert (await _audit_actions(client, user)).count("pwd_change") == 1
+
+
+async def test_a_password_change_with_no_new_session_answers_200_with_no_cookie(
+    auth_client, monkeypatch
+) -> None:
+    import structlog.testing
+
+    from backend.core.metrics import AUTH_FAILURES
+    from backend.routers import auth as auth_module
+
+    http, client = auth_client
+    user = _u()
+    new_password = "an entirely new passphrase"
+    await _seed_user(client, user, must_change=True)
+    await _login(http, user)
+
+    async def no_session(*args, **kwargs):
+        raise RuntimeError("sessions index hiccup")
+
+    monkeypatch.setattr(auth_module, "mint_session", no_session)
+    monkeypatch.setattr(auth_module, "log", structlog.get_logger())  # see the lockout test
+    counter = AUTH_FAILURES.labels("session_not_minted")
+    before = counter._value.get()  # noqa: SLF001 — prometheus_client test-read idiom
+
+    with structlog.testing.capture_logs() as logs:
+        r = await http.post(
+            "/auth/password", json={"current_password": PASSWORD, "new_password": new_password}
+        )
+
+    assert r.status_code == 200
+    assert "set-cookie" not in r.headers
+    assert r.json()["user"]["must_change"] is False
+    assert (await http.get("/auth/me")).status_code == 401  # the old session ended with it
+    monkeypatch.undo()
+    fresh = httpx.AsyncClient(transport=http._transport, base_url="https://t")
+    async with fresh:
+        assert (await _login(fresh, user, new_password)).status_code == 200
+    assert counter._value.get() - before == 1  # noqa: SLF001
+    warnings = [e for e in logs if e["event"] == "password changed, no new session"]
+    assert warnings and warnings[0]["log_level"] == "warning"
+    assert warnings[0]["username"] == user
 
 
 # --- bootstrap admin (seed-once, SEC-6) ----------------------------------------------
