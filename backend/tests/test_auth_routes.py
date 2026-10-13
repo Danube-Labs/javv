@@ -311,6 +311,44 @@ async def test_login_with_a_lone_surrogate_is_422(auth_client) -> None:
     assert r.status_code == 422
 
 
+TOO_LONG = "a password one character past the cap " + "x" * 256
+
+
+def _names_the_field_not_the_value(r: httpx.Response, field: str) -> None:
+    body = r.json()
+    assert (r.status_code, body["title"]) == (422, "Validation error")
+    assert f"'{field}'" in body["detail"]
+    assert TOO_LONG not in r.text
+    assert "'input'" not in body["detail"]
+
+
+async def test_a_too_long_password_at_sign_in_is_not_sent_back(auth_client) -> None:
+    http, _ = auth_client
+    r = await http.post("/auth/login", json={"username": _u(), "password": TOO_LONG})
+    _names_the_field_not_the_value(r, "password")
+
+
+async def test_an_extra_sign_in_field_is_not_sent_back(auth_client) -> None:
+    http, _ = auth_client
+    r = await http.post(
+        "/auth/login", json={"username": _u(), "password": PASSWORD, "password2": TOO_LONG}
+    )
+    _names_the_field_not_the_value(r, "password2")
+
+
+async def test_a_too_long_password_at_the_change_is_not_sent_back(auth_client) -> None:
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+    await _login(http, user)
+
+    r = await http.post(
+        "/auth/password", json={"current_password": PASSWORD, "new_password": TOO_LONG}
+    )
+
+    _names_the_field_not_the_value(r, "new_password")
+
+
 async def test_password_change_without_a_session_is_401(auth_client) -> None:
     http, _ = auth_client
     r = await http.post(

@@ -6,7 +6,8 @@ inbound `X-Request-ID` if well-formed, else minted) and logged the request under
 """
 
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 import structlog
 from fastapi import FastAPI, Request
@@ -105,6 +106,12 @@ def delete_unfinished() -> TypedHTTPException:
     )
 
 
+def validation_detail(errors: Sequence[Mapping[str, Any]]) -> str:
+    """Each error's location, type and message, never the value that failed: a too-long password
+    would otherwise come back in the answer (issue 842), for any proxy or tool that keeps it."""
+    return str([{k: v for k, v in error.items() if k != "input"} for error in errors])
+
+
 def _now() -> float:
     return time.monotonic()
 
@@ -155,7 +162,10 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def _validation(request: Request, exc: RequestValidationError) -> JSONResponse:
         return problem_response(
-            422, title="Validation error", detail=str(exc.errors()), request_id=_request_id(request)
+            422,
+            title="Validation error",
+            detail=validation_detail(exc.errors()),
+            request_id=_request_id(request),
         )
 
     @app.exception_handler(TransportError)
