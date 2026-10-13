@@ -57,13 +57,20 @@ toolchain:
   # renovate: datasource=github-releases depName=norwoodj/helm-docs extractVersion=^v(?<version>.+)$
   helm-docs: "1.14.2"
 
-# CI supply-chain tools: the Secret scan job's gitleaks (ci.yml), the scanner-images SBOM step's
-# syft, and cosign for image signing. CI reads these directly. A gitleaks bump also needs GITLEAKS_SHA256 in ci.yml, from the
-# release's checksums.txt; the Secret scan job fails until it matches.
+# CI supply-chain tools: the Secret scan job's gitleaks (ci.yml), the SBOM tool syft and the
+# self-scan grype of the publish jobs, and cosign for image signing. CI reads these directly. A
+# gitleaks bump also needs GITLEAKS_SHA256 in ci.yml, from the release's checksums.txt; the Secret
+# scan job fails until it matches. syft and grype run in the jobs that can sign, so they are pinned
+# by image digest, `tag@sha256:`: a tag can be moved, the digest cannot. Renovate updates the tag
+# and the digest together (issue 833).
 supply_chain:
   # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.+)$
   gitleaks: "8.30.1"
-  # renovate: datasource=github-releases depName=anchore/syft extractVersion=^v(?<version>.+)$
-  syft: "1.54.1"
+  # renovate: datasource=docker depName=anchore/syft
+  syft: "v1.54.1@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa"
+  # the scanner-images self-scan; check-versions.sh holds its tag equal to scanners.grype.current,
+  # and Renovate moves the two in one PR
+  # renovate: datasource=docker depName=anchore/grype
+  grype: "v0.120.1@sha256:e4a44ef45d285b829ce6efe2642980329661bd2d18eab5fc539138d4adaebbbe"
   # renovate: datasource=github-releases depName=sigstore/cosign extractVersion=^v(?<version>.+)$
   cosign: "3.1.3"
