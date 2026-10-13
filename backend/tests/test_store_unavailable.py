@@ -31,6 +31,50 @@ def _read_only() -> float:
     return REGISTRY.get_sample_value("javv_store_read_only_total") or 0.0
 
 
+def _busy() -> float:
+    labels = {"kind": "429"}
+    return REGISTRY.get_sample_value("javv_opensearch_request_errors_total", labels) or 0.0
+
+
+_BREAKER = {
+    "type": "circuit_breaking_exception",
+    "reason": "[request] Data too large, data for [<agg [t]>] would be [5120/5kb], which is"
+    " larger than the limit of [1024/1kb]",
+    "bytes_wanted": 5120,
+    "bytes_limit": 1024,
+    "durability": "TRANSIENT",
+}
+# a terms aggregation past the request circuit breaker, recorded on a real store
+CIRCUIT_BREAKER = TransportError(
+    429,
+    "search_phase_execution_exception",
+    {
+        "error": {
+            "root_cause": [_BREAKER],
+            "type": "search_phase_execution_exception",
+            "reason": "all shards failed",
+            "phase": "query",
+            "grouped": True,
+            "caused_by": _BREAKER,
+        },
+        "status": 429,
+    },
+)
+# a full search queue; built by hand in the shape OpenSearch answers, since a single-node test
+# store does not fill its queue on demand
+REJECTED = TransportError(
+    429,
+    "es_rejected_execution_exception",
+    {
+        "error": {
+            "type": "es_rejected_execution_exception",
+            "reason": "rejected execution of a search task: queue capacity = 1000",
+        },
+        "status": 429,
+    },
+)
+
+
 _FLOOD = (
     "index [system-sessions] blocked by: [TOO_MANY_REQUESTS/12/disk usage exceeded flood-stage"
     " watermark, index has read-only-allow-delete block];"
@@ -63,7 +107,7 @@ def _app_raising(exc: Exception) -> httpx.AsyncClient:
 
 @pytest.fixture(autouse=True)
 def _fresh_window(monkeypatch: Any) -> None:
-    for name in ("_store_warned", "_read_only_warned"):
+    for name in ("_store_warned", "_read_only_warned", "_busy_warned"):
         fresh = core_errors._StoreWarnings(
             getattr(core_errors, name).event, getattr(core_errors, name).counter
         )
@@ -150,3 +194,32 @@ async def test_the_read_only_warning_is_written_once_per_window(monkeypatch) -> 
             assert (await client.get("/reads")).status_code == 503
     assert [e["held_back"] for e in logs if e["event"] == "store read-only"] == [0, 2]
     assert _read_only() == before + 4
+
+
+@pytest.mark.parametrize("exc", [CIRCUIT_BREAKER, REJECTED], ids=["breaker", "rejected"])
+async def test_an_overloaded_store_is_a_429_busy_with_retry_after(exc: Exception) -> None:
+    before, read_only = _busy(), _read_only()
+    async with _app_raising(exc) as client:
+        with structlog.testing.capture_logs() as logs:
+            r = await client.get("/reads")
+    assert r.status_code == 429
+    assert r.headers["retry-after"] == "5"
+    assert r.json()["title"] == "The search backend is busy"
+    assert "opensearch" not in r.text.lower()
+    assert _busy() == before + 1
+    assert _read_only() == read_only
+    (line,) = [e for e in logs if e["event"] == "store busy"]
+    assert line["log_level"] == "warning" and line["held_back"] == 0
+    assert not [e for e in logs if e["log_level"] == "error"]
+
+
+async def test_the_busy_warning_is_written_once_per_window(monkeypatch) -> None:
+    clock = [1000.0]
+    monkeypatch.setattr(core_errors, "_now", lambda: clock[0])
+    async with _app_raising(CIRCUIT_BREAKER) as client:
+        with structlog.testing.capture_logs() as logs:
+            for _ in range(3):
+                assert (await client.get("/reads")).status_code == 429
+            clock[0] += core_errors.STORE_WARN_WINDOW_S
+            assert (await client.get("/reads")).status_code == 429
+    assert [e["held_back"] for e in logs if e["event"] == "store busy"] == [0, 2]

@@ -17,7 +17,7 @@ from opensearchpy.exceptions import TransportError
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.core.metrics import STORE_READ_ONLY, STORE_UNAVAILABLE
+from backend.core.metrics import OS_REQUEST_ERRORS, STORE_READ_ONLY, STORE_UNAVAILABLE
 
 PROBLEM_MEDIA_TYPE = "application/problem+json"
 
@@ -72,6 +72,10 @@ _FLOOD_STAGE_BLOCK = "TOO_MANY_REQUESTS/12/"
 
 STORE_READ_ONLY_TYPE = "store-read-only"
 
+# the same wait JAVV's own 429s ask for (the per-user search cap, `Retry-After: 5`); the UI never
+# retries by itself, so this only guides a script
+STORE_BUSY_RETRY_AFTER_S = 5
+
 
 def store_read_only(exc: BaseException) -> bool:
     """A write the store refused because its disk is past the flood-stage watermark. Reads still
@@ -115,6 +119,7 @@ class _StoreWarnings:
 
 _store_warned = _StoreWarnings("store unavailable", STORE_UNAVAILABLE.inc)
 _read_only_warned = _StoreWarnings("store read-only", STORE_READ_ONLY.inc)
+_busy_warned = _StoreWarnings("store busy", OS_REQUEST_ERRORS.labels("429").inc)
 
 
 def register_error_handlers(app: FastAPI) -> None:
@@ -146,6 +151,19 @@ def register_error_handlers(app: FastAPI) -> None:
                 request_id=request_id,
                 headers={"X-Request-ID": request_id} if request_id else None,
                 type_=STORE_READ_ONLY_TYPE,
+            )
+        if exc.status_code == 429:  # overloaded: a full queue or a circuit breaker
+            _busy_warned.note(request, exc)
+            request_id = _request_id(request)
+            headers = {"Retry-After": str(STORE_BUSY_RETRY_AFTER_S)}
+            if request_id:
+                headers["X-Request-ID"] = request_id
+            return problem_response(
+                429,
+                title="The search backend is busy",
+                detail="Try again in a few seconds.",
+                request_id=request_id,
+                headers=headers,
             )
         if not store_unavailable(exc):
             raise exc  # to the generic handler below: logged, then a 500

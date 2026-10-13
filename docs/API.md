@@ -208,7 +208,7 @@ Each answer that is not a success has the same body, with the type `application/
 | 413 | The request asks for too many rows, or its body is too large. Make the request smaller. |
 | 415 | The sign-in body has a JSON type that is not `application/json`. |
 | 422 | A field is not valid. `detail` names the field. |
-| 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. |
+| 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. With the title "The search backend is busy", OpenSearch itself is overloaded (a full queue or a circuit breaker): the answer has `Retry-After: 5`. |
 | 503 | OpenSearch is not available. Do the request again later. With the type `store-read-only` and the title "The store is read-only: its disk is full", OpenSearch is past its flood-stage disk watermark: reads work, and a change that OpenSearch refuses, a sign-in included, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
 
 ## List responses
@@ -667,7 +667,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_ingest_failures_unrecorded_total` | counter | `reason` | Refused pushes with no record ([Records of a refused push](#records-of-a-refused-push)). A value larger than 0 means that the **Failed ingests** table does not show all the refused pushes. |
 | `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote |
 | `javv_http_request_duration_seconds` | histogram | `method`, `route`, `status` | The time of each request. `route` is the route pattern, not the full path. A path with no route counts as `unmatched`. `/metrics` and the probes are not counted. |
-| `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes |
+| `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes. `429` also counts each request that got 429 "The search backend is busy"; the backend logs `store busy` for these at most once in 10 seconds, with `held_back`. |
 | `javv_opensearch_backoff_retries_total` | counter | none | Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy. |
 | `javv_sla_clock_missing_total` | counter | none | Pages of findings with a row that has no `sla_clock_at`. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the `rebuild_state` job. |
 | `javv_cas_conflicts_total` | counter | `site` | Writes that lost a race to a different writer: `watermarks`, `scan_orders`, `inventory_orders`, `reconcile`, `reproject`, `merge`, `report_claim` and `retirement`. A high rate means many writers on the same data. |
