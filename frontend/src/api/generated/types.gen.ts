@@ -1470,6 +1470,10 @@ export type ReadAuditLogApiV1AuditGetData = {
          * As Of
          */
         as_of?: string | null;
+        /**
+         * Keep Open
+         */
+        keep_open?: boolean;
     };
     url: '/api/v1/audit';
 };
@@ -2225,6 +2229,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          * Cursor
          */
         cursor?: string | null;
+        /**
+         * Keep Open
+         */
+        keep_open?: boolean;
         /**
          * Severity
          */

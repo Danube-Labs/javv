@@ -321,8 +321,11 @@ async def run_search(
     order: str = "desc",
     cursor: str | None = None,
     prefix: str = "",
+    keep_open: bool = False,
 ) -> dict[str, Any]:
-    """One page. Returns `{data, next_cursor, total}`; `next_cursor=None` ends the walk."""
+    """One page. Returns `{data, next_cursor, total}`; `next_cursor=None` ends the walk.
+    `keep_open` keeps a continuation's PIT past its final page, for a client that may page back
+    and closes the walk itself (`POST /api/v1/cursors/close`, issue 832)."""
     keep_alive = get_settings().search_pit_keep_alive
     search_after: list[Any] | None = None
     sla_cutoffs: dict[str, str] | None = None
@@ -377,8 +380,9 @@ async def run_search(
         raise
 
     hits = resp["hits"]["hits"]
-    if len(hits) < size:  # final page — the PIT dies with it (D38)
-        await client.delete_pit(body={"pit_id": [pit_id]})
+    if len(hits) < size:  # final page — the PIT dies with it (D38), unless the client keeps it
+        if opened_here or not keep_open:  # a first page gave the client no cursor to close it by
+            await client.delete_pit(body={"pit_id": [pit_id]})
         next_cursor = None
     else:
         next_cursor = encode_cursor(

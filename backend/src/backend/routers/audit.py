@@ -67,6 +67,7 @@ async def read_audit_log(
     size: Annotated[int, Query(ge=1, le=500)] = 50,
     cursor: Annotated[str | None, Query(max_length=4096)] = None,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
+    keep_open: bool = False,
 ) -> dict[str, Any]:
     client = cast(Any, request.app.state.opensearch)
     try:
@@ -99,6 +100,7 @@ async def read_audit_log(
             size=size,
             order=order,
             cursor=cursor,
+            keep_open=keep_open,
         )
     except CursorExpired as exc:  # A-m1: idled past keep_alive → 410 Gone, restart the walk
         pit_guard.release(principal.user_id, slot)
@@ -121,7 +123,8 @@ async def read_audit_log(
         principal.user_id,
         slot,
         cursor_pit_id(walk) if walk else None,
-        ended=out["next_cursor"] is None,  # the final page closed its PIT (D38)
+        # the final page closed its PIT (D38), unless a continuation asked to keep it
+        ended=out["next_cursor"] is None and not (keep_open and cursor is not None),
     )
     return out
 

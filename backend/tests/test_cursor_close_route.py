@@ -3,8 +3,9 @@
 Pins: a caller closes its own findings or audit walk early, which deletes the PIT and frees the
 slot; another user's cursor, an ended walk and an expired one answer 204 and close nothing; a bad
 cursor is 422; the route needs a session (401) and a changed password (403). A continuation that
-finds its PIT gone frees the walk's slot too. The cap is 1 here, so "the slot is free" is read off
-the next first page: 200 when it fits, 429 when the slot is still held.
+finds its PIT gone frees the walk's slot too. With `keep_open`, a walk's last page keeps its PIT
+and slot, so the client can page back from it, until the client closes it. The cap is 1 here, so
+"the slot is free" is read off the next first page: 200 when it fits, 429 when it is still held.
 """
 
 import uuid
@@ -122,17 +123,23 @@ async def test_your_own_findings_walk_closes_and_frees_its_slot(env) -> None:
     assert await _first_page(http, cid) == 200  # the slot is free again
 
 
+def _actor(cid: str) -> str:
+    # an audit read also returns fleet rows (every sign-in on the store), so a walk filters on
+    # this test's own actor, or it walks the whole shared store
+    return f"u-actor-{cid}"
+
+
 async def _journal(client: AsyncOpenSearch, cid: str) -> None:
     for i in range(3):
         await append_field_change(
             client,
-            actor="u-close-actor",
+            actor=_actor(cid),
             action="assign",
             entity_type="finding",
             entity_id=f"fk-{cid}-{i}",
             field="assignee",
             old_value=None,
-            new_value="u-close-actor",
+            new_value=_actor(cid),
             revision=1,
             cluster_id=cid,
             finding_key=f"fk-{cid}-{i}",
@@ -141,7 +148,7 @@ async def _journal(client: AsyncOpenSearch, cid: str) -> None:
 
 
 async def _audit_walk(http: httpx.AsyncClient, cid: str) -> str:
-    r = await http.get("/api/v1/audit", params={"cluster_id": cid, "size": 1})
+    r = await http.get("/api/v1/audit", params={"cluster_id": cid, "size": 1, "actor": _actor(cid)})
     assert r.status_code == 200 and r.json()["next_cursor"]
     return r.json()["next_cursor"]
 
@@ -202,6 +209,78 @@ async def test_an_ended_walk_and_an_expired_one_are_closed_already(env) -> None:
     assert await _first_page(http, cid) == 200
 
 
+async def _walk_to_the_end(http: httpx.AsyncClient, path: str, cid: str, **extra: Any) -> list[str]:
+    """Page with size 1 until `next_cursor` is null; return the cursors that fetched pages 2..N
+    (the UI's cursor stack, minus page 1's null)."""
+    cursors: list[str] = []
+    cursor: str | None = None
+    while True:
+        params: dict[str, Any] = {"cluster_id": cid, "size": 1, **extra}
+        if cursor:
+            params["cursor"] = cursor
+        r = await http.get(path, params=params)
+        assert r.status_code == 200
+        cursor = r.json()["next_cursor"]
+        if cursor is None:
+            return cursors
+        cursors.append(cursor)
+
+
+async def test_a_kept_walk_pages_back_from_its_last_page_until_it_is_closed(env) -> None:
+    """keep_open: the last page keeps the PIT and the slot, so Prev from it works; the close then
+    frees both. Without keep_open the last page ends the walk, and Prev from it is a 410."""
+    login, client, _ = env
+    cid = f"c-close-{uuid.uuid4().hex[:8]}"
+    await _seed(client, cid, _rows(3))
+    http = await login()
+    path = "/api/v1/findings"
+
+    stack = await _walk_to_the_end(http, path, cid, keep_open=True)
+    assert len(stack) == 3  # 3 rows at size 1: the 4th page is the short, last one
+    pit_id = cursor_pit_id(stack[-1])
+    assert await _pit_alive(client, pit_id)
+    assert await _first_page(http, cid) == 429  # the kept walk still holds the only slot
+
+    prev = {"cluster_id": cid, "size": 1, "cursor": stack[-2], "keep_open": True}
+    back = await http.get(path, params=prev)  # Prev from the last page
+    assert back.status_code == 200 and len(back.json()["data"]) == 1
+
+    assert (await _close(http, stack[-1])).status_code == 204
+    assert not await _pit_alive(client, pit_id)
+    assert await _first_page(http, cid) == 200
+
+    # the default is unchanged: a script that never closes gets its PIT closed by the last page
+    pit_guard._slots.clear()
+    stack = await _walk_to_the_end(http, path, cid)
+    assert not await _pit_alive(client, cursor_pit_id(stack[-1]))
+    r = await http.get(path, params={"cluster_id": cid, "size": 1, "cursor": stack[-2]})
+    assert r.status_code == 410
+    assert await _first_page(http, cid) == 200  # and its slot went with it
+
+
+async def test_a_kept_audit_walk_pages_back_from_its_last_page(env) -> None:
+    login, client, _ = env
+    cid = f"c-close-{uuid.uuid4().hex[:8]}"
+    await _journal(client, cid)
+    http = await login()
+    path = "/api/v1/audit"
+
+    stack = await _walk_to_the_end(http, path, cid, keep_open=True, actor=_actor(cid))
+    assert len(stack) == 3  # 3 rows at size 1: the 4th page is the short, last one
+    prev = {
+        "cluster_id": cid,
+        "size": 1,
+        "cursor": stack[-2],
+        "keep_open": True,
+        "actor": _actor(cid),
+    }
+    assert (await http.get(path, params=prev)).status_code == 200  # Prev from the last page
+    assert (await _close(http, stack[-1])).status_code == 204
+    assert not await _pit_alive(client, cursor_pit_id(stack[-1]))
+    r = await http.get(path, params={"cluster_id": cid, "size": 1})
+    assert r.status_code == 200  # the slot is free again
+
+
 async def test_a_continuation_that_finds_its_pit_gone_frees_the_walk_slot(env) -> None:
     login, client, _ = env
     cid = f"c-close-{uuid.uuid4().hex[:8]}"
@@ -223,7 +302,8 @@ async def test_an_audit_continuation_that_finds_its_pit_gone_frees_the_walk_slot
 
     cursor = await _audit_walk(http, cid)
     await client.delete_pit(body={"pit_id": [cursor_pit_id(cursor)]})
-    r = await http.get("/api/v1/audit", params={"cluster_id": cid, "size": 1, "cursor": cursor})
+    params = {"cluster_id": cid, "size": 1, "cursor": cursor, "actor": _actor(cid)}
+    r = await http.get("/api/v1/audit", params=params)
     assert r.status_code == 410
     r = await http.get("/api/v1/audit", params={"cluster_id": cid, "size": 1})
     assert r.status_code == 200  # the dead walk's slot went with it

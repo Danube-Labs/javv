@@ -343,6 +343,7 @@ async def search_findings(
     order: Annotated[str, Query(max_length=4)] = "desc",
     size: Annotated[int, Query(ge=1, le=500)] = 50,
     cursor: Annotated[str | None, Query(max_length=4096)] = None,
+    keep_open: bool = False,
 ) -> dict[str, Any]:
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:  # past T → M8b's reconstruction, never this route's query (D28)
@@ -377,6 +378,7 @@ async def search_findings(
             sort=sort,
             order=order,
             cursor=cursor,
+            keep_open=keep_open,
         )
     except CursorExpired as exc:  # A-m1: idled past keep_alive → 410 Gone, restart the walk
         pit_guard.release(principal.user_id, slot)
@@ -399,7 +401,8 @@ async def search_findings(
         principal.user_id,
         slot,
         cursor_pit_id(walk) if walk else None,
-        ended=out["next_cursor"] is None,  # the final page closed its PIT (D38)
+        # the final page closed its PIT (D38), unless a continuation asked to keep it
+        ended=out["next_cursor"] is None and not (keep_open and cursor is not None),
     )
     await _decorate_overdue(client, cluster_id, out["data"])
     await _decorate_images_affected(client, cluster_id, out["data"])

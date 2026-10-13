@@ -2894,6 +2894,16 @@
               ],
               "title": "As Of"
             }
+          },
+          {
+            "in": "query",
+            "name": "keep_open",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Keep Open",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -4398,6 +4408,16 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keep_open",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Keep Open",
+              "type": "boolean"
             }
           },
           {
