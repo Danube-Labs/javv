@@ -166,6 +166,23 @@ async def test_garbage_is_422_at_the_door(env) -> None:
     assert (await http.post("/api/v1/reports", json=body)).status_code == 422
 
 
+async def test_a_selector_that_fails_its_check_names_the_field_not_the_value(env) -> None:
+    login, _ = env
+    http = await login(["can_triage"])
+    body = _body(f"c-bk-{uuid.uuid4().hex[:8]}")
+    sent = "echo-842 " + "y" * 200  # pydantic shortens a long value to its two ends
+    body["bulk_params"]["selector"] = {"cve_id": sent, "namespace": sent}
+
+    r = await http.post("/api/v1/reports", json=body)
+
+    detail = r.json()["detail"]
+    assert (r.status_code, r.json()["title"]) == (422, "Validation error")
+    assert "('body', 'bulk_params', 'selector', 'cve_id')" in detail  # string_too_long
+    assert "('body', 'bulk_params', 'selector', 'namespace')" in detail  # extra_forbidden
+    assert "echo-842" not in r.text
+    assert "'input'" not in detail
+
+
 async def test_selector_freezes_at_enqueue_and_drain_applies_only_that_set(env) -> None:
     login, client = env
     http = await login(["can_triage"])

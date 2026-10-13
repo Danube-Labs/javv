@@ -20,6 +20,7 @@ from typing import Annotated, Any, cast
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
 from pydantic import ValidationError
@@ -69,8 +70,17 @@ async def enqueue_report(
             raise HTTPException(403, "risk-accept requires can_accept_audit_final")
         try:
             selector = BulkSelector(**body.bulk_params.selector).model_dump(exclude_none=True)
+        except ValidationError as exc:
+            # the same 422 as a field check of the body itself, so the value is not sent back
+            raise RequestValidationError(
+                [
+                    {**error, "loc": ("body", "bulk_params", "selector", *error["loc"])}
+                    for error in exc.errors(include_url=False)
+                ]
+            ) from exc
+        try:
             validate_bulk_patch(patch)
-        except (ValidationError, TransitionError) as exc:
+        except TransitionError as exc:
             raise HTTPException(422, str(exc)) from exc
         # freeze AT ENQUEUE (D38/H8 — a queue never carries a live selector). The freeze cap
         # still applies (bounded memory); the INLINE ceiling deliberately does not — scheduled
