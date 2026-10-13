@@ -57,7 +57,8 @@ Each release publishes `ghcr.io/danube-labs/javv-backend` and `javv-frontend` wi
 The `deploy/compose/compose.yaml` file of the release names these images. To upgrade:
 
 1. Replace your `compose.yaml` with the file of the new release. Keep your `.env` file. It holds
-    your settings.
+    your settings. If you changed your `compose.yaml`, for example the host port, make the same
+    change in the new file.
 2. Run `docker compose pull`, then `docker compose up -d`.
 
 There is only one backend. Thus JAVV is not available for some seconds, while the new backend
@@ -65,7 +66,8 @@ starts and upgrades the indices. The frontend waits until the backend reports he
 (`depends_on`).
 
 To go back to the previous release, put the `compose.yaml` of that release back. Then run the same
-two commands.
+two commands. To go back to a release before 0.7.0, first put back the old name of the secret key
+(see [Go back to a previous release](#go-back-to-a-previous-release)).
 
 #### Upgrade from 0.5.1 to 0.6.1 or later
 
@@ -222,6 +224,19 @@ list all indices as `unchanged`.
   again, the new field has its default value. This is true when you go back to 0.4.8 or later.
 - **Go back with the scanners first** when the report format changed between the two releases.
   Then the scanners do not send a format that the older backend refuses.
+- **A release before 0.7.0 needs the old name of the secret key.** These releases read
+  `JAVV_TOKEN_PEPPER` (docker compose) or the key `token-pepper` of `secrets.existingSecret` (Helm).
+  If you deleted it after the upgrade to 0.7.0, put it back with the same value before you go back:
+    - docker compose: `sed -n 's/^JAVV_SECRET_KEY=/JAVV_TOKEN_PEPPER=/p' .env >> .env`. Without it,
+      `docker compose up` stops with `set JAVV_TOKEN_PEPPER in .env`, and the newer release
+      continues to run.
+    - Helm with `secrets.existingSecret`: copy the value of `secret-key` into `token-pepper`.
+      Without it, `helm rollback javv` succeeds, but the older backend pod does not start
+      (`couldn't find key token-pepper in Secret`). JAVV is not available until you copy the value.
+      ```bash
+      kubectl patch secret <your-secret> --type merge -p \
+        "{\"data\":{\"token-pepper\":\"$(kubectl get secret <your-secret> -o jsonpath='{.data.secret-key}')\"}}"
+      ```
 - **A snapshot does not give a rollback in one step.** A restore makes `restored-*` copies next to
   the live indices. It never writes over them
   (`POST /api/v1/admin/snapshots/{snapshot_name}/restore`). To use a copy, you must move it into
@@ -284,11 +299,14 @@ every user must sign in again, and every open download link stops working. The s
 restore them, and each scanner then needs a new token. A backend that finds the old name stops at
 start, and it shows the new name.
 
-- **docker compose:** in `.env`, change the name of the variable, and keep its value:
+- **docker compose:** in `.env`, add the new name with the same value. Keep the line with the old
+  name until you do not need to go back to a release before 0.7.0:
   ```bash
-  sed -i 's/^JAVV_TOKEN_PEPPER=/JAVV_SECRET_KEY=/' .env
+  sed -n 's/^JAVV_TOKEN_PEPPER=/JAVV_SECRET_KEY=/p' .env >> .env
   ```
-  Until you do this, `docker compose up` stops with `set JAVV_SECRET_KEY in .env`.
+  Until you add the new name, `docker compose up` stops with `set JAVV_SECRET_KEY in .env`. The
+  `compose.yaml` of 0.7.0 and later gives only `JAVV_SECRET_KEY` to the backend. Thus the old name
+  in `.env` has no effect on it.
 - **Helm, with the value in your values file:** change the name `secrets.tokenPepper` to
   `secrets.secretKey`, and keep its value. Until you do this, the upgrade stops with
   `additional properties 'tokenPepper' not allowed`. If you set the value with `--set`, get your
@@ -300,7 +318,8 @@ start, and it shows the new name.
   kubectl patch secret <your-secret> --type merge -p \
     "{\"data\":{\"secret-key\":\"$(kubectl get secret <your-secret> -o jsonpath='{.data.token-pepper}')\"}}"
   ```
-  After the upgrade works, delete the key `token-pepper`.
+  Keep the key `token-pepper` until you do not need to go back to a release before 0.7.0. Those
+  releases read only `token-pepper`. After that, you can delete it.
 
 ### 0.6.2: JAVV retires clusters that send no scans
 
