@@ -6,10 +6,11 @@ and a cluster left alone by them; recipients are the enabled users holding `can_
 (role bundle or their own list; a missing role grants nothing); one notification each, with the
 cluster and its retirement date; a second sweep sends nothing, nor does a settings change that
 moves the dates; a dismissed notification does not come back; a new silence is announced again; a
-run that stopped before its marker repeats none; with no recipient no marker is written; a failed
-announcement leaves the run's retirements standing; a notice is withdrawn when its cluster scans
-again or a new silence replaces it, and kept once the cluster is retired; a cluster delete removes
-the marker."""
+run that stopped before its marker repeats none; every notice of a run goes in one `_bulk`, and
+one the store refuses fails the run before any marker; with no recipient no marker is written; a
+failed announcement leaves the run's retirements standing; a notice is withdrawn when its cluster
+scans again or a new silence replaces it, and kept once the cluster is retired; a cluster delete
+removes the marker."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -33,6 +34,7 @@ from backend.jobs.cluster_retirement import (
     schedule_for,
 )
 from backend.reports.models import NOTIFICATIONS_INDEX
+from backend.repositories.bulk import BulkError
 from os_env import requires_opensearch
 
 NOW = datetime(2026, 10, 6, 12, 0, tzinfo=UTC)
@@ -246,6 +248,55 @@ async def test_a_run_that_stopped_before_its_marker_repeats_no_notification(real
     assert len(bell) == 2
     assert {n["notification_id"]: n["read"] for n in bell}[read] is True  # not rewritten
     assert await client.exists(index=f"{prefix}system-config", id=warned_doc_id("c-warn-0005"))
+
+
+@requires_opensearch
+async def test_every_notice_of_a_run_goes_in_one_bulk_request(real_os, monkeypatch) -> None:
+    client, prefix = real_os
+    await _people(client, prefix)
+    real_bulk, real_index = client.bulk, client.index
+    bulks: list[list[dict[str, Any]]] = []
+    indexed: list[str] = []
+
+    async def bulk(*args: Any, **kwargs: Any) -> Any:
+        bulks.append(kwargs["body"])
+        return await real_bulk(*args, **kwargs)
+
+    async def index(*args: Any, **kwargs: Any) -> Any:
+        indexed.append(kwargs["index"])
+        return await real_index(*args, **kwargs)
+
+    monkeypatch.setattr(client, "bulk", bulk)
+    monkeypatch.setattr(client, "index", index)
+    warning = {"c-warn-0007": (_ago(40), _ago(-5)), "c-warn-0008": (_ago(41), _ago(-4))}
+
+    assert await notify_retiring(client, warning, now=NOW, prefix=prefix) == 2
+
+    assert len(bulks) == 1
+    creates = [a["create"]["_index"] for a in bulks[0][::2]]
+    assert creates == [f"{prefix}{NOTIFICATIONS_INDEX}"] * 4  # 2 clusters x ann and sam
+    assert f"{prefix}{NOTIFICATIONS_INDEX}" not in indexed  # no one-by-one writes are left
+    assert len(await _bell(client, prefix)) == 4
+
+
+@requires_opensearch
+async def test_a_notice_the_store_refuses_fails_the_run_before_any_marker(real_os) -> None:
+    client, prefix = real_os
+    await _people(client, prefix)
+    warning = {"c-warn-0009": (_ago(40), _ago(-5))}
+    blocked = {"index.blocks.write": True}
+    await client.indices.put_settings(index=f"{prefix}{NOTIFICATIONS_INDEX}", body=blocked)
+    try:
+        with pytest.raises(BulkError):
+            await notify_retiring(client, warning, now=NOW, prefix=prefix)
+    finally:
+        await client.indices.put_settings(
+            index=f"{prefix}{NOTIFICATIONS_INDEX}", body={"index.blocks.write": None}
+        )
+    assert not await client.exists(index=f"{prefix}system-config", id=warned_doc_id("c-warn-0009"))
+    # nothing marked it sent, so the next run announces it
+    assert await notify_retiring(client, warning, now=NOW, prefix=prefix) == 1
+    assert len(await _bell(client, prefix)) == 2
 
 
 def _notify_failures() -> float:

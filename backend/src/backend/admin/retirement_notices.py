@@ -6,8 +6,8 @@ sent for, so a dismissed notification (dismiss deletes it) is not sent again, an
 for a settings change that moves the dates of the same silence. A cluster that scans and goes
 silent again has a new `silent_since`, and is announced again.
 
-Notification ids are derived from (cluster, user, silent_since) and written with
-`op_type=create`, so a sweep that stopped between the notifications and the marker repeats none
+Notification ids are derived from (cluster, user, silent_since) and written in one `_bulk` of
+`create` actions, so a sweep that stopped between the notifications and the marker repeats none
 still in the bell on its next run (one dismissed in between is written again).
 
 A notice lives as long as its silence (operator ruling, 2026-10-08): when the cluster scans
@@ -22,12 +22,12 @@ from typing import Any
 
 import structlog
 from opensearchpy import AsyncOpenSearch, NotFoundError
-from opensearchpy.exceptions import ConflictError
 
 from backend.auth.capabilities import ROLES_INDEX
 from backend.auth.principal import USERS_INDEX
 from backend.query.paging import search_to_exhaustion
 from backend.reports.models import NOTIFICATIONS_INDEX
+from backend.repositories.bulk import bulk_write
 
 log = structlog.get_logger()
 
@@ -114,26 +114,28 @@ async def notify_retiring(
             "cluster retirement not announced: no user holds the capability", clusters=len(due)
         )
         return 0
+    actions: list[dict[str, Any]] = []
     for cid, (silent_since, retires_at) in sorted(due.items()):
         for user in recipients:
             notice_id = _notice_id(cid, user, silent_since)
-            try:
-                await client.index(
-                    index=f"{prefix}{NOTIFICATIONS_INDEX}",
-                    id=notice_id,
-                    body={
-                        "notification_id": notice_id,
-                        "user_id": user,
-                        "type": NOTICE_TYPE,
-                        "ref": retires_at.isoformat(),
-                        "cluster_id": cid,
-                        "created_at": now.isoformat(),
-                        "read": False,
-                    },
-                    params={"op_type": "create"},
-                )
-            except ConflictError:
-                continue  # sent by a run that stopped before its marker
+            actions.append(
+                {"create": {"_index": f"{prefix}{NOTIFICATIONS_INDEX}", "_id": notice_id}}
+            )
+            actions.append(
+                {
+                    "notification_id": notice_id,
+                    "user_id": user,
+                    "type": NOTICE_TYPE,
+                    "ref": retires_at.isoformat(),
+                    "cluster_id": cid,
+                    "created_at": now.isoformat(),
+                    "read": False,
+                }
+            )
+    # a 409 is a notice sent by a run that stopped before its marker: collected, not rewritten.
+    # Any other failed item raises, before any marker, so the next run sends the rest.
+    await bulk_write(client, actions, collect_conflicts=True)
+    for cid, (silent_since, _) in sorted(due.items()):
         await client.index(
             index=f"{prefix}system-config",
             id=warned_doc_id(cid),

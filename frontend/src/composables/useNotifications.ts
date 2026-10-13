@@ -20,6 +20,8 @@ export interface NotificationItem {
   type: string // report_ready | sla_breach | assignment | cluster_retiring
   ref: string | null
   cluster_id: string | null
+  /** the cluster's name when the feed was read, its id if never named; null with no cluster */
+  cluster_name?: string | null
   created_at: string
   read: boolean
 }

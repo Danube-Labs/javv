@@ -19,6 +19,7 @@ from backend.admin.cluster_delete import clear_for_onboarding, deletes_started
 from backend.audit.writer import append_auth_event
 from backend.auth.capabilities import require_capability
 from backend.auth.principal import Principal
+from backend.core.errors import delete_unfinished
 from backend.core.identifiers import ClusterId
 from backend.core.security import hash_token, mint_token
 from backend.core.settings import get_settings
@@ -26,8 +27,6 @@ from backend.core.settings import get_settings
 router = APIRouter(prefix="/api/v1/admin/tokens", tags=["token-admin"])
 
 TOKENS_INDEX = "system-tokens"
-# the refusal un-retire gives for the same state: a cluster whose delete stopped halfway
-_DELETE_UNFINISHED = "its delete did not finish: delete it again"
 _PUBLIC_FIELDS = (  # never token_hash — the hash never leaves the server either
     "cluster_id",
     "scanner",
@@ -130,7 +129,7 @@ async def list_tokens(
 async def mint(request: Request, body: MintRequest, principal: ManageTokens) -> dict[str, Any]:
     client = _os(request)
     if body.cluster_id in await deletes_started(client):
-        raise HTTPException(409, _DELETE_UNFINISHED)
+        raise delete_unfinished()
     token_id = uuid4().hex
     # journal-first (D17, audit #188): strict append before the token exists — an audit failure
     # 500s without a live-but-unjournaled token; a retry mints a fresh id and re-drives both.
@@ -144,7 +143,7 @@ async def mint(request: Request, body: MintRequest, principal: ManageTokens) -> 
         strict=True,
     )
     if not await clear_for_onboarding(client, body.cluster_id):  # a delete started since the check
-        raise HTTPException(409, _DELETE_UNFINISHED)
+        raise delete_unfinished()
     raw = await _write_token(
         client,
         token_id=token_id,

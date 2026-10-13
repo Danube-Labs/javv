@@ -11,6 +11,7 @@ from typing import Annotated, Any, cast
 from fastapi import APIRouter, Depends, HTTPException, Request
 from opensearchpy import NotFoundError
 
+from backend.admin.cluster_registry import read_registry
 from backend.auth.principal import Principal, get_current_principal
 from backend.reports.models import NOTIFICATIONS_INDEX
 
@@ -41,6 +42,12 @@ async def list_notifications(request: Request, principal: Authenticated) -> dict
         params={"ignore_unavailable": "true"},
     )
     items = [{k: hit["_source"].get(k) for k in _PUBLIC} for hit in result["hits"]["hits"]]
+    # the name at read time: a retired cluster is off the cluster list the web app holds, and a
+    # rename after the notice shows (issue 787)
+    names = await read_registry(client) if any(i["cluster_id"] for i in items) else {}
+    for item in items:
+        cid = item["cluster_id"]
+        item["cluster_name"] = names.get(cid, cid) if cid else None
     return {"unread": int(unread["count"]), "items": items}
 
 

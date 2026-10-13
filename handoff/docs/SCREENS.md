@@ -149,7 +149,8 @@ Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 - Retirement countdown (issue 765): a status chip under the cluster's name, "retires in 5 days"
   (amber) or, on the last day and past its date, red ("retirement due" once past it), from the
   cluster list's `warns_at` / `retires_at`; nothing outside the warning window, and none for the
-  only cluster listed.
+  only cluster listed. It moves on the banner's 10-minute tick, from the list the banner re-reads,
+  so a cluster that scans again loses its chip without a reload.
 
 **States:** loading (skeleton rows); empty (no clusters registered — cold-start copy); degraded;
 **T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1
@@ -710,7 +711,9 @@ shows **"expires in Xh"** (C-2) and opens `GET /api/v1/reports/{id}/download`; o
 item flips to "expired — re-run the export" (never a dead link). **Cluster retiring** (issue 765):
 written once per silence to every settings admin; names the cluster and the date it is due to be
 retired (`ref` = `retires_at`; the sweep retires on its first run from then), or that it was due
-and is held while no cluster scans, or that it has been retired; withdrawn by the sweep when the cluster scans again; opens
+and is held while no cluster scans, or that it has been retired (by its name, which the feed
+carries as `cluster_name` since a retired cluster is off the cluster list); withdrawn by the sweep
+when the cluster scans again; opens
 Settings › Cluster for that cluster, or says it is no longer listed and opens the panel with
 Retired clusters.
 **States:** loading; empty; 410-expired per item; degraded (badge pauses, no stale count).

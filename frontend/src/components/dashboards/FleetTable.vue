@@ -13,12 +13,13 @@ import HealthChip from '@/components/chips/HealthChip.vue'
 import MixBar from '@/components/dashboards/MixBar.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
+import { useNow } from '@/composables/useNow'
 import { useAllClustersStore, type ClusterRow } from '@/stores/allClusters'
 import { useClusterStore } from '@/stores/cluster'
 import type { Severity } from '@/styles/tokens'
 import { facetCount, fmt, type ScannerLens } from '@/lib/scannerLens'
 import { lastDataAt } from '@/system/freshness'
-import { retirementChip, retirementStatus } from '@/system/retirement'
+import { RETIREMENT_TICK_MS, retirementChip, retirementStatus } from '@/system/retirement'
 
 const MIX_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'negligible', 'unknown']
 const SCANNERS = ['trivy', 'grype'] as const
@@ -28,13 +29,19 @@ const props = defineProps<{ scanner: ScannerLens; thresholdS: number }>()
 const router = useRouter()
 const clusterStore = useClusterStore()
 const fleet = useAllClustersStore()
-// the retirement countdown per cluster, inside its warning window only (issue 765)
-const retiring = computed(
-  () =>
-    new Map(
-      fleet.rows.map((r) => [r.cluster_id, retirementChip(retirementStatus(r.schedule), fleet.rows.length === 1)]),
-    ),
-)
+// the retirement countdown per cluster, inside its warning window only (issue 765). It moves on
+// the banner's tick, from the list the banner re-reads, so a cluster that scans again loses its
+// chip without a reload (issue 787)
+const now = useNow(RETIREMENT_TICK_MS)
+const retiring = computed(() => {
+  const listed = new Map(clusterStore.clusters.map((c) => [c.cluster_id, c]))
+  return new Map(
+    fleet.rows.map((r) => [
+      r.cluster_id,
+      retirementChip(retirementStatus(listed.get(r.cluster_id) ?? r.schedule, now.value), fleet.rows.length === 1),
+    ]),
+  )
+})
 
 const count = (row: ClusterRow, facet: string, key: string) =>
   facetCount(row.facets, facet, key, props.scanner)

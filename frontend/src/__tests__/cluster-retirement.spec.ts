@@ -218,7 +218,8 @@ describe('RetiredClustersCard, issue 778', () => {
     listing([fleetRow('beta', true)])
     vi.mocked(sdk.unretireApiV1ClustersClusterIdUnretirePost).mockResolvedValue({
       response: { ok: false, status: 409 },
-      error: { title: 'its delete did not finish: delete it again' },
+      // matched on the type: a reworded title must not turn this into "not retired any more"
+      error: { type: 'cluster-delete-unfinished', title: 'a reworded title' },
       data: undefined,
     } as never)
     const w = mount(RetiredClustersCard)
@@ -226,6 +227,22 @@ describe('RetiredClustersCard, issue 778', () => {
     await buttons(w, 'Bring back')[0]!.trigger('click')
     await flushPromises()
     expect(await toasts()).toContain('Its delete did not finish. Delete it again.')
+  })
+
+  it('says it is not retired any more for a 409 without that type', async () => {
+    signIn(['can_manage_settings'])
+    listing([fleetRow('beta', true)])
+    vi.mocked(sdk.unretireApiV1ClustersClusterIdUnretirePost).mockResolvedValue({
+      response: { ok: false, status: 409 },
+      error: { type: 'about:blank', title: 'cluster is not retired' },
+      data: undefined,
+    } as never)
+    const w = mount(RetiredClustersCard)
+    await flushPromises()
+    await buttons(w, 'Bring back')[0]!.trigger('click')
+    await flushPromises()
+    expect(await toasts()).toContain('It is not retired any more.')
+    expect(await toasts()).not.toContain('delete')
   })
 })
 

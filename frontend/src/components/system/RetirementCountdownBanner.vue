@@ -7,23 +7,23 @@
  * table's countdown is a chip under the cluster's name: both ruled on built A/B specimens
  * (2026-10-07) over a sentence inside the freshness banner and a Retires in column.
  */
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, watch } from 'vue'
 
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useNow } from '@/composables/useNow'
 import { useClusterStore } from '@/stores/cluster'
-import { isUrgent, retirementCountdown, retirementStatus, silenceClause } from '@/system/retirement'
-
-// a pinned tab re-reads the list (a scan or the sweep moves the schedule) and the clock, on the
-// freshness banner's cadence
-const TICK_MS = 10 * 60_000
+import {
+  isUrgent,
+  RETIREMENT_TICK_MS,
+  retirementCountdown,
+  retirementStatus,
+  silenceClause,
+} from '@/system/retirement'
 
 const clusterStore = useClusterStore()
-const now = ref(Date.now())
-const timer = setInterval(() => {
-  now.value = Date.now()
-  void clusterStore.refresh()
-}, TICK_MS)
-onUnmounted(() => clearInterval(timer))
+// a pinned tab re-reads the list (a scan or the sweep moves the schedule) and the clock
+const now = useNow(RETIREMENT_TICK_MS)
+watch(now, () => void clusterStore.refresh())
 
 const status = computed(() => {
   const row = clusterStore.selected

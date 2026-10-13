@@ -45,6 +45,7 @@ from backend.admin.cluster_retirement import (
 from backend.audit.writer import append_field_change
 from backend.auth.capabilities import require_capability
 from backend.auth.principal import Principal, get_current_principal
+from backend.core.errors import delete_unfinished
 from backend.core.identifiers import CLUSTER_ID_RE
 from backend.core.metrics import CLUSTER_DELETE_INCOMPLETE
 from backend.jobs.cluster_retirement import (
@@ -161,7 +162,7 @@ async def unretire(
         brought = await unretire_cluster(client, cluster_id, actor=principal.user_id)
     except DeleteUnderway:
         # its tokens and part of its data are gone: bringing it back would list a broken cluster
-        raise HTTPException(409, "its delete did not finish: delete it again") from None
+        raise delete_unfinished() from None
     if not brought:
         raise HTTPException(409, "cluster is not retired")  # a concurrent write got there first
     return {"cluster_id": cluster_id, "retired": False}

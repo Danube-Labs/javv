@@ -195,8 +195,11 @@ Each answer that is not a success has the same body, with the type `application/
 {"type": "about:blank", "title": "invalid credentials", "status": 401, "detail": null, "request_id": "b169be4a30444fdc"}
 ```
 
-- `type`: `about:blank`, or `store-read-only` on a 503 for a write that OpenSearch refused
-  because its disk is full.
+- `type`: `about:blank`, or one of these. Match on `type`, not on `title`: the title can change.
+    - `store-read-only` on a 503 for a write that OpenSearch refused because its disk is full.
+    - `cluster-delete-unfinished` on a 409 for a cluster whose delete did not finish: a bring
+      back (`POST /api/v1/clusters/{cluster_id}/unretire`) or a new token
+      (`POST /api/v1/admin/tokens`). Delete the cluster again to finish it.
 - `title`: a short text that names the error.
 - `detail`: on a 422 from a field check, the list of the fields that are not valid. Else it is
   `null`.
@@ -586,7 +589,7 @@ goes to the user.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET | `/api/v1/notifications` | session | Your 50 newest notifications, and `unread`, the count of the unread ones |
+| GET | `/api/v1/notifications` | session | Your 50 newest notifications, and `unread`, the count of the unread ones. Each item has `cluster_name`: the name of its cluster now, the `cluster_id` if the cluster has no name, or `null` if the item has no cluster. |
 | PATCH | `/api/v1/notifications/{notification_id}/read` | session | Marks one of your notifications as read. A notification of a different user gets 404. |
 | DELETE | `/api/v1/notifications/{notification_id}` | session | Deletes one of your notifications (204). A notification of a different user gets 404. |
 

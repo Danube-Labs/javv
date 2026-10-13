@@ -11,7 +11,7 @@ import {
   retireApiV1ClustersClusterIdRetirePost,
   unretireApiV1ClustersClusterIdUnretirePost,
 } from '@/api/generated'
-import { detailOr } from '@/api/problem'
+import { DELETE_UNFINISHED_TYPE } from '@/api/problem'
 import { logger } from '@/lib/logger'
 
 export interface FleetCluster {
@@ -67,7 +67,7 @@ export function useFleetClusters() {
     if (response?.ok) return null
     logger.warn('cluster_unretire_failed', { status: response?.status })
     // a delete started since the list was read (issue 778): its tokens and part of its data are gone
-    if (response?.status === 409 && detailOr(error, '').startsWith('its delete did not finish'))
+    if (response?.status === 409 && (error as { type?: unknown } | undefined)?.type === DELETE_UNFINISHED_TYPE)
       return 'Its delete did not finish. Delete it again.'
     if (response?.status === 409) return 'It is not retired any more.'
     if (response?.status === 403) return 'Bringing a cluster back needs the can_manage_settings capability.'

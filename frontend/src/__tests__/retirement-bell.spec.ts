@@ -1,7 +1,8 @@
 /**
- * The retirement bell row (issue 765): a `cluster_retiring` notification names the cluster and
- * the date it is due to be retired (or that it is held past it), and opens Settings › Cluster for
- * that cluster after re-reading the list, or says it is gone. Either way the drawer closes.
+ * The retirement bell row (issue 765): a `cluster_retiring` notification names the cluster (a
+ * retired one by the name the feed carries, issue 787) and the date it is due to be retired (or
+ * that it is held past it), and opens Settings › Cluster for that cluster after re-reading the
+ * list, or says it is gone. Either way the drawer closes.
  */
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -25,11 +26,12 @@ vi.mock('@/api/generated', async (importOriginal) =>
 const NOW = new Date('2026-10-08T12:00:00Z')
 const DUE = '2026-10-14T12:00:00+00:00'
 
-const notice = (cluster_id: string, ref = DUE, read = false) => ({
+const notice = (cluster_id: string, ref = DUE, read = false, cluster_name: string | null = cluster_id) => ({
   notification_id: 'n1',
   type: 'cluster_retiring',
   ref,
   cluster_id,
+  cluster_name,
   created_at: '2026-10-07T12:00:00+00:00',
   read,
 })
@@ -109,10 +111,17 @@ describe('the cluster_retiring bell row', () => {
     )
   })
 
-  it('says a cluster retired since has been retired, not that it is due', async () => {
-    await openBell(notice('c-gone', '2026-10-01T12:00:00+00:00'))
-    expect(row().textContent).toContain('c-gone has been retired.')
+  it('says a cluster retired since has been retired, by its name, not that it is due', async () => {
+    // off the cluster list once retired: the name comes from the feed (issue 787)
+    await openBell(notice('c-gone', '2026-10-01T12:00:00+00:00', false, 'payments-prod'))
+    expect(row().textContent).toContain('payments-prod has been retired.')
+    expect(row().textContent).not.toContain('c-gone')
     expect(row().textContent).not.toContain('due')
+  })
+
+  it('falls back to the id when the feed has no name', async () => {
+    await openBell(notice('c-gone', '2026-10-01T12:00:00+00:00', false, null))
+    expect(row().textContent).toContain('c-gone has been retired.')
   })
 
   it('opens Settings › Cluster with that cluster selected and closes the drawer', async () => {

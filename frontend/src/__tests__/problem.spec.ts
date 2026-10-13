@@ -8,7 +8,12 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { detailOr, STORE_READ_ONLY_TYPE, VALIDATION_TITLE } from '@/api/problem'
+import {
+  DELETE_UNFINISHED_TYPE,
+  detailOr,
+  STORE_READ_ONLY_TYPE,
+  VALIDATION_TITLE,
+} from '@/api/problem'
 
 describe('the validation title', () => {
   it("is the backend handler's title", () => {
@@ -28,6 +33,16 @@ describe('the read-only store type', () => {
       'utf8',
     )
     expect(/^STORE_READ_ONLY_TYPE = "([^"]+)"/m.exec(source)?.[1]).toBe(STORE_READ_ONLY_TYPE)
+  })
+})
+
+describe('the unfinished delete type', () => {
+  it("is the backend's problem type for a cluster whose delete stopped halfway (issue 787)", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), '..', 'backend/src/backend/core/errors.py'),
+      'utf8',
+    )
+    expect(/^DELETE_UNFINISHED_TYPE = "([^"]+)"/m.exec(source)?.[1]).toBe(DELETE_UNFINISHED_TYPE)
   })
 })
 

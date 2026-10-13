@@ -4,7 +4,8 @@ Pins: the status view mints a `download_token` only for a done, unexpired report
 requires session + valid token; expiry → **410** (never stale bytes); a pending report has no
 result (404); status + download are OWNER-scoped — another user's report_id is a 404,
 indistinguishable from missing; the bell is strictly own-notifications (server-side filter +
-IDOR 404 on mark-read), with a server-computed unread count. Token unit contract alongside.
+IDOR 404 on mark-read), with a server-computed unread count, and each item names its cluster
+as the registry does at read time. Token unit contract alongside.
 """
 
 import uuid
@@ -14,6 +15,7 @@ import httpx
 import pytest
 from opensearchpy import AsyncOpenSearch
 
+from backend.admin.cluster_registry import set_registry_name
 from backend.auth.passwords import hash_password
 from backend.main import create_app
 from backend.reports import download_token
@@ -246,6 +248,35 @@ async def test_bell_lists_only_own_notifications_with_server_computed_unread(env
     assert {n1, n2} <= ids
     assert all("user_id" not in i for i in body["items"])  # public shape only
     assert body["unread"] == 1  # server-computed: n1 unread, n2 read
+
+
+async def test_each_bell_item_names_its_cluster_as_the_registry_does_now(env) -> None:
+    login, client = env
+    http, user = await login()
+    named, unnamed = f"c-bell-{uuid.uuid4().hex[:8]}", f"c-bell-{uuid.uuid4().hex[:8]}"
+    assert await set_registry_name(client, named, "payments-prod", actor="test")
+    try:
+        n_named = await _seed_note(client, user, type="cluster_retiring", cluster_id=named)
+        n_unnamed = await _seed_note(client, user, type="cluster_retiring", cluster_id=unnamed)
+        n_none = await _seed_note(client, user, cluster_id=None)
+
+        items = {
+            i["notification_id"]: i
+            for i in (await http.get("/api/v1/notifications")).json()["items"]
+        }
+
+        assert items[n_named]["cluster_name"] == "payments-prod"
+        assert items[n_unnamed]["cluster_name"] == unnamed  # never named: its id, as everywhere
+        assert items[n_none]["cluster_name"] is None
+        # a rename after the notice shows: the name is read now, not stored with the notice
+        assert await set_registry_name(client, named, "payments-old", actor="test")
+        items = {
+            i["notification_id"]: i
+            for i in (await http.get("/api/v1/notifications")).json()["items"]
+        }
+        assert items[n_named]["cluster_name"] == "payments-old"
+    finally:
+        await set_registry_name(client, named, None, actor="test")
 
 
 async def test_mark_read_flips_own_and_404s_on_someone_elses(env) -> None:

@@ -79,11 +79,13 @@ function meta(item: NotificationItem): Meta {
     // a retired cluster keeps its notice (operator ruling 2026-10-08); it is off the list, so the
     // row says what happened rather than what was due
     const retired = clusterStore.loaded && !listed
+    // off the list once retired: the feed carries the name for that (issue 787)
+    const name = listed?.cluster_name ?? item.cluster_name ?? id
     // the title names the event, like every other row; ruled on built A/B specimens 2026-10-07
     return {
       icon: 'alert',
       label: 'Cluster retiring',
-      desc: retired ? `${id} has been retired.` : retiringDesc(listed?.cluster_name ?? id, item.ref),
+      desc: retired ? `${name} has been retired.` : retiringDesc(name, item.ref),
     }
   }
   return COPY[item.type] ?? { icon: 'shield', label: item.type, desc: '' }
