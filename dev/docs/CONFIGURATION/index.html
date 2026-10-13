@@ -2244,7 +2244,7 @@ the code.</p>
 <tr>
 <td><code>JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL</code></td>
 <td><code>10</code></td>
-<td>The most searches and exports that one user or token can keep open at one time. Above this number, the backend replies 429 with <code>Retry-After</code>. The backend keeps the count in its memory. A search that the client does not close frees its slot after the keep-alive and a small margin.</td>
+<td>The most searches and exports that one user or token can keep open at one time. Above this number, the backend replies 429 with <code>Retry-After</code>. The backend keeps the count in its memory. The web app closes each search that it stops using (<code>POST /api/v1/cursors/close</code>). A search that the client does not close frees its slot 30 seconds after its keep-alive ends.</td>
 </tr>
 <tr>
 <td><code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code></td>

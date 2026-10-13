@@ -1916,6 +1916,11 @@ a list. This procedure reads all the findings of one cluster with the cursor.</p
    equal, a page failed. Read the list again.</li>
 </ol>
 <p>A cursor stays valid for a short time only. If a page answers 410, start again at step 4.</p>
+<p>To stop before the last page, close the cursor. Until then, it keeps one of your open-cursor
+slots (<a href="#exports-and-reports">Exports and reports</a>):
+<div class="highlight"><pre><span></span><code>jq<span class="w"> </span>-n<span class="w"> </span>--arg<span class="w"> </span>c<span class="w"> </span><span class="s2">"</span><span class="nv">$cursor</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{cursor: $c}'</span><span class="w"> </span><span class="p">|</span>
+<span class="w">  </span>curl<span class="w"> </span>-sf<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/api/v1/cursors/close"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span>@-
+</code></pre></div></p>
 <h2 id="scrape-the-metrics">Scrape the metrics<a class="headerlink" href="#scrape-the-metrics" title="Permanent link">&para;</a></h2>
 <p>The backend gives its metrics at <code>/metrics</code>, in the Prometheus format. This path needs no sign-in.
 The frontend does not send it to the backend. <a href="#metrics">Metrics</a> lists each metric.</p>
@@ -2488,7 +2493,8 @@ cron expressions.</p>
   nothing. On the other kinds, <code>dry_run</code> gets 422.</li>
 </ul>
 <h3 id="findings-read">Findings: read<a class="headerlink" href="#findings-read" title="Permanent link">&para;</a></h3>
-<p>These endpoints need a session only. Each one needs <code>cluster_id</code>.</p>
+<p>These endpoints need a session only. Each one needs <code>cluster_id</code>, except
+<code>POST /api/v1/cursors/close</code>.</p>
 <table>
 <thead>
 <tr>
@@ -2503,7 +2509,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/findings</code></td>
 <td>session</td>
-<td>One page of findings, with a cursor (<a href="#read-a-list-page-by-page">Read a list page by page</a>). <code>size</code> is 1 to 500, default 50. <code>sort</code> is <code>severity_rank</code>, <code>first_seen_at</code>, <code>last_scan_at</code>, <code>cvss</code> or <code>epss</code>.</td>
+<td>One page of findings, with a cursor (<a href="#read-a-list-page-by-page">Read a list page by page</a>). <code>size</code> is 1 to 500, default 50. <code>sort</code> is <code>severity_rank</code>, <code>first_seen_at</code>, <code>last_scan_at</code>, <code>cvss</code> or <code>epss</code>. The last page closes the search of the cursor. With <code>keep_open=true</code>, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with <code>POST /api/v1/cursors/close</code>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -2569,7 +2575,13 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/audit</code></td>
 <td>session</td>
-<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
+<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. <code>keep_open</code> is as in <code>/findings</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/cursors/close</code></td>
+<td>session</td>
+<td>Closes a cursor of <code>/findings</code> or <code>/audit</code> before its last page. Body: <code>{cursor}</code>. It closes the search of the cursor and frees your slot (<a href="#exports-and-reports">Exports and reports</a>), and answers 204. A cursor of a different user, of a list that ended, or that expired also gets 204, and nothing changes. A cursor that is not valid gets 422.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3030,7 +3042,9 @@ in the audit log. Snapshots from before keep the data.</p>
 <p>In each CSV file, JAVV puts an apostrophe before a cell that starts with <code>=</code>, <code>+</code>, <code>-</code>, <code>@</code>, a tab
 or a carriage return. Thus a spreadsheet does not run the cell as a formula.</p>
 <p>Each user can have <code>JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL</code> (default 10) open cursors and exports
-at the same time. One more gets 429 with <code>Retry-After</code>. JAVV keeps the result of a report in
+at the same time. One more gets 429 with <code>Retry-After</code>. A cursor is open from its first page until
+its last page, until you close it with <code>POST /api/v1/cursors/close</code>, or until
+<code>JAVV_SEARCH_PIT_KEEP_ALIVE</code> plus 30 seconds after the last page that you read. JAVV keeps the result of a report in
 OpenSearch for <code>JAVV_EXPORT_TTL_HOURS</code> (default 24). The <code>report_drain</code> job runs the queue, on
 <code>JAVV_JOB_REPORT_DRAIN_CRON</code> (default every 5 minutes). A result larger than
 <code>JAVV_EXPORT_MAX_BYTES</code> makes the job fail. At the end of a job, a <code>report_ready</code> notification
@@ -3241,7 +3255,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_pits_open</code></td>
 <td>gauge</td>
 <td>none</td>
-<td>The cursors and exports that are open now</td>
+<td>The cursors and exports that are open now. A cursor that a client stopped using counts until <code>JAVV_SEARCH_PIT_KEEP_ALIVE</code> plus 30 seconds after the last page that the client read, and then stops counting.</td>
 </tr>
 <tr>
 <td><code>javv_export_rows_total</code> / <code>javv_export_bytes_total</code></td>
