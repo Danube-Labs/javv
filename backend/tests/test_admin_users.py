@@ -398,6 +398,29 @@ async def test_create_and_reset_refuse_a_lone_surrogate_with_422(admin_env) -> N
     assert (await _doc(client, target))["must_change"] is False  # the reset changed nothing
 
 
+async def test_create_and_reset_do_not_send_a_too_long_password_back(admin_env) -> None:
+    make_http, client = admin_env
+    admin = make_http()
+    await _seed_and_login(admin, client, capabilities=["can_manage_users"])
+    target = await _seed_and_login(make_http(), client, capabilities=[])
+    too_long = "a temporary password past the cap " + "x" * 256
+
+    created = await admin.post(
+        "/api/v1/admin/users",
+        json={"username": _name(), "temp_password": too_long, "role": "viewer"},
+    )
+    reset = await admin.post(
+        f"/api/v1/admin/users/{target}/password-reset", json={"temp_password": too_long}
+    )
+
+    for r in (created, reset):
+        body = r.json()
+        assert (r.status_code, body["title"]) == (422, "Validation error")
+        assert "'temp_password'" in body["detail"]
+        assert too_long not in r.text
+        assert "'input'" not in body["detail"]
+
+
 async def test_user_list_paginates(admin_env) -> None:
     # task E (#142): the same pagination the token list gained
     make_http, client = admin_env

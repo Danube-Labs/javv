@@ -201,8 +201,8 @@ Each answer that is not a success has the same body, with the type `application/
       back (`POST /api/v1/clusters/{cluster_id}/unretire`) or a new token
       (`POST /api/v1/admin/tokens`). Delete the cluster again to finish it.
 - `title`: a short text that names the error.
-- `detail`: on a 422 from a field check, the list of the fields that are not valid. Else it is
-  `null`.
+- `detail`: on a 422 from a field check, the list of the fields that are not valid, with the
+  reason for each. It does not hold the value that you sent. Else it is `null`.
 - `request_id`: the id of the request in the backend log. The `X-Request-ID` header of the answer
   also has it, on each answer. To set the id yourself, send `X-Request-ID` with 1 to 64 letters,
   digits or hyphens. If you send no id, or an id that is not valid, the backend makes one.
