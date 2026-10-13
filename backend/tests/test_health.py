@@ -13,6 +13,7 @@ from opensearchpy import AsyncOpenSearch
 from opensearchpy.exceptions import TransportError
 from prometheus_client import REGISTRY
 
+from backend.core.errors import DELETE_UNFINISHED_TYPE, delete_unfinished
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
 
@@ -38,6 +39,26 @@ async def test_unknown_route_uses_problem_envelope() -> None:
     body = resp.json()
     assert body["status"] == 404
     assert set(body) >= {"type", "title", "status"}
+    assert body["type"] == "about:blank"
+
+
+async def test_a_typed_refusal_carries_its_problem_type() -> None:
+    app = create_app()
+
+    async def refuse() -> None:
+        raise delete_unfinished()
+
+    app.add_api_route("/typed", refuse)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://t") as client:
+        resp = await client.get("/typed")
+    assert resp.status_code == 409
+    assert resp.headers["content-type"] == "application/problem+json"
+    body = resp.json()
+    assert (body["type"], body["title"]) == (
+        DELETE_UNFINISHED_TYPE,
+        "its delete did not finish: delete it again",
+    )
 
 
 # --- /readyz: a read-only or red store stays in service (issue 832) ------------------------

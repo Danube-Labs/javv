@@ -72,6 +72,10 @@ _FLOOD_STAGE_BLOCK = "TOO_MANY_REQUESTS/12/"
 
 STORE_READ_ONLY_TYPE = "store-read-only"
 
+# a cluster whose delete stopped halfway: un-retire and a token mint refuse it alike (issue 787),
+# and the web app matches this type, never the title, so a reworded title cannot break it
+DELETE_UNFINISHED_TYPE = "cluster-delete-unfinished"
+
 # the same wait JAVV's own 429s ask for (the per-user search cap, `Retry-After: 5`); the UI never
 # retries by itself, so this only guides a script
 STORE_BUSY_RETRY_AFTER_S = 5
@@ -84,6 +88,20 @@ def store_read_only(exc: BaseException) -> bool:
         isinstance(exc, TransportError)
         and exc.status_code == 429
         and _FLOOD_STAGE_BLOCK in str(exc.info)
+    )
+
+
+class TypedHTTPException(StarletteHTTPException):
+    """An HTTPException whose problem `type` a client can match on."""
+
+    def __init__(self, status_code: int, detail: str, *, problem_type: str) -> None:
+        super().__init__(status_code, detail)
+        self.problem_type = problem_type
+
+
+def delete_unfinished() -> TypedHTTPException:
+    return TypedHTTPException(
+        409, "its delete did not finish: delete it again", problem_type=DELETE_UNFINISHED_TYPE
     )
 
 
@@ -131,6 +149,7 @@ def register_error_handlers(app: FastAPI) -> None:
             title=str(exc.detail),
             request_id=_request_id(request),
             headers=exc.headers,
+            type_=getattr(exc, "problem_type", "about:blank"),
         )
 
     @app.exception_handler(RequestValidationError)

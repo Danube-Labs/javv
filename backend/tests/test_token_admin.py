@@ -18,6 +18,7 @@ from opensearchpy import AsyncOpenSearch
 
 from backend.admin import cluster_delete
 from backend.auth.passwords import hash_password
+from backend.core.errors import DELETE_UNFINISHED_TYPE
 from backend.main import create_app
 from backend.routers import tokens as tokens_router
 from os_env import OS_URL, requires_opensearch
@@ -296,6 +297,7 @@ async def test_mint_is_refused_for_a_cluster_whose_delete_did_not_finish(admin_c
     r = await http.post("/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "trivy"})
 
     assert (r.status_code, r.json()["title"]) == (409, "its delete did not finish: delete it again")
+    assert r.json()["type"] == DELETE_UNFINISHED_TYPE
     count = await client.count(
         index="system-tokens", body={"query": {"term": {"cluster_id": cluster}}}
     )
@@ -340,7 +342,7 @@ async def test_a_delete_that_starts_during_the_mint_still_refuses_it(
     monkeypatch.setattr(tokens_router, "deletes_started", not_yet)
     r = await http.post("/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "trivy"})
 
-    assert r.status_code == 409
+    assert (r.status_code, r.json()["type"]) == (409, DELETE_UNFINISHED_TYPE)
     count = await client.count(
         index="system-tokens", body={"query": {"term": {"cluster_id": cluster}}}
     )

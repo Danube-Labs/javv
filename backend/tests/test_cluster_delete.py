@@ -45,6 +45,7 @@ from backend.admin.cluster_retirement import (
     unretire_cluster,
 )
 from backend.auth.passwords import hash_password
+from backend.core.errors import DELETE_UNFINISHED_TYPE
 from backend.core.security import hash_token, mint_token
 from backend.core.settings import get_settings
 from backend.jobs import cluster_retirement
@@ -714,6 +715,7 @@ async def test_bring_back_is_refused_once_a_delete_has_started(env, monkeypatch)
     r = await http.post(f"/api/v1/clusters/{cid}/unretire")
     assert r.status_code == 409
     assert r.json()["title"] == "its delete did not finish: delete it again"
+    assert r.json()["type"] == DELETE_UNFINISHED_TYPE  # what the web app matches (issue 787)
     assert cid in await read_retirements(client)  # still retired, nothing stamped
     assert (await read_retirements(client))[cid].returned_at is None
     listed = await http.get("/api/v1/clusters", params={"include_retired": "true"})

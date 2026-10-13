@@ -195,8 +195,13 @@ Each answer that is not a success has the same body, with the type `application/
 {"type": "about:blank", "title": "invalid credentials", "status": 401, "detail": null, "request_id": "b169be4a30444fdc"}
 ```
 
-- `type`: `about:blank`, or `store-read-only` on a 503 for a write that OpenSearch refused
-  because its disk is full.
+- `type`: `about:blank`, or one of these:
+  - `store-read-only` on a 503 for a write that OpenSearch refused because its disk is full;
+  - `cluster-delete-unfinished` on a 409 for a cluster whose delete did not finish: a bring back
+    (`POST /api/v1/clusters/{cluster_id}/unretire`) or a new token
+    (`POST /api/v1/admin/tokens`). Delete the cluster again to finish it.
+
+  Match on `type`, not on `title`: the title can change.
 - `title`: a short text that names the error.
 - `detail`: on a 422 from a field check, the list of the fields that are not valid. Else it is
   `null`.
