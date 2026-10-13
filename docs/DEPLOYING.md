@@ -544,6 +544,9 @@ for a new password before you can do other work. The command also ends all sessi
 It writes a `pwd_reset` row to the audit log, with `system` as the actor.
 
 - The command refuses a user whose password belongs to an identity provider.
+- If the command cannot end the sessions, it still shows the new password, says that the sessions
+  were not ended, and stops with exit code 1. Run it again: it gives a new password and ends the
+  sessions.
 - A user that too many failed sign-ins locked out stays locked out for `JAVV_LOGIN_LOCKOUT_MINUTES`
   (15 by default). The lockout is in the memory of the running backend. Wait until it ends, or
   restart the backend.
