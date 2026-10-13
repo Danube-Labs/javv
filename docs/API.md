@@ -591,7 +591,7 @@ goes to the user.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET | `/api/v1/notifications` | session | Your 50 newest notifications, and `unread`, the count of the unread ones |
+| GET | `/api/v1/notifications` | session | Your 50 newest notifications, and `unread`, the count of the unread ones. Each item has `cluster_name`: the name of its cluster now, the `cluster_id` if the cluster has no name, or `null` if the item has no cluster. |
 | PATCH | `/api/v1/notifications/{notification_id}/read` | session | Marks one of your notifications as read. A notification of a different user gets 404. |
 | DELETE | `/api/v1/notifications/{notification_id}` | session | Deletes one of your notifications (204). A notification of a different user gets 404. |
 

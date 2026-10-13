@@ -710,7 +710,9 @@ shows **"expires in Xh"** (C-2) and opens `GET /api/v1/reports/{id}/download`; o
 item flips to "expired — re-run the export" (never a dead link). **Cluster retiring** (issue 765):
 written once per silence to every settings admin; names the cluster and the date it is due to be
 retired (`ref` = `retires_at`; the sweep retires on its first run from then), or that it was due
-and is held while no cluster scans, or that it has been retired; withdrawn by the sweep when the cluster scans again; opens
+and is held while no cluster scans, or that it has been retired (by its name, which the feed
+carries as `cluster_name` since a retired cluster is off the cluster list); withdrawn by the sweep
+when the cluster scans again; opens
 Settings › Cluster for that cluster, or says it is no longer listed and opens the panel with
 Retired clusters.
 **States:** loading; empty; 410-expired per item; degraded (badge pauses, no stale count).
