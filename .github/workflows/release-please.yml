@@ -147,10 +147,11 @@ jobs:
 
       # issue 615: an SBOM, a keyless signature and a signed SBOM attestation for each pushed digest,
       # as the scanner images have (issue 74). A tag can be moved; the digest is what was pushed.
-      - name: Install syft (versions.yaml, from its official image)
+      # by digest (versions.yaml `tag@sha256:`): this job can sign, so it runs no tag that can move
+      - name: Install syft (versions.yaml, from its official image, by digest)
         run: |
           syft=$(yq -r '.supply_chain.syft' versions.yaml)
-          cid=$(docker create "anchore/syft:v$syft")
+          cid=$(docker create "anchore/syft:$syft")
           docker cp "$cid:/syft" syft && docker rm "$cid" >/dev/null
           sudo install -m 0755 syft /usr/local/bin/syft && rm syft
 
