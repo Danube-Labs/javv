@@ -1391,14 +1391,16 @@ backend ignores the fields that it does not know. A newer backend reads a missin
 The <code>deploy/compose/compose.yaml</code> file of the release names these images. To upgrade:</p>
 <ol>
 <li>Replace your <code>compose.yaml</code> with the file of the new release. Keep your <code>.env</code> file. It holds
-    your settings.</li>
+    your settings. If you changed your <code>compose.yaml</code>, for example the host port, make the same
+    change in the new file.</li>
 <li>Run <code>docker compose pull</code>, then <code>docker compose up -d</code>.</li>
 </ol>
 <p>There is only one backend. Thus JAVV is not available for some seconds, while the new backend
 starts and upgrades the indices. The frontend waits until the backend reports healthy
 (<code>depends_on</code>).</p>
 <p>To go back to the previous release, put the <code>compose.yaml</code> of that release back. Then run the same
-two commands.</p>
+two commands. To go back to a release before 0.7.0, first put back the old name of the secret key
+(see <a href="#go-back-to-a-previous-release">Go back to a previous release</a>).</p>
 <h4 id="upgrade-from-051-to-061-or-later">Upgrade from 0.5.1 to 0.6.1 or later<a class="headerlink" href="#upgrade-from-051-to-061-or-later" title="Permanent link">&para;</a></h4>
 <p>From 0.6.0, OpenSearch requires a sign-in. 0.6.0 published no images, so use 0.6.1 or later. Before
 step 2:</p>
@@ -1467,13 +1469,23 @@ these steps on the real compose files, from an OpenSearch that a <code>main</cod
 <h3 id="on-kubernetes-helm">On Kubernetes (Helm)<a class="headerlink" href="#on-kubernetes-helm" title="Permanent link">&para;</a></h3>
 <p>Each release publishes the JAVV chart and the OpenSearch chart
 (<a href="../DEPLOYING/#install-on-kubernetes-with-helm"><code>DEPLOYING.md</code></a>) at <code>oci://ghcr.io/danube-labs/charts</code>,
-with the version of the release. Keep your settings in your own values file. Then each upgrade uses
-the chart of the new release with the same file:</p>
+with the version of the release. Keep your settings in your own values files. An install with
+<code>--set</code>, as in <code>DEPLOYING.md</code>, writes no values file. Thus, before the first upgrade, write the
+values of each release to a file:</p>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>store<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-store-values.yaml
+helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>javv<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-javv-values.yaml
+helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>scanner<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-scanner-values.yaml<span class="w">   </span><span class="c1"># in each scanned cluster</span>
+</code></pre></div>
+<p>These files hold each value that you set, the passwords included. Keep them as safe as your
+Secrets. Then each upgrade uses the chart of the new release with the same files:</p>
 <div class="highlight"><pre><span></span><code>helm<span class="w"> </span>upgrade<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span>&lt;new<span class="w"> </span>version&gt;<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-f<span class="w"> </span>my-store-values.yaml<span class="w">   </span><span class="c1"># only when the OpenSearch chart changed</span>
+<span class="w">  </span>-f<span class="w"> </span>my-store-values.yaml
 helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span>&lt;new<span class="w"> </span>version&gt;<span class="w"> </span>-f<span class="w"> </span>my-javv-values.yaml
 helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>javv
 </code></pre></div>
+<p>Do the <code>store</code> upgrade when the release changed the OpenSearch chart.
+<a href="#version-notes">Version notes</a> tells you which releases did. It is safe to do it when the chart did
+not change. Then the upgrade changes only labels, and OpenSearch does not restart.</p>
 <p>The backend runs as one pod with <code>strategy: Recreate</code>. The backend runs the background jobs, so
 two backends must never run at the same time. Kubernetes stops the old pod before it starts the new
 pod. Thus JAVV is not available for some seconds, while the new pod checks OpenSearch and upgrades
@@ -1557,6 +1569,20 @@ list all indices as <code>unchanged</code>.</p>
   again, the new field has its default value. This is true when you go back to 0.4.8 or later.</li>
 <li><strong>Go back with the scanners first</strong> when the report format changed between the two releases.
   Then the scanners do not send a format that the older backend refuses.</li>
+<li><strong>A release before 0.7.0 needs the old name of the secret key.</strong> These releases read
+  <code>JAVV_TOKEN_PEPPER</code> (docker compose) or the key <code>token-pepper</code> of <code>secrets.existingSecret</code> (Helm).
+  If you deleted it after the upgrade to 0.7.0, put it back with the same value before you go back:<ul>
+<li>docker compose: <code>sed -n 's/^JAVV_SECRET_KEY=/JAVV_TOKEN_PEPPER=/p' .env &gt;&gt; .env</code>. Without it,
+  <code>docker compose up</code> stops with <code>set JAVV_TOKEN_PEPPER in .env</code>, and the newer release
+  continues to run.</li>
+<li>Helm with <code>secrets.existingSecret</code>: copy the value of <code>secret-key</code> into <code>token-pepper</code>.
+  Without it, <code>helm rollback javv</code> succeeds, but the older backend pod does not start
+  (<code>couldn't find key token-pepper in Secret</code>). JAVV is not available until you copy the value.
+  <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>patch<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>--type<span class="w"> </span>merge<span class="w"> </span>-p<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">"{\"data\":{\"token-pepper\":\"</span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.data.secret-key}'</span><span class="k">)</span><span class="s2">\"}}"</span>
+</code></pre></div></li>
+</ul>
+</li>
 <li><strong>A snapshot does not give a rollback in one step.</strong> A restore makes <code>restored-*</code> copies next to
   the live indices. It never writes over them
   (<code>POST /api/v1/admin/snapshots/{snapshot_name}/restore</code>). To use a copy, you must move it into
@@ -1589,6 +1615,7 @@ already running. But the second run is work for no result.</p>
 <li>The store schema changed (<code>mapping_version</code>).</li>
 <li>The report formats that the backend accepts changed (<code>envelope_versions</code>).</li>
 <li>The scanner images must be published again, or changed together with the release.</li>
+<li>The OpenSearch chart (<code>javv-opensearch</code>) changed. Then do the <code>store</code> upgrade.</li>
 </ul>
 <p>The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.</p>
@@ -1610,6 +1637,8 @@ applied it automatically on the first start.</p>
 </tr>
 </tbody>
 </table>
+<p>No release up to and including 0.7.2 changed the OpenSearch chart. Only its version number
+changed.</p>
 <h3 id="073-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend">0.7.3: a bootstrap admin password longer than 256 characters stops the backend<a class="headerlink" href="#073-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" title="Permanent link">&para;</a></h3>
 <p>A sign-in accepts a password of 256 characters at most. A first admin with a longer
 <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code> could never sign in. The backend now refuses such a value at start,
@@ -1624,21 +1653,25 @@ every user must sign in again, and every open download link stops working. The s
 restore them, and each scanner then needs a new token. A backend that finds the old name stops at
 start, and it shows the new name.</p>
 <ul>
-<li><strong>docker compose:</strong> in <code>.env</code>, change the name of the variable, and keep its value:
-  <div class="highlight"><pre><span></span><code>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/^JAVV_TOKEN_PEPPER=/JAVV_SECRET_KEY=/'</span><span class="w"> </span>.env
+<li><strong>docker compose:</strong> in <code>.env</code>, add the new name with the same value. Keep the line with the old
+  name until you do not need to go back to a release before 0.7.0:
+  <div class="highlight"><pre><span></span><code>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'s/^JAVV_TOKEN_PEPPER=/JAVV_SECRET_KEY=/p'</span><span class="w"> </span>.env<span class="w"> </span>&gt;&gt;<span class="w"> </span>.env
 </code></pre></div>
-  Until you do this, <code>docker compose up</code> stops with <code>set JAVV_SECRET_KEY in .env</code>.</li>
+  Until you add the new name, <code>docker compose up</code> stops with <code>set JAVV_SECRET_KEY in .env</code>. The
+  <code>compose.yaml</code> of 0.7.0 and later gives only <code>JAVV_SECRET_KEY</code> to the backend. Thus the old name
+  in <code>.env</code> has no effect on it.</li>
 <li><strong>Helm, with the value in your values file:</strong> change the name <code>secrets.tokenPepper</code> to
   <code>secrets.secretKey</code>, and keep its value. Until you do this, the upgrade stops with
-  <code>additional properties 'tokenPepper' not allowed</code>. If you set the value with <code>--set</code>, get your
-  values first (<code>helm get values javv -o yaml &gt; values.yaml</code>). Change the name in that file. Then
-  upgrade with <code>-f values.yaml</code>.</li>
+  <code>additional properties 'tokenPepper' not allowed</code>. If you set the value with <code>--set</code>, write your
+  values to a file first (see <a href="#on-kubernetes-helm">On Kubernetes (Helm)</a>). Change the name in
+  <code>my-javv-values.yaml</code>. Then upgrade with <code>-f my-javv-values.yaml</code>.</li>
 <li><strong>Helm, with <code>secrets.existingSecret</code>:</strong> the chart now reads the key <code>secret-key</code> from that
   Secret. Before the upgrade, copy the value of <code>token-pepper</code> into it:
   <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>patch<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>--type<span class="w"> </span>merge<span class="w"> </span>-p<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="s2">"{\"data\":{\"secret-key\":\"</span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.data.token-pepper}'</span><span class="k">)</span><span class="s2">\"}}"</span>
 </code></pre></div>
-  After the upgrade works, delete the key <code>token-pepper</code>.</li>
+  Keep the key <code>token-pepper</code> until you do not need to go back to a release before 0.7.0. Those
+  releases read only <code>token-pepper</code>. After that, you can delete it.</li>
 </ul>
 <h3 id="062-javv-retires-clusters-that-send-no-scans">0.6.2: JAVV retires clusters that send no scans<a class="headerlink" href="#062-javv-retires-clusters-that-send-no-scans" title="Permanent link">&para;</a></h3>
 <p>A new daily job retires a cluster that sent no accepted scan for 45 days

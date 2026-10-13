@@ -1546,8 +1546,10 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 <p><strong>Sign in</strong> through the <code>javv</code> Service on port 8080, as <code>admin</code>, with the bootstrap password.
     Nothing is in front of the Service. For <code>https</code>, put your own Ingress, gateway or load balancer
     in front of it, and keep the session cookie <code>Secure</code> (<a href="#http-or-https">http or https</a> applies in
-    the same way). To look at JAVV before you do this, run <code>kubectl port-forward svc/javv 8080</code>, and
-    set <code>backend.config.JAVV_SESSION_COOKIE_SECURE=false</code>.</p>
+    the same way). To look at JAVV before you do this, run <code>kubectl port-forward svc/javv 8080</code>,
+    and open <code>http://localhost:8080</code>. Chromium (Chrome) and Firefox keep the <code>Secure</code> cookie from
+    <code>localhost</code>, so you do not change a setting. We did not test Safari. If Safari does not keep
+    you signed in, set <code>backend.config.JAVV_SESSION_COOKIE_SECURE=false</code>.</p>
 </li>
 </ol>
 <p><strong>What the <code>javv</code> chart runs:</strong></p>
