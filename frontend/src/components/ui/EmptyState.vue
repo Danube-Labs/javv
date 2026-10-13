@@ -8,13 +8,19 @@
  */
 import AppIcon, { type IconName } from '@/components/ui/AppIcon.vue'
 
-defineProps<{ icon?: IconName; title: string; hint?: string }>()
+defineProps<{
+  icon?: IconName
+  title: string
+  hint?: string
+  /** the state IS the page (the cold start): its title is the page's one h1 (issue 829) */
+  pageTitle?: boolean
+}>()
 </script>
 
 <template>
   <div class="empty-state" role="status">
     <span v-if="icon" class="es-tile"><AppIcon :name="icon" :size="22" /></span>
-    <h2>{{ title }}</h2>
+    <component :is="pageTitle ? 'h1' : 'h2'" class="es-title">{{ title }}</component>
     <p v-if="hint" class="es-hint">{{ hint }}</p>
     <div v-if="$slots.default" class="es-actions"><slot /></div>
   </div>
@@ -37,7 +43,7 @@ defineProps<{ icon?: IconName; title: string; hint?: string }>()
   border: 1px solid var(--line2);
   margin-bottom: 12px;
 }
-.empty-state h2 {
+.es-title {
   color: var(--ink);
   margin: 0 0 6px;
 }

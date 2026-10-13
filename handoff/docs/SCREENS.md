@@ -138,6 +138,9 @@ Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 **T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1
 metrics rollup" (C-5/D39) — the current-state table is replaced by the notice, never a wrong or
 expensive query.
+The cold-start state ("No clusters registered yet") is the whole page on the nine data routes,
+so its title is the page's one h1 in the page-title style (issue 829; operator ruling
+2026-10-12).
 
 **Changed vs SCREENS.md**
 - Fleet KPI strip severity buckets: lowercase + `negligible` (A-1); per-scanner, never summed.
@@ -220,15 +223,27 @@ dropped (contract is cursor paging).
 **States**
 - loading — skeleton rows; empty/first-run — "no sweep yet" friendly state; filtered-empty —
   "no findings match" + clear-filters.
-- **410 cursor expired** (A-m1) — silently re-run the search from the current filters; toast if
-  the position was lost. **422 tampered cursor** — reset to first page. **503** — degraded state
-  in the grid area + global banner.
+- **A refused later page stays where it is** (operator ruling 2026-10-12, issue 833 G1): the
+  alert, the grid's "could not be loaded" row, and the pager still on that page's range with Prev
+  usable. The head count keeps the total, which page 1 of the same query gave (operator ruling
+  2026-10-13). A **410** (the page's search expired after the keep-alive) says "These results expired.
+  Reload the page to start again.", since its cursor cannot be asked for again. **503**: the same,
+  plus the global banner.
 - **429 PIT cap** (`JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL`) — "too many open searches/exports,
   retry in Ns" honoring `Retry-After`.
 - **Any refused read**: the alert names the reason; the head count shows "-" and the grid row
   reads "Findings could not be loaded.", never "0 findings" or "No findings yet" (issue 817). Audit
   log, Contributors and Approvals follow the same rule for their counts (Audit's row: "Events could
-  not be loaded.").
+  not be loaded."). A refused read after a good one clears the rows: they answered another
+  query (issue 833 F1). On all four screens an answer to an older request is dropped, so it never
+  replaces a newer one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
+  current filters answers.
+- **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
+  the alert says "Filter counts could not be loaded." with the reason, and the rail and the
+  add-filter menu keep their values with "-" for each count.
+- **The reason in any read's alert** (issue 833 G2, every screen): a 429 is the per-user search
+  budget and says "The search backend is busy. Try again in a few seconds."; any other failure
+  keeps the screen's own copy (`readFailureCopy` in `src/findings/failureCopy.ts`).
 - 403-capability-hidden — bulk-triage bar and row checkboxes absent without `can_triage`.
 - Bulk 413 — inline error offering to narrow the selection.
 - Zero-vs-nonzero scanner pair (M9b update, #156-4): one scanner's 0 is **never** a green "clean"
@@ -285,7 +300,12 @@ the next state change, or on leaving the finding.
 **States:** loading; 403-capability-hidden (triage controls disabled-with-tooltip without
 `can_triage`; risk-accept without `can_accept_audit_final`); CAS conflict on save → "changed by
 someone else — reload and retry" (no silent overwrite); `T<now` — panel read-only ("viewing
-history"); `present=false` row visible **only** in history views (A-2).
+history"); `present=false` row visible **only** in history views (A-2). **A refused card read**
+(operator ruling 2026-10-12, issue 833 F2): the Affected components, Activity and Decisions cards
+each say "Could not be loaded.", never their empty-state copy; the Affected badge shows "-";
+"New decision" is disabled while the decisions read is refused; a refused read never leaves the
+previous CVE's rows, and a late answer for the previous CVE never lands on the next one. A
+refused read of the finding itself follows the G2 rule (§3).
 
 **Changed vs SCREENS.md:** A-2 (6 states + justification flow), A-3 (evidence = sibling query),
 B-2/B-3 (metadata cuts), B-5 (server SLA), V4-DELTA-1 (old triage fields removed), D40
@@ -336,7 +356,8 @@ must reproduce identical query params).
 
 **States:** empty ("save a filter set from Findings"); count-loading per card; degraded (counts
 show em-dash); 403 on mutating someone else's view (edit/delete affordances hidden unless owner
-or admin).
+or admin). The head count shows "-" until the list read answers, and after a refused one, never
+"0 views" (issue 833 F5); the alert follows the G2 rule (§3).
 
 **Changed vs SCREENS.md:** C-6 ruled server-side (M8e); owner column kept per the v4 design.
 
@@ -387,7 +408,9 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
   findings work today.
 
 **States:** loading; **"Not yet scanned then"** (T before the first committed scan); build-changed
-marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`.
+marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`. A
+refused build-history read says so in the Build history card and is never read as "not yet
+scanned": neither the stat nor the "Not yet scanned then" card shows (issue 833 F5).
 
 **Changed vs SCREENS.md:** scanner dropdown is a **read** lens only (no version anything — D41);
 EPSS/KEV null on Trivy rows enforced here too (V4-DELTA-5); M8b dependency made explicit (C-1).
@@ -408,7 +431,9 @@ conflict 2).
 justification · approver · **expiry** (expired decisions resurface) · status (active / revoked
 struck-through / expired) · when. Row → finding detail's "Decisions on this CVE".
 
-**States:** loading; empty ("no pending decisions"); 403 (nav hidden); degraded.
+**States:** loading; empty ("no pending decisions"); 403 (nav hidden); degraded. A refused read
+keeps the rail's values with "-" for each count, since the counts come with the rows (operator
+ruling 2026-10-13, issue 833).
 
 **Changed vs SCREENS.md:** decisions shape replaces approval fields (V4-DELTA-2); capability
 gate + nav hiding (A-4); revoke+new editing (D40).
@@ -432,7 +457,11 @@ re-evaluated selector) · Detail. **Click-through only where `entity_type=="find
 Task column dropped (no field; Jira linkage is v1.1 — V4-DELTA-1).
 
 **States:** loading; empty; degraded; retention note ("audit window bounded by
-`system-audit-log` retention").
+`system-audit-log` retention"). The count shows "-" until the first read answers (issue 833 G3).
+A refused read follows the Findings rules in §3 (issue 833): the rows clear, a refused later
+page stays put with Prev, a 429 says busy and a 410 says the results expired, an older answer
+never replaces a newer one, and refused filter counts alone leave the rows and show "-" in the
+rail (operator ruling 2026-10-12: F9's rule applies here too).
 
 **Default view (issue 681):** the sidebar and command palette open the log at
 `/audit?action=!login`, so it starts with a removable "Action is not Login" pill and the first
@@ -512,7 +541,11 @@ Trivy | Grype picker shows one lane at a time. Rejected: tinted lane backgrounds
 warm canvas) and one-at-a-time on wide screens (loses the side-by-side comparison).
 
 **States:** loading; never-ingested; scanner-silent (chip + global banner agree); degraded;
-`T<now` → "history for scanner status is limited until the v1.1 metrics rollup" (C-1/D39).
+`T<now` → "history for scanner status is limited until the v1.1 metrics rollup" (C-1/D39). The
+head count shows "-" until both reads answer, and after a refused one, never "0 scanners" (issue
+833 F5); the alert follows the G2 rule (§3). The ingest strip on this and the other data screens
+shows "last ingest -" when its freshness read is refused, never the previous read's time
+(operator ruling 2026-10-12).
 
 **Changed vs SCREENS.md:** C-3 (whole-screen redesign), A-7/D-4 (retry/dead-letter feed cut), issue 357 (JAVV-side refusals reinstated), D41
 (version/DB lines are provenance display only), C-1 (historical limitation).

@@ -9,7 +9,7 @@
  * caller resets to page 0 (`resetPaging`).
  */
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useCursorPager } from '@/composables/useCursorPager'
 import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
@@ -53,6 +53,9 @@ export const useFindingsStore = defineStore('findings', () => {
   const settled = ref(false)
   const failed = ref(false)
   const failedStatus = ref<number | null>(null)
+  /** The total belongs to the current filters: answered, or a refused later page of the same
+   * query, whose total page 1 already gave (operator ruling 2026-10-13, issue 833). */
+  const totalKnown = computed(() => settled.value && (!failed.value || pager.page.value > 0))
 
   function setResult(newRows: FindingRow[], newTotal: number, nextCursor: string | null) {
     rows.value = newRows
@@ -60,8 +63,14 @@ export const useFindingsStore = defineStore('findings', () => {
     settled.value = true
     pager.landed(nextCursor)
   }
-  /** A read finished without rows to show (a failure) — the grid is answered, not pending. */
-  function markSettled() {
+  /** A read was refused: no rows are shown, since they answered another query or page. A refused
+   * first page drops the total too; a refused later page keeps it, because page 1 of the same
+   * query answered it, so the pager can stay on that page. */
+  function setFailed(status: number | null) {
+    rows.value = []
+    if (pager.page.value === 0) total.value = 0
+    failed.value = true
+    failedStatus.value = status
     settled.value = true
   }
   function setSort(field: SortField) {
@@ -92,12 +101,13 @@ export const useFindingsStore = defineStore('findings', () => {
     settled,
     failed,
     failedStatus,
+    totalKnown,
     hasPrev: pager.hasPrev,
     hasNext: pager.hasNext,
     /** Cursor to fetch the CURRENT page with. */
     activeCursor: pager.cursor,
     setResult,
-    markSettled,
+    setFailed,
     goNext: pager.next,
     goPrev: pager.prev,
     setSort,

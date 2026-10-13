@@ -24,6 +24,17 @@ describe('GridPager', () => {
     expect(w.find('.pager').exists()).toBe(false)
   })
 
+  it('keeps a refused page in place: its range and Prev, with no rows shown (issue 833)', () => {
+    const w = pager({ total: 435, page: 1, shown: 0, hasPrev: true, hasNext: false, failed: true })
+    expect(w.find('.pager-info').text()).toBe('Showing 26–50 of 435')
+    expect(w.findAll('.pager-btn')[0]!.attributes('disabled')).toBeUndefined()
+  })
+
+  it('caps a refused last page at the total', () => {
+    const w = pager({ total: 40, page: 1, shown: 0, hasPrev: true, hasNext: false, failed: true })
+    expect(w.find('.pager-info').text()).toBe('Showing 26–40 of 40')
+  })
+
   it('stays on an empty later page, so Prev can still get back', () => {
     const w = pager({ total: 0, page: 1, shown: 0, hasPrev: true, hasNext: false })
     expect(w.find('.pager').exists()).toBe(true)

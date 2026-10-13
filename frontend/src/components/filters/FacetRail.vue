@@ -16,6 +16,8 @@ const props = defineProps<{
   fields: readonly FilterField[]
   selections: Selections
   facets: FacetsResponse
+  /** the counts read was refused: keep the values, show no count (issue 833, F9) */
+  countsUnknown?: boolean
   modes?: Modes
 }>()
 
@@ -81,7 +83,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           'facet-on': activeMode(g.field, it.value) === 'is',
           'facet-out': activeMode(g.field, it.value) === 'not',
         }"
-        :title="it.hint ?? scannerSplit(it.byScanner)"
+        :title="it.hint ?? (countsUnknown ? undefined : scannerSplit(it.byScanner))"
         @click="emit('toggle', g.field.key, it.value)"
       >
         <span class="facet-check" />
@@ -90,7 +92,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
             <slot name="value" :field="g.field" :value="it.value" :label="it.label">{{ it.label }}</slot>
           </span>
         </span>
-        <span v-if="it.count !== null" class="facet-count">{{ fmt(it.count) }}</span>
+        <span v-if="it.count !== null" class="facet-count">{{ countsUnknown ? '-' : fmt(it.count) }}</span>
         <!-- the row click already means include, so the action offers the other side only -->
         <ValueActions
           v-if="negatable(g.field)"

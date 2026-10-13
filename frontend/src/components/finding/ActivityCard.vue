@@ -20,7 +20,11 @@ export interface ActivityRow {
   '@timestamp': string
 }
 
-const props = defineProps<{ activity: ActivityRow[] }>()
+const props = defineProps<{
+  activity: ActivityRow[]
+  /** the activity read was refused: say so, never "none" (issue 833, F2) */
+  failed?: boolean
+}>()
 
 /* display slices through the shared GridPager — the FULL trail still lives on Audit */
 const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activity)
@@ -29,7 +33,7 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
 <template>
   <DetailCard title="Activity on this finding" sub="the audit trail: every triage action, who &amp; when" flush dark-head>
     <div class="act-body">
-    <p v-if="activity.length === 0" class="empty-row">No triage actions yet.</p>
+    <p v-if="activity.length === 0" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No triage actions yet.' }}</p>
     <ul v-else class="act-list">
       <li v-for="a in shown" :key="a.event_id" class="act-row">
         <span class="act-when mono-cell">{{ fmtAt(a['@timestamp']) }}</span>

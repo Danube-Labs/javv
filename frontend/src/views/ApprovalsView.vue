@@ -47,6 +47,7 @@ import { useToastStore } from '@/stores/toast'
 import { refNowMs } from '@/system/clock'
 import { lastDataAt } from '@/system/freshness'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
+import { readFailureCopy } from '@/findings/failureCopy'
 
 const clusterStore = useClusterStore()
 const timeTravel = useTimeTravelStore()
@@ -66,6 +67,7 @@ const page = ref(0)
 const size = ref(25)
 const settled = ref(false)
 const failed = ref(false)
+const failedStatus = ref<number | null>(null)
 const facets = ref<FacetsResponse>({})
 
 /** countdowns measure from the display clock (D28) — wall time at now, T when rewound */
@@ -116,8 +118,10 @@ async function exportCsv() {
   await runExport({ ...q, warn_days: EXPIRY_WARN_DAYS })
 }
 
+let seq = 0
 async function fetchQueue() {
   if (!filterQuery.value || !timeTravel.isNow) return
+  const mine = ++seq
   const response = await approvalListApiV1DecisionsApprovalsGet({
     query: {
       ...filterQuery.value,
@@ -126,7 +130,9 @@ async function fetchQueue() {
       warn_days: EXPIRY_WARN_DAYS,
     } as never,
   })
+  if (mine !== seq) return // a newer read owns the queue now
   failed.value = !response.response?.ok || !response.data
+  failedStatus.value = response.response?.status ?? null
   if (!failed.value) {
     const data = response.data as {
       approvals: ApprovalRow[]
@@ -269,6 +275,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           :fields="APPROVAL_FIELDS"
           :selections="filters.selections"
           :facets="facets"
+          :counts-unknown="failed"
           :modes="filters.modes"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
@@ -282,6 +289,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
             :selections="filters.selections"
             :modes="filters.modes"
             :facets="facets"
+            :counts-unknown="failed"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"
@@ -302,7 +310,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
 
       <UiSkeleton v-if="!settled" :height="220" label="Loading approvals" class="skel-gap" />
       <p v-else-if="failed" class="load-error" role="alert">
-        Could not load the queue. Check the backend connection.
+        {{ readFailureCopy(failedStatus, 'Could not load the queue. Check the backend connection.') }}
       </p>
       <section v-else class="card queue-card">
         <div class="tbl-scroll-pin">

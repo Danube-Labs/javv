@@ -38,6 +38,7 @@ import {
   severityDisagrees,
   type AffectedComponentRow,
 } from '@/findings/detailViewModel'
+import { readFailureCopy } from '@/findings/failureCopy'
 import { undoPatch, type TriagePatchBody } from '@/findings/triageRules'
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
@@ -63,8 +64,10 @@ const clickedScanner = computed(() =>
 const rows = ref<FindingRow[]>([])
 const affected = ref<AffectedComponentRow[]>([])
 const affectedTruncated = ref(false)
+const affectedFailed = ref(false)
 const loading = ref(true)
 const failed = ref(false)
+const failedStatus = ref<number | null>(null)
 
 /* ---- the sibling pair: one query, no scanner filter (A-3) ---- */
 const pairQuery = computed(() =>
@@ -73,20 +76,24 @@ const pairQuery = computed(() =>
     : null,
 )
 
+let pairSeq = 0
 watch(
   pairQuery,
   async (q, old) => {
     if (!q || JSON.stringify(q) === JSON.stringify(old)) return
+    const mine = ++pairSeq
     loading.value = true
     const response = await searchFindingsApiV1FindingsGet({
       query: q as SearchFindingsApiV1FindingsGetData['query'],
     })
+    if (mine !== pairSeq) return // a newer read owns the page now
     loading.value = false
     if (response.response?.ok && response.data) {
       rows.value = (response.data as { data: FindingRow[] }).data
       failed.value = false
     } else {
       failed.value = true
+      failedStatus.value = response.response?.status ?? null
       logger.warn('finding_detail_failed', { status: response.response?.status })
     }
   },
@@ -100,18 +107,24 @@ const occQuery = computed(() =>
     : null,
 )
 
+let occSeq = 0
 watch(
   occQuery,
   async (q, old) => {
     if (!q || JSON.stringify(q) === JSON.stringify(old)) return
+    const mine = ++occSeq
     const response = await searchFindingsApiV1FindingsGet({
       query: q as SearchFindingsApiV1FindingsGetData['query'],
     })
-    if (response.response?.ok && response.data) {
+    if (mine !== occSeq) return // a newer read owns the card now
+    affectedFailed.value = !response.response?.ok || !response.data
+    if (!affectedFailed.value) {
       const body = response.data as { data: FindingRow[]; total: number }
       affected.value = affectedComponentRows(body.data)
       affectedTruncated.value = body.total > body.data.length
     } else {
+      affected.value = []
+      affectedTruncated.value = false
       logger.warn('finding_occurrences_failed', { status: response.response?.status })
     }
   },
@@ -195,9 +208,12 @@ async function saveTriage(body: TriagePatchBody, undoing = false) {
 const raOpen = ref(false)
 const decisions = ref<DecisionRow[]>([])
 const decisionsBusy = ref(false)
+const decisionsFailed = ref(false)
 
+let decisionsSeq = 0
 async function fetchDecisions() {
   if (!clusterStore.selectedId || !cveId.value) return
+  const mine = ++decisionsSeq
   const response = await listDecisionsApiV1DecisionsGet({
     query: {
       cluster_id: clusterStore.selectedId,
@@ -205,9 +221,12 @@ async function fetchDecisions() {
       include_revoked: true,
     },
   })
-  if (response.response?.ok && response.data) {
+  if (mine !== decisionsSeq) return // a newer read owns the card now
+  decisionsFailed.value = !response.response?.ok || !response.data
+  if (!decisionsFailed.value) {
     decisions.value = (response.data as { decisions: DecisionRow[] }).decisions ?? []
   } else {
+    decisions.value = [] // another CVE's, or an unknown list: never shown as this one's
     logger.warn('decisions_list_failed', { status: response.response?.status })
   }
 }
@@ -235,10 +254,13 @@ function onDecisionCreated() {
 
 /* ---- per-finding activity (the audit trail rows for THIS finding_key) ---- */
 const activity = ref<ActivityRow[]>([])
+const activityFailed = ref(false)
 
+let activitySeq = 0
 async function fetchActivity() {
   const p = primary.value
   if (!p || !clusterStore.selectedId) return
+  const mine = ++activitySeq
   const response = await readAuditLogApiV1AuditGet({
     query: {
       cluster_id: clusterStore.selectedId,
@@ -246,9 +268,12 @@ async function fetchActivity() {
       size: 50,
     } as never,
   })
-  if (response.response?.ok && response.data) {
+  if (mine !== activitySeq) return // a newer read owns the card now
+  activityFailed.value = !response.response?.ok || !response.data
+  if (!activityFailed.value) {
     activity.value = (response.data as { data: ActivityRow[] }).data
   } else {
+    activity.value = []
     logger.warn('finding_activity_failed', { status: response.response?.status })
   }
 }
@@ -267,7 +292,7 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
     </div>
 
     <p v-else-if="failed" class="load-error" role="alert">
-      Finding unavailable. Check the backend connection.
+      {{ readFailureCopy(failedStatus, 'Finding unavailable. Check the backend connection.') }}
     </p>
 
     <div v-else-if="!digest" class="not-found">
@@ -328,14 +353,20 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           :decisions="decisions"
           :can-accept-final="auth.hasCapability('can_accept_audit_final')"
           :busy="decisionsBusy"
+          :failed="decisionsFailed"
           @create="raOpen = true"
           @revoke="revokeDecision"
         />
-        <ActivityCard :activity="activity" />
+        <ActivityCard :activity="activity" :failed="activityFailed" />
       </div>
 
       <!-- the widest table gets the full width, below the grid, same edges -->
-      <AffectedCard class="detail-band" :affected="affected" :truncated="affectedTruncated" />
+      <AffectedCard
+        class="detail-band"
+        :affected="affected"
+        :truncated="affectedTruncated"
+        :failed="affectedFailed"
+      />
 
       <RiskAcceptDialog
         v-if="raOpen && primary"

@@ -30,6 +30,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { useApi } from '@/composables/useApi'
+import { readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
 import { lastDataAt } from '@/system/freshness'
@@ -116,6 +117,8 @@ watch([() => clusterStore.selectedId, () => timeTravel.t, digest], () => void lo
 
 /* ---- build history: the committed scan-event trail of this repo:tag ---- */
 const timeline = ref<TimelineEvent[]>([])
+const timelineFailed = ref(false)
+const timelineFailedStatus = ref<number | null>(null)
 async function loadTimeline() {
   if (!clusterStore.selectedId || !repo.value || !tag.value) return
   const { data, response } = await imageTimelineApiV1ImagesTimelineGet({
@@ -125,15 +128,21 @@ async function loadTimeline() {
       tag: tag.value,
     } as ImageTimelineApiV1ImagesTimelineGetData['query'],
   })
-  if (response?.ok && data) {
+  timelineFailed.value = !response?.ok || !data
+  timelineFailedStatus.value = response?.status ?? null
+  if (!timelineFailed.value) {
     timeline.value = (data as { events: TimelineEvent[] }).events ?? []
   } else {
+    timeline.value = []
     logger.warn('image_detail_timeline_failed', { status: response?.status })
   }
 }
 watch([() => clusterStore.selectedId, repo, tag], () => void loadTimeline(), { immediate: true })
 
-const notYetScanned = computed(() => notYetScannedAt(timeline.value, scanner.value, timeTravel.t))
+// an unread timeline is not an empty one: never "not yet scanned" on a refused read (issue 833, F5)
+const notYetScanned = computed(
+  () => !timelineFailed.value && notYetScannedAt(timeline.value, scanner.value, timeTravel.t),
+)
 
 /** The current lens scanner's most recent committed scan ≤ T — the findings answer's stamp. */
 const lastScanAt = computed(() => {
@@ -218,7 +227,11 @@ const fmt = (n: number) => n.toLocaleString('en-US')
         </div>
       </div>
       <div class="card-body">
+        <p v-if="timelineFailed" class="load-error" role="alert">
+          {{ readFailureCopy(timelineFailedStatus, 'Build history unavailable. Check the backend connection.') }}
+        </p>
         <DigestSubTimeline
+          v-else
           :events="timeline"
           :scanner="scanner"
           :t="timeTravel.t"

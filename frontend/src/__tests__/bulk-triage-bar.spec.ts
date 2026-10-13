@@ -16,9 +16,9 @@ vi.mock('@/api/generated', async (importOriginal) =>
   }),
 )
 
-const open = async (selections: Record<string, string[]>) => {
+const open = async (selections: Record<string, string[]>, total: number | null = 12) => {
   const w = mount(BulkTriageBar, {
-    props: { fields: FINDINGS_FIELDS, selections, total: 12, canTriage: true, canAcceptFinal: true, historical: false },
+    props: { fields: FINDINGS_FIELDS, selections, total, canTriage: true, canAcceptFinal: true, historical: false },
     attachTo: document.body,
   })
   await w.findAll('button').find((b) => b.text().includes('Bulk triage'))!.trigger('click')
@@ -51,5 +51,22 @@ describe('BulkTriageBar', () => {
     expect(document.body.textContent).not.toContain('Add a filter first.')
     expect(buttons()).toContain('Cancel')
     expect(buttons().some((t) => t.startsWith('Apply'))).toBe(true)
+  })
+
+  // issue 833, F1: the count came from the last answer, so a refused read showed the old count
+  it.each([
+    [12, '≈ 12 findings', false],
+    [null, 'count unknown', true],
+  ] as const)('with a total of %s: says "%s", Apply disabled is %s', async (total, label, off) => {
+    const w = await open({ severity: ['critical'] }, total)
+    const assignee = document.body.querySelector<HTMLInputElement>('#bulk-assignee')!
+    assignee.value = 'bob'
+    assignee.dispatchEvent(new Event('input'))
+    await w.vm.$nextTick()
+    expect(document.body.querySelector('.lens-count')!.textContent!.trim()).toBe(label)
+    const apply = [...document.body.querySelectorAll('button')].find((b) =>
+      b.textContent!.includes('Apply to matching findings'),
+    )!
+    expect(apply.disabled).toBe(off)
   })
 })

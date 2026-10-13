@@ -24,7 +24,8 @@ const props = defineProps<{
   fields: readonly FilterField[]
   selections: Record<string, string[]>
   modes?: Record<string, 'is' | 'not'>
-  total: number
+  /** null while no read for these filters has answered: never show another query's count */
+  total: number | null
   canTriage: boolean
   canAcceptFinal: boolean
   historical: boolean
@@ -118,7 +119,9 @@ async function apply() {
               <span v-for="[k, v] in selectorChips" :key="k" class="lens-chip">
                 {{ k }} <b>{{ v }}</b>
               </span>
-              <span class="lens-count">≈ {{ total.toLocaleString('en-US') }} findings</span>
+              <span class="lens-count">{{
+                total === null ? 'count unknown' : `≈ ${total.toLocaleString('en-US')} findings`
+              }}</span>
             </div>
 
             <UiField label="Set state">
@@ -151,7 +154,7 @@ async function apply() {
           <UiButton
             v-if="done === null && !lens.blocked"
             variant="primary"
-            :disabled="!draft.body || submitting"
+            :disabled="!draft.body || submitting || total === null"
             @click="apply"
           >
             {{ submitting ? 'Applying…' : 'Apply to matching findings' }}

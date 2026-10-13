@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
-import { FAILURE_COPY, failureKind } from '@/findings/failureCopy'
+import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { clusterFromQuery, foreignQuery, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
 
 describe('accurate-error mapping (audit 343 rule 1)', () => {
@@ -11,8 +11,17 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(failureKind(422, true)).toBe('past_t') // the reader's unrecorded-filter 422
     expect(failureKind(501, false)).toBe('past_t')
     expect(failureKind(429, false)).toBe('busy')
+    expect(failureKind(410, false)).toBe('expired') // a later page whose search context ended
     expect(failureKind(503, false)).toBe('backend')
     expect(failureKind(null, false)).toBe('backend')
+  })
+
+  it('any read: a 429 is busy, a 410 expired, anything else keeps the screen copy (issue 833, G2)', () => {
+    expect(readFailureCopy(429, 'Contributors unavailable.')).toBe(FAILURE_COPY.busy)
+    expect(readFailureCopy(410, 'Audit log unavailable.')).toBe(FAILURE_COPY.expired)
+    for (const status of [500, 503, null]) {
+      expect(readFailureCopy(status, 'Contributors unavailable.')).toBe('Contributors unavailable.')
+    }
   })
 
   it('every kind has copy that never blames the backend for user input', () => {

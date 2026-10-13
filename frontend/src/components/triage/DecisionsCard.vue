@@ -32,6 +32,9 @@ const props = defineProps<{
   decisions: DecisionRow[]
   canAcceptFinal: boolean
   busy: boolean
+  /** the decisions read was refused: say so, and offer no new decision against an unknown list
+   * (issue 833, F2) */
+  failed?: boolean
 }>()
 const emit = defineEmits<{ revoke: [id: string]; create: [] }>()
 
@@ -58,7 +61,7 @@ function scopeLabel(d: DecisionRow): string {
     flush
   >
     <template #action>
-      <UiButton v-if="canAcceptFinal" @click="emit('create')">
+      <UiButton v-if="canAcceptFinal" :disabled="failed" @click="emit('create')">
         <AppIcon name="plus" :size="13" />New decision
       </UiButton>
     </template>
@@ -69,7 +72,7 @@ function scopeLabel(d: DecisionRow): string {
         </thead>
         <tbody>
           <tr v-if="rows.length === 0">
-            <td colspan="7" class="empty-row">No decisions on this CVE yet.</td>
+            <td colspan="7" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No decisions on this CVE yet.' }}</td>
           </tr>
           <tr v-for="d in shown" :key="d.decision_id" :class="{ 'dec-inactive': d.revoked_at }">
             <td><StateTag :state="d.type === 'risk_accepted' ? 'risk_accepted' : 'not_affected'" /></td>

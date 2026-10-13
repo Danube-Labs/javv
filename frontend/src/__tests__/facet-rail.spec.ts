@@ -44,3 +44,13 @@ describe('FacetRail row with a long value', () => {
     expect(mountRail().find('.facet-row').attributes('title')).toBe('trivy 600 · grype 634')
   })
 })
+
+describe('FacetRail with counts that could not be loaded (issue 833, F9)', () => {
+  it('keeps every value and shows "-" for its count', () => {
+    const w = mount(FacetRail, {
+      props: { fields: FIELDS, selections: emptySelections(FIELDS), facets: FACETS, countsUnknown: true },
+    })
+    expect(w.find('.facet-text').text()).toBe(LONG)
+    expect(w.find('.facet-count').text()).toBe('-')
+  })
+})

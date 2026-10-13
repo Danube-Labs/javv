@@ -107,7 +107,19 @@ describe('findings store (cursor-stack paging)', () => {
 
   it('a failed read is answered, not pending', () => {
     const s = useFindingsStore()
-    s.markSettled()
+    s.setFailed(503)
     expect(s.settled).toBe(true)
+    expect(s.failed).toBe(true)
+  })
+
+  it('a refused first page drops the rows and the total; a refused later page keeps the total', () => {
+    const s = useFindingsStore()
+    s.setResult([{ finding_key: 'k' } as never], 435, 'cur-2')
+    s.goNext()
+    s.setFailed(410)
+    expect([s.rows.length, s.total, s.page, s.totalKnown]).toEqual([0, 435, 1, true])
+    s.resetPaging()
+    s.setFailed(429)
+    expect([s.rows.length, s.total, s.totalKnown]).toEqual([0, 0, false])
   })
 })

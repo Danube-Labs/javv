@@ -13,6 +13,8 @@ const props = defineProps<{
   page: number
   size: number
   shown: number
+  /** the current page's read was refused: keep its range so the user knows where they are */
+  failed?: boolean
   hasPrev: boolean
   hasNext: boolean
 }>()
@@ -21,9 +23,10 @@ const emit = defineEmits<{ prev: []; next: []; 'update:size': [size: number] }>(
 
 const SIZES = [10, 25, 50]
 const range = computed(() => {
-  if (props.total === 0 || props.shown === 0) return null
+  const count = props.failed ? props.size : props.shown
+  if (props.total === 0 || count === 0) return null
   const start = props.page * props.size + 1
-  return { start, end: start + props.shown - 1 }
+  return { start, end: Math.min(start + count - 1, props.total) }
 })
 const fmt = (n: number) => n.toLocaleString('en-US')
 </script>

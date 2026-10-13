@@ -46,6 +46,7 @@ const timeTravel = useTimeTravelStore()
 
 const series = ref<ScanActivityData>({})
 const freshness = ref<FreshnessRow[]>([])
+const freshnessFailed = ref(false)
 const failed = ref(false)
 // no claim before evidence: quiet/failed/chart render only once a response has LANDED —
 // the pre-data default used to satisfy `quiet` and flash the amber panel on every load
@@ -72,9 +73,12 @@ watch(
     failed.value = !scans.response?.ok || !scans.data
     if (failed.value) logger.warn('ingest_lens_failed', { status: scans.response?.status })
     series.value = failed.value ? {} : ((scans.data as { series: ScanActivityData }).series ?? {})
-    if (fresh.response?.ok && fresh.data) {
-      freshness.value = (fresh.data as { scanners: FreshnessRow[] }).scanners ?? []
-    }
+    // a refused freshness read drops the old time: it belonged to an earlier read (issue 833, F5)
+    freshnessFailed.value = !fresh.response?.ok || !fresh.data
+    freshness.value = freshnessFailed.value
+      ? []
+      : ((fresh.data as { scanners: FreshnessRow[] }).scanners ?? [])
+    if (freshnessFailed.value) logger.warn('ingest_lens_freshness_failed', { status: fresh.response?.status })
     settled.value = true
   },
   { immediate: true },
@@ -121,6 +125,7 @@ function onPointClick(params: { dataIndex: number }) {
           silentFor(latest.silent_for_seconds)
         }} ago)
       </span>
+      <span v-else-if="timeTravel.isNow && freshnessFailed" class="il-last mono-cell">last ingest -</span>
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (a quiet range is an
          ANSWER; before the response lands there is none) -->

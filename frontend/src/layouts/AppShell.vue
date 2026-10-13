@@ -135,6 +135,7 @@ onUnmounted(() => {
       <main class="content" :class="{ 'content-wide': $route.meta.wide }" :style="sectAccent">
         <EmptyState
           v-if="coldStart"
+          page-title
           icon="layers"
           title="No clusters registered yet"
           hint="JAVV fills in once the first scanner envelope lands. Create a scanner token, deploy the scanner CronJobs to a cluster, and the first committed cycle appears here."

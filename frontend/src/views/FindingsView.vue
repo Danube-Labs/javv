@@ -33,7 +33,7 @@ import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { captureLens } from '@/findings/savedViews'
 import { reorderFromDrag, restoreOrder } from '@/system/columnOrder'
-import { FAILURE_COPY, failureKind } from '@/findings/failureCopy'
+import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
@@ -56,6 +56,7 @@ const router = useRouter()
 
 const facets = ref<FacetsResponse>({})
 const facetsFailed = ref(false)
+const facetsFailedStatus = ref<number | null>(null)
 
 filters.fromQuery(route.query)
 
@@ -69,17 +70,21 @@ const facetsQuery = computed(() =>
     : null,
 )
 
+let facetsSeq = 0
 async function loadFacets(q: typeof facetsQuery.value) {
   if (!q) return
+  const mine = ++facetsSeq
   const response = await facetFindingsApiV1FindingsFacetsGet({
     // builder output is a generic param record; the endpoint type is the precise contract
     query: q as FacetFindingsApiV1FindingsFacetsGetData['query'],
   })
+  if (mine !== facetsSeq) return // a newer read owns the rail now
   if (response.response?.ok && response.data) {
     facets.value = (response.data as { facets: FacetsResponse }).facets
     facetsFailed.value = false
   } else {
     facetsFailed.value = true
+    facetsFailedStatus.value = response.response?.status ?? null
     logger.warn('findings_facets_failed', { status: response.response?.status })
   }
 }
@@ -109,35 +114,36 @@ const rowsQuery = computed(() =>
     : null,
 )
 
+let rowsSeq = 0
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
+  const mine = ++rowsSeq
   grid.loading = true
-    const response = await searchFindingsApiV1FindingsGet({
-      query: q as SearchFindingsApiV1FindingsGetData['query'],
-    })
-    grid.loading = false
-    if (response.response?.ok && response.data) {
-      const body = response.data as {
-        data: FindingRow[]
-        total: { value: number }
-        next_cursor: string | null
-      }
-      grid.setResult(body.data, body.total.value, body.next_cursor)
-      grid.failed = false
-      grid.failedStatus = null
-    } else if (grid.page > 0) {
-      // stale PIT cursor is the usual culprit — rebuild from page 0
-      logger.warn('findings_page_failed_reset', { status: response.response?.status })
-      grid.resetPaging()
+  const response = await searchFindingsApiV1FindingsGet({
+    query: q as SearchFindingsApiV1FindingsGetData['query'],
+  })
+  if (mine !== rowsSeq) return // a newer read owns the grid now
+  grid.loading = false
+  if (response.response?.ok && response.data) {
+    const body = response.data as {
+      data: FindingRow[]
+      total: { value: number }
+      next_cursor: string | null
+    }
+    grid.setResult(body.data, body.total.value, body.next_cursor)
+    grid.failed = false
+    grid.failedStatus = null
   } else {
-    grid.failed = true
-    grid.failedStatus = response.response?.status ?? null
-    grid.markSettled()
-    logger.warn('findings_search_failed', { status: response.response?.status })
+    // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
+    grid.setFailed(response.response?.status ?? null)
+    logger.warn('findings_search_failed', { status: response.response?.status, page: grid.page })
   }
 }
-const failureMessage = computed(
-  () => FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null)],
+// the rows' failure names the whole grid; the counts alone failing leaves the rows standing (F9)
+const failureMessage = computed(() =>
+  grid.failed
+    ? FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null)]
+    : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 watch(
   rowsQuery,
@@ -263,7 +269,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         <h1>Findings</h1>
         <p class="head-stat">
           <!-- a count before the first read, or after a refused one, is not zero: it is unknown -->
-          <template v-if="grid.settled && !grid.failed">{{ grid.total.toLocaleString('en-US') }}</template
+          <template v-if="grid.totalKnown">{{ grid.total.toLocaleString('en-US') }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> findings</span>
         </p>
         <p class="head-note">kept per-scanner, no cross-merge</p>
@@ -286,6 +292,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         :fields="FINDINGS_FIELDS"
         :selections="filters.selections"
         :facets="facets"
+        :counts-unknown="facetsFailed"
         :modes="filters.modes"
         @toggle="filters.toggle"
         @pick="filters.pickValue"
@@ -304,6 +311,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :selections="filters.selections"
             :modes="filters.modes"
             :facets="facets"
+            :counts-unknown="facetsFailed"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"
@@ -322,7 +330,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :fields="FINDINGS_FIELDS"
             :selections="filters.selections"
             :modes="filters.modes"
-            :total="grid.total"
+            :total="grid.totalKnown ? grid.total : null"
             :can-triage="auth.hasCapability('can_triage')"
             :can-accept-final="auth.hasCapability('can_accept_audit_final')"
             :historical="timeTravel.t !== null"
@@ -367,6 +375,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           :page="grid.page"
           :size="grid.size"
           :shown="grid.rows.length"
+          :failed="grid.failed"
           :has-prev="grid.hasPrev"
           :has-next="grid.hasNext"
           @prev="grid.goPrev()"
