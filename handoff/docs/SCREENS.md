@@ -352,7 +352,8 @@ must reproduce identical query params).
 
 **States:** empty ("save a filter set from Findings"); count-loading per card; degraded (counts
 show em-dash); 403 on mutating someone else's view (edit/delete affordances hidden unless owner
-or admin).
+or admin). The head count shows "-" until the list read answers, and after a refused one, never
+"0 views" (issue 833 F5); the alert follows the G2 rule (§3).
 
 **Changed vs SCREENS.md:** C-6 ruled server-side (M8e); owner column kept per the v4 design.
 
@@ -403,7 +404,9 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
   findings work today.
 
 **States:** loading; **"Not yet scanned then"** (T before the first committed scan); build-changed
-marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`.
+marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`. A
+refused build-history read says so in the Build history card and is never read as "not yet
+scanned": neither the stat nor the "Not yet scanned then" card shows (issue 833 F5).
 
 **Changed vs SCREENS.md:** scanner dropdown is a **read** lens only (no version anything — D41);
 EPSS/KEV null on Trivy rows enforced here too (V4-DELTA-5); M8b dependency made explicit (C-1).
@@ -532,7 +535,11 @@ Trivy | Grype picker shows one lane at a time. Rejected: tinted lane backgrounds
 warm canvas) and one-at-a-time on wide screens (loses the side-by-side comparison).
 
 **States:** loading; never-ingested; scanner-silent (chip + global banner agree); degraded;
-`T<now` → "history for scanner status is limited until the v1.1 metrics rollup" (C-1/D39).
+`T<now` → "history for scanner status is limited until the v1.1 metrics rollup" (C-1/D39). The
+head count shows "-" until both reads answer, and after a refused one, never "0 scanners" (issue
+833 F5); the alert follows the G2 rule (§3). The ingest strip on this and the other data screens
+shows "last ingest -" when its freshness read is refused, never the previous read's time
+(operator ruling 2026-10-12).
 
 **Changed vs SCREENS.md:** C-3 (whole-screen redesign), A-7/D-4 (retry/dead-letter feed cut), issue 357 (JAVV-side refusals reinstated), D41
 (version/DB lines are provenance display only), C-1 (historical limitation).

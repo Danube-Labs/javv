@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { useClusterStore } from '@/stores/cluster'
+import { useTimeTravelStore } from '@/stores/timeTravel'
 import ImageDetailView from '@/views/ImageDetailView.vue'
 
 const ok = (data: unknown) => ({ data, response: { ok: true, status: 200 } })
@@ -117,5 +118,23 @@ describe('ImageDetailView (M9c slice 3)', () => {
     const w = mount(ImageDetailView, { global: { plugins: [router] } })
     await flushPromises()
     expect(w.text()).toContain('No findings from trivy')
+  })
+
+  // issue 833, F5: an empty timeline from a refused read read as "never scanned before this T"
+  it.each([
+    [ok({ events: [] }), true],
+    [{ error: {}, response: { ok: false, status: 503 } }, false],
+  ])('at a past T, a timeline answer %#: "not yet scanned" only when it truly answered', async (answer, notYet) => {
+    useTimeTravelStore().rewindTo('2026-09-30T12:00:00.000Z')
+    facetsMock.mockResolvedValue(ok({ facets: {} }) as never)
+    searchMock.mockResolvedValue(ok({ data: [], total: { value: 0 }, next_cursor: null }) as never)
+    timelineMock.mockResolvedValue(answer as never)
+    await router.push('/images/sha256:past?repo=r&tag=t')
+    const w = mount(ImageDetailView, { global: { plugins: [router] } })
+    await flushPromises()
+    // the second stat cell answers "what did the scanner find?"; the view's own card is titled
+    expect(w.findAll('.tq-ans')[1]!.text() === 'not yet scanned').toBe(notYet)
+    expect(w.findAll('h2').some((h) => h.text() === 'Not yet scanned then')).toBe(notYet)
+    expect(w.find('.tl-card .load-error').exists()).toBe(!notYet)
   })
 })

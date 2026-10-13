@@ -133,6 +133,18 @@ describe('IngestLens head (issue 341: the guide popover, plain copy)', () => {
     expect(sub).not.toContain('—')
   })
 
+  it('a refused freshness read drops the old "last ingest" time for "-" (issue 833, F5)', async () => {
+    const w = await mountLens({ trivy: pts([1]) })
+    expect(w.find('.il-last').text()).toMatch(/^last ingest trivy/)
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue({
+      error: {},
+      response: { ok: false, status: 503 },
+    } as never)
+    useTimeTravelStore().setWindow(7, 'Last 7 days')
+    await flushPromises()
+    expect(w.find('.il-last').text()).toBe('last ingest -')
+  })
+
   it('a quiet range at now says when the table was last updated, without an em dash', async () => {
     const w = await mountLens({})
     const empty = w.find('.il-empty').text()

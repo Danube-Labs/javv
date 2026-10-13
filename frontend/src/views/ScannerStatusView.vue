@@ -27,6 +27,7 @@ import ScannerStatusCard, {
 } from '@/components/scanners/ScannerStatusCard.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -42,6 +43,7 @@ const freshness = ref<FreshnessRow[]>([])
 const provenance = ref<ProvenanceRow[]>([])
 const loading = ref(true)
 const failed = ref(false)
+const failedStatus = ref<number | null>(null)
 
 watch(
   () => [clusterStore.selectedId, timeTravel.t] as const,
@@ -57,6 +59,7 @@ watch(
     ])
     loading.value = false
     failed.value = !fresh.response?.ok || !prov.response?.ok || !fresh.data || !prov.data
+    failedStatus.value = (fresh.response?.ok ? prov.response?.status : fresh.response?.status) ?? null
     if (failed.value) {
       logger.warn('scanner_status_failed', {
         freshness: fresh.response?.status,
@@ -108,7 +111,9 @@ const laneOptions = computed(() =>
       <div class="head-card">
         <h1>Scanner status</h1>
         <p class="head-stat">
-          {{ scanners.length }}<span class="head-unit"> scanners</span>
+          <!-- a count not yet read, or refused, is unknown, not zero (issue 833, F5) -->
+          <template v-if="!loading && !failed">{{ scanners.length }}</template
+          ><span v-else class="muted-dash">-</span><span class="head-unit"> scanners</span>
         </p>
         <p class="head-note">committed runs only · versions are read-only provenance</p>
       </div>
@@ -137,7 +142,7 @@ const laneOptions = computed(() =>
       </div>
 
       <p v-else-if="failed" class="load-error" role="alert">
-        Scanner status unavailable. Check the backend connection.
+        {{ readFailureCopy(failedStatus, 'Scanner status unavailable. Check the backend connection.') }}
       </p>
 
       <div v-else-if="scanners.length === 0" class="not-found" role="status">

@@ -33,6 +33,7 @@ import {
   type ViewPreset,
   type ViewWorkbench,
 } from '@/findings/savedViews'
+import { readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
@@ -61,6 +62,7 @@ const router = useRouter()
 const views = ref<ViewDoc[]>([])
 const loaded = ref(false)
 const failed = ref(false)
+const failedStatus = ref<number | null>(null)
 /** Display paging over the fetched list (usePagedSlice — the bounded-board model). */
 const pager = usePagedSlice(() => views.value, 10)
 /** view_id → live count; null = count degraded (em-dash), absent = loading */
@@ -69,6 +71,7 @@ const counts = ref<Record<string, number | null>>({})
 async function load() {
   const { response, data } = await listViewsApiV1ViewsGet()
   failed.value = !response?.ok || !data
+  failedStatus.value = response?.status ?? null
   views.value = failed.value ? [] : ((data as { views: ViewDoc[] }).views ?? [])
   loaded.value = true
   void loadCounts()
@@ -156,14 +159,16 @@ function summary(v: ViewDoc): string {
       <div class="head-card">
         <h1>Saved views</h1>
         <p class="head-stat">
-          {{ views.length }}<span class="head-unit"> views</span>
+          <!-- a count not yet read, or refused, is unknown, not zero (issue 833, F5) -->
+          <template v-if="loaded && !failed">{{ views.length }}</template
+          ><span v-else class="muted-dash">-</span><span class="head-unit"> views</span>
         </p>
         <p class="head-note">fleet-global lenses · counts are live for the selected cluster</p>
       </div>
     </div>
 
     <p v-if="failed" class="load-error" role="alert">
-      Saved views unavailable. Check the backend, then reload.
+      {{ readFailureCopy(failedStatus, 'Saved views unavailable. Check the backend, then reload.') }}
     </p>
 
     <EmptyState
