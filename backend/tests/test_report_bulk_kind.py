@@ -19,7 +19,7 @@ from backend.auth.passwords import hash_password
 from backend.jobs.report_drain import run_job
 from backend.main import create_app
 from backend.reports.claim import claim_next
-from backend.reports.models import DONE, REPORTS_INDEX
+from backend.reports.models import DONE, FAILED, REPORTS_INDEX, EnqueueReport, new_report_doc
 from os_env import OS_URL, requires_opensearch
 
 PASSWORD = "bulk-kind-password"
@@ -181,6 +181,126 @@ async def test_a_selector_that_fails_its_check_names_the_field_not_the_value(env
     assert "('body', 'bulk_params', 'selector', 'namespace')" in detail  # extra_forbidden
     assert "echo-842" not in r.text
     assert "'input'" not in detail
+
+
+async def _queued(client, cluster_id: str) -> list[dict]:
+    await client.indices.refresh(index=REPORTS_INDEX)
+    rows = await client.search(
+        index=REPORTS_INDEX, body={"query": {"term": {"cluster_id": cluster_id}}}
+    )
+    return [h["_source"] for h in rows["hits"]["hits"]]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("present", False),
+        ("cluster_id", "7e57c1a5-0000-4000-8000-000000000002"),
+        ("severity", "LOW"),
+        ("severity_canonical", "low"),
+        ("severity_rank", 2),
+        ("not_a_finding_field", "x"),
+    ],
+)
+async def test_a_patch_field_the_inline_route_refuses_queues_nothing(env, field, value) -> None:
+    """Issue 854: the drain copies the patch onto each finding, so a field outside BulkPatch would
+    hide a finding, lower its severity or move it to another cluster."""
+    login, client = env
+    http = await login(["can_triage"])
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+
+    body = _body(cluster_id)
+    body["bulk_params"]["patch"][field] = value
+
+    r = await http.post("/api/v1/reports", json=body)
+
+    assert r.status_code == 422
+    assert r.json()["title"] == "Validation error"
+    assert f"('body', 'bulk_params', 'patch', '{field}')" in r.json()["detail"]
+    assert await _queued(client, cluster_id) == []
+
+
+async def test_a_note_over_the_cap_is_refused_without_the_note(env) -> None:
+    login, client = env
+    http = await login(["can_triage"])
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+    too_long = "echo-854 " + "n" * 9_992  # 10,001 characters
+
+    r = await http.post("/api/v1/reports", json=_body(cluster_id, notes=too_long))
+
+    assert r.status_code == 422
+    assert "('body', 'bulk_params', 'patch', 'notes')" in r.json()["detail"]
+    assert "string_too_long" in r.json()["detail"]
+    assert "echo-854" not in r.text
+    assert await _queued(client, cluster_id) == []
+
+    r = await http.post("/api/v1/reports", json=_body(cluster_id, notes="n" * 10_000))
+    assert r.status_code == 201
+    [doc] = await _queued(client, cluster_id)
+    assert len(doc["params"]["patch"]["notes"]) == 10_000
+
+
+async def test_a_null_patch_field_is_still_dropped(env) -> None:
+    """A scheduled patch has always dropped a `null` field (the inline route keeps one, as an
+    unassign); the BulkPatch check keeps that rule, so a stored patch holds only set fields."""
+    login, client = env
+    http = await login(["can_triage"])
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+
+    r = await http.post(
+        "/api/v1/reports", json=_body(cluster_id, state="acknowledged", assignee=None)
+    )
+
+    assert r.status_code == 201
+    [doc] = await _queued(client, cluster_id)
+    assert doc["params"]["patch"] == {"state": "acknowledged"}
+
+
+@pytest.mark.parametrize(
+    ("patch", "named"),
+    [
+        ({"state": "acknowledged", "cluster_id": "echo-854-move"}, "cluster_id extra_forbidden"),
+        ({"notes": "echo-854 " + "n" * 9_992}, "notes string_too_long"),
+        ({"state": "stale"}, "stale is system-only"),
+    ],
+)
+async def test_the_drain_refuses_a_queued_patch_the_route_now_refuses(env, patch, named) -> None:
+    """A job queued before the route checked the patch (issue 854) ends failed, writes nothing,
+    and its error, which GET /api/v1/reports/{id} shows, names the field but not the value."""
+    _, client = env
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+    report_id, doc = new_report_doc(
+        EnqueueReport.model_validate(_body(cluster_id)), requested_by="u-drain-854"
+    )
+    doc["params"] = {
+        "selector": {"cve_id": "CVE-2026-7777"},
+        "patch": patch,
+        "target_ids": [f"fk-{cluster_id}-0"],
+    }
+    await client.index(index=REPORTS_INDEX, id=report_id, body=doc, params={"refresh": "true"})
+
+    job = await claim_next(client, worker="w-bulk", report_id=report_id)
+    assert job is not None and await run_job(client, job) is False
+
+    final = (await client.get(index=REPORTS_INDEX, id=report_id))["_source"]
+    assert final["status"] == FAILED
+    assert named in final["error"]
+    assert "echo-854" not in final["error"]
+    finding = (await client.get(index="findings", id=f"fk-{cluster_id}-0"))["_source"]
+    assert (finding["cluster_id"], finding["state"], finding.get("notes")) == (
+        cluster_id,
+        "open",
+        None,
+    )
+    await client.indices.refresh(index="system-audit-log-*")
+    rows = await client.count(
+        index="system-audit-log-*", body={"query": {"term": {"cluster_id": cluster_id}}}
+    )
+    assert rows["count"] == 0
 
 
 async def test_selector_freezes_at_enqueue_and_drain_applies_only_that_set(env) -> None:

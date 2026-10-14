@@ -569,7 +569,7 @@ in the audit log. Snapshots from before keep the data.
 |---|---|---|---|
 | GET | `/api/v1/findings/export.csv` | session | The findings of the [filters](#filters) as CSV. More than `JAVV_EXPORT_MAX_ROWS` (50000) rows get 413. Make the filter narrower, or use a report. |
 | GET | `/api/v1/findings/export.vex` | session | The findings as an OpenVEX or CycloneDX document, for one scanner. `scanner` is necessary. The row limit is the same. |
-| POST | `/api/v1/reports` | session, and `can_triage` for `bulk_triage` | Puts a job in the queue and answers 201. `kind: export` needs only a session. `kind: bulk_triage` needs `can_triage`, and `can_accept_audit_final` for a risk acceptance. A bulk triage keeps the list of findings at this time. Only the `JAVV_BULK_MAX_TARGETS` limit applies. |
+| POST | `/api/v1/reports` | session, and `can_triage` for `bulk_triage` | Puts a job in the queue and answers 201. `kind: export` needs only a session. `kind: bulk_triage` needs `can_triage`, and `can_accept_audit_final` for a risk acceptance. A bulk triage keeps the list of findings at this time. Only the `JAVV_BULK_MAX_TARGETS` limit applies. Its `patch` takes the fields of `POST /api/v1/findings/bulk-triage` (`state`, `vex_justification`, `assignee` and `notes`), with the same limits. A different field gets 422. JAVV does not change a field whose value is `null`. |
 | GET | `/api/v1/reports/{report_id}` | session, the owner | The status of your job. A job of a different user gets 404. When the job is `done` and not expired, the answer has a `download_token` for 15 minutes. |
 | GET | `/api/v1/reports/{report_id}/download` | session, the owner, and `token` | Downloads the result. After `expires_at`, the request gets 410. With no result yet, it gets 404. A wrong or expired token gets 403. |
 
@@ -582,7 +582,9 @@ its last page, until you close it with `POST /api/v1/cursors/close`, or until
 `JAVV_SEARCH_PIT_KEEP_ALIVE` plus 30 seconds after the last page that you read. JAVV keeps the result of a report in
 OpenSearch for `JAVV_EXPORT_TTL_HOURS` (default 24). The `report_drain` job runs the queue, on
 `JAVV_JOB_REPORT_DRAIN_CRON` (default every 5 minutes). A result larger than
-`JAVV_EXPORT_MAX_BYTES` makes the job fail. At the end of a job, a `report_ready` notification
+`JAVV_EXPORT_MAX_BYTES` makes the job fail. Before a bulk triage job writes, it checks its patch
+again. A patch that is not valid makes the job fail, and the `error` of the job names the field,
+not its value. At the end of a job, a `report_ready` notification
 goes to the user.
 
 ### Notifications

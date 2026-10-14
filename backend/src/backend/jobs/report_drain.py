@@ -27,6 +27,7 @@ from typing import Any
 
 import structlog
 from opensearchpy import AsyncOpenSearch
+from pydantic import ValidationError
 
 from backend.admin.report_ttl import read_report_ttl_hours
 from backend.core.opensearch_client import build_client
@@ -39,7 +40,8 @@ from backend.reports.claim import ClaimedJob, claim_next
 from backend.reports.lease import finalize, heartbeat
 from backend.reports.models import DONE, FAILED, NOTIFICATIONS_INDEX
 from backend.reports.storage import ExportTooLarge, FencedOut, write_chunks
-from backend.triage.bulk import apply_bulk_triage
+from backend.triage.bulk import apply_bulk_triage, validate_bulk_patch
+from backend.triage.bulk_routes import BulkPatch
 
 log = structlog.get_logger()
 
@@ -50,6 +52,22 @@ def _filters_from_params(params: dict[str, Any]) -> SearchFilters:
     """The stored `params` blob → the M6 lens. Fields mirror 1:1 (asserted by test)."""
     known = {f for f in SearchFilters.__dataclass_fields__}
     return SearchFilters(**{k: v for k, v in params.items() if k in known})
+
+
+def _checked_patch(patch: dict[str, Any]) -> dict[str, Any]:
+    """The enqueue route's checks, again: a job queued before the route checked its patch
+    (issue 854) can hold any field, and `apply_bulk_triage` copies every key onto each finding.
+    The reason names the field, never its value, because the job's `error` is shown to the user."""
+    try:
+        BulkPatch.model_validate(patch)
+    except ValidationError as exc:
+        reasons = ", ".join(
+            f"{'.'.join(str(part) for part in error['loc'])} {error['type']}"
+            for error in exc.errors(include_input=False, include_url=False)
+        )
+        raise ValueError(f"patch not valid: {reasons}") from None
+    validate_bulk_patch(patch)
+    return patch
 
 
 async def _throttled(pieces: AsyncIterator[str], sleep_ms: int) -> AsyncIterator[str]:
@@ -173,7 +191,7 @@ async def run_job(client: AsyncOpenSearch, job: ClaimedJob, *, prefix: str = "")
                 actor=doc["requested_by"],
                 cluster_id=cluster_id,
                 target_ids=params.get("target_ids") or [],
-                patch=params.get("patch") or {},
+                patch=_checked_patch(params.get("patch") or {}),
                 prefix=prefix,
             )
         except Exception as exc:
