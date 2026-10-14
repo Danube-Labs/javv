@@ -3,4 +3,4 @@ PR (`extra-files` in `release-please-config.json`), so dev checkouts, CI and ima
 last released version with no build step. `tests/test_meta_route.py` holds it equal to
 `.release-please-manifest.json`."""
 
-APP_VERSION = "0.7.2"  # x-release-please-version
+APP_VERSION = "0.8.0"  # x-release-please-version
