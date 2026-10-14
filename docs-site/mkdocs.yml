@@ -79,6 +79,7 @@ nav:
   - Operate:
       - Sizing OpenSearch: docs/runbooks/opensearch-sizing.md
       - Scaling and failures: docs/runbooks/multi-pod.md
+      - Indices and data: docs/runbooks/indices-and-data.md
   - Upgrade:
       - Upgrading: docs/UPGRADING.md
       - Release notes: CHANGELOG.md
