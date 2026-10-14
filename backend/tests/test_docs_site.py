@@ -44,6 +44,7 @@ PAGES = {
     "docs/INGEST-CONTRACT.md",
     "docs/runbooks/opensearch-sizing.md",
     "docs/runbooks/multi-pod.md",
+    "docs/runbooks/indices-and-data.md",
     "SECURITY.md",
     "CHANGELOG.md",
     "deploy/helm/javv/README.md",

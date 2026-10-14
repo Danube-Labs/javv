@@ -16,6 +16,7 @@ These pages are for the people who install and operate JAVV.
 | Change a setting | [Configuration](CONFIGURATION.md) |
 | Calculate the OpenSearch size for your clusters | [Sizing OpenSearch](runbooks/opensearch-sizing.md) |
 | Learn which parts scale, and what occurs when a part fails | [Scaling and failures](runbooks/multi-pod.md) |
+| Learn which indices JAVV uses, how long it keeps the data, and what a snapshot holds | [Indices and data](runbooks/indices-and-data.md) |
 | Upgrade JAVV, or go back to the previous release | [Upgrading](UPGRADING.md) and the [release notes](../CHANGELOG.md) |
 | Verify the published images and charts | [Deploying: verify the images and charts](DEPLOYING.md#verify-the-images-and-charts) |
 | Send requests to JAVV from a script, or push results from your own tools | [API](API.md) and the [ingest contract](INGEST-CONTRACT.md) |
