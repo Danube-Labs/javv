@@ -299,7 +299,7 @@ applied it automatically on the first start.
 No release up to and including 0.7.2 changed the OpenSearch chart. Only its version number
 changed.
 
-### 0.7.3: a bootstrap admin password longer than 256 characters stops the backend
+### 0.8.0: a bootstrap admin password longer than 256 characters stops the backend
 
 A sign-in accepts a password of 256 characters at most. A first admin with a longer
 `JAVV_BOOTSTRAP_ADMIN_PASSWORD` could never sign in. The backend now refuses such a value at start,
