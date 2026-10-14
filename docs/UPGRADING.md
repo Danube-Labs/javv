@@ -25,10 +25,15 @@ own deployment. To install JAVV, see [`DEPLOYING.md`](DEPLOYING.md).
 1. **Read the release notes.** Each release has a GitHub Release and an entry in
     [`CHANGELOG.md`](../CHANGELOG.md). Then read [Version notes](#version-notes) on this page. They
     tell you what a release needs from you.
-2. **Make a snapshot.** Use **Settings → Data & OpenSearch → Snapshot now**, or
+2. **Make a snapshot.** Use **Settings › Data & OpenSearch › Snapshot now**, or
     `POST /api/v1/admin/snapshots`. The request needs `can_manage_retention`. It returns 409 when
     OpenSearch has no snapshot repository. [Snapshots](CONFIGURATION.md#snapshots) tells you how
-    to add the repository. The upgrade does not need the snapshot. The snapshot protects your data.
+    to add the repository. The upgrade does not need the snapshot.
+
+    The snapshot keeps the current state, the triage, the decisions, the users, the settings and
+    the audit log. **It does not keep the scan history** that time travel reads. Thus a restore
+    does not bring the history back ([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
+
 3. **Check the OpenSearch version.** CI tests JAVV with the version in `datastore.opensearch` in
     [`versions.yaml`](../versions.yaml).
 
@@ -263,9 +268,9 @@ only manually, or never, the first scheduled runs do all the work at the same ti
 
 - **The lifecycle sweep** (03:00 by default) deletes all scan history that is older than the
   retention of each cluster (90 days by default). After this, time travel cannot show that period.
-  Before the jobs run for the first time, see what the sweep will do: **Data inspector → Repair
-  actions → Lifecycle sweep → Dry run**. If it deletes more than you want, increase the retention in
-  **Settings → Data & OpenSearch**.
+  Before the jobs run for the first time, see what the sweep will do: **Data inspector › Repair
+  actions › Lifecycle sweep › Dry run**. If it deletes more than you want, increase the retention in
+  **Settings › Data & OpenSearch**.
 - **The staleness sweep** (02:00) marks as stale each finding that no scan found again for 3 days. It
   also marks as stale all findings of a scanner that sent nothing for 7 days.
 - **The findings cleanup** (04:00) deletes the findings that no scan reported for longer than its
@@ -294,10 +299,17 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
-| *(no entries yet)* | | | |
+| 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |
+| 0.7.0 | 18 | 3 and 4 | The note **`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`** below |
+| 0.6.2 | 18 | 3 and 4 | The note **JAVV retires clusters that send no scans** below |
+| 0.6.0 | 18 | 3 and 4 | The note **How the backend connects to OpenSearch** below |
 
-No release up to and including 0.7.2 changed the OpenSearch chart. Only its version number
-changed.
+No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
+backend accepts (3 and 4).
+
+No release up to and including 0.8.0 changed the OpenSearch chart in a way that needs the `store`
+upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
+of the comments in `values.yaml`, and no value.
 
 ### 0.8.0: a bootstrap admin password longer than 256 characters stops the backend
 
