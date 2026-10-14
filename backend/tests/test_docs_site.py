@@ -185,7 +185,7 @@ def test_mermaid_blocks_render_as_diagrams(page: str) -> None:
 # Issue 796: the operator pages carry no engineering references. A link to an issue stays only
 # where it tracks a limit an operator meets today, and it is listed here. The release notes keep
 # their links: each entry is a change and its pull request.
-OPEN_LIMIT_ISSUES = {327, 664, 719, 739}
+OPEN_LIMIT_ISSUES = {664, 719, 739, 865}
 _REFERENCE = re.compile(
     r"\bissues? \d+|#\d{2,4}\b|\bM\d{1,2}[a-f]?\b|\b(?:D|FR-|NFR-|SEC-)\d+\b"
     r"|\b[A-Z]-[0-9A-Za-z]{1,3}\b|\baudit (?:[A-Z]-|#)|\bslice \d|\bbolt\b",
