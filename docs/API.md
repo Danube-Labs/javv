@@ -582,7 +582,9 @@ its last page, until you close it with `POST /api/v1/cursors/close`, or until
 `JAVV_SEARCH_PIT_KEEP_ALIVE` plus 30 seconds after the last page that you read. JAVV keeps the result of a report in
 OpenSearch for `JAVV_EXPORT_TTL_HOURS` (default 24). The `report_drain` job runs the queue, on
 `JAVV_JOB_REPORT_DRAIN_CRON` (default every 5 minutes). A result larger than
-`JAVV_EXPORT_MAX_BYTES` makes the job fail. At the end of a job, a `report_ready` notification
+`JAVV_EXPORT_MAX_BYTES` makes the job fail. Before a bulk triage job writes, it checks its patch
+again. A patch that is not valid makes the job fail, and the `error` of the job names the field,
+not its value. At the end of a job, a `report_ready` notification
 goes to the user.
 
 ### Notifications

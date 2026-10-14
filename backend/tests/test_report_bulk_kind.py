@@ -19,7 +19,7 @@ from backend.auth.passwords import hash_password
 from backend.jobs.report_drain import run_job
 from backend.main import create_app
 from backend.reports.claim import claim_next
-from backend.reports.models import DONE, REPORTS_INDEX
+from backend.reports.models import DONE, FAILED, REPORTS_INDEX, EnqueueReport, new_report_doc
 from os_env import OS_URL, requires_opensearch
 
 PASSWORD = "bulk-kind-password"
@@ -257,6 +257,50 @@ async def test_a_null_patch_field_is_still_dropped(env) -> None:
     assert r.status_code == 201
     [doc] = await _queued(client, cluster_id)
     assert doc["params"]["patch"] == {"state": "acknowledged"}
+
+
+@pytest.mark.parametrize(
+    ("patch", "named"),
+    [
+        ({"state": "acknowledged", "cluster_id": "echo-854-move"}, "cluster_id extra_forbidden"),
+        ({"notes": "echo-854 " + "n" * 9_992}, "notes string_too_long"),
+        ({"state": "stale"}, "stale is system-only"),
+    ],
+)
+async def test_the_drain_refuses_a_queued_patch_the_route_now_refuses(env, patch, named) -> None:
+    """A job queued before the route checked the patch (issue 854) ends failed, writes nothing,
+    and its error, which GET /api/v1/reports/{id} shows, names the field but not the value."""
+    _, client = env
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+    report_id, doc = new_report_doc(
+        EnqueueReport.model_validate(_body(cluster_id)), requested_by="u-drain-854"
+    )
+    doc["params"] = {
+        "selector": {"cve_id": "CVE-2026-7777"},
+        "patch": patch,
+        "target_ids": [f"fk-{cluster_id}-0"],
+    }
+    await client.index(index=REPORTS_INDEX, id=report_id, body=doc, params={"refresh": "true"})
+
+    job = await claim_next(client, worker="w-bulk", report_id=report_id)
+    assert job is not None and await run_job(client, job) is False
+
+    final = (await client.get(index=REPORTS_INDEX, id=report_id))["_source"]
+    assert final["status"] == FAILED
+    assert named in final["error"]
+    assert "echo-854" not in final["error"]
+    finding = (await client.get(index="findings", id=f"fk-{cluster_id}-0"))["_source"]
+    assert (finding["cluster_id"], finding["state"], finding.get("notes")) == (
+        cluster_id,
+        "open",
+        None,
+    )
+    await client.indices.refresh(index="system-audit-log-*")
+    rows = await client.count(
+        index="system-audit-log-*", body={"query": {"term": {"cluster_id": cluster_id}}}
+    )
+    assert rows["count"] == 0
 
 
 async def test_selector_freezes_at_enqueue_and_drain_applies_only_that_set(env) -> None:
