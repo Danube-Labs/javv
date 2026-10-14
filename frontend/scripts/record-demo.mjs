@@ -12,8 +12,10 @@
  *
  * Chromium's video capture draws no pointer, hence the synthetic cursor injected below.
  *
- *   node scripts/record-demo.mjs            # from frontend/
- *   JAVV_USER=admin JAVV_PASS=... node scripts/record-demo.mjs
+ *   JAVV_CLUSTER=<cluster id> JAVV_PASS=... node scripts/record-demo.mjs   # from frontend/
+ *
+ * Seed some triage first (a few acknowledged findings, risk acceptances, a not-affected
+ * decision), or the CVE page, the approval list and the audit log are empty on camera.
  *
  * Encode the .webm it leaves in tmp/ with development/scripts/make-demo-gif.sh.
  */
@@ -22,7 +24,12 @@ import { chromium } from '@playwright/test'
 const BASE = process.env.JAVV_BASE ?? 'http://localhost:5173'
 const USER = process.env.JAVV_USER ?? 'admin'
 const PASS = process.env.JAVV_PASS ?? ''
-const CLUSTER = process.env.JAVV_CLUSTER ?? 'fcbcbe84-9da1-41fb-879e-83c3e0f995f0'
+// no default: a cluster id belongs to one store, and a stale one fails the walk on camera
+const CLUSTER = process.env.JAVV_CLUSTER ?? ''
+if (!CLUSTER) {
+  console.error('set JAVV_CLUSTER to the cluster id the walk is about')
+  process.exit(1)
+}
 const OUT_DIR = process.env.JAVV_DEMO_DIR ?? '../tmp/demo'
 
 const VIEWPORT = { width: 1280, height: 800 }
@@ -58,6 +65,15 @@ const CURSOR = `
       ? document.addEventListener('DOMContentLoaded', add)
       : add()
   })()
+`
+
+/** the dev server's devtools button is not part of the product */
+const HIDE_DEVTOOLS = `
+  document.addEventListener('DOMContentLoaded', () => {
+    const style = document.createElement('style')
+    style.textContent = '#__vue-devtools-container__{display:none!important}'
+    document.head.appendChild(style)
+  })
 `
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -117,6 +133,7 @@ const context = await browser.newContext({
   recordVideo: { dir: OUT_DIR, size: VIEWPORT },
 })
 await context.addInitScript(CURSOR)
+await context.addInitScript(HIDE_DEVTOOLS)
 const page = await context.newPage()
 
 // Exactly ONE full page load, at the very start. Every later move is a click, so the router
@@ -130,7 +147,8 @@ await beat('all clusters', async () => {
 
 // 2. drill into a cluster — the one the rest of the walk is about, so the numbers line up
 await beat('pick a cluster', async () => {
-  const row = page.locator('table tbody tr').filter({ hasText: 'k3d' }).first()
+  // the row shows the cluster id, so this names the same cluster as the address above
+  const row = page.locator('table tbody tr').filter({ hasText: CLUSTER }).first()
   await row.waitFor({ timeout: 8000 })
   await click(page, row, { settle: 1400 })
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
