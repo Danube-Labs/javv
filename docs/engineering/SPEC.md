@@ -226,7 +226,8 @@ from an env/secret and must change the password on first login - FR-18.)
   random**, stored **peppered SHA-256** (D38/M14); "token↔payload binding" is authorization matching (token
   scope must equal payload `cluster_id`/`scanner`), not body signing.
 - **NFR-6 Backups/availability + retention horizons.** **Native OpenSearch Snapshot/Restore** to S3/MinIO
-  (`repository-s3`) with **tested restore** (gate at M2); ISM-automated schedule (FR-19). **Independent
+  (`repository-s3`) with **tested restore** (gate at M2); ISM-automated schedule (FR-19). *(Open, issue 664:
+  JAVV has no schedule yet, and a snapshot holds `findings`, `javv-images-*` and `system-*` only.)* **Independent
   retention per purpose:** `javv-finding-occurrences-*` (accurate-history horizon, main cost lever,
   NON-downsampled); `javv-scan-events-*` (trends); `system-audit-log` (**keep long** → bounds Contributors +
   compliance); current-state has no time-retention. HA is **not JAVV-built** (NFR-9/D23).
