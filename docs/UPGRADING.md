@@ -294,10 +294,10 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
-| 0.8.0 | 18 | 3 and 4 | [A bootstrap admin password longer than 256 characters stops the backend](#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend) |
-| 0.7.0 | 18 | 3 and 4 | [`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`](#070-javv_token_pepper-is-now-javv_secret_key) |
-| 0.6.2 | 18 | 3 and 4 | [JAVV retires clusters that send no scans](#062-javv-retires-clusters-that-send-no-scans) |
-| 0.6.0 | 18 | 3 and 4 | [How the backend connects to OpenSearch](#060-how-the-backend-connects-to-opensearch) |
+| 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |
+| 0.7.0 | 18 | 3 and 4 | The note **`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`** below |
+| 0.6.2 | 18 | 3 and 4 | The note **JAVV retires clusters that send no scans** below |
+| 0.6.0 | 18 | 3 and 4 | The note **How the backend connects to OpenSearch** below |
 
 No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
 backend accepts (3 and 4).
