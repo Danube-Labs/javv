@@ -48,7 +48,7 @@ toolchain:
   # renovate: datasource=npm depName=pyright
   pyright: "1.1.414"
   # renovate: datasource=pypi depName=pre-commit
-  pre-commit: "4.6.2"
+  pre-commit: "4.7.0"
   # major-only LTS; CI's setup-node repeats it (drift-checked). Majors wait for dashboard approval.
   # renovate: datasource=node-version depName=node
   node: "22"
