@@ -29,9 +29,9 @@ const listen = (server: http.Server): Promise<string> =>
     ),
   )
 
-async function frontend(url = backendUrl, warnWindowMs?: number): Promise<string> {
+async function frontend(url = backendUrl, warnWindowMs?: number, connectMs?: number): Promise<string> {
   const log = createLogger('info', (line) => lines.push(line))
-  const server = createFrontendServer({ backendUrl: url, distDir: dist, log, warnWindowMs })
+  const server = createFrontendServer({ backendUrl: url, distDir: dist, log, warnWindowMs, connectMs })
   servers.push(server)
   return listen(server)
 }
@@ -194,11 +194,15 @@ async function deadBackend(): Promise<string> {
   return url
 }
 
+// The default connect timeout (5 s) equals vitest's test timeout, so a closed port that did not
+// refuse once ended as a test timeout that could not say what the connection did (issue 811)
+const DEAD_CONNECT_MS = 1_000
+
 describe('a backend that does not answer', () => {
   it('gets a 502 with the error envelope, and one warning line', async () => {
     const deadUrl = await deadBackend()
 
-    const res = await fetch(`${await frontend(deadUrl)}/readyz?x=secret`, {
+    const res = await fetch(`${await frontend(deadUrl, undefined, DEAD_CONNECT_MS)}/readyz?x=secret`, {
       headers: { 'x-request-id': 'rid-1', authorization: 'Bearer t0ken', cookie: 'javv_session=s3' },
     })
 
@@ -226,12 +230,12 @@ describe('a backend that does not answer', () => {
   })
 
   it('logs a burst of 502s once per window, with the count it held back', async () => {
-    const base = await frontend(await deadBackend(), 60_000)
+    const base = await frontend(await deadBackend(), 60_000, DEAD_CONNECT_MS)
     for (let i = 0; i < 3; i++) expect((await fetch(`${base}/readyz`)).status).toBe(502)
     expect(lines).toHaveLength(1) // any sender can repeat a 502 while the backend is down
 
     lines = []
-    const every = await frontend(await deadBackend(), 0)
+    const every = await frontend(await deadBackend(), 0, DEAD_CONNECT_MS)
     await fetch(`${every}/readyz`)
     await fetch(`${every}/readyz`)
     expect(lines.map((l) => JSON.parse(l).held_back)).toEqual([0, 0])
@@ -303,7 +307,11 @@ describe('the connect timeout (JAVV_BACKEND_CONNECT_TIMEOUT)', () => {
   })
 
   it('names another failure by its code', async () => {
-    await fetch(`${await frontend(await deadBackend())}/readyz`)
+    // a hang after the connection opened starts no connect timer: this ends it before the test's
+    // own timeout, with no log line, so each way of not refusing fails with its own message
+    await fetch(`${await frontend(await deadBackend(), undefined, DEAD_CONNECT_MS)}/readyz`, {
+      signal: AbortSignal.timeout(3_000),
+    })
     expect(JSON.parse(lines[0]!).reason).toBe('ECONNREFUSED')
   })
 

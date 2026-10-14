@@ -132,12 +132,12 @@ def _sweep_residue() -> None:
                 c.put("/system-config/_doc/cluster-registry", params={"refresh": "true"}, json=doc)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def sweep_test_residue():
-    """Session-end sweep of everything the integration fixtures seeded. Best-effort: a failed
-    sweep must never fail the suite (it reruns next session)."""
-    yield
-    if not opensearch_up():
+def pytest_sessionfinish(session: pytest.Session) -> None:
+    """Sweep everything the integration fixtures seeded, once, after the last test. Under xdist each
+    worker is a session of its own, and a worker that finished first swept the users of tests the
+    other one was still running (issue 844): only the controller, or a run without xdist, sweeps.
+    Best-effort: a failed sweep must never fail the suite (it reruns next session)."""
+    if hasattr(session.config, "workerinput") or not opensearch_up():
         return
     with contextlib.suppress(Exception):
         _sweep_residue()
