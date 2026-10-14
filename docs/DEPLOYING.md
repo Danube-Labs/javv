@@ -439,14 +439,21 @@ the JAVV indices:
 We showed that JAVV needs each permission: the role test fails without it.
 
 To make the user and the role on an OpenSearch that you operate, use a user that can change the
-security configuration (the `admin` of OpenSearch):
+security configuration (the `admin` of OpenSearch). Each `curl -u admin` asks for the password of
+`admin`. The commands read the password of `javv` at a prompt, and write it only to a file that
+only you can read. Thus neither password goes into your shell history or into the arguments of a
+process. Use a long random password for `javv`.
 
 ```bash
 OS=https://<your opensearch>:9200
 curl -u admin -X PUT "$OS/_plugins/_security/api/roles/javv" \
   -H 'content-type: application/json' --data-binary @javv-role.json
+read -rs -p 'Password of javv: ' pw && echo
+(umask 077; printf '%s' "$pw" | jq -Rs '{password: .}' > javv-user.json)
+unset pw
 curl -u admin -X PUT "$OS/_plugins/_security/api/internalusers/javv" \
-  -H 'content-type: application/json' -d '{"password": "<a long random password>"}'
+  -H 'content-type: application/json' --data-binary @javv-user.json
+rm javv-user.json
 curl -u admin -X PUT "$OS/_plugins/_security/api/rolesmapping/javv" \
   -H 'content-type: application/json' -d '{"users": ["javv"]}'
 ```
@@ -575,9 +582,21 @@ admin does not exist.
 - **The OpenSearch of the compose file uses demo certificates** (see
   [Ports and access](#ports-and-access)). For your own certificates, operate your own OpenSearch,
   and connect JAVV to it as above.
-- **No maintenance page without a proxy.** To show `frontend/public/maintenance.html`, a proxy in
-  front of JAVV must send requests to it (`development/RUNNING-THE-STACK.md` §R1). With nothing in
-  front of JAVV, there is no switch yet
+- **No maintenance page without a proxy.** The frontend image holds a maintenance page,
+  `/maintenance.html`. It needs no backend and no OpenSearch. To show it during an upgrade or a
+  restore, make the proxy in front of JAVV answer each path with this page and the status 503. A
+  scanner then gets a 503 and tries again later. Delete the rule when JAVV runs again. An example
+  for nginx, with the page copied into its `root`:
+    ```nginx
+    error_page 503 /maintenance.html;
+    location = /maintenance.html {
+      internal;
+      add_header Cache-Control "no-store" always;
+      add_header Retry-After "60" always;
+    }
+    location / { return 503; }
+    ```
+  With nothing in front of JAVV, there is no switch yet
   ([issue 719](https://github.com/Danube-Labs/javv-poc/issues/719)).
 - **The build of the frontend image sets the `VITE_*` settings**
   ([Frontend build settings](CONFIGURATION.md#frontend-build-settings)). You cannot change them later. A published image has
