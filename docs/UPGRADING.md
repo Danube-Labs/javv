@@ -28,7 +28,12 @@ own deployment. To install JAVV, see [`DEPLOYING.md`](DEPLOYING.md).
 2. **Make a snapshot.** Use **Settings › Data & OpenSearch › Snapshot now**, or
     `POST /api/v1/admin/snapshots`. The request needs `can_manage_retention`. It returns 409 when
     OpenSearch has no snapshot repository. [Snapshots](CONFIGURATION.md#snapshots) tells you how
-    to add the repository. The upgrade does not need the snapshot. The snapshot protects your data.
+    to add the repository. The upgrade does not need the snapshot.
+
+    The snapshot keeps the current state, the triage, the decisions, the users, the settings and
+    the audit log. **It does not keep the scan history** that time travel reads. Thus a restore
+    does not bring the history back ([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
+
 3. **Check the OpenSearch version.** CI tests JAVV with the version in `datastore.opensearch` in
     [`versions.yaml`](../versions.yaml).
 
