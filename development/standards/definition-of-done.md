@@ -4,13 +4,17 @@ The uniform bar **every** bolt clears before it merges. A bolt README adds only 
 of this - it does not repeat this list.
 
 ## 1. Static floor (must be clean)
-- **Backend:** `uv run ruff check .` and `uv run ruff format --check .` clean; `pyright` clean.
+- **Backend:** `uv run ruff check .`, `uv run ruff format --check .` and `uv run pyright` clean (from
+  `backend/`, tree-wide, no path arguments: the commands that CI runs).
 - **Frontend:** `npm run lint` (ESLint + eslint-plugin-vue + Volar) clean.
 - No new warnings introduced in touched files.
 
 ## 2. Tests (see [testing.md](testing.md))
 - New/changed logic has tests **first** (TDD - `test-driven-development` skill).
-- `uv run pytest` green; `npm run test` (Vitest) green where FE is touched.
+- The commands that CI runs are green. Backend, from `backend/`, against a store of its own:
+  `uv run pytest -n 2 -m "not serial" --cov=src/backend --cov-fail-under=90`, then
+  `uv run pytest -m serial`. Frontend, when the change touches it: `npm run test:ci` (the type check,
+  Vitest and the coverage minimum).
 - The bolt's specific **golden fixtures** (if any) are checked in and asserted.
 - Meaningful coverage on the modules the bolt creates - not a number game, but no untested logic branches.
 
