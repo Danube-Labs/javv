@@ -3029,7 +3029,7 @@ in the audit log. Snapshots from before keep the data.</p>
 <td>POST</td>
 <td><code>/api/v1/reports</code></td>
 <td>session, and <code>can_triage</code> for <code>bulk_triage</code></td>
-<td>Puts a job in the queue and answers 201. <code>kind: export</code> needs only a session. <code>kind: bulk_triage</code> needs <code>can_triage</code>, and <code>can_accept_audit_final</code> for a risk acceptance. A bulk triage keeps the list of findings at this time. Only the <code>JAVV_BULK_MAX_TARGETS</code> limit applies.</td>
+<td>Puts a job in the queue and answers 201. <code>kind: export</code> needs only a session. <code>kind: bulk_triage</code> needs <code>can_triage</code>, and <code>can_accept_audit_final</code> for a risk acceptance. A bulk triage keeps the list of findings at this time. Only the <code>JAVV_BULK_MAX_TARGETS</code> limit applies. Its <code>patch</code> takes the fields of <code>POST /api/v1/findings/bulk-triage</code> (<code>state</code>, <code>vex_justification</code>, <code>assignee</code> and <code>notes</code>), with the same limits. A different field gets 422. JAVV does not change a field whose value is <code>null</code>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3053,7 +3053,9 @@ its last page, until you close it with <code>POST /api/v1/cursors/close</code>, 
 <code>JAVV_SEARCH_PIT_KEEP_ALIVE</code> plus 30 seconds after the last page that you read. JAVV keeps the result of a report in
 OpenSearch for <code>JAVV_EXPORT_TTL_HOURS</code> (default 24). The <code>report_drain</code> job runs the queue, on
 <code>JAVV_JOB_REPORT_DRAIN_CRON</code> (default every 5 minutes). A result larger than
-<code>JAVV_EXPORT_MAX_BYTES</code> makes the job fail. At the end of a job, a <code>report_ready</code> notification
+<code>JAVV_EXPORT_MAX_BYTES</code> makes the job fail. Before a bulk triage job writes, it checks its patch
+again. A patch that is not valid makes the job fail, and the <code>error</code> of the job names the field,
+not its value. At the end of a job, a <code>report_ready</code> notification
 goes to the user.</p>
 <h3 id="notifications">Notifications<a class="headerlink" href="#notifications" title="Permanent link">&para;</a></h3>
 <table>
