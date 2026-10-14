@@ -5,7 +5,7 @@ name = "javv-docs-site"
 version = "0"
 requires-python = ">=3.12"
 dependencies = [
-    "zensical==0.0.69",
+    "zensical==0.0.70",
     # Zensical's fork of mike, until Zensical versions docs natively. It is published on GitHub
     # only, so it is pinned to a tag here and to its commit in uv.lock.
     "mike @ git+https://github.com/squidfunk/mike.git@2.2.0+zensical-0.1.0",
