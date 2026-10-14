@@ -297,7 +297,8 @@ reconcile** flips `present=false` on `findings` the run omitted (cache only - hi
 8. **Retain / protect** - rollover (doc/age/size) + per-cluster `retention_days` delete by **dropping whole
    indices**, both driven by the lifecycle sweep, not the ISM plugin (a per-cluster retention doesn't fit one
    static ISM policy - `jobs/lifecycle.py`); **native Snapshot/Restore** to S3/MinIO, snapshots on demand
-   (no scheduled snapshot yet), restores into `restored-*` copies (tested restore drill). All Admin-managed
+   (no scheduled snapshot yet), restores into `restored-*` copies (tested restore drill). A snapshot
+   holds `findings`, `javv-images-*` and `system-*`, not the append series (issue 664). All Admin-managed
    via the **Data & OpenSearch** panel (D26).
 
 ## 4. Projection & precedence (FR-8)

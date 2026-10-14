@@ -30,7 +30,7 @@
 | `system-config` | mutable | none | **no** | none, except a deleted cluster's per-cluster docs (issue 765) |
 | `system-tags` | mutable *(planned — not yet created by bootstrap; the tags feature is post-MVP)* | none | **no** | none |
 | `system-views` | mutable | none | **no** | none |
-| `system-notifications` | mutable | none | **no** | bounded delete (old/read); a deleted cluster's go with it (issue 765) |
+| `system-notifications` | mutable | none | **no** | No job deletes them by age or by read state. The user deletes one (`DELETE /api/v1/notifications/{id}`). The retirement sweep deletes a `cluster_retiring` notice when the cluster scans again or returns. A cluster delete deletes the notices of that cluster (issue 765). |
 | `system-reports` | mutable | none | **no** | TTL sweep (`JAVV_EXPORT_TTL_HOURS`, default 24h); a deleted cluster's go with it, chunks included (issue 765) |
 | `system-report-chunks` | mutable | none | **no** | TTL sweep with its parent report |
 | `system-jobs` | mutable (one lease/status doc per background job kind: the three repair actions, issue 406, and since issue 691 the scheduled-only jobs too: four, and `cluster_retirement` since issue 765) | none | **no** | none — bounded at one doc per job kind |
@@ -307,7 +307,7 @@ watermarks are *derived* (rebuild-state wipes + recomputes them from the catalog
 *authoritative* - an allocated-but-uncommitted order is invisible to the catalog, so a naive rebuild
 could re-issue it. **rebuild-state never touches this index**; the only self-heal is forward
 (`max(committed) > counter` → bump up, never down). Mutable, no rollover, **no retention ever** (the one exception: deleting a whole cluster, issue 765, removes its counters);
-snapshot/restored with everything else (M2). **Also holds the per-cluster `inventory_order` counter**
+**not in a snapshot today:** `DURABILITY_INDICES` (`admin/snapshot.py`) is `findings,javv-images-*,system-*`. The forward-only self-heal keeps a restore safe for committed scans (issue 664). **Also holds the per-cluster `inventory_order` counter**
 (M8a slice 2/#33): one doc per cluster under the reserved scanner key `__inventory__`
 (`_id = <cluster_id>:__inventory__`, same shape/CAS; self-heal floor = max committed
 `inventory_order` in `javv-inventory-runs`, allocated at cycle-END commit).
@@ -450,5 +450,8 @@ revoked           boolean       revoke-on-role-change / logout-all
   clusters are visible to any authenticated user - `cluster_id` is a **data filter applied on every
   read/agg/export** (guards accidental cross-cluster bleed), **not** a per-user auth boundary; per-user/role
   `allowed_cluster_ids` grants are **post-MVP** (would slot onto `system-users`/`system-roles`).
-- **Snapshot/restore** (NFR-6) covers all of these; snapshot the small audit/decisions indices more often
-  than the bulky append ones (DR RPO note).
+- **Snapshot/restore** (NFR-6): D36 plans two schedules, the small audit/decisions indices more often than
+  the bulky append ones (DR RPO note). Only the first exists today: a snapshot (on demand, from
+  **Settings › Data & OpenSearch**) holds `findings`, `javv-images-*` and `system-*`. The append series,
+  `javv-scan-orders` and `javv-scan-watermarks` are in no snapshot. Issue 664 holds the history of this
+  choice and the open questions.

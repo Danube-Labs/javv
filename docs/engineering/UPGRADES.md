@@ -92,12 +92,13 @@ new backend has removed. Keeping a removed route alive for one release is a hard
 - **Mappings are rollback-safe.** Bootstrap only moves forward: an older pod finds `_meta.version`
   above its own `MAPPING_VERSION` and leaves the index `unchanged`. The newer fields stay mapped and
   unused. `helm rollback` needs no data step for an additive release.
-- **Stored settings are rollback-safe (#640).** The seven settings models stay `extra="forbid"`,
+- **Stored settings are rollback-safe (#640).** The nine settings models stay `extra="forbid"`,
   because they also validate request bodies. Every read of a stored `system-config` value goes
   through `core/stored_settings.py` `parse_stored_setting`, which drops the top-level fields the
   running release doesn't declare and validates the rest with the strict model. It covers
   `ScanScope`, `SnapshotRepoRef`, `ReportTtl`, `LifecycleSettings`, `SlaPolicy`,
-  `FindingsCleanupSetting` and `StalenessTimers`.
+  `FindingsCleanupSetting`, `StalenessTimers`, and the retirement models `Retirement` and
+  `RetirementWindow` (issue 765).
   - A drop logs `stored setting has unknown keys` (field names only) once per setting doc per
     process, and bumps `javv_stored_setting_unknown_fields_total{setting}` on every such read.
   - A bad value on a field the release *does* know still fails; that's corrupt data, not a version

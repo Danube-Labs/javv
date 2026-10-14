@@ -44,10 +44,10 @@
 > machine or with **three Helm charts** on Kubernetes ([`docs/DEPLOYING.md`](docs/DEPLOYING.md)).
 > The release workflow publishes the backend and frontend images and the charts, signed with
 > cosign; the scanner images are published per supported version (see
-> [Supported versions](#supported-versions)). The current milestone is **M10**
-> ([#41](https://github.com/Danube-Labs/javv-poc/issues/41)). See
-> [Releases](https://github.com/Danube-Labs/javv-poc/releases) for the current cut; canonical design
-> lives in [`docs/engineering/`](docs/engineering/).
+> [Supported versions](#supported-versions)). The latest release is **0.8.0**, and the next milestone
+> is **1.0.0** (the roadmap is [#555](https://github.com/Danube-Labs/javv-poc/issues/555)). See
+> [Releases](https://github.com/Danube-Labs/javv-poc/releases) for each release. The canonical design
+> is in [`docs/engineering/`](docs/engineering/).
 
 ---
 
@@ -155,7 +155,7 @@ this repository whenever they change on `main`.
 | [SECURITY.md](SECURITY.md) | How to report a vulnerability in JAVV (privately), and what's in scope |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Contributor Covenant 3.0: how we work together, and how to report a concern |
 | [docs/API.md](docs/API.md) | The shipped HTTP surface at a glance (auth regimes, capabilities) |
-| [docs/DEPLOYING.md](docs/DEPLOYING.md) | Deploy JAVV: docker compose on one machine, and pointing scanners at it |
+| [docs/DEPLOYING.md](docs/DEPLOYING.md) | Deploy JAVV: docker compose on one machine or the Helm charts on Kubernetes, and connect the scanners |
 | [docs/UPGRADING.md](docs/UPGRADING.md) | Move a running JAVV to a newer release |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every configuration setting: its default, what it does, where you set it |
 | [development/RUNNING-THE-STACK.md](development/RUNNING-THE-STACK.md) | Bring the stack up by hand (backend / full-stack / frontend) |
@@ -174,9 +174,9 @@ it directly and `development/scripts/check-versions.sh` drift-checks every consu
 | Tool | Role | Version |
 |---|---|---|
 | Python | Backend runtime | 3.12 |
-| [uv](https://docs.astral.sh/uv/) | Python package/venv manager | 0.11.25 *(pinned)* |
-| [ruff](https://docs.astral.sh/ruff/) | Lint + format (backend) | 0.15.20 *(pinned)* |
-| [pyright](https://microsoft.github.io/pyright/) | Type check (backend) | 1.1.411 *(pinned)* |
+| [uv](https://docs.astral.sh/uv/) | Python package/venv manager | `toolchain.uv` in [`versions.yaml`](versions.yaml) |
+| [ruff](https://docs.astral.sh/ruff/) | Lint + format (backend) | `toolchain.ruff` in [`versions.yaml`](versions.yaml) |
+| [pyright](https://microsoft.github.io/pyright/) | Type check (backend) | `toolchain.pyright` in [`versions.yaml`](versions.yaml) |
 | Node.js | Frontend runtime / toolchain | 22 LTS *(pinned major)* |
 | Vite · Vitest · ESLint/oxlint · stylelint · vue-tsc | Build, tests, lint/type gates (frontend) | from [`frontend/package.json`](frontend/package.json) |
 | OpenSearch | Single datastore | pinned in [`versions.yaml`](versions.yaml) |
