@@ -109,7 +109,7 @@ Each endpoint uses one of three kinds of authentication.
 
 | Kind | What the request sends | Endpoints |
 |---|---|---|
-| None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. |
+| None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. Also `POST /auth/login` and `POST /auth/logout`. |
 | Scanner token | `Authorization: Bearer <token>`. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token. | The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner. |
 | Session | The `javv_session` cookie from `POST /auth/login` | All other endpoints |
 
@@ -144,7 +144,7 @@ Each refusal logs a `password change required` warning with the username. It als
 
 - **The new password** has 12 to 256 characters. Each character counts as one, also a character
   outside ASCII.
-- **401:** the current password is wrong, or the session has ended. The two get the same answer.
+- **401:** the current password is wrong, or the session ended. The two get the same answer.
 - **403:** an identity provider manages the password of the user.
 - **422:** the new password has fewer than 12 or more than 256 characters, or the body is not
   valid.
@@ -152,7 +152,7 @@ Each refusal logs a `password change required` warning with the username. It als
   the password. If JAVV cannot write the row, the password does not change, and the answer is an
   error.
 - **200 with no cookie:** the password changed, but JAVV could not make the new session. Each old
-  session has ended, so sign in again with the new password. JAVV logs a `password changed, no new
+  session ended, so sign in again with the new password. JAVV logs a `password changed, no new
   session` warning and increments `javv_auth_failures_total{reason="session_not_minted"}`.
 
 ## Roles and permissions
@@ -218,8 +218,8 @@ Each answer that is not a success has the same body, with the type `application/
 | 413 | The request asks for too many rows, or its body is too large. Make the request smaller. |
 | 415 | The sign-in body has a JSON type that is not `application/json`. |
 | 422 | A field is not valid. `detail` names the field. |
-| 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. With the title "The search backend is busy", OpenSearch itself is overloaded (a full queue or a circuit breaker): the answer has `Retry-After: 5`. |
-| 503 | OpenSearch is not available. Do the request again later. With the type `store-read-only` and the title "The store is read-only: its disk is full", OpenSearch is past its flood-stage disk watermark: reads work, and a change that OpenSearch refuses, a sign-in included, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
+| 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has `Retry-After: 5`. |
+| 503 | OpenSearch is not available. Do the request again later. The type `store-read-only`, with the title "The store is read-only: its disk is full", tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
 
 ## List responses
 
@@ -258,7 +258,7 @@ of the data inspector.
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/healthz` | none | Liveness. It answers 200 while the process runs. It does not use OpenSearch. |
-| GET | `/readyz` | none | Readiness. It answers 200 `{"status": "ready"}` when OpenSearch answers, else 503 `{"status": "degraded"}`. When OpenSearch answers but is read-only (its disk is past the flood-stage watermark) or red (part of its data is not available), the answer is 200 with `"checks": {"store": "read-only"}` or `"red"`: reads still work, so the backend stays in service. |
+| GET | `/readyz` | none | Readiness. It answers 200 `{"status": "ready"}` when OpenSearch answers, else 503 `{"status": "degraded"}`. OpenSearch can answer but refuse writes (its disk is past the flood-stage watermark), or be red (part of its data is not available). Then the answer is 200 with `"checks": {"store": "read-only"}` or `"red"`. Reads still work, so the backend stays in service. |
 | GET | `/metrics` | none | The metrics, in the Prometheus format ([Metrics](#metrics)) |
 | GET | `/api/v1/meta` | session | The versions that the backend runs: `version` (the JAVV release), `mapping_version`, `envelope_versions` (the ingest schema versions that it accepts), `opensearch_version` and `python_version`. If OpenSearch does not answer, `opensearch_version` is `null`. |
 
@@ -282,7 +282,7 @@ in a scan cycle.
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | POST | `/auth/login` | none | Signs in and sets the session cookie. A wrong username or password gets 401. Too many failures get 429 ([Authentication](#authentication)). |
-| POST | `/auth/logout` | session | Signs out and ends the session on the server |
+| POST | `/auth/logout` | none | Signs out. It ends the session of the cookie on the server, if the request has a cookie, and deletes the cookie. The answer is 204, also with no session. |
 | POST | `/auth/password` | session | Changes your password. Body: `{current_password, new_password}`. It ends each session of the user and sets a new cookie. The rules and the refusals are in [A password change](#a-password-change). |
 | GET | `/auth/me` | session | Your user: `username`, `role`, `capabilities` and `must_change` |
 
@@ -299,7 +299,7 @@ in a scan cycle.
 | POST | `/api/v1/admin/users/{username}/password-reset` | `can_manage_users` | Sets a temporary password, which the user must change. It ends each session of that user. |
 | GET | `/api/v1/admin/roles` | `can_manage_users` | The roles and their permissions |
 | GET | `/api/v1/admin/snapshots` | `can_manage_retention` | The snapshots in the configured repository, newest first. With no repository, `configured` is `false`. |
-| POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of the data that JAVV keeps, and answers 202 at once. With no repository, it answers 409. |
+| POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of `findings`, `javv-images-*` and `system-*`, and answers 202 at once. The scan history is not in the snapshot ([Snapshots](CONFIGURATION.md#snapshots)). With no repository, it answers 409. |
 | POST | `/api/v1/admin/snapshots/{snapshot_name}/restore` | `can_restore_snapshot` | Restores a snapshot into copies with the prefix `restored-`. It never writes to the live indices. To use a copy, move it in by hand. |
 | GET | `/api/v1/admin/opensearch-runtime` | `can_manage_settings` | Facts about OpenSearch: version, health, nodes, roles, heap, `discovery.type`, `path.repo` and the security plugin. It gives only these fields. |
 | POST | `/api/v1/admin/opensearch/inspect` | `can_inspect_store` | The data inspector. [The data inspector](#the-data-inspector) gives its rules. |
@@ -488,7 +488,7 @@ that fails during your read can show on a later page.
 - `created_by`.
 - `scanner`: `both`, `trivy` or `grype`.
 
-Each filter has an `exclude_` form. The answer also has `facets`: the counts of `status`,
+Each filter except `q` has an `exclude_` form. The answer also has `facets`: the counts of `status`,
 `created_by` and `scanner` with the same filters. A revoked acceptance is never in the queue.
 
 The CSV export has the same rows. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413.
@@ -637,7 +637,7 @@ same envelope again, JAVV keeps one copy.
 | 401 | The token is missing, not valid, disabled or expired. Each of these gets the same answer. |
 | 403 | The `cluster_id` or the `scanner` of the envelope is not the one of the token. |
 | 413 | The compressed body or the body after gzip is larger than its limit. |
-| 422 | The envelope is not valid. Examples: a field that the schema does not have, a `cluster_id` that is not valid, counts that do not agree, or a time with no time zone. A `schema_version` that is not 3 or 4 also gets 422. So does a `scan_order` that `POST /api/v1/scan-runs` did not give (`reason` `unallocated_order`), a `last_seen_at` too far ahead or too old (`clock_skew`), and a value that OpenSearch refuses to store. The scanner does not try again. |
+| 422 | The envelope is not valid. Examples: a field that the schema does not have, a `cluster_id` that is not valid, or counts that do not agree. A time with no time zone and a `schema_version` that is not 3 or 4 also get 422. A `scan_order` that `POST /api/v1/scan-runs` did not give gets 422 with `reason` `unallocated_order`. A `last_seen_at` too far ahead or too old gets `clock_skew`. A value that OpenSearch refuses to store also gets 422. The scanner does not try again. |
 | 429 | The token is over its rate limit. |
 | 503 | OpenSearch could not keep the data, or OpenSearch is not reachable. The scanner tries again. |
 
@@ -683,7 +683,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_ingest_failures_unrecorded_total` | counter | `reason` | Refused pushes with no record ([Records of a refused push](#records-of-a-refused-push)). A value larger than 0 means that the **Failed ingests** table does not show all the refused pushes. |
 | `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote |
 | `javv_http_request_duration_seconds` | histogram | `method`, `route`, `status` | The time of each request. `route` is the route pattern, not the full path. A path with no route counts as `unmatched`. `/metrics` and the probes are not counted. |
-| `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes. `429` also counts each request that got 429 "The search backend is busy"; the backend logs `store busy` for these at most once in 10 seconds, with `held_back`. |
+| `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes. `429` also counts each request that got 429 "The search backend is busy". The backend logs `store busy` for these at most once in 10 seconds, with `held_back`. |
 | `javv_opensearch_backoff_retries_total` | counter | none | Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy. |
 | `javv_sla_clock_missing_total` | counter | none | Pages of findings with a row that has no `sla_clock_at`. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the `rebuild_state` job. |
 | `javv_cas_conflicts_total` | counter | `site` | Writes that lost a race to a different writer: `watermarks`, `scan_orders`, `inventory_orders`, `reconcile`, `reproject`, `merge`, `report_claim` and `retirement`. A high rate means many writers on the same data. |
@@ -697,8 +697,8 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_job_last_success_timestamp_seconds` | gauge | `kind` | The Unix time of the last successful scheduled run in this process. It is 0 after a restart, until a run succeeds. Alert on `time() - value`, against the schedule of the job. |
 | `javv_scheduler_tick_errors_total` | counter | none | Scheduler ticks that failed before a job started, usually because OpenSearch was not available. A steady rate means that no job runs. |
 | `javv_cluster_retirement_held_total` | counter | none | Retirement sweeps that retired nothing, because no cluster sent an accepted scan in its scanner-down time. This points at JAVV, an outage or a refused scanner version, not at the clusters. Each one also logs a warning. |
-| `javv_store_unavailable_total` | counter | none | Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs `store unavailable` at most once in 10 seconds, with `held_back`, the count since the line before: any sender can repeat a request while OpenSearch is away. |
-| `javv_store_read_only_total` | counter | none | Writes that got 503 `store-read-only` because the disk of OpenSearch is past its flood-stage watermark. Each one is counted. The backend logs `store read-only` at most once in 10 seconds, with `held_back`. |
+| `javv_store_unavailable_total` | counter | none | Requests that got 503 because OpenSearch was not reachable or still starting. The counter counts each one. The backend logs `store unavailable` at most once in 10 seconds, with `held_back`: the count since the line before. Any sender can repeat a request while OpenSearch is away. |
+| `javv_store_read_only_total` | counter | none | Writes that got 503 `store-read-only` because the disk of OpenSearch is past its flood-stage watermark. The counter counts each one. The backend logs `store read-only` at most once in 10 seconds, with `held_back`. |
 | `javv_cluster_delete_incomplete_total` | counter | none | Cluster deletes that stopped and answered 503. Send the delete again to finish it. Each one also logs a warning. |
 | `javv_cluster_delete_leftovers_total` | counter | none | Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows, after it wrote an audit row with their counts (action `cluster_delete_recheck`). Each one also logs a warning. |
 | `javv_cluster_delete_recheck_failures_total` | counter | none | Deleted clusters that the retirement sweep could not check, or sweeps that could not check any. The sweep goes on to the next deleted cluster, and the next run checks them again. Each one also logs a warning. |
