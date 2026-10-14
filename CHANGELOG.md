@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0](https://github.com/Danube-Labs/javv-poc/compare/v0.7.2...v0.8.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* a 422 from a field check names the field and the reason, not the value sent ([#849](https://github.com/Danube-Labs/javv-poc/issues/849)) ([1bf192f](https://github.com/Danube-Labs/javv-poc/commit/1bf192f860d884949ff65ce69b2907e9e85358ae))
+* a full or red store says so, an overloaded one says busy, and readiness stays up ([#843](https://github.com/Danube-Labs/javv-poc/issues/843)) ([5858383](https://github.com/Danube-Labs/javv-poc/commit/5858383653037fc988bbf4311d3bc6349404bd30))
+* cluster delete holds for re-deletes, mints, the bring back race and the nightly pass ([#834](https://github.com/Danube-Labs/javv-poc/issues/834)) ([9a60db0](https://github.com/Danube-Labs/javv-poc/commit/9a60db0b895ec7bd07fc49158d24048cdf1c5a10))
+* **deps:** update dependency zensical to v0.0.70 ([#838](https://github.com/Danube-Labs/javv-poc/issues/838)) ([6399aca](https://github.com/Danube-Labs/javv-poc/commit/6399aca4b2fad10258a5d4deb4a0656ceb286710))
+* index-map has the new ingest reasons, comments explain, mints log the tombstone they end ([#836](https://github.com/Danube-Labs/javv-poc/issues/836)) ([39e4014](https://github.com/Danube-Labs/javv-poc/commit/39e401456ea6d7f26074914db4d8dbf0dcf0b310))
+* ingest refuses made-up scan orders, wrong clocks and naive times; a lost store is a 503 ([#835](https://github.com/Danube-Labs/javv-poc/issues/835)) ([c290f37](https://github.com/Danube-Labs/javv-poc/commit/c290f375c4900a2aeff3cd39365be929e4c23a8e))
+* password changes journal first, and sign-in says when a session or a change ended ([#841](https://github.com/Danube-Labs/javv-poc/issues/841)) ([3977cdd](https://github.com/Danube-Labs/javv-poc/commit/3977cddd25eea5ebbcc563783c4615249d7b5851))
+* refused reads say so instead of showing an empty or stale answer ([#840](https://github.com/Danube-Labs/javv-poc/issues/840)) ([281abed](https://github.com/Danube-Labs/javv-poc/commit/281abed05d1d2c4917a07f8d47f22d88a571fcf7))
+* release workflows: syft and the self-scan grype by digest, and a re-run signs what is published ([#847](https://github.com/Danube-Labs/javv-poc/issues/847)) ([b95b16d](https://github.com/Danube-Labs/javv-poc/commit/b95b16d33b11d4df9b83fb2f8a5d136584d37d3c))
+* retirement notices: a shared code for the mid-delete 409, one bulk write, names in the bell, ticking fleet chips ([#846](https://github.com/Danube-Labs/javv-poc/issues/846)) ([3ba9a0e](https://github.com/Danube-Labs/javv-poc/commit/3ba9a0e972df5ca2c694694bab36679b1b40c640))
+* serve the fonts from the app, with spline sans mono as the mono face ([#827](https://github.com/Danube-Labs/javv-poc/issues/827)) ([8130999](https://github.com/Danube-Labs/javv-poc/commit/813099938cd25eb3a37a161d8b30e4e664a0c320))
+* the scanner pulls the digest a pod runs, and a cycle retries for up to 6 minutes ([#837](https://github.com/Danube-Labs/javv-poc/issues/837)) ([0eeda33](https://github.com/Danube-Labs/javv-poc/commit/0eeda33f8bccfaed05d7d24151e973a8c1df6f82))
+* the web app closes the searches it leaves, and Prev from the last page works ([#845](https://github.com/Danube-Labs/javv-poc/issues/845)) ([581fa8f](https://github.com/Danube-Labs/javv-poc/commit/581fa8ffa276cb976a4187eccee4500abd323d5e))
+
+
+### Miscellaneous Chores
+
+* the next release is 0.8.0, and its upgrade note says so ([#853](https://github.com/Danube-Labs/javv-poc/issues/853)) ([11ceb2d](https://github.com/Danube-Labs/javv-poc/commit/11ceb2d9cb2f6559b909549bd50ed6f266c85999))
+
 ## [0.7.2](https://github.com/Danube-Labs/javv-poc/compare/v0.7.1...v0.7.2) (2026-10-11)
 
 
