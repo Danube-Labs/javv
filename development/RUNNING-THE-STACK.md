@@ -66,7 +66,7 @@ export JAVV_BOOTSTRAP_ADMIN_PASSWORD='dev-admin-passphrase-12+'   # ≥12 chars 
 export JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL=50   # default 10 starves rapid UI navigation/rigs with 429s
 export JAVV_SCHEDULER_ENABLED=false                # the backend runs its own jobs (A9); off keeps a dev store as you left it
 
-# create/upgrade every index + template (idempotent, versioned — MAPPING_VERSION 16 today)
+# create/upgrade every index + template (idempotent, versioned by MAPPING_VERSION in core/bootstrap.py)
 uv run python -m backend.core.bootstrap
 
 # start the API (foreground). It re-runs bootstrap, seeds the admin + default roles, then serves.
@@ -307,7 +307,7 @@ for S in trivy grype; do
 done
 
 # run a SECOND trivy cycle, then check reconcile (fixed CVEs flip present=false)
-cd scanner && KUBECONFIG=$HOME/.kube/config JAVV_SCANNER=trivy \
+cd scanner && KUBECONFIG=$HOME/.kube/config JAVV_KUBE_CONTEXT=k3d-alpha JAVV_SCANNER=trivy \
   JAVV_BACKEND_URL=http://localhost:8000 JAVV_CLUSTER_ID=$SCAN_CID JAVV_TOKEN=$SCAN_TOKEN \
   uv run python -m scanner
 ```
@@ -375,7 +375,8 @@ location / { return 503; }
 ```
 
 The `503` matters: API callers and scanners see a retryable failure rather than a `200` HTML
-body. The Helm chart does not exist yet, so the ingress wiring for a deployed cluster is M10 work.
+body. The `javv` chart makes no Ingress, so put this rule in the proxy or gateway in front of it.
+The operator steps are in `docs/DEPLOYING.md`, "Known limits".
 
 ---
 
@@ -439,14 +440,15 @@ rm -f backend/cookies.txt scanner/*.dead-letter.jsonl
 
 - **`readyz` returns 503 `degraded`** — OpenSearch isn't reachable; re-check A1 (`docker ps`,
   cluster health). The app stays up and degrades rather than crashing, by design.
-- **Login 401 with the right password** — the cookie is `Secure`; over plain `http://` a browser
-  won't send it back (localhost is exempted). `curl` with `-b/-c` is unaffected. This bites the UI
-  on a non-TLS host (tracked for M10 in #134).
+- **Signed in, then 401 on the next request** — the session cookie is `Secure`, and over plain
+  `http://` a browser does not send it back (`localhost` is the exception). `curl` with `-b/-c` is
+  not affected. On a host with no TLS, set `JAVV_SESSION_COOKIE_SECURE=false`
+  (`docs/DEPLOYING.md`, "http or https").
 - **Ingest 403 `scope_mismatch`** — the token's `cluster_id`/`scanner` must equal the envelope's
   (SEC-3 binding). Mint a token for the exact pair you're pushing.
 - **Ingest 401**: wrong/expired token, or `JAVV_SECRET_KEY` differs between the process that
   minted the token and the running backend. Keep the secret key stable.
-- **Scanner "scan scope unavailable — skipping cycle"** — the backend is unreachable from the
+- **Scanner "scan scope unavailable (backend unreachable) — skipping cycle"** — the backend is unreachable from the
   scanner, or the token 401s the scope fetch. Fail-closed is intentional.
 - **Scanner finds nothing** — no running pods matched the scope, or `kubectl get pods -A` is empty.
   Deploy something (B1).
