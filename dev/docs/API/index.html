@@ -1952,7 +1952,7 @@ The frontend does not send it to the backend. <a href="#metrics">Metrics</a> lis
 <tr>
 <td>None</td>
 <td>Nothing</td>
-<td><code>/healthz</code>, <code>/readyz</code> and <code>/metrics</code>. Control the access to these with your network.</td>
+<td><code>/healthz</code>, <code>/readyz</code> and <code>/metrics</code>. Control the access to these with your network. Also <code>POST /auth/login</code> and <code>POST /auth/logout</code>.</td>
 </tr>
 <tr>
 <td>Scanner token</td>
@@ -1993,7 +1993,7 @@ body that is not valid JSON gets 422 first.</p>
 <ul>
 <li><strong>The new password</strong> has 12 to 256 characters. Each character counts as one, also a character
   outside ASCII.</li>
-<li><strong>401:</strong> the current password is wrong, or the session has ended. The two get the same answer.</li>
+<li><strong>401:</strong> the current password is wrong, or the session ended. The two get the same answer.</li>
 <li><strong>403:</strong> an identity provider manages the password of the user.</li>
 <li><strong>422:</strong> the new password has fewer than 12 or more than 256 characters, or the body is not
   valid.</li>
@@ -2001,7 +2001,7 @@ body that is not valid JSON gets 422 first.</p>
   the password. If JAVV cannot write the row, the password does not change, and the answer is an
   error.</li>
 <li><strong>200 with no cookie:</strong> the password changed, but JAVV could not make the new session. Each old
-  session has ended, so sign in again with the new password. JAVV logs a <code>password changed, no new
+  session ended, so sign in again with the new password. JAVV logs a <code>password changed, no new
   session</code> warning and increments <code>javv_auth_failures_total{reason="session_not_minted"}</code>.</li>
 </ul>
 <h2 id="roles-and-permissions">Roles and permissions<a class="headerlink" href="#roles-and-permissions" title="Permanent link">&para;</a></h2>
@@ -2153,11 +2153,11 @@ a hyphen.</p>
 </tr>
 <tr>
 <td>429</td>
-<td>Too many requests. Some answers have a <code>Retry-After</code> header with the seconds to wait. With the title "The search backend is busy", OpenSearch itself is overloaded (a full queue or a circuit breaker): the answer has <code>Retry-After: 5</code>.</td>
+<td>Too many requests. Some answers have a <code>Retry-After</code> header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has <code>Retry-After: 5</code>.</td>
 </tr>
 <tr>
 <td>503</td>
-<td>OpenSearch is not available. Do the request again later. With the type <code>store-read-only</code> and the title "The store is read-only: its disk is full", OpenSearch is past its flood-stage disk watermark: reads work, and a change that OpenSearch refuses, a sign-in included, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead (<a href="#ingest-a-scan">Ingest a scan</a>).</td>
+<td>OpenSearch is not available. Do the request again later. The type <code>store-read-only</code>, with the title "The store is read-only: its disk is full", tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead (<a href="#ingest-a-scan">Ingest a scan</a>).</td>
 </tr>
 </tbody>
 </table>
@@ -2230,7 +2230,7 @@ of the data inspector.</p>
 <td>GET</td>
 <td><code>/readyz</code></td>
 <td>none</td>
-<td>Readiness. It answers 200 <code>{"status": "ready"}</code> when OpenSearch answers, else 503 <code>{"status": "degraded"}</code>. When OpenSearch answers but is read-only (its disk is past the flood-stage watermark) or red (part of its data is not available), the answer is 200 with <code>"checks": {"store": "read-only"}</code> or <code>"red"</code>: reads still work, so the backend stays in service.</td>
+<td>Readiness. It answers 200 <code>{"status": "ready"}</code> when OpenSearch answers, else 503 <code>{"status": "degraded"}</code>. OpenSearch can answer but refuse writes (its disk is past the flood-stage watermark), or be red (part of its data is not available). Then the answer is 200 with <code>"checks": {"store": "read-only"}</code> or <code>"red"</code>. Reads still work, so the backend stays in service.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -2307,8 +2307,8 @@ in a scan cycle.</p>
 <tr>
 <td>POST</td>
 <td><code>/auth/logout</code></td>
-<td>session</td>
-<td>Signs out and ends the session on the server</td>
+<td>none</td>
+<td>Signs out. It ends the session of the cookie on the server, if the request has a cookie, and deletes the cookie. The answer is 204, also with no session.</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -2393,7 +2393,7 @@ in a scan cycle.</p>
 <td>POST</td>
 <td><code>/api/v1/admin/snapshots</code></td>
 <td><code>can_manage_retention</code></td>
-<td>Starts a snapshot of the data that JAVV keeps, and answers 202 at once. With no repository, it answers 409.</td>
+<td>Starts a snapshot of <code>findings</code>, <code>javv-images-*</code> and <code>system-*</code>, and answers 202 at once. The scan history is not in the snapshot (<a href="../CONFIGURATION/#snapshots">Snapshots</a>). With no repository, it answers 409.</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -2798,7 +2798,7 @@ that fails during your read can show on a later page.</p>
 <li><code>created_by</code>.</li>
 <li><code>scanner</code>: <code>both</code>, <code>trivy</code> or <code>grype</code>.</li>
 </ul>
-<p>Each filter has an <code>exclude_</code> form. The answer also has <code>facets</code>: the counts of <code>status</code>,
+<p>Each filter except <code>q</code> has an <code>exclude_</code> form. The answer also has <code>facets</code>: the counts of <code>status</code>,
 <code>created_by</code> and <code>scanner</code> with the same filters. A revoked acceptance is never in the queue.</p>
 <p>The CSV export has the same rows. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.
 Two columns are different from the screen:</p>
@@ -3150,7 +3150,7 @@ same envelope again, JAVV keeps one copy.</p>
 </tr>
 <tr>
 <td>422</td>
-<td>The envelope is not valid. Examples: a field that the schema does not have, a <code>cluster_id</code> that is not valid, counts that do not agree, or a time with no time zone. A <code>schema_version</code> that is not 3 or 4 also gets 422. So does a <code>scan_order</code> that <code>POST /api/v1/scan-runs</code> did not give (<code>reason</code> <code>unallocated_order</code>), a <code>last_seen_at</code> too far ahead or too old (<code>clock_skew</code>), and a value that OpenSearch refuses to store. The scanner does not try again.</td>
+<td>The envelope is not valid. Examples: a field that the schema does not have, a <code>cluster_id</code> that is not valid, or counts that do not agree. A time with no time zone and a <code>schema_version</code> that is not 3 or 4 also get 422. A <code>scan_order</code> that <code>POST /api/v1/scan-runs</code> did not give gets 422 with <code>reason</code> <code>unallocated_order</code>. A <code>last_seen_at</code> too far ahead or too old gets <code>clock_skew</code>. A value that OpenSearch refuses to store also gets 422. The scanner does not try again.</td>
 </tr>
 <tr>
 <td>429</td>
@@ -3233,7 +3233,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_opensearch_request_errors_total</code></td>
 <td>counter</td>
 <td><code>kind</code></td>
-<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes. <code>429</code> also counts each request that got 429 "The search backend is busy"; the backend logs <code>store busy</code> for these at most once in 10 seconds, with <code>held_back</code>.</td>
+<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes. <code>429</code> also counts each request that got 429 "The search backend is busy". The backend logs <code>store busy</code> for these at most once in 10 seconds, with <code>held_back</code>.</td>
 </tr>
 <tr>
 <td><code>javv_opensearch_backoff_retries_total</code></td>
@@ -3317,13 +3317,13 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_store_unavailable_total</code></td>
 <td>counter</td>
 <td>none</td>
-<td>Requests that got 503 because OpenSearch was not reachable or still starting. Each one is counted. The backend logs <code>store unavailable</code> at most once in 10 seconds, with <code>held_back</code>, the count since the line before: any sender can repeat a request while OpenSearch is away.</td>
+<td>Requests that got 503 because OpenSearch was not reachable or still starting. The counter counts each one. The backend logs <code>store unavailable</code> at most once in 10 seconds, with <code>held_back</code>: the count since the line before. Any sender can repeat a request while OpenSearch is away.</td>
 </tr>
 <tr>
 <td><code>javv_store_read_only_total</code></td>
 <td>counter</td>
 <td>none</td>
-<td>Writes that got 503 <code>store-read-only</code> because the disk of OpenSearch is past its flood-stage watermark. Each one is counted. The backend logs <code>store read-only</code> at most once in 10 seconds, with <code>held_back</code>.</td>
+<td>Writes that got 503 <code>store-read-only</code> because the disk of OpenSearch is past its flood-stage watermark. The counter counts each one. The backend logs <code>store read-only</code> at most once in 10 seconds, with <code>held_back</code>.</td>
 </tr>
 <tr>
 <td><code>javv_cluster_delete_incomplete_total</code></td>

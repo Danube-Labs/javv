@@ -1162,7 +1162,7 @@ sequence:</p>
 <tbody>
 <tr>
 <td><code>cluster_id</code></td>
-<td>An environment ID that <strong>never changes</strong>: lowercase letters, digits and hyphens, 8–64 characters. JAVV stores the data under this ID. Do not change it. The names that JAVV shows for a cluster are in a different place.</td>
+<td>An environment ID that <strong>never changes</strong>: lowercase letters, digits and hyphens, 8–64 characters, and not a hyphen first. JAVV stores the data under this ID. Do not change it. The names that JAVV shows for a cluster are in a different place.</td>
 </tr>
 <tr>
 <td><code>namespaces</code></td>
@@ -1198,7 +1198,8 @@ refusal, not a warning. JAVV refuses the envelope with <code>422</code> in these
   <strong>and</strong> to <code>len(findings)</code>. The count fields have short names (<code>crit</code>, <code>med</code>). The severity values
   are always full words.</li>
 <li><strong><code>cluster_id</code> has a different shape</strong> from lowercase letters, digits and hyphens, 8–64
-  characters. JAVV puts the ID into index names, so it refuses all other characters.</li>
+  characters, with no hyphen first. JAVV puts the ID into index names, so it refuses all other
+  characters.</li>
 <li><strong><code>image_digest</code></strong> does not agree with <code>^sha256:[a-fA-F0-9]{6,64}$</code>.</li>
 <li><strong><code>scanner</code> and <code>effective_config.tuning</code> do not agree</strong>, for example a <code>trivy</code> envelope with
   Grype settings.</li>
@@ -1217,8 +1218,8 @@ same data. Thus you can send a failed cycle again with no risk, while its <code>
 than the staleness period of the cluster. After that, scan again.</p>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <p>This example is a complete envelope with one finding. The example is a real finding, and a test
-validates it. For a larger example with 29 findings, see
-<code>backend/tests/fixtures/envelope-trivy-v3-golden.json</code> in the repository.</p>
+validates the envelope on this page. For a larger example with 29 findings, see
+<code>backend/tests/fixtures/envelope-trivy-golden.json</code> in the repository.</p>
 <div class="highlight"><pre><span></span><code><span class="nv">TOKEN</span><span class="o">=</span>…<span class="w">            </span><span class="c1"># from step 0, scoped to (my-nomad-fleet-01, trivy)</span>
 <span class="nv">ORDER</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>https://javv.example/api/v1/scan-runs<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.scan_order<span class="k">)</span>
