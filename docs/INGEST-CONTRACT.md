@@ -44,7 +44,7 @@ None of these fields is specific to Kubernetes.
 
 | Field | Meaning |
 |---|---|
-| `cluster_id` | An environment ID that **never changes**: lowercase letters, digits and hyphens, 8–64 characters. JAVV stores the data under this ID. Do not change it. The names that JAVV shows for a cluster are in a different place. |
+| `cluster_id` | An environment ID that **never changes**: lowercase letters, digits and hyphens, 8–64 characters, and not a hyphen first. JAVV stores the data under this ID. Do not change it. The names that JAVV shows for a cluster are in a different place. |
 | `namespaces` | A `list[str]` of labels that tell where the image runs. For Kubernetes, these are namespaces. You can also use Nomad job names, compose project names or host groups. |
 | `replicas` | The number of instances of the image in that group: an integer, 0 or more. |
 | `image_digest` | `sha256:<hex>`. JAVV identifies each image by this digest. |
@@ -61,7 +61,8 @@ refusal, not a warning. JAVV refuses the envelope with `422` in these conditions
   **and** to `len(findings)`. The count fields have short names (`crit`, `med`). The severity values
   are always full words.
 - **`cluster_id` has a different shape** from lowercase letters, digits and hyphens, 8–64
-  characters. JAVV puts the ID into index names, so it refuses all other characters.
+  characters, with no hyphen first. JAVV puts the ID into index names, so it refuses all other
+  characters.
 - **`image_digest`** does not agree with `^sha256:[a-fA-F0-9]{6,64}$`.
 - **`scanner` and `effective_config.tuning` do not agree**, for example a `trivy` envelope with
   Grype settings.
@@ -82,8 +83,8 @@ than the staleness period of the cluster. After that, scan again.
 ## Example
 
 This example is a complete envelope with one finding. The example is a real finding, and a test
-validates it. For a larger example with 29 findings, see
-`backend/tests/fixtures/envelope-trivy-v3-golden.json` in the repository.
+validates the envelope on this page. For a larger example with 29 findings, see
+`backend/tests/fixtures/envelope-trivy-golden.json` in the repository.
 
 ```bash
 TOKEN=…            # from step 0, scoped to (my-nomad-fleet-01, trivy)
