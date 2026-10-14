@@ -38,7 +38,7 @@ from backend.reports.models import (
 )
 from backend.reports.storage import stream_chunks
 from backend.triage.bulk import SelectorTooBroad, freeze_targets, validate_bulk_patch
-from backend.triage.bulk_routes import BulkSelector
+from backend.triage.bulk_routes import BulkPatch, BulkSelector
 from backend.triage.state_machine import TransitionError
 
 log = structlog.get_logger()
@@ -46,6 +46,16 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
+
+
+def _bulk_part_errors(exc: ValidationError, part: str) -> RequestValidationError:
+    # the same 422 as a field check of the body itself, so the value is not sent back
+    return RequestValidationError(
+        [
+            {**error, "loc": ("body", "bulk_params", part, *error["loc"])}
+            for error in exc.errors(include_url=False)
+        ]
+    )
 
 
 @router.post("", status_code=201)
@@ -63,7 +73,12 @@ async def enqueue_report(
         if "*" not in caps and "can_triage" not in caps:
             raise HTTPException(403, "bulk_triage reports require can_triage")
         assert body.bulk_params is not None  # the model validator guarantees the pairing
-        patch = {k: v for k, v in body.bulk_params.patch.items() if v is not None}
+        try:
+            # the drain copies every key onto each finding, so only the inline patch's fields
+            # may pass (issue 854); a null field is dropped, as it always was here
+            patch = BulkPatch.model_validate(body.bulk_params.patch).model_dump(exclude_none=True)
+        except ValidationError as exc:
+            raise _bulk_part_errors(exc, "patch") from exc
         if patch.get("state") == "risk_accepted" and not (
             "*" in caps or "can_accept_audit_final" in caps
         ):
@@ -71,13 +86,7 @@ async def enqueue_report(
         try:
             selector = BulkSelector(**body.bulk_params.selector).model_dump(exclude_none=True)
         except ValidationError as exc:
-            # the same 422 as a field check of the body itself, so the value is not sent back
-            raise RequestValidationError(
-                [
-                    {**error, "loc": ("body", "bulk_params", "selector", *error["loc"])}
-                    for error in exc.errors(include_url=False)
-                ]
-            ) from exc
+            raise _bulk_part_errors(exc, "selector") from exc
         try:
             validate_bulk_patch(patch)
         except TransitionError as exc:

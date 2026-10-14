@@ -183,6 +183,82 @@ async def test_a_selector_that_fails_its_check_names_the_field_not_the_value(env
     assert "'input'" not in detail
 
 
+async def _queued(client, cluster_id: str) -> list[dict]:
+    await client.indices.refresh(index=REPORTS_INDEX)
+    rows = await client.search(
+        index=REPORTS_INDEX, body={"query": {"term": {"cluster_id": cluster_id}}}
+    )
+    return [h["_source"] for h in rows["hits"]["hits"]]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("present", False),
+        ("cluster_id", "7e57c1a5-0000-4000-8000-000000000002"),
+        ("severity", "LOW"),
+        ("severity_canonical", "low"),
+        ("severity_rank", 2),
+        ("not_a_finding_field", "x"),
+    ],
+)
+async def test_a_patch_field_the_inline_route_refuses_queues_nothing(env, field, value) -> None:
+    """Issue 854: the drain copies the patch onto each finding, so a field outside BulkPatch would
+    hide a finding, lower its severity or move it to another cluster."""
+    login, client = env
+    http = await login(["can_triage"])
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+
+    body = _body(cluster_id)
+    body["bulk_params"]["patch"][field] = value
+
+    r = await http.post("/api/v1/reports", json=body)
+
+    assert r.status_code == 422
+    assert r.json()["title"] == "Validation error"
+    assert f"('body', 'bulk_params', 'patch', '{field}')" in r.json()["detail"]
+    assert await _queued(client, cluster_id) == []
+
+
+async def test_a_note_over_the_cap_is_refused_without_the_note(env) -> None:
+    login, client = env
+    http = await login(["can_triage"])
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+    too_long = "echo-854 " + "n" * 9_992  # 10,001 characters
+
+    r = await http.post("/api/v1/reports", json=_body(cluster_id, notes=too_long))
+
+    assert r.status_code == 422
+    assert "('body', 'bulk_params', 'patch', 'notes')" in r.json()["detail"]
+    assert "string_too_long" in r.json()["detail"]
+    assert "echo-854" not in r.text
+    assert await _queued(client, cluster_id) == []
+
+    r = await http.post("/api/v1/reports", json=_body(cluster_id, notes="n" * 10_000))
+    assert r.status_code == 201
+    [doc] = await _queued(client, cluster_id)
+    assert len(doc["params"]["patch"]["notes"]) == 10_000
+
+
+async def test_a_null_patch_field_is_still_dropped(env) -> None:
+    """A scheduled patch has always dropped a `null` field (the inline route keeps one, as an
+    unassign); the BulkPatch check keeps that rule, so a stored patch holds only set fields."""
+    login, client = env
+    http = await login(["can_triage"])
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 1)
+
+    r = await http.post(
+        "/api/v1/reports", json=_body(cluster_id, state="acknowledged", assignee=None)
+    )
+
+    assert r.status_code == 201
+    [doc] = await _queued(client, cluster_id)
+    assert doc["params"]["patch"] == {"state": "acknowledged"}
+
+
 async def test_selector_freezes_at_enqueue_and_drain_applies_only_that_set(env) -> None:
     login, client = env
     http = await login(["can_triage"])

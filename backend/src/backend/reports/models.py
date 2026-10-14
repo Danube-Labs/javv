@@ -78,7 +78,7 @@ class BulkTriageParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     selector: dict[str, Any]  # validated by the route via the inline BulkSelector model
-    patch: dict[str, Any]  # validated by the route via validate_bulk_patch
+    patch: dict[str, Any]  # validated by the route via BulkPatch, then validate_bulk_patch
 
 
 class EnqueueReport(BaseModel):
