@@ -19,7 +19,7 @@ These pages are for the people who install and operate JAVV.
 | Learn which indices JAVV uses, how long it keeps the data, and what a snapshot holds | [Indices and data](runbooks/indices-and-data.md) |
 | Upgrade JAVV, or go back to the previous release | [Upgrading](UPGRADING.md) and the [release notes](../CHANGELOG.md) |
 | Verify the published images and charts | [Deploying: verify the images and charts](DEPLOYING.md#verify-the-images-and-charts) |
-| Send requests to JAVV from a script, or push results from your own tools | [API](API.md) and the [ingest contract](INGEST-CONTRACT.md) |
+| Send requests to JAVV from a script, or push results from your own tools | [API](API.md) and [Push from your own script](INGEST-CONTRACT.md) |
 | Report a security problem | [Security](../SECURITY.md) |
 
 Each JAVV release has its own version of these docs. Select the version in the version menu.

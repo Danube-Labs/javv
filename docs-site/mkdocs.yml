@@ -85,5 +85,5 @@ nav:
       - Release notes: CHANGELOG.md
   - Integrate:
       - API: docs/API.md
-      - Ingest contract: docs/INGEST-CONTRACT.md
+      - Push from your own script: docs/INGEST-CONTRACT.md
   - Security: SECURITY.md
