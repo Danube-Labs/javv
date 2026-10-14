@@ -299,7 +299,7 @@ in a scan cycle.
 | POST | `/api/v1/admin/users/{username}/password-reset` | `can_manage_users` | Sets a temporary password, which the user must change. It ends each session of that user. |
 | GET | `/api/v1/admin/roles` | `can_manage_users` | The roles and their permissions |
 | GET | `/api/v1/admin/snapshots` | `can_manage_retention` | The snapshots in the configured repository, newest first. With no repository, `configured` is `false`. |
-| POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of the data that JAVV keeps, and answers 202 at once. With no repository, it answers 409. |
+| POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of `findings`, `javv-images-*` and `system-*`, and answers 202 at once. The scan history is not in the snapshot ([Snapshots](CONFIGURATION.md#snapshots)). With no repository, it answers 409. |
 | POST | `/api/v1/admin/snapshots/{snapshot_name}/restore` | `can_restore_snapshot` | Restores a snapshot into copies with the prefix `restored-`. It never writes to the live indices. To use a copy, move it in by hand. |
 | GET | `/api/v1/admin/opensearch-runtime` | `can_manage_settings` | Facts about OpenSearch: version, health, nodes, roles, heap, `discovery.type`, `path.repo` and the security plugin. It gives only these fields. |
 | POST | `/api/v1/admin/opensearch/inspect` | `can_inspect_store` | The data inspector. [The data inspector](#the-data-inspector) gives its rules. |

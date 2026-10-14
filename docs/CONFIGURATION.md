@@ -440,6 +440,12 @@ cluster.
   never writes over the live indices.
 - You register the snapshot repository when you deploy, with its credentials in the keystore of
   OpenSearch. The `system-config` document `snapshot_repo` holds its name, with no credentials.
+- A snapshot holds `findings`, `javv-images-*` and `system-*`: the current state, the triage, the
+  decisions, the users, the settings and the audit log.
+- A snapshot does not hold the scan history (`javv-finding-occurrences-*`, `javv-scan-events-*`,
+  `javv-inventory-runs-*` and `javv-ingest-failures-*`). Time travel reads this history. A snapshot
+  also does not hold `javv-scan-orders` and `javv-scan-watermarks`. Thus a restore from a snapshot
+  does not bring back the history.
 - JAVV does not make scheduled snapshots yet
   ([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
 
