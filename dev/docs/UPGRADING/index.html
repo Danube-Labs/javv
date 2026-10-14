@@ -1363,12 +1363,19 @@ own deployment. To install JAVV, see <a href="../DEPLOYING/"><code>DEPLOYING.md<
 <li><strong>Read the release notes.</strong> Each release has a GitHub Release and an entry in
     <a href="../../CHANGELOG/"><code>CHANGELOG.md</code></a>. Then read <a href="#version-notes">Version notes</a> on this page. They
     tell you what a release needs from you.</li>
-<li><strong>Make a snapshot.</strong> Use <strong>Settings → Data &amp; OpenSearch → Snapshot now</strong>, or
+<li>
+<p><strong>Make a snapshot.</strong> Use <strong>Settings › Data &amp; OpenSearch › Snapshot now</strong>, or
     <code>POST /api/v1/admin/snapshots</code>. The request needs <code>can_manage_retention</code>. It returns 409 when
     OpenSearch has no snapshot repository. <a href="../CONFIGURATION/#snapshots">Snapshots</a> tells you how
-    to add the repository. The upgrade does not need the snapshot. The snapshot protects your data.</li>
-<li><strong>Check the OpenSearch version.</strong> CI tests JAVV with the version in <code>datastore.opensearch</code> in
-    <a href="../../versions.yaml"><code>versions.yaml</code></a>.</li>
+    to add the repository. The upgrade does not need the snapshot.</p>
+<p>The snapshot keeps the current state, the triage, the decisions, the users, the settings and
+the audit log. <strong>It does not keep the scan history</strong> that time travel reads. Thus a restore
+does not bring the history back (<a href="https://github.com/Danube-Labs/javv-poc/issues/664">issue 664</a>).</p>
+</li>
+<li>
+<p><strong>Check the OpenSearch version.</strong> CI tests JAVV with the version in <code>datastore.opensearch</code> in
+    <a href="../../versions.yaml"><code>versions.yaml</code></a>.</p>
+</li>
 </ol>
 <h2 id="sequence-of-the-upgrade">Sequence of the upgrade<a class="headerlink" href="#sequence-of-the-upgrade" title="Permanent link">&para;</a></h2>
 <p><strong>Upgrade the backend first, then the frontend, then the scanner images.</strong></p>
@@ -1595,9 +1602,9 @@ only manually, or never, the first scheduled runs do all the work at the same ti
 <ul>
 <li><strong>The lifecycle sweep</strong> (03:00 by default) deletes all scan history that is older than the
   retention of each cluster (90 days by default). After this, time travel cannot show that period.
-  Before the jobs run for the first time, see what the sweep will do: <strong>Data inspector → Repair
-  actions → Lifecycle sweep → Dry run</strong>. If it deletes more than you want, increase the retention in
-  <strong>Settings → Data &amp; OpenSearch</strong>.</li>
+  Before the jobs run for the first time, see what the sweep will do: <strong>Data inspector › Repair
+  actions › Lifecycle sweep › Dry run</strong>. If it deletes more than you want, increase the retention in
+  <strong>Settings › Data &amp; OpenSearch</strong>.</li>
 <li><strong>The staleness sweep</strong> (02:00) marks as stale each finding that no scan found again for 3 days. It
   also marks as stale all findings of a scanner that sent nothing for 7 days.</li>
 <li><strong>The findings cleanup</strong> (04:00) deletes the findings that no scan reported for longer than its
@@ -1631,15 +1638,36 @@ applied it automatically on the first start.</p>
 </thead>
 <tbody>
 <tr>
-<td><em>(no entries yet)</em></td>
-<td></td>
-<td></td>
-<td></td>
+<td>0.8.0</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>A bootstrap admin password longer than 256 characters stops the backend</strong> below</td>
+</tr>
+<tr>
+<td>0.7.0</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong><code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code></strong> below</td>
+</tr>
+<tr>
+<td>0.6.2</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>JAVV retires clusters that send no scans</strong> below</td>
+</tr>
+<tr>
+<td>0.6.0</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>How the backend connects to OpenSearch</strong> below</td>
 </tr>
 </tbody>
 </table>
-<p>No release up to and including 0.7.2 changed the OpenSearch chart. Only its version number
-changed.</p>
+<p>No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
+backend accepts (3 and 4).</p>
+<p>No release up to and including 0.8.0 changed the OpenSearch chart in a way that needs the <code>store</code>
+upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
+of the comments in <code>values.yaml</code>, and no value.</p>
 <h3 id="080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend">0.8.0: a bootstrap admin password longer than 256 characters stops the backend<a class="headerlink" href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" title="Permanent link">&para;</a></h3>
 <p>A sign-in accepts a password of 256 characters at most. A first admin with a longer
 <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code> could never sign in. The backend now refuses such a value at start,

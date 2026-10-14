@@ -1168,7 +1168,10 @@ index. To change a password and keep the data:</p>
 </ol>
 <p>The command ends with <code>Done with success</code>. From then on, the new password works and the old
 password does not. For the password of <code>javv</code>, restart the JAVV backend. It then reads the new
-password from the same Secret: <code>kubectl rollout restart deploy/&lt;its release&gt;-javv-backend</code>.</p>
+password from the same Secret. For a <code>javv</code> release with the name <code>javv</code>, as in
+<a href="../../../docs/DEPLOYING/#install-on-kubernetes-with-helm">Deploying</a>, the command is
+<code>kubectl rollout restart deploy/javv-backend</code>. A release name that holds <code>javv</code> gives the name
+<code>&lt;release&gt;-backend</code>. Each other release name gives <code>&lt;release&gt;-javv-backend</code>.</p>
 <p>The same command loads the role file and the mapping file. Use
 <code>-f config/opensearch-security/roles.yml -t roles</code>, then
 <code>-f config/opensearch-security/roles_mapping.yml -t rolesmapping</code>. Do this for an OpenSearch that

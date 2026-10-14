@@ -1692,12 +1692,19 @@ the JAVV indices:</p>
 </ul>
 <p>We showed that JAVV needs each permission: the role test fails without it.</p>
 <p>To make the user and the role on an OpenSearch that you operate, use a user that can change the
-security configuration (the <code>admin</code> of OpenSearch):</p>
+security configuration (the <code>admin</code> of OpenSearch). Each <code>curl -u admin</code> asks for the password of
+<code>admin</code>. The commands read the password of <code>javv</code> at a prompt, and write it only to a file that
+only you can read. Thus neither password goes into your shell history or into the arguments of a
+process. Use a long random password for <code>javv</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="nv">OS</span><span class="o">=</span>https://&lt;your<span class="w"> </span>opensearch&gt;:9200
 curl<span class="w"> </span>-u<span class="w"> </span>admin<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"</span><span class="nv">$OS</span><span class="s2">/_plugins/_security/api/roles/javv"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>--data-binary<span class="w"> </span>@javv-role.json
+<span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'Password of javv: '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+<span class="o">(</span><span class="nb">umask</span><span class="w"> </span><span class="m">077</span><span class="p">;</span><span class="w"> </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$pw</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-Rs<span class="w"> </span><span class="s1">'{password: .}'</span><span class="w"> </span>&gt;<span class="w"> </span>javv-user.json<span class="o">)</span>
+<span class="nb">unset</span><span class="w"> </span>pw
 curl<span class="w"> </span>-u<span class="w"> </span>admin<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"</span><span class="nv">$OS</span><span class="s2">/_plugins/_security/api/internalusers/javv"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"password": "&lt;a long random password&gt;"}'</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>--data-binary<span class="w"> </span>@javv-user.json
+rm<span class="w"> </span>javv-user.json
 curl<span class="w"> </span>-u<span class="w"> </span>admin<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"</span><span class="nv">$OS</span><span class="s2">/_plugins/_security/api/rolesmapping/javv"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"users": ["javv"]}'</span>
 </code></pre></div>
@@ -1815,9 +1822,20 @@ admin does not exist.</p>
 <li><strong>The OpenSearch of the compose file uses demo certificates</strong> (see
   <a href="#ports-and-access">Ports and access</a>). For your own certificates, operate your own OpenSearch,
   and connect JAVV to it as above.</li>
-<li><strong>No maintenance page without a proxy.</strong> To show <code>frontend/public/maintenance.html</code>, a proxy in
-  front of JAVV must send requests to it (<code>development/RUNNING-THE-STACK.md</code> §R1). With nothing in
-  front of JAVV, there is no switch yet
+<li><strong>No maintenance page without a proxy.</strong> The frontend image holds a maintenance page,
+  <code>/maintenance.html</code>. It needs no backend and no OpenSearch. To show it during an upgrade or a
+  restore, make the proxy in front of JAVV answer each path with this page and the status 503. A
+  scanner then gets a 503 and tries again later. Delete the rule when JAVV runs again. An example
+  for nginx, with the page copied into its <code>root</code>:
+    <div class="highlight"><pre><span></span><code><span class="k">error_page</span><span class="w"> </span><span class="mi">503</span><span class="w"> </span><span class="s">/maintenance.html</span><span class="p">;</span>
+<span class="k">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/maintenance.html</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kn">internal</span><span class="p">;</span>
+<span class="w">  </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Cache-Control</span><span class="w"> </span><span class="s">"no-store"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<span class="w">  </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Retry-After</span><span class="w"> </span><span class="s">"60"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kn">return</span><span class="w"> </span><span class="mi">503</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+  With nothing in front of JAVV, there is no switch yet
   (<a href="https://github.com/Danube-Labs/javv-poc/issues/719">issue 719</a>).</li>
 <li><strong>The build of the frontend image sets the <code>VITE_*</code> settings</strong>
   (<a href="../CONFIGURATION/#frontend-build-settings">Frontend build settings</a>). You cannot change them later. A published image has
