@@ -67,6 +67,19 @@ const navItems = computed(() =>
 .guide-body {
   padding-top: 10px;
 }
+/* The guide's cards hold only prose, so each head is a band in the table-head colors to mark
+   where a section starts (operator ruling on A/B specimens, 2026-10-14). Settings shares the
+   card and keeps its plain head: there the band would stack on the tables inside the cards. */
+.guide-anchor :deep(.card-head) {
+  background: var(--table-head-bg);
+  border-bottom-color: var(--table-head-line);
+}
+.guide-anchor :deep(.card-head h2) {
+  color: var(--table-head-fg);
+}
+.guide-anchor :deep(.card-sub) {
+  color: var(--side-fg);
+}
 @media (width <= 1100px) {
   .guide-layout {
     grid-template-columns: minmax(0, 1fr);
