@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.1](https://github.com/Danube-Labs/javv-poc/compare/v0.8.0...v0.8.1) (2026-10-15)
+
+
+### Features
+
+* the guide's section heads are bands in the table-head colors ([#864](https://github.com/Danube-Labs/javv-poc/issues/864)) ([0583a3a](https://github.com/Danube-Labs/javv-poc/commit/0583a3a53c7fbad1e77e955f3ca4d536a5bbfff2))
+
+
+### Bug Fixes
+
+* a scheduled bulk triage checks its patch, at enqueue and in the drain ([#855](https://github.com/Danube-Labs/javv-poc/issues/855)) ([59a9ec4](https://github.com/Danube-Labs/javv-poc/commit/59a9ec4f6b216658c409421c333845fabd0de7c1))
+
 ## [0.8.0](https://github.com/Danube-Labs/javv-poc/compare/v0.7.2...v0.8.0) (2026-10-14)
 
 
