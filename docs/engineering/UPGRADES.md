@@ -61,8 +61,8 @@ for four reasons:
 4. **It would need a second place for credentials.** The pod already has the OpenSearch
    connection; a hook would need the same secret wired a second time.
 
-Revisit this choice when a release needs a **breaking** migration (a reindex). That is a long-running,
-resumable Job by nature, and it belongs to the hardening phase (see *Deferred* below).
+A **breaking** change (a copy of an index with `_reindex`) is a different case: see
+[A breaking change](#a-breaking-change).
 
 ## Old and new pods side by side
 
@@ -148,8 +148,40 @@ holds each one. The scanner row is the `javv-scanner` chart (slice 3).
 The scanner CronJobs' security context (UID 65532, a read-only root) is in the `javv-scanner`
 chart's `values.yaml`; the M10 bolt README's `## Updates` of 2026-09-29 set it out.
 
-## Deferred to the hardening phase (issue 261, items 1-3)
+## A breaking change
 
-- **Breaking migrations:** retyping or removing a field, changing an `_id` scheme, or splitting an
-  index. These need a versioned, checkpointed, resumable reindex Job and a rule for which release runs
-  it.
+`put_mapping` cannot make a change that is not additive. OpenSearch refuses a retyped field, and a
+removed field stays in the index. Examples are a retyped or removed field, a changed `_id` scheme,
+and an index split in two. No release has made such a change. The first one follows these rules
+(issue 261). They come from how Kibana migrates its saved objects, and the pytest store ran each
+step.
+
+- **A release of its own.** The change is the only breaking change in its release. Its commit has
+  the breaking marker, so release-please bumps the minor version. The pull request adds the change
+  to `BREAKING_CHANGES` in `backend/tests/test_mapping_additive.py`, and adds a version note to
+  `docs/UPGRADING.md`.
+- **The steps for each index, with `findings` from version 18 to 19 as the example.**
+  1. Stop the backend. Then no scan, triage or job writes to the index during the copy.
+  2. Put a write block on the index: `PUT findings/_block/write`.
+  3. Keep the old data for a rollback: `POST findings/_clone/findings-v18`. OpenSearch refuses a
+     clone of an index without the write block. The clone keeps the block.
+  4. Make the new index with the new mapping, then copy the documents into it: `PUT findings-v19`,
+     then `POST _reindex` from `findings` to `findings-v19`.
+  5. In one `POST _aliases` request, remove the index `findings` (`remove_index`) and add the alias
+     `findings` to `findings-v19`. Reads and writes through the name then go to the copy.
+  6. Start the new release. Bootstrap reads the mapping of the index behind the alias.
+- **Safe to run again.** A run can stop at any step. The next run must find what is there and
+  continue: the block, the clone, and a copy with the same document count as the source. Kibana
+  does the same, and its documentation says not to remove indices to fix a failed migration.
+- **A job, not bootstrap.** The copy is a kind in `backend/jobs` under the `system-jobs` lease, which
+  records each step. Bootstrap does not run the copy, because a copy of a large index takes longer
+  than the start-up probe of the Helm chart allows (300 s). The pull request with the first breaking
+  change adds the job.
+- **Rollback.** In one `POST _aliases` request, move the alias `findings` to `findings-v18`. Then
+  remove the block: `PUT findings-v18/_settings` with `index.blocks.write: false`. Until then,
+  OpenSearch refuses each write. Documents written after the migration are only in `findings-v19`,
+  so a rollback loses them. An older release starts on the alias only if its bootstrap reads the
+  mapping through an alias. Releases up to 0.8.1 raise `KeyError` there, and do not start.
+- **The per-cluster series.** A template change reaches only the indices made after it. The older
+  indices of a series keep the old mapping until retention removes them. Thus a query across a
+  series must accept both mappings, or each index of the series needs the steps above.
