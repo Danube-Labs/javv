@@ -256,6 +256,10 @@ list all indices as `unchanged`.
       kubectl patch secret <your-secret> --type merge -p \
         "{\"data\":{\"token-pepper\":\"$(kubectl get secret <your-secret> -o jsonpath='{.data.secret-key}')\"}}"
       ```
+- **CI tests a rollback from each change to the last release.** On a new docker compose store,
+  CI starts the last release and writes data with it. Then CI starts the change, the last release
+  again, and the change again. After each start, CI signs in and reads the same findings and the
+  same SLA policy.
 - **A snapshot does not give a rollback in one step.** A restore makes `restored-*` copies next to
   the live indices. It never writes over them
   (`POST /api/v1/admin/snapshots/{snapshot_name}/restore`). To use a copy, you must move it into

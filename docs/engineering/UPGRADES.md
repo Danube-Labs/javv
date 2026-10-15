@@ -71,6 +71,13 @@ An older release still meets a newer store after a rollback, and the frontend an
 upgraded on their own. That is safe only because every mapping change is **additive**. `core/bootstrap.py` says so in its instructions for evolving a mapping,
 and the history v2 → v18 contains only added fields and indices.
 
+`backend/tests/test_mapping_additive.py` holds this rule (issue 261). It compares the definitions in
+`core/bootstrap.py` with the newest release tag: each index, template, field and setting of that
+release must stay the same, and only new ones can appear. It also compares them with the merge base
+on `main`: a change must bump `MAPPING_VERSION`. Two changes with one number between two releases
+are a problem: a store that has the first change has that number, and bootstrap then does not apply
+the second change.
+
 | Who | Sees | Why it's safe |
 |---|---|---|
 | old pod, reading | fields the new release added | mappings are `dynamic:false` and readers pick the fields they know, so extra `_source` keys are ignored |
@@ -84,8 +91,9 @@ backend would call routes that don't exist yet. A newer scanner can send an enve
 backend rejects. A single `helm upgrade` rolls the backend and the frontend at the same time, so the
 window where the frontend is newer than the backend lasts as long as the rollout. During it, a new
 screen can call a route the old backend doesn't have yet, and the old frontend can call a route the
-new backend has removed. Keeping a removed route alive for one release is a hardening-phase rule (see
-*Deferred*).
+new backend has removed. Thus a route stays for one release after a release marks it `deprecated`.
+`backend/tests/test_api_routes_kept.py` holds this rule (issue 261): each route of the newest release
+tag must be in `frontend/openapi.json`, or that release marked it deprecated.
 
 ## Rollback
 
@@ -111,6 +119,15 @@ new backend has removed. Keeping a removed route alive for one release is a hard
   Before this, the older release raised `ValidationError` on every read of such a setting, and
   `core/errors.py` turned it into a 500. For the scan scope, that meant every scanner skipped its
   cycle. Rollbacks to a release without the fix still behave that way.
+- **CI runs a rollback across two releases** (issue 261). The last step of the Compose stack job
+  runs `development/scripts/compose-ci-cross-release.sh` on a new store. The last release (the
+  compose file and the published images of the newest tag) writes data: two clusters' scans and
+  inventory runs, and an SLA policy. Then this change, the last release again, and this change
+  again start on that store. After each start, the script checks that the expected images run, that
+  `GET /api/v1/meta` gives that code's `mapping_version`, and that the findings and the SLA policy
+  read back the same. Kibana's check of its saved objects does the same three steps. When two
+  releases have the same schema, the run proves the sequence only. The Helm job tests `helm
+  upgrade` and `helm rollback` inside one release (`development/scripts/helm-ci-app-checks.sh`).
 - **Decisions are safe.** Editing a decision copies only the fields `DecisionPayload` declares from the
   stored document (`decisions/lifecycle.py`), so unknown stored keys are dropped, not rejected.
 
@@ -168,12 +185,3 @@ step.
 - **The per-cluster series.** A template change reaches only the indices made after it. The older
   indices of a series keep the old mapping until retention removes them. Thus a query across a
   series must accept both mappings, or each index of the series needs the steps above.
-
-## Deferred to the hardening phase (issue 261, items 1-3)
-
-- **Pinning "additive only":** a CI check that a release's mappings are a superset of the previous
-  tag's.
-- **A tested rollback:** a CI run that upgrades, writes, rolls back and reads. It would exercise the
-  lenient settings reads above end to end, plus keeping a route for one release before removing it.
-  CI's Helm job already runs `helm upgrade` and `helm rollback` within one release
-  (`development/scripts/helm-ci-app-checks.sh`); across releases with a schema change is what is deferred.

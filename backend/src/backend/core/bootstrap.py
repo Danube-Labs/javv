@@ -24,8 +24,10 @@ from opensearchpy import AsyncOpenSearch, RequestError
 # reference this constant — no other file carries a version literal (test_bootstrap asserts the
 # marker via the same import). To evolve any index/template mapping:
 #   1. Edit the `_*_PROPERTIES` dict here (ADDITIVE only — `dynamic:false` means new fields must
-#      be mapped here first; never retype/remove a field, that's a reindex-migration, D-post-MVP).
-#   2. Bump MAPPING_VERSION by 1 and extend the history comment below.
+#      be mapped here first; never retype/remove a field, that's a reindex-migration).
+#      tests/test_mapping_additive.py holds this against the newest release tag (issue 261).
+#   2. Bump MAPPING_VERSION by 1 and extend the history comment below. The same test fails a
+#      mapping change that main does not have yet under main's MAPPING_VERSION.
 #   3. Keep INDEX-MAP.md in the same change (it's the spec of record for every mapping), and add
 #      an `Unreleased` row to docs/UPGRADING.md § Version notes (operators read that, not this).
 #   4. Done — on next startup bootstrap() sees version < MAPPING_VERSION and applies an additive

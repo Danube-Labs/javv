@@ -51,6 +51,10 @@ jobs:
           --health-interval 10s --health-timeout 5s --health-retries 20 --health-start-period 40s
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # the tags and origin/main: tests/test_mapping_additive.py and test_api_routes_kept.py
+          # compare with the newest release and with the merge base (issue 261)
+          fetch-depth: 0
 
       - name: Install libfaketime
         run: sudo apt-get update && sudo apt-get install -y faketime
