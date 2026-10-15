@@ -1148,6 +1148,33 @@
 
                 
               
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/indices-and-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Indices and data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
             </ul>
           </nav>
         
@@ -1361,7 +1388,7 @@
   <span class="md-ellipsis">
     
   
-  Ingest contract
+  Push from your own script
 
     
   </span>
@@ -2092,7 +2119,7 @@ the code.</p>
 <tr>
 <td><code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code></td>
 <td>empty: no first admin</td>
-<td><strong>Secret.</strong> The password of the first admin. The backend uses it only when that admin does not exist. A later change of this value has no effect: change the password in the web app. The first admin must change the password at the first sign-in. At most 256 characters: a longer value stops the backend at start. Fewer than 12 characters are accepted, because the first sign-in changes the password.</td>
+<td><strong>Secret.</strong> The password of the first admin. The backend uses it only when that admin does not exist. A later change of this value has no effect: change the password in the web app. The first admin must change the password at the first sign-in. At most 256 characters: a longer value stops the backend at start. The backend accepts fewer than 12 characters, because the first sign-in changes the password.</td>
 </tr>
 </tbody>
 </table>
@@ -2487,7 +2514,7 @@ do not set always has the default in the table.</p>
 <tr>
 <td><code>JAVV_LOG_LEVEL</code></td>
 <td><code>info</code></td>
-<td>The log level, as for the backend. At <code>info</code>, the log shows the progress of each image (<code>scanning image</code>, then <code>scan done</code> with the findings and the time) and a summary of the cycle. At <code>warning</code>, it shows the skipped images and the dead-letter entries. The line for a skipped image has <code>reason</code> (<code>scanner_exit</code>, <code>timeout</code> or <code>error</code>), <code>exit_code</code> and <code>scanner_stderr</code>. <code>scanner_stderr</code> holds the last 5 lines of the error output of the scanner, 1000 characters at most. The <code>cycle complete</code> line gives <code>discovered</code>, <code>scanned</code> and <code>scan_failed</code>. Each line has <code>scanner</code>, <code>cluster_id</code> and <code>scan_run_id</code>.</td>
+<td>The log level, as for the backend. At <code>info</code>, the log shows the progress of each image (<code>scanning image</code>, then <code>scan done</code> with the findings and the time) and a summary of the cycle. At <code>warning</code>, it shows the skipped images and the dead-letter entries. The line for a skipped image has <code>reason</code>: <code>scanner_exit</code>, <code>timeout</code> or <code>error</code>. With <code>scanner_exit</code>, it also has <code>exit_code</code> and <code>scanner_stderr</code>. <code>scanner_stderr</code> holds the last 5 lines of the error output of the scanner, 1000 characters at most. With <code>timeout</code>, it also has <code>timeout_s</code>. The <code>cycle complete</code> line gives <code>discovered</code>, <code>scanned</code> and <code>scan_failed</code>. Each line has <code>scanner</code>, <code>cluster_id</code> and <code>scan_run_id</code>.</td>
 </tr>
 <tr>
 <td><code>JAVV_BACKEND_URL</code></td>
@@ -2517,7 +2544,7 @@ do not set always has the default in the table.</p>
 <tr>
 <td><code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code></td>
 <td><code>360</code></td>
-<td>How long one cycle can try again, in total, when JAVV does not accept a push or the inventory commit (a 429, a 5xx or no answer). The scanner waits longer each time, at most 30 seconds. The time counts from the first failure of a push to its end. When the cycle has used all of it, a push that fails goes to the dead-letter file with no wait, and the log shows <code>push retry budget spent</code> one time. The default is longer than the 300 seconds that a <code>helm upgrade</code> of JAVV gives the backend to start. A value that is not a whole number above 0 stops the scanner with exit code 2.</td>
+<td>How long one cycle can try again, in total, when JAVV does not accept a push or the inventory commit. Examples are a 429, a 5xx or no answer. The scanner waits longer each time, at most 30 seconds. The time counts from the first failure of a push to its end. When the cycle used all of it, a push that fails goes to the dead-letter file with no wait. The log then shows <code>push retry budget spent</code> one time. The default is longer than the 300 seconds that a <code>helm upgrade</code> of JAVV gives the backend to start. A value that is not a whole number above 0 stops the scanner with exit code 2.</td>
 </tr>
 </tbody>
 </table>
@@ -3081,6 +3108,12 @@ cluster.</p>
   never writes over the live indices.</li>
 <li>You register the snapshot repository when you deploy, with its credentials in the keystore of
   OpenSearch. The <code>system-config</code> document <code>snapshot_repo</code> holds its name, with no credentials.</li>
+<li>A snapshot holds <code>findings</code>, <code>javv-images-*</code> and <code>system-*</code>: the current state, the triage, the
+  decisions, the users, the settings and the audit log.</li>
+<li>A snapshot does not hold the scan history (<code>javv-finding-occurrences-*</code>, <code>javv-scan-events-*</code>,
+  <code>javv-inventory-runs-*</code> and <code>javv-ingest-failures-*</code>). Time travel reads this history. A snapshot
+  also does not hold <code>javv-scan-orders</code> and <code>javv-scan-watermarks</code>. Thus a restore from a snapshot
+  does not bring back the history.</li>
 <li>JAVV does not make scheduled snapshots yet
   (<a href="https://github.com/Danube-Labs/javv-poc/issues/664">issue 664</a>).</li>
 </ul>
@@ -3271,7 +3304,7 @@ the value stays in the code: fix the bug. For example, the bulk limit is a setti
 </tr>
 <tr>
 <td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>
-<td><code>query/aggs._FACET_TERMS_SIZE</code> (16, at least the largest facet vocabulary), <code>query/contributors._BOARD_SIZE</code> (100 people on the leaderboard)</td>
+<td><code>query/aggs._FACET_TERMS_SIZE</code> (32, at least the largest facet vocabulary), <code>query/contributors._BOARD_SIZE</code> (100 people on the leaderboard)</td>
 <td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
 </tr>
 </tbody>
