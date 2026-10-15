@@ -72,7 +72,7 @@ check() {
   [ "$count" -gt 0 ] && [ "${findings:=$count}" = "$count" ] ||
     { echo "FAIL: $count findings of $golden, $findings before"; exit 1; }
   curl -sf -b "$jar" "$base/api/v1/settings/sla" | jq -e --argjson want "$sla" \
-    'with_entries(select(.key | IN($want | keys[]))) == $want' >/dev/null ||
+    '.sla | with_entries(select(.key | IN($want | keys[]))) == $want' >/dev/null ||
     { echo "FAIL: the SLA policy did not read back"; exit 1; }
   echo "mapping_version $1, $count findings of $golden, the SLA policy: read back"
 }
