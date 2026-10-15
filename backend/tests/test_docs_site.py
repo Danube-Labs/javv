@@ -254,7 +254,7 @@ def test_the_release_publishes_its_docs_as_its_version_and_latest() -> None:
     assert 'minor="${VERSION%.*}"' in runs
     assert (
         "mike deploy --config-file docs-site/mkdocs.yml --push --update-aliases"
-        ' --alias-type=redirect "$minor" latest'
+        ' --alias-type=redirect --title "$VERSION" "$minor" latest'
     ) in runs
     assert "mike set-default --config-file docs-site/mkdocs.yml --push latest" in runs
     # docs.yml pushes the same branch: one job at a time
