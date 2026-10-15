@@ -62,7 +62,9 @@ capabilities, the always-applied `cluster_id` filter) · `triage/` · `decisions
 `admin/` · `jobs/` · `tools/` (`export_openapi`). Tests in `backend/tests/`
 (128 files, about 1,750 tests on 2026-10-14; session-scoped bootstrap in `conftest.py` - new test files must NOT
 re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in app code;
-`tests/security/test_rbac_idor_contract.py` is the **capability registry of record**).
+`tests/security/test_rbac_idor_contract.py` is the **capability registry of record**;
+`test_mapping_additive.py` compares the mappings with the newest release tag and with `main`, and
+`test_api_routes_kept.py` the routes with that tag, through `release_refs.py`, issue 261).
 
 ## `docs/` - design & trackers
 
