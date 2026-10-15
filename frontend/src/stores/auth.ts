@@ -41,6 +41,16 @@ const refusedReadOnly = (error: unknown): boolean =>
 export const SESSION_ENDED_COPY = 'Your session ended. Sign in again.'
 export const PASSWORD_CHANGED_COPY = 'Password changed. Sign in again.'
 
+/** A sign-in that answered 200 with no session after it (issue 869, copy B ruled 2026-10-15). A
+ * browser keeps a Secure cookie only from https or localhost, so on any other page that is the
+ * cause, and the fix is a setting the server cannot change by itself. */
+export const COOKIE_REFUSED_ON_HTTP_COPY =
+  'This browser refused the session cookie, because the page uses http. Use https, or ask the ' +
+  'admin to set JAVV_SESSION_COOKIE_SECURE=false.'
+export const SESSION_NOT_KEPT_COPY =
+  'Signed in, but this browser did not keep the session. Allow cookies for this site, then sign ' +
+  'in again.'
+
 /** Mirror `MIN_LENGTH` and `MAX_LENGTH` in `backend/src/backend/auth/passwords.py`
  * (CONFIGURATION.md, "Fixed values"), so the form can say the rule and refuse a short password
  * before sending it. The server stays the authority; `password-change.spec.ts` fails when they
@@ -98,6 +108,12 @@ export const useAuthStore = defineStore('auth', {
       if (failure !== null) return failure
       logger.info('login', { username })
       await this.fetchMe()
+      if (this.user === null && !this.unreachable) {
+        // the server took the password, and the session check that follows has no cookie
+        const secureContext = window.isSecureContext
+        logger.warn('session not kept after sign-in', { secure_context: secureContext })
+        return secureContext ? SESSION_NOT_KEPT_COPY : COOKIE_REFUSED_ON_HTTP_COPY
+      }
       return null
     },
     async changePassword(currentPassword: string, newPassword: string): Promise<string | null> {
