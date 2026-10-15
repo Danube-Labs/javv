@@ -445,6 +445,9 @@ revoked           boolean       revoke-on-role-change / logout-all
   `_rollover`+`conditions` — not the ISM plugin; see
   PLAN D8) creates numbered backing indices behind a write-alias; the `-*` denotes the
   rolled series. Route append series on **immutable `cluster_id`**, never `cluster_name`.
+- **A mutable index can be an alias.** After a breaking change, the name (for example `findings`) is
+  an alias of a copy with the new mapping (`findings-v19`). Bootstrap reads the mapping of the index
+  behind the alias. The steps are in `UPGRADES.md`, "A breaking change" (issue 261).
 - **Every read carries a `cluster_id` filter** via one tenant-scoping repository helper (SEC-4) - including
   both steps of the point-in-time symmetric query and the export drain. **MVP tenant model (D38/H9):** all
   clusters are visible to any authenticated user - `cluster_id` is a **data filter applied on every

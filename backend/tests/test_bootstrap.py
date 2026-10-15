@@ -246,3 +246,30 @@ async def test_dynamic_false_keeps_rogue_fields_in_source_but_unindexed(
     # ... but is not indexed/searchable (dynamic:false, not strict)
     hits = await client.search(index=idx, body={"query": {"term": {"rogue_field": "sneaky"}}})
     assert hits["hits"]["total"]["value"] == 0
+
+
+@requires_opensearch
+async def test_bootstrap_reads_a_mutable_index_behind_an_alias(
+    client: AsyncOpenSearch, prefix: str
+) -> None:
+    """Issue 261: a breaking migration copies an index with its new mapping and moves the old
+    name to an alias of the copy. OpenSearch answers `get_mapping` by the real index name, so
+    bootstrap must read the one index the alias names; it raised KeyError on every start."""
+    await bootstrap(client, prefix=prefix)
+    name, copy = f"{prefix}findings", f"{prefix}findings-copy"
+    body = MUTABLE_INDEXES["findings"]
+    older = {**body, "mappings": {**body["mappings"], "_meta": {"version": MAPPING_VERSION - 1}}}
+    await client.indices.create(index=copy, body=older)
+    await client.indices.update_aliases(
+        body={
+            "actions": [
+                {"remove_index": {"index": name}},
+                {"add": {"index": copy, "alias": name}},
+            ]
+        }
+    )
+
+    assert (await bootstrap(client, prefix=prefix))[name] == "updated"
+    got = await client.indices.get_mapping(index=name)
+    assert list(got) == [copy] and got[copy]["mappings"]["_meta"]["version"] == MAPPING_VERSION
+    assert (await bootstrap(client, prefix=prefix))[name] == "unchanged"

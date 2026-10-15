@@ -581,8 +581,10 @@ async def bootstrap(client: AsyncOpenSearch, *, prefix: str = "") -> dict[str, s
     for name, body in MUTABLE_INDEXES.items():
         full = prefix + name
         if await client.indices.exists(index=full):
-            current = await client.indices.get_mapping(index=full)
-            version = int(current[full]["mappings"].get("_meta", {}).get("version", 0))
+            # keyed by the real index name: after a breaking migration `full` is an alias of the
+            # copy (docs/engineering/UPGRADES.md, "A breaking change", issue 261)
+            (current,) = (await client.indices.get_mapping(index=full)).values()
+            version = int(current["mappings"].get("_meta", {}).get("version", 0))
             if version >= MAPPING_VERSION:
                 results[full] = "unchanged"
             else:
