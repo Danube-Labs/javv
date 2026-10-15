@@ -1343,8 +1343,10 @@ results to JAVV:</p>
 Kubernetes</strong>. Both use the same images, with the same settings and defaults.</p>
 <h2 id="install-with-docker-compose">Install with docker compose<a class="headerlink" href="#install-with-docker-compose" title="Permanent link">&para;</a></h2>
 <p>You need Docker Engine with the compose plugin, version 2.23.1 or later. The compose file holds the
-OpenSearch role for JAVV in <code>configs</code>, and older versions cannot read it. You also need two files
-from the release that you install: <code>deploy/compose/compose.yaml</code> and <code>deploy/compose/.env.example</code>.</p>
+OpenSearch role for JAVV in <code>configs</code>, and older versions cannot read it. You also need three files
+from the release that you install, in one folder: <code>deploy/compose/compose.yaml</code>,
+<code>deploy/compose/.env.example</code> and <code>deploy/compose/setup.sh</code>. <code>setup.sh</code> needs a POSIX shell, as on
+Linux and macOS.</p>
 <p>Each release publishes the backend image and the frontend image with its version
 (<code>ghcr.io/danube-labs/javv-backend:&lt;version&gt;</code> and <code>javv-frontend:&lt;version&gt;</code>). The compose file of
 the release names these images.</p>
@@ -1354,10 +1356,20 @@ the release names these images.</p>
     <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>vm.max_map_count<span class="o">=</span><span class="m">262144</span>
 </code></pre></div></li>
 <li>
-<p><strong>Make the <code>.env</code> file</strong> in the folder that holds the two files:
-    <div class="highlight"><pre><span></span><code>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+<p><strong>Make the <code>.env</code> file.</strong> In the folder that holds the three files, run one of these commands:
+    <div class="highlight"><pre><span></span><code>./setup.sh<span class="w">           </span><span class="c1"># browsers use plain http, for example http://&lt;this machine&gt;:8080</span>
+./setup.sh<span class="w"> </span>--https<span class="w">   </span><span class="c1"># a proxy or a load balancer in front of JAVV ends https</span>
 </code></pre></div>
-    Set the four secrets. The compose file does not start without them.</p>
+    The script copies <code>.env.example</code> to <code>.env</code>, and only you can read <code>.env</code>. It sets the four
+    secrets to long random values that compose does not change. The OpenSearch admin password
+    obeys the rules of OpenSearch. The script shows the password of the first JAVV admin one time:
+    keep it for step 4. With <code>--https</code>, the session cookie keeps its <code>Secure</code> flag (see
+    <a href="#http-or-https">http or https</a>). If the memory map limit of step 1 is too low, the script
+    shows the command again.</p>
+<p>The script does not change an <code>.env</code> that exists. Thus it cannot change the secret key of an
+installation.</p>
+<p><strong>To set your own secrets</strong> in place of the script, run <code>cp .env.example .env</code>, and set these
+four values. The compose file does not start without them.</p>
 <ul>
 <li><code>JAVV_SECRET_KEY</code>: the secret key of the backend. Use a long random string
     (<code>openssl rand -hex 32</code>). Keep it for the life of the installation (see the warning below).</li>
@@ -1407,7 +1419,7 @@ in these three ways:</p>
 stops with "refused the credentials in JAVV_OPENSEARCH_USERNAME", the <code>javv</code> passwords are
 different. <a href="../UPGRADING/#change-an-opensearch-password"><code>UPGRADING.md</code></a> tells you how to correct
 both conditions.</p>
-<p>Then set the session cookie (see <a href="#http-or-https">http or https</a>).</p>
+<p>With your own secrets, then set the session cookie (see <a href="#http-or-https">http or https</a>).</p>
 </li>
 <li>
 <p><strong>Start JAVV:</strong>
@@ -1417,9 +1429,9 @@ docker<span class="w"> </span>compose<span class="w"> </span>ps<span class="w"> 
     The backend makes its indices at its first start.</p>
 </li>
 <li>
-<p><strong>Sign in</strong> at <code>http://&lt;this machine&gt;:8080</code> as <code>admin</code>, with the password from <code>.env</code>. JAVV
-    then asks for a new password (12 characters or more). You must set it before you can do other
-    work.</p>
+<p><strong>Sign in</strong> at <code>http://&lt;this machine&gt;:8080</code> as <code>admin</code>, with the password that <code>setup.sh</code> showed,
+    or with your <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>. JAVV then asks for a new password (12 characters
+    or more). You must set it before you can do other work.</p>
 </li>
 </ol>
 <p>To upgrade later, see <a href="../UPGRADING/#with-docker-compose"><code>UPGRADING.md</code> § With docker compose</a>.</p>
@@ -1450,7 +1462,7 @@ under a new name JAVV starts with empty volumes.</p>
 <code>https</code> or from <code>localhost</code>.</p>
 <ul>
 <li><strong>With TLS in front of JAVV</strong> (a proxy, a load balancer or a gateway that ends <code>https</code>): keep the
-  default. Delete <code>JAVV_SESSION_COOKIE_SECURE=false</code> from <code>.env</code>.</li>
+  default. Delete <code>JAVV_SESSION_COOKIE_SECURE=false</code> from <code>.env</code>. <code>./setup.sh --https</code> does this.</li>
 <li><strong>With plain http</strong> (for example <code>http://&lt;machine&gt;:8080</code> on a LAN): set
   <code>JAVV_SESSION_COOKIE_SECURE=false</code> in <code>.env</code>. <code>.env.example</code> sets this value. Without it, the
   sign-in succeeds, and the next request fails.</li>
