@@ -332,12 +332,15 @@ jobs:
     # calls every surface that reaches OpenSearch as javv, then checks what the role refuses.
     # Issue 869: deploy/compose/setup.sh makes the .env, as the guide says. No secret is in this
     # job's env: compose takes a shell variable over .env, so one here would hide the file.
+    # Issue 261: last, the last release and this change take turns on one new store.
     name: Compose stack
     runs-on: ubuntu-latest
     env:
       OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0 # the release tags: the last step runs the last release
 
       - name: OpenSearch's memory map limit
         run: sudo sysctl -w vm.max_map_count=262144
@@ -462,6 +465,14 @@ jobs:
           echo "status $code"
           [ "$code" = 502 ]
           jq -e '.status == 502 and .title == "Backend unavailable"' readyz.json
+
+      # issue 261: on a new store, the last release writes data, then this change, the last
+      # release again (a rollback) and this change again start on it and read the data back
+      - name: Upgrade, roll back and upgrade again, from the last release
+        run: |
+          docker compose -f deploy/compose/compose.yaml down -v
+          development/scripts/compose-ci-cross-release.sh \
+            "$(git tag --merged HEAD --list 'v*' --sort=-v:refname | head -1)"
 
       - name: Compose logs
         if: failure()

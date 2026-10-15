@@ -111,6 +111,15 @@ new backend has removed. Keeping a removed route alive for one release is a hard
   Before this, the older release raised `ValidationError` on every read of such a setting, and
   `core/errors.py` turned it into a 500. For the scan scope, that meant every scanner skipped its
   cycle. Rollbacks to a release without the fix still behave that way.
+- **CI runs a rollback across two releases** (issue 261). The last step of the Compose stack job
+  runs `development/scripts/compose-ci-cross-release.sh` on a new store. The last release (the
+  compose file and the published images of the newest tag) writes data: two clusters' scans and
+  inventory runs, and an SLA policy. Then this change, the last release again, and this change
+  again start on that store. After each start, the script checks that the expected images run, that
+  `GET /api/v1/meta` gives that code's `mapping_version`, and that the findings and the SLA policy
+  read back the same. Kibana's check of its saved objects does the same three steps. When two
+  releases have the same schema, the run proves the sequence only. The Helm job tests `helm
+  upgrade` and `helm rollback` inside one release (`development/scripts/helm-ci-app-checks.sh`).
 - **Decisions are safe.** Editing a decision copies only the fields `DecisionPayload` declares from the
   stored document (`decisions/lifecycle.py`), so unknown stored keys are dropped, not rejected.
 
@@ -138,7 +147,3 @@ chart's `values.yaml`; the M10 bolt README's `## Updates` of 2026-09-29 set it o
   it.
 - **Pinning "additive only":** a CI check that a release's mappings are a superset of the previous
   tag's.
-- **A tested rollback:** a CI run that upgrades, writes, rolls back and reads. It would exercise the
-  lenient settings reads above end to end, plus keeping a route for one release before removing it.
-  CI's Helm job already runs `helm upgrade` and `helm rollback` within one release
-  (`development/scripts/helm-ci-app-checks.sh`); across releases with a schema change is what is deferred.
