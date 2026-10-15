@@ -162,7 +162,8 @@ logger. `Dockerfile` builds the image (context = the repo root).
 ## `deploy/` - how JAVV is deployed (M10)
 `compose/`: `compose.yaml` runs OpenSearch, the backend and the frontend on one machine, with every
 setting listed at its default (`backend/tests/test_compose_settings.py` holds it to the code),
-`.env.example` for the secrets and the cookie choice, and a short `README.md`. The guide is
+`.env.example` for the secrets and the cookie choice, `setup.sh`, which makes `.env` from it with random
+secrets (issue 869, tested by `backend/tests/test_compose_setup_script.py`), and a short `README.md`. The guide is
 [`docs/DEPLOYING.md`](docs/DEPLOYING.md).
 `helm/` (issue 725, three charts): `javv-opensearch/` is OpenSearch, a wrapper around the official
 chart (vendored in its `charts/`), one node with its login on and `admin` as its only password
