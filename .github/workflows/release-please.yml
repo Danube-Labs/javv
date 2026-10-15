@@ -386,7 +386,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages:gh-pages
           minor="${VERSION%.*}"
+          # one folder per minor, so a patch release replaces its docs; the menu names that patch
           uv run --project docs-site --frozen mike deploy --config-file docs-site/mkdocs.yml \
-            --push --update-aliases --alias-type=redirect "$minor" latest
+            --push --update-aliases --alias-type=redirect --title "$VERSION" "$minor" latest
           uv run --project docs-site --frozen mike set-default --config-file docs-site/mkdocs.yml \
             --push latest
