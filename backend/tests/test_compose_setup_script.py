@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 COMPOSE = Path(__file__).parents[2] / "deploy" / "compose"
 SECRETS = (
@@ -22,6 +23,7 @@ COOKIE_LINE = "JAVV_SESSION_COOKIE_SECURE=false"
 # compose takes an unquoted value like this one as it is: no `$`, `#`, quote or space
 COMPOSE_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 MAX_MAP_COUNT = Path("/proc/sys/vm/max_map_count")
+CI = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
 @pytest.fixture
@@ -153,3 +155,16 @@ def test_a_low_memory_map_limit_prints_the_command_and_a_good_one_prints_nothing
     assert result.returncode == 0
     low = int(MAX_MAP_COUNT.read_text()) < 262144
     assert ("sysctl -w vm.max_map_count=262144" in result.stderr) is low
+
+
+def test_the_compose_ci_job_installs_with_the_script() -> None:
+    """The Compose stack job is the end-to-end proof: OpenSearch and the backend take what the
+    script made, and the password it showed signs in. A secret in the job's env would win over
+    .env in compose, and the job would then test nothing of the script."""
+    job = yaml.safe_load(CI.read_text())["jobs"]["compose"]
+    assert not set(job.get("env", {})) & {*SECRETS, "JAVV_SESSION_COOKIE_SECURE"}
+    names = [step.get("name") for step in job["steps"]]
+    runs = {step.get("name"): step.get("run", "") for step in job["steps"]}
+    assert names.index("Make .env with the setup script") < names.index("Start the stack")
+    assert "deploy/compose/setup.sh > setup.out" in runs["Make .env with the setup script"]
+    assert "setup.out" in runs["Sign in through the frontend over plain http"]
