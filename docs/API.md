@@ -7,7 +7,7 @@ The backend also publishes a description of its API, with each parameter and its
 `/docs` and `/openapi.json` on the backend port, 8000. The frontend does not send these two paths
 to the backend.
 
-To push scan results from your own tools, read the [ingest contract](INGEST-CONTRACT.md). To
+To push scan results from your own tools, read [Push from your own script](INGEST-CONTRACT.md). To
 connect the JAVV scanners, read [Connect the scanners](DEPLOYING.md#connect-the-scanners).
 
 ## Sign in from a script
@@ -267,7 +267,7 @@ The backend also writes the release and the mapping version in its `bootstrap co
 ### Scanner endpoints
 
 The scanners use these endpoints. Each one applies to the cluster and the scanner of the token,
-never to values in the body. The [ingest contract](INGEST-CONTRACT.md) gives the order of the calls
+never to values in the body. [Push from your own script](INGEST-CONTRACT.md) gives the order of the calls
 in a scan cycle.
 
 | Method | Path | Access | What it does |
@@ -607,7 +607,7 @@ The types are `report_ready`, `sla_breach`, `assignment` and `cluster_retiring`:
 
 `POST /api/v1/ingest/scan` accepts the results of one scan: an envelope with `schema_version` 3 or
 4, as JSON. The body can have `Content-Encoding: gzip`. The findings of a version 3 envelope have
-`ptype: null`. The [ingest contract](INGEST-CONTRACT.md) gives the schema, the order of the calls
+`ptype: null`. [Push from your own script](INGEST-CONTRACT.md) gives the schema, the order of the calls
 and an example.
 
 The backend does these checks in this order:
