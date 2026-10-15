@@ -1465,7 +1465,7 @@ under a new name JAVV starts with empty volumes.</p>
   default. Delete <code>JAVV_SESSION_COOKIE_SECURE=false</code> from <code>.env</code>. <code>./setup.sh --https</code> does this.</li>
 <li><strong>With plain http</strong> (for example <code>http://&lt;machine&gt;:8080</code> on a LAN): set
   <code>JAVV_SESSION_COOKIE_SECURE=false</code> in <code>.env</code>. <code>.env.example</code> sets this value. Without it, the
-  sign-in succeeds, and the next request fails.</li>
+  sign-in fails, and the sign-in page says that the browser refused the session cookie.</li>
 </ul>
 <p>JAVV cannot see a TLS proxy in front of it. Thus it never sets the flag itself.</p>
 <h3 id="ports-and-access">Ports and access<a class="headerlink" href="#ports-and-access" title="Permanent link">&para;</a></h3>

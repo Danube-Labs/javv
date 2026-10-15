@@ -2188,7 +2188,7 @@ the code.</p>
 <tr>
 <td><code>JAVV_SESSION_COOKIE_SECURE</code></td>
 <td><code>true</code></td>
-<td>The <code>Secure</code> flag of the session cookie. A browser keeps a <code>Secure</code> cookie only from <code>https</code> or <code>localhost</code>. If users open JAVV over plain <code>http</code>, set <code>false</code>, or the sign-in fails at the next request. An example is a machine on a LAN with no TLS in front. Keep <code>true</code> behind each proxy that ends TLS. JAVV cannot see that proxy, so it never sets the flag itself. Sign-out clears the cookie with the same flag.</td>
+<td>The <code>Secure</code> flag of the session cookie. A browser keeps a <code>Secure</code> cookie only from <code>https</code> or <code>localhost</code>. If users open JAVV over plain <code>http</code>, set <code>false</code>. Else the sign-in fails, and the sign-in page says that the browser refused the session cookie. An example is a machine on a LAN with no TLS in front. Keep <code>true</code> behind each proxy that ends TLS. JAVV cannot see that proxy, so it never sets the flag itself. Sign-out clears the cookie with the same flag.</td>
 </tr>
 <tr>
 <td><code>JAVV_SESSION_SWEEP_GRACE_HOURS</code></td>
