@@ -108,7 +108,14 @@ session, so a visitor whose session is still good goes straight to Overview. A f
 check is not remembered as signed out: the next navigation asks again), **store read-only**
 (issue 832: a sign-in or a forced password change the full disk refuses, a `503` with the
 problem type `store-read-only`, shows "The store is read-only: its disk is full." and starts no
-re-check, since the server answers; the password change by operator ruling on PR 843).
+re-check, since the server answers; the password change by operator ruling on PR 843), **session
+not kept** (issue 869: a sign-in that answers `200` and a session check that finds no session.
+The browser did not keep the cookie. On a page that is not a secure context, plain `http` and
+not `localhost`, the form says "This browser refused the session cookie, because the page uses
+http. Use https, or ask the admin to set JAVV_SESSION_COOKIE_SECURE=false." Else it says "Signed
+in, but this browser did not keep the session. Allow cookies for this site, then sign in again."
+The form stays on sign-in. A server failure on that check stays "not answering". Copy B of two,
+ruled by the operator on built specimens, 2026-10-15).
 **Rulings (operator, on built specimens, 2026-10-02):** the server-down message on the login page
 is the form's plain red line (A of two; B was a tinted box). The banner for a backend that is gone
 reads "The backend is not answering. Screens cannot load until it is back." (A of two; B ended

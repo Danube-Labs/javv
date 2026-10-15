@@ -150,7 +150,7 @@ By default, the session cookie has the `Secure` flag. A browser keeps a `Secure`
   default. Delete `JAVV_SESSION_COOKIE_SECURE=false` from `.env`.
 - **With plain http** (for example `http://<machine>:8080` on a LAN): set
   `JAVV_SESSION_COOKIE_SECURE=false` in `.env`. `.env.example` sets this value. Without it, the
-  sign-in succeeds, and the next request fails.
+  sign-in fails, and the sign-in page says that the browser refused the session cookie.
 
 JAVV cannot see a TLS proxy in front of it. Thus it never sets the flag itself.
 
