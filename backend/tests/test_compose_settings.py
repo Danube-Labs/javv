@@ -410,17 +410,30 @@ def test_the_app_runs_the_published_image_of_this_release(app: str) -> None:
 
 WORKFLOWS = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
 COMPOSE_UP = "docker compose -f deploy/compose/compose.yaml up"
+SETUP_SCRIPT = "deploy/compose/setup.sh"
 
 
-def _compose_up_steps() -> list[tuple[str, dict[str, Any]]]:
-    """Every workflow step that starts the compose file, with the env it runs under."""
+def _filled_by_setup_script() -> set[str]:
+    """The keys that setup.sh fills: the template's empty `KEY=` lines (issue 869)."""
+    template = (COMPOSE.parent / ".env.example").read_text().splitlines()
+    return {line[:-1] for line in template if re.fullmatch(r"[A-Z0-9_]+=", line)}
+
+
+def _compose_up_steps() -> list[tuple[str, set[str]]]:
+    """Every workflow step that starts the compose file, with the names it sets: its env, and the
+    .env of setup.sh when an earlier step of its job ran the script."""
     found = []
     for workflow in WORKFLOWS:
         for name, job in (yaml.safe_load(workflow.read_text())["jobs"] or {}).items():
+            made_env = False
             for step in job.get("steps", []):
-                if COMPOSE_UP in step.get("run", ""):
-                    env = {**(job.get("env") or {}), **(step.get("env") or {})}
-                    found.append((f"{workflow.name} {name} / {step.get('name')}", env))
+                run = step.get("run", "")
+                if COMPOSE_UP in run:
+                    names = {*(job.get("env") or {}), *(step.get("env") or {})}
+                    if made_env:
+                        names |= _filled_by_setup_script()
+                    found.append((f"{workflow.name} {name} / {step.get('name')}", names))
+                made_env = made_env or SETUP_SCRIPT in run
     return found
 
 
@@ -430,5 +443,5 @@ def test_every_workflow_that_starts_the_stack_sets_what_compose_requires() -> No
     assert required >= {"JAVV_OPENSEARCH_ADMIN_PASSWORD", "JAVV_OPENSEARCH_PASSWORD"}
     steps = _compose_up_steps()
     assert {where.split(" ")[0] for where, _ in steps} == {"ci.yml", "release-please.yml"}
-    for where, env in steps:
-        assert required <= set(env), f"{where} leaves {sorted(required - set(env))} unset"
+    for where, names in steps:
+        assert required <= names, f"{where} leaves {sorted(required - names)} unset"

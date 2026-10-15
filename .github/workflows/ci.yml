@@ -330,15 +330,11 @@ jobs:
     # backend with a message that says so. Issue 736: the demo setup's other users are gone.
     # Issue 729: the backend signs in as javv, which holds only the javv role, and the role walk
     # calls every surface that reaches OpenSearch as javv, then checks what the role refuses.
+    # Issue 869: deploy/compose/setup.sh makes the .env, as the guide says. No secret is in this
+    # job's env: compose takes a shell variable over .env, so one here would hide the file.
     name: Compose stack
     runs-on: ubuntu-latest
     env:
-      JAVV_SECRET_KEY: ci-only-secret-key-for-the-compose-check
-      JAVV_BOOTSTRAP_ADMIN_PASSWORD: ci-only-admin-passphrase
-      # OpenSearch's rules: 8+ characters with upper, lower, digit and special, and not a weak one
-      JAVV_OPENSEARCH_ADMIN_PASSWORD: Ci-only-OpenSearch-715!
-      JAVV_OPENSEARCH_PASSWORD: Ci-only-javv-729
-      JAVV_SESSION_COOKIE_SECURE: "false"
       OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -352,17 +348,37 @@ jobs:
       - name: Build both images
         run: development/scripts/build-app-images.sh
 
+      # its output holds the admin password: kept in a file, never in the log
+      - name: Make .env with the setup script
+        run: deploy/compose/setup.sh > setup.out
+
       - name: Start the stack
         run: |
           docker compose -f deploy/compose/compose.yaml pull opensearch
           docker compose -f deploy/compose/compose.yaml up -d --pull never --wait --wait-timeout 300
 
+      # the password that the script showed, not the one in .env: the two must be the same
       - name: Sign in through the frontend over plain http
         run: |
+          password=$(sed -n 's/^    //p' setup.out)
+          echo "::add-mask::$password"
           curl -sf -c jar.txt -H 'content-type: application/json' \
-            -d "{\"username\":\"admin\",\"password\":\"$JAVV_BOOTSTRAP_ADMIN_PASSWORD\"}" \
+            -d "{\"username\":\"admin\",\"password\":\"$password\"}" \
             localhost:8080/auth/login | jq -e '.user.username == "admin" and .user.must_change'
           curl -sf -b jar.txt localhost:8080/auth/me | jq -e '.user.username == "admin"'
+
+      # the later steps read the secrets that the script made, masked in the log from here on
+      - name: The secrets of .env, for the later steps
+        run: |
+          while IFS='=' read -r key value; do
+            case $key in
+              JAVV_BOOTSTRAP_ADMIN_PASSWORD | JAVV_OPENSEARCH_ADMIN_PASSWORD | \
+                JAVV_OPENSEARCH_PASSWORD)
+                echo "::add-mask::$value"
+                echo "$key=$value" >> "$GITHUB_ENV"
+                ;;
+            esac
+          done < deploy/compose/.env
 
       - name: OpenSearch refuses a request without its login
         run: |

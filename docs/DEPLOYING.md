@@ -34,8 +34,10 @@ Kubernetes**. Both use the same images, with the same settings and defaults.
 ## Install with docker compose
 
 You need Docker Engine with the compose plugin, version 2.23.1 or later. The compose file holds the
-OpenSearch role for JAVV in `configs`, and older versions cannot read it. You also need two files
-from the release that you install: `deploy/compose/compose.yaml` and `deploy/compose/.env.example`.
+OpenSearch role for JAVV in `configs`, and older versions cannot read it. You also need three files
+from the release that you install, in one folder: `deploy/compose/compose.yaml`,
+`deploy/compose/.env.example` and `deploy/compose/setup.sh`. `setup.sh` needs a POSIX shell, as on
+Linux and macOS.
 
 Each release publishes the backend image and the frontend image with its version
 (`ghcr.io/danube-labs/javv-backend:<version>` and `javv-frontend:<version>`). The compose file of
@@ -46,11 +48,23 @@ the release names these images.
     ```bash
     sudo sysctl -w vm.max_map_count=262144
     ```
-2. **Make the `.env` file** in the folder that holds the two files:
+2. **Make the `.env` file.** In the folder that holds the three files, run one of these commands:
     ```bash
-    cp .env.example .env
+    ./setup.sh           # browsers use plain http, for example http://<this machine>:8080
+    ./setup.sh --https   # a proxy or a load balancer in front of JAVV ends https
     ```
-    Set the four secrets. The compose file does not start without them.
+    The script copies `.env.example` to `.env`, and only you can read `.env`. It sets the four
+    secrets to long random values that compose does not change. The OpenSearch admin password
+    obeys the rules of OpenSearch. The script shows the password of the first JAVV admin one time:
+    keep it for step 4. With `--https`, the session cookie keeps its `Secure` flag (see
+    [http or https](#http-or-https)). If the memory map limit of step 1 is too low, the script
+    shows the command again.
+
+    The script does not change an `.env` that exists. Thus it cannot change the secret key of an
+    installation.
+
+    **To set your own secrets** in place of the script, run `cp .env.example .env`, and set these
+    four values. The compose file does not start without them.
 
     - `JAVV_SECRET_KEY`: the secret key of the backend. Use a long random string
         (`openssl rand -hex 32`). Keep it for the life of the installation (see the warning below).
@@ -98,7 +112,7 @@ the release names these images.
     different. [`UPGRADING.md`](UPGRADING.md#change-an-opensearch-password) tells you how to correct
     both conditions.
 
-    Then set the session cookie (see [http or https](#http-or-https)).
+    With your own secrets, then set the session cookie (see [http or https](#http-or-https)).
 
 3. **Start JAVV:**
     ```bash
@@ -107,9 +121,9 @@ the release names these images.
     ```
     The backend makes its indices at its first start.
 
-4. **Sign in** at `http://<this machine>:8080` as `admin`, with the password from `.env`. JAVV
-    then asks for a new password (12 characters or more). You must set it before you can do other
-    work.
+4. **Sign in** at `http://<this machine>:8080` as `admin`, with the password that `setup.sh` showed,
+    or with your `JAVV_BOOTSTRAP_ADMIN_PASSWORD`. JAVV then asks for a new password (12 characters
+    or more). You must set it before you can do other work.
 
 To upgrade later, see [`UPGRADING.md` § With docker compose](UPGRADING.md#with-docker-compose).
 
@@ -147,7 +161,7 @@ By default, the session cookie has the `Secure` flag. A browser keeps a `Secure`
 `https` or from `localhost`.
 
 - **With TLS in front of JAVV** (a proxy, a load balancer or a gateway that ends `https`): keep the
-  default. Delete `JAVV_SESSION_COOKIE_SECURE=false` from `.env`.
+  default. Delete `JAVV_SESSION_COOKIE_SECURE=false` from `.env`. `./setup.sh --https` does this.
 - **With plain http** (for example `http://<machine>:8080` on a LAN): set
   `JAVV_SESSION_COOKIE_SECURE=false` in `.env`. `.env.example` sets this value. Without it, the
   sign-in fails, and the sign-in page says that the browser refused the session cookie.
