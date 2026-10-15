@@ -8,13 +8,15 @@ other clusters and the known limits, is [`docs/DEPLOYING.md`](../../docs/DEPLOYI
 sudo sysctl -w vm.max_map_count=262144
 
 cd deploy/compose
-cp .env.example .env    # set the four secrets in it (docs/DEPLOYING.md says what each is for)
-docker compose up -d    # pulls this release's JAVV images
-docker compose ps       # wait until all three are healthy
+./setup.sh             # makes .env with random secrets; --https behind a proxy that ends https
+docker compose up -d   # pulls this release's JAVV images
+docker compose ps      # wait until all three are healthy
 ```
 
-Open `http://<this machine>:8080`, sign in as `admin` with the password from `.env`, and choose a
-new one. Scanners push to the same address: `http://<this machine>:8080`.
+Open `http://<this machine>:8080`, sign in as `admin` with the password that `setup.sh` showed, and
+choose a new one. To set your own secrets, copy `.env.example` to `.env` and fill it in
+([`docs/DEPLOYING.md`](../../docs/DEPLOYING.md) tells what each one is for). Scanners push to the
+same address: `http://<this machine>:8080`.
 
 | Task | Command |
 |---|---|
