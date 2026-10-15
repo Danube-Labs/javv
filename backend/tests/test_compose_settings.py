@@ -445,3 +445,32 @@ def test_every_workflow_that_starts_the_stack_sets_what_compose_requires() -> No
     assert {where.split(" ")[0] for where, _ in steps} == {"ci.yml", "release-please.yml"}
     for where, names in steps:
         assert required <= names, f"{where} leaves {sorted(required - names)} unset"
+
+
+CROSS_RELEASE = ROOT / "development" / "scripts" / "compose-ci-cross-release.sh"
+
+
+def test_the_compose_job_ends_with_the_last_release_and_this_change_in_turns() -> None:
+    # issue 261: upgrade, rollback and a second upgrade, the three steps of Kibana's check
+    steps = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]["compose"][
+        "steps"
+    ]
+    assert steps[0]["uses"].startswith("actions/checkout@")
+    assert (steps[0].get("with") or {}).get("fetch-depth") == 0, "the job needs the release tags"
+    at = next(
+        i for i, s in enumerate(steps) if str(CROSS_RELEASE.relative_to(ROOT)) in s.get("run", "")
+    )
+    run = steps[at]["run"]
+    assert run.index("down -v") < run.index(CROSS_RELEASE.name), "it starts on a new store"
+    assert "git tag --merged HEAD --list 'v*' --sort=-v:refname | head -1" in run
+    assert [s.get("if") for s in steps[at + 1 :]] == ["failure()"], (
+        "it is the last check of the job"
+    )
+    script = CROSS_RELEASE.read_text()
+    assert re.findall(r"^start (\w+)$", script, re.M) == [
+        "previous",
+        "change",
+        "previous",
+        "change",
+    ]
+    assert script.count("\ncheck ") == 4, "the data is read back after each start"
