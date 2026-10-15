@@ -1324,7 +1324,7 @@
   <span class="md-ellipsis">
     
   
-  Ingest contract
+  Push from your own script
 
     
   </span>
@@ -1886,7 +1886,7 @@ it. The tasks come first. Then the reference tables give each endpoint, error an
 <p>The backend also publishes a description of its API, with each parameter and its limits. It is at
 <code>/docs</code> and <code>/openapi.json</code> on the backend port, 8000. The frontend does not send these two paths
 to the backend.</p>
-<p>To push scan results from your own tools, read the <a href="../INGEST-CONTRACT/">ingest contract</a>. To
+<p>To push scan results from your own tools, read <a href="../INGEST-CONTRACT/">Push from your own script</a>. To
 connect the JAVV scanners, read <a href="../DEPLOYING/#connect-the-scanners">Connect the scanners</a>.</p>
 <h2 id="sign-in-from-a-script">Sign in from a script<a class="headerlink" href="#sign-in-from-a-script" title="Permanent link">&para;</a></h2>
 <p>A script uses the same address as a browser. The frontend sends <code>/api</code>, <code>/auth</code> and <code>/readyz</code> to
@@ -2276,7 +2276,7 @@ of the data inspector.</p>
 <p>The backend also writes the release and the mapping version in its <code>bootstrap complete</code> log line.</p>
 <h3 id="scanner-endpoints">Scanner endpoints<a class="headerlink" href="#scanner-endpoints" title="Permanent link">&para;</a></h3>
 <p>The scanners use these endpoints. Each one applies to the cluster and the scanner of the token,
-never to values in the body. The <a href="../INGEST-CONTRACT/">ingest contract</a> gives the order of the calls
+never to values in the body. <a href="../INGEST-CONTRACT/">Push from your own script</a> gives the order of the calls
 in a scan cycle.</p>
 <table>
 <thead>
@@ -3126,7 +3126,7 @@ goes to the user.</p>
 <h2 id="ingest-a-scan">Ingest a scan<a class="headerlink" href="#ingest-a-scan" title="Permanent link">&para;</a></h2>
 <p><code>POST /api/v1/ingest/scan</code> accepts the results of one scan: an envelope with <code>schema_version</code> 3 or
 4, as JSON. The body can have <code>Content-Encoding: gzip</code>. The findings of a version 3 envelope have
-<code>ptype: null</code>. The <a href="../INGEST-CONTRACT/">ingest contract</a> gives the schema, the order of the calls
+<code>ptype: null</code>. <a href="../INGEST-CONTRACT/">Push from your own script</a> gives the schema, the order of the calls
 and an example.</p>
 <p>The backend does these checks in this order:</p>
 <ol>
