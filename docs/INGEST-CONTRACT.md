@@ -345,13 +345,11 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 Trivy or with Grype, and push as that scanner.** Get the token for that scanner, and use the
 settings shape of that scanner.
 
-JAVV keeps the results of each scanner apart, and it never merges them. Thus each scanner name
-changes many parts of JAVV: the severity words, the comparison between scanners, and the tokens.
-A list of registered scanners will permit more names
-([issue 865](https://github.com/Danube-Labs/javv-poc/issues/865)).
+JAVV keeps the results of each scanner apart, and it never merges them. JAVV supports only these
+two scanners.
 
-Until then, if you use a different tool (for example Snyk or Clair), convert its output to the
-fields of one of the two scanners. Use the same conversion each time.
+If you use a different tool (for example Snyk or Clair), convert its output to the fields of one
+of the two scanners. Use the same conversion each time.
 
 ## Related pages
 
