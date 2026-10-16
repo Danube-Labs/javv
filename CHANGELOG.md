@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.2](https://github.com/Danube-Labs/javv-poc/compare/v0.8.1...v0.8.2) (2026-10-16)
+
+
+### Features
+
+* deploy/compose/setup.sh makes .env with random secrets and shows the admin password once ([#870](https://github.com/Danube-Labs/javv-poc/issues/870)) ([856b5ec](https://github.com/Danube-Labs/javv-poc/commit/856b5ec18d96d8d40cef3722bab244a783f3f26f)), closes [#869](https://github.com/Danube-Labs/javv-poc/issues/869)
+* the scanners pull images from private registries with a login that the chart mounts ([#880](https://github.com/Danube-Labs/javv-poc/issues/880)) ([d02b951](https://github.com/Danube-Labs/javv-poc/commit/d02b951f4886c0241cf0319f1e6259bbbebcd5e6))
+
+
+### Bug Fixes
+
+* a sign-in whose cookie the browser did not keep says why, not success ([#871](https://github.com/Danube-Labs/javv-poc/issues/871)) ([669ad0c](https://github.com/Danube-Labs/javv-poc/commit/669ad0c49843baae59bb26d48fd5828998526c4c)), closes [#869](https://github.com/Danube-Labs/javv-poc/issues/869)
+* bootstrap reads the mapping of an index behind an alias of the same name ([#876](https://github.com/Danube-Labs/javv-poc/issues/876)) ([e874587](https://github.com/Danube-Labs/javv-poc/commit/e87458747aa6d32441afff61bd2e5791a7419688))
+* findings and running images open with a bad stored hidden-columns value ([#882](https://github.com/Danube-Labs/javv-poc/issues/882)) ([13a09b4](https://github.com/Danube-Labs/javv-poc/commit/13a09b4de3ac16950dc6b3e0df4a8a5b87fbeb78))
+
 ## [0.8.1](https://github.com/Danube-Labs/javv-poc/compare/v0.8.0...v0.8.1) (2026-10-15)
 
 
