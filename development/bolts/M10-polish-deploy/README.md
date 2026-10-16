@@ -80,6 +80,11 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
 > **Never `print()`, never `logging.getLogger()`, never a private logging setup.**
 
 ## Updates
+- **2026-10-16: no maintenance switch (operator, issue 719 closed as not planned).** Kibana,
+  Dependency-Track and DefectDojo have no such switch either. While the backend does not run, the
+  frontend server already answers 502, the app shows "backend not answering", and scanners try
+  again. `docs/DEPLOYING.md` "Known limits" now says what users and scanners see, and keeps the
+  proxy recipe for the maintenance page.
 - **2026-10-09: M10 closes with 0.7.0 (issue 41).** What shipped after the rulings below:
   - #792: the root `NOTICE`, and the trivy and grype license files in the scanner images.
   - #793: the operator docs site, built by Zensical from the repository, `dev` published from

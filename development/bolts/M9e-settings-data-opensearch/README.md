@@ -145,6 +145,15 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
 > whether it's UI-controllable. That file is the single tracker for every configuration knob (DoD §6).
 
 ## Updates
+- **2026-10-16: issue 403 closed as not planned (operator).** A check against the code on that
+  date: rows 21 and 22 of the table above are no longer "entirely unbuilt". The `javv-scanner`
+  chart sets the vulnerability database sources (`trivy.vulnDb.repository`, `.javaRepository`,
+  `grype.vulnDb.updateUrl`, issue 741) and a registry login for private images
+  (`<scanner>.registryAuth.existingSecret`, issue 739). The other deferred rows stay as they are:
+  scanner tuning stays in the chart (row 16), session time and sign-in lock stay deployment
+  settings (rows 12 and 13), retention stays one window for each cluster (row 23), and the
+  OpenSearch card shows only live values (section D). To read the `imagePullSecrets` of each pod,
+  the scanners must read Secrets, and issue 725 ruled that out.
 - **2026-10-06: the backend runs these jobs itself (D47, issue 691):** the CronJobs this
   bolt names were never built. The backend starts each job on its cron schedule
   (`JAVV_JOB_<KIND>_CRON`, `jobs/scheduler.py`); `python -m backend.jobs.<name>` still runs one

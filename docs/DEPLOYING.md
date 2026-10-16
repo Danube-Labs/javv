@@ -633,11 +633,17 @@ admin does not exist.
 - **The OpenSearch of the compose file uses demo certificates** (see
   [Ports and access](#ports-and-access)). For your own certificates, operate your own OpenSearch,
   and connect JAVV to it as above.
-- **No maintenance page without a proxy.** The frontend image holds a maintenance page,
-  `/maintenance.html`. It needs no backend and no OpenSearch. To show it during an upgrade or a
-  restore, make the proxy in front of JAVV answer each path with this page and the status 503. A
-  scanner then gets a 503 and tries again later. Delete the rule when JAVV runs again. An example
-  for nginx, with the page copied into its `root`:
+- **No maintenance switch.** JAVV has no setting that shows a maintenance page. While the backend
+  stops for an upgrade or a restart, an open app shows the banner "The backend is not answering.
+  Screens cannot load until it is back." The banner goes away when the backend answers again. The
+  sign-in page says that the server is not answering, and tries again on its own. A scanner tries
+  each push again, for at most `JAVV_PUSH_RETRY_BUDGET_SECONDS` in each cycle. A cycle that
+  starts while the backend does not run scans nothing. The next cycle scans all the images again.
+  The frontend image also holds a maintenance page, `/maintenance.html`. It needs no backend and
+  no OpenSearch. If a proxy is in front of JAVV, you can show this page during an upgrade or a
+  restore: make the proxy answer each path with this page and the status 503. A scanner then gets
+  a 503 and tries again later. Delete the rule when JAVV runs again. An example for nginx, with
+  the page copied into its `root`:
     ```nginx
     error_page 503 /maintenance.html;
     location = /maintenance.html {
@@ -647,8 +653,6 @@ admin does not exist.
     }
     location / { return 503; }
     ```
-  With nothing in front of JAVV, there is no switch yet
-  ([issue 719](https://github.com/Danube-Labs/javv-poc/issues/719)).
 - **The build of the frontend image sets the `VITE_*` settings**
   ([Frontend build settings](CONFIGURATION.md#frontend-build-settings)). You cannot change them later. A published image has
   their default values.
@@ -662,5 +666,25 @@ admin does not exist.
   in its log.
 - **The scanners see each pod spec.** To find the images, they list the pods. This also shows each
   value that is in the `env` of a pod. Keep secrets in Secrets.
+- **JAVV shows the namespaces of an image, not its workloads.** A scanner scans each image one
+  time, also when many pods run it. JAVV records only the namespaces where the image runs. To find
+  the workloads, copy the digest (`sha256:...`) from the image page, under the image name. Then
+  run this command with the `kubectl` context of that cluster:
+    ```bash
+    DIGEST=sha256:...
+    kubectl get pods --all-namespaces --output json | jq --raw-output --arg digest "$DIGEST" '
+      .items[]
+      | select(any(.status.containerStatuses[]?; .imageID | endswith($digest)))
+      | (.metadata.ownerReferences[0] // {kind: "Pod", name: .metadata.name}) as $owner
+      | (.metadata.labels["pod-template-hash"] // "") as $hash
+      | if $owner.kind == "ReplicaSet" and $hash != "" and ($owner.name | endswith("-" + $hash))
+        then [.metadata.namespace, "Deployment", ($owner.name | rtrimstr("-" + $hash))]
+        else [.metadata.namespace, $owner.kind, $owner.name]
+        end
+      | @tsv' | sort --unique
+    ```
+  Each line gives a namespace, a kind and a name. For a pod of a Deployment, the line gives the
+  Deployment. For other pods, the line gives the owner of the pod, for example a DaemonSet or a
+  StatefulSet. For a pod with no owner, the line gives the pod.
 - **The first release with published charts is the release after 0.6.0.** For earlier releases,
   install from `deploy/helm/` in a checkout.
