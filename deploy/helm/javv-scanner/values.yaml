@@ -44,6 +44,13 @@ trivy:
     key: token
     value: ""
 
+  # -- A registry login for the images from private registries: the name of a
+  # `kubernetes.io/dockerconfigjson` Secret in the namespace of the chart. The scan container mounts
+  # it, and `DOCKER_CONFIG` tells Trivy where it is. When it is empty, Trivy pulls each image with
+  # no login.
+  registryAuth:
+    existingSecret: ""
+
   vulnDb:
     # -- The source of the vulnerability database (`--db-repository`, OCI repositories in sequence).
     # When it is empty, Trivy uses `mirror.gcr.io/aquasec/trivy-db:2`, then
@@ -116,6 +123,11 @@ grype:
     existingSecret: ""
     key: token
     value: ""
+
+  # -- A registry login for the images from private registries, as for Trivy. It can be the same
+  # Secret.
+  registryAuth:
+    existingSecret: ""
 
   vulnDb:
     # -- The source of the vulnerability database (`GRYPE_DB_UPDATE_URL`, the list of database

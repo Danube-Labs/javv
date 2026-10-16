@@ -1,10 +1,20 @@
 # ct install: the scanners in a second kind cluster, pushing to the javv chart in the first. The CI
 # job mints both tokens in that JAVV, puts them in these two Secrets in the install's namespace,
 # and passes the real backendUrl (the first cluster's node address) with --helm-extra-set-args.
+# It also puts the login of its private registry in javv-ci-registry (issue 739). That registry
+# serves plain http, so the scans may pull over http; the database refresh does not get the switch.
 backendUrl: http://javv.invalid:8080
 trivy:
   token:
     existingSecret: javv-ci-trivy-token
+  registryAuth:
+    existingSecret: javv-ci-registry
+  config:
+    TRIVY_INSECURE: "true"
 grype:
   token:
     existingSecret: javv-ci-grype-token
+  registryAuth:
+    existingSecret: javv-ci-registry
+  config:
+    GRYPE_REGISTRY_INSECURE_USE_HTTP: "true"

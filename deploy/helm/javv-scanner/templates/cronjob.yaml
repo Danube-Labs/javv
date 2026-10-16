@@ -80,6 +80,11 @@ spec:
                 {{- end }}
                 {{- end }}
                 {{- include "javv-scanner.noUpdate" $name | nindent 16 }}
+                {{- if $s.registryAuth.existingSecret }}
+                # both binaries read config.json in this directory; the image's HOME has none
+                - name: DOCKER_CONFIG
+                  value: /etc/javv/registry
+                {{- end }}
                 {{- with $s.extraEnv }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
@@ -96,6 +101,11 @@ spec:
                   mountPath: /var/lib/javv
                 - name: tmp
                   mountPath: /tmp
+                {{- if $s.registryAuth.existingSecret }}
+                - name: registry-auth
+                  mountPath: /etc/javv/registry
+                  readOnly: true
+                {{- end }}
           volumes:
             - name: vulndb
               persistentVolumeClaim:
@@ -104,6 +114,15 @@ spec:
               emptyDir: {}
             - name: tmp
               emptyDir: {}
+            {{- with $s.registryAuth.existingSecret }}
+            # Kubernetes mounts the login: the scanner's own account cannot read Secrets (issue 739)
+            - name: registry-auth
+              secret:
+                secretName: {{ . }}
+                items:
+                  - key: .dockerconfigjson
+                    path: config.json
+            {{- end }}
           {{- with $s.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 12 }}

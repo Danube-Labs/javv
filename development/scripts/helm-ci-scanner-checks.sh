@@ -3,6 +3,13 @@
 # The javv-scanner chart against a running javv chart, across two clusters (issue 725, slice 3):
 # the javv chart's cluster serves JAVV, a second cluster plays the monitored one.
 #
+#   registry <kind cluster> <monitored context> <scanner namespace>
+#     A registry that requires a login, on the kind network, and an image in it that only that login
+#     pulls (issue 739). Each node of the cluster pulls from it over http. The login is in the
+#     Secret javv-ci-registry in the seeded namespace, for the kubelet, and in the scanner namespace,
+#     for the scanners (the name ci/default-values.yaml uses). A deployment of the image runs in the
+#     seeded namespace. Run it before prepare.
+#
 #   prepare <javv context> <javv namespace> <javv release> <monitored context> <scanner namespace>
 #     Exposes the javv frontend Service as a NodePort, signs in (rotating the bootstrap password),
 #     limits the monitored cluster's scan scope to one seeded namespace, mints a token per scanner
@@ -12,11 +19,13 @@
 #
 #   cycle <monitored context> <scanner namespace> <scanner release> <JAVV address>
 #     Starts one cycle of each scanner from its CronJob, waits for both, and checks JAVV holds a
-#     committed run from that cluster for each, by the version versions.yaml pins.
+#     committed run from that cluster for each, by the version versions.yaml pins, and a scan by
+#     each of the image that only the registry login pulls.
 #
 # Env: JAVV_CI_ADMIN_PASSWORD, the bootstrap admin's password in that JAVV install, and
 # JAVV_CI_ADMIN_USERNAME when that admin is not called admin. Requires
-# kubectl, helm, curl, jq and yq. Nothing secret is printed.
+# kubectl, helm, curl, jq and yq; registry also needs docker, kind, openssl and htpasswd. Nothing
+# secret is printed.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -26,6 +35,11 @@ SEED_NS=javv-scan-seed
 # a deliberately old image, so the scans find something
 SEED_IMAGE=nginx:1.23.4
 ROTATED="$JAVV_CI_ADMIN_PASSWORD-rotated"
+# the registry by its container name on the kind network, which the nodes and the pods resolve
+REGISTRY=javv-ci-registry:5000
+# the scanner compatibility gate's fixture (issue 631): public, with known findings
+PRIVATE_SOURCE=ghcr.io/danube-labs/javv-compat-fixture:python-3.9.16-slim
+PRIVATE_IMAGE=$REGISTRY/private/python:3.9.16-slim
 
 # The session cookie is Secure, which curl's own cookie jar never sends over http, so it travels
 # as a header read from a file; a body with a password is a file too. Neither is ever in a
@@ -63,6 +77,47 @@ sign_in() {  # url, then the password to try first and the one to try next
   done
   echo "FAIL: cannot sign in to $url as $ADMIN" >&2
   return 1
+}
+
+registry() {
+  local cluster=$1 mon_ctx=$2 ns=$3 auth dir pw node target namespace
+  # the registry reads the htpasswd file from this directory for as long as it runs
+  auth=$(mktemp -d) dir=$(mktemp -d)
+  pw=$(openssl rand -hex 24)
+  htpasswd -Bbn ci "$pw" >"$auth/htpasswd" 2>/dev/null
+  docker run -d --name "${REGISTRY%:*}" --network kind -p 127.0.0.1:5001:5000 \
+    -v "$auth:/auth:ro" -e REGISTRY_AUTH=htpasswd -e REGISTRY_AUTH_HTPASSWD_REALM=ci \
+    -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd registry:3.0.0 >/dev/null
+  # containerd reads a registry's hosts.toml from certs.d at each pull: http, with no restart
+  for node in $(kind get nodes --name "$cluster"); do
+    docker exec "$node" sh -c "mkdir -p /etc/containerd/certs.d/$REGISTRY && printf \
+      '[host.\"http://$REGISTRY\"]\n  capabilities = [\"pull\", \"resolve\"]\n' \
+      >/etc/containerd/certs.d/$REGISTRY/hosts.toml"
+  done
+
+  # one Docker config with the login, for the push from this host and for both Secrets
+  P=$pw jq -n --arg a "127.0.0.1:5001" --arg r "$REGISTRY" \
+    '(("ci:" + env.P) | @base64) as $auth | {auths: {($a): {auth: $auth}, ($r): {auth: $auth}}}' \
+    >"$dir/config.json"
+  target=127.0.0.1:5001/${PRIVATE_IMAGE#*/}
+  docker pull -q "$PRIVATE_SOURCE" >/dev/null
+  docker tag "$PRIVATE_SOURCE" "$target"
+  DOCKER_CONFIG=$dir docker push -q "$target" >/dev/null
+  echo "pushed $PRIVATE_IMAGE, which pulls only with the login" >&2
+
+  for namespace in "$SEED_NS" "$ns"; do
+    kubectl --context "$mon_ctx" create namespace "$namespace" --dry-run=client -o yaml |
+      kubectl --context "$mon_ctx" apply -f - >/dev/null
+    kubectl --context "$mon_ctx" -n "$namespace" create secret generic javv-ci-registry \
+      --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson="$dir/config.json" \
+      --dry-run=client -o yaml | kubectl --context "$mon_ctx" apply -f - >/dev/null
+  done
+  rm -f "$dir/config.json" && rmdir "$dir"
+  kubectl --context "$mon_ctx" -n "$SEED_NS" create deployment private --image="$PRIVATE_IMAGE" \
+    --dry-run=client -o json -- sleep infinity |
+    jq '.spec.template.spec.imagePullSecrets = [{name: "javv-ci-registry"}]' |
+    kubectl --context "$mon_ctx" apply -f - >/dev/null
+  kubectl --context "$mon_ctx" -n "$SEED_NS" rollout status deploy/private --timeout=5m >&2
 }
 
 prepare() {
@@ -144,7 +199,7 @@ until_none_running() {
 
 cycle() {
   local mon_ctx=$1 ns=$2 release=$3 url=$4
-  local k cid scanner cronjob want provenance version
+  local k cid scanner cronjob want provenance version images
   k() { kubectl --context "$mon_ctx" -n "$ns" "$@"; }
   cid=$(kubectl --context "$mon_ctx" get namespace kube-system -o jsonpath='{.metadata.uid}')
 
@@ -183,12 +238,26 @@ cycle() {
     fi
     echo "ok: a committed $scanner $version run from $cid"
   done
+
+  # the private image, which a scanner pulls only with its registry login (issue 739)
+  # a row of Running images names its image by image_repo and tag, as ingest split the reference
+  images=$(json "$url/api/v1/images?cluster_id=$cid")
+  if ! jq -e --arg repo "${PRIVATE_IMAGE%:*}" --arg tag "${PRIVATE_IMAGE##*:}" \
+    'any(.images[]; .image_repo == $repo and .tag == $tag
+      and (.severity_by_scanner | has("trivy") and has("grype")))' <<<"$images" >/dev/null; then
+    echo "FAIL: JAVV holds no scan of $PRIVATE_IMAGE by both scanners" >&2
+    jq -c '.images[] | {image_repo, tag, scanners: (.severity_by_scanner | keys)}' <<<"$images" >&2 ||
+      true
+    exit 1
+  fi
+  echo "ok: both scanners scanned $PRIVATE_IMAGE with their registry login"
 }
 
 command=${1:-}
 shift || true
 case "$command" in
+  registry) registry "$@" ;;
   prepare) prepare "$@" ;;
   cycle) cycle "$@" ;;
-  *) echo "usage: $0 prepare|cycle ..." >&2; exit 2 ;;
+  *) echo "usage: $0 registry|prepare|cycle ..." >&2; exit 2 ;;
 esac
