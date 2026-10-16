@@ -486,6 +486,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#scan-images-from-private-registries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scan images from private registries
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-scanner-chart-runs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1235,6 +1246,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#scan-images-from-private-registries" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scan images from private registries
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-scanner-chart-runs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1645,6 +1667,37 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 </li>
 </ol>
 <p>The first push shows in <strong>Scanner status</strong>. Its findings show when the scan is complete.</p>
+<h3 id="scan-images-from-private-registries">Scan images from private registries<a class="headerlink" href="#scan-images-from-private-registries" title="Permanent link">&para;</a></h3>
+<p>The scanners pull each image from its registry. For a registry that requires a sign-in, give the
+scanners a login. Kubernetes puts the login into the scan container as a file. The scanners do not
+read Secrets through the Kubernetes API.</p>
+<ol>
+<li>Make an account on the registry that can only pull images. The scanner process reads the
+    content of images that you do not control, and it can read this login.</li>
+<li>Put the login in a Secret of the type <code>kubernetes.io/dockerconfigjson</code>, in the namespace of the
+    scanners. The password goes in at a prompt:
+    <div class="highlight"><pre><span></span><code><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s2">"registry password: "</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+<span class="nv">P</span><span class="o">=</span><span class="nv">$pw</span><span class="w"> </span>jq<span class="w"> </span>-n<span class="w"> </span>--arg<span class="w"> </span>r<span class="w"> </span>registry.example.com<span class="w"> </span>--arg<span class="w"> </span>u<span class="w"> </span>&lt;user&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s1">'{auths: {($r): {auth: (($u + ":" + env.P) | @base64)}}}'</span><span class="w"> </span><span class="p">|</span>
+<span class="w">  </span>kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>javv-registry<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--type<span class="o">=</span>kubernetes.io/dockerconfigjson<span class="w"> </span>--from-file<span class="o">=</span>.dockerconfigjson<span class="o">=</span>/dev/stdin
+<span class="nb">unset</span><span class="w"> </span>pw
+</code></pre></div>
+    For more registries, put one entry for each registry in <code>auths</code>. <code>kubectl create secret
+    docker-registry</code> makes the same Secret, but it gets the password as an argument.</li>
+<li>Give the Secret to each scanner. Add these values to the install command of step 3 above, or to
+    your values for the next <code>helm upgrade</code>:
+    <div class="highlight"><pre><span></span><code>--set<span class="w"> </span>trivy.registryAuth.existingSecret<span class="o">=</span>javv-registry<span class="w"> </span><span class="se">\</span>
+--set<span class="w"> </span>grype.registryAuth.existingSecret<span class="o">=</span>javv-registry
+</code></pre></div></li>
+<li>After the next cycle, make sure that <strong>Running images</strong> shows the images from that registry.
+    When the login is missing or wrong, the log of the scan has <code>scan failed, image skipped</code>, and its
+    <code>scanner_stderr</code> holds the error of the registry, for example <code>UNAUTHORIZED</code>:
+    <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>logs<span class="w"> </span>job/&lt;job&gt;<span class="w"> </span>-c<span class="w"> </span>trivy<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">'image skipped'</span>
+</code></pre></div></li>
+</ol>
+<p>Without Kubernetes, put the login in a file with the name <code>config.json</code>, mount its directory into
+the scanner container, and set <code>DOCKER_CONFIG</code> to that directory.</p>
 <h3 id="what-the-scanner-chart-runs">What the scanner chart runs<a class="headerlink" href="#what-the-scanner-chart-runs" title="Permanent link">&para;</a></h3>
 <p>The <a href="../../deploy/helm/javv-scanner/">chart README</a> lists all of its values.</p>
 <ul>
@@ -1664,7 +1717,8 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
   (OCI repositories), or <code>grype.vulnDb.updateUrl</code> (a DB listing).</li>
 <li><strong>What the scanners can read in the cluster:</strong> the pods in all namespaces, to find the images that
   run, and the <code>kube-system</code> namespace, because its UID is the cluster ID. They can read nothing
-  more, and no Secrets.</li>
+  more, and no Secrets. A registry login that you give them comes as a file in the scan container
+  (<a href="#scan-images-from-private-registries">Scan images from private registries</a>).</li>
 <li><strong>The images</strong> are the scanner versions in <a href="../../versions.yaml"><code>versions.yaml</code></a>. The published
   chart names each image by its digest at the time of the release. Thus a cluster runs the scanner
   build of that release. From a checkout, the chart has only the tag, and Kubernetes pulls it at
@@ -1881,9 +1935,12 @@ admin does not exist.</p>
   their default values.</li>
 <li><strong>TLS is your work.</strong> JAVV serves plain http. Put <code>https</code> in front of it with the tools that you
   already operate, and keep the session cookie <code>Secure</code>.</li>
-<li><strong>The scanners do not scan images from private registries yet.</strong> They pull each image with no
-  sign-in. When a pull fails, the scanner skips the image, and it writes a warning in its log
-  (<a href="https://github.com/Danube-Labs/javv-poc/issues/739">issue 739</a>).</li>
+<li><strong>A private registry needs a static login.</strong> The scanners use the login in the Secret that you
+  give them (<a href="#scan-images-from-private-registries">Scan images from private registries</a>). The
+  scanner images have no credential helpers. Thus a registry whose logins expire after some hours
+  needs a process of your own that writes a new login into the Secret before the old one expires.
+  Without a login that works, the pull fails: the scanner skips the image, and it writes a warning
+  in its log.</li>
 <li><strong>The scanners see each pod spec.</strong> To find the images, they list the pods. This also shows each
   value that is in the <code>env</code> of a pod. Keep secrets in Secrets.</li>
 <li><strong>The first release with published charts is the release after 0.6.0.</strong> For earlier releases,

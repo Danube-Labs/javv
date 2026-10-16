@@ -2632,6 +2632,11 @@ also has <code>config</code>: its settings from the <a href="#trivy-settings">Tr
 <td><strong>Secret.</strong> <code>JAVV_TOKEN</code>: the Secret of that scanner, or a value that the chart puts in a Secret. Without it, the install fails.</td>
 </tr>
 <tr>
+<td><code>&lt;scanner&gt;.registryAuth.existingSecret</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> A login for private registries: the name of a <code>kubernetes.io/dockerconfigjson</code> Secret in the namespace of the chart. Kubernetes puts its <code>.dockerconfigjson</code> key into the scan container as <code>/etc/javv/registry/config.json</code>, and the chart sets <code>DOCKER_CONFIG</code> to <code>/etc/javv/registry</code>. The refresh container does not get the login. When the value is empty, the scanner pulls each image with no login.</td>
+</tr>
+<tr>
 <td><code>&lt;scanner&gt;.schedule</code></td>
 <td><code>0 */6 * * *</code> (Trivy), <code>30 */6 * * *</code> (Grype)</td>
 <td>When a cycle starts. <code>timeZone</code> sets the zone.</td>
