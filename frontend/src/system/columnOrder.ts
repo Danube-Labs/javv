@@ -22,6 +22,24 @@ export function restoreOrder(raw: string | null, known: readonly string[]): stri
   return [...known]
 }
 
+/** Validated restore of the hidden columns: unknown keys drop; garbage degrades to the default
+ * set. An empty list is kept, since it is the user showing every column. */
+export function restoreHidden(
+  raw: string | null,
+  known: readonly string[],
+  defaults: readonly string[],
+): Set<string> {
+  try {
+    const parsed: unknown = JSON.parse(raw ?? '')
+    if (Array.isArray(parsed)) {
+      return new Set(parsed.filter((k): k is string => typeof k === 'string' && known.includes(k)))
+    }
+  } catch {
+    /* garbage degrades to the default set */
+  }
+  return new Set(defaults)
+}
+
 /**
  * Header drag → new full order. `dragIndex`/`dropIndex` are PrimeVue's, counted over the
  * rendered columns: `pinnedLeft` fixed columns, then the visible orderable ones (a trailing
