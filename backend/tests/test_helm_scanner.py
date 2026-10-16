@@ -343,6 +343,40 @@ def test_a_registry_login_is_mounted_for_the_scan_only(scanner: str) -> None:
             assert "DOCKER_CONFIG" not in _env(container)
 
 
+def test_ci_scans_an_image_that_only_the_registry_login_pulls() -> None:
+    # ct install reads ci/default-values.yaml; the registry step runs before the tokens and the
+    # install, and the cycle step fails unless both scanners scanned the private image
+    values = CHART / "ci" / "default-values.yaml"
+    out = subprocess.run(
+        ["helm", "template", "s", str(CHART), "--namespace", "scan", "-f", str(values)],
+        capture_output=True,
+        text=True,
+    )
+    assert out.returncode == 0, out.stderr
+    docs = [d for d in yaml.safe_load_all(out.stdout) if d]
+    for scanner, switch in (
+        ("trivy", "TRIVY_INSECURE"),
+        ("grype", "GRYPE_REGISTRY_INSECURE_USE_HTTP"),
+    ):
+        pod = _pod(docs, scanner)
+        volumes = {v["name"]: v for v in pod["volumes"]}
+        assert volumes["registry-auth"]["secret"]["secretName"] == "javv-ci-registry"
+        assert _env(pod["containers"][0])[switch] == "true"
+        # the registry of the CI serves http; the database refresh keeps its TLS
+        assert switch not in _env(pod["initContainers"][0])
+    script = (ROOT / "development" / "scripts" / "helm-ci-scanner-checks.sh").read_text()
+    assert '.spec.template.spec.imagePullSecrets = [{name: "javv-ci-registry"}]' in script
+    assert '(.severity_by_scanner | has("trivy") and has("grype"))' in script
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+    steps = workflow["jobs"]["helm-app"]["steps"]
+    run = next(
+        s["run"] for s in steps if s.get("name") == "ct install, javv-scanner, pushing to that JAVV"
+    )
+    registry = run.index("helm-ci-scanner-checks.sh registry monitored kind-monitored javv-scan")
+    assert registry < run.index("helm-ci-scanner-checks.sh prepare") < run.index("ct install")
+    assert any("helm-ci-scanner-checks.sh cycle" in (s.get("run") or "") for s in steps)
+
+
 def test_no_token_outside_its_secret() -> None:
     for doc in _render(*VALUES):
         if doc["kind"] == "Secret":

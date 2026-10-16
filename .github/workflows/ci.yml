@@ -13,7 +13,8 @@ name: CI
 #   - helm (issues 725, 780), two jobs side by side: helm-opensearch runs ct lint, the chart
 #     READMEs, the release's package/push/pull and ct install of javv-opensearch in kind;
 #     helm-app runs ct install of javv and javv-scanner, the app's sign-in, upgrade and rollback,
-#     and a scanner cycle pushing from a second cluster
+#     and a scanner cycle pushing from a second cluster, which also scans an image from a registry
+#     that needs a login
 #   - dependency-audit (issue 552): pip-audit + npm audit, report-only
 #   - docs-site (issue 639): the operator docs site's strict build (docs-site/mkdocs.yml, Zensical)
 #   - frontend: oxlint/eslint/stylelint + vue-tsc + vitest (coverage floor in
@@ -650,10 +651,12 @@ jobs:
       - name: A second kind cluster, the monitored one
         run: kind create cluster --name monitored --wait 2m
 
+      # issue 739: first a registry that needs a login, and a pod of an image only it serves
       - name: ct install, javv-scanner, pushing to that JAVV
         env:
           JAVV_CI_ADMIN_PASSWORD: ci-only-admin-passphrase
         run: |
+          development/scripts/helm-ci-scanner-checks.sh registry monitored kind-monitored javv-scan
           url=$(development/scripts/helm-ci-scanner-checks.sh prepare \
             kind-chart-testing javv "$JAVV_CI_RELEASE" kind-monitored javv-scan | tail -n 1)
           echo "JAVV_CI_BACKEND_URL=$url" >> "$GITHUB_ENV"
