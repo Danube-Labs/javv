@@ -23,7 +23,10 @@ _spec = importlib.util.spec_from_file_location("replay_waves", SCRIPT)
 assert _spec and _spec.loader
 rw = importlib.util.module_from_spec(_spec)
 sys.modules["replay_waves"] = rw  # dataclasses resolve their module by name
+# no __pycache__ next to the script: the docs-drift check lists every file in that folder
+_write_bytecode, sys.dont_write_bytecode = sys.dont_write_bytecode, True
 _spec.loader.exec_module(rw)
+sys.dont_write_bytecode = _write_bytecode
 
 NOW = datetime(2026, 10, 16, 12, 0, tzinfo=UTC)
 

@@ -159,6 +159,34 @@ curl -s -X POST localhost:8000/api/v1/ingest/scan \
 # → {"accepted":true,"findings":29,"commit":"<scan_run_id>"}
 ```
 
+### A6b. Replay scan data over several days
+
+One push gives all findings the same first-seen time. To get findings that are new, resolved and
+back again over time, replay made-up scan data in waves (issue 883):
+
+```bash
+cd backend
+read -rsp 'admin password: ' JAVV_REPLAY_PASSWORD && export JAVV_REPLAY_PASSWORD && echo
+uv run python ../development/scripts/replay_waves.py --backend http://localhost:8000
+# wave 1/4 at 2026-10-14 01:15 UTC: 6 images, trivy 163 findings, grype 159 findings
+# ...
+# done: cluster replay-0001, 56 scans, 8 inventory runs committed
+```
+
+- The script writes only to a new cluster (`--cluster`, default `replay-0001`). It stops if the
+  cluster exists, so it does not add to a real cluster.
+- `--backend` has no default. The account (`--username`, default `admin`) needs `can_manage_tokens`,
+  and must have changed its first password.
+- The waves span 60 hours by default and end now (`--span-hours`, `--waves`). Ingest refuses a scan
+  older than the staleness period of the cluster (3 days by default), so the span must be shorter
+  than 72 hours.
+- `--seed` sets the data: the same seed gives the same images and findings. `--images` and
+  `--findings` set the size.
+- The Findings screen and the Overview chart show the spread. The scan ingest chart does not: it
+  counts each scan on the day that the backend received it.
+- To delete the data, select the cluster, retire it on Settings > Cluster, then delete it from
+  Retired clusters.
+
 ### A7. See the data land
 
 ```bash
