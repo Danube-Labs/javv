@@ -366,6 +366,7 @@ def test_ci_scans_an_image_that_only_the_registry_login_pulls() -> None:
         assert switch not in _env(pod["initContainers"][0])
     script = (ROOT / "development" / "scripts" / "helm-ci-scanner-checks.sh").read_text()
     assert '.spec.template.spec.imagePullSecrets = [{name: "javv-ci-registry"}]' in script
+    assert ".image_repo == $repo and .tag == $tag" in script
     assert '(.severity_by_scanner | has("trivy") and has("grype"))' in script
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
     steps = workflow["jobs"]["helm-app"]["steps"]

@@ -240,12 +240,14 @@ cycle() {
   done
 
   # the private image, which a scanner pulls only with its registry login (issue 739)
+  # a row of Running images names its image by image_repo and tag, as ingest split the reference
   images=$(json "$url/api/v1/images?cluster_id=$cid")
-  if ! jq -e --arg ref "$PRIVATE_IMAGE" \
-    'any(.images[]; .image_ref == $ref and (.severity_by_scanner | has("trivy") and has("grype")))' \
-    <<<"$images" >/dev/null; then
+  if ! jq -e --arg repo "${PRIVATE_IMAGE%:*}" --arg tag "${PRIVATE_IMAGE##*:}" \
+    'any(.images[]; .image_repo == $repo and .tag == $tag
+      and (.severity_by_scanner | has("trivy") and has("grype")))' <<<"$images" >/dev/null; then
     echo "FAIL: JAVV holds no scan of $PRIVATE_IMAGE by both scanners" >&2
-    jq -c '.images[] | {image_ref, scanners: (.severity_by_scanner | keys)}' <<<"$images" >&2 || true
+    jq -c '.images[] | {image_repo, tag, scanners: (.severity_by_scanner | keys)}' <<<"$images" >&2 ||
+      true
     exit 1
   fi
   echo "ok: both scanners scanned $PRIVATE_IMAGE with their registry login"
