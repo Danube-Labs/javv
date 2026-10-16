@@ -1,6 +1,7 @@
 # What a scanner cycle asks the Kubernetes API (scanner/src/scanner/run.py, discovery.py): every
 # running pod, to find the images, and the kube-system namespace, whose UID is the cluster's id in
-# JAVV. Nothing else, and no Secrets (ruled on issue 725; private registries are issue 739).
+# JAVV. Nothing else, and no Secrets (ruled on issue 725). A registry login is a volume that
+# Kubernetes mounts into the scan container, so it needs no rule here (issue 739).
 apiVersion: v1
 kind: ServiceAccount
 metadata:

@@ -53,7 +53,7 @@ which is why JAVV keeps a current-state findings store, not just an append-only 
 Carried from v3 (unchanged): decoupled drop-in **scanner module** (Trivy AND Grype, **local digest-dedup,
 scan-all** - D30); **FastAPI + AsyncOpenSearch** (PIT + `search_after`); **OpenSearch-only**; **per-scanner,
 never merged** + scanner dropdown; **multi-cluster** via immutable `cluster_id` + relabelable `cluster_name`;
-private registries via `imagePullSecrets`; vuln-DB mirror/cache + PVC; EPSS/KEV captured (Grype); Vue 3 +
+private registries via an operator-mounted registry login (issue 739); vuln-DB mirror/cache + PVC; EPSS/KEV captured (Grype); Vue 3 +
 PrimeVue + vue-echarts, **all server-side**.
 
 **v3 decisions retained (summarised):** D1 VEX two-field state model · D2 hybrid data model (current-state +

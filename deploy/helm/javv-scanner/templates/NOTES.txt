@@ -26,4 +26,5 @@ for the cycles the CronJob starts itself, so pause it first and start yours when
   If a step fails, still run the last patch: a paused CronJob starts no cycle until it is resumed.
 
 Each run first refreshes the scanner's vuln DB into its own volume, then scans every running image.
-Its result shows in JAVV under Scanner status. Images from private registries are not scanned yet.
+Its result shows in JAVV under Scanner status. A scanner pulls images from a private registry only
+with a login in <scanner>.registryAuth.existingSecret.

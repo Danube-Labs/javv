@@ -23,6 +23,7 @@ JAVV_SCANNER=trivy JAVV_BACKEND_URL=http://backend JAVV_TOKEN=<ingest token> pyt
 | `JAVV_CLUSTER_ID` | tenant id; defaults to the live `kube-system` namespace UID. Set = **asserted**: a mismatch with the cluster actually reached refuses the cycle (exit 2) |
 | `JAVV_KUBE_CONTEXT` | out-of-cluster only — which kubeconfig context to scan (default: the current one) |
 | `JAVV_DEAD_LETTER` | dead-letter sink path (default `<scanner>.dead-letter.jsonl`) |
+| `DOCKER_CONFIG` | read by the trivy and grype binaries, not by JAVV: the directory of a `config.json` that holds the registry logins (issue 739). The images' home is `/nonexistent`, so with no `DOCKER_CONFIG` they pull with no login. The chart sets it from `<scanner>.registryAuth.existingSecret` |
 
 ### The image runs as non-root
 Both images run as `65532:65532` with `python -m scanner` (the project venv) as the entrypoint, and
@@ -115,6 +116,7 @@ Status: ✅ implemented (M0/M0b; M10's CronJobs, vuln-DB cache and RBAC in the `
 | Backend down at cycle start | Scope fetch fails → cycle **skipped** before any scan (logged at `error`, exit 0) | fail-closed scan scope (D43) | ✅ |
 | Backend lost mid-cycle | Pushes retry → dead-letter; the cycle finishes (exit 0); "running at T" still shows last committed run | commit-then-cache: no push = no partial state (D39) | ✅ / M1 |
 | An image cannot be scanned (its registry no longer serves it, the scanner exits non-zero, the scan times out) | The image is **skipped** and logged at `warning` with the scanner's own error text; the rest of the cycle runs. The image is **left out of the inventory run's expected count**, so the run still commits: the image leaves Running images and its findings go stale on the normal timer. Nothing on screen names it; the reason is in this log. **If no image scanned at all**, the run keeps the discovered count and stays partial, so the last good inventory keeps answering instead of an empty one | a failed scan must not freeze the inventory (issue 633) | ✅ |
+| Image in a private registry | Pulled with the login in `$DOCKER_CONFIG/config.json` (the chart mounts it from `registryAuth`). With no login or a wrong one, the pull fails with the registry's `UNAUTHORIZED`. The scanner skips the image as above, and `scanner_stderr` holds that error | Kubernetes mounts the login, so the scanner's account reads no Secret (issues 725, 739) | ✅ chart |
 | Clean image (0 vulns) | **Still emits a full envelope** (`total:0`) | no skip-unchanged (D30); catalog needs the marker | ✅ |
 | Pod pending / digest unresolved | Image **ignored this cycle**, retried next once `image_id` resolves | discovery requires a `sha256:` digest | ✅ |
 | Pod started by tag (`repo:tag`) | Scanned by the `repo@sha256:…` reference in `image_id`, the image that runs; the tag is the name shown and the one that scope globs match. If the registry no longer has that digest (the tag moved and the old image was deleted), the image is skipped and logged, as for any image that cannot be pulled. An `image_id` with no repository (a bare `sha256:…`) leaves the tag as the pull | the tag can have moved since the pod started (issue 833, B5) | ✅ |

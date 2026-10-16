@@ -29,8 +29,9 @@ from an env/secret and must change the password on first login - FR-18.)
 
 - **FR-1 Discovery.** Scanner enumerates namespaces/workloads/running images via the k8s API; dedupes by
   image **digest**; reads `kube-system` UID as immutable `cluster_id`.
-- **FR-2 Scan.** Selected scanner (Trivy|Grype) over unique digests; resolves namespace-scoped
-  `imagePullSecrets`; **scans everything every cycle** - a stateless scanner with **local digest-dedup**
+- **FR-2 Scan.** Selected scanner (Trivy|Grype) over unique digests. It pulls from private registries
+  with the login that the operator mounts (`<scanner>.registryAuth`, read through `DOCKER_CONFIG`,
+  issue 739). It **scans everything every cycle** - a stateless scanner with **local digest-dedup**
   (each unique digest once) and namespace/label **exclusions** only (no skip-unchanged, no backend query -
   D30); bounded concurrency.
 - **FR-3 Ingest.** Scanner **normalizes** Trivy/Grype JSON into the shared shape (canonicalizing the severity
@@ -219,7 +220,8 @@ from an env/secret and must change the password on first login - FR-18.)
   inventory-runs - the last is tiny, 1 doc/run) × rollover, **not** also × scanner. A single
   small node supports a documented cluster-count ceiling before needing multi-node or a shared-index mode
   (each shard carries fixed heap/cluster-state overhead regardless of size; hundreds of clusters → revisit).
-- **NFR-3 Least-priv scanner RBAC** (read-only workloads; namespace-scoped Secret read).
+- **NFR-3 Least-priv scanner RBAC.** Read-only: `list` pods, `get` the `kube-system` namespace. **No
+  Secret read**, ruled on issue 725. A registry login is a volume that Kubernetes mounts (issue 739).
 - **NFR-4 Deterministic tests** via frozen golden scanner JSON; **golden-envelope round-trip** at the M0/M1
   seam (raw preserved + normalized bucketed); one count-tolerant live scan test.
 - **NFR-5 Credentials in memory only, never logged.** Passwords argon2id-hashed; ingest tokens are **256-bit

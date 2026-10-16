@@ -68,8 +68,12 @@ Each scanner then runs on its `schedule`. To start a cycle now, follow the safe 
   private mirror.
 - **Kubernetes access:** one ClusterRole. It can `list` pods, to find the running images. It can
   `get` the `kube-system` namespace, because its UID is the id of the cluster. It cannot read
-  Secrets. Thus the scanners do not scan images from private registries yet
-  ([issue 739](https://github.com/Danube-Labs/javv-poc/issues/739)).
+  Secrets.
+- **Private registries:** `<scanner>.registryAuth.existingSecret` names a
+  `kubernetes.io/dockerconfigjson` Secret. Kubernetes puts its `.dockerconfigjson` key into the scan
+  container as `/etc/javv/registry/config.json`, and `DOCKER_CONFIG` points the scanner at it. The
+  refresh does not get the login. With no login, the scanner pulls each image with no sign-in, and
+  it skips an image that it cannot pull.
 - Both scanners run as the user of their images, `65532`, with a read-only root file system. They
   have the cache volume, an `emptyDir` on `/var/lib/javv` for the dead-letter file, and an
   `emptyDir` on `/tmp`.

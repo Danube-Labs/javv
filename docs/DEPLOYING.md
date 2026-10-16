@@ -354,6 +354,42 @@ network. Each pair of a cluster and a scanner has its own token.
 
 The first push shows in **Scanner status**. Its findings show when the scan is complete.
 
+### Scan images from private registries
+
+The scanners pull each image from its registry. For a registry that requires a sign-in, give the
+scanners a login. Kubernetes puts the login into the scan container as a file. The scanners do not
+read Secrets through the Kubernetes API.
+
+1. Make an account on the registry that can only pull images. The scanner process reads the
+    content of images that you do not control, and it can read this login.
+2. Put the login in a Secret of the type `kubernetes.io/dockerconfigjson`, in the namespace of the
+    scanners. The password goes in at a prompt:
+    ```bash
+    read -rs -p "registry password: " pw && echo
+    P=$pw jq -n --arg r registry.example.com --arg u <user> \
+      '{auths: {($r): {auth: (($u + ":" + env.P) | @base64)}}}' |
+      kubectl -n javv-scanner create secret generic javv-registry \
+        --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=/dev/stdin
+    unset pw
+    ```
+    For more registries, put one entry for each registry in `auths`. `kubectl create secret
+    docker-registry` makes the same Secret, but it gets the password as an argument.
+3. Give the Secret to each scanner. Add these values to the install command of step 3 above, or to
+    your values for the next `helm upgrade`:
+    ```bash
+    --set trivy.registryAuth.existingSecret=javv-registry \
+    --set grype.registryAuth.existingSecret=javv-registry
+    ```
+4. After the next cycle, make sure that **Running images** shows the images from that registry.
+    When the login is missing or wrong, the log of the scan has `scan failed, image skipped`, and its
+    `scanner_stderr` holds the error of the registry, for example `UNAUTHORIZED`:
+    ```bash
+    kubectl -n javv-scanner logs job/<job> -c trivy | grep 'image skipped'
+    ```
+
+Without Kubernetes, put the login in a file with the name `config.json`, mount its directory into
+the scanner container, and set `DOCKER_CONFIG` to that directory.
+
 ### What the scanner chart runs
 
 The [chart README](../deploy/helm/javv-scanner/README.md) lists all of its values.
@@ -374,7 +410,8 @@ The [chart README](../deploy/helm/javv-scanner/README.md) lists all of its value
   (OCI repositories), or `grype.vulnDb.updateUrl` (a DB listing).
 - **What the scanners can read in the cluster:** the pods in all namespaces, to find the images that
   run, and the `kube-system` namespace, because its UID is the cluster ID. They can read nothing
-  more, and no Secrets.
+  more, and no Secrets. A registry login that you give them comes as a file in the scan container
+  ([Scan images from private registries](#scan-images-from-private-registries)).
 - **The images** are the scanner versions in [`versions.yaml`](../versions.yaml). The published
   chart names each image by its digest at the time of the release. Thus a cluster runs the scanner
   build of that release. From a checkout, the chart has only the tag, and Kubernetes pulls it at
@@ -617,9 +654,12 @@ admin does not exist.
   their default values.
 - **TLS is your work.** JAVV serves plain http. Put `https` in front of it with the tools that you
   already operate, and keep the session cookie `Secure`.
-- **The scanners do not scan images from private registries yet.** They pull each image with no
-  sign-in. When a pull fails, the scanner skips the image, and it writes a warning in its log
-  ([issue 739](https://github.com/Danube-Labs/javv-poc/issues/739)).
+- **A private registry needs a static login.** The scanners use the login in the Secret that you
+  give them ([Scan images from private registries](#scan-images-from-private-registries)). The
+  scanner images have no credential helpers. Thus a registry whose logins expire after some hours
+  needs a process of your own that writes a new login into the Secret before the old one expires.
+  Without a login that works, the pull fails: the scanner skips the image, and it writes a warning
+  in its log.
 - **The scanners see each pod spec.** To find the images, they list the pods. This also shows each
   value that is in the `env` of a pod. Keep secrets in Secrets.
 - **The first release with published charts is the release after 0.6.0.** For earlier releases,
