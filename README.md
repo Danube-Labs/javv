@@ -60,7 +60,7 @@ Three things it does differently:
 
 ## Features
 
-- **Runtime discovery**: scan the images live in your clusters, per namespace.
+- **Runtime discovery**: scan the images live in your clusters. Choose what to scan by namespace, image and workload kind.
 - **Per-scanner, side by side**: Trivy + Grype kept separate; disagreement is surfaced, never merged away.
 - **Per-finding audit trail**: every vulnerability keeps its own immutable history, with each triage action, decision, and note journaled by who, what, and when, replayed in causal-revision order.
 - **Triage lifecycle**: a six-state machine (five operator-settable; `stale` is set by the staleness sweep), VEX export (OpenVEX / CycloneDX), risk-accept, decisions that apply across scanners.
