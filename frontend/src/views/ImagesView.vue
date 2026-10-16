@@ -25,7 +25,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
 import { IMAGES_COLUMNS, IMAGES_FIELDS } from '@/images/fields.config'
-import { reorderFromDrag, restoreOrder } from '@/system/columnOrder'
+import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { filterImages, imagesCsv, imagesFacets } from '@/images/imageFilters'
 import { logger } from '@/lib/logger'
 import { makeFiltersStore } from '@/stores/filters'
@@ -91,7 +91,9 @@ function onSort(field: ImagesSortField) {
 /* columns + density — the findings pattern, images-scoped keys */
 const COLS_KEY = 'javv.images.hidden_cols'
 const DENSE_KEY = 'javv.images.dense'
-const hiddenCols = ref<Set<string>>(new Set(JSON.parse(localStorage.getItem(COLS_KEY) ?? '[]')))
+const hiddenCols = ref<Set<string>>(
+  restoreHidden(localStorage.getItem(COLS_KEY), IMAGES_COLUMNS.map(([key]) => key), []),
+)
 const dense = ref(localStorage.getItem(DENSE_KEY) !== 'false')
 function toggleCol(key: string) {
   const next = new Set(hiddenCols.value)
