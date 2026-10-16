@@ -1915,11 +1915,17 @@ admin does not exist.</p>
 <li><strong>The OpenSearch of the compose file uses demo certificates</strong> (see
   <a href="#ports-and-access">Ports and access</a>). For your own certificates, operate your own OpenSearch,
   and connect JAVV to it as above.</li>
-<li><strong>No maintenance page without a proxy.</strong> The frontend image holds a maintenance page,
-  <code>/maintenance.html</code>. It needs no backend and no OpenSearch. To show it during an upgrade or a
-  restore, make the proxy in front of JAVV answer each path with this page and the status 503. A
-  scanner then gets a 503 and tries again later. Delete the rule when JAVV runs again. An example
-  for nginx, with the page copied into its <code>root</code>:
+<li><strong>No maintenance switch.</strong> JAVV has no setting that shows a maintenance page. While the backend
+  stops for an upgrade or a restart, an open app shows the banner "The backend is not answering.
+  Screens cannot load until it is back." The banner goes away when the backend answers again. The
+  sign-in page says that the server is not answering, and tries again on its own. A scanner tries
+  each push again, for at most <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code> in each cycle. A cycle that
+  starts while the backend does not run scans nothing. The next cycle scans all the images again.
+  The frontend image also holds a maintenance page, <code>/maintenance.html</code>. It needs no backend and
+  no OpenSearch. If a proxy is in front of JAVV, you can show this page during an upgrade or a
+  restore: make the proxy answer each path with this page and the status 503. A scanner then gets
+  a 503 and tries again later. Delete the rule when JAVV runs again. An example for nginx, with
+  the page copied into its <code>root</code>:
     <div class="highlight"><pre><span></span><code><span class="k">error_page</span><span class="w"> </span><span class="mi">503</span><span class="w"> </span><span class="s">/maintenance.html</span><span class="p">;</span>
 <span class="k">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/maintenance.html</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kn">internal</span><span class="p">;</span>
@@ -1927,9 +1933,7 @@ admin does not exist.</p>
 <span class="w">  </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Retry-After</span><span class="w"> </span><span class="s">"60"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
 <span class="p">}</span>
 <span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kn">return</span><span class="w"> </span><span class="mi">503</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-</code></pre></div>
-  With nothing in front of JAVV, there is no switch yet
-  (<a href="https://github.com/Danube-Labs/javv-poc/issues/719">issue 719</a>).</li>
+</code></pre></div></li>
 <li><strong>The build of the frontend image sets the <code>VITE_*</code> settings</strong>
   (<a href="../CONFIGURATION/#frontend-build-settings">Frontend build settings</a>). You cannot change them later. A published image has
   their default values.</li>
