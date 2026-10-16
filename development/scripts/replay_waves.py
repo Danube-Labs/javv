@@ -8,15 +8,27 @@ resolves them), brings one back, and adds images. Trivy and Grype report differe
 its own severity casing.
 
 The plan is pure and seeded: the same seed gives the same data. Only the push talks to a backend.
+The push writes only to a cluster ID that does not exist yet, so it never adds to a real cluster.
+
+    cd backend && JAVV_REPLAY_PASSWORD=... uv run python ../development/scripts/replay_waves.py \
+        --backend http://localhost:8000 [--cluster replay-0001] [--seed 1] [--waves 4]
 """
 
 from __future__ import annotations
 
+import argparse
+import asyncio
 import hashlib
+import os
 import random
+import sys
+import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
+
+import httpx
 
 SCANNERS = ("trivy", "grype")
 # ingest refuses a scan older than the cluster's staleness period; 3 days is its default
@@ -341,3 +353,209 @@ def build_envelope(
             for f in rows
         ],
     }
+
+
+# --- the push --------------------------------------------------------------------------------
+
+
+class ReplayRefused(Exception):
+    """The replay stopped before it wrote anything."""
+
+
+class ReplayFailed(Exception):
+    """A call failed after the replay started to write."""
+
+
+_BUSY = (429, 503)  # the backend's flow control: wait and send again
+
+
+async def _send(
+    http: httpx.AsyncClient, method: str, url: str, **kw: Any
+) -> httpx.Response:
+    for attempt in range(6):
+        r = await http.request(method, url, **kw)
+        if r.status_code not in _BUSY:
+            return r
+        await asyncio.sleep(min(float(r.headers.get("retry-after", 2**attempt)), 30.0))
+    return r
+
+
+def _expect(r: httpx.Response, status: int, step: str) -> dict[str, Any]:
+    if r.status_code != status:
+        title = (
+            r.json().get("title", "")
+            if r.headers.get("content-type", "").endswith("json")
+            else ""
+        )
+        raise ReplayFailed(f"{step}: HTTP {r.status_code} {title}".rstrip())
+    return r.json() if r.content else {}
+
+
+async def replay(
+    http: httpx.AsyncClient,
+    plan: Plan,
+    *,
+    cluster_id: str,
+    username: str,
+    password: str,
+    say: Callable[[str], None],
+) -> dict[str, Any]:
+    """Push `plan` into a new cluster `cluster_id`: for each wave and scanner, a scan order, one
+    envelope for each image, then the inventory commit."""
+    r = await _send(
+        http, "POST", "/auth/login", json={"username": username, "password": password}
+    )
+    if r.status_code != 200:
+        raise ReplayRefused(f"sign-in failed for {username} (HTTP {r.status_code})")
+    if r.json()["user"]["must_change"]:
+        raise ReplayRefused(
+            f"{username} must change the password first: sign in once in the UI"
+        )
+    # the session cookie is Secure, so a client on plain http does not send it back by itself
+    session = {"cookie": f"javv_session={r.cookies['javv_session']}"}
+    http.cookies.clear()
+
+    r = await _send(
+        http,
+        "GET",
+        "/api/v1/clusters",
+        params={"include_retired": "true"},
+        headers=session,
+    )
+    known = {c["cluster_id"] for c in _expect(r, 200, "list clusters")["clusters"]}
+    if cluster_id in known:
+        raise ReplayRefused(
+            f"cluster {cluster_id} already exists: the replay writes only to a new cluster. "
+            "Use another --cluster."
+        )
+
+    tokens: dict[str, dict[str, str]] = {}
+    for scanner in SCANNERS:
+        r = await _send(
+            http,
+            "POST",
+            "/api/v1/admin/tokens",
+            json={"cluster_id": cluster_id, "scanner": scanner},
+            headers=session,
+        )
+        token = _expect(r, 201, f"mint the {scanner} token")["token"]
+        tokens[scanner] = {"authorization": f"Bearer {token}"}
+
+    run_tag = uuid.uuid4().hex[:8]
+    pushes = committed = 0
+    for wave in plan.waves:
+        counts: dict[str, int] = {}
+        for scanner in SCANNERS:
+            auth = tokens[scanner]
+            order = _expect(
+                await _send(http, "POST", "/api/v1/scan-runs", headers=auth),
+                200,
+                "scan order",
+            )["scan_order"]
+            run_id = f"replay-{run_tag}-w{wave.index}-{scanner}"
+            images = [(d, rows) for (s, d), rows in wave.scans.items() if s == scanner]
+            for digest, rows in images:
+                body = build_envelope(
+                    cluster_id, scanner, plan.images[digest], rows, wave, order, run_id
+                )
+                r = await _send(
+                    http, "POST", "/api/v1/ingest/scan", json=body, headers=auth
+                )
+                _expect(
+                    r,
+                    202,
+                    f"push wave {wave.index + 1} {scanner} {plan.images[digest].ref}",
+                )
+                pushes += 1
+            r = await _send(
+                http,
+                "POST",
+                "/api/v1/inventory-runs",
+                json={
+                    "scan_run_id": run_id,
+                    "expected_count": len(images),
+                    "started_at": wave.at.isoformat(),
+                },
+                headers=auth,
+            )
+            status = _expect(r, 200, f"commit wave {wave.index + 1} {scanner}")[
+                "status"
+            ]
+            if status != "committed":
+                raise ReplayFailed(
+                    f"wave {wave.index + 1} {scanner}: the inventory run is {status}"
+                )
+            committed += 1
+            counts[scanner] = sum(len(rows) for _, rows in images)
+        say(
+            f"wave {wave.index + 1}/{len(plan.waves)} at {wave.at:%Y-%m-%d %H:%M} UTC: "
+            f"{len({d for _, d in wave.scans})} images, "
+            + ", ".join(f"{s} {n} findings" for s, n in counts.items())
+        )
+    return {"cluster_id": cluster_id, "pushes": pushes, "committed": committed}
+
+
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument(
+        "--backend",
+        required=True,
+        help="the backend URL, for example http://localhost:8000",
+    )
+    ap.add_argument(
+        "--username", default="admin", help="an account with can_manage_tokens"
+    )
+    ap.add_argument(
+        "--cluster", default="replay-0001", help="a cluster ID that does not exist yet"
+    )
+    ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--images", type=int, default=8)
+    ap.add_argument("--findings", type=int, default=40, help="findings for each image")
+    ap.add_argument("--waves", type=int, default=4)
+    ap.add_argument("--span-hours", type=float, default=60.0)
+    args = ap.parse_args(argv)
+    password = os.environ.get("JAVV_REPLAY_PASSWORD")
+    if not password:
+        sys.stderr.write("set JAVV_REPLAY_PASSWORD to the password of --username\n")
+        return 2
+    try:
+        plan = plan_waves(
+            seed=args.seed,
+            images=args.images,
+            findings=args.findings,
+            waves=args.waves,
+            span_hours=args.span_hours,
+            now=datetime.now(UTC),
+        )
+    except ValueError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 2
+
+    def say(line: str) -> None:
+        sys.stdout.write(line + "\n")
+
+    async def run() -> dict[str, Any]:
+        async with httpx.AsyncClient(base_url=args.backend, timeout=60.0) as http:
+            return await replay(
+                http,
+                plan,
+                cluster_id=args.cluster,
+                username=args.username,
+                password=password,
+                say=say,
+            )
+
+    try:
+        summary = asyncio.run(run())
+    except (ReplayRefused, ReplayFailed, httpx.HTTPError) as exc:
+        sys.stderr.write(f"replay stopped: {exc}\n")
+        return 1
+    say(
+        f"done: cluster {summary['cluster_id']}, {summary['pushes']} scans, "
+        f"{summary['committed']} inventory runs committed"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
