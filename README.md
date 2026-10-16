@@ -38,17 +38,6 @@
   </sub>
 </p>
 
-> **Status:** actively developed, pre-1.0. The full stack is built and runnable from source: Python
-> scanners → FastAPI backend → **Vue 3 frontend** (overview, triage, images, audit, scanner status,
-> contributors, approvals, settings, data inspector). It deploys with **docker compose** on one
-> machine or with **three Helm charts** on Kubernetes ([`docs/DEPLOYING.md`](docs/DEPLOYING.md)).
-> The release workflow publishes the backend and frontend images and the charts, signed with
-> cosign; the scanner images are published per supported version (see
-> [Supported versions](#supported-versions)). The latest release is **0.8.0**, and the next milestone
-> is **1.0.0** (the roadmap is [#555](https://github.com/Danube-Labs/javv-poc/issues/555)). See
-> [Releases](https://github.com/Danube-Labs/javv-poc/releases) for each release. The canonical design
-> is in [`docs/engineering/`](docs/engineering/).
-
 ---
 
 ## Why
@@ -71,7 +60,7 @@ Three things it does differently:
 
 ## Features
 
-- **Runtime discovery**: scan the images live in your clusters, per namespace/workload.
+- **Runtime discovery**: scan the images live in your clusters. Choose what to scan by namespace, image and workload kind.
 - **Per-scanner, side by side**: Trivy + Grype kept separate; disagreement is surfaced, never merged away.
 - **Per-finding audit trail**: every vulnerability keeps its own immutable history, with each triage action, decision, and note journaled by who, what, and when, replayed in causal-revision order.
 - **Triage lifecycle**: a six-state machine (five operator-settable; `stale` is set by the staleness sweep), VEX export (OpenVEX / CycloneDX), risk-accept, decisions that apply across scanners.
@@ -139,12 +128,12 @@ this repository whenever they change on `main`.
 
 | Doc | What |
 |---|---|
-| [PLAN.md](docs/engineering/PLAN.md) | Decisions (D1–D47), data model, milestones (M0–M10) |
+| [PLAN.md](docs/engineering/PLAN.md) | Decisions, data model, milestones |
 | [SPEC.md](docs/engineering/SPEC.md) | Functional + non-functional requirements (FR/NFR) |
 | [ARCHITECTURE.md](docs/engineering/ARCHITECTURE.md) | Layers, data flow, diagrams (Mermaid) |
 | [INDEX-MAP.md](docs/engineering/INDEX-MAP.md) | Source of truth for every OpenSearch index + mapping |
 | [FLOW-EXAMPLE.md](docs/engineering/FLOW-EXAMPLE.md) | Worked ingest / query / time-travel examples |
-| [AUDIT-RESPONSE.md](docs/engineering/AUDIT-RESPONSE.md) | External-audit findings → resolutions (rounds 1–4) |
+| [AUDIT-RESPONSE.md](docs/engineering/AUDIT-RESPONSE.md) | External-audit findings and their resolutions |
 
 **Supporting:**
 
@@ -165,7 +154,7 @@ this repository whenever they change on `main`.
 ## Stack & toolchain
 
 Python 3.12 · FastAPI (async) · AsyncOpenSearch · Pydantic v2 · Vue 3 (`<script setup>`) · PrimeVue ·
-Pinia · vue-echarts. OpenSearch is the single store. Apache-2.0 components throughout.
+Pinia · vue-echarts. OpenSearch is the single store. Open-source components throughout.
 
 Gate-tool versions (the ones that decide lint/type/test results, so local matches CI) are pinned in
 **[`versions.yaml`](versions.yaml)** (D42). Bump them there; `development/setup/setup-dev.sh` reads
@@ -177,7 +166,7 @@ it directly and `development/scripts/check-versions.sh` drift-checks every consu
 | [uv](https://docs.astral.sh/uv/) | Python package/venv manager | `toolchain.uv` in [`versions.yaml`](versions.yaml) |
 | [ruff](https://docs.astral.sh/ruff/) | Lint + format (backend) | `toolchain.ruff` in [`versions.yaml`](versions.yaml) |
 | [pyright](https://microsoft.github.io/pyright/) | Type check (backend) | `toolchain.pyright` in [`versions.yaml`](versions.yaml) |
-| Node.js | Frontend runtime / toolchain | 22 LTS *(pinned major)* |
+| Node.js | Frontend runtime / toolchain | `toolchain.node` in [`versions.yaml`](versions.yaml) |
 | Vite · Vitest · ESLint/oxlint · stylelint · vue-tsc | Build, tests, lint/type gates (frontend) | from [`frontend/package.json`](frontend/package.json) |
 | OpenSearch | Single datastore | pinned in [`versions.yaml`](versions.yaml) |
 | [Trivy](https://trivy.dev/) · [Grype](https://github.com/anchore/grype) | Scanners (per-scanner, never merged) | pinned in [`versions.yaml`](versions.yaml) |
