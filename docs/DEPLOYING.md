@@ -666,5 +666,25 @@ admin does not exist.
   in its log.
 - **The scanners see each pod spec.** To find the images, they list the pods. This also shows each
   value that is in the `env` of a pod. Keep secrets in Secrets.
+- **JAVV shows the namespaces of an image, not its workloads.** A scanner scans each image one
+  time, also when many pods run it. JAVV records only the namespaces where the image runs. To find
+  the workloads, copy the digest (`sha256:...`) from the image page, under the image name. Then
+  run this command with the `kubectl` context of that cluster:
+    ```bash
+    DIGEST=sha256:...
+    kubectl get pods --all-namespaces --output json | jq --raw-output --arg digest "$DIGEST" '
+      .items[]
+      | select(any(.status.containerStatuses[]?; .imageID | endswith($digest)))
+      | (.metadata.ownerReferences[0] // {kind: "Pod", name: .metadata.name}) as $owner
+      | (.metadata.labels["pod-template-hash"] // "") as $hash
+      | if $owner.kind == "ReplicaSet" and $hash != "" and ($owner.name | endswith("-" + $hash))
+        then [.metadata.namespace, "Deployment", ($owner.name | rtrimstr("-" + $hash))]
+        else [.metadata.namespace, $owner.kind, $owner.name]
+        end
+      | @tsv' | sort --unique
+    ```
+  Each line gives a namespace, a kind and a name. For a pod of a Deployment, the line gives the
+  Deployment. For other pods, the line gives the owner of the pod, for example a DaemonSet or a
+  StatefulSet. For a pod with no owner, the line gives the pod.
 - **The first release with published charts is the release after 0.6.0.** For earlier releases,
   install from `deploy/helm/` in a checkout.
