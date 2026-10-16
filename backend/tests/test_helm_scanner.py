@@ -9,6 +9,8 @@ What they hold (the scanners' own settings are held to the code by
 - each scanner's own cache volume, refreshed by the run's init container on the same image from
   the source in `vulnDb`, and the scan itself with updates off;
 - each scanner's own token Secret, by reference, and no token value outside it;
+- a registry login only when one is named: Kubernetes mounts it into the scan container, and the
+  refresh and the RBAC stay as they are (issue 739);
 - the image tags against versions.yaml, a digest winning over the tag;
 - every rule the chart enforces at install fails with its message.
 
@@ -43,6 +45,7 @@ EXISTING = (
     "grype.token.existingSecret=grype-secret",
 )
 DIGEST = "sha256:" + "a" * 64
+LOGINS = tuple(f"{s}.registryAuth.existingSecret=regcred" for s in ("trivy", "grype"))
 
 
 def _helm(*sets: str) -> subprocess.CompletedProcess[str]:
@@ -127,8 +130,9 @@ def test_a_disabled_scanner_renders_nothing(off: str) -> None:
     assert f"s-javv-scanner-{on}" in names
 
 
-def test_rbac_is_the_two_calls_and_no_secret() -> None:
-    docs = _render(*VALUES)
+@pytest.mark.parametrize("sets", [VALUES, (*VALUES, *LOGINS)], ids=["no-login", "login"])
+def test_rbac_is_the_two_calls_and_no_secret(sets: tuple[str, ...]) -> None:
+    docs = _render(*sets)
     assert not _of(docs, "Role") and not _of(docs, "RoleBinding")
     (role,) = _of(docs, "ClusterRole")
     assert role["rules"] == [
@@ -254,6 +258,7 @@ def test_a_new_refresh_job_only_when_what_it_runs_changes() -> None:
 
     base = names()
     assert names("trivy.schedule=0 1 * * *", "clusterId=abc") == base
+    assert names(*LOGINS) == base  # the login is the scan's alone
     moved = names("grype.vulnDb.updateUrl=https://mirror.example/databases")
     assert moved["trivy"] == base["trivy"] and moved["grype"] != base["grype"]
     assert names(f"trivy.image.digest={DIGEST}")["trivy"] != base["trivy"]
@@ -308,6 +313,34 @@ def test_each_scanner_has_its_own_token_by_reference(scanner: str) -> None:
     assert not _of(_render(*EXISTING), "Secret")
     env = _env(_pod(_render(*VALUES, "clusterId=abc"), scanner)["containers"][0])
     assert env["JAVV_CLUSTER_ID"] == "abc"
+
+
+@pytest.mark.parametrize("scanner", SCANNERS)
+def test_a_registry_login_is_mounted_for_the_scan_only(scanner: str) -> None:
+    other = next(s for s in SCANNERS if s != scanner)
+    base = _render(*VALUES)
+    docs = _render(*VALUES, f"{scanner}.registryAuth.existingSecret=regcred")
+    pod = _pod(docs, scanner)
+    (scan,) = pod["containers"]
+    volumes = {v["name"]: v for v in pod["volumes"]}
+    # the Secret type's key is .dockerconfigjson; both binaries read DOCKER_CONFIG/config.json
+    assert volumes["registry-auth"] == {
+        "name": "registry-auth",
+        "secret": {
+            "secretName": "regcred",
+            "items": [{"key": ".dockerconfigjson", "path": "config.json"}],
+        },
+    }
+    mount = next(m for m in scan["volumeMounts"] if m["name"] == "registry-auth")
+    assert mount == {"name": "registry-auth", "mountPath": "/etc/javv/registry", "readOnly": True}
+    assert _env(scan)["DOCKER_CONFIG"] == mount["mountPath"]
+    # the refresh pulls only the vulnerability database, and is the same as with no login
+    assert pod["initContainers"] == _pod(base, scanner)["initContainers"]
+    assert _pod(docs, other) == _pod(base, other)
+    for unset in (_pod(base, scanner), _pod(base, other)):
+        assert "registry-auth" not in {v["name"] for v in unset["volumes"]}
+        for container in (*unset["initContainers"], *unset["containers"]):
+            assert "DOCKER_CONFIG" not in _env(container)
 
 
 def test_no_token_outside_its_secret() -> None:
@@ -383,8 +416,18 @@ def test_helm_test_checks_each_token_against_javv() -> None:
         ((*VALUES, "backendUrl=javv:8080"), "/backendUrl"),
         ((*VALUES, "grype.image.digest=latest"), "/grype/image/digest"),
         ((*VALUES, "trivy.vulnDb.updateUrl=x"), "/trivy/vulnDb"),
+        ((*VALUES, "grype.registryAuth.key=x"), "/grype/registryAuth"),
     ],
-    ids=["no-url", "no-token", "two-sources", "none-enabled", "url", "digest", "wrong-db-key"],
+    ids=[
+        "no-url",
+        "no-token",
+        "two-sources",
+        "none-enabled",
+        "url",
+        "digest",
+        "wrong-db-key",
+        "wrong-login-key",
+    ],
 )
 def test_the_install_fails_with_its_reason(sets: tuple[str, ...], message: str) -> None:
     out = _helm(*sets)

@@ -76,6 +76,15 @@
             }
           }
         },
+        "registryAuth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string"
+            }
+          }
+        },
         "config": {
           "type": "object",
           "additionalProperties": {
@@ -190,6 +199,15 @@
               "minLength": 1
             },
             "value": {
+              "type": "string"
+            }
+          }
+        },
+        "registryAuth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
               "type": "string"
             }
           }
