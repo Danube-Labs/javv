@@ -1947,6 +1947,25 @@ admin does not exist.</p>
   in its log.</li>
 <li><strong>The scanners see each pod spec.</strong> To find the images, they list the pods. This also shows each
   value that is in the <code>env</code> of a pod. Keep secrets in Secrets.</li>
+<li><strong>JAVV shows the namespaces of an image, not its workloads.</strong> A scanner scans each image one
+  time, also when many pods run it. JAVV records only the namespaces where the image runs. To find
+  the workloads, copy the digest (<code>sha256:...</code>) from the image page, under the image name. Then
+  run this command with the <code>kubectl</code> context of that cluster:
+    <div class="highlight"><pre><span></span><code><span class="nv">DIGEST</span><span class="o">=</span>sha256:...
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>--all-namespaces<span class="w"> </span>--output<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>--raw-output<span class="w"> </span>--arg<span class="w"> </span>digest<span class="w"> </span><span class="s2">"</span><span class="nv">$DIGEST</span><span class="s2">"</span><span class="w"> </span><span class="s1">'</span>
+<span class="s1">  .items[]</span>
+<span class="s1">  | select(any(.status.containerStatuses[]?; .imageID | endswith($digest)))</span>
+<span class="s1">  | (.metadata.ownerReferences[0] // {kind: "Pod", name: .metadata.name}) as $owner</span>
+<span class="s1">  | (.metadata.labels["pod-template-hash"] // "") as $hash</span>
+<span class="s1">  | if $owner.kind == "ReplicaSet" and $hash != "" and ($owner.name | endswith("-" + $hash))</span>
+<span class="s1">    then [.metadata.namespace, "Deployment", ($owner.name | rtrimstr("-" + $hash))]</span>
+<span class="s1">    else [.metadata.namespace, $owner.kind, $owner.name]</span>
+<span class="s1">    end</span>
+<span class="s1">  | @tsv'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>--unique
+</code></pre></div>
+  Each line gives a namespace, a kind and a name. For a pod of a Deployment, the line gives the
+  Deployment. For other pods, the line gives the owner of the pod, for example a DaemonSet or a
+  StatefulSet. For a pod with no owner, the line gives the pod.</li>
 <li><strong>The first release with published charts is the release after 0.6.0.</strong> For earlier releases,
   install from <code>deploy/helm/</code> in a checkout.</li>
 </ul>
