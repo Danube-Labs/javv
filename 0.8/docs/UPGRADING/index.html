@@ -1618,6 +1618,10 @@ list all indices as <code>unchanged</code>.</p>
 </code></pre></div></li>
 </ul>
 </li>
+<li><strong>CI tests a rollback from each change to the last release.</strong> On a new docker compose store,
+  CI starts the last release and writes data with it. Then CI starts the change, the last release
+  again, and the change again. After each start, CI signs in and reads the same findings and the
+  same SLA policy.</li>
 <li><strong>A snapshot does not give a rollback in one step.</strong> A restore makes <code>restored-*</code> copies next to
   the live indices. It never writes over them
   (<code>POST /api/v1/admin/snapshots/{snapshot_name}/restore</code>). To use a copy, you must move it into

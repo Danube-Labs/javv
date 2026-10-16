@@ -2130,12 +2130,10 @@ curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>
 <p><code>scanner</code> is <code>"trivy"</code> or <code>"grype"</code>. Thus <strong>a different tool must make output that agrees with
 Trivy or with Grype, and push as that scanner.</strong> Get the token for that scanner, and use the
 settings shape of that scanner.</p>
-<p>JAVV keeps the results of each scanner apart, and it never merges them. Thus each scanner name
-changes many parts of JAVV: the severity words, the comparison between scanners, and the tokens.
-A list of registered scanners will permit more names
-(<a href="https://github.com/Danube-Labs/javv-poc/issues/865">issue 865</a>).</p>
-<p>Until then, if you use a different tool (for example Snyk or Clair), convert its output to the
-fields of one of the two scanners. Use the same conversion each time.</p>
+<p>JAVV keeps the results of each scanner apart, and it never merges them. JAVV supports only these
+two scanners.</p>
+<p>If you use a different tool (for example Snyk or Clair), convert its output to the fields of one
+of the two scanners. Use the same conversion each time.</p>
 <h2 id="related-pages">Related pages<a class="headerlink" href="#related-pages" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../API/"><code>API.md</code></a>: all the endpoints, with authentication, errors and metrics.</li>

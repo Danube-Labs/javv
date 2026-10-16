@@ -2188,7 +2188,7 @@ the code.</p>
 <tr>
 <td><code>JAVV_SESSION_COOKIE_SECURE</code></td>
 <td><code>true</code></td>
-<td>The <code>Secure</code> flag of the session cookie. A browser keeps a <code>Secure</code> cookie only from <code>https</code> or <code>localhost</code>. If users open JAVV over plain <code>http</code>, set <code>false</code>, or the sign-in fails at the next request. An example is a machine on a LAN with no TLS in front. Keep <code>true</code> behind each proxy that ends TLS. JAVV cannot see that proxy, so it never sets the flag itself. Sign-out clears the cookie with the same flag.</td>
+<td>The <code>Secure</code> flag of the session cookie. A browser keeps a <code>Secure</code> cookie only from <code>https</code> or <code>localhost</code>. If users open JAVV over plain <code>http</code>, set <code>false</code>. Else the sign-in fails, and the sign-in page says that the browser refused the session cookie. An example is a machine on a LAN with no TLS in front. Keep <code>true</code> behind each proxy that ends TLS. JAVV cannot see that proxy, so it never sets the flag itself. Sign-out clears the cookie with the same flag.</td>
 </tr>
 <tr>
 <td><code>JAVV_SESSION_SWEEP_GRACE_HOURS</code></td>
@@ -2539,7 +2539,7 @@ do not set always has the default in the table.</p>
 <tr>
 <td><code>JAVV_DEAD_LETTER</code></td>
 <td><code>&lt;scanner&gt;.dead-letter.jsonl</code>. The images set <code>/var/lib/javv/&lt;scanner&gt;.dead-letter.jsonl</code>.</td>
-<td>The file for the images whose scan failed. The scanner writes the failure there and continues with the next image.</td>
+<td>The file for the pushes that JAVV did not accept. The scanner adds each of these pushes to the file as one JSON line, logs <code>envelope dead-lettered</code>, and continues with the next image. A refusal with a 4xx that is not 429 goes there immediately. A 429, a 5xx or no answer goes there when the retry budget is spent. The scanner does not send the file again. An image whose scan failed is not in this file: the log has it (<code>scan failed, image skipped</code>).</td>
 </tr>
 <tr>
 <td><code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code></td>
@@ -2630,6 +2630,11 @@ also has <code>config</code>: its settings from the <a href="#trivy-settings">Tr
 <td><code>&lt;scanner&gt;.token.existingSecret</code> / <code>.key</code> / <code>.value</code></td>
 <td><code>""</code> / <code>token</code> / <code>""</code></td>
 <td><strong>Secret.</strong> <code>JAVV_TOKEN</code>: the Secret of that scanner, or a value that the chart puts in a Secret. Without it, the install fails.</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.registryAuth.existingSecret</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> A login for private registries: the name of a <code>kubernetes.io/dockerconfigjson</code> Secret in the namespace of the chart. Kubernetes puts its <code>.dockerconfigjson</code> key into the scan container as <code>/etc/javv/registry/config.json</code>, and the chart sets <code>DOCKER_CONFIG</code> to <code>/etc/javv/registry</code>. The refresh container does not get the login. When the value is empty, the scanner pulls each image with no login.</td>
 </tr>
 <tr>
 <td><code>&lt;scanner&gt;.schedule</code></td>

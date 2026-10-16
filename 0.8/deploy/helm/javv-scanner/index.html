@@ -1071,7 +1071,7 @@
 
 
 <h1 id="javv-scanner">javv-scanner<a class="headerlink" href="#javv-scanner" title="Permanent link">&para;</a></h1>
-<p><img alt="Version: 0.8.1" src="https://img.shields.io/badge/Version-0.8.1-informational?style=flat-square" /> <img alt="AppVersion: 0.8.1" src="https://img.shields.io/badge/AppVersion-0.8.1-informational?style=flat-square" /></p>
+<p><img alt="Version: 0.8.2" src="https://img.shields.io/badge/Version-0.8.2-informational?style=flat-square" /> <img alt="AppVersion: 0.8.2" src="https://img.shields.io/badge/AppVersion-0.8.2-informational?style=flat-square" /></p>
 <p>This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
 CronJob. Each scanner pushes its own results to JAVV. JAVV never merges them. Install the chart in
 each cluster that you scan. JAVV itself, the <a href="../javv/"><code>javv</code></a> chart, can run in that
@@ -1134,8 +1134,12 @@ Each scanner then runs on its <code>schedule</code>. To start a cycle now, follo
   private mirror.</li>
 <li><strong>Kubernetes access:</strong> one ClusterRole. It can <code>list</code> pods, to find the running images. It can
   <code>get</code> the <code>kube-system</code> namespace, because its UID is the id of the cluster. It cannot read
-  Secrets. Thus the scanners do not scan images from private registries yet
-  (<a href="https://github.com/Danube-Labs/javv-poc/issues/739">issue 739</a>).</li>
+  Secrets.</li>
+<li><strong>Private registries:</strong> <code>&lt;scanner&gt;.registryAuth.existingSecret</code> names a
+  <code>kubernetes.io/dockerconfigjson</code> Secret. Kubernetes puts its <code>.dockerconfigjson</code> key into the scan
+  container as <code>/etc/javv/registry/config.json</code>, and <code>DOCKER_CONFIG</code> points the scanner at it. The
+  refresh does not get the login. With no login, the scanner pulls each image with no sign-in, and
+  it skips an image that it cannot pull.</li>
 <li>Both scanners run as the user of their images, <code>65532</code>, with a read-only root file system. They
   have the cache volume, an <code>emptyDir</code> on <code>/var/lib/javv</code> for the dead-letter file, and an
   <code>emptyDir</code> on <code>/tmp</code>.</li>
@@ -1204,6 +1208,12 @@ of <code>scanner-images.yml</code>. A checkout of the repository has the tag onl
 <td>string</td>
 <td><code>"0.120.1"</code></td>
 <td>The Grype version, from versions.yaml (<code>scanners.grype.current</code>). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image.</td>
+</tr>
+<tr>
+<td>grype.registryAuth</td>
+<td>object</td>
+<td><code>{"existingSecret":""}</code></td>
+<td>A registry login for the images from private registries, as for Trivy. It can be the same Secret.</td>
 </tr>
 <tr>
 <td>grype.schedule</td>
@@ -1288,6 +1298,12 @@ of <code>scanner-images.yml</code>. A checkout of the repository has the tag onl
 <td>string</td>
 <td><code>"0.75.0"</code></td>
 <td>The Trivy version, from versions.yaml (<code>scanners.trivy.current</code>). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image.</td>
+</tr>
+<tr>
+<td>trivy.registryAuth</td>
+<td>object</td>
+<td><code>{"existingSecret":""}</code></td>
+<td>A registry login for the images from private registries: the name of a <code>kubernetes.io/dockerconfigjson</code> Secret in the namespace of the chart. The scan container mounts it, and <code>DOCKER_CONFIG</code> tells Trivy where it is. When it is empty, Trivy pulls each image with no login.</td>
 </tr>
 <tr>
 <td>trivy.schedule</td>
