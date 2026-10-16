@@ -633,11 +633,17 @@ admin does not exist.
 - **The OpenSearch of the compose file uses demo certificates** (see
   [Ports and access](#ports-and-access)). For your own certificates, operate your own OpenSearch,
   and connect JAVV to it as above.
-- **No maintenance page without a proxy.** The frontend image holds a maintenance page,
-  `/maintenance.html`. It needs no backend and no OpenSearch. To show it during an upgrade or a
-  restore, make the proxy in front of JAVV answer each path with this page and the status 503. A
-  scanner then gets a 503 and tries again later. Delete the rule when JAVV runs again. An example
-  for nginx, with the page copied into its `root`:
+- **No maintenance switch.** JAVV has no setting that shows a maintenance page. While the backend
+  stops for an upgrade or a restart, an open app shows the banner "The backend is not answering.
+  Screens cannot load until it is back." The banner goes away when the backend answers again. The
+  sign-in page says that the server is not answering, and tries again on its own. A scanner tries
+  each push again, for at most `JAVV_PUSH_RETRY_BUDGET_SECONDS` in each cycle. A cycle that
+  starts while the backend does not run scans nothing. The next cycle scans all the images again.
+  The frontend image also holds a maintenance page, `/maintenance.html`. It needs no backend and
+  no OpenSearch. If a proxy is in front of JAVV, you can show this page during an upgrade or a
+  restore: make the proxy answer each path with this page and the status 503. A scanner then gets
+  a 503 and tries again later. Delete the rule when JAVV runs again. An example for nginx, with
+  the page copied into its `root`:
     ```nginx
     error_page 503 /maintenance.html;
     location = /maintenance.html {
@@ -647,8 +653,6 @@ admin does not exist.
     }
     location / { return 503; }
     ```
-  With nothing in front of JAVV, there is no switch yet
-  ([issue 719](https://github.com/Danube-Labs/javv-poc/issues/719)).
 - **The build of the frontend image sets the `VITE_*` settings**
   ([Frontend build settings](CONFIGURATION.md#frontend-build-settings)). You cannot change them later. A published image has
   their default values.
