@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { moveKey, reorderFromDrag, restoreOrder } from '@/system/columnOrder'
+import { moveKey, reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 
 const KNOWN = ['a', 'b', 'c', 'd'] as const
 
@@ -15,6 +15,25 @@ describe('restoreOrder', () => {
   it('keeps the saved order, drops unknown keys, appends missing ones', () => {
     expect(restoreOrder('["c","a","zombie","b"]', KNOWN)).toEqual(['c', 'a', 'b', 'd'])
     expect(restoreOrder('["d",7,"a"]', KNOWN)).toEqual(['d', 'a', 'b', 'c'])
+  })
+})
+
+describe('restoreHidden', () => {
+  const DEFAULTS = ['b', 'd'] as const
+
+  it.each([null, 'not json', '{}', '{"a":1}', '5', 'null', '"a"'])(
+    'returns the default hidden set for %j (issue 881)',
+    (raw) => {
+      expect([...restoreHidden(raw, KNOWN, DEFAULTS)]).toEqual(['b', 'd'])
+    },
+  )
+
+  it('keeps an empty list: the user shows every column', () => {
+    expect(restoreHidden('[]', KNOWN, DEFAULTS).size).toBe(0)
+  })
+
+  it('keeps the saved keys and drops unknown keys and non-strings', () => {
+    expect([...restoreHidden('["c","zombie",7,"a"]', KNOWN, DEFAULTS)]).toEqual(['c', 'a'])
   })
 })
 

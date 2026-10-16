@@ -33,7 +33,7 @@ import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { captureLens } from '@/findings/savedViews'
-import { reorderFromDrag, restoreOrder } from '@/system/columnOrder'
+import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
@@ -226,11 +226,12 @@ function openFinding(row: FindingRow) {
 /* ---- column visibility + density (Columns menu), persisted per browser ---- */
 const COLS_KEY = 'javv.findings.hidden_cols'
 const DENSE_KEY = 'javv.findings.dense'
+const COL_KEYS = FINDINGS_COLUMNS.map(([key]) => key)
 // first-run default hides the low-signal columns (operator 2026-07-11: KEV mostly empty,
 // versions live in the detail view; last_scan is the hidden sibling of first_seen) — the
 // Columns menu + localStorage override per user
 const hiddenCols = ref<Set<string>>(
-  new Set(JSON.parse(localStorage.getItem(COLS_KEY) ?? '["epss","kev","current","fixed","last_scan"]')),
+  restoreHidden(localStorage.getItem(COLS_KEY), COL_KEYS, ['epss', 'kev', 'current', 'fixed', 'last_scan']),
 )
 const dense = ref(localStorage.getItem(DENSE_KEY) !== 'false')
 
@@ -248,7 +249,6 @@ function setDense(value: boolean) {
 
 /* ---- column order (task 92): header drag + Columns-menu drag, one persisted order ---- */
 const ORDER_KEY = 'javv.findings.col_order'
-const COL_KEYS = FINDINGS_COLUMNS.map(([key]) => key)
 const colOrder = ref<string[]>(restoreOrder(localStorage.getItem(ORDER_KEY), COL_KEYS))
 const orderedCols = computed(() =>
   colOrder.value.map((key) => FINDINGS_COLUMNS.find(([k]) => k === key)!),
