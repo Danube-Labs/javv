@@ -460,7 +460,16 @@ rm -f backend/cookies.txt scanner/*.dead-letter.jsonl
 
 # after running the backend test suite against this store: sweep the test residue
 # (`nu-*`/`ext-*`/`0-list-*`/`u-*` users, `t-*` indices) — keep {admin, rig}; or `down -v` for a clean slate
+
+# local clutter that git ignores: test and build output, e2e logs, dead-letter files, tool caches
+development/scripts/clean-local.sh             # list what it would delete, with sizes
+# development/scripts/clean-local.sh --apply   # delete it
 ```
+
+`clean-local.sh` deletes a path only when git ignores it and the path is in one of those four groups.
+It never deletes `tmp/` (screenshots, trailer and demo work), `.claude/`, `.codex/`, `.serena/`,
+`AGENTS.md`, `backend/cookies.txt`, `node_modules/` or `.venv/`. The next build, test run or tool
+run makes the deleted files again.
 
 ---
 
