@@ -1162,8 +1162,10 @@ run (03:00 by default). After that, time travel cannot show that period.
 <a href="../../CONFIGURATION/#retention-and-rollover">Retention and rollover</a> gives the settings.</p>
 <h2 id="back-up-the-data">Back up the data<a class="headerlink" href="#back-up-the-data" title="Permanent link">&para;</a></h2>
 <p>A snapshot from <strong>Settings › Data &amp; OpenSearch › Snapshot now</strong> holds <code>findings</code>, <code>javv-images-*</code>
-and <code>system-*</code>. These indices hold the current state, the triage, the decisions, the users, the
-settings and the audit log.</p>
+and <code>system-*</code>, except <code>system-sessions</code>. These indices hold the current state, the triage, the
+decisions, the users, the settings and the audit log.</p>
+<p>A snapshot does not hold the sessions. A sign-out only marks its session as ended, so a restored
+copy could make an ended session valid again. After a restore, the users sign in again.</p>
 <p>A snapshot does not hold the scan history (<code>javv-finding-occurrences-*</code>, <code>javv-scan-events-*</code>,
 <code>javv-inventory-runs-*</code> and <code>javv-ingest-failures-*</code>), <code>javv-scan-orders</code> or
 <code>javv-scan-watermarks</code>. Thus a restore does not bring back the history that time travel reads. JAVV
