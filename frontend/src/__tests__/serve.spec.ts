@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { createLogger } from '../../server/log.mjs'
-import { connectTimeoutMs, createFrontendServer } from '../../server/serve.mjs'
+import { connectTimeoutMs, createFrontendServer, SECURITY_HEADERS } from '../../server/serve.mjs'
 
 type Seen = { method?: string; url?: string; headers: http.IncomingHttpHeaders; body: string }
 
@@ -39,7 +39,10 @@ async function frontend(url = backendUrl, warnWindowMs?: number, connectMs?: num
 beforeAll(async () => {
   dist = mkdtempSync(join(tmpdir(), 'javv-dist-'))
   mkdirSync(join(dist, 'assets'))
-  writeFileSync(join(dist, 'index.html'), '<!doctype html><div id="app"></div>')
+  writeFileSync(
+    join(dist, 'index.html'),
+    '<!doctype html><html><head><title>javv</title></head><body><div id="app"></div></body></html>',
+  )
   writeFileSync(join(dist, 'assets', 'index-abc123.js'), 'console.log(1)')
   writeFileSync(join(dist, 'favicon.ico'), 'icon')
 
@@ -54,6 +57,9 @@ beforeAll(async () => {
       } else if (req.url === '/auth/login') {
         res.writeHead(200, { 'set-cookie': ['javv_session=abc; HttpOnly; Path=/', 'other=1; Path=/'] })
         res.end('{"user":{}}')
+      } else if (req.url === '/api/v1/identity') {
+        res.writeHead(200, { 'content-type': 'application/json', server: 'uvicorn', 'x-powered-by': 'x' })
+        res.end('{}')
       } else if (req.url === '/api/v1/slow') {
         setTimeout(() => {
           res.writeHead(200, { 'content-type': 'application/json' })
@@ -137,6 +143,64 @@ describe('the static files', () => {
   it('refuses a write to a static path', async () => {
     const res = await fetch(`${await frontend()}/findings`, { method: 'POST' })
     expect(res.status).toBe(405)
+  })
+})
+
+describe('the security headers (issue 892)', () => {
+  const policy = (res: Response) => res.headers.get('content-security-policy') ?? ''
+  const fixed = (res: Response) =>
+    expect({
+      frame: res.headers.get('x-frame-options'),
+      sniff: res.headers.get('x-content-type-options'),
+      referrer: res.headers.get('referrer-policy'),
+    }).toEqual({ frame: 'DENY', sniff: 'nosniff', referrer: 'same-origin' })
+
+  it('gives the page a new style nonce, the same in its policy and in its meta', async () => {
+    const base = await frontend()
+    const nonces: string[] = []
+    for (let i = 0; i < 2; i++) {
+      const res = await fetch(`${base}/findings`)
+      fixed(res)
+      const meta = /<meta name="csp-nonce" content="([^"]+)">/.exec(await res.text())?.[1]
+      expect(meta).toBeTruthy()
+      expect(policy(res)).toContain(`style-src 'self' 'nonce-${meta}'`)
+      nonces.push(meta as string)
+    }
+    expect(nonces[0]).not.toBe(nonces[1]) // one per page, never reused
+  })
+
+  it('allows no inline script or style, and no frame on another site', async () => {
+    const res = await fetch(`${await frontend()}/`)
+    expect(policy(res)).toContain("script-src 'self';")
+    expect(policy(res)).toContain("frame-ancestors 'none'")
+    expect(policy(res)).not.toContain('unsafe-inline')
+    expect(policy(res)).not.toContain('unsafe-eval')
+  })
+
+  it('sends them on a file, a missing asset and a refused method too', async () => {
+    const base = await frontend()
+    for (const res of [
+      await fetch(`${base}/assets/index-abc123.js`),
+      await fetch(`${base}/assets/gone-000.js`),
+      await fetch(`${base}/x`, { method: 'POST' }),
+    ]) {
+      fixed(res)
+      expect(policy(res)).toBe(SECURITY_HEADERS['content-security-policy'])
+    }
+  })
+
+  it('sends them on a forwarded answer and drops the headers that name the backend software', async () => {
+    const res = await fetch(`${await frontend()}/api/v1/identity`)
+    fixed(res)
+    expect(res.headers.get('server')).toBeNull()
+    expect(res.headers.get('x-powered-by')).toBeNull()
+    expect(res.headers.get('content-type')).toBe('application/json') // the rest passes on
+  })
+
+  it('sends them on the 502 when the backend does not answer', async () => {
+    const res = await fetch(`${await frontend('http://127.0.0.1:1')}/api/v1/findings`)
+    expect(res.status).toBe(502)
+    fixed(res)
   })
 })
 

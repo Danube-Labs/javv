@@ -97,6 +97,47 @@ async def freeze_targets(
         body = {**body, "search_after": hits[-1]["sort"]}
 
 
+# the query form of state_machine.holds_risk_accept: risk_accepted, or stale keeping it
+_HOLDS_RISK_ACCEPT: dict[str, Any] = {
+    "bool": {
+        "should": [
+            {"term": {"state": "risk_accepted"}},
+            {
+                "bool": {
+                    "filter": [
+                        {"term": {"state": "stale"}},
+                        {"term": {"pre_stale_status": "risk_accepted"}},
+                    ]
+                }
+            },
+        ],
+        "minimum_should_match": 1,
+    }
+}
+
+
+async def count_risk_accepted(
+    client: AsyncOpenSearch, target_ids: list[str], *, prefix: str = ""
+) -> int:
+    """How many of the frozen findings a state change would take off a risk-accept (issue 892
+    ruling 6). Counted in pages, so each query stays bounded however large the freeze cap is."""
+    count = 0
+    for start in range(0, len(target_ids), _FREEZE_PAGE):
+        page = target_ids[start : start + _FREEZE_PAGE]
+        query = {"bool": {"filter": [{"ids": {"values": page}}, _HOLDS_RISK_ACCEPT]}}
+        count += (await client.count(index=f"{prefix}findings", body={"query": query}))["count"]
+    return count
+
+
+def risk_accept_refusal(held: int, total: int) -> str:
+    """The user-facing reason a bulk state change is refused (shown by the bulk bar)."""
+    verb = "is" if held == 1 else "are"
+    return (
+        f"{held} of the {total} selected findings {verb} risk-accepted. Changing their state "
+        "requires can_accept_audit_final."
+    )
+
+
 def result_hash(target_ids: list[str]) -> str:
     return hashlib.sha256(json.dumps(sorted(target_ids)).encode()).hexdigest()
 

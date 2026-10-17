@@ -494,5 +494,72 @@ async def test_failed_decorate_on_a_nonfinal_page_reclaims_the_opened_pit(monkey
             cluster_id="c-unit-audit",
             filters=AuditFilters(),
             size=2,
+            account_events=False,
         )
     assert stub.deleted == ["pit-1"]
+
+
+async def _session_with(client: AsyncOpenSearch, capabilities: list[str]) -> httpx.AsyncClient:
+    app = create_app()
+    app.state.opensearch = client
+    http = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://t")
+    username = f"u-{uuid.uuid4().hex[:12]}"
+    await client.index(
+        index="system-users",
+        id=username,
+        body={
+            "username": username,
+            "password_hash": hash_password(PASSWORD),
+            "role": "custom",
+            "capabilities": capabilities,
+            "must_change": False,
+            "disabled": False,
+            "auth_source": "local",
+            "external_id": None,
+            "created_at": "2026-07-08T00:00:00+00:00",
+        },
+        params={"refresh": "true"},
+    )
+    r = await http.post("/auth/login", json={"username": username, "password": PASSWORD})
+    assert r.status_code == 200
+    return http
+
+
+async def test_account_events_need_can_manage_users(env) -> None:
+    """issue 892 ruling 3: the sign-ins, password, user, role and token events (entity_type
+    `user` and `token`) reach only `can_manage_users`, in the list, the rail facets and the CSV
+    alike. The other fleet rows stay open to every session."""
+    viewer, client = env
+    actor = f"u-acct-{uuid.uuid4().hex[:8]}"
+    for action, entity_type in (("login", "user"), ("token_mint", "token"), ("job_trigger", "job")):
+        await append_auth_event(
+            client,
+            actor=actor,
+            action=action,
+            entity_type=entity_type,
+            entity_id=f"{entity_type}:{actor}",
+            strict=True,
+        )
+    await client.indices.refresh(index="system-audit-log-*")
+    params = {"cluster_id": f"c-audit-{uuid.uuid4().hex[:8]}", "actor": actor}
+
+    async def seen(http: httpx.AsyncClient) -> tuple[list[str], set[str], int]:
+        rows = (await http.get("/api/v1/audit", params=params)).json()["data"]
+        facets = (await http.get("/api/v1/audit/facets", params=params)).json()["facets"]
+        csv = (await http.get("/api/v1/audit/export.csv", params=params)).text
+        return (
+            sorted(row["action"] for row in rows),
+            {b["key"] for b in facets["entity_type"]},
+            len(csv.strip().splitlines()) - 1,  # minus the header
+        )
+
+    assert await seen(viewer) == (["job_trigger"], {"job"}, 1)
+    manager = await _session_with(client, ["can_manage_users"])
+    try:
+        assert await seen(manager) == (
+            ["job_trigger", "login", "token_mint"],
+            {"job", "token", "user"},
+            3,
+        )
+    finally:
+        await manager.aclose()

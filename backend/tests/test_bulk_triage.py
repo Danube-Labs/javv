@@ -278,3 +278,37 @@ async def test_bulk_racing_single_triage_loses_no_update(env) -> None:
     doc = (await client.get(index="findings", id=fk))["_source"]
     assert doc["assignee"] == "ana"  # the bulk write survived
     assert doc["state"] == "acknowledged"  # the single write survived
+
+
+async def test_a_state_change_over_a_risk_accept_needs_the_final_word(env) -> None:
+    """issue 892 rulings 6 and 7: a bulk state change whose frozen set holds a risk-accepted
+    finding (or a stale one that keeps a risk-accept) is refused whole, with the count; a note
+    over the same set is not an undo; a lead may do both."""
+    login_with, client, _ = env
+    cve = f"CVE-{uuid.uuid4().hex[:8]}"
+    keys = await _seed(client, cve, 3)
+    await client.update(index="findings", id=keys[0], body={"doc": {"state": "risk_accepted"}})
+    await client.update(
+        index="findings",
+        id=keys[1],
+        body={"doc": {"state": "stale", "pre_stale_status": "risk_accepted"}},
+        params={"refresh": "true"},
+    )
+
+    triager = await login_with(["can_triage"])
+    r = await triager.post("/api/v1/findings/bulk-triage", json=_body(cve, state="open"))
+    assert r.status_code == 403
+    assert r.json()["title"].startswith("2 of the 3 selected findings are risk-accepted")
+
+    async def states() -> list[str]:
+        return [(await client.get(index="findings", id=k))["_source"]["state"] for k in keys]
+
+    assert await states() == ["risk_accepted", "stale", "open"]  # refused whole: nothing written
+
+    r = await triager.post("/api/v1/findings/bulk-triage", json=_body(cve, notes="seen"))
+    assert (r.status_code, r.json()["count"]) == (200, 3)
+
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    r = await lead.post("/api/v1/findings/bulk-triage", json=_body(cve, state="open"))
+    assert (r.status_code, r.json()["count"]) == (200, 3)
+    assert await states() == ["open", "open", "open"]

@@ -74,6 +74,22 @@ describe('TriagePanel (FR-7 gates)', () => {
     expect(w.emitted('save')![0]![0]).toEqual({ state: 'acknowledged' })
   })
 
+  it.each([
+    ['risk_accepted', null],
+    ['stale', 'risk_accepted'],
+  ])('a triager on %s (kept: %s) gets the state locked, with a note; notes stay open', (state, pre) => {
+    const w = panel({ finding: { ...finding, state, pre_stale_status: pre } })
+    for (const b of w.findAll('.state-opt')) expect((b.element as HTMLButtonElement).disabled).toBe(true)
+    expect(w.find('.triage-accept-locked').text()).toContain('can_accept_audit_final')
+    expect((w.find('#triage-notes').element as HTMLTextAreaElement).disabled).toBe(false)
+  })
+
+  it('a lead on a risk-accepted finding can change the state, and gets no lock note', () => {
+    const w = panel({ finding: { ...finding, state: 'risk_accepted' }, canAcceptFinal: true })
+    for (const b of w.findAll('.state-opt')) expect((b.element as HTMLButtonElement).disabled).toBe(false)
+    expect(w.find('.triage-accept-locked').exists()).toBe(false)
+  })
+
   it('no can_triage → controls disabled and the locked note names the capability', () => {
     const w = panel({ canTriage: false })
     expect(w.text()).toContain('can_triage')

@@ -1,10 +1,11 @@
 """Decision routes (M5c, FR-8) — the HTTP face of `decisions/lifecycle.py` + the projector.
 
-Capability regime mirrors triage (SEC-2/D33): every route needs `can_triage`; a
-**`risk_accepted`** decision (create, or an edit whose result is risk_accepted) additionally
-requires `can_accept_audit_final`. All three mutating routes are registered in the standing
-RBAC/IDOR suite. This layer only translates auth + errors — the service owns CAS, journaling,
-the revoke+create pair, and re-projection.
+Capability regime mirrors triage (SEC-2/D33): every route needs `can_triage`. A
+**`risk_accepted`** or **`ignore_rule`** decision (both project `state=risk_accepted`) additionally
+requires `can_accept_audit_final` to create, to edit (from or to that type) and to revoke: a
+triager can neither make nor undo one (issue 892 rulings 1 and 5). All three mutating routes are
+registered in the standing RBAC/IDOR suite. This layer only translates auth + errors — the
+service owns CAS, journaling, the revoke+create pair, and re-projection.
 
 List is a tenant read: `cluster_id` is a REQUIRED filter (the tenant-read-path rule — never an
 unscoped cross-cluster read), with task-E pagination (`size`/`offset` + `total`).
@@ -20,7 +21,7 @@ from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.auth.capabilities import require_capability
+from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS
@@ -49,9 +50,13 @@ CanTriage = Annotated[Principal, Depends(require_capability("can_triage"))]
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
 
 
-def _require_accept_final(principal: Principal) -> None:
-    if not ("*" in principal.capabilities or "can_accept_audit_final" in principal.capabilities):
-        raise HTTPException(403, "risk-accept requires can_accept_audit_final")
+# the types whose projection is state=risk_accepted (decisions/projection.py)
+ACCEPT_TYPES = frozenset({"risk_accepted", "ignore_rule"})
+
+
+def _require_accept_final(principal: Principal, reason: str) -> None:
+    if not holds_accept_final(principal):
+        raise accept_final_refusal(f"{reason} requires can_accept_audit_final")
 
 
 class DecisionEditRequest(BaseModel):
@@ -73,8 +78,8 @@ class DecisionEditRequest(BaseModel):
 async def create(
     request: Request, payload: DecisionPayload, principal: CanTriage
 ) -> dict[str, Any]:
-    if payload.type == "risk_accepted":
-        _require_accept_final(principal)  # SEC-2
+    if payload.type in ACCEPT_TYPES:
+        _require_accept_final(principal, f"a {payload.type} decision")  # SEC-2
     client = cast(Any, request.app.state.opensearch)
     doc = await create_decision(client, actor=principal.user_id, payload=payload)
     return {"decision": doc}
@@ -83,6 +88,12 @@ async def create(
 @router.post("/{decision_id}/revoke")
 async def revoke(request: Request, decision_id: str, principal: CanTriage) -> dict[str, Any]:
     client = cast(Any, request.app.state.opensearch)
+    try:
+        old = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
+    except NotFoundError:
+        raise HTTPException(404, "decision not found") from None
+    if old["type"] in ACCEPT_TYPES:
+        _require_accept_final(principal, f"revoking a {old['type']} decision")
     try:
         doc = await revoke_decision(client, actor=principal.user_id, decision_id=decision_id)
     except NotFoundError:
@@ -104,8 +115,11 @@ async def edit(
         old = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
     except NotFoundError:
         raise HTTPException(404, "decision not found") from None
-    if changes.get("type", old["type"]) == "risk_accepted":
-        _require_accept_final(principal)  # SEC-2 — an edit can't smuggle in a risk-accept
+    if old["type"] in ACCEPT_TYPES:  # an edit is revoke + create: an undo of the old one
+        _require_accept_final(principal, f"editing a {old['type']} decision")
+    new_type = changes.get("type", old["type"])
+    if new_type in ACCEPT_TYPES:  # an edit can't smuggle one in
+        _require_accept_final(principal, f"a {new_type} decision")
     try:
         revoked, new = await edit_decision(
             client, actor=principal.user_id, decision_id=decision_id, changes=changes

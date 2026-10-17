@@ -146,6 +146,6 @@ export const FAMILY_ROWS: FamilyRow[] = [
     pattern: 'system-*',
     purpose: 'config · users · tokens · decisions · views · reports',
     kind: 'protected',
-    why: 'small mutable state: snapshotted for durability, never expired (reports TTL-swept separately)',
+    why: 'small mutable state: snapshotted for durability except the sessions (a restored copy could revive an ended one), never expired (reports TTL-swept separately)',
   },
 ]

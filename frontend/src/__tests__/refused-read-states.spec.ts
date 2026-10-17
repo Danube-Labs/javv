@@ -449,6 +449,13 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     )
   }
 
+  it('a link with no digest says what is missing, and stops loading (issue 892)', async () => {
+    const { w } = await mountDetail('/findings/CVE-2026-0001')
+    expect(w.find('[aria-busy="true"]').exists()).toBe(false)
+    expect(w.find('.not-found h1').text()).toBe('CVE-2026-0001')
+    expect(w.text()).toContain('This link is missing the image identity. Open the finding from the grid.')
+  })
+
   it('each card says "Could not be loaded.", the badge shows "-", New decision is off', async () => {
     answerSearch('CVE-2026-0001', refusedWith(429))
     // the activity and decisions reads keep the default refusal

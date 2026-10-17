@@ -338,6 +338,16 @@ sends the requests to `/api`, `/auth` and `/readyz` on to the backend. Thus the 
 address. The server reads these settings when its container starts. A restart applies a change,
 with no new build.
 
+The server sends these headers on each reply, so that JAVV needs no proxy to add them:
+
+- `Content-Security-Policy`: the browser loads scripts, styles, fonts and data only from the JAVV
+  address. Each page gets a new nonce for the styles of the web app. No inline script runs.
+- `X-Frame-Options: DENY` and `frame-ancestors 'none'`: no other site can show JAVV in a frame.
+- `X-Content-Type-Options: nosniff` and `Referrer-Policy: same-origin`.
+
+The server does not send on the `Server` header of the backend. If a proxy in front of JAVV sets
+its own security headers, make sure that they do not replace these headers with weaker ones.
+
 | Setting | Default | What it does |
 |---|---|---|
 | `JAVV_BACKEND_URL` | `http://backend:8000` | The address of the backend, as the frontend container sees it: a compose service name, a Kubernetes Service or an IP address. `http` or `https`. When nothing replies there, the server replies 502 with the error envelope. The web app shows this as "backend down". |
@@ -441,8 +451,9 @@ cluster.
   never writes over the live indices.
 - You register the snapshot repository when you deploy, with its credentials in the keystore of
   OpenSearch. The `system-config` document `snapshot_repo` holds its name, with no credentials.
-- A snapshot holds `findings`, `javv-images-*` and `system-*`: the current state, the triage, the
-  decisions, the users, the settings and the audit log.
+- A snapshot holds `findings`, `javv-images-*` and `system-*`, except `system-sessions`: the
+  current state, the triage, the decisions, the users, the settings and the audit log. A snapshot
+  does not hold the sessions, because a restored copy could make an ended session valid again.
 - A snapshot does not hold the scan history (`javv-finding-occurrences-*`, `javv-scan-events-*`,
   `javv-inventory-runs-*` and `javv-ingest-failures-*`). Time travel reads this history. A snapshot
   also does not hold `javv-scan-orders` and `javv-scan-watermarks`. Thus a restore from a snapshot

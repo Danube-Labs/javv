@@ -17,7 +17,7 @@ import type {
   AuditFacetsApiV1AuditFacetsGetData,
   ReadAuditLogApiV1AuditGetData,
 } from '@/api/generated'
-import { AUDIT_FIELDS } from '@/audit/fields.config'
+import { AUDIT_FIELDS, auditFields } from '@/audit/fields.config'
 import AuditTable from '@/components/audit/AuditTable.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
 import FacetRail from '@/components/filters/FacetRail.vue'
@@ -32,6 +32,7 @@ import { readFailureCopy } from '@/findings/failureCopy'
 import type { FacetsResponse } from '@/filters/facets'
 import { logger } from '@/lib/logger'
 import { useAuditStore, type AuditEvent } from '@/stores/audit'
+import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -39,6 +40,9 @@ import { useToastStore } from '@/stores/toast'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
 
 const useAuditFilters = makeFiltersStore('audit-filters', AUDIT_FIELDS)
+// the values this user can find rows for: no account events without can_manage_users
+const auth = useAuthStore()
+const railFields = computed(() => auditFields(auth.hasCapability('can_manage_users')))
 const filters = useAuditFilters()
 const grid = useAuditStore()
 const clusterStore = useClusterStore()
@@ -233,7 +237,7 @@ async function exportCsv() {
     <div class="findings-layout">
       <div class="rail-col">
         <FacetRail
-          :fields="AUDIT_FIELDS"
+          :fields="railFields"
           :selections="filters.selections"
           :facets="facets"
           :counts-unknown="facetsFailed"
@@ -246,7 +250,7 @@ async function exportCsv() {
       <div class="findings-main">
         <div class="toolbar-row">
           <FilterBar
-            :fields="AUDIT_FIELDS"
+            :fields="railFields"
             :selections="filters.selections"
             :modes="filters.modes"
             :facets="facets"

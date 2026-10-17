@@ -7,7 +7,8 @@ bounds, two distinct DoS surfaces: `freeze_targets` never materializes more than
 set larger than `JAVV_BULK_INLINE_LIMIT` → **413** (narrow the selector, or use M7's scheduled
 bulk). There is **no async 202 path** — a volatile background task could accept work then lose it
 (no durable job record), and the durable large-bulk queue is M7. Capability regime mirrors single
-triage: `can_triage`, plus `can_accept_audit_final` when the patch risk-accepts (SEC-2).
+triage: `can_triage`, plus `can_accept_audit_final` when the patch risk-accepts (SEC-2), and when
+it changes the state of a frozen set that holds a risk-accept (issue 892 ruling 6: refused whole).
 """
 
 from typing import Annotated, Any, cast
@@ -16,7 +17,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from backend.auth.capabilities import require_capability
+from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import LIMIT_REJECTIONS
@@ -24,8 +25,10 @@ from backend.core.settings import get_settings
 from backend.triage.bulk import (
     SelectorTooBroad,
     apply_bulk_triage,
+    count_risk_accepted,
     freeze_targets,
     result_hash,
+    risk_accept_refusal,
     validate_bulk_patch,
 )
 from backend.triage.state_machine import TransitionError
@@ -75,10 +78,9 @@ class BulkTriageRequest(BaseModel):
 @router.post("/bulk-triage")
 async def bulk_triage(request: Request, body: BulkTriageRequest, principal: CanTriage) -> Any:
     patch = body.patch.model_dump(exclude_unset=True)
-    if patch.get("state") == "risk_accepted" and not (
-        "*" in principal.capabilities or "can_accept_audit_final" in principal.capabilities
-    ):
-        raise HTTPException(403, "risk-accept requires can_accept_audit_final")
+    accept_final = holds_accept_final(principal)
+    if patch.get("state") == "risk_accepted" and not accept_final:
+        raise accept_final_refusal("risk-accept requires can_accept_audit_final")
     try:
         validate_bulk_patch(patch)
     except TransitionError as exc:
@@ -118,6 +120,11 @@ async def bulk_triage(request: Request, body: BulkTriageRequest, principal: CanT
             f"{len(target_ids)} findings exceed the inline bulk limit ({limit}) — "
             "narrow the selector, or use M7's scheduled bulk",
         )
+
+    if "state" in patch and not accept_final:
+        held = await count_risk_accepted(client, target_ids)
+        if held:
+            raise accept_final_refusal(risk_accept_refusal(held, len(target_ids)))
 
     updated = await apply_bulk_triage(
         client,

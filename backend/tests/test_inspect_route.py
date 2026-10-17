@@ -127,6 +127,13 @@ async def test_global_cat_read_lists_only_javv_indices(env, path):
         ("POST", "system-users/_search", {"query": {"match_all": {}}}, "credential indices"),
         ("POST", "system-*/_search", {"query": {"match_all": {}}}, "credential indices"),
         ("POST", "sys*/_search", {"query": {"match_all": {}}}, "credential indices"),
+        # a restore writes `restored-<name>` copies, password hashes included (issue 892)
+        ("POST", "restored-system-users/_search", None, "credential indices"),
+        ("GET", "restored-system-sessions/_count", None, "credential indices"),
+        ("GET", "restored-system-tokens/_mapping", None, "credential indices"),
+        ("POST", "restored-*/_search", None, "credential indices"),
+        ("POST", "res*/_search", None, "credential indices"),
+        ("POST", "findings,restored-system-*/_search", None, "credential indices"),
         (
             "POST",
             "findings/_search",
@@ -143,6 +150,14 @@ async def test_allowlist_rejections_carry_verbatim_reasons(env, method, path, bo
     r = await _inspect(http, method=method, path=path, body=body)
     assert r.status_code == 422
     assert fragment in r.json()["title"]  # problem+json: the reason rides `title`
+
+
+@pytest.mark.parametrize("path", ["restored-findings/_search", "restored-javv-images-*/_count"])
+async def test_restored_copies_of_other_indices_stay_inspectable(env, path):
+    http, client = env
+    await _login(http, client, ["can_inspect_store"])
+    r = await _inspect(http, method="POST", path=path)
+    assert r.status_code != 422  # past the allowlist: the store answers (no such index here)
 
 
 async def test_capability_gate(env):

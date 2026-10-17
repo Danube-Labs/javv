@@ -172,10 +172,10 @@ At its first start, JAVV creates four roles:
 
 | Permission | What it allows |
 |---|---|
-| `can_triage` | Triage findings. Make, change and revoke decisions. |
-| `can_accept_audit_final` | Accept a risk, in a decision or in triage. Read and export the approvals queue. |
+| `can_triage` | Triage findings. Make, change and revoke `not_affected` decisions. |
+| `can_accept_audit_final` | Accept a risk, in a decision or in triage. Make, change and revoke `risk_accepted` and `ignore_rule` decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue. |
 | `can_manage_tokens` | Make, revoke and rotate scanner tokens |
-| `can_manage_users` | Make users. Change their role, their status and their password. |
+| `can_manage_users` | Make users. Change their role, their status and their password. Read the account events in the audit log. |
 | `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. |
 | `can_manage_retention` | Read and change the data settings: retention, rollover, export lifetime and findings cleanup. Read and take snapshots. Delete a retired cluster. |
 | `can_restore_snapshot` | Restore a snapshot |
@@ -253,6 +253,11 @@ The audit log keeps each sign-in and sign-out, and each change to triage, decisi
 the scan scope, users, tokens, saved views, clusters, snapshots and jobs. It also keeps each query
 of the data inspector.
 
+Each signed-in user reads the audit log. Only a user with `can_manage_users` reads the account
+events: the rows with `entity_type` `user` (sign-ins and sign-outs, password, user and role
+changes) and `token` (the scanner tokens). For the other users, the three audit endpoints leave
+these rows out of the list, the counts and the CSV.
+
 ### System
 
 | Method | Path | Access | What it does |
@@ -299,7 +304,7 @@ in a scan cycle.
 | POST | `/api/v1/admin/users/{username}/password-reset` | `can_manage_users` | Sets a temporary password, which the user must change. It ends each session of that user. |
 | GET | `/api/v1/admin/roles` | `can_manage_users` | The roles and their permissions |
 | GET | `/api/v1/admin/snapshots` | `can_manage_retention` | The snapshots in the configured repository, newest first. With no repository, `configured` is `false`. |
-| POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of `findings`, `javv-images-*` and `system-*`, and answers 202 at once. The scan history is not in the snapshot ([Snapshots](CONFIGURATION.md#snapshots)). With no repository, it answers 409. |
+| POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of `findings`, `javv-images-*` and `system-*` except `system-sessions`, and answers 202 at once. The scan history is not in the snapshot ([Snapshots](CONFIGURATION.md#snapshots)). With no repository, it answers 409. |
 | POST | `/api/v1/admin/snapshots/{snapshot_name}/restore` | `can_restore_snapshot` | Restores a snapshot into copies with the prefix `restored-`. It never writes to the live indices. To use a copy, move it in by hand. |
 | GET | `/api/v1/admin/opensearch-runtime` | `can_manage_settings` | Facts about OpenSearch: version, health, nodes, roles, heap, `discovery.type`, `path.repo` and the security plugin. It gives only these fields. |
 | POST | `/api/v1/admin/opensearch/inspect` | `can_inspect_store` | The data inspector. [The data inspector](#the-data-inspector) gives its rules. |
@@ -469,12 +474,12 @@ that fails during your read can show on a later page.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| PATCH | `/api/v1/findings/{finding_key}/triage` | `can_triage` | Changes the state of one finding: `open`, `acknowledged`, `not_affected`, `risk_accepted` or `resolved`. `not_affected` needs a `vex_justification`. `risk_accepted` also needs `can_accept_audit_final`. |
-| POST | `/api/v1/findings/bulk-triage` | `can_triage` | Changes the state of all the findings that a selector finds, now. More than `JAVV_BULK_INLINE_LIMIT` (5000) findings get 413. Use a report for more. A selector that finds more than `JAVV_BULK_MAX_TARGETS` (10000) gets 413. An empty selector gets 422. |
-| POST | `/api/v1/decisions` | `can_triage` | Makes a decision. A `risk_accepted` decision also needs `can_accept_audit_final`. `expiry` is a date (`YYYY-MM-DD`), or a date and time with a time zone. JAVV keeps a date and time in UTC. |
+| PATCH | `/api/v1/findings/{finding_key}/triage` | `can_triage` | Changes the state of one finding: `open`, `acknowledged`, `not_affected`, `risk_accepted` or `resolved`. `not_affected` needs a `vex_justification`. `risk_accepted` also needs `can_accept_audit_final`. A change of state of a risk-accepted finding also needs `can_accept_audit_final`. This includes a `stale` finding that goes back to `risk_accepted` when the scanner reports it again. A change of `notes` or `assignee` only does not need it. |
+| POST | `/api/v1/findings/bulk-triage` | `can_triage` | Changes the state of all the findings that a selector finds, now. More than `JAVV_BULK_INLINE_LIMIT` (5000) findings get 413. Use a report for more. A selector that finds more than `JAVV_BULK_MAX_TARGETS` (10000) gets 413. An empty selector gets 422. A change of state of a set that holds risk-accepted findings needs `can_accept_audit_final`. Without it, the request gets 403 with the count, and JAVV changes no finding. |
+| POST | `/api/v1/decisions` | `can_triage` | Makes a decision. A `risk_accepted` or `ignore_rule` decision also needs `can_accept_audit_final`. `expiry` is a date (`YYYY-MM-DD`), or a date and time with a time zone. JAVV keeps a date and time in UTC. |
 | GET | `/api/v1/decisions` | session | Lists the decisions of the cluster, with `cve_id`, `include_revoked` (default `false`), `size` (1 to 500, default 50) and `offset` (0 to 10000) |
-| PATCH | `/api/v1/decisions/{decision_id}` | `can_triage` | Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. |
-| POST | `/api/v1/decisions/{decision_id}/revoke` | `can_triage` | Revokes a decision. Its effect on the findings stops. |
+| PATCH | `/api/v1/decisions/{decision_id}` | `can_triage` | Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. A change from or to `risk_accepted` or `ignore_rule` also needs `can_accept_audit_final`. |
+| POST | `/api/v1/decisions/{decision_id}/revoke` | `can_triage` | Revokes a decision. Its effect on the findings stops. A `risk_accepted` or `ignore_rule` decision also needs `can_accept_audit_final`. |
 | GET | `/api/v1/decisions/approvals` | `can_accept_audit_final` | The approvals queue: the active risk acceptances, the nearest expiry first ([The approvals queue](#the-approvals-queue)) |
 | GET | `/api/v1/decisions/approvals/export.csv` | `can_accept_audit_final` | The approvals queue as CSV, with the same filters ([The approvals queue](#the-approvals-queue)) |
 
@@ -569,7 +574,7 @@ in the audit log. Snapshots from before keep the data.
 |---|---|---|---|
 | GET | `/api/v1/findings/export.csv` | session | The findings of the [filters](#filters) as CSV. More than `JAVV_EXPORT_MAX_ROWS` (50000) rows get 413. Make the filter narrower, or use a report. |
 | GET | `/api/v1/findings/export.vex` | session | The findings as an OpenVEX or CycloneDX document, for one scanner. `scanner` is necessary. The row limit is the same. |
-| POST | `/api/v1/reports` | session, and `can_triage` for `bulk_triage` | Puts a job in the queue and answers 201. `kind: export` needs only a session. `kind: bulk_triage` needs `can_triage`, and `can_accept_audit_final` for a risk acceptance. A bulk triage keeps the list of findings at this time. Only the `JAVV_BULK_MAX_TARGETS` limit applies. Its `patch` takes the fields of `POST /api/v1/findings/bulk-triage` (`state`, `vex_justification`, `assignee` and `notes`), with the same limits. A different field gets 422. JAVV does not change a field whose value is `null`. |
+| POST | `/api/v1/reports` | session, and `can_triage` for `bulk_triage` | Puts a job in the queue and answers 201. `kind: export` needs only a session. `kind: bulk_triage` needs `can_triage`, and `can_accept_audit_final` for a risk acceptance or for a change of state of a set that holds risk-accepted findings. A bulk triage keeps the list of findings at this time. If the user does not have `can_accept_audit_final`, the job checks the set again before it changes a finding. When a finding became risk-accepted after the request, the job fails and changes no finding. Only the `JAVV_BULK_MAX_TARGETS` limit applies. Its `patch` takes the fields of `POST /api/v1/findings/bulk-triage` (`state`, `vex_justification`, `assignee` and `notes`), with the same limits. A different field gets 422. JAVV does not change a field whose value is `null`. |
 | GET | `/api/v1/reports/{report_id}` | session, the owner | The status of your job. A job of a different user gets 404. When the job is `done` and not expired, the answer has a `download_token` for 15 minutes. |
 | GET | `/api/v1/reports/{report_id}/download` | session, the owner, and `token` | Downloads the result. After `expires_at`, the request gets 410. With no result yet, it gets 404. A wrong or expired token gets 403. |
 

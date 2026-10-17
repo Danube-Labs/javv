@@ -2,8 +2,9 @@
 /**
  * "Decisions on this CVE" (issue 434 refresh) — scoped risk-accepts & not-affected calls.
  * Decisions are immutable (D40): revoked rows stay, struck through; expiry never edits.
- * Revoke is gated by can_accept_audit_final (the server is the authority; the button
- * follows). Kit skin + DetailCard chrome.
+ * The buttons follow the server's rule (issue 892): a risk-accept or an ignore rule is made and
+ * revoked with can_accept_audit_final only, a not-affected decision is revoked with can_triage.
+ * "New decision" makes a risk-accept, so it is the lead's. Kit skin + DetailCard chrome.
  */
 import { computed } from 'vue'
 
@@ -31,6 +32,7 @@ export interface DecisionRow {
 const props = defineProps<{
   decisions: DecisionRow[]
   canAcceptFinal: boolean
+  canTriage: boolean
   busy: boolean
   /** the decisions read was refused: say so, and offer no new decision against an unknown list
    * (issue 833, F2) */
@@ -45,6 +47,11 @@ const rows = computed(() =>
 /* display slices through the shared GridPager — decisions accrete forever (immutable +
  * revoked kept), so the card pages instead of walling */
 const { page, size, shown, hasNext, setSize } = usePagedSlice(() => rows.value)
+
+function canRevoke(d: DecisionRow): boolean {
+  if (d.revoked_at) return false
+  return props.canAcceptFinal || (props.canTriage && d.type === 'not_affected')
+}
 
 function scopeLabel(d: DecisionRow): string {
   const ns = d.scope?.namespaces ?? []
@@ -75,7 +82,8 @@ function scopeLabel(d: DecisionRow): string {
             <td colspan="7" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No decisions on this CVE yet.' }}</td>
           </tr>
           <tr v-for="d in shown" :key="d.decision_id" :class="{ 'dec-inactive': d.revoked_at }">
-            <td><StateTag :state="d.type === 'risk_accepted' ? 'risk_accepted' : 'not_affected'" /></td>
+            <!-- an ignore rule gives the finding risk_accepted: it wears that tag -->
+            <td><StateTag :state="d.type === 'not_affected' ? 'not_affected' : 'risk_accepted'" /></td>
             <td class="sm">{{ scopeLabel(d) }}</td>
             <td class="sm">
               <span v-if="d.apply_both_scanners" class="both-tag">both</span>
@@ -89,7 +97,7 @@ function scopeLabel(d: DecisionRow): string {
             </td>
             <td class="c">
               <UiButton
-                v-if="!d.revoked_at && canAcceptFinal"
+                v-if="canRevoke(d)"
                 :disabled="busy"
                 title="Revoke this decision (create a new one to replace it)"
                 @click="emit('revoke', d.decision_id)"
