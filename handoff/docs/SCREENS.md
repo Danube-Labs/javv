@@ -307,6 +307,12 @@ right).
   struck-through / expired). Risk-accept: `POST /api/v1/decisions` (type `risk_accepted`
   additionally requires `can_accept_audit_final` — SEC-2 → 403 without); edit =
   `PATCH /api/v1/decisions/{id}` (revoke+new, D40); revoke = `POST …/revoke`.
+  **Who sees which button (operator ruling 2026-10-17, issue 892 option 1):** "New decision" opens
+  the risk-accept dialog, so only `can_accept_audit_final` sees it, as in the prototype. Revoke shows
+  on every active decision for `can_accept_audit_final`, and on an active `not_affected` decision for
+  `can_triage`. A `risk_accepted` or `ignore_rule` decision is made, changed and revoked by
+  `can_accept_audit_final` only (the server answers 403). An `ignore_rule` decision wears the
+  "Risk accepted" tag, the state it gives the finding.
 
 **Header/meta — renders what exists (B-2/B-3):** CVE mono h1, severity tag (verbatim word), KEV
 tag, meta line = CVSS float · raw EPSS (Grype rows only) · first seen (`first_seen_at`) · last

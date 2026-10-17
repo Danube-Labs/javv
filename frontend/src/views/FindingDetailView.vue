@@ -361,6 +361,7 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           class="detail-main"
           :decisions="decisions"
           :can-accept-final="auth.hasCapability('can_accept_audit_final')"
+          :can-triage="auth.hasCapability('can_triage')"
           :busy="decisionsBusy"
           :failed="decisionsFailed"
           @create="raOpen = true"
