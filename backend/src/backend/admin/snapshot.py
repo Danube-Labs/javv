@@ -21,7 +21,9 @@ SNAPSHOT_REPO_KEY = "snapshot_repo"  # the system-config doc _id holding the rep
 
 # the durability set — current-state + config indices snapshotted on schedule (NFR-6). The bulky
 # per-cluster append series (occurrences) are snapshotted less often / separately (DR RPO note).
-DURABILITY_INDICES = "findings,javv-images-*,system-*"
+# system-sessions stays out: sign-out only sets `revoked`, so a restored copy would revive
+# sessions that ended after the snapshot, for the rest of their lifetime (issue 892).
+DURABILITY_INDICES = "findings,javv-images-*,system-*,-system-sessions"
 
 # Only these repo-settings keys may be persisted — non-secret location/addressing settings. Anything
 # else (notably credentials) is refused. Allowlist, not denylist: safe by construction.
