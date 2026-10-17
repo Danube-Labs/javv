@@ -69,7 +69,9 @@ def test_snapshot_policy_body_shape() -> None:
     body = snapshot_policy_body(repository="javv-snapshots")
     sc = body["snapshot_config"]
     assert sc["repository"] == "javv-snapshots"
-    assert sc["indices"] == DURABILITY_INDICES == "findings,javv-images-*,system-*"
+    assert sc["indices"] == DURABILITY_INDICES
+    # sessions stay out: a restored copy would revive signed-out sessions (issue 892)
+    assert DURABILITY_INDICES == "findings,javv-images-*,system-*,-system-sessions"
     assert sc["include_global_state"] is False  # index-scoped durability contract
     assert body["creation"]["schedule"]["cron"]["expression"] == "0 2 * * *"
     # retention floor keeps at least min_count snapshots regardless of age (D26)

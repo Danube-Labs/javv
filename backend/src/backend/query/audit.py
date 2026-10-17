@@ -27,6 +27,9 @@ log = structlog.get_logger()
 
 _PATTERN = "system-audit-log-*"
 _SORT_KEY = "@timestamp"  # fixed — the cursor's `s` field must round-trip exactly this
+# The account events: sign-ins and sign-outs, password, user and role changes (`user`), and the
+# ingest tokens (`token`). Only `can_manage_users` reads them (issue 892 ruling 3).
+ACCOUNT_ENTITY_TYPES = ("token", "user")
 # Fleet-wide settings rows written before issue 559 carry this literal instead of no cluster_id.
 # The log is append-only, so they keep it; no real cluster can match, since ids are 8-64 chars.
 _LEGACY_FLEET_CLUSTER_ID = "fleet"
@@ -53,14 +56,17 @@ class AuditFilters:
     exclude_actor: str | None = None
 
 
-def audit_tenant_query(cluster_id: str, body: dict[str, Any]) -> dict[str, Any]:
+def audit_tenant_query(
+    cluster_id: str, body: dict[str, Any], *, account_events: bool
+) -> dict[str, Any]:
     """SEC-4 for the JOURNAL specifically (operator catch, 2026-07-18): the log holds two row
     classes — cluster-scoped (triage, decisions) and FLEET-scoped (auth, user admin, store
     inspect, job triggers — no cluster to belong to). The plain term guard silently hid the
     whole fleet class from the audit screen. Still a structural, server-built guard: a row is
     visible iff it is the selected tenant's, carries no cluster_id at all, or carries the legacy
     fleet literal (MVP tenancy is all-clusters-visible, D38 — nothing here a session holder
-    can't already see)."""
+    can't already see). Without `account_events` the account rows (`ACCOUNT_ENTITY_TYPES`) are
+    left out; the argument has no default, so every reader of the log decides."""
     guarded = tenant_query(cluster_id, body)
     term = guarded["query"]["bool"]["filter"][0]
     guarded["query"]["bool"]["filter"][0] = {
@@ -73,6 +79,10 @@ def audit_tenant_query(cluster_id: str, body: dict[str, Any]) -> dict[str, Any]:
             "minimum_should_match": 1,
         }
     }
+    if not account_events:
+        guarded["query"]["bool"].setdefault("must_not", []).append(
+            {"terms": {"entity_type": list(ACCOUNT_ENTITY_TYPES)}}
+        )
     return guarded
 
 
@@ -134,6 +144,7 @@ async def run_audit_search(
     size: int,
     order: str = "desc",
     cursor: str | None = None,
+    account_events: bool,
     prefix: str = "",
     keep_open: bool = False,
 ) -> dict[str, Any]:
@@ -159,7 +170,8 @@ async def run_audit_search(
 
     opened_here = cursor is None
     body = build_audit_body(filters, size=size, order=order, search_after=search_after)
-    body = audit_tenant_query(cluster_id, body)  # SEC-4 + the fleet-row seam (see the builder)
+    # SEC-4 + the fleet-row seam (see the builder)
+    body = audit_tenant_query(cluster_id, body, account_events=account_events)
     body["pit"] = {"id": pit_id, "keep_alive": keep_alive}
     try:
         resp = await client.search(body=body)

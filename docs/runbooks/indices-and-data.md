@@ -29,8 +29,11 @@ run (03:00 by default). After that, time travel cannot show that period.
 ## Back up the data
 
 A snapshot from **Settings › Data & OpenSearch › Snapshot now** holds `findings`, `javv-images-*`
-and `system-*`. These indices hold the current state, the triage, the decisions, the users, the
-settings and the audit log.
+and `system-*`, except `system-sessions`. These indices hold the current state, the triage, the
+decisions, the users, the settings and the audit log.
+
+A snapshot does not hold the sessions. A sign-out only marks its session as ended, so a restored
+copy could make an ended session valid again. After a restore, the users sign in again.
 
 A snapshot does not hold the scan history (`javv-finding-occurrences-*`, `javv-scan-events-*`,
 `javv-inventory-runs-*` and `javv-ingest-failures-*`), `javv-scan-orders` or

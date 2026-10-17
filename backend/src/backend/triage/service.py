@@ -26,7 +26,7 @@ from opensearchpy.exceptions import ConflictError
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.audit.writer import append_field_change
-from backend.triage.state_machine import validate_transition
+from backend.triage.state_machine import holds_risk_accept, validate_transition
 
 FINDINGS_INDEX = "findings"
 _CAS_RETRIES = 8
@@ -62,16 +62,22 @@ class FindingNotFound(LookupError):
     pass
 
 
+class RiskAcceptLocked(PermissionError):
+    """A state change would undo a risk-accept, and the caller may not (issue 892). Raised from
+    the same read the CAS write is guarded by, so the check sees the finding's current state."""
+
+
 async def apply_triage(
     client: AsyncOpenSearch,
     *,
     actor: str,
     finding_key: str,
     patch: TriagePatch,
+    may_undo_risk_accept: bool = False,
     prefix: str = "",
 ) -> dict[str, Any]:
     """Apply one triage patch under CAS; returns the updated finding `_source`.
-    Raises FindingNotFound / TransitionError (422 upstream)."""
+    Raises FindingNotFound / TransitionError (422 upstream) / RiskAcceptLocked (403 upstream)."""
     index = f"{prefix}{FINDINGS_INDEX}"
     for _ in range(_CAS_RETRIES):
         try:
@@ -85,6 +91,8 @@ async def apply_triage(
         actions: list[dict[str, Any]] = []  # audit rows to append after the CAS write lands
 
         if patch.state is not None:
+            if patch.state != current_state and not may_undo_risk_accept and holds_risk_accept(src):
+                raise RiskAcceptLocked(finding_key)
             validate_transition(
                 current_state, patch.state, vex_justification=patch.vex_justification
             )

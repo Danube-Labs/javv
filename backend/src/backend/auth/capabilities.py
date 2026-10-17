@@ -29,6 +29,22 @@ ROLE_BUNDLES: dict[str, list[str]] = {
 }
 
 
+def holds(principal: Principal, capability: str) -> bool:
+    """The gate's test, for a route that varies its answer instead of refusing it."""
+    return "*" in principal.capabilities or capability in principal.capabilities
+
+
+def holds_accept_final(principal: Principal) -> bool:
+    """SEC-2: may this principal make, change or undo a risk-accept (issue 892)?"""
+    return holds(principal, "can_accept_audit_final")
+
+
+def accept_final_refusal(title: str) -> HTTPException:
+    """The 403 for a risk-accept the principal may not make or undo, counted like the gate's."""
+    AUTH_FAILURES.labels("missing_capability").inc()
+    return HTTPException(403, title)
+
+
 def require_capability(capability: str):
     """Dependency factory: `Depends(require_capability("can_triage"))` → the Principal."""
 

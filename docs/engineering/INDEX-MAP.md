@@ -307,7 +307,7 @@ watermarks are *derived* (rebuild-state wipes + recomputes them from the catalog
 *authoritative* - an allocated-but-uncommitted order is invisible to the catalog, so a naive rebuild
 could re-issue it. **rebuild-state never touches this index**; the only self-heal is forward
 (`max(committed) > counter` → bump up, never down). Mutable, no rollover, **no retention ever** (the one exception: deleting a whole cluster, issue 765, removes its counters);
-**not in a snapshot today:** `DURABILITY_INDICES` (`admin/snapshot.py`) is `findings,javv-images-*,system-*`. The forward-only self-heal keeps a restore safe for committed scans (issue 664). **Also holds the per-cluster `inventory_order` counter**
+**not in a snapshot today:** `DURABILITY_INDICES` (`admin/snapshot.py`) is `findings,javv-images-*,system-*,-system-sessions`. The forward-only self-heal keeps a restore safe for committed scans (issue 664). **Also holds the per-cluster `inventory_order` counter**
 (M8a slice 2/#33): one doc per cluster under the reserved scanner key `__inventory__`
 (`_id = <cluster_id>:__inventory__`, same shape/CAS; self-heal floor = max committed
 `inventory_order` in `javv-inventory-runs`, allocated at cycle-END commit).
@@ -456,5 +456,6 @@ revoked           boolean       revoke-on-role-change / logout-all
 - **Snapshot/restore** (NFR-6): D36 plans two schedules, the small audit/decisions indices more often than
   the bulky append ones (DR RPO note). Only the first exists today: a snapshot (on demand, from
   **Settings › Data & OpenSearch**) holds `findings`, `javv-images-*` and `system-*`. The append series,
-  `javv-scan-orders` and `javv-scan-watermarks` are in no snapshot. Issue 664 holds the history of this
+  `javv-scan-orders`, `javv-scan-watermarks` and `system-sessions` are in no snapshot: sign-out only
+  sets `revoked`, so a restored copy would revive ended sessions (issue 892). Issue 664 holds the history of this
   choice and the open questions.

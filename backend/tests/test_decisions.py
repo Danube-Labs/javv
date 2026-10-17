@@ -588,6 +588,7 @@ async def test_reproject_does_not_overwrite_a_concurrent_human_triage(real_os) -
             actor="human",
             finding_key=fk,
             patch=TriagePatch(state="acknowledged"),
+            may_undo_risk_accept=True,  # a lead's override: this test races the write path
             prefix=prefix,
         ),
         return_exceptions=True,

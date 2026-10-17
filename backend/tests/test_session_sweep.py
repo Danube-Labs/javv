@@ -117,6 +117,7 @@ async def test_each_run_journals_its_counts_where_the_audit_screen_can_see_them(
     body = audit_tenant_query(
         "0f0e6c4e-0000-4000-8000-000000000000",
         {"size": 10, "query": {"bool": {"filter": [{"term": {"action": "session_sweep_run"}}]}}},
+        account_events=False,  # a job row, not an account event: every session sees it
     )
     visible = await client.search(index=f"{prefix}{AUDIT_ALIAS}*", body=body)
     assert len(visible["hits"]["hits"]) == 2

@@ -1,7 +1,8 @@
 """M5c decision routes (FR-8/SEC-2) — the HTTP layer over decisions/lifecycle + projection.
 
-Pins: risk-accept needs `can_accept_audit_final` on CREATE **and on an EDIT that would produce
-one** (no smuggling); a plain `can_triage` holder can still create ignore_rule/not_affected;
+Pins: risk-accept and ignore_rule (which projects risk_accepted) need `can_accept_audit_final` on
+CREATE, on an EDIT that would produce one (no smuggling), and on an EDIT or REVOKE of one (an undo,
+issue 892); a plain `can_triage` holder creates, edits and revokes not_affected;
 double-revoke → 409; empty edit → 422; the list read REQUIRES `cluster_id` (tenant read path
 discipline) and paginates. Real OpenSearch — same fixture family as test_admin_users."""
 
@@ -60,8 +61,8 @@ async def env():
 
 
 def _body(**over) -> dict:
-    return {
-        "type": "ignore_rule",
+    body = {
+        "type": "not_affected",
         "cve_id": f"CVE-{uuid.uuid4().hex[:8]}",
         "scope": {"namespaces": [], "images": []},
         "apply_both_scanners": True,
@@ -69,26 +70,71 @@ def _body(**over) -> dict:
         "cluster_id": CID,
         **over,
     }
+    if body["type"] == "not_affected" and "vex_justification" not in over:
+        body["vex_justification"] = "component_not_present"  # the CISA five it requires
+    return body
 
 
-async def test_risk_accept_needs_accept_final_on_create_and_edit(env) -> None:
+async def test_accept_types_need_accept_final_on_create_and_edit(env) -> None:
     login_with, _ = env
     triager = await login_with(["can_triage"])
 
-    r = await triager.post("/api/v1/decisions", json=_body(type="risk_accepted"))
-    assert r.status_code == 403  # SEC-2
+    for kind in ("risk_accepted", "ignore_rule"):  # ignore_rule: issue 892 ruling 5
+        r = await triager.post("/api/v1/decisions", json=_body(type=kind, vex_justification=None))
+        assert r.status_code == 403, kind  # SEC-2
 
-    r = await triager.post("/api/v1/decisions", json=_body(type="ignore_rule"))
+    r = await triager.post("/api/v1/decisions", json=_body())
     assert r.status_code == 201
     decision_id = r.json()["decision"]["decision_id"]
 
-    # an EDIT flipping the type to risk_accepted is the smuggling arm — same gate
-    r = await triager.patch(f"/api/v1/decisions/{decision_id}", json={"type": "risk_accepted"})
-    assert r.status_code == 403
+    # an EDIT flipping the type to an accept type is the smuggling arm — same gate
+    for kind in ("risk_accepted", "ignore_rule"):
+        r = await triager.patch(
+            f"/api/v1/decisions/{decision_id}", json={"type": kind, "vex_justification": None}
+        )
+        assert r.status_code == 403, kind
 
     lead = await login_with(["can_triage", "can_accept_audit_final"])
-    r = await lead.post("/api/v1/decisions", json=_body(type="risk_accepted"))
+    r = await lead.post(
+        "/api/v1/decisions", json=_body(type="risk_accepted", vex_justification=None)
+    )
     assert r.status_code == 201
+
+
+@pytest.mark.parametrize("kind", ["risk_accepted", "ignore_rule"])
+async def test_undoing_an_accept_type_needs_accept_final(env, kind) -> None:
+    """issue 892 ruling 1: a triager cannot undo what only a lead may make — no revoke, and no
+    edit of any field (an edit is revoke + create), even to a type the triager may create."""
+    login_with, _ = env
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    triager = await login_with(["can_triage"])
+    made = (
+        await lead.post("/api/v1/decisions", json=_body(type=kind, vex_justification=None))
+    ).json()["decision"]
+    path = f"/api/v1/decisions/{made['decision_id']}"
+
+    r = await triager.post(f"{path}/revoke")
+    assert r.status_code == 403
+    r = await triager.patch(
+        path, json={"type": "not_affected", "vex_justification": "component_not_present"}
+    )
+    assert r.status_code == 403
+    r = await triager.patch(path, json={"justification": "narrowed"})
+    assert r.status_code == 403
+    listed = await lead.get(
+        "/api/v1/decisions",
+        params={"cluster_id": CID, "cve_id": made["cve_id"], "include_revoked": True},
+    )
+    # still one active decision: the refusals revoked nothing and created nothing
+    assert [d["revoked_at"] for d in listed.json()["decisions"]] == [None]
+
+    # the lead may still change it: an edit of the justification alone keeps the type
+    r = await lead.patch(path, json={"justification": "narrowed by the lead"})
+    assert r.status_code == 200
+    assert r.json()["decision"]["type"] == kind
+    assert (
+        await lead.post(f"/api/v1/decisions/{r.json()['decision']['decision_id']}/revoke")
+    ).status_code == 200
 
 
 async def test_revoke_translates_conflicts_and_unknowns(env) -> None:
@@ -145,7 +191,9 @@ async def test_invalid_decision_inputs_return_422_not_500(env) -> None:
     login_with, _ = env
     http = await login_with(["can_triage"])
 
-    r = await http.post("/api/v1/decisions", json=_body(type="not_affected"))
+    r = await http.post(
+        "/api/v1/decisions", json=_body(type="not_affected", vex_justification=None)
+    )
     assert r.status_code == 422  # A-M2: not_affected needs a justification
     r = await http.post(
         "/api/v1/decisions",
