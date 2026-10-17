@@ -312,7 +312,7 @@ The scanner checks each value against the values that the pinned Trivy binary ac
 | `JAVV_TRIVY_SEVERITIES` | not set: all | `--severity`, for example `CRITICAL,HIGH`. |
 | `JAVV_TRIVY_PKG_TYPES` | not set | `--pkg-types`, for example `os,library`. |
 | `JAVV_TRIVY_TIMEOUT` | not set: the Trivy default | `--timeout`, for example `5m0s`. |
-| **Trivy version** | `0.75.0` | `scanners.trivy.current` in `versions.yaml`, and the `ARG` in the Dockerfile. To change it, use a different image tag. |
+| **Trivy version** | `0.76.0` | `scanners.trivy.current` in `versions.yaml`, and the `ARG` in the Dockerfile. To change it, use a different image tag. |
 | **Vulnerability database** | schema 2 | `versions.yaml` holds the schema. A database with a different schema fails with a clear error. The `javv-scanner` chart refreshes the database at the start of each cycle. Without the chart, Trivy refreshes it at scan time. Each push holds the database version, from `trivy version --format json` in each cycle. |
 
 ## Grype settings

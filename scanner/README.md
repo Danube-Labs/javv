@@ -92,7 +92,7 @@ a **signed SPDX SBOM attestation**. Both bind to the image digest, not a tag. To
 (the version CI signs with, `versions.yaml` `supply_chain.cosign`):
 
 ```bash
-IMAGE=ghcr.io/danube-labs/javv-scanner-trivy:0.75.0
+IMAGE=ghcr.io/danube-labs/javv-scanner-trivy:0.76.0
 IDENTITY='^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/scanner-images\.yml@refs/(heads/main|tags/scanner-v.+)$'
 ISSUER=https://token.actions.githubusercontent.com
 

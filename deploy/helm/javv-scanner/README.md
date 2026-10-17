@@ -112,7 +112,7 @@ of `scanner-images.yml`. A checkout of the repository has the tag only.
 | trivy.enabled | bool | `true` | Run the Trivy CronJob. |
 | trivy.extraEnv | list | `[]` | More environment variables for the refresh and the scan, in the form of Kubernetes. |
 | trivy.image.digest | string | `""` | `sha256:...`: run exactly that image. It replaces `tag`. It is empty in the repository. The chart of a release sets it to the digest that the tag named at the release. |
-| trivy.image.tag | string | `"0.75.0"` | The Trivy version, from versions.yaml (`scanners.trivy.current`). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image. |
+| trivy.image.tag | string | `"0.76.0"` | The Trivy version, from versions.yaml (`scanners.trivy.current`). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image. |
 | trivy.registryAuth | object | `{"existingSecret":""}` | A registry login for the images from private registries: the name of a `kubernetes.io/dockerconfigjson` Secret in the namespace of the chart. The scan container mounts it, and `DOCKER_CONFIG` tells Trivy where it is. When it is empty, Trivy pulls each image with no login. |
 | trivy.schedule | string | `"0 */6 * * *"` | When a cycle starts, in the time zone of the CronJob. A cycle each 6 hours keeps each finding well inside the 3-day staleness window of JAVV. Grype runs half an hour later, so the two downloads do not occur at the same time. |
 | trivy.timeZone | string | `""` | The time zone of `schedule`, for example `Europe/Bucharest`. When it is empty, the zone of the cluster applies, which is UTC on most clusters. |
