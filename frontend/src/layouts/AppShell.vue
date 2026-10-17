@@ -23,13 +23,16 @@ import RetirementCountdownBanner from '@/components/system/RetirementCountdownBa
 import ScannerFreshnessBanner from '@/components/system/ScannerFreshnessBanner.vue'
 import GlobalTimePicker from '@/components/time-travel/GlobalTimePicker.vue'
 import ToastStack from '@/components/ui/ToastStack.vue'
+import UiLoadingBar from '@/components/ui/UiLoadingBar.vue'
 import { useGlobalUrlStamp } from '@/composables/useGlobalUrlStamp'
+import { preloadPages } from '@/router/preload'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { useHealthStore } from '@/stores/health'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { isColdStart } from '@/system/coldStart'
 import { lastDataAt } from '@/system/freshness'
+import { pendingWork } from '@/system/pendingWork'
 import { clusterFromQuery, ttFromQuery } from '@/system/globalUrl'
 
 const auth = useAuthStore()
@@ -68,6 +71,9 @@ const coldStart = computed(() =>
   isColdStart({ none: clusterStore.none, section: route.meta.section as string | undefined }),
 )
 
+/** A page change or an API request is open: the top bar's loading bar (issue 902). */
+const busy = computed(() => pendingWork.value > 0)
+
 /** Section identity echo (§8.5 specimen): the route's sidebar-group accent, exposed as a CSS
  * var the head-card's top bar reads — wayfinding chroma only. */
 const sectAccent = computed(() => {
@@ -89,6 +95,7 @@ onMounted(() => {
   health.startPolling()
   void clusterStore.fetchClusters(urlCluster)
   document.addEventListener('keydown', onGlobalKey)
+  preloadPages(router)
 })
 onUnmounted(() => {
   health.stopPolling()
@@ -115,6 +122,7 @@ onUnmounted(() => {
           <NotificationBell />
           <UserMenu />
         </div>
+        <UiLoadingBar :busy="busy" />
       </header>
 
       <BackendHealthBanner />
@@ -132,7 +140,7 @@ onUnmounted(() => {
         </div>
       </Transition>
 
-      <main class="content page-motion" :class="{ 'content-wide': $route.meta.wide }" :style="sectAccent">
+      <main class="content page-motion" :class="{ 'content-wide': $route.meta.wide }" :style="sectAccent" :aria-busy="busy || undefined">
         <EmptyState
           v-if="coldStart"
           page-title
@@ -176,6 +184,7 @@ onUnmounted(() => {
   min-width: 0;
 }
 .topbar {
+  position: relative;
   height: 56px;
   flex: none;
   background: var(--card);

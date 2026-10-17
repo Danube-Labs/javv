@@ -67,6 +67,12 @@ Place the real brand SVGs (`brand/lockup.svg`, dark variants in dark chrome) —
   re-read on the banner's 10-minute tick and after every Settings write that moves a schedule,
   keeping the selected cluster while it is still listed.
 
+**Loading bar (issue 902, operator decision D1 B, 2026-10-17).** A 2px coral bar on the bottom
+edge of the topbar shows when a page change or an API request is open for more than 250 ms. It
+grows more slowly near the end, then fills and fades when the work ends. The notification poll
+does not count. The main area has `aria-busy` while the work is open. The code of the other pages
+loads while the browser is idle, so most clicks show the new page at once.
+
 **Time picker (C-1, D28/FR-23).** Two visibly distinct controls in one group (V4-DELTA conflict 4):
 the **time-travel `T`** (Now / rewind / jump-to-date → amber "Viewing history: as scanned at T"
 banner + Back to now) and the **trend window** (relative to `T`, scopes charts + Contributors).

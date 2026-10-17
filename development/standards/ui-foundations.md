@@ -70,7 +70,8 @@ invisible and does not count. The global rule lives in `frontend/src/styles/base
 styles may add to it, never remove it. Binding detail: `frontend/DESIGN.md` §2.
 
 **Structural home (post-M9b):** the contract is baked into the UI kit
-(`frontend/src/components/ui/` — UiButton, UiSegControl, UiToggleGroup, UiField, UiDropdown, ModalShell).
+(`frontend/src/components/ui/` — UiButton, UiSegControl, UiToggleGroup, UiField, UiDropdown, ModalShell,
+UiLoadingBar).
 Buttons, segmented bars, labeled fields, dropdown behavior, and modals are USED from the kit,
 never re-rolled per component — writing their raw markup/CSS again is a review failure
 (`frontend/DESIGN.md` §5 table).
@@ -87,6 +88,8 @@ built through the kit animates by default; in-flow appearances (banners) use `t-
 Page entry comes from the app shell (`.page-motion`): each new block of a page fades in, and
 the outer blocks rise 6px. A view adds no entry motion of its own.
 Feedback text (error/success notes) is deliberately INSTANT — never animate urgency.
+After a click, the top bar's loading bar shows when the work takes more than 250 ms
+(issue 902). A view does not add its own sign for a page change or an API request.
 Binding detail: `frontend/DESIGN.md` §5 "Motion".
 
 ## Audit rules (ruled 2026-07-11, #343) — every screen, present and future
