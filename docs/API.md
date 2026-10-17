@@ -175,7 +175,7 @@ At its first start, JAVV creates four roles:
 | `can_triage` | Triage findings. Make, change and revoke `not_affected` decisions. |
 | `can_accept_audit_final` | Accept a risk, in a decision or in triage. Make, change and revoke `risk_accepted` and `ignore_rule` decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue. |
 | `can_manage_tokens` | Make, revoke and rotate scanner tokens |
-| `can_manage_users` | Make users. Change their role, their status and their password. |
+| `can_manage_users` | Make users. Change their role, their status and their password. Read the account events in the audit log. |
 | `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. |
 | `can_manage_retention` | Read and change the data settings: retention, rollover, export lifetime and findings cleanup. Read and take snapshots. Delete a retired cluster. |
 | `can_restore_snapshot` | Restore a snapshot |
@@ -252,6 +252,11 @@ endpoint needs:
 The audit log keeps each sign-in and sign-out, and each change to triage, decisions, settings,
 the scan scope, users, tokens, saved views, clusters, snapshots and jobs. It also keeps each query
 of the data inspector.
+
+Each signed-in user reads the audit log. Only a user with `can_manage_users` reads the account
+events: the rows with `entity_type` `user` (sign-ins and sign-outs, password, user and role
+changes) and `token` (the scanner tokens). For the other users, the three audit endpoints leave
+these rows out of the list, the counts and the CSV.
 
 ### System
 

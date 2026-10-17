@@ -29,9 +29,14 @@ ROLE_BUNDLES: dict[str, list[str]] = {
 }
 
 
+def holds(principal: Principal, capability: str) -> bool:
+    """The gate's test, for a route that varies its answer instead of refusing it."""
+    return "*" in principal.capabilities or capability in principal.capabilities
+
+
 def holds_accept_final(principal: Principal) -> bool:
     """SEC-2: may this principal make, change or undo a risk-accept (issue 892)?"""
-    return "*" in principal.capabilities or "can_accept_audit_final" in principal.capabilities
+    return holds(principal, "can_accept_audit_final")
 
 
 def accept_final_refusal(title: str) -> HTTPException:

@@ -1,6 +1,8 @@
 """GET /api/v1/audit (M8c slice 1, #240) — the journaled history, read plain-session (ruled
 2026-07-07, #237): every triage action is already attributed in-row (D17/D32), so any
-authenticated user may read the log. Feeds the M9d Audit screen + Contributors activity feed.
+authenticated user may read the log. The account events (sign-ins, password, user, role and
+token rows) reach only `can_manage_users` (issue 892 ruling 3). Feeds the M9d Audit screen +
+Contributors activity feed.
 
 Cursor-paged with the A-m1 machinery (`query/audit.py`): opaque cursor, 410 on an expired PIT,
 422 on a tampered cursor/bad order, 503 when the store is down — never a 500. Cursor-less pages
@@ -16,6 +18,7 @@ from fastapi.responses import StreamingResponse
 from opensearchpy.exceptions import ConnectionError as OSConnectionError
 from opensearchpy.exceptions import ConnectionTimeout
 
+from backend.auth.capabilities import holds
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS, OS_REQUEST_ERRORS
@@ -101,6 +104,7 @@ async def read_audit_log(
             order=order,
             cursor=cursor,
             keep_open=keep_open,
+            account_events=holds(principal, "can_manage_users"),
         )
     except CursorExpired as exc:  # A-m1: idled past keep_alive → 410 Gone, restart the walk
         pit_guard.release(principal.user_id, slot)
@@ -166,7 +170,10 @@ async def audit_facets(
         raise HTTPException(422, str(exc)) from exc
     try:
         resp = await client.search(
-            index="system-audit-log-*", body=audit_tenant_query(cluster_id, body)
+            index="system-audit-log-*",
+            body=audit_tenant_query(
+                cluster_id, body, account_events=holds(principal, "can_manage_users")
+            ),
         )
     except (OSConnectionError, ConnectionTimeout) as exc:
         kind = "timeout" if isinstance(exc, ConnectionTimeout) else "conn"
@@ -223,7 +230,10 @@ async def export_audit_csv(
     )
     _reject_conflicting_modes(filters)
     max_rows = get_settings().export_max_rows
-    n = await count_audit_lens(client, cluster_id=cluster_id, filters=filters)
+    account_events = holds(principal, "can_manage_users")
+    n = await count_audit_lens(
+        client, cluster_id=cluster_id, filters=filters, account_events=account_events
+    )
     if n > max_rows:
         log.warning("inline export capped", cluster_id=cluster_id, cap=max_rows, format="audit")
         LIMIT_REJECTIONS.labels("export_rows").inc()  # M-4 (#220)
@@ -242,7 +252,9 @@ async def export_audit_csv(
         # client that disconnects mid-stream reports what was ACTUALLY streamed
         rows, size = 0, 0
         try:
-            async for line in stream_audit_csv(client, cluster_id=cluster_id, filters=filters):
+            async for line in stream_audit_csv(
+                client, cluster_id=cluster_id, filters=filters, account_events=account_events
+            ):
                 rows += 1
                 size += len(line)
                 yield line
