@@ -70,7 +70,7 @@ invisible and does not count. The global rule lives in `frontend/src/styles/base
 styles may add to it, never remove it. Binding detail: `frontend/DESIGN.md` §2.
 
 **Structural home (post-M9b):** the contract is baked into the UI kit
-(`frontend/src/components/ui/` — UiButton, UiSegControl, UiField, UiDropdown, ModalShell).
+(`frontend/src/components/ui/` — UiButton, UiSegControl, UiToggleGroup, UiField, UiDropdown, ModalShell).
 Buttons, segmented bars, labeled fields, dropdown behavior, and modals are USED from the kit,
 never re-rolled per component — writing their raw markup/CSS again is a review failure
 (`frontend/DESIGN.md` §5 table).

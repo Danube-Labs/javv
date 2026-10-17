@@ -21,6 +21,7 @@ import NoClusterState from '@/components/settings/NoClusterState.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import UiToggleGroup from '@/components/ui/UiToggleGroup.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -34,6 +35,9 @@ import {
   scopeDirty,
   type ScopeDraft,
 } from './scopeForm'
+import { KIND_BUTTONS, kindNote, splitKinds, toggleKind } from './scopeKinds'
+
+const KIND_OPTIONS = KIND_BUTTONS.map((b) => ({ value: b.kind, label: b.label, detail: b.kind }))
 
 const clusterStore = useClusterStore()
 const toast = useToastStore()
@@ -66,6 +70,14 @@ watch(
 )
 
 const dirty = computed(() => scopeDirty(draft.value, saved.value))
+const kinds = computed(() => {
+  const { selected, typed } = splitKinds(draft.value.ignore_kinds)
+  return {
+    selected: [...selected],
+    typed,
+    notes: typed.flatMap((v) => kindNote(v) ?? []),
+  }
+})
 const bothListsActive = computed(
   () => draft.value.include_namespaces.length > 0 && draft.value.ignore_namespaces.length > 0,
 )
@@ -89,6 +101,13 @@ async function save() {
     return
   }
   saved.value = cloneScope(draft.value)
+  logger.info('scan_scope_saved', {
+    cluster_id: id,
+    include_namespaces: draft.value.include_namespaces.length,
+    ignore_namespaces: draft.value.ignore_namespaces.length,
+    exclude_images: draft.value.exclude_images.length,
+    ignore_kinds: draft.value.ignore_kinds,
+  })
   toast.success('Scan scope saved. The scanner applies it at its next cycle start')
 }
 
@@ -175,16 +194,32 @@ function discard() {
         </SettingsRow>
         <SettingsRow
           label="Skip workload kinds"
-          hint="Pod owner-reference kinds you don't want inventoried (Job, CronJob…)."
+          hint="The scanner does not scan the pods of the workloads that you select."
+          stack
+        >
+          <UiToggleGroup
+            :options="KIND_OPTIONS"
+            :selected="kinds.selected"
+            label="Skip workload kinds"
+            @toggle="(k) => (draft.ignore_kinds = toggleKind(draft.ignore_kinds, k))"
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="Other owner kinds"
+          hint="For an owner kind that is not in the list above, for example Cluster for a CloudNativePG database. Type the kind of the direct owner of the pod, with the same uppercase and lowercase letters as Kubernetes."
           stack
         >
           <ChipsInput
-            :items="draft.ignore_kinds"
-            placeholder="Job, CronJob…"
+            :items="kinds.typed"
+            placeholder="Cluster, VirtualMachineInstance…"
             input-id="scope-kinds"
             @add="(v) => (draft.ignore_kinds = addChip(draft.ignore_kinds, v))"
             @remove="(v) => (draft.ignore_kinds = removeChip(draft.ignore_kinds, v))"
           />
+          <div v-for="note in kinds.notes" :key="note" class="scope-note-banner" role="status">
+            <AppIcon name="info" :size="13" />
+            {{ note }}
+          </div>
         </SettingsRow>
       </template>
     </SettingsCard>
