@@ -145,6 +145,11 @@ and OIDC (#131) moves those passwords to the identity provider.
 
 Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 
+**Header card (issue 902).** While the fleet loads, the note says only "Fleet current state".
+When the counts arrive, it adds "· 34 clusters · 33 need attention" (or "all healthy"), and the
+card stretches to the right. Before, it showed "0 clusters" while it loaded. Overview's card
+stretches the same way when "last sweep" arrives.
+
 **Data**
 - Cluster list: **RULED (D-5/C-5, 2026-07-07)** — the `system-config` cluster-registry doc
   (`cluster_id` + relabelable `cluster_name`) ships in **M8c** with its session read; the UI
@@ -892,6 +897,8 @@ lists are drawn elsewhere.
   6-state values (A-1/A-2).
 - RelTime everywhere; deadlines absolute. Esc/arrow keyboard patterns; coral focus rings.
 - First-run/empty states on every data screen (M9f owns the shared components).
+- Page entry (issue 902): each new block of the routed page fades in, and the outer blocks rise
+  6px, also when data replaces a placeholder. The app shell does it for every screen.
 - Capability gating on every mutating affordance — from `/auth/me` capabilities (A-4); client
   gate is convenience, server is authority.
 - All timestamps/IDs/versions in the mono face (`--font-mono`); severity colors from the token map only; coral/amber

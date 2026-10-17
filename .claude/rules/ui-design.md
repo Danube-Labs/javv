@@ -26,7 +26,10 @@ operator ruling on a **built specimen** (DESIGN.md §8.5), not an argument in a 
    exactly where a screen most often feels unfinished. Land what you borrow on the **existing** motion
    layer rather than a new curve: `t-pop` = floating panels (dropdowns/popovers), fade + 4px rise,
    quick both ways; `t-fade` = banners and in-flow appearances, crossfade only, **never animate
-   height**. Skeletons are shared: the pulse is `.skel` + `@keyframes skel-shimmer` in base.css,
+   height**. Page entry is in the shell, not in the views: `.page-motion` on the main area fades
+   each new block in and raises the outer ones 6px (issue 902), so a view adds no entry motion
+   of its own. DESIGN.md §9 permits two layout animations: the sidebar collapse and the
+   header card stretch (`composables/useStretchWidth.ts`). Skeletons are shared: the pulse is `.skel` + `@keyframes skel-shimmer` in base.css,
    composed by `UiSkeleton` — a view that grows its own shimmer fails the style rules test.
 3. **`node .claude/skills/impeccable/scripts/detect.mjs <changed files>`** — the VENDORED detector,
    pinned with the repo. **Never `npx impeccable detect`**: unpinned, and a stale cached version
