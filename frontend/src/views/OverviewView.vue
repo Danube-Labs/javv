@@ -31,6 +31,7 @@ import UiSegControl from '@/components/ui/UiSegControl.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
+import { useStretchWidth } from '@/composables/useStretchWidth'
 import { CHART_PTYPE_RAMP } from '@/styles/tokens'
 import { useClusterStore } from '@/stores/cluster'
 import { useOverviewStore } from '@/stores/overview'
@@ -51,6 +52,10 @@ const overview = useOverviewStore()
 const { withGlobals } = useApi()
 
 const scanner = ref<ScannerLens>('all')
+
+/** The header card stretches when the last sweep time arrives (issue 902). */
+const headCard = ref<HTMLElement | null>(null)
+useStretchWidth(headCard)
 const LENS_OPTS = [
   { value: 'scanner', label: 'by scanner' },
   { value: 'severity', label: 'by severity' },
@@ -126,7 +131,7 @@ function onDonutClick(e: { name?: string }) {
 <template>
   <div class="screen">
     <div class="screen-head">
-      <div class="head-card head-card-fluid">
+      <div ref="headCard" class="head-card head-card-fluid">
         <h1>Overview</h1>
         <p class="head-note">
           Current state across <b class="mono-cell"><template v-if="clusterStore.selected?.cluster_name">{{ clusterStore.selected.cluster_name }}</template><span v-else class="muted-dash">-</span></b>

@@ -281,6 +281,21 @@ notification bell) do not count. The main area has `aria-busy` while the work is
 of the other pages loads while the browser is idle (`router/preload.ts`), so most clicks show the
 new page at once.
 
+**Page entry (operator decision 2026-10-17 on built prototypes, issue 902, D2 B).** A page must
+not come in all at once. The app shell puts `.page-motion` on its main area. In `base.css`, each
+block of the routed page fades in when the page inserts it (`page-fade`), and the outer blocks also
+rise 6px (`page-rise`). Both run for `--dur-panel` on `--ease-out`. This covers a page change and
+the data that replaces a placeholder, and a view adds no code for it. The selectors have zero
+specificity (`:where()`), so a block with its own animation, such as the skeleton pulse, keeps
+it. Do not add a page-level `<Transition>` on top: two fades on the same blocks gave an empty
+area for about 100 ms in the prototype.
+
+**Header card stretch (operator decision 2026-10-17 on built prototypes, issue 902, D3 A).** A
+header card that gets wider when its text grows stretches to the right in `--dur-panel`, and its
+text shows from left to right. A card that gets narrower changes at once. Use
+`composables/useStretchWidth.ts` on the card (All clusters and Overview do). This animates width,
+thus it is a ruled exception in §9.
+
 ### The UI kit (`components/ui/`) — use it, never re-roll it
 
 These components each own one contract ONCE (feedback states, dismiss behavior, rhythm). Writing
@@ -438,7 +453,8 @@ reflex defaults (operator ruling 2026-07-09):
 | `tiny-text 10–11.5px` on mono micro-scale | Ops-tool density (table headers, counts, chips) per the v4 scale. Body text stays ≥13px. |
 | `low-contrast` white-on-coral (login/action buttons) | Prototype button treatment; 13px/600 button label, not body text. |
 | `cramped-padding` on `tbl-wrap` | Full-bleed table inside the card is the prototype's design. |
-| `layout-transition: width` on `.sidebar` | The collapse rail (226↔64px) — the one deliberate layout animation: user-initiated, rare, and the standard sidebar pattern (Nuxt UI reference does the same). Nothing else animates layout — the `t-*` classes are transform/opacity only. **Enforced, not just stated:** `style-rules.spec.ts` fails any other width/height/padding/margin transition in `src/` (issue 484 — the triage meter had been breaking this sentence unnoticed). |
+| `layout-transition: width` on `.sidebar` | The collapse rail (226↔64px) — a deliberate layout animation: user-initiated, rare, and the standard sidebar pattern (Nuxt UI reference does the same). Nothing else animates layout except the header card stretch below — the `t-*` classes are transform/opacity only. **Enforced, not just stated:** `style-rules.spec.ts` fails any other width/height/padding/margin transition in `src/` (issue 484 — the triage meter had been breaking this sentence unnoticed). |
+| width animation in `composables/useStretchWidth.ts` | The header card stretch (operator decision 2026-10-17, issue 902). It runs only when a card gets wider, for `--dur-panel`, and not with reduced motion. It moves one small card, not the page. `style-rules.spec.ts` permits it in this one file, and also fails a layout animation from script (`element.animate()`) anywhere else. |
 | `ai-color-palette` purple/violet | The `--scanner-grype-*` identity tokens (chip language A) — Grype's brand tone, deliberately distinct from Trivy's teal. Fires on every dump because tokens.css ships globally; not an accent choice. |
 
 Everything else it flags (real contrast failures, hierarchy problems) gets fixed or gets its

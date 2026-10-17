@@ -890,6 +890,36 @@ button.stat-cell:hover .cell-go,
   }
 }
 
+/* page entry (issue 902, operator decision D2 B): each block that comes into the routed page fades
+   in, and the outer blocks also rise 6px. This covers a page change and the data that replaces a
+   placeholder, with no code in the views: an animation runs when its element is inserted. The
+   app shell puts .page-motion on its main area. :where() keeps the specificity at zero, so a block
+   with its own animation (the skeleton pulse) keeps it. `backwards` holds the start values only
+   during the run, so a block's own translate or opacity is not touched after it. */
+@keyframes page-rise {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+}
+:where(.page-motion) > * > * {
+  animation: page-rise var(--dur-panel) var(--ease-out) backwards;
+}
+:where(.page-motion) > * > * > * {
+  animation: page-fade var(--dur-panel) var(--ease-out) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.page-motion) > * > *,
+  :where(.page-motion) > * > * > * {
+    animation: none;
+  }
+}
+
 /* t-toast: the ToastStack TransitionGroup — rise in, fade out; the move class keeps the
    stack sliding smoothly when one dismisses (leave goes absolute so siblings can move). */
 .t-toast-enter-active,

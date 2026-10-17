@@ -140,7 +140,7 @@ onUnmounted(() => {
         </div>
       </Transition>
 
-      <main class="content" :class="{ 'content-wide': $route.meta.wide }" :style="sectAccent" :aria-busy="busy || undefined">
+      <main class="content page-motion" :class="{ 'content-wide': $route.meta.wide }" :style="sectAccent" :aria-busy="busy || undefined">
         <EmptyState
           v-if="coldStart"
           page-title
