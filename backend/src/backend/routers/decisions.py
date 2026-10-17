@@ -21,7 +21,7 @@ from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.auth.capabilities import holds_accept_final, require_capability
+from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS
@@ -56,7 +56,7 @@ ACCEPT_TYPES = frozenset({"risk_accepted", "ignore_rule"})
 
 def _require_accept_final(principal: Principal, reason: str) -> None:
     if not holds_accept_final(principal):
-        raise HTTPException(403, f"{reason} requires can_accept_audit_final")
+        raise accept_final_refusal(f"{reason} requires can_accept_audit_final")
 
 
 class DecisionEditRequest(BaseModel):

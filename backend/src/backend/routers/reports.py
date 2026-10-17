@@ -25,7 +25,7 @@ from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
 from pydantic import ValidationError
 
-from backend.auth.capabilities import holds_accept_final
+from backend.auth.capabilities import accept_final_refusal, holds_accept_final
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.metrics import LIMIT_REJECTIONS
 from backend.core.settings import get_settings
@@ -88,7 +88,7 @@ async def enqueue_report(
             raise _bulk_part_errors(exc, "patch") from exc
         accept_final = holds_accept_final(principal)
         if patch.get("state") == "risk_accepted" and not accept_final:
-            raise HTTPException(403, "risk-accept requires can_accept_audit_final")
+            raise accept_final_refusal("risk-accept requires can_accept_audit_final")
         try:
             selector = BulkSelector(**body.bulk_params.selector).model_dump(exclude_none=True)
         except ValidationError as exc:
@@ -114,7 +114,7 @@ async def enqueue_report(
         if "state" in patch and not accept_final:  # issue 892 ruling 6, as the inline bulk
             held = await count_risk_accepted(client, target_ids)
             if held:
-                raise HTTPException(403, risk_accept_refusal(held, len(target_ids)))
+                raise accept_final_refusal(risk_accept_refusal(held, len(target_ids)))
         doc["params"] = {
             "selector": selector,
             "patch": patch,

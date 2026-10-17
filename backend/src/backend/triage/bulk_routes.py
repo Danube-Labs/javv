@@ -17,7 +17,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from backend.auth.capabilities import holds_accept_final, require_capability
+from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import LIMIT_REJECTIONS
@@ -80,7 +80,7 @@ async def bulk_triage(request: Request, body: BulkTriageRequest, principal: CanT
     patch = body.patch.model_dump(exclude_unset=True)
     accept_final = holds_accept_final(principal)
     if patch.get("state") == "risk_accepted" and not accept_final:
-        raise HTTPException(403, "risk-accept requires can_accept_audit_final")
+        raise accept_final_refusal("risk-accept requires can_accept_audit_final")
     try:
         validate_bulk_patch(patch)
     except TransitionError as exc:
@@ -124,7 +124,7 @@ async def bulk_triage(request: Request, body: BulkTriageRequest, principal: CanT
     if "state" in patch and not accept_final:
         held = await count_risk_accepted(client, target_ids)
         if held:
-            raise HTTPException(403, risk_accept_refusal(held, len(target_ids)))
+            raise accept_final_refusal(risk_accept_refusal(held, len(target_ids)))
 
     updated = await apply_bulk_triage(
         client,

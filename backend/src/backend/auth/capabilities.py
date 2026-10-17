@@ -34,6 +34,12 @@ def holds_accept_final(principal: Principal) -> bool:
     return "*" in principal.capabilities or "can_accept_audit_final" in principal.capabilities
 
 
+def accept_final_refusal(title: str) -> HTTPException:
+    """The 403 for a risk-accept the principal may not make or undo, counted like the gate's."""
+    AUTH_FAILURES.labels("missing_capability").inc()
+    return HTTPException(403, title)
+
+
 def require_capability(capability: str):
     """Dependency factory: `Depends(require_capability("can_triage"))` → the Principal."""
 

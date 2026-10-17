@@ -8,7 +8,7 @@ from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from backend.auth.capabilities import holds_accept_final, require_capability
+from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal
 from backend.triage.service import FindingNotFound, RiskAcceptLocked, TriagePatch, apply_triage
 from backend.triage.state_machine import TransitionError
@@ -24,7 +24,7 @@ async def triage(
 ) -> dict[str, Any]:
     accept_final = holds_accept_final(principal)
     if patch.state == "risk_accepted" and not accept_final:
-        raise HTTPException(403, "risk-accept requires can_accept_audit_final")
+        raise accept_final_refusal("risk-accept requires can_accept_audit_final")
     client = cast(Any, request.app.state.opensearch)
     try:
         finding = await apply_triage(
@@ -37,8 +37,8 @@ async def triage(
     except FindingNotFound:
         raise HTTPException(404, "finding not found") from None
     except RiskAcceptLocked:
-        raise HTTPException(
-            403, "changing the state of a risk-accepted finding requires can_accept_audit_final"
+        raise accept_final_refusal(
+            "changing the state of a risk-accepted finding requires can_accept_audit_final"
         ) from None
     except TransitionError as exc:
         raise HTTPException(422, str(exc)) from exc
