@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 
-import { useStretchWidth } from '@/composables/useStretchWidth'
+import { cssTimeMs, useStretchWidth } from '@/composables/useStretchWidth'
 
 /** The width each text gives the box; a text not listed gives 120px. */
 let widths = new Map<string, number>()
@@ -67,6 +67,20 @@ describe('useStretchWidth', () => {
     expect(runs[0]!.keyframes).toEqual([{ width: '120px' }, { width: '300px' }])
     expect(runs[0]!.options.duration).toBe(200)
     expect(runs[0]!.options.easing).toBe('cubic-bezier(0.16, 1, 0.3, 1)')
+  })
+
+  it('reads the duration token in the unit the built style sheet uses', async () => {
+    expect(cssTimeMs('200ms')).toBe(200)
+    expect(cssTimeMs('.2s')).toBe(200)
+    expect(cssTimeMs(' 0.12s ')).toBe(120)
+    document.documentElement.style.setProperty('--dur-panel', '.2s')
+    try {
+      const w = mount(Card, { props: { text: 'a' } })
+      await grow(w, 'a longer text', 300)
+      expect(runs[0]!.options.duration).toBe(200)
+    } finally {
+      document.documentElement.style.removeProperty('--dur-panel')
+    }
   })
 
   it('clips and keeps the text on one line during the stretch, then gives back the own styles', async () => {

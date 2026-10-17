@@ -16,6 +16,12 @@ function motionToken(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
 }
 
+/** A CSS time in milliseconds. The production build writes `200ms` as `.2s`, so read both units. */
+export function cssTimeMs(value: string): number {
+  const n = parseFloat(value)
+  return value.trim().endsWith('ms') ? n : n * 1000
+}
+
 export function useStretchWidth(box: Ref<HTMLElement | null>) {
   let before = 0
   let running: { animation: Animation; restore: () => void } | undefined
@@ -47,7 +53,7 @@ export function useStretchWidth(box: Ref<HTMLElement | null>) {
       el.style.whiteSpace = style.whiteSpace
     }
     const animation = el.animate([{ width: `${before}px` }, { width: `${after}px` }], {
-      duration: parseFloat(motionToken('--dur-panel', '200ms')),
+      duration: cssTimeMs(motionToken('--dur-panel', '200ms')),
       easing: motionToken('--ease-out', 'cubic-bezier(0.16, 1, 0.3, 1)'),
     })
     running = { animation, restore }
