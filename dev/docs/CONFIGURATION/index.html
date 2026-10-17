@@ -2793,6 +2793,15 @@ table. The output format stays <code>json</code>, because the parser of JAVV nee
 sends the requests to <code>/api</code>, <code>/auth</code> and <code>/readyz</code> on to the backend. Thus the browser uses one
 address. The server reads these settings when its container starts. A restart applies a change,
 with no new build.</p>
+<p>The server sends these headers on each reply, so that JAVV needs no proxy to add them:</p>
+<ul>
+<li><code>Content-Security-Policy</code>: the browser loads scripts, styles, fonts and data only from the JAVV
+  address. Each page gets a new nonce for the styles of the web app. No inline script runs.</li>
+<li><code>X-Frame-Options: DENY</code> and <code>frame-ancestors 'none'</code>: no other site can show JAVV in a frame.</li>
+<li><code>X-Content-Type-Options: nosniff</code> and <code>Referrer-Policy: same-origin</code>.</li>
+</ul>
+<p>The server does not send on the <code>Server</code> header of the backend. If a proxy in front of JAVV sets
+its own security headers, make sure that they do not replace these headers with weaker ones.</p>
 <table>
 <thead>
 <tr>
