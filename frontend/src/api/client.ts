@@ -5,12 +5,22 @@
  * the app degrades loudly, not blindly): the store when the backend's own error envelope says so,
  * the backend for anything else, such as a proxy's 503 page or a gateway's JSON. A 503 whose problem
  * type says the store's disk is full marks the store read-only instead (issue 832). The health
- * store's /readyz poll clears it.
+ * store's /readyz poll clears it. Each request counts as pending work for the loading bar, except
+ * the background polls below (issue 902).
  */
 import { client } from './generated/client.gen'
 import { downReason, isBackendProblem, isReadOnlyRefusal, useHealthStore } from '@/stores/health'
+import { countedFetch } from '@/system/pendingWork'
 
-client.setConfig({ baseUrl: '', credentials: 'same-origin', throwOnError: false })
+/** Requests the app sends by itself on a timer: no user waits for them. */
+const BACKGROUND_POLLS = new Set(['/api/v1/notifications'])
+
+client.setConfig({
+  baseUrl: '',
+  credentials: 'same-origin',
+  throwOnError: false,
+  fetch: countedFetch((req) => req.method === 'GET' && BACKGROUND_POLLS.has(req.path)),
+})
 
 client.interceptors.response.use(async (response) => {
   if (await isReadOnlyRefusal(response)) {
