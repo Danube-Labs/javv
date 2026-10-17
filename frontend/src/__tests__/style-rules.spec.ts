@@ -72,31 +72,47 @@ describe('style rules — no pointer cursor', () => {
 
 /**
  * "Nothing else animates layout" (DESIGN.md §9, issue 484). Animating width/height/padding/
- * margin relayouts the page on every frame; §9 rules exactly ONE deliberate exception — the
- * sidebar collapse rail — and states plainly that nothing else does it. That sentence was true
- * only by luck: the triage meter had been transitioning `width` since M9d and surfaced through
- * the anti-pattern detector, not through CI. Enforced here so the claim stays true on its own.
+ * margin relayouts the page on every frame; §9 rules two deliberate exceptions — the sidebar
+ * collapse rail and the header card stretch (issue 902) — and states plainly that nothing else
+ * does it. That sentence was true only by luck: the triage meter had been transitioning `width`
+ * since M9d and surfaced through the anti-pattern detector, not through CI. Enforced here so the
+ * claim stays true on its own, for CSS transitions and for `element.animate()` from script. Test
+ * files are left out: they name these patterns on purpose.
  */
 describe('style rules — nothing else animates layout', () => {
   /** No /g: a stateful regex would skip files on alternate `.test()` calls. */
   const LAYOUT_TRANSITION = /transition(?:-property)?:[^;}]*\b(?:width|height|padding|margin)\b/
-  /** The one §9-ruled layout animation: the 226↔64px sidebar collapse rail. */
-  const RULED = 'components/chrome/SideNav.vue'
+  /** The same from script: an `element.animate()` whose keyframes move a layout property. */
+  const LAYOUT_SCRIPT_ANIMATION = /\.animate\(\s*\[[^\]]*\b(?:width|height|padding|margin)\s*:/
+  /** The §9-ruled layout animations: the 226↔64px sidebar collapse rail, and the header card that
+   * stretches to the right when its text gets longer (issue 902, operator decision D3 A). */
+  const RULED = ['components/chrome/SideNav.vue', 'composables/useStretchWidth.ts']
 
   const offenders = walk(SRC)
     .map((p) => relative(SRC, p).split('\\').join('/'))
-    .filter((rel) => LAYOUT_TRANSITION.test(readFileSync(join(SRC, rel), 'utf8')))
+    .filter((rel) => !rel.startsWith('__tests__/'))
+    .filter((rel) => {
+      const source = readFileSync(join(SRC, rel), 'utf8')
+      return LAYOUT_TRANSITION.test(source) || LAYOUT_SCRIPT_ANIMATION.test(source)
+    })
 
-  it('no width/height/padding/margin transition outside the ruled sidebar rail', () => {
-    const added = offenders.filter((f) => f !== RULED)
+  it('no layout animation outside the ruled sidebar rail and header card stretch', () => {
+    const added = offenders.filter((f) => !RULED.includes(f))
     expect(
       added,
       `animates layout — transition transform/opacity instead (DESIGN.md §9): ${added.join(', ')}`,
     ).toEqual([])
   })
 
-  it('the ruled exception is real, not a stale entry', () => {
-    expect(offenders, `${RULED} no longer animates layout — drop it from RULED`).toContain(RULED)
+  it('each ruled exception is real, not a stale entry', () => {
+    for (const ruled of RULED) {
+      expect(offenders, `${ruled} no longer animates layout — drop it from RULED`).toContain(ruled)
+    }
+  })
+
+  it('the script check finds a width animation and lets a transform animation pass', () => {
+    expect(LAYOUT_SCRIPT_ANIMATION.test('el.animate([{ width: `${a}px` }, { width: `${b}px` }], o)')).toBe(true)
+    expect(LAYOUT_SCRIPT_ANIMATION.test('el.animate([{ transform: "scaleX(0)" }, { opacity: 1 }])')).toBe(false)
   })
 })
 

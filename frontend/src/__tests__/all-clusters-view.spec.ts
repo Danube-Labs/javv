@@ -101,6 +101,21 @@ describe('AllClustersView (M9c slice 2)', () => {
     expect(rows[0]!.text()).toContain('%') // fix % renders
   })
 
+  it('the header card shows no cluster count while the fleet loads, then the count (issue 902)', async () => {
+    listMock.mockResolvedValue(ok({ clusters: [{ cluster_id: 'c-1', cluster_name: 'prod' }] }) as never)
+    let answer!: (v: unknown) => void
+    facetsMock.mockReturnValue(new Promise((res) => (answer = res)) as never)
+    freshMock.mockResolvedValue(ok({ scanners: [] }) as never)
+    imagesMock.mockResolvedValue(ok({ inventory: { inventory_run_id: 'r1' }, images: [] }) as never)
+    const w = mountView()
+    await flushPromises()
+    const note = () => w.get('.head-note').text().replace(/\s+/g, ' ')
+    expect(note()).toBe('Fleet current state')
+    answer(ok({ facets: {} }))
+    await flushPromises()
+    expect(note()).toMatch(/^Fleet current state · 1 cluster · /)
+  })
+
   it('no clusters → the cold-start copy, not an empty table', async () => {
     listMock.mockResolvedValue(ok({ clusters: [] }) as never)
     const w = mountView()

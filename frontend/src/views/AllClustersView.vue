@@ -18,6 +18,7 @@ import { useStalenessStore } from '@/stores/staleness'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { useStretchWidth } from '@/composables/useStretchWidth'
 import { CHART_SEV, type Severity } from '@/styles/tokens'
 import { freshnessStatus } from '@/system/freshness'
 import { facetCount, fmt, type ScannerLens } from '@/lib/scannerLens'
@@ -37,6 +38,10 @@ const staleness = useStalenessStore()
 void staleness.loadFleet()
 
 const scanner = ref<ScannerLens>('all')
+
+/** The header card stretches when the fleet counts arrive (issue 902). */
+const headCard = ref<HTMLElement | null>(null)
+useStretchWidth(headCard)
 
 watch(
   () => timeTravel.t,
@@ -59,16 +64,20 @@ const needAttention = computed(
 <template>
   <div class="screen">
     <div class="screen-head">
-      <div class="head-card head-card-fluid">
+      <div ref="headCard" class="head-card head-card-fluid">
         <h1>All clusters</h1>
         <p class="head-note">
           <template v-if="fleet.limited">Historical fleet view, limited until the v1.1 rollup</template>
           <template v-else>
-            Fleet current state · <b class="mono-cell">{{ fleet.rows.length }}</b>
-            cluster{{ fleet.rows.length === 1 ? '' : 's' }}
-            <template v-if="!fleet.loading && fleet.rows.length">
-              · <span v-if="needAttention" class="deg-note">{{ needAttention }} need{{ needAttention === 1 ? 's' : '' }} attention</span>
-              <template v-else>all healthy</template>
+            Fleet current state
+            <!-- the counts are not known while the fleet loads: no "0 clusters" in the meantime -->
+            <template v-if="!fleet.loading">
+              · <b class="mono-cell">{{ fleet.rows.length }}</b>
+              cluster{{ fleet.rows.length === 1 ? '' : 's' }}
+              <template v-if="fleet.rows.length">
+                · <span v-if="needAttention" class="deg-note">{{ needAttention }} need{{ needAttention === 1 ? 's' : '' }} attention</span>
+                <template v-else>all healthy</template>
+              </template>
             </template>
           </template>
         </p>
