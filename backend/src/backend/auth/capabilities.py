@@ -29,6 +29,11 @@ ROLE_BUNDLES: dict[str, list[str]] = {
 }
 
 
+def holds_accept_final(principal: Principal) -> bool:
+    """SEC-2: may this principal make, change or undo a risk-accept (issue 892)?"""
+    return "*" in principal.capabilities or "can_accept_audit_final" in principal.capabilities
+
+
 def require_capability(capability: str):
     """Dependency factory: `Depends(require_capability("can_triage"))` → the Principal."""
 

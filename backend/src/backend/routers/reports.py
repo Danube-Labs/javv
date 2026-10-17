@@ -25,6 +25,7 @@ from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
 from pydantic import ValidationError
 
+from backend.auth.capabilities import holds_accept_final
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.metrics import LIMIT_REJECTIONS
 from backend.core.settings import get_settings
@@ -37,7 +38,13 @@ from backend.reports.models import (
     public_report,
 )
 from backend.reports.storage import stream_chunks
-from backend.triage.bulk import SelectorTooBroad, freeze_targets, validate_bulk_patch
+from backend.triage.bulk import (
+    SelectorTooBroad,
+    count_risk_accepted,
+    freeze_targets,
+    risk_accept_refusal,
+    validate_bulk_patch,
+)
 from backend.triage.bulk_routes import BulkPatch, BulkSelector
 from backend.triage.state_machine import TransitionError
 
@@ -79,9 +86,8 @@ async def enqueue_report(
             patch = BulkPatch.model_validate(body.bulk_params.patch).model_dump(exclude_none=True)
         except ValidationError as exc:
             raise _bulk_part_errors(exc, "patch") from exc
-        if patch.get("state") == "risk_accepted" and not (
-            "*" in caps or "can_accept_audit_final" in caps
-        ):
+        accept_final = holds_accept_final(principal)
+        if patch.get("state") == "risk_accepted" and not accept_final:
             raise HTTPException(403, "risk-accept requires can_accept_audit_final")
         try:
             selector = BulkSelector(**body.bulk_params.selector).model_dump(exclude_none=True)
@@ -105,10 +111,16 @@ async def enqueue_report(
             log.warning("bulk selector capped at enqueue", cluster_id=body.cluster_id)
             LIMIT_REJECTIONS.labels("bulk_targets").inc()
             raise HTTPException(413, str(exc)) from exc
+        if "state" in patch and not accept_final:  # issue 892 ruling 6, as the inline bulk
+            held = await count_risk_accepted(client, target_ids)
+            if held:
+                raise HTTPException(403, risk_accept_refusal(held, len(target_ids)))
         doc["params"] = {
             "selector": selector,
             "patch": patch,
             "target_ids": target_ids,  # FROZEN — the drain applies exactly this set
+            # the drain checks again for a risk-accept made after now, unless this is true
+            "may_undo_risk_accept": accept_final,
         }
 
     # op_type=create: the id is fresh (uuid4), so this can't overwrite; refresh so a status read /

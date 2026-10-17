@@ -401,3 +401,60 @@ async def test_freeze_cap_still_applies_to_scheduled_runs(env, monkeypatch) -> N
 
     r = await http.post("/api/v1/reports", json=_body(cluster_id))
     assert r.status_code == 413  # selector too broad — bounded memory even for scheduled runs
+
+
+async def _accept(client, finding_key: str) -> None:
+    await client.update(
+        index="findings",
+        id=finding_key,
+        body={"doc": {"state": "risk_accepted"}},
+        params={"refresh": "true"},
+    )
+
+
+async def test_a_scheduled_state_change_over_a_risk_accept_is_refused_at_enqueue(env) -> None:
+    """issue 892 ruling 6: the same check as the inline bulk, before anything is queued."""
+    login, client = env
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 2)
+    await _accept(client, f"fk-{cluster_id}-0")
+
+    http = await login(["can_triage"])
+    r = await http.post("/api/v1/reports", json=_body(cluster_id))
+    assert r.status_code == 403
+    assert r.json()["title"].startswith("1 of the 2 selected findings are risk-accepted")
+    assert await _queued(client, cluster_id) == []
+
+    lead = await login(["can_triage", "can_accept_audit_final"])
+    assert (await lead.post("/api/v1/reports", json=_body(cluster_id))).status_code == 201
+
+
+@pytest.mark.parametrize(("capabilities", "applied"), [(["can_triage"], False), (["*"], True)])
+async def test_the_drain_checks_again_for_a_risk_accept_made_after_the_enqueue(
+    env, capabilities, applied
+) -> None:
+    """issue 892 ruling 6: a finding risk-accepted between enqueue and drain fails a triager's
+    job before it writes anything; a requester who holds the final word is not checked."""
+    login, client = env
+    cluster_id = f"c-bk-{uuid.uuid4().hex[:8]}"
+    await _seed_findings(client, cluster_id, 2)
+    http = await login(capabilities)
+    r = await http.post("/api/v1/reports", json=_body(cluster_id))
+    assert r.status_code == 201
+    report_id = r.json()["report_id"]
+    await _accept(client, f"fk-{cluster_id}-0")
+
+    job = await claim_next(client, worker="w-bulk", report_id=report_id)
+    assert job is not None and await run_job(client, job) is applied
+
+    final = (await client.get(index=REPORTS_INDEX, id=report_id))["_source"]
+    states = [
+        (await client.get(index="findings", id=f"fk-{cluster_id}-{i}"))["_source"]["state"]
+        for i in range(2)
+    ]
+    if applied:
+        assert final["status"] == DONE and states == ["acknowledged", "acknowledged"]
+    else:
+        assert final["status"] == FAILED
+        assert "1 of the 2 selected findings are risk-accepted" in final["error"]
+        assert states == ["risk_accepted", "open"]  # nothing written

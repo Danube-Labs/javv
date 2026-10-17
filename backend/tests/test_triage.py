@@ -208,6 +208,32 @@ async def test_risk_accept_needs_the_final_word_capability(triage_client) -> Non
     assert (await _doc(client, fk))["state"] == "risk_accepted"
 
 
+@pytest.mark.parametrize(
+    ("state", "pre_stale"), [("risk_accepted", None), ("stale", "risk_accepted")]
+)
+async def test_undoing_a_risk_accept_needs_the_final_word_capability(
+    triage_client, state, pre_stale
+) -> None:
+    """issue 892 rulings 1 and 7: a triager cannot move a finding off risk_accepted, nor off a
+    stale state that keeps a risk-accept for the sweep to restore. A note still lands."""
+    http, client = triage_client
+    await _login(http, client, capabilities=["can_triage"])
+    fk = await _seed_finding(client, state=state, pre_stale=pre_stale)
+
+    r = await _patch(http, fk, {"state": "open"})
+    assert r.status_code == 403
+    assert "can_accept_audit_final" in r.json()["title"]
+    doc = await _doc(client, fk)
+    assert (doc["state"], doc["pre_stale_status"]) == (state, pre_stale)  # nothing written
+    assert await _audit_rows(client, fk) == []  # nothing journaled
+
+    assert (await _patch(http, fk, {"notes": "seen"})).status_code == 200  # not an undo
+
+    await _login(http, client, capabilities=["can_triage", "can_accept_audit_final"])
+    assert (await _patch(http, fk, {"state": "open"})).status_code == 200
+    assert (await _doc(client, fk))["state"] == "open"
+
+
 async def test_human_override_from_stale_clears_pre_stale_status(triage_client) -> None:
     http, client = triage_client
     await _login(http, client, capabilities=["can_triage"])
