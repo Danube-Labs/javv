@@ -9,6 +9,7 @@ import PrimeVue from 'primevue/config'
 import App from './App.vue'
 import { logger } from './lib/logger'
 import router from './router'
+import { countNavigations } from './system/pendingWork'
 import { errorMessage, errorStack, logUnhandledRejections, pageCrashed } from './system/crash'
 import { themeOptions } from './theme/preset'
 
@@ -16,6 +17,7 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
+countNavigations(router)
 // the frontend server puts a new nonce in each page and its policy (server/serve.mjs); PrimeVue
 // stamps it on the `<style>` elements of its theme. No meta in dev, where no policy applies.
 const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content') ?? undefined

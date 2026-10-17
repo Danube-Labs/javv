@@ -28,6 +28,9 @@ operator ruling on a **built specimen** (DESIGN.md §8.5), not an argument in a 
    quick both ways; `t-fade` = banners and in-flow appearances, crossfade only, **never animate
    height**. Skeletons are shared: the pulse is `.skel` + `@keyframes skel-shimmer` in base.css,
    composed by `UiSkeleton` — a view that grows its own shimmer fails the style rules test.
+   The sign that the app works after a click is the top bar's `UiLoadingBar`, fed by
+   `system/pendingWork.ts` (issue 902): an API request or a page change counts by itself, so a
+   view adds no loading sign of its own for it.
 3. **`node .claude/skills/impeccable/scripts/detect.mjs <changed files>`** — the VENDORED detector,
    pinned with the repo. **Never `npx impeccable detect`**: unpinned, and a stale cached version
    once invented a finding that nearly bought §9 a permanent exception row (issue 484). Plus the
@@ -53,7 +56,7 @@ Both are served by the app (`src/styles/fonts.css`, Fontsource); a font host lin
 
 **Reuse before building — the kit already solves most of it**
 `components/ui/` (UiButton · UiField · UiDropdown · UiSegControl · UiToggleGroup · UiDateTime · ModalShell ·
-SlideoverShell · ToastStack · EmptyState · UiSkeleton · AppIcon · SectionNav · RowLink), plus `components/chips/`, the M9a filter module,
+SlideoverShell · ToastStack · EmptyState · UiSkeleton · UiLoadingBar · AppIcon · SectionNav · RowLink), plus `components/chips/`, the M9a filter module,
 the shared table skin + GridPager, and the stat-band skin (`.stat-band`/`.stat-cell` in base.css,
 composed by `components/overview/OverviewStatBands.vue` — it is a skin, not a kit component).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
