@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.3](https://github.com/Danube-Labs/javv-poc/compare/v0.8.2...v0.8.3) (2026-10-17)
+
+
+### Features
+
+* owner-kind buttons on the scan scope page, with a typed list for other kinds ([#900](https://github.com/Danube-Labs/javv-poc/issues/900)) ([cffb5d3](https://github.com/Danube-Labs/javv-poc/commit/cffb5d335cb5960f2d54f1a21ddf59e0f44af237))
+* the scanner logs what the scan scope skipped in each cycle ([#901](https://github.com/Danube-Labs/javv-poc/issues/901)) ([6f9039e](https://github.com/Danube-Labs/javv-poc/commit/6f9039e7e27c7438b770489a8ee0957671a0a8a3))
+
+
+### Bug Fixes
+
+* **deps:** update dependency zensical to v0.0.71 ([#893](https://github.com/Danube-Labs/javv-poc/issues/893)) ([27f8763](https://github.com/Danube-Labs/javv-poc/commit/27f8763ebcc74bc76e06ed6e43ce33185bb7c63b))
+* role boundaries and credential copies from the 0.8.2 security review (backend) ([#897](https://github.com/Danube-Labs/javv-poc/issues/897)) ([8df0bf9](https://github.com/Danube-Labs/javv-poc/commit/8df0bf97446fd568f28f9144977f843d02deeb95))
+* security headers and role-aware triage controls from the 0.8.2 security review (web app) ([#898](https://github.com/Danube-Labs/javv-poc/issues/898)) ([2cc12f4](https://github.com/Danube-Labs/javv-poc/commit/2cc12f46c925d589008d1405ef3ff5f2b1c94499))
+
 ## [0.8.2](https://github.com/Danube-Labs/javv-poc/compare/v0.8.1...v0.8.2) (2026-10-16)
 
 
