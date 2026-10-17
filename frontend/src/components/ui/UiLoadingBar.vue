@@ -13,9 +13,9 @@ const props = defineProps<{ busy: boolean }>()
 
 /** Kibana waits 250 ms, Nuxt 200 ms, GitHub 500 ms before its bar shows. */
 const SHOW_AFTER_MS = 250
-/** Work that ends and starts again inside this gap (a page change, then its first requests)
- * keeps one bar instead of two. */
-const DONE_AFTER_MS = 150
+/** Work that ends and starts again inside this gap is one piece of work: a page change ends a
+ * moment before the new page sends its first requests. */
+const GAP_MS = 150
 const START = 0.08
 const NEAR_END = 0.9
 /** The growth slows on this time scale: about 63% of the way to NEAR_END after 1.2 s. */
@@ -26,8 +26,10 @@ const RESET_AFTER_MS = 400
 
 const shown = ref(false)
 const progress = ref(0)
+/** When the current piece of work started; the bar shows SHOW_AFTER_MS after it. */
+let since: number | undefined
 let showTimer: ReturnType<typeof setTimeout> | undefined
-let doneTimer: ReturnType<typeof setTimeout> | undefined
+let gapTimer: ReturnType<typeof setTimeout> | undefined
 let tick: ReturnType<typeof setInterval> | undefined
 let resetTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -55,16 +57,30 @@ function done() {
   resetTimer = setTimeout(() => (progress.value = 0), RESET_AFTER_MS)
 }
 
+function showIfStillBusy() {
+  showTimer = undefined
+  if (props.busy) show()
+}
+
+/** The gap passed with no new work: the piece of work is over. */
+function workEnded() {
+  since = undefined
+  clearTimeout(showTimer)
+  showTimer = undefined
+  if (shown.value) done()
+}
+
 watch(
   () => props.busy,
   (busy) => {
     if (busy) {
-      clearTimeout(doneTimer)
-      if (!shown.value) showTimer ??= setTimeout(() => ((showTimer = undefined), show()), SHOW_AFTER_MS)
+      clearTimeout(gapTimer)
+      since ??= Date.now()
+      if (!shown.value && !showTimer) {
+        showTimer = setTimeout(showIfStillBusy, Math.max(0, since + SHOW_AFTER_MS - Date.now()))
+      }
     } else {
-      clearTimeout(showTimer)
-      showTimer = undefined
-      if (shown.value) doneTimer = setTimeout(done, DONE_AFTER_MS)
+      gapTimer = setTimeout(workEnded, GAP_MS)
     }
   },
   { immediate: true },
@@ -72,7 +88,7 @@ watch(
 
 onUnmounted(() => {
   clearTimeout(showTimer)
-  clearTimeout(doneTimer)
+  clearTimeout(gapTimer)
   clearTimeout(resetTimer)
   stopGrowing()
 })

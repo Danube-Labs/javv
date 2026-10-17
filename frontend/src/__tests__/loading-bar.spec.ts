@@ -67,6 +67,27 @@ describe('UiLoadingBar', () => {
     expect(scale(w)).toBeGreaterThan(before)
   })
 
+  it('counts a page change and the requests of the new page as one wait', async () => {
+    const w = mount(UiLoadingBar, { props: { busy: true } })
+    await vi.advanceTimersByTimeAsync(150)
+    await w.setProps({ busy: false })
+    await vi.advanceTimersByTimeAsync(20)
+    await w.setProps({ busy: true })
+    await vi.advanceTimersByTimeAsync(90)
+    expect(isOn(w)).toBe(true)
+  })
+
+  it('shows at once when work comes back after its 250 ms passed inside a gap', async () => {
+    const w = mount(UiLoadingBar, { props: { busy: true } })
+    await vi.advanceTimersByTimeAsync(240)
+    await w.setProps({ busy: false })
+    await vi.advanceTimersByTimeAsync(60)
+    expect(isOn(w)).toBe(false)
+    await w.setProps({ busy: true })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(isOn(w)).toBe(true)
+  })
+
   it('stops its timers when it unmounts', async () => {
     const w = mount(UiLoadingBar, { props: { busy: true } })
     await vi.advanceTimersByTimeAsync(400)
