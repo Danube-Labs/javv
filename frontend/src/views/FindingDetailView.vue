@@ -81,7 +81,12 @@ let pairSeq = 0
 watch(
   pairQuery,
   async (q, old) => {
-    if (!q || JSON.stringify(q) === JSON.stringify(old)) return
+    if (!q) {
+      // a link without the image never reads: show what is missing instead of loading for ever
+      if (!digest.value) loading.value = false
+      return
+    }
+    if (JSON.stringify(q) === JSON.stringify(old)) return
     const mine = ++pairSeq
     loading.value = true
     const response = await searchFindingsApiV1FindingsGet({
