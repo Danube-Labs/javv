@@ -42,7 +42,11 @@ Before discovering anything, the cycle makes two calls, and both **fail closed**
 unavailable the cycle is skipped (logged at `error`, exit 0) and nothing is scanned.
 1. `GET /api/v1/scan-scope` — the cluster's scan scope (D43): namespace allow/deny globs, excluded
    image globs, ignored owner kinds. Discovery filters on it before any pull. A fetched *empty* scope
-   means scan everything; an unreachable backend means scan nothing.
+   means scan everything. An unreachable backend means scan nothing. The scanner compares an
+   ignored kind with the kind of the direct owner of the pod, exactly and with case. Thus `Job`
+   skips the pods of a CronJob, and `ReplicaSet` skips the pods of a Deployment. Each cycle logs one
+   `scope applied` line at `info` with the count of pods that each part of the scope skipped. A
+   listed kind with 0 skipped no pod.
 2. `POST /api/v1/scan-runs` — the backend allocates this cycle's `scan_order` (D45).
 
 At the end, `POST /api/v1/inventory-runs` certifies the cycle's inventory (best effort, retried within
