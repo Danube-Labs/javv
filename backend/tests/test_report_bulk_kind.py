@@ -422,7 +422,7 @@ async def test_a_scheduled_state_change_over_a_risk_accept_is_refused_at_enqueue
     http = await login(["can_triage"])
     r = await http.post("/api/v1/reports", json=_body(cluster_id))
     assert r.status_code == 403
-    assert r.json()["title"].startswith("1 of the 2 selected findings are risk-accepted")
+    assert r.json()["title"].startswith("1 of the 2 selected findings is risk-accepted")
     assert await _queued(client, cluster_id) == []
 
     lead = await login(["can_triage", "can_accept_audit_final"])
@@ -456,5 +456,5 @@ async def test_the_drain_checks_again_for_a_risk_accept_made_after_the_enqueue(
         assert final["status"] == DONE and states == ["acknowledged", "acknowledged"]
     else:
         assert final["status"] == FAILED
-        assert "1 of the 2 selected findings are risk-accepted" in final["error"]
+        assert "1 of the 2 selected findings is risk-accepted" in final["error"]
         assert states == ["risk_accepted", "open"]  # nothing written

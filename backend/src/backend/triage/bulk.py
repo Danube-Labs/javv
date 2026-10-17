@@ -131,8 +131,9 @@ async def count_risk_accepted(
 
 def risk_accept_refusal(held: int, total: int) -> str:
     """The user-facing reason a bulk state change is refused (shown by the bulk bar)."""
+    verb = "is" if held == 1 else "are"
     return (
-        f"{held} of the {total} selected findings are risk-accepted. Changing their state "
+        f"{held} of the {total} selected findings {verb} risk-accepted. Changing their state "
         "requires can_accept_audit_final."
     )
 
