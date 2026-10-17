@@ -16,7 +16,10 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-app.use(PrimeVue, { theme: themeOptions })
+// the frontend server puts a new nonce in each page and its policy (server/serve.mjs); PrimeVue
+// stamps it on the `<style>` elements of its theme. No meta in dev, where no policy applies.
+const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content') ?? undefined
+app.use(PrimeVue, { theme: themeOptions, csp: { nonce } })
 
 // the last net: an error outside the routed page (the frame itself, the login page), which the
 // boundary inside the shell never sees

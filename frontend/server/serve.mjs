@@ -15,7 +15,7 @@
 
 import { randomBytes } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { stat } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import http from 'node:http'
 import https from 'node:https'
 import { extname, join, normalize, sep } from 'node:path'
@@ -38,6 +38,34 @@ const HOP_BY_HOP = new Set([
   'transfer-encoding',
   'upgrade',
 ])
+
+// What the browser may do with JAVV's pages, sent on every answer so that JAVV needs nothing in
+// front of it (issue 892): code, styles, fonts and requests from this origin only, no frame on
+// another site, no MIME sniffing, and no full URL in a Referer to another origin
+/** @param {string} [nonce] the page's nonce: PrimeVue's theme adds `<style>` elements at run time */
+export function contentSecurityPolicy(nonce) {
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    nonce ? `style-src 'self' 'nonce-${nonce}'` : "style-src 'self'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ')
+}
+export const SECURITY_HEADERS = {
+  'content-security-policy': contentSecurityPolicy(),
+  'x-frame-options': 'DENY',
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'same-origin',
+}
+
+// headers that name the backend's software: of no use to the browser, so never passed on
+const NOT_FORWARDED = new Set(['server', 'x-powered-by'])
 
 // the backend's own rule for an inbound id (core/logging.py), so the id it logs is ours
 const REQUEST_ID = /^[A-Za-z0-9-]{1,64}$/
@@ -90,6 +118,12 @@ function withoutHopByHop(headers) {
   return Object.fromEntries(Object.entries(headers).filter(([k]) => !HOP_BY_HOP.has(k)))
 }
 
+/** @param {import('node:http').IncomingHttpHeaders} headers the backend's answer */
+function toBrowser(headers) {
+  const kept = Object.entries(withoutHopByHop(headers)).filter(([k]) => !NOT_FORWARDED.has(k))
+  return { ...Object.fromEntries(kept), ...SECURITY_HEADERS }
+}
+
 /**
  * @param {import('node:http').ServerResponse} res
  * @param {number} status
@@ -99,7 +133,7 @@ function withoutHopByHop(headers) {
  */
 function problem(res, status, title, detail, requestId) {
   const body = JSON.stringify({ type: 'about:blank', title, status, detail, request_id: requestId })
-  res.writeHead(status, { 'content-type': 'application/problem+json' })
+  res.writeHead(status, { ...SECURITY_HEADERS, 'content-type': 'application/problem+json' })
   res.end(body)
 }
 
@@ -125,6 +159,28 @@ async function fileFor(distDir, path) {
 }
 
 /**
+ * The app page, with a new nonce in its policy and in a `<meta name="csp-nonce">` that main.ts
+ * hands to PrimeVue for the `<style>` elements of its theme, so that no style needs 'unsafe-inline'.
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} index
+ * @param {boolean} head
+ */
+async function sendIndex(res, index, head) {
+  const nonce = randomBytes(16).toString('base64')
+  const html = (await readFile(index, 'utf8')).replace(
+    '<head>',
+    `<head>\n    <meta name="csp-nonce" content="${nonce}">`,
+  )
+  res.writeHead(200, {
+    ...SECURITY_HEADERS,
+    'content-security-policy': contentSecurityPolicy(nonce),
+    'content-type': TYPES['.html'],
+    'cache-control': 'no-cache',
+  })
+  res.end(head ? undefined : html)
+}
+
+/**
  * @param {import('node:http').ServerResponse} res
  * @param {string} file
  * @param {string} cache
@@ -132,7 +188,7 @@ async function fileFor(distDir, path) {
  */
 function sendFile(res, file, cache, head) {
   const type = TYPES[/** @type {keyof typeof TYPES} */ (extname(file))] ?? 'application/octet-stream'
-  res.writeHead(200, { 'content-type': type, 'cache-control': cache })
+  res.writeHead(200, { ...SECURITY_HEADERS, 'content-type': type, 'cache-control': cache })
   if (head) {
     res.end()
     return
@@ -201,7 +257,7 @@ export function createFrontendServer({
     })
 
     upstream.on('response', (answer) => {
-      res.writeHead(answer.statusCode ?? 502, withoutHopByHop(answer.headers))
+      res.writeHead(answer.statusCode ?? 502, toBrowser(answer.headers))
       answer.pipe(res)
     })
 
@@ -248,7 +304,7 @@ export function createFrontendServer({
 
     const head = req.method === 'HEAD'
     if (req.method !== 'GET' && !head) {
-      res.writeHead(405, { allow: 'GET, HEAD' })
+      res.writeHead(405, { ...SECURITY_HEADERS, allow: 'GET, HEAD' })
       res.end()
       return
     }
@@ -259,11 +315,11 @@ export function createFrontendServer({
     }
     // a missing hashed asset is a 404, never index.html served as script after an upgrade
     if (path.startsWith('/assets/')) {
-      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' })
+      res.writeHead(404, { ...SECURITY_HEADERS, 'content-type': 'text/plain; charset=utf-8' })
       res.end('not found')
       return
     }
-    sendFile(res, index, 'no-cache', head)
+    await sendIndex(res, index, head)
   })
 }
 
