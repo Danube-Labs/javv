@@ -86,6 +86,11 @@ async function apply() {
     done.value = count
     logger.info('bulk_triage_applied', { count })
     emit('applied', count)
+  } else if (response.response?.status === 403) {
+    // the server names the reason, e.g. how many selected findings are risk-accepted (issue 892)
+    error.value =
+      (response.error as { title?: string } | undefined)?.title ??
+      'You may not change the state of these findings.'
   } else if (response.response?.status === 413) {
     error.value = 'Too many findings match for one bulk action. Narrow the filters.'
   } else if (response.response?.status === 422) {
