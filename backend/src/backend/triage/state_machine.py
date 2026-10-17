@@ -21,6 +21,16 @@ CISA_JUSTIFICATIONS = frozenset(
 )
 
 
+def holds_risk_accept(finding: dict) -> bool:
+    """Does a state change on this finding undo a risk-accept? True for `risk_accepted`, and for
+    a `stale` finding whose `pre_stale_status` the staleness sweep would restore to it (issue 892
+    rulings 1 and 7)."""
+    state = finding.get("state") or "open"
+    return state == "risk_accepted" or (
+        state == "stale" and finding.get("pre_stale_status") == "risk_accepted"
+    )
+
+
 class TransitionError(ValueError):
     """A rejected triage transition — the message is user-facing (422)."""
 

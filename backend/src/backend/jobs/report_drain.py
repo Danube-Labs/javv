@@ -40,7 +40,12 @@ from backend.reports.claim import ClaimedJob, claim_next
 from backend.reports.lease import finalize, heartbeat
 from backend.reports.models import DONE, FAILED, NOTIFICATIONS_INDEX
 from backend.reports.storage import ExportTooLarge, FencedOut, write_chunks
-from backend.triage.bulk import apply_bulk_triage, validate_bulk_patch
+from backend.triage.bulk import (
+    apply_bulk_triage,
+    count_risk_accepted,
+    risk_accept_refusal,
+    validate_bulk_patch,
+)
 from backend.triage.bulk_routes import BulkPatch
 
 log = structlog.get_logger()
@@ -186,12 +191,20 @@ async def run_job(client: AsyncOpenSearch, job: ClaimedJob, *, prefix: str = "")
         # patch is idempotent, so a reclaimed retry re-applies safely (a second audit row with
         # the same result_hash is replay-tolerated — an orphan CHANGE is what's forbidden).
         try:
+            target_ids = params.get("target_ids") or []
+            patch = _checked_patch(params.get("patch") or {})
+            # issue 892 ruling 6: a finding risk-accepted after the enqueue fails the job before
+            # any write. A job queued before the key existed is checked too (the safe default).
+            if "state" in patch and not params.get("may_undo_risk_accept", False):
+                held = await count_risk_accepted(client, target_ids, prefix=prefix)
+                if held:
+                    raise PermissionError(risk_accept_refusal(held, len(target_ids)))
             updated = await apply_bulk_triage(
                 client,
                 actor=doc["requested_by"],
                 cluster_id=cluster_id,
-                target_ids=params.get("target_ids") or [],
-                patch=_checked_patch(params.get("patch") or {}),
+                target_ids=target_ids,
+                patch=patch,
                 prefix=prefix,
             )
         except Exception as exc:

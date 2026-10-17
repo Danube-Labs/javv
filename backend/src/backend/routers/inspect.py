@@ -45,8 +45,11 @@ _INDEX_VERBS: dict[str, frozenset[str]] = {
 # index expression: lowercase names/patterns only — never a leading underscore or a slash,
 # so no API endpoint can be smuggled through the index position
 _INDEX_EXPR = re.compile(r"^[a-z0-9*][a-z0-9*._,-]*$")
-# credential material lives here — denied even to capability holders (hash/session dump risk)
-_SENSITIVE_INDICES = ("system-users", "system-sessions", "system-tokens")
+# credential material lives here — denied even to capability holders (hash/session dump risk).
+# A snapshot restore writes each index back as `restored-<name>` (routers/data_settings.py), so
+# the copies carry the same hashes and are denied by the same check (issue 892).
+_CREDENTIAL_INDICES = ("system-users", "system-sessions", "system-tokens")
+_SENSITIVE_INDICES = (*_CREDENTIAL_INDICES, *(f"restored-{name}" for name in _CREDENTIAL_INDICES))
 # write/script/stateful surfaces have no read-only form — reject wherever they appear in a body
 _FORBIDDEN_BODY_KEYS = frozenset({"script", "script_fields", "runtime_mappings", "pit", "scroll"})
 

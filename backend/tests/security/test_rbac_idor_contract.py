@@ -109,13 +109,17 @@ REGISTRY: tuple[MutatingEndpoint, ...] = (
         capability="can_manage_users",
         body={"temp_password": PASSWORD},
     ),
-    MutatingEndpoint(  # M5c — decisions (FR-8; risk-accept additionally needs accept_final)
+    # M5c — decisions (FR-8). can_triage is the gate for not_affected; risk_accepted and
+    # ignore_rule additionally need accept_final to create, edit or revoke (issue 892), pinned
+    # in test_decision_routes.py
+    MutatingEndpoint(
         method="POST",
         path="/api/v1/decisions",
         route_path="/api/v1/decisions",
         capability="can_triage",
         body={
-            "type": "ignore_rule",
+            "type": "not_affected",
+            "vex_justification": "component_not_present",
             "cve_id": "CVE-1",
             "scope": {"namespaces": [], "images": []},
             "apply_both_scanners": True,

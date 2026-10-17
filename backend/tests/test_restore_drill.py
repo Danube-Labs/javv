@@ -17,6 +17,7 @@ import pytest
 from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.admin.snapshot import (
+    DURABILITY_INDICES,
     SnapshotRepoRef,
     read_snapshot_repo_ref,
     register_repository,
@@ -166,3 +167,27 @@ async def test_restore_is_repeatable_no_partial_state(drill) -> None:
     # a clean overwrite (delete → restore) is deterministic: same result twice, no partial state
     assert await restore_once() == seed
     assert await restore_once() == seed
+
+
+def _prefixed(expr: str, prefix: str) -> str:
+    """The durability expression for a prefixed index set; an exclusion keeps its leading `-`."""
+    return ",".join(
+        f"-{prefix}{part[1:]}" if part.startswith("-") else f"{prefix}{part}"
+        for part in expr.split(",")
+    )
+
+
+async def test_durability_snapshot_holds_users_and_tokens_but_not_sessions(drill) -> None:
+    # issue 892: a restored copy of system-sessions would bring back sessions that signed out
+    # after the snapshot (sign-out only sets `revoked`), so the durability set leaves it out
+    c, prefix, repo, token = drill
+    await bootstrap(c, prefix=prefix)
+    ref = SnapshotRepoRef(repository=repo, type="fs", settings={"location": f"{PATH_REPO}/{token}"})
+    await register_repository(c, ref)
+    await take_snapshot(
+        c, repository=repo, snapshot="drill", indices=_prefixed(DURABILITY_INDICES, prefix)
+    )
+    info = await c.snapshot.get(repository=repo, snapshot="drill")
+    taken = set(info["snapshots"][0]["indices"])
+    assert {f"{prefix}system-users", f"{prefix}system-tokens", f"{prefix}findings"} <= taken
+    assert f"{prefix}system-sessions" not in taken
