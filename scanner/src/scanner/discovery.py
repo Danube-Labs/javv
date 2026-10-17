@@ -12,9 +12,12 @@ kube client is injected so this is unit-testable without a live cluster.
 from collections.abc import Iterable
 from typing import Any, Protocol
 
+import structlog
 from pydantic import BaseModel, ConfigDict
 
-from scanner.scope import ScanScope
+from scanner.scope import ScanScope, ScopeTally
+
+log = structlog.get_logger()
 
 
 class Location(BaseModel):
@@ -82,18 +85,26 @@ def _owner_kinds(pod: Any) -> list[str]:
     return [getattr(o, "kind", "") for o in refs]
 
 
-def running_images(pods: Iterable[Any] | None, scope: ScanScope | None = None) -> list[ImageTarget]:
+def running_images(
+    pods: Iterable[Any] | None, scope: ScanScope | None = None, tally: ScopeTally | None = None
+) -> list[ImageTarget]:
+    """`tally`, when given, is filled with what the scope skipped (see `discover`)."""
     scope = scope or ScanScope()  # empty scope = scan everything (the default)
+    tally = tally if tally is not None else ScopeTally.for_scope(scope)
     by_digest: dict[str, dict[str, Any]] = {}
     for p in pods or []:
         status = getattr(p, "status", None)
         if status is None or getattr(status, "phase", None) != "Running":
             continue
+        tally.pods_running += 1
         # scope filter at the pod level (before dedup): a digest survives if it runs in ≥1 in-scope
         # pod (D30 — a digest can span namespaces). Image-glob is applied to the target below.
         if not scope.namespace_allowed(p.metadata.namespace):
+            tally.skipped_namespace += 1
             continue
-        if not scope.kinds_allowed(_owner_kinds(p)):
+        if hits := scope.ignored_kinds(_owner_kinds(p)):
+            for kind in hits:
+                tally.skipped_kind[kind] = tally.skipped_kind.get(kind, 0) + 1
             continue
         for cs in getattr(status, "container_statuses", None) or []:
             image_id = getattr(cs, "image_id", "") or ""
@@ -121,8 +132,23 @@ def running_images(pods: Iterable[Any] | None, scope: ScanScope | None = None) -
         )
         for digest, entry in sorted(by_digest.items())
     ]
-    return [t for t in targets if scope.image_allowed(t.image_ref)]
+    kept = [t for t in targets if scope.image_allowed(t.image_ref)]
+    tally.skipped_image += len(targets) - len(kept)
+    return kept
 
 
 def discover(api: _PodSource, scope: ScanScope | None = None) -> list[ImageTarget]:
-    return running_images(api.list_pod_for_all_namespaces(watch=False).items, scope)
+    """List the running images in scope, and log once what the scope skipped. A listed kind
+    that skipped 0 pods is how an operator sees a kind that owns no pod (issue 891)."""
+    scope = scope or ScanScope()
+    tally = ScopeTally.for_scope(scope)
+    targets = running_images(api.list_pod_for_all_namespaces(watch=False).items, scope, tally)
+    log.info(
+        "scope applied",
+        pods_running=tally.pods_running,
+        skipped_namespace=tally.skipped_namespace,
+        skipped_kind=tally.skipped_kind,
+        skipped_image=tally.skipped_image,
+        targets=len(targets),
+    )
+    return targets
