@@ -272,6 +272,15 @@ form state). Anything non-kit that appears/disappears in-flow (banners) wraps in
 live in `base.css` and collapse under `prefers-reduced-motion`. Animate `transform`/`opacity`
 only; no bounce/elastic; new appear/disappear surfaces use these classes, not new ones.
 
+**Loading bar (operator decision 2026-10-17 on built prototypes, issue 902, D1 B).** After a
+click, the user must see that the app works. `UiLoadingBar` sits on the bottom edge of the top bar.
+It shows when a page change or an API request is open for more than 250 ms. A bar that shows for
+less time looks like a flash (Kibana waits 250 ms, Nuxt 200 ms, GitHub 500 ms). It grows more
+slowly near the end, and when the work ends it fills and fades. The background polls (the
+notification bell) do not count. The main area has `aria-busy` while the work is open. The code
+of the other pages loads while the browser is idle (`router/preload.ts`), so most clicks show the
+new page at once.
+
 ### The UI kit (`components/ui/`) — use it, never re-roll it
 
 These components each own one contract ONCE (feedback states, dismiss behavior, rhythm). Writing
@@ -285,6 +294,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiField` | mono uppercase micro-label + parenthesized `hint`, 14px band / 6px label gap (`first` zeroes the top) | any labeled control |
 | `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
 | `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss | every dialog |
+| `UiLoadingBar` | the 2px coral loading bar on the bottom edge of its positioned parent. It shows only after 250 ms of work and grows more slowly near the end. When the work ends, it fills and fades. It has `role="progressbar"`. The parent owns `busy` | the top bar's sign that the app works, fed by `system/pendingWork.ts` (open page changes and API requests). Also a panel that needs its own sign |
 | `UiSkeleton` | the one loading pulse (`.skel` + `skel-shimmer` in base.css) and its reduced-motion off-switch; `height` is a prop because a skeleton mirrors the panel it stands in for, `label` only when it is its own loading region | every loading placeholder. The style rules test fails any view that grows its own shimmer |
 | `AppIcon` | the stroke icon set | every icon |
 | `RowLink` | the identifier of a row that opens something, as a real `<a>`: focusable, the focus ring, Enter and plain click hand off to the row's own open handler, modified clicks left to the browser | the identifier cell of every clickable row (the grids take a `rowTo` prop; hand-built rows wrap the cell) |
