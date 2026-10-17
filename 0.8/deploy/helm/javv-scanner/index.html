@@ -24,7 +24,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.70">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
@@ -1071,7 +1071,7 @@
 
 
 <h1 id="javv-scanner">javv-scanner<a class="headerlink" href="#javv-scanner" title="Permanent link">&para;</a></h1>
-<p><img alt="Version: 0.8.2" src="https://img.shields.io/badge/Version-0.8.2-informational?style=flat-square" /> <img alt="AppVersion: 0.8.2" src="https://img.shields.io/badge/AppVersion-0.8.2-informational?style=flat-square" /></p>
+<p><img alt="Version: 0.8.3" src="https://img.shields.io/badge/Version-0.8.3-informational?style=flat-square" /> <img alt="AppVersion: 0.8.3" src="https://img.shields.io/badge/AppVersion-0.8.3-informational?style=flat-square" /></p>
 <p>This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
 CronJob. Each scanner pushes its own results to JAVV. JAVV never merges them. Install the chart in
 each cluster that you scan. JAVV itself, the <a href="../javv/"><code>javv</code></a> chart, can run in that
@@ -1296,7 +1296,7 @@ of <code>scanner-images.yml</code>. A checkout of the repository has the tag onl
 <tr>
 <td>trivy.image.tag</td>
 <td>string</td>
-<td><code>"0.75.0"</code></td>
+<td><code>"0.76.0"</code></td>
 <td>The Trivy version, from versions.yaml (<code>scanners.trivy.current</code>). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image.</td>
 </tr>
 <tr>
