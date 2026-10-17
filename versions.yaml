@@ -17,7 +17,7 @@
 scanners:
   trivy:
     # renovate: datasource=docker depName=aquasec/trivy
-    current: "0.75.0"
+    current: "0.76.0"
     also_supported: ["0.76.0", "0.70.0"]
     vuln_db:
       schema: 2  # trivy-db schema these versions speak (current). Trivy REFUSES a schema-incompatible
