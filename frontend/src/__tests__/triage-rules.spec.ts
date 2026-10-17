@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  holdsRiskAccept,
   buildTriagePatch,
   CISA_JUSTIFICATIONS,
   PANEL_TARGETS,
@@ -89,5 +90,18 @@ describe('triage rules (FR-7 two-field VEX)', () => {
       expect(undoPatch({ state: 'not_affected' }, 'open')).toBeNull()
       expect(undoPatch({ state: 'not_affected', vex_justification: null }, 'open')).toBeNull()
     })
+  })
+})
+
+describe('holdsRiskAccept (issue 892: a state change here is a lead\'s)', () => {
+  it('is true for risk_accepted, and for stale that keeps risk_accepted for the sweep', () => {
+    expect(holdsRiskAccept({ state: 'risk_accepted' })).toBe(true)
+    expect(holdsRiskAccept({ state: 'stale', pre_stale_status: 'risk_accepted' })).toBe(true)
+  })
+  it('is false for any other state, and for stale that keeps another state', () => {
+    for (const state of ['open', 'acknowledged', 'not_affected', 'resolved'])
+      expect(holdsRiskAccept({ state })).toBe(false)
+    expect(holdsRiskAccept({ state: 'stale', pre_stale_status: 'acknowledged' })).toBe(false)
+    expect(holdsRiskAccept({ state: 'stale', pre_stale_status: null })).toBe(false)
   })
 })

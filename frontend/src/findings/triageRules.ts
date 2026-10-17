@@ -87,3 +87,12 @@ export function undoPatch(
   body.notes = `Undo: back to ${stateLabel(before.state)}`
   return body
 }
+
+/**
+ * Does a state change on this finding undo a risk-accept? The server's rule (issue 892):
+ * risk_accepted, or stale with a risk-accept kept for the staleness sweep to restore. Only
+ * can_accept_audit_final may then change the state; notes and the assignee stay open.
+ */
+export function holdsRiskAccept(f: { state: string; pre_stale_status?: unknown }): boolean {
+  return f.state === 'risk_accepted' || (f.state === 'stale' && f.pre_stale_status === 'risk_accepted')
+}
