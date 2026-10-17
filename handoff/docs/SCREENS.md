@@ -619,6 +619,13 @@ FR-24: empty include = all; ignore wins; fail-closed scanner fetch.
 **Layout unchanged:** running-only toggle, include/ignore namespace lists, image globs, skipped
 kinds.
 
+**Skipped kinds (issue 891):** the scanner compares each listed kind with the kind of the direct owner of the pod. The comparison is exact and uses case. Thus the row has two parts:
+
+- Four buttons (`UiToggleGroup`) show the workloads that Kubernetes makes. "Deployment pods" saves `ReplicaSet`, "DaemonSet pods" saves `DaemonSet` and "StatefulSet pods" saves `StatefulSet`. "Job and CronJob pods" saves `Job`.
+- The "Other owner kinds" list holds all other owner kinds, for example `Cluster` of CloudNativePG.
+
+The saved value stays one `ignore_kinds` list. A typed value can match no pod: `Deployment`, `CronJob`, or a known kind with a different case. For such a value, a note names the button to select.
+
 ### 13.2 Scanning — **read-only** (C-4, replaces v4's editable Scanners+Schedule+Vuln-DB)
 Per-scanner cards display, from the latest committed scan-event's `effective_config` stamp
 (D44, landed) + provenance (D41): running `scanner_version`, DB version/built (Trivy OCI /
