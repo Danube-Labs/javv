@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 
 from scanner.discovery import running_images
-from scanner.scope import ScanScope, fetch_scan_scope
+from scanner.scope import ScanScope, ScopeTally, fetch_scan_scope
 
 # --- predicates -------------------------------------------------------------
 
@@ -125,6 +125,70 @@ def test_image_glob_filter_drops_targets() -> None:
 def test_no_scope_scans_everything() -> None:
     pods = [_pod("kube-system", "p1", "sha256:aaa", "a:1", kinds=["Job"])]
     assert len(running_images(pods)) == 1  # default scope = scan all
+
+
+# --- what the scope skipped (issue 891) ---------------------------------------
+
+
+def _scoped_pods() -> list[_Pod]:
+    return [
+        _pod("team-a", "web", "sha256:aaa", "registry.io/app:1", kinds=["ReplicaSet"]),
+        _pod("kube-system", "dns", "sha256:bbb", "registry.io/dns:1", kinds=["ReplicaSet"]),
+        _pod("team-a", "batch", "sha256:ccc", "registry.io/batch:1", kinds=["Job"]),
+        _pod("team-a", "pause", "sha256:ddd", "registry.k8s.io/pause:3.9", kinds=["DaemonSet"]),
+    ]
+
+
+_SCOPE = ScanScope(
+    ignore_namespaces=("kube-system",),
+    ignore_kinds=("Job", "CronJob"),
+    exclude_images=("registry.k8s.io/*",),
+)
+
+
+def test_ignored_kinds_names_each_listed_kind_that_matches() -> None:
+    assert _SCOPE.ignored_kinds(["Job"]) == ["Job"]
+    assert _SCOPE.ignored_kinds(["ReplicaSet"]) == []
+    assert ScanScope(ignore_kinds=("job",)).ignored_kinds(["Job"]) == []  # exact, with case
+
+
+def test_tally_counts_what_each_part_of_the_scope_skipped() -> None:
+    tally = ScopeTally.for_scope(_SCOPE)
+    targets = running_images(_scoped_pods(), _SCOPE, tally)
+    assert [t.image_ref for t in targets] == ["registry.io/app:1"]
+    assert tally.pods_running == 4
+    assert tally.skipped_namespace == 1
+    # a listed kind that skipped no pod reads 0: CronJob owns no pod, a Job does
+    assert tally.skipped_kind == {"Job": 1, "CronJob": 0}
+    assert tally.skipped_image == 1
+
+
+def test_running_images_without_a_tally_is_unchanged() -> None:
+    assert [t.image_ref for t in running_images(_scoped_pods(), _SCOPE)] == ["registry.io/app:1"]
+
+
+def test_discover_logs_what_the_scope_skipped_once_at_info() -> None:
+    import structlog.testing
+
+    from scanner import discovery
+
+    discovery.log = structlog.get_logger()  # fresh proxy: an earlier main() cached the pipeline
+
+    class FakeApi:
+        def list_pod_for_all_namespaces(self, *, watch: bool = False) -> Any:
+            return type("PodList", (), {"items": _scoped_pods()})()
+
+    with structlog.testing.capture_logs() as logs:
+        targets = discovery.discover(FakeApi(), _SCOPE)
+    lines = [e for e in logs if e["event"] == "scope applied"]
+    assert len(lines) == 1
+    line = lines[0]
+    assert line["log_level"] == "info"
+    assert line["pods_running"] == 4
+    assert line["skipped_namespace"] == 1
+    assert line["skipped_kind"] == {"Job": 1, "CronJob": 0}
+    assert line["skipped_image"] == 1
+    assert line["targets"] == len(targets) == 1
 
 
 # --- fail-closed fetch ------------------------------------------------------

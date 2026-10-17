@@ -9,6 +9,7 @@ caller must then **not scan** (distinct from a *fetched empty* scope, which mean
 
 import fnmatch
 from collections.abc import Iterable
+from dataclasses import dataclass, field
 
 import httpx
 from pydantic import BaseModel, ConfigDict
@@ -37,8 +38,28 @@ class ScanScope(BaseModel):
     def kinds_allowed(self, owner_kinds: Iterable[str]) -> bool:
         return not any(k in self.ignore_kinds for k in owner_kinds)
 
+    def ignored_kinds(self, owner_kinds: Iterable[str]) -> list[str]:
+        """The listed kinds that match the pod's owner kinds (exact, with case)."""
+        return [k for k in owner_kinds if k in self.ignore_kinds]
+
     def image_allowed(self, image_ref: str) -> bool:
         return not _matches_any(image_ref, self.exclude_images)
+
+
+@dataclass
+class ScopeTally:
+    """What one discovery pass skipped, for the cycle's `scope applied` line (issue 891).
+    Every listed kind starts at 0, so a kind that owns no pod (e.g. `CronJob`, whose pods are
+    owned by a Job) shows as 0 instead of being missing."""
+
+    pods_running: int = 0
+    skipped_namespace: int = 0  # pods
+    skipped_kind: dict[str, int] = field(default_factory=dict)  # pods, per listed kind
+    skipped_image: int = 0  # image digests
+
+    @classmethod
+    def for_scope(cls, scope: ScanScope) -> "ScopeTally":
+        return cls(skipped_kind=dict.fromkeys(scope.ignore_kinds, 0))
 
 
 def fetch_scan_scope(http: httpx.Client, *, token: str | None) -> ScanScope | None:
