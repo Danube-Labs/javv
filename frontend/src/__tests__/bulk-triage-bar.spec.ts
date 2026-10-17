@@ -6,7 +6,9 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { bulkTriageApiV1FindingsBulkTriagePost } from '@/api/generated'
 import BulkTriageBar from '@/components/triage/BulkTriageBar.vue'
+import { useClusterStore } from '@/stores/cluster'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
 
 vi.mock('@/api/generated', async (importOriginal) =>
@@ -68,5 +70,26 @@ describe('BulkTriageBar', () => {
       b.textContent!.includes('Apply to matching findings'),
     )!
     expect(apply.disabled).toBe(off)
+  })
+
+  // issue 892 ruling 6: the server refuses a state change over risk-accepted findings with the
+  // count; the bar says that, not "check the backend connection"
+  it('a refusal shows the reason the server gives', async () => {
+    useClusterStore().selectedId = 'c-1'
+    const reason =
+      '2 of the 3 selected findings are risk-accepted. Changing their state requires can_accept_audit_final.'
+    vi.mocked(bulkTriageApiV1FindingsBulkTriagePost).mockResolvedValueOnce({
+      error: { title: reason, status: 403 },
+      request: {},
+      response: { ok: false, status: 403 },
+    } as never)
+    const w = await open({ severity: ['critical'] })
+    const open_ = [...document.body.querySelectorAll<HTMLButtonElement>('.state-opt')].find(
+      (b) => b.textContent!.trim() === 'Open',
+    )!
+    open_.click()
+    await w.vm.$nextTick()
+    ;[...document.body.querySelectorAll('button')].find((b) => b.textContent!.includes('Apply to matching'))!.click()
+    await vi.waitFor(() => expect(document.body.querySelector('.bulk-error')?.textContent).toBe(reason))
   })
 })

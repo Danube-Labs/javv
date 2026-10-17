@@ -81,7 +81,12 @@ let pairSeq = 0
 watch(
   pairQuery,
   async (q, old) => {
-    if (!q || JSON.stringify(q) === JSON.stringify(old)) return
+    if (!q) {
+      // a link without the image never reads: show what is missing instead of loading for ever
+      if (!digest.value) loading.value = false
+      return
+    }
+    if (JSON.stringify(q) === JSON.stringify(old)) return
     const mine = ++pairSeq
     loading.value = true
     const response = await searchFindingsApiV1FindingsGet({
@@ -356,6 +361,7 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           class="detail-main"
           :decisions="decisions"
           :can-accept-final="auth.hasCapability('can_accept_audit_final')"
+          :can-triage="auth.hasCapability('can_triage')"
           :busy="decisionsBusy"
           :failed="decisionsFailed"
           @create="raOpen = true"

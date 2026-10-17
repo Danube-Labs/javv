@@ -2,6 +2,8 @@
 /**
  * The triage aside (prototype `.triage` on tokens) — FR-7 two-field VEX. Read-only when the
  * user lacks can_triage, and when viewing history (T<now: reconstructed state is not editable).
+ * Without can_accept_audit_final the state of a risk-accepted finding is locked too (issue 892);
+ * the note and the assignee stay open.
  * risk_accepted and stale render explainer blocks instead of buttons; the presence explainer
  * (fixed vs stale) is kept verbatim from the prototype. Save emits the validated PATCH body —
  * the parent owns the network call and conflict surfacing. After a saved state change the parent
@@ -16,7 +18,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import { stateLabel } from '@/findings/stateLabels'
-import { buildTriagePatch, type TriagePatchBody } from '@/findings/triageRules'
+import { buildTriagePatch, holdsRiskAccept, type TriagePatchBody } from '@/findings/triageRules'
 import type { FindingRow } from '@/stores/findings'
 
 const props = defineProps<{
@@ -48,6 +50,7 @@ watch(
 )
 
 const locked = computed(() => !props.canTriage || props.historical)
+const acceptLocked = computed(() => !props.canAcceptFinal && holdsRiskAccept(props.finding))
 const shownState = computed(() => target.value ?? props.finding.state)
 const draft = computed(() =>
   buildTriagePatch({
@@ -60,7 +63,7 @@ const draft = computed(() =>
 )
 
 function pickState(s: string) {
-  if (locked.value) return
+  if (locked.value || acceptLocked.value) return
   target.value = s
   if (s !== 'not_affected') vexJustification.value = null
 }
@@ -114,8 +117,20 @@ function undoLast() {
       </UiField>
 
       <UiField label="State">
-        <TriageStateControl :current="finding.state" :target="target" :disabled="locked" @select="pickState" />
+        <TriageStateControl
+          :current="finding.state"
+          :target="target"
+          :disabled="locked || acceptLocked"
+          @select="pickState"
+        />
       </UiField>
+      <p v-if="acceptLocked && !locked" class="triage-locked triage-accept-locked">
+        <AppIcon name="key" :size="13" />
+        <span>
+          A risk-accept is changed by a Security Lead (<b>can_accept_audit_final</b>). You can still
+          assign this finding and add a note.
+        </span>
+      </p>
 
       <div v-if="shownState === 'not_affected'" class="vex-block">
         <UiField label="Justification · CISA five (required)">
