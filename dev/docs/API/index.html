@@ -2860,7 +2860,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/audit</code></td>
 <td>session</td>
-<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. <code>keep_open</code> is as in <code>/findings</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
+<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>finding_key</code> also returns each bulk change that included the finding (<code>action</code> <code>bulk_triage</code>). Such a row lists the changed findings in <code>target_ids</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. <code>keep_open</code> is as in <code>/findings</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
 </tr>
 <tr>
 <td>POST</td>
