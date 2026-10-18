@@ -48,6 +48,19 @@ describe('BulkTriageBar', () => {
     expect(buttons().some((t) => t.startsWith('Apply'))).toBe(false)
   })
 
+  // issue 909: the reasons of Not affected carry a plain label, not an internal name
+  it('Not affected: the reasons carry the label Reason (required)', async () => {
+    await open({ severity: ['critical'] })
+    const notAffected = [...document.body.querySelectorAll<HTMLButtonElement>('.state-opt')].find(
+      (b) => b.textContent!.trim() === 'Not affected',
+    )!
+    notAffected.click()
+    await new Promise((r) => setTimeout(r))
+    expect(document.body.querySelector('.vex-chips')).not.toBeNull()
+    expect(document.body.textContent).toContain('Reason (required)')
+    expect(document.body.textContent).not.toContain('CISA')
+  })
+
   it('with a usable filter: the form, with Cancel and Apply', async () => {
     await open({ severity: ['critical'] })
     expect(document.body.textContent).not.toContain('Add a filter first.')

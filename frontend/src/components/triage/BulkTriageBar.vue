@@ -133,7 +133,7 @@ async function apply() {
               <TriageStateControl current="__none__" :target="target" @select="pickState" />
             </UiField>
             <div v-if="target === 'not_affected'" class="vex-block">
-              <UiField label="Justification · CISA five (required)">
+              <UiField label="Reason (required)">
                 <VexJustificationPicker :selected="vexJustification" @select="(id) => (vexJustification = id)" />
               </UiField>
             </div>

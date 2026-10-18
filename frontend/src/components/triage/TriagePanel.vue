@@ -133,7 +133,7 @@ function undoLast() {
       </p>
 
       <div v-if="shownState === 'not_affected'" class="vex-block">
-        <UiField label="Justification · CISA five (required)">
+        <UiField label="Reason (required)">
           <VexJustificationPicker
             :selected="vexJustification"
             :disabled="locked"

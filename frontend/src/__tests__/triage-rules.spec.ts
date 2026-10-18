@@ -18,7 +18,7 @@ describe('triage rules (FR-7 two-field VEX)', () => {
   it('not_affected requires a CISA justification — blocked without one', () => {
     const blocked = buildTriagePatch({ ...base, targetState: 'not_affected' })
     expect(blocked.body).toBeNull()
-    expect(blocked.error).toMatch(/justification/)
+    expect(blocked.error).toBe('Select a reason for Not affected.')
 
     const ok = buildTriagePatch({
       ...base,
