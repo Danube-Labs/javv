@@ -91,32 +91,31 @@ async def append_field_change(
     old_value_json: dict[str, Any] | None = None,
     new_value_json: dict[str, Any] | None = None,  # non-scalar payload riding the row (D38/H8)
     event_id: str | None = None,  # deterministic id → journal-first stays idempotent (audit #188)
+    target_ids: list[str] | None = None,  # a bulk row's frozen set, top level so a term reaches it
     prefix: str = "",
 ) -> str:
     """One structured row for one field change (D32). Raises on failure — no row, no action.
     Callers journal-first, so the raise leaves no applied-but-unjournaled change (D17/#188)."""
+    row: dict[str, Any] = {
+        "actor": actor,
+        "action": action,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "finding_key": finding_key,
+        "decision_id": decision_id,
+        "field": field,
+        "field_type": "text" if field in _TEXT_FIELDS else "scalar",
+        "old_value": old_value,
+        "new_value": new_value,
+        "old_value_json": old_value_json,
+        "new_value_json": new_value_json,
+        "revision": revision,
+        "cluster_id": cluster_id,
+    }
+    if target_ids is not None:
+        row["target_ids"] = target_ids
     try:
-        return await _append(
-            client,
-            {
-                "actor": actor,
-                "action": action,
-                "entity_type": entity_type,
-                "entity_id": entity_id,
-                "finding_key": finding_key,
-                "decision_id": decision_id,
-                "field": field,
-                "field_type": "text" if field in _TEXT_FIELDS else "scalar",
-                "old_value": old_value,
-                "new_value": new_value,
-                "old_value_json": old_value_json,
-                "new_value_json": new_value_json,
-                "revision": revision,
-                "cluster_id": cluster_id,
-            },
-            prefix=prefix,
-            event_id=event_id,
-        )
+        return await _append(client, row, prefix=prefix, event_id=event_id)
     except Exception:  # structured signal for ops before the 5xx; values are never logged
         log.error(
             "audit append failed", action=action, entity_type=entity_type, entity_id=entity_id
