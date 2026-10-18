@@ -60,6 +60,19 @@ describe('ActivityCard', () => {
     expect(row.text()).toContain('assignee: alice')
   })
 
+  it('a note keeps its label and its text in one part, so a long note wraps as one piece', () => {
+    const row = rowOf({
+      event_id: 'e-5',
+      action: 'note',
+      actor: 'lead',
+      field: 'notes',
+      new_value: 'Fix ships with the next base image',
+      '@timestamp': at,
+    })
+    expect(row.find('.action-tag').text()).toBe('Note')
+    expect(row.find('.act-part').text()).toBe('· notes: Fix ships with the next base image')
+  })
+
   it('an action with no label reads as words, never as snake_case', () => {
     const row = rowOf({ event_id: 'e-4', action: 'store_inspect', actor: 'lead', '@timestamp': at })
     expect(row.find('.action-tag').text()).toBe('store inspect')

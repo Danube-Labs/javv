@@ -53,9 +53,9 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
               · notes: <span class="mono-cell sm">{{ bulkChange(a)!.notes }}</span>
             </span>
           </template>
-          <template v-else-if="a.new_value && a.field !== 'state'">
+          <span v-else-if="a.new_value && a.field !== 'state'" class="act-part">
             · {{ a.field }}: <span class="mono-cell sm">{{ a.new_value }}</span>
-          </template>
+          </span>
         </span>
       </li>
     </ul>
