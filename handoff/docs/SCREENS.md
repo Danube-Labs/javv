@@ -346,6 +346,14 @@ journaled like any change. Not offered when the earlier state was risk_accepted 
 when only a note or assignee was saved. It restores the state only, and goes away on undo, on
 the next state change, or on leaving the finding.
 
+**Activity card:** the audit rows of this finding (`GET /api/v1/audit?finding_key=…`), which
+include each bulk change that included it (issue 912). A row is: time, actor, then the action as
+the Audit log's action pill (`ActionTag`, the same pill the Contributors feed uses). A single state
+change adds nothing after the pill, because the pill names the state it set. A bulk row adds the
+state tag, the assignee and the note that it set. An assignee or note row adds the new value, with
+its label and value kept together. Operator decision 2026-10-18 (issue 918, option B), made on
+built pictures of options A, B and C.
+
 **SLA box:** server-computed deadline + overdue flag from the findings read (B-5).
 
 **States:** loading; 403-capability-hidden (triage controls disabled-with-tooltip without
