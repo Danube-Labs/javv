@@ -48,6 +48,19 @@ describe('BulkTriageBar', () => {
     expect(buttons().some((t) => t.startsWith('Apply'))).toBe(false)
   })
 
+  // issue 909: the reasons of Not affected carry a plain label, not an internal name
+  it('Not affected: the reasons carry the label Reason (required)', async () => {
+    await open({ severity: ['critical'] })
+    const notAffected = [...document.body.querySelectorAll<HTMLButtonElement>('.state-opt')].find(
+      (b) => b.textContent!.trim() === 'Not affected',
+    )!
+    notAffected.click()
+    await new Promise((r) => setTimeout(r))
+    expect(document.body.querySelector('.vex-chips')).not.toBeNull()
+    expect(document.body.textContent).toContain('Reason (required)')
+    expect(document.body.textContent).not.toContain('CISA')
+  })
+
   it('with a usable filter: the form, with Cancel and Apply', async () => {
     await open({ severity: ['critical'] })
     expect(document.body.textContent).not.toContain('Add a filter first.')
@@ -91,5 +104,26 @@ describe('BulkTriageBar', () => {
     await w.vm.$nextTick()
     ;[...document.body.querySelectorAll('button')].find((b) => b.textContent!.includes('Apply to matching'))!.click()
     await vi.waitFor(() => expect(document.body.querySelector('.bulk-error')?.textContent).toBe(reason))
+  })
+
+  // issue 909 (operator, 2026-10-18): a refused change says what to check in the words of the form
+  it('a 422 says what to check, in plain words', async () => {
+    useClusterStore().selectedId = 'c-1'
+    vi.mocked(bulkTriageApiV1FindingsBulkTriagePost).mockResolvedValueOnce({
+      error: { title: 'unprocessable', status: 422 },
+      request: {},
+      response: { ok: false, status: 422 },
+    } as never)
+    const w = await open({ severity: ['critical'] })
+    ;[...document.body.querySelectorAll<HTMLButtonElement>('.state-opt')]
+      .find((b) => b.textContent!.trim() === 'Acknowledge')!
+      .click()
+    await w.vm.$nextTick()
+    ;[...document.body.querySelectorAll('button')].find((b) => b.textContent!.includes('Apply to matching'))!.click()
+    await vi.waitFor(() =>
+      expect(document.body.querySelector('.bulk-error')?.textContent).toBe(
+        'JAVV did not accept this change. Check the state and, for Not affected, the reason.',
+      ),
+    )
   })
 })

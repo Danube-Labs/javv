@@ -52,7 +52,7 @@ export function buildTriagePatch(d: TriageDraft): { body: TriagePatchBody | null
     return { body: null, error: 'stale is system-set: it clears when the scanner reports again' }
   }
   if (stateChanged && d.targetState === 'not_affected' && !d.vexJustification) {
-    return { body: null, error: 'not_affected requires a justification (CISA five)' }
+    return { body: null, error: 'Select a reason for Not affected.' }
   }
   const body: TriagePatchBody = {}
   if (stateChanged && d.targetState) {

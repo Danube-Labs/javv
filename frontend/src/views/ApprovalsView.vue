@@ -218,7 +218,7 @@ async function revoke(row: ApprovalRow) {
   busy.value = false
   if (response.response?.ok) {
     logger.info('decision_revoked', { decision_id: row.decision_id })
-    toast.success('Acceptance revoked. Its findings return to open on the next projection')
+    toast.success('Acceptance revoked. Its findings are Open again.')
     await fetchQueue()
   } else {
     logger.warn('decision_revoke_failed', { status: response.response?.status })

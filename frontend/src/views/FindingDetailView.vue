@@ -78,6 +78,23 @@ const pairQuery = computed(() =>
 )
 
 let pairSeq = 0
+async function loadPair(q: NonNullable<typeof pairQuery.value>) {
+  const mine = ++pairSeq
+  const response = await searchFindingsApiV1FindingsGet({
+    query: q as SearchFindingsApiV1FindingsGetData['query'],
+  })
+  closeUnpaged(response.data?.next_cursor, !q.as_of) // one page only: never paged
+  if (mine !== pairSeq) return // a newer read owns the page now
+  loading.value = false
+  if (response.response?.ok && response.data) {
+    rows.value = (response.data as { data: FindingRow[] }).data
+    failed.value = false
+  } else {
+    failed.value = true
+    failedStatus.value = response.response?.status ?? null
+    logger.warn('finding_detail_failed', { status: response.response?.status })
+  }
+}
 watch(
   pairQuery,
   async (q, old) => {
@@ -87,25 +104,16 @@ watch(
       return
     }
     if (JSON.stringify(q) === JSON.stringify(old)) return
-    const mine = ++pairSeq
     loading.value = true
-    const response = await searchFindingsApiV1FindingsGet({
-      query: q as SearchFindingsApiV1FindingsGetData['query'],
-    })
-    closeUnpaged(response.data?.next_cursor, !q.as_of) // one page only: never paged
-    if (mine !== pairSeq) return // a newer read owns the page now
-    loading.value = false
-    if (response.response?.ok && response.data) {
-      rows.value = (response.data as { data: FindingRow[] }).data
-      failed.value = false
-    } else {
-      failed.value = true
-      failedStatus.value = response.response?.status ?? null
-      logger.warn('finding_detail_failed', { status: response.response?.status })
-    }
+    await loadPair(q)
   },
   { immediate: true },
 )
+
+/** A decision changes the state of the finding on the server at once: read it again, in place. */
+function reloadPair() {
+  if (pairQuery.value) void loadPair(pairQuery.value)
+}
 
 /* ---- affected components: every occurrence of the CVE, server-side filtered ---- */
 const occQuery = computed(() =>
@@ -247,6 +255,7 @@ async function revokeDecision(id: string) {
   if (response.response?.ok) {
     logger.info('decision_revoked', { decision_id: id })
     toast.success('Decision revoked')
+    reloadPair()
     await fetchDecisions()
     void fetchActivity()
   } else {
@@ -256,6 +265,7 @@ async function revokeDecision(id: string) {
 
 function onDecisionCreated() {
   toast.success('Decision recorded')
+  reloadPair()
   void fetchDecisions()
   void fetchActivity()
 }

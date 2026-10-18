@@ -11,7 +11,7 @@ const emit = defineEmits<{ select: [id: string] }>()
 </script>
 
 <template>
-  <div class="vex-chips" role="radiogroup" aria-label="VEX justification (CISA five)">
+  <div class="vex-chips" role="radiogroup" aria-label="Reason for Not affected">
     <button
       v-for="j in CISA_JUSTIFICATIONS"
       :key="j.id"

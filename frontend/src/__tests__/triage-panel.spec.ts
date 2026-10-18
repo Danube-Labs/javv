@@ -53,7 +53,10 @@ describe('TriagePanel (FR-7 gates)', () => {
     await w.findAll('.state-opt').find((b) => b.text() === 'Not affected')!.trigger('click')
     expect(w.find('.vex-chips').exists()).toBe(true)
     expect((save(w).element as HTMLButtonElement).disabled).toBe(true)
-    expect(w.text()).toContain('requires a justification')
+    expect(w.text()).toContain('Reason (required)')
+    expect(w.text()).toContain('Select a reason for Not affected.')
+    expect(w.text()).not.toContain('CISA')
+    expect(w.find('.vex-chips').attributes('aria-label')).toBe('Reason for Not affected')
 
     await w.findAll('.vex-chip')[0]!.trigger('click')
     expect((save(w).element as HTMLButtonElement).disabled).toBe(false)
