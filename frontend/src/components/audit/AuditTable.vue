@@ -18,6 +18,7 @@ import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 import { actionLabel } from '@/audit/actionLabels'
+import { bulkJson } from '@/audit/bulkAudit'
 import { causalOrder } from '@/audit/causalOrder'
 import ActionTag from '@/components/chips/ActionTag.vue'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
@@ -60,14 +61,6 @@ const clickable = (e: AuditEvent) => e.entity_type === 'finding' && !!e.finding_
 const shortId = (id: string) => (id.length > 72 ? `${id.slice(0, 68)}…` : id)
 
 const shortImage = (e: AuditEvent) => (e.finding?.image_repo ?? '').split('/').pop() ?? ''
-
-interface BulkJson {
-  patch?: Record<string, unknown>
-  target_ids?: string[]
-  result_count?: number
-}
-const bulkJson = (e: AuditEvent): BulkJson | null =>
-  e.action === 'bulk_triage' && e.new_value_json ? (e.new_value_json as BulkJson) : null
 
 /** one-line what-changed; empty when the tag + target already say it all (auth events) */
 function detail(e: AuditEvent): string {
