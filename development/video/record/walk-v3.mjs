@@ -64,8 +64,7 @@ await record('v3', async ({ page, shot, hoverShot, settle, pickBothOpen }) => {
 
   await create.click()
   await dialog.waitFor({ state: 'detached', timeout: 15000 }).catch(() => {})
-  // the page keeps the old state tag until a reload (a UI bug); the video shows the Decisions card,
-  // which does refresh
+  // the page reads its state and its cards again after the decision; wait for both to land
   await sleep(800)
   await settle()
   const approvalsLink = page.getByRole('link', { name: /^Approval list$/ })

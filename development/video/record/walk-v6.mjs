@@ -34,8 +34,7 @@ await record('v6', async ({ page, shot, hoverShot, settle }) => {
   await findingsLink.click()
   await page.waitForSelector('table tbody tr', { timeout: 20000 })
   await settle()
-  // a finding changed one at a time: a bulk change is one audit row and does not show in a
-  // finding's own Activity card
+  // a finding that walk 2 set to Not affected, one at a time
   const ackFilter = row(facet('state'), /not affected/i)
   await shot('findings', { ackFilter, stateFacet: facet('state') })
   await hoverShot('findings', ackFilter)
