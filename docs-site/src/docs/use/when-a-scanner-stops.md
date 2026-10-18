@@ -1,0 +1,1 @@
+../../../../docs/use/when-a-scanner-stops.md

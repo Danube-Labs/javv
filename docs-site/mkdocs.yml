@@ -7,7 +7,7 @@
 # file symlinks, not folder ones.) The one real file there is the site's stylesheet.
 # backend/tests/test_docs_site.py holds src/, the nav and the links in step.
 site_name: JAVV
-site_description: Operator docs for JAVV, Just Another Vulnerability Viewer
+site_description: Docs for JAVV, Just Another Vulnerability Viewer
 site_url: https://danube-labs.github.io/javv-poc/
 repo_url: https://github.com/Danube-Labs/javv-poc
 edit_uri: edit/main/
@@ -69,6 +69,14 @@ extra:
 
 nav:
   - Home: docs/index.md
+  - Use JAVV:
+      - Overview: docs/use/index.md
+      - From a scan to a finding: docs/use/from-a-scan-to-a-finding.md
+      - Set the state of a finding: docs/use/set-the-state-of-a-finding.md
+      - Accept a risk: docs/use/accept-a-risk.md
+      - Change many findings at once: docs/use/change-many-findings.md
+      - When a scanner stops: docs/use/when-a-scanner-stops.md
+      - See who changed what: docs/use/who-changed-what.md
   - Install:
       - Deploying: docs/DEPLOYING.md
       - Supported versions: docs/supported-versions.md
