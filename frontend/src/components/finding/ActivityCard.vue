@@ -4,6 +4,7 @@
  * capped at a glance, the full trail lives on the Audit screen. DetailCard chrome; the body
  * stays a list, not a table (two columns of prose is not tabular data).
  */
+import { bulkChange } from '@/audit/bulkAudit'
 import StateTag from '@/components/chips/StateTag.vue'
 import DetailCard from '@/components/finding/DetailCard.vue'
 import GridPager from '@/components/findings/GridPager.vue'
@@ -17,6 +18,8 @@ export interface ActivityRow {
   field?: string
   old_value?: string | null
   new_value?: string | null
+  /** a bulk change keeps what it set here, in `patch` */
+  new_value_json?: Record<string, unknown> | null
   '@timestamp': string
 }
 
@@ -41,6 +44,15 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
           <b>{{ a.actor }}</b> · {{ a.action }}
           <template v-if="a.field === 'state' && a.new_value">
             · <StateTag :state="a.new_value" />
+          </template>
+          <template v-else-if="bulkChange(a)">
+            <template v-if="bulkChange(a)!.state"> · <StateTag :state="bulkChange(a)!.state!" /></template>
+            <span v-if="bulkChange(a)!.assignee" class="act-part">
+              · assignee: <span class="mono-cell sm">{{ bulkChange(a)!.assignee }}</span>
+            </span>
+            <span v-if="bulkChange(a)!.notes" class="act-part">
+              · notes: <span class="mono-cell sm">{{ bulkChange(a)!.notes }}</span>
+            </span>
           </template>
           <template v-else-if="a.new_value">
             · {{ a.field }}: <span class="mono-cell sm">{{ a.new_value }}</span>
@@ -102,9 +114,14 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
 }
 .act-what {
   display: inline-flex;
+  flex-wrap: wrap; /* a bulk change has more parts than one line holds: wrap whole parts */
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
+  min-width: 0;
   color: var(--ink);
+}
+.act-part {
+  min-width: 0;
 }
 .empty-row {
   text-align: center;
