@@ -171,6 +171,7 @@ async def apply_bulk_triage(
         },
         revision=1,
         cluster_id=cluster_id,
+        target_ids=sorted(target_ids),  # what the finding page's audit read matches on
         prefix=prefix,
     )
     doc = dict(patch)

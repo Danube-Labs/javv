@@ -148,6 +148,26 @@ async def test_bulk_applies_and_journals_exactly_one_row_with_frozen_ids(env) ->
     assert row["result_count"] == 3
     assert sorted(row["target_ids"]) == sorted(keys)  # frozen IDS, not a selector
     assert row["result_hash"]
+    # issue 912: the same ids at the top level, where the audit read for one finding finds them
+    assert ours[0]["target_ids"] == sorted(keys)
+
+
+async def test_the_activity_of_one_changed_finding_includes_the_bulk_row(env) -> None:
+    # issue 912: the finding page asks the audit log for its own finding_key
+    login_with, client, _ = env
+    http = await login_with(["can_triage"])
+    cve = f"CVE-{uuid.uuid4().hex[:8]}"
+    keys = await _seed(client, cve, 2)
+    r = await http.post("/api/v1/findings/bulk-triage", json=_body(cve, state="acknowledged"))
+    assert r.status_code == 200
+    await client.indices.refresh(index="system-audit-log*")
+
+    r = await http.get("/api/v1/audit", params={"cluster_id": CID, "finding_key": keys[1]})
+    assert r.status_code == 200
+    rows = [e for e in r.json()["data"] if e["action"] == "bulk_triage"]
+    assert len(rows) == 1
+    assert keys[1] in rows[0]["target_ids"]
+    assert rows[0]["new_value_json"]["patch"] == {"state": "acknowledged"}
 
 
 @pytest.fixture
