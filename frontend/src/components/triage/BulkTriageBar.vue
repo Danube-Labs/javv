@@ -94,7 +94,7 @@ async function apply() {
   } else if (response.response?.status === 413) {
     error.value = 'Too many findings match for one bulk action. Narrow the filters.'
   } else if (response.response?.status === 422) {
-    error.value = 'The server rejected this patch. Check the state/justification pairing.'
+    error.value = 'JAVV did not accept this change. Check the state and, for Not affected, the reason.'
   } else {
     error.value = 'Bulk failed. Check the backend connection.'
     logger.warn('bulk_triage_failed', { status: response.response?.status })

@@ -74,7 +74,7 @@ async function submit() {
   } else {
     error.value =
       response.response?.status === 403
-        ? 'Risk-accept needs the can_accept_audit_final capability.'
+        ? 'Only a Security Lead or an admin can accept a risk.'
         : 'Could not create the decision. Check the backend connection.'
     logger.warn('decision_create_failed', { status: response.response?.status })
   }
