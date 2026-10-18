@@ -55,6 +55,29 @@ async def test_field_change_row_carries_the_full_d32_contract(real_os) -> None:
     assert row["schema_version"] == AUDIT_SCHEMA_VERSION
 
 
+async def test_target_ids_ride_the_row_only_when_a_caller_gives_them(real_os) -> None:
+    # issue 912: a bulk row names its targets at the top level, where a term query reaches them
+    client, prefix = real_os
+    common: dict = dict(
+        actor="alice",
+        entity_type="finding",
+        field="state",
+        old_value=None,
+        new_value=None,
+        revision=1,
+        cluster_id="c-1",
+        prefix=prefix,
+    )
+    await append_field_change(
+        client, action="bulk_triage", entity_id="bulk:1", target_ids=["fk-1", "fk-2"], **common
+    )
+    await append_field_change(client, action="acknowledge", entity_id="fk-3", **common)
+
+    rows = {r["entity_id"]: r for r in await _rows(client, prefix)}
+    assert rows["bulk:1"]["target_ids"] == ["fk-1", "fk-2"]
+    assert "target_ids" not in rows["fk-3"]
+
+
 async def test_notes_are_text_typed(real_os) -> None:
     client, prefix = real_os
     await append_field_change(

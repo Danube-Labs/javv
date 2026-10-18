@@ -104,10 +104,22 @@ def build_audit_body(
             ("entity_type", filters.entity_type),
             ("action", filters.action),
             ("actor", filters.actor),
-            ("finding_key", filters.finding_key),
         )
         if value is not None
     ]
+    if filters.finding_key is not None:
+        # a bulk change names its findings in `target_ids`, never in `finding_key` (issue 912)
+        fl.append(
+            {
+                "bool": {
+                    "should": [
+                        {"term": {"finding_key": filters.finding_key}},
+                        {"term": {"target_ids": filters.finding_key}},
+                    ],
+                    "minimum_should_match": 1,
+                }
+            }
+        )
     if filters.until is not None:
         fl.append({"range": {_SORT_KEY: {"lte": filters.until.isoformat()}}})
     must_not: list[dict[str, Any]] = [
