@@ -32,8 +32,9 @@ repos:
         # play a repo-relative video, so an animated GIF is the only inline option. Named
         # explicitly rather than raising maxkb, so every OTHER large file still gets stopped.
         # Regenerate with development/scripts/make-demo-gif.sh; re-commit sparingly, since
-        # each revision stays in .git forever.
-        exclude: '^docs/assets/demo\.gif$'
+        # each revision stays in .git forever. The triage videos of the docs site (issue 699) are
+        # the same case: backend/tests/test_docs_site.py holds each one under its own size limit.
+        exclude: '^(docs/assets/demo\.gif|docs/use/videos/[a-z0-9-]+\.mp4)$'
 
   - repo: local
     hooks:

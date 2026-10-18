@@ -961,13 +961,15 @@ jobs:
           enable-cache: true
       - name: Strict build
         run: uv run --project docs-site --frozen zensical build -f docs-site/mkdocs.yml --strict
-      - name: The theme's own files were written, and code blocks and diagrams render
+      - name: The theme's own files were written, and code blocks, diagrams and videos render
         # the strict build passes without any of them: pages with no styling, every fenced block
-        # flattened into inline code, or a mermaid diagram shown as its source (issue 639)
+        # flattened into inline code, a mermaid diagram shown as its source (issue 639), or a
+        # video src not rewritten for the page's URL (issue 699)
         run: |
           ls docs-site/site/assets/stylesheets/modern/main.*.min.css
           grep -q '<pre' docs-site/site/docs/DEPLOYING/index.html
           grep -q '<pre class="mermaid">' docs-site/site/docs/DEPLOYING/index.html
+          grep -q 'src="../videos/accept-a-risk.mp4"' docs-site/site/docs/use/accept-a-risk/index.html
       - name: No list on the site rendered as a paragraph
         # the strict build passes a list GitHub nests with 3 spaces, which the site shows as text
         run: python3 development/scripts/check-docs-site-lists.py docs-site/site

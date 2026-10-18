@@ -1,15 +1,16 @@
-"""The operator docs site (issue 639), read from `docs-site/` and its two workflows.
+"""The docs site (issue 639), read from `docs-site/` and its two workflows.
 
 `docs-site/src/` holds a symlink to each published file, laid out as in the repository; that tree
 is the list of what is published. Zensical's strict build checks links between pages, but not
-links to other files, nor that the tree publishes only operator files. These tests hold the rest:
-- src/ is exactly the operator files, each a symlink to the same path in the repository, plus
+links to other files, nor that the tree publishes only the listed files. These tests hold the rest:
+- src/ is exactly the published files, each a symlink to the same path in the repository, plus
   the site's own stylesheet, which the config loads;
 - every published page is in the nav and every nav entry is published;
 - every relative link in a published page reaches a published file;
+- each video plays from its page, and stays under the size limit;
 - the supported-versions page includes README's table, which check-versions.sh keeps in step;
-- CI builds the site strict and checks the theme's files were written, blocks render and no list
-  rendered as a paragraph;
+- CI builds the site strict and checks the theme's files were written, blocks and videos render
+  and no list rendered as a paragraph;
 - a release publishes its docs as its `major.minor` version and as `latest`;
 - no published page carries an em dash;
 - the pages carry no engineering references (milestones, decisions, audit ids, issue
@@ -33,7 +34,8 @@ SITE = ROOT / "docs-site"
 SRC = SITE / "src"
 CONFIG: dict[str, Any] = yaml.safe_load((SITE / "mkdocs.yml").read_text())
 
-# What the site is for (issue 639, "Scope"): the operator pages, rendered where they live.
+# What the site is for (issue 639, "Scope"): the operator pages, rendered where they live, and the
+# pages that show users how to triage, each with its video (issue 699).
 PAGES = {
     "docs/index.md",
     "docs/supported-versions.md",
@@ -50,10 +52,31 @@ PAGES = {
     "deploy/helm/javv/README.md",
     "deploy/helm/javv-opensearch/README.md",
     "deploy/helm/javv-scanner/README.md",
+    "docs/use/index.md",
+    "docs/use/from-a-scan-to-a-finding.md",
+    "docs/use/set-the-state-of-a-finding.md",
+    "docs/use/accept-a-risk.md",
+    "docs/use/change-many-findings.md",
+    "docs/use/when-a-scanner-stops.md",
+    "docs/use/who-changed-what.md",
 }
 # Files the pages link to, published as they are.
 FILES = {"docs/ingest-envelope.schema.json", "versions.yaml", "deploy/compose/compose.yaml"}
-PUBLISHED = PAGES | FILES
+VIDEOS = {
+    f"docs/use/videos/{name}.mp4"
+    for name in (
+        "from-a-scan-to-a-finding",
+        "set-the-state-of-a-finding",
+        "accept-a-risk",
+        "change-many-findings",
+        "when-a-scanner-stops",
+        "who-changed-what",
+    )
+}
+# Each version of the site keeps its own copy of every video, and git keeps every old one: a
+# video stays small. The six are 3.1 to 4.6 MB at 1920 wide, H.264 crf 28.
+VIDEO_LIMIT_BYTES = 6_000_000
+PUBLISHED = PAGES | FILES | VIDEOS
 # The site's own files: real files in src/, not copies of anything in the repository.
 SITE_FILES = {"stylesheets/javv.css"}
 
@@ -94,7 +117,7 @@ def _workflow(name: str) -> dict[Any, Any]:
     return yaml.safe_load((ROOT / ".github" / "workflows" / name).read_text())
 
 
-def test_src_is_exactly_the_operator_files() -> None:
+def test_src_is_exactly_the_published_files() -> None:
     assert _src_entries() == PUBLISHED | SITE_FILES
 
 
@@ -125,6 +148,25 @@ def test_relative_links_reach_published_files(page: str) -> None:
         assert resolved in PUBLISHED, f"{page} links to {target}, which the site does not publish"
 
 
+_VIDEO_SRC = re.compile(r'<video [^>]*src="([^"]+)"')
+
+
+def test_each_video_plays_from_exactly_one_page() -> None:
+    # The strict build checks links in Markdown, not the src of a raw <video> tag. The site
+    # rewrites that src as it rewrites a link: from the page's file (CI checks one built page).
+    played: list[str] = []
+    for page in sorted(PAGES):
+        for src in _VIDEO_SRC.findall((ROOT / page).read_text()):
+            played.append(_normalize(f"{Path(page).parent.as_posix()}/{src}"))
+    assert sorted(played) == sorted(VIDEOS)
+
+
+@pytest.mark.parametrize("video", sorted(VIDEOS))
+def test_each_video_is_under_the_size_limit(video: str) -> None:
+    size = (ROOT / video).stat().st_size
+    assert size <= VIDEO_LIMIT_BYTES, f"{video} is {size} bytes; encode it again for the web"
+
+
 def test_the_versions_page_includes_readmes_marked_table() -> None:
     page = (ROOT / "docs" / "supported-versions.md").read_text()
     assert '--8<-- "README.md:supported-versions"' in page
@@ -150,6 +192,10 @@ def test_ci_builds_the_site_strict_with_the_themes_files() -> None:
     assert "grep -q '<pre class=\"mermaid\">' docs-site/site/docs/DEPLOYING/index.html" in runs
     # a list GitHub nests with 3 spaces, or one with no blank line before it, renders as text
     assert "python3 development/scripts/check-docs-site-lists.py docs-site/site" in runs
+    # a raw <video> src the site did not rewrite for the page's URL plays nothing, and the strict
+    # build passes
+    page = "docs-site/site/docs/use/accept-a-risk/index.html"
+    assert f"grep -q 'src=\"../videos/accept-a-risk.mp4\"' {page}" in runs
 
 
 def test_fenced_code_blocks_are_enabled() -> None:

@@ -1,0 +1,1 @@
+../../../../docs/use/from-a-scan-to-a-finding.md

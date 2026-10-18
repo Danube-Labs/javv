@@ -4,7 +4,8 @@ JAVV finds the container images that run in your Kubernetes clusters. It scans e
 Trivy and with Grype, and it keeps the results of each scanner apart. For each vulnerability, JAVV
 records each triage decision in an audit log.
 
-These pages are for the people who install and operate JAVV.
+These pages are for the people who install and operate JAVV. To learn how to triage findings in
+JAVV, read [Use JAVV](use/index.md). It has a short video for each task.
 
 ## Start here
 
