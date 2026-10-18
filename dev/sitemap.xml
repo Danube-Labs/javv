@@ -45,4 +45,25 @@
       <url>
         <loc>https://danube-labs.github.io/javv-poc/dev/docs/supported-versions/</loc>
       </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/accept-a-risk/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/change-many-findings/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/from-a-scan-to-a-finding/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/set-the-state-of-a-finding/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/when-a-scanner-stops/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/who-changed-what/</loc>
+      </url>
 </urlset>
