@@ -16,7 +16,7 @@ The video is 1 minute long and has no sound.
 ## The history of one finding
 
 1. Open Findings, and open a finding.
-2. The Activity card shows the changes that a person made on this one finding, with who and when.
-   A bulk change does not show on the Activity card today. Find it in the Audit log.
+2. The Activity card shows each change on this one finding, with who and when. A bulk change that
+   included this finding also shows, with the state and the note that it set.
 
 For more help, open the Guide from the side menu of JAVV.
