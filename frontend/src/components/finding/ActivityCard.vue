@@ -5,6 +5,7 @@
  * stays a list, not a table (two columns of prose is not tabular data).
  */
 import { bulkChange } from '@/audit/bulkAudit'
+import ActionTag from '@/components/chips/ActionTag.vue'
 import StateTag from '@/components/chips/StateTag.vue'
 import DetailCard from '@/components/finding/DetailCard.vue'
 import GridPager from '@/components/findings/GridPager.vue'
@@ -41,11 +42,9 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
       <li v-for="a in shown" :key="a.event_id" class="act-row">
         <span class="act-when mono-cell">{{ fmtAt(a['@timestamp']) }}</span>
         <span class="act-what">
-          <b>{{ a.actor }}</b> · {{ a.action }}
-          <template v-if="a.field === 'state' && a.new_value">
-            · <StateTag :state="a.new_value" />
-          </template>
-          <template v-else-if="bulkChange(a)">
+          <b>{{ a.actor }}</b> · <ActionTag :action="a.action" />
+          <!-- a single state change adds nothing: the action pill already names the state it set -->
+          <template v-if="bulkChange(a)">
             <template v-if="bulkChange(a)!.state"> · <StateTag :state="bulkChange(a)!.state!" /></template>
             <span v-if="bulkChange(a)!.assignee" class="act-part">
               · assignee: <span class="mono-cell sm">{{ bulkChange(a)!.assignee }}</span>
@@ -54,7 +53,7 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
               · notes: <span class="mono-cell sm">{{ bulkChange(a)!.notes }}</span>
             </span>
           </template>
-          <template v-else-if="a.new_value">
+          <template v-else-if="a.new_value && a.field !== 'state'">
             · {{ a.field }}: <span class="mono-cell sm">{{ a.new_value }}</span>
           </template>
         </span>
