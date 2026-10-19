@@ -88,10 +88,8 @@ describe('feedDetail, the detail line of the Contributors feed', () => {
     )
   })
 
-  it('a change kept as JSON reads as updated, and no value as the empty sign', () => {
-    expect(feedDetail(row({ field: 'sla_policy', new_value: null, new_value_json: { critical: 7 } }))).toBe(
-      'SLA policy → updated',
-    )
+  it('other JSON reads as updated, and no value as the empty sign', () => {
+    expect(feedDetail(row({ field: 'view', new_value: null, new_value_json: { name: 'x' } }))).toBe('Saved view → updated')
     expect(feedDetail(row({ field: 'assignee', new_value: null }))).toBe('Assigned to → ∅')
   })
 
