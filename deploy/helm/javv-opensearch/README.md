@@ -1,6 +1,6 @@
 # javv-opensearch
 
-![Version: 0.8.3](https://img.shields.io/badge/Version-0.8.3-informational?style=flat-square) ![AppVersion: 3.9.0](https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square)
+![Version: 0.8.4](https://img.shields.io/badge/Version-0.8.4-informational?style=flat-square) ![AppVersion: 3.9.0](https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square)
 
 This chart installs OpenSearch for JAVV: one node, with its security plugin on and two users with
 a password. The users are `admin` and `javv`, the user that the JAVV backend signs in as. The chart
