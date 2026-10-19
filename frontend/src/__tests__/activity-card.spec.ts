@@ -29,7 +29,26 @@ describe('ActivityCard', () => {
     expect(row.find('.action-tag').text()).toBe('Bulk triage')
     expect(row.text()).not.toContain('bulk_triage')
     expect(row.find('.state-tag').text()).toContain('Acknowledged')
-    expect(row.text()).toContain('notes: Low risk')
+    expect(row.text()).toContain('Note: Low risk')
+    expect(row.text()).not.toContain('notes:')
+  })
+
+  it('a bulk change to Not affected also shows its reason', () => {
+    const row = rowOf({
+      event_id: 'e-8',
+      action: 'bulk_triage',
+      actor: 'lead',
+      field: 'bulk_patch',
+      new_value: null,
+      new_value_json: {
+        patch: { state: 'not_affected', vex_justification: 'component_not_present' },
+        target_ids: ['fk-1'],
+      },
+      '@timestamp': at,
+    })
+    expect(row.find('.state-tag').text()).toContain('Not affected')
+    expect(row.text()).toContain('Reason: Component not present')
+    expect(row.text()).not.toContain('component_not_present')
   })
 
   it('a single state change names the state once, in the action pill', () => {
@@ -47,6 +66,22 @@ describe('ActivityCard', () => {
     expect(row.text()).not.toContain('state:')
   })
 
+  it('a change to Not affected shows the reason that came with it', () => {
+    const row = rowOf({
+      event_id: 'e-9',
+      action: 'not_affected',
+      actor: 'lead',
+      field: 'state',
+      old_value: 'open',
+      new_value: 'not_affected',
+      new_value_json: { vex_justification: 'vulnerable_code_not_in_execute_path' },
+      '@timestamp': at,
+    })
+    expect(row.find('.action-tag').text()).toBe('Not affected')
+    expect(row.find('.act-part').text()).toBe('· Reason: Code not in execute path')
+    expect(row.find('.state-tag').exists()).toBe(false)
+  })
+
   it('an assignee change shows the Assigned pill and the new assignee', () => {
     const row = rowOf({
       event_id: 'e-3',
@@ -57,7 +92,7 @@ describe('ActivityCard', () => {
       '@timestamp': at,
     })
     expect(row.find('.action-tag').text()).toBe('Assigned')
-    expect(row.text()).toContain('assignee: alice')
+    expect(row.find('.act-part').text()).toBe('· Assigned to: alice')
   })
 
   it('a note keeps its label and its text in one part, so a long note wraps as one piece', () => {
@@ -70,7 +105,7 @@ describe('ActivityCard', () => {
       '@timestamp': at,
     })
     expect(row.find('.action-tag').text()).toBe('Note')
-    expect(row.find('.act-part').text()).toBe('· notes: Fix ships with the next base image')
+    expect(row.find('.act-part').text()).toBe('· Note: Fix ships with the next base image')
   })
 
   it('a new reason on a Not affected finding reads as the plain label of the triage panel', () => {
