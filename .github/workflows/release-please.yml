@@ -352,10 +352,11 @@ jobs:
           } > "$RUNNER_TEMP/notes.md"
           gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
 
-  # issue 639: a release publishes its operator docs as a numbered version (`0.7`) on the gh-pages
-  # branch that GitHub Pages serves, and moves `latest`, which the site opens on, to it. It runs
-  # after the charts, so `latest` names a release that can be installed. `latest` is a redirect
-  # page per page, not a symlink; docs.yml stops making `dev` the default once `latest` exists.
+  # issue 639: a release publishes its operator docs as a numbered version on the gh-pages branch
+  # that GitHub Pages serves, and moves `latest`, which the site opens on, to it. Each release has
+  # a folder of its own (`0.8.4`); its minor (`0.8`) and `latest` are redirects (issue 925). It runs
+  # after the charts, so `latest` names a release that can be installed. docs.yml stops making
+  # `dev` the default once `latest` exists. docs-backfill.yml publishes an older release by hand.
   publish-docs:
     name: Publish docs
     needs: [release-please, publish-charts]
@@ -372,6 +373,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
+          fetch-depth: 0 # the script reads every release tag to choose the aliases
       - name: Read uv pin from versions.yaml (D42)
         id: uv
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
@@ -380,14 +382,8 @@ jobs:
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
-      - name: Deploy the release's version as latest
+      - name: Deploy the release's version, its minor and latest
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin gh-pages:gh-pages
-          minor="${VERSION%.*}"
-          # one folder per minor, so a patch release replaces its docs; the menu names that patch
-          uv run --project docs-site --frozen mike deploy --config-file docs-site/mkdocs.yml \
-            --push --update-aliases --alias-type=redirect --title "$VERSION" "$minor" latest
-          uv run --project docs-site --frozen mike set-default --config-file docs-site/mkdocs.yml \
-            --push latest
+          development/scripts/publish-docs-version.sh "$VERSION"
