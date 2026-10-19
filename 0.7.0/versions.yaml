@@ -1,0 +1,69 @@
+# Externally-owned tools/services JAVV pins and supports — single source of truth (D42).
+# Renovate updates the pins here (customManager in renovate.json); consumers (the scanner
+# Dockerfiles, docker-bake, the scanner-images workflow, the dev OpenSearch compose, the dev
+# setup script + pyproject dev-deps) derive from this file, and a CI drift check
+# (development/scripts/check-versions.sh) fails if a literal-pin consumer diverges. Keep the
+# supported set small (current + 1-2 prior); the `current` entry is the default/recommended
+# version. `also_supported` are manual (Renovate only bumps the annotated `current` pins).
+# Phase 1 = scanners + OpenSearch; phase 2 = the gate toolchain (uv/ruff/pyright/pre-commit/node).
+# Deliberately NOT here: k8s tooling (kubectl/helm/k3d) and the dev scanner CLIs track latest
+# (cluster compat / security DBs are more defensible at HEAD) — see development/setup/setup-dev.sh.
+
+# `vuln_db` records the *factual* DB compatibility of each scanner (M0b) — NOT an invented EOL for the
+# tool itself (Trivy/Grype publish no release-EOL, so we don't fabricate one). It states which vuln-DB
+# schema a scanner version speaks, and — where upstream froze an old schema — the minimum version that
+# still receives DB updates. `development/scripts/check-scanner-db-policy.sh` fails CI if a supported
+# version would run a frozen/incompatible DB, so we never *silently* ship a stale scanner.
+scanners:
+  trivy:
+    # renovate: datasource=docker depName=aquasec/trivy
+    current: "0.75.0"
+    also_supported: ["0.70.0"]
+    vuln_db:
+      schema: 2  # trivy-db schema these versions speak (current). Trivy REFUSES a schema-incompatible
+                 # DB at runtime (errors, won't scan) — it fails loud, so there's no silent-stale risk.
+  grype:
+    # renovate: datasource=docker depName=anchore/grype extractVersion=^v(?<version>.+)$
+    current: "0.120.1"
+    also_supported: ["0.114.0"]
+    vuln_db:
+      schema: 6  # Grype DB schema v6 (used since grype 0.88.0, Mar 2025).
+      # Grype < 0.88.0 speaks schema v5, which upstream EOL'd 2026-03-06 → frozen (no more DB updates),
+      # and old Grype runs on it SILENTLY. Never support a version below this floor.
+      min_live_version: "0.88.0"
+
+datastore:
+  # renovate: datasource=docker depName=opensearchproject/opensearch
+  opensearch: "3.9.0"
+
+# Gate toolchain (D42 phase 2): tools whose version decides lint/type results, so local MUST
+# match CI. Consumers read these directly (can't drift): development/setup/setup-dev.sh, and CI's
+# setup-uv reads `.toolchain.uv` via yq. ruff/pyright are also pinned in each pyproject.toml
+# dev-deps (what CI runs via `uv run`) and drift-checked here.
+toolchain:
+  # renovate: datasource=github-releases depName=astral-sh/uv
+  uv: "0.12.24"
+  # renovate: datasource=pypi depName=ruff
+  ruff: "0.16.10"
+  # renovate: datasource=npm depName=pyright
+  pyright: "1.1.414"
+  # renovate: datasource=pypi depName=pre-commit
+  pre-commit: "4.6.2"
+  # major-only LTS; CI's setup-node repeats it (drift-checked). Majors wait for dashboard approval.
+  # renovate: datasource=node-version depName=node
+  node: "22"
+  # writes each chart's README from its values.yaml; CI fails on a README it would change.
+  # development/scripts/helm-docs.sh runs this version (issue 725)
+  # renovate: datasource=github-releases depName=norwoodj/helm-docs extractVersion=^v(?<version>.+)$
+  helm-docs: "1.14.2"
+
+# CI supply-chain tools: the Secret scan job's gitleaks (ci.yml), the scanner-images SBOM step's
+# syft, and cosign for image signing. CI reads these directly. A gitleaks bump also needs GITLEAKS_SHA256 in ci.yml, from the
+# release's checksums.txt; the Secret scan job fails until it matches.
+supply_chain:
+  # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.+)$
+  gitleaks: "8.30.1"
+  # renovate: datasource=github-releases depName=anchore/syft extractVersion=^v(?<version>.+)$
+  syft: "1.54.1"
+  # renovate: datasource=github-releases depName=sigstore/cosign extractVersion=^v(?<version>.+)$
+  cosign: "3.1.3"

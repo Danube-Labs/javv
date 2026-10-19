@@ -1,0 +1,2350 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Operator docs for JAVV, Just Another Vulnerability Viewer">
+      
+      
+      
+        <link rel="canonical" href="https://danube-labs.github.io/javv-poc/0.7.0/docs/API/">
+      
+      
+        <link rel="prev" href="../../CHANGELOG/">
+      
+      
+        <link rel="next" href="../INGEST-CONTRACT/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.69">
+    
+    
+      
+        <title>API - JAVV</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/javv.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="JAVV" class="md-header__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            JAVV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark theme"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark theme" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light theme"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light theme" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="JAVV" class="md-nav__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    JAVV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Install
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPLOYING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deploying
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supported versions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-opensearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-opensearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-scanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-scanner
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Operate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Operate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/opensearch-sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sizing OpenSearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/multi-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scaling and failures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrade
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Upgrade
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UPGRADING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Integrate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Integrate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#auth-regimes-three-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Auth regimes (three classes)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Endpoints
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system-m1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        System (M1)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-surface-m1m3-scanner-facing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Machine surface (M1/M3, scanner-facing)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auth-sessions-m5a" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Auth &amp; sessions (M5a)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin-m5a" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Admin (M5a)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-read-m6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: read (M6)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-triage-decisions-m5bm5cm5d" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: triage &amp; decisions (M5b/M5c/M5d)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings-m5d" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings (M5d)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saved-views-m8e-c-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saved views (M8e, C-6)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exports-m6-scheduled-reports-m7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exports (M6) &amp; scheduled reports (M7)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apiv1ingestscan-the-hardened-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        POST <code>/api/v1/ingest/scan</code> (the hardened surface)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-metrics-prometheus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Metrics (<code>/metrics</code>, Prometheus)
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metrics (&#x2f;metrics, Prometheus)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#client-events-issue-453" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Client events (issue 453)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logging
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auth-model-mvp-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Auth model (MVP): summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INGEST-CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ingest contract
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#auth-regimes-three-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Auth regimes (three classes)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Endpoints
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system-m1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        System (M1)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-surface-m1m3-scanner-facing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Machine surface (M1/M3, scanner-facing)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auth-sessions-m5a" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Auth &amp; sessions (M5a)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin-m5a" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Admin (M5a)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-read-m6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: read (M6)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-triage-decisions-m5bm5cm5d" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: triage &amp; decisions (M5b/M5c/M5d)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings-m5d" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings (M5d)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saved-views-m8e-c-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saved views (M8e, C-6)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exports-m6-scheduled-reports-m7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exports (M6) &amp; scheduled reports (M7)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apiv1ingestscan-the-hardened-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        POST <code>/api/v1/ingest/scan</code> (the hardened surface)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-metrics-prometheus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Metrics (<code>/metrics</code>, Prometheus)
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metrics (&#x2f;metrics, Prometheus)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#client-events-issue-453" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Client events (issue 453)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logging
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auth-model-mvp-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Auth model (MVP): summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="javv-api-reference">JAVV API reference<a class="headerlink" href="#javv-api-reference" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Human-readable index of the backend's HTTP surface. The <strong>live, authoritative</strong> spec is the
+app's auto-generated OpenAPI: run the backend and open <strong><code>/docs</code></strong> (Swagger UI) or
+<strong><code>/openapi.json</code></strong>. This file is the at-a-glance map + the things OpenAPI doesn't capture (auth
+regime, capabilities, metrics, error semantics). Kept versioned in-repo (reviewed in PRs) rather
+than a wiki so it can't drift silently: <strong>any route change updates this file in the same PR</strong>
+(<code>standards/definition-of-done.md</code> §6). Conventions (<code>standards/api-design.md</code>): <code>/api/v1</code>
+prefix for data routes, snake_case, <code>extra="forbid"</code> request models, one problem-details error
+envelope for every non-2xx (<code>status</code>/<code>title</code>/<code>request_id</code>). <strong>List responses come in three
+envelope shapes</strong>, picked by pagination style (cursor → <code>data</code> + <code>next_cursor</code>; offset → a named
+key + a bare <code>total</code>; unpaged → a named key alone). The shapes, the two routes that break the
+pattern, and how to read one without silently getting <code>0</code> are in
+<a href="https://github.com/Danube-Labs/javv-poc/blob/main/development/standards/api-design.md"><code>standards/api-design.md</code></a> § <em>List response envelopes</em>.</p>
+</blockquote>
+<h2 id="auth-regimes-three-classes">Auth regimes (three classes)<a class="headerlink" href="#auth-regimes-three-classes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Regime</th>
+<th>Mechanism</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>none</strong></td>
+<td>none</td>
+<td><code>/healthz</code>, <code>/readyz</code>, <code>/metrics</code> (cluster-internal; restrict by scrape topology, not app auth)</td>
+</tr>
+<tr>
+<td><strong>machine</strong></td>
+<td><code>Authorization: Bearer &lt;token&gt;</code>: a per-<code>(cluster, scanner)</code> 256-bit token, peppered-SHA-256 at rest, scope-bound to the payload (SEC-3)</td>
+<td>ingest, scan-scope, scan-runs</td>
+</tr>
+<tr>
+<td><strong>session</strong></td>
+<td>httpOnly cookie from <code>/auth/login</code>, <code>Secure</code> unless <code>JAVV_SESSION_COOKIE_SECURE=false</code>; server-side TTL + revocation; login lockout</td>
+<td>every human endpoint</td>
+</tr>
+</tbody>
+</table>
+<p>Session endpoints marked with a <strong>capability</strong> additionally require it on the principal's role
+bundle (D33; roles: <code>viewer</code>: none, <code>triager</code>: <code>can_triage</code>, <code>security_lead</code>: <code>can_triage</code> +
+<code>can_accept_audit_final</code>, <code>admin</code>: <code>*</code>). A <code>must_change</code> session (fresh temp password, SEC-6)
+can reach <strong>only <code>/auth/*</code></strong>; everything else 403s until the password is changed. The
+<strong>capability column's source of truth</strong> is <code>backend/tests/security/test_rbac_idor_contract.py</code>
+(registry + exemptions); if this table and the registry disagree, the registry wins.</p>
+<p>Tenancy: <code>cluster_id</code> is an always-applied data filter on every read/export (D38/H9), enforced in
+the query layer (tenant read path), not per-user grants (post-MVP).</p>
+<h2 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h2>
+<h3 id="system-m1">System (M1)<a class="headerlink" href="#system-m1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/healthz</code></td>
+<td>none</td>
+<td>Liveness: 200 while the process runs; <strong>no OpenSearch dependency</strong></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/readyz</code></td>
+<td>none</td>
+<td>Readiness: <code>200 {ready}</code> if OpenSearch reachable, <code>503 {degraded}</code> if not</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/metrics</code></td>
+<td>none</td>
+<td>Prometheus exposition (see below)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/meta</code></td>
+<td>session</td>
+<td>What this backend runs: <code>{version, mapping_version, envelope_versions, opensearch_version, python_version}</code> (issues 261, 341). <code>version</code> is the release (<code>backend/src/backend/version.py</code>, bumped by release-please); <code>mapping_version</code> is <code>MAPPING_VERSION</code>; <code>envelope_versions</code> are the ingest <code>schema_version</code>s accepted; <code>opensearch_version</code> is read live from the store per request, and is <code>null</code> when the store is unreachable (the rest still answers; the miss is logged as <code>opensearch version unavailable</code> and counted in <code>javv_opensearch_request_errors_total{kind}</code>); <code>python_version</code> is the backend's interpreter. Behind login because <code>/readyz</code> is anonymous; the <code>bootstrap complete</code> log line carries the release and mapping versions for operators</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine-surface-m1m3-scanner-facing">Machine surface (M1/M3, scanner-facing)<a class="headerlink" href="#machine-surface-m1m3-scanner-facing" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/ingest/scan</code></td>
+<td>machine</td>
+<td>Ingest one scanner envelope (schema <strong>v3 or v4</strong>, the M8d ptype rollout window; v3 findings get <code>ptype: null</code>) → findings/scan-events/images (details below)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scan-scope</code></td>
+<td>machine</td>
+<td>The scanner reads its own cluster's scan scope; scoped to the token's <code>cluster_id</code> (D43)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/scan-runs</code></td>
+<td>machine</td>
+<td>Allocates the next <code>scan_order</code> (strictly increasing per <code>(cluster_id, scanner)</code>; CAS + forward self-heal, D45)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/inventory-runs</code></td>
+<td>machine</td>
+<td>Cycle-END inventory certification (M8a/#33): body <code>{scan_run_id, expected_count, started_at}</code> → the backend counts landed image docs server-side, allocates <code>inventory_order</code> (per-cluster D45 counter), writes the immutable manifest (<code>committed</code> iff complete; retry returns the original manifest). Token-bound to its own <code>cluster_id</code> (SEC-3)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="auth-sessions-m5a">Auth &amp; sessions (M5a)<a class="headerlink" href="#auth-sessions-m5a" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/auth/login</code></td>
+<td>none</td>
+<td>Session mint; generic 401 (no user-existence oracle); lockout 429 after <code>JAVV_LOGIN_MAX_ATTEMPTS</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/logout</code></td>
+<td>session</td>
+<td>Server-side revocation</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/password</code></td>
+<td>session</td>
+<td>Password change; the only mutating route a <code>must_change</code> session may call</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/auth/me</code></td>
+<td>session</td>
+<td>Principal view: <code>username</code>, <code>role</code>, <code>capabilities</code>, <code>must_change</code>. <strong>The UI gates on <code>capabilities</code>, never role names</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="admin-m5a">Admin (M5a)<a class="headerlink" href="#admin-m5a" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Capability</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET/POST</td>
+<td><code>/api/v1/admin/tokens</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>List / mint ingest tokens (raw token returned <strong>once</strong>, at mint). List pages with <code>size</code> (≤1000, default 100) / <code>offset</code> (≤9000); optional <code>cluster_id</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/tokens/{token_id}/revoke</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>Disable a token</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/tokens/{token_id}/rotate</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>New secret, same scope</td>
+</tr>
+<tr>
+<td>GET/POST</td>
+<td><code>/api/v1/admin/users</code></td>
+<td><code>can_manage_users</code></td>
+<td>List / create users (<code>system</code>/<code>fleet</code> usernames reserved → 422). List pages with <code>size</code> (≤1000, default 100) / <code>offset</code> (≤9000)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/admin/users/{username}/role</code></td>
+<td><code>can_manage_users</code></td>
+<td>Role change (revokes the user's sessions)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/admin/users/{username}/disabled</code></td>
+<td><code>can_manage_users</code></td>
+<td>Enable/disable; the <strong>last enabled admin</strong> cannot be disabled (409)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/users/{username}/password-reset</code></td>
+<td><code>can_manage_users</code></td>
+<td>Temp password + <code>must_change</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/roles</code></td>
+<td><code>can_manage_users</code></td>
+<td>The seeded <code>system-roles</code> capability bundles (A-4: the UI renders whatever is seeded; M9e)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/snapshots</code></td>
+<td><code>can_manage_retention</code></td>
+<td>The configured repo's snapshots, newest first (<code>configured: false</code> empty state until a repo ref exists; M9e)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/snapshots</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Manual snapshot of the durability set (202 fire-and-forget; 409 without a repo). Journaled (D17)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/snapshots/{snapshot_name}/restore</code></td>
+<td><code>can_restore_snapshot</code></td>
+<td>Restore into <code>restored-*</code> copies, <strong>never onto live indices</strong>; promoting a copy is a manual step. Journaled (D17)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/opensearch-runtime</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Allowlist-shaped runtime facts (version, health, nodes/roles/heap, <code>discovery.type</code>, <code>path.repo</code>, security state): the §D read-only card; never a raw passthrough</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/opensearch/inspect</code></td>
+<td><code>can_inspect_store</code></td>
+<td>Data inspector (issue 406): <code>{method, path, body}</code> validated against a <strong>hard allowlist</strong>: GET/POST on <code>&lt;index&gt;/_search</code>·<code>_count</code>, GET <code>_mapping</code>, and the global reads (<code>_cat/indices</code>, <code>_cat/shards</code>, <code>_cluster/health</code>, <code>_nodes/stats</code>). Credential indices (<code>system-users</code>/<code>-sessions</code>/<code>-tokens</code>) and script/PIT/scroll body keys are <strong>422</strong> with the reason verbatim; <code>size</code> over <code>JAVV_INSPECT_MAX_HITS</code> → 422; response over <code>JAVV_INSPECT_MAX_RESPONSE_BYTES</code> → <strong>413</strong>. Envelope <code>{took_ms, bytes, cap_bytes, body}</code>. Journal-first (D17): every query appends <code>store_inspect</code> (actor · method+path · query hash)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/jobs</code></td>
+<td><code>can_inspect_store</code></td>
+<td>The status of every background job (issues 406, 556; the Data inspector's capability since issue 706, as the list carries failure text and who started each run): <code>{jobs, scheduler}</code>. One entry per kind in <code>jobs/registry.py</code> (eight), each the kind's <code>system-jobs</code> record (<code>status</code>, <code>requested_by</code>, <code>started_at</code>, <code>finished_at</code>, last <code>result</code> counts, <code>error</code>; <code>status: idle</code> when it has never run) plus <code>stale</code> (<code>true</code> when a running record's heartbeat outlived the lease TTL), <code>runnable</code> (it can be started with the route below) and its <code>capability</code> (null when not runnable), <code>schedule</code> (its cron expression from <code>JAVV_JOB_&lt;KIND&gt;_CRON</code>, null when it has none), <code>next_run_at</code> (UTC; null when the kind or the scheduler is switched off) and <code>health</code>. <code>health</code> is checked in this order: <code>failed</code> (the last run failed), <code>off</code> (no schedule, or the scheduler is switched off), <code>never_ran</code> (scheduled, no run on record), <code>overdue</code> (it missed a whole scheduled run: two scheduled times have passed since it last started), else <code>ok</code>. <code>scheduler</code> is <code>{enabled, timezone}</code>: whether this backend runs the schedules, and the timezone the cron expressions are read in</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/jobs/{kind}/run</code></td>
+<td>per kind</td>
+<td>Trigger a sanctioned maintenance job → <strong>202</strong> <code>{attempt_id}</code>; a fresh running lease → <strong>409</strong>. Kinds/capabilities: <code>rebuild_state</code> → <code>can_rebuild_state</code>, <code>staleness_sweep</code> → <code>can_manage_settings</code>, <code>lifecycle_sweep</code> → <code>can_drop_index</code> (D33 destructive tier). The five scheduled-only kinds (<code>runnable: false</code> in the list above) and unknown kinds → <strong>404</strong>. Exactly-once via seq_no-CAS claim + fencing <code>attempt_id</code>, shared with the backend's own scheduler (issues 459, 691: a scheduled run skips while the card's run holds the lease, and vice versa); journaled (D17). <code>?dry_run=true</code> (lifecycle only, same capability): inline <strong>200</strong> <code>{dry_run, result: {rolled, dropped, errors}}</code> = would-roll/would-drop counts, writes nothing, takes no lease; other kinds → <strong>422</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="findings-read-m6">Findings: read (M6)<a class="headerlink" href="#findings-read-m6" title="Permanent link">&para;</a></h3>
+<p>All session-auth, no capability (reads). All take the filter family (<code>cluster_id</code> <strong>required</strong>,
+<code>scanner</code>, <code>severity</code>, <code>state</code>, <code>namespace</code>, <code>image_repo</code>, <code>image_digest</code>, <code>cve_id</code>, <code>package_name</code>,
+<code>assignee</code>, <code>kev</code>, <code>fixable</code>, <code>disagree</code>, <code>ptype</code>, <code>present</code>, <code>new_within_days</code>, <code>overdue</code>, <code>unassigned</code>, …) and the global <code>as_of</code>. <code>severity</code> values are the <strong>full-word canonical vocabulary</strong>
+(D46/#274: <code>critical|high|medium|low|negligible|unknown</code>) served by the server-derived
+<code>severity_canonical</code> key; facet bucket keys are the same words; the verbatim scanner word stays
+display-only in rows. <code>ptype</code> (M8d/#241) is also a facet (pre-v4 rows bucket as
+<code>"unknown"</code> until a sweep heals them, D30) and a group dim, and unlike <code>kev</code>/<code>epss</code> it IS
+recorded on occurrences, so it stays filterable/facetable at a past <code>as_of</code> (v3-era rows are
+explicitly <code>null</code> there). <code>overdue=true|false</code> (issue #363) filters on the <strong>materialized D21 group
+clock</strong> (<code>sla_clock_at</code>) against cutoffs derived from the <strong>live SLA policy at query time</strong>: a
+policy edit moves the filter instantly, chip ≡ filter by construction (shared handled-states set,
+KEV fast-lane included); works on grid/facets/groups/exports, and at a past <code>as_of</code> it filters the
+reconstruction's own read-time verdict (judged at <code>now=T</code>, never the cache field). Multi-page grid
+walks freeze the cutoffs in the cursor (the PIT freezes docs, the query freezes with them).</p>
+<p><strong>Unassigned (issue #349 §1):</strong> <code>unassigned=true|false</code> is ABSENCE, not negation: an owner is a NON-EMPTY <code>assignee</code> (a cleared one is written as <code>""</code>, which <code>exists</code> alone would count as owned). It is a distinct filter because the excludes below are pure <code>must_not</code>, so <code>exclude_assignee=bob</code> keeps unowned rows and can never ask "nobody owns this". It is also a facet (a <code>filter</code> agg over the grid's own clause, so the rail count equals the filtered rows) and is answerable at a past <code>as_of</code> from the reconstruction.</p>
+<p><strong>Negation (issue #349, completed by #492):</strong> every filterable term has an exclude mirror,
+<code>exclude_severity</code>, <code>exclude_state</code>, <code>exclude_scanner</code>, <code>exclude_assignee</code>,
+<code>exclude_image_repo</code>, <code>exclude_namespace</code>, <code>exclude_ptype</code>, <code>exclude_cve_id</code>,
+<code>exclude_package_name</code>, compiled to <code>must_not</code> clauses. Semantics are <strong>pure
+must_not</strong>: a row <em>missing</em> the field survives the exclusion (<code>exclude_assignee=bob</code> keeps
+unassigned rows; <code>exclude_package_name=zlib</code> keeps OS-level rows that carry no package at
+all). A field is include OR exclude, never both (422). Mirrored on <code>ExportParams</code>
+and <code>ViewPreset</code>; at a past <code>as_of</code>, excludes on recorded fields apply and
+<code>exclude_image_repo</code> is a 422 like its include twin.
+<code>image_digest</code> deliberately has <strong>no</strong> exclude twin: it is a drill-down identity, not a
+browsing facet (issue #492 ruling).</p>
+<p><strong><code>package_name</code> (issue #492):</strong> an EXACT keyword term, both directions. The fuzzy reading of
+a package name is what <code>q</code> already does (it wildcards across <code>package_name</code> among other
+fields) and stays include-only. It is a filter, <strong>not</strong> a facet: <code>fields=package_name</code> on
+<code>/findings/facets</code> is a 422, because a rail dim over unbounded package cardinality is not a
+browsing surface. Recorded on occurrences, so it filters at a past <code>as_of</code> too.</p>
+<p><strong>T&lt;now dispatches to the M8b reader (live since #34)</strong>: results are
+reconstructed from the append logs as-scanned: fields history deliberately does not record
+(<code>kev</code>, <code>epss</code>, <code>disagree</code>, <code>image_repo</code>, <code>tag</code>, <code>app</code>) come back <code>null</code>; a filter/sort/group on
+one of them at a past T is a 422; whitelisted facets on them return empty buckets. Queued exports
+(<code>POST /api/v1/reports</code>) accept a past <code>as_of_t</code> too; the drain reconstructs at T (inline export
+routes stay current-state-only).</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings</code></td>
+<td>PIT + <code>search_after</code> paged search; returns rows + an opaque <code>cursor</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/facets</code></td>
+<td>Scanner-faceted aggregations (counts per severity/state/… per scanner)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/groups</code></td>
+<td>Composite group paging (e.g. by CVE across images)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/top-components</code></td>
+<td>Top packages by finding rows with per-scanner unique-CVE counts (Overview card; now-only, 422 at a past <code>as_of</code>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/trends/scans</code> · <code>/api/v1/trends/findings</code></td>
+<td>Time series from scan-events over <code>days</code> (1–365, default 30); <code>/scans</code> also takes <code>interval=day\|hour</code> (hour only for <code>days</code> ≤ 31, else 422; audit 343); <code>resolved_semantics: "scan_resolved"</code> (A-m9: <em>scan-observed</em> resolution, not human <code>state=resolved</code>). <code>/findings</code> also takes <code>split=scanner\|severity</code> (severity = the D16 server-derived canonical, six buckets; <strong>now-only</strong>, 422 at a past <code>as_of</code>) and an optional <code>scanner=trivy\|grype</code> query-filter scope (M9c 1b)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/trends/ingest-failures</code></td>
+<td>Pushes the ingest route refused <strong>after the token check</strong> per bucket, one series per scanner (issue 575; the same records <code>/scanners/ingest-failures</code> pages, so a series sums to that route's <code>total</code> for the same window). Same axis as <code>/trends/scans</code> (<code>days</code> 1–365, default 30; <code>interval=day\|hour</code>, hour only for <code>days&lt;=31</code>, else 422), so the two strips line up. An append-only log: a past <code>as_of</code> just ends the window at T (no 501). <code>{series: {&lt;scanner&gt;: [{date, count}]}, days, interval}</code>; a cluster with no refusals is <code>series: {}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/contributors</code></td>
+<td>Triage-work leaderboard + TTR/SLA-hit from <code>system-audit-log</code> (FR-15) over <code>days</code> (1–365, default 30). <code>totals</code> (M9d slice 3) = the team KPI block: exact team-wide <code>by_action</code> (top-level agg, never board-capped), <strong>pooled</strong> median TTR / SLA-hit (never median-of-medians), <code>critical_cleared</code>; same block at a rewound <code>as_of</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/contributors/export.csv</code></td>
+<td>The leaderboard as CSV (issue 359): the SAME payload <code>/contributors</code> serves, so the file can't disagree with the screen. Fixed columns: the five measures + one <code>action_&lt;name&gt;</code> per action of the closed triage vocabulary, present as <code>0</code> rather than absent in a quiet window. Cells CSV-injection-sanitized (the actor is a username: attacker-controlled). <strong>Not</strong> a PIT sweep: the rows are the terms agg, already bounded by the 100-actor board, so the <code>JAVV_EXPORT_MAX_ROWS</code> <strong>413</strong> is a post-count backstop (no cheap pre-count exists) and there is no PIT-slot 429. <code>as_of</code> rides the read's D28 seam, not the findings export's flat 501</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scanners/freshness</code></td>
+<td>Per-(cluster, scanner) <code>last_ingest_at</code> + <code>silent_for_seconds</code> (FR-6/D20 banner; #218). Max across tokens; disabled tokens count; never-ingested → nulls</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scanners/ingest-failures</code></td>
+<td>One scanner's pushes the ingest route refused <strong>after the token check</strong> (issue 357; INDEX-MAP <code>javv-ingest-failures-*</code>), newest first. <code>?scanner=</code> is <strong>required</strong>, so no page or total ever mixes scanners; <code>days</code> (1–365, default 30) + optional <code>as_of</code> are the trend window. An append-only log, so a past <code>as_of</code> just ends the window at T (no 501). <code>size</code> 1–100 (default 25), cursor-paged by <code>search_after</code> <strong>without a PIT</strong> (a record written mid-walk lands ahead of the cursor). <code>{data, total: {value, relation}, next_cursor}</code>; each row: <code>@timestamp</code>, <code>failure_id</code> (also on the backend's <code>ingest rejected</code> log line), <code>scanner</code>, <code>stage</code>, <code>reason</code>, <code>status</code>, <code>error</code>, <code>image_ref</code>. Tampered cursor → 422</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scanners/provenance</code></td>
+<td>Per-(cluster, scanner) versions/<code>effective_config</code> of the latest <strong>committed</strong> run + last-N runs (<code>?runs=</code>, ≤50). Catalog-first (R-CATALOG); latest = max <code>scan_order</code>, never <code>@timestamp</code> (M8c/#240)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit</code></td>
+<td>The journaled history, plain-session read (M8c/#240): filters <code>entity_type</code>/<code>action</code>/<code>actor</code> (each with an <code>exclude_*</code> twin, issue 349 negation; a row missing the field survives its exclusion, so <code>exclude_actor</code> keeps actor-less system rows), ordered <code>(@timestamp, event_id)</code> (<code>?order=</code>, desc default), same opaque-cursor paging + A-m1 semantics as <code>/findings</code>. <code>as_of</code> (M9d/D28) bounds the walk at a rewound T; absent/<code>now</code> = unbounded. Rows are <strong>decorated at read</strong> (M9d): <code>finding</code>/<code>decision</code> sub-objects carry the touched entity's identity (cve/image/scanner/type), <code>null</code> once the doc ages out. History stays untouched, decoration is display-only and tenant-checked per doc (SEC-4)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit/facets</code></td>
+<td>Rail counts for the audit screen (M9d): <code>entity_type</code>/<code>action</code>/<code>actor</code> terms aggs under the same filters (incl. <code>exclude_*</code>) + <code>as_of</code> bound as the walk. <code>interval=day\|hour</code> + <code>window_days</code> adds <code>activity</code>: the audit lens's events-over-time histogram (quiet buckets as zeros)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit/export.csv</code></td>
+<td>Streaming CSV of the audit lens (M9d, same filters incl. <code>exclude_*</code>): decorated + CSV-injection-sanitized, constant-memory PIT sweep; &gt; <code>JAVV_EXPORT_MAX_ROWS</code> → <strong>413</strong>, PIT cap → <strong>429</strong> (same bounds as the findings export)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/images</code></td>
+<td>Running images = the latest <strong>committed</strong> inventory run's image docs (M8c/#240; the T=now case of M8b's <code>running_images_at</code>, shared primitives). Partial runs never leak; clean (zero-finding) images appear; <code>inventory: null</code> = no committed inventory yet (unknown ≠ empty)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/images/timeline</code></td>
+<td>One <code>repo:tag</code>'s committed scan-event history (<code>cluster_id</code> + <code>image_repo</code> + <code>tag</code> query params) for the image-detail digest sub-timeline; build-change (digest flips) and per-scanner gap markers derive client-side</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/clusters</code></td>
+<td>Cluster listing (D-5): token-derived <code>cluster_id</code>s ∪ registry names ∪ retirement records (a cluster whose delete stopped halfway has only that left, and stays listed under <code>include_retired</code> so the delete can be retried); <code>cluster_name</code> defaults to the id. <strong>Display-only</strong>, never a query key. Each row carries <code>retired</code>; retired clusters (issue 765) are left out unless <code>?include_retired=true</code>. A retirement that a newer accepted scan has outlived already reads as not retired. Each row also carries <code>last_scan_at</code> (the newest accepted scan; null when none) and its retirement schedule (ISO datetimes): <code>silent_since</code>, where the countdown starts (the newest accepted scan, else the first token's mint, or the cluster's return from retirement when that is later; null when nothing is known), <code>warns_at</code> and <code>retires_at</code> (null = never retires), <code>delete_started</code> (issue 778: a delete of this cluster started and has not finished; delete it again), and <code>retirement_mode</code> (issue 778: <code>manual</code> or <code>auto</code> while retired, else null; a manual retire revoked the tokens, so bringing it back needs a newly minted one)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cursor errors (A-m1):</strong> expired PIT → <strong>410</strong> (re-run the search); tampered/invalid cursor →
+<strong>422</strong>; OpenSearch transport failure → <strong>503</strong>. The PIT slot is released on every error path.</p>
+<h3 id="findings-triage-decisions-m5bm5cm5d">Findings: triage &amp; decisions (M5b/M5c/M5d)<a class="headerlink" href="#findings-triage-decisions-m5bm5cm5d" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Capability</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/findings/{finding_key}/triage</code></td>
+<td><code>can_triage</code></td>
+<td>One VEX-model transition (<code>state</code> ∈ open/acknowledged/not_affected/risk_accepted/resolved; <code>vex_justification</code> required iff <code>not_affected</code>); CAS'd on the doc; journaled (D17)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/findings/bulk-triage</code></td>
+<td><code>can_triage</code></td>
+<td><strong>Bounded-synchronous</strong> (A-Mc): frozen selector set ≤ <code>JAVV_BULK_INLINE_LIMIT</code> (5000) applies now; above → <strong>413</strong>; selector materializing &gt; <code>JAVV_BULK_MAX_TARGETS</code> (10000) → <strong>413</strong> "selector too broad". Empty selector → 422. One journal row per action</td>
+</tr>
+<tr>
+<td>POST/GET</td>
+<td><code>/api/v1/decisions</code></td>
+<td><code>can_triage</code></td>
+<td>Create / list decisions (ignore-rules etc.). <strong>Immutable + lifecycle stamp</strong>: edit = revoke+new. <code>risk_accepted</code> type additionally requires <code>can_accept_audit_final</code> (SEC-2 → 403 without it). <code>expiry</code> is a bare date (<code>YYYY-MM-DD</code>) or a timezone-aware datetime; a datetime is stored and returned in UTC, so <code>…T23:00:00+02:00</code> comes back as <code>…T21:00:00+00:00</code> (issue 706). The list takes <code>cve_id</code>, <code>include_revoked</code> (default false) and <code>size</code> (≤500, default 50) / <code>offset</code> (≤10000)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/decisions/{decision_id}</code></td>
+<td><code>can_triage</code></td>
+<td>The revoke+new edit (one <code>effective_at</code>/<code>operation_id</code>, D40)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/decisions/{decision_id}/revoke</code></td>
+<td><code>can_triage</code></td>
+<td>Revoke (projection un-applies)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/decisions/approvals</code></td>
+<td><code>can_accept_audit_final</code></td>
+<td>The approvals queue (security-lead view): ACTIVE risk-accepts, soonest expiry first, <code>size</code>/<code>offset</code> paging. Slice 4b filters, all server-side: <code>q</code> (CVE contains) · <code>status</code> (<code>active\|expiring\|expired\|open-ended</code>, derived from <code>expiry</code> at query time against <code>warn_days</code>, default 7, mirrors the UI chip) · <code>created_by</code> · <code>scanner</code> (<code>both\|trivy\|grype</code>, the column value), each with an <code>exclude_*</code> twin (issue 349 negation: the vocabularies partition the queue, so excluding <code>expiring</code> yields the other three statuses, open-ended included; exclusions never lift the revoked-row guard). Response carries <code>facets</code> (status/created_by/scanner counts under the same lens)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/decisions/approvals/export.csv</code></td>
+<td><code>can_accept_audit_final</code></td>
+<td>The queue as CSV (issue 359, absorbing #373): the SAME lens the queue read runs, every filter above honoured incl. the <code>exclude_*</code> twins and <code>warn_days</code>. Streaming, constant-memory PIT sweep with <strong>CSV-injection-sanitized</strong> cells (the <code>justification</code> is approver-authored free text). &gt; <code>JAVV_EXPORT_MAX_ROWS</code> → <strong>413</strong> from a cheap pre-count before any PIT; PIT cap → <strong>429</strong>, the same bounds as the findings/audit exports. Gated like the queue, <strong>not</strong> session-only: the rows name who accepted which risk. Two columns differ from the screen on purpose: <code>status</code> is the chip's verdict <strong>derived per row</strong> at the same boundaries the <code>status</code> filter uses (chip ≡ filter ≡ facet ≡ export), and <code>scope_namespaces</code>/<code>scope_images</code> carry the raw lists rather than the screen's truncating "+2" label (both empty = cluster-wide). Revoked acceptances never appear, whatever the lens</td>
+</tr>
+</tbody>
+</table>
+<h3 id="settings-m5d">Settings (M5d)<a class="headerlink" href="#settings-m5d" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/sla</code></td>
+<td>session</td>
+<td>Read SLA policy (<code>critical_days</code>/<code>high_days</code>/<code>medium_days</code>/<code>low_days</code>/<code>kev_days</code>, full-word settings, D46/#274)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/sla</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Replace SLA policy</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/staleness</code></td>
+<td>session</td>
+<td>Effective D20 timers for <code>?cluster_id</code> (its override if set, else the fleet default) + <code>per_cluster_override</code> (M9e)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/staleness</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Replace the timers; <code>cluster_id</code> in the body writes the per-cluster override, absent = the fleet default. Journaled (D17)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/retirement</code></td>
+<td>session</td>
+<td>The effective cluster retirement window for <code>?cluster_id</code> (its override if set, else the fleet default, else 45 days) + <code>per_cluster_override</code> (issue 765). <code>retire_after_days: null</code> = never; <code>warn_days</code> = how long before retirement the warning starts. Until a value is saved, the env seeds <code>JAVV_CLUSTER_RETIRE_AFTER_DAYS</code> / <code>JAVV_CLUSTER_RETIREMENT_WARN_DAYS</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/retirement</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Set <code>retire_after_days</code> (required; <code>null</code> = never) and <code>warn_days</code> (required); <code>cluster_id</code> in the body writes the per-cluster override, absent = the fleet default. A window not longer than the effective scanner-down timer, or a <code>warn_days</code> not shorter than the window → <strong>422</strong>. Journaled (D17)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/scan-scope</code></td>
+<td>session</td>
+<td>The D-2 session read of <code>?cluster_id</code>'s scan scope (the bearer <code>GET /api/v1/scan-scope</code> stays scanner-only; M9e)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/scan-scope</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Replace a cluster's scan scope (D43/FR-24: empty include = all, ignore wins). Journaled (D17)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/data</code></td>
+<td><code>can_manage_retention</code></td>
+<td>The Data &amp; OpenSearch panel's one read: effective lifecycle settings for <code>?cluster_id</code> (+ <code>per_cluster_override</code>), report TTL, the effective findings-cleanup window for <code>?cluster_id</code> (+ <code>findings_cleanup_override</code>), snapshot repo ref (M9e)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/retention</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Set <code>retention_days</code> (RMW of the lifecycle doc; <code>cluster_id</code> in body = the per-cluster override). Journaled (D17)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/rollover</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Set <code>max_age_days</code>/<code>max_docs</code>/<code>max_size_gb</code> (same doc/override rule). Journaled (D17)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/report-ttl</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Set the export TTL <code>hours</code> (fleet-wide <code>report_ttl</code> setting; row 11 made <code>JAVV_EXPORT_TTL_HOURS</code> runtime-editable). Journaled (D17)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/findings-cleanup</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Set the D37/M12 long <code>cleanup_days</code> window: fleet default, or a per-cluster override via body <code>cluster_id</code> (the lifecycle-settings pattern; consumed per cluster by the findings-cleanup job). Journaled (D17)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/clusters/{cluster_id}/name</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Rename a cluster's display name (M8c/#240): journaled per D17 (journal-first), stored in the <code>system-config</code> <code>cluster-registry</code> doc via a seq_no-CAS write. <code>cluster_id</code> itself is immutable</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/clusters/{cluster_id}/retire</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Retire a cluster (issue 765): it leaves the default listing, so the switcher and All clusters; its data is kept and its tokens are revoked. Journal-first (D17): a <code>cluster_retire</code> row, then a <code>token_revoke</code> row per token. Unknown cluster <strong>404</strong>, already retired <strong>409</strong>. Returns <code>{cluster_id, retired, retired_at, by, mode}</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/clusters/{cluster_id}</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Delete a <strong>retired</strong> cluster (issue 765): everything JAVV holds for it but its audit rows. In order: its token docs (a scanner still pushing gets 401), its five history series as whole-index drops matched by exact name (with an index auto-created under the alias's own name), its rows in <code>findings</code>, <code>javv-scan-watermarks</code>, <code>javv-scan-orders</code>, <code>system-decisions</code>, <code>system-notifications</code> and <code>system-reports</code> (with their chunks), its <code>system-config</code> docs and registry name, then its retirement record, so a delete that stopped halfway can be retried, and last it stamps the <code>cluster-delete:&lt;cluster_id&gt;</code> marker it wrote before its first step as finished (issue 778). The marker stays as a tombstone: the nightly retirement sweep re-runs the data steps for a deleted cluster nothing names any more, removing rows a push in flight wrote after the delete (<code>javv_cluster_delete_leftovers_total</code>), and drops it after a second clean pass, or at once if the cluster was onboarded again. Journal-first (<code>cluster_delete</code>). Not retired <strong>409</strong>, unknown <strong>404</strong>, a step that could not finish, or the store away or overloaded, <strong>503</strong> (retry it; counted in <code>javv_cluster_delete_incomplete_total</code>, logged at <code>warning</code>). Returns <code>{cluster_id, deleted: {&lt;what&gt;: count}}</code>. Snapshots taken before still hold the data</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/clusters/{cluster_id}/unretire</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Bring a retired cluster back to the listing (<code>cluster_unretire</code>, journal-first). Its revoked tokens stay revoked: a scanner needs a new token. The record is kept with <code>returned_at</code>, and the retirement countdown restarts from it. Unknown <strong>404</strong>; not retired, or a concurrent retire landed first, <strong>409</strong>; a delete of it started and has not finished, <strong>409</strong> "its delete did not finish: delete it again" (issue 778: its tokens and part of its data are gone)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="saved-views-m8e-c-6">Saved views (M8e, C-6)<a class="headerlink" href="#saved-views-m8e-c-6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/views</code></td>
+<td>session</td>
+<td>List saved views, visible to <strong>all</strong> authenticated users (C-6; per-view ACLs post-MVP). Card counts come from <code>/findings/facets</code> at render time, never stored</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/views</code></td>
+<td>session</td>
+<td>Save a view (<code>owner</code> = principal, immutable). <code>preset</code> mirrors the findings filter family 1:1 (incl. the issue-349 <code>exclude_*</code> family, same no-mixing rule) and is validated against the <strong>closed vocabularies</strong> (lowercase canonical severities incl. <code>negligible</code>, the 6 states, scanner, ptype shape); garbage → 422, never stored. Schema v2 (M9f slice 4) adds <code>workbench</code> <code>{columns, dense, sort, order, window_days}</code>: the findings-table capture, cluster-agnostic by shape (no <code>cluster_id</code>/absolute <code>t</code> representable). Journaled (D17, journal-first)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/views/{view_id}</code></td>
+<td>session, <strong>owner-or-admin</strong></td>
+<td>Edit name/description/preset/workbench (partial; preset and workbench each replace whole). Non-owner without <code>can_manage_settings</code> → 403 (the IDOR case); <code>owner</code> is unrepresentable in the body. seq_no-CAS write → <strong>409</strong> on a concurrent edit. Journaled</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/views/{view_id}</code></td>
+<td>session, <strong>owner-or-admin</strong></td>
+<td>Delete (204). Journal row carries the frozen doc, so deleted views stay auditable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="exports-m6-scheduled-reports-m7">Exports (M6) &amp; scheduled reports (M7)<a class="headerlink" href="#exports-m6-scheduled-reports-m7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/export.csv</code></td>
+<td>session</td>
+<td>Streaming, <strong>CSV-injection-sanitized</strong> export of any lens. &gt; <code>JAVV_EXPORT_MAX_ROWS</code> (50k) → <strong>413</strong> (narrow the lens or schedule)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/export.vex</code></td>
+<td>session</td>
+<td>OpenVEX/CycloneDX per <strong>one scanner</strong> (<code>scanner</code> required: per-scanner is sacred); same row cap</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/reports</code></td>
+<td>session · <code>kind: bulk_triage</code> → <code>can_triage</code></td>
+<td>Enqueue a scheduled job. <code>kind: export</code> is session-only <em>by design</em> (a scheduled export is a read). <code>kind: bulk_triage</code> is gated like the inline bulk (<code>can_triage</code>; + <code>can_accept_audit_final</code> for risk-accepts). The selector <strong>freezes to <code>target_ids</code> at enqueue</strong>, and the inline 5000 ceiling is lifted (only the 10k freeze cap applies → <strong>413</strong>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/reports/{report_id}</code></td>
+<td>session (owner)</td>
+<td>Job status (public view, never leaks <code>params</code>/<code>attempt_id</code>/lease fields). 404 unknown <strong>or not yours</strong> (a foreign <code>report_id</code> is indistinguishable from missing). For a <code>done</code>, unexpired report also mints the short-lived (15 min) signed <code>download_token</code>; refetch for a fresh one</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/reports/{report_id}/download</code></td>
+<td>session (owner) + <code>token</code></td>
+<td>Streams the result chunks in order (CSV or VEX JSON). <strong>410</strong> past <code>expires_at</code> (re-run the export) · 404 no result yet · 403 bad/stale token</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/notifications</code></td>
+<td>session</td>
+<td>The bell (FR-16, polled, no broker): own notifications only, newest 50, + server-computed <code>unread</code> count. Types: <code>report_ready</code>, <code>sla_breach</code>, <code>assignment</code>, and <code>cluster_retiring</code> (issue 765: written by the retirement sweep for every user holding <code>can_manage_settings</code> when a cluster enters its warning window, once per silence (a settings change that moves the dates sends nothing new); <code>ref</code> is its <code>retires_at</code>, the first sweep from then retires it. The sweep deletes them again when the cluster scans again, or a return from retirement starts a new silence; a settings change keeps them, and a retired cluster's stay)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/notifications/{notification_id}/read</code></td>
+<td>session</td>
+<td>Mark one of <strong>your own</strong> read; anyone else's id is 404 (IDOR-indistinguishable from missing)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/notifications/{notification_id}</code></td>
+<td>session</td>
+<td>Dismiss (hard-delete) one of <strong>your own</strong> feed docs, same own-or-404 gate; 204 on success (M9f slice 3)</td>
+</tr>
+</tbody>
+</table>
+<p>Exports + search cursors share a <strong>per-principal concurrent-PIT cap</strong>
+(<code>JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL</code>, 10) → <strong>429 + <code>Retry-After</code></strong> past it. Scheduled-report
+results are stored in OpenSearch chunks with <code>expires_at</code> (default 24 h); the drain worker
+(<code>python -m backend.jobs.report_drain</code>; the backend runs it on <code>JAVV_JOB_REPORT_DRAIN_CRON</code>, every
+5 minutes by default) claims jobs via OCC + fencing
+<code>attempt_id</code>, throttles with <code>JAVV_REPORT_DRAIN_SLEEP_MS</code>, fails jobs past <code>JAVV_EXPORT_MAX_BYTES</code>,
+and rings a <code>report_ready</code> bell on completion.</p>
+<h3 id="post-apiv1ingestscan-the-hardened-surface">POST <code>/api/v1/ingest/scan</code> (the hardened surface)<a class="headerlink" href="#post-apiv1ingestscan-the-hardened-surface" title="Permanent link">&para;</a></h3>
+<p>Request: a <strong>scanner envelope, schema v3 or v4</strong> (the M8d ptype rollout window: anything
+outside it 422s; v3 = the D44 <code>effective_config</code> stamp), JSON, optionally
+<code>Content-Encoding: gzip</code>. <strong>Third-party pushers:</strong> the full public contract (JSON Schema,
+call protocol, worked example) is <a href="../INGEST-CONTRACT/"><code>INGEST-CONTRACT.md</code></a> (#327).</p>
+<p>Defenses, in order: per-token rate limit → bearer auth → compressed-size cap (streamed) →
+decompression cap (zip-bomb) → JSON parse → full-envelope <code>extra="forbid"</code> validation →
+token↔payload scope binding → commit-then-cache writes (D39, deterministic <code>_id</code>s → idempotent).</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>202</code></td>
+<td>Accepted: <code>{accepted, findings, commit}</code></td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>Body not valid JSON / not valid gzip</td>
+</tr>
+<tr>
+<td><code>401</code></td>
+<td>Missing/invalid/disabled token (generic, no existence oracle)</td>
+</tr>
+<tr>
+<td><code>403</code></td>
+<td>Token scope ≠ payload <code>cluster_id</code>/<code>scanner</code> (SEC-3)</td>
+</tr>
+<tr>
+<td><code>413</code></td>
+<td>Compressed body &gt; cap, or decompressed &gt; cap (zip bomb)</td>
+</tr>
+<tr>
+<td><code>422</code></td>
+<td>Envelope failed validation (extra field, bad <code>cluster_id</code> shape, counts invariant, <code>schema_version</code> outside the accepted window: v3/v4 during the M8d rollout)</td>
+</tr>
+<tr>
+<td><code>429</code></td>
+<td>Per-token rate limit exceeded</td>
+</tr>
+<tr>
+<td><code>503</code></td>
+<td>Storage temporarily unavailable (bulk retries exhausted)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Logging of rejections</strong> (issue 523). Every rejection increments <code>javv_ingest_rejected_total{reason}</code>.
+Every rejection after the token check (<code>400</code>, <code>403</code>, <code>413</code>, <code>422</code>, <code>503</code>) also logs one <code>ingest rejected</code>
+warning with <code>reason</code>, <code>status</code>, the token's <code>cluster_id</code> and <code>scanner</code>, and <code>failure_id</code> (the id of
+the failed-ingest record below, so a table row and its log line join), plus <code>limit_bytes</code> on a
+<code>413</code>, <code>errors</code> on a <code>422</code>, and <code>payload_cluster_id</code> / <code>payload_scanner</code> on a <code>403</code>. The token itself is
+never logged. A <code>429</code> logs at most one warning per token per minute. A <code>401</code> is counted only, because
+an unauthenticated sender could otherwise choose how much the backend writes to its log.</p>
+<p><strong>Recording of rejections</strong> (issue 357). The same post-token rejections are also written as one doc
+each to <code>javv-ingest-failures-&lt;cluster_id&gt;</code> (INDEX-MAP), under the <strong>token's</strong> cluster and scanner,
+for the scanner-status failed-ingests table. The <code>401</code> and the <code>429</code> record nothing, for the same
+reason they don't log per request. The response is unchanged by recording: if the write fails, the
+scanner still gets the same status and body, and the backend logs <code>ingest failure not recorded</code>
+(with the <code>failure_id</code>) and increments <code>javv_ingest_failures_unrecorded_total{reason}</code>, because the
+table cannot show its own gaps.</p>
+<h2 id="metrics-metrics-prometheus">Metrics (<code>/metrics</code>, Prometheus)<a class="headerlink" href="#metrics-metrics-prometheus" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Type</th>
+<th>Labels</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>javv_ingest_accepted_total</code></td>
+<td>counter</td>
+<td><code>scanner</code></td>
+<td>Envelopes accepted + committed</td>
+</tr>
+<tr>
+<td><code>javv_ingest_rejected_total</code></td>
+<td>counter</td>
+<td><code>reason</code></td>
+<td>Envelopes rejected; <code>reason</code> ∈ <code>bad_token</code>, <code>rate_limited</code>, <code>too_large</code>, <code>bad_gzip</code>, <code>bad_json</code>, <code>invalid_envelope</code>, <code>scope_mismatch</code>, <code>storage_error</code></td>
+</tr>
+<tr>
+<td><code>javv_ingest_failures_unrecorded_total</code></td>
+<td>counter</td>
+<td><code>reason</code></td>
+<td>Post-token rejections whose failed-ingest record could not be written (issue 357). Non-zero means the scanner-status failed-ingests table is missing rows. <code>reason</code> ∈ the six post-token values above</td>
+</tr>
+<tr>
+<td><code>javv_ingest_findings_written_total</code></td>
+<td>counter</td>
+<td><code>scanner</code></td>
+<td>Finding docs written</td>
+</tr>
+<tr>
+<td><code>javv_http_request_duration_seconds</code></td>
+<td>histogram</td>
+<td><code>method</code>, <code>route</code>, <code>status</code></td>
+<td>Route-TEMPLATE labels (unrouted → one <code>unmatched</code> series); <code>/metrics</code> + probes excluded (#220 M-1)</td>
+</tr>
+<tr>
+<td><code>javv_opensearch_request_errors_total</code></td>
+<td>counter</td>
+<td><code>kind</code></td>
+<td><code>conn</code>, <code>timeout</code>, <code>429</code>, <code>503</code>: dependency failures on read + bulk paths (M-2)</td>
+</tr>
+<tr>
+<td><code>javv_opensearch_backoff_retries_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Per-item 429/503 bulk retries: the saturation signal (the only flow control without a broker)</td>
+</tr>
+<tr>
+<td><code>javv_sla_clock_missing_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Findings pages that held at least one row without a materialized <code>sla_clock_at</code> (issue 363). Those rows' SLA clock is computed by the per-pair aggregation instead, and the page also logs a <code>warning</code>. A sustained rate means the store needs the <code>rebuild_state</code> job to backfill the field</td>
+</tr>
+<tr>
+<td><code>javv_cas_conflicts_total</code></td>
+<td>counter</td>
+<td><code>site</code></td>
+<td><code>watermarks</code>, <code>scan_orders</code>, <code>reproject</code> (+ <code>report_claim</code>, M7 slice 2; <code>retirement</code>, issue 765: an un-retire that lost to a concurrent retire): multi-writer contention early warning (M-3)</td>
+</tr>
+<tr>
+<td><code>javv_limit_rejections_total</code></td>
+<td>counter</td>
+<td><code>limit</code></td>
+<td><code>pit_cap</code>, <code>export_rows</code>, <code>bulk_targets</code>, <code>bulk_inline</code> (M-4)</td>
+</tr>
+<tr>
+<td><code>javv_pits_open</code></td>
+<td>gauge</td>
+<td>none</td>
+<td>Open PIT slots (per pod, like the guard)</td>
+</tr>
+<tr>
+<td><code>javv_export_rows_total</code> / <code>javv_export_bytes_total</code></td>
+<td>counter</td>
+<td><code>format</code></td>
+<td>What was <strong>actually</strong> streamed (a disconnected client counts what it got)</td>
+</tr>
+<tr>
+<td><code>javv_auth_failures_total</code></td>
+<td>counter</td>
+<td><code>reason</code></td>
+<td><code>bad_credentials</code>, <code>locked_out</code>, <code>expired_session</code>, <code>missing_capability</code>; never a username label (M-5)</td>
+</tr>
+<tr>
+<td><code>javv_config_warnings_total</code></td>
+<td>counter</td>
+<td><code>setting</code></td>
+<td>Start-ups whose settings leave the OpenSearch connection weaker than it looks (issue 715): <code>JAVV_OPENSEARCH_VERIFY_CERTS</code> (certificates not checked on <code>https</code>) or <code>JAVV_OPENSEARCH_URL</code> (a password over plain <code>http</code>). Each also logs one <code>warning</code> at start.</td>
+</tr>
+<tr>
+<td><code>javv_stored_setting_unknown_fields_total</code></td>
+<td>counter</td>
+<td><code>setting</code></td>
+<td>Stored-setting reads that dropped fields this release doesn't know (issue 640). Non-zero after a rollback means a newer release saved that setting; the log warns once per setting doc per process, and this keeps counting. <code>setting</code> is the kind (<code>sla</code>, <code>scan_scope</code>, <code>snapshot_repo</code>, <code>report_ttl</code>, <code>lifecycle</code>, <code>findings_cleanup</code>, <code>staleness</code>, <code>retirement</code>, <code>cluster-retirement</code>), never the per-cluster doc id</td>
+</tr>
+<tr>
+<td><code>javv_job_runs_total</code></td>
+<td>counter</td>
+<td><code>kind</code>, <code>outcome</code></td>
+<td>Background-job runs started by the scheduler (issue 691). <code>kind</code> is one of the eight in <code>jobs/registry.py</code>; <code>outcome</code> is <code>done</code>, <code>failed</code>, or <code>skipped</code> (another backend held the lease). A <code>failed</code> rate is a job that keeps failing; no <code>done</code> for a kind over its schedule is a job that is not running</td>
+</tr>
+<tr>
+<td><code>javv_job_last_success_timestamp_seconds</code></td>
+<td>gauge</td>
+<td><code>kind</code></td>
+<td>Unix time of the kind's last successful scheduled run in this process; <code>0</code> until one succeeds after a restart. Alert on <code>time() - value</code> against the kind's schedule</td>
+</tr>
+<tr>
+<td><code>javv_scheduler_tick_errors_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Scheduler ticks that failed before a job could start, in practice the store being away. A sustained rate means no job is running</td>
+</tr>
+<tr>
+<td><code>javv_cluster_retirement_held_total</code></td>
+<td>counter</td>
+<td></td>
+<td>Retirement sweeps that retired nothing because no cluster had a scan accepted within its scanner-down timer (issue 765). That points at JAVV itself, an outage or a rejected scanner version, not at the clusters; each also logs one <code>warning</code></td>
+</tr>
+<tr>
+<td><code>javv_cluster_delete_incomplete_total</code></td>
+<td>counter</td>
+<td></td>
+<td>Cluster deletes that stopped halfway and answered 503 (issue 765): a step stayed contended, or the store was away or pushing back. A retry finishes the delete; each also logs one <code>warning</code></td>
+</tr>
+<tr>
+<td><code>javv_cluster_delete_leftovers_total</code></td>
+<td>counter</td>
+<td></td>
+<td>Deleted clusters whose next-night pass (the retirement sweep) found rows written after the delete, a push in flight or a job running at the time, and removed them (issue 778). Each also logs one <code>warning</code></td>
+</tr>
+<tr>
+<td><code>javv_cluster_delete_recheck_failures_total</code></td>
+<td>counter</td>
+<td></td>
+<td>Retirement sweeps whose pass over deleted clusters failed (issue 778). The run's retirements stand and the next run passes again. Each also logs one <code>warning</code></td>
+</tr>
+<tr>
+<td><code>javv_cluster_retirement_notify_failures_total</code></td>
+<td>counter</td>
+<td></td>
+<td>Retirement sweep steps whose bell notifications could not be written or withdrawn (issue 765). The run's retirements stand and the run records as done; the next run tries again, repeating no notification still in the bell. Each also logs one <code>warning</code></td>
+</tr>
+</tbody>
+</table>
+<p>Plus the default <code>prometheus_client</code> process/GC gauges. The scrape is <strong>storage-free</strong> (no
+OpenSearch call): it keeps working during an outage, exactly when it's needed. Single-process
+registry (one uvicorn worker); multi-worker needs the multiprocess mode (noted in
+<code>core/metrics.py</code>). JAVV ships no alerting rules: if you scrape <code>/metrics</code>, build alerts on it
+that fit your setup.</p>
+<h3 id="client-events-issue-453">Client events (issue 453)<a class="headerlink" href="#client-events-issue-453" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/client-events</code></td>
+<td>session</td>
+<td>Browser <code>warn</code>/<code>error</code> telemetry → the backend's own stdout stream (<strong>204</strong>, fire-and-forget). Body <code>{events: [{level, event, fields}]}</code>, 1–20 events, <code>extra="forbid"</code>. <code>level</code> is a <code>Literal['warn','error']</code>, so <code>debug</code>/<code>info</code> are <strong>unrepresentable</strong> (422), not filtered. <strong>No storage, no index, no audit row</strong>: the stream IS the destination</td>
+</tr>
+</tbody>
+</table>
+<p>Two properties defend the stream against its own untrusted input, both by construction:</p>
+<ul>
+<li><strong>Namespaced names.</strong> Every event re-emits as <code>client.&lt;name&gt;</code>, so a client posting
+  <code>event: "scan done"</code> can never collide with a real backend event: an operator's <code>grep</code>, or an
+  alerting rule keyed on an event name, cannot be fooled. <code>client_event=true</code> + <code>username</code> are
+  tagged too, but they only help a reader who filters on them; the namespace helps one who doesn't.</li>
+<li><strong>Nested fields.</strong> Client keys ride under a single <code>fields</code> key, never splatted as siblings, so
+  <code>fields: {"username": "admin"}</code> cannot forge the line's attribution. The redaction processor
+  recurses in, so <code>token</code>-ish keys and <code>Bearer …</code> values are masked inside the blob as well.</li>
+</ul>
+<p>Shape caps (batch ≤ 20, ≤ 25 keys/object, depth ≤ 3, keys ≤ 64 chars, values ≤ 512 chars, lists ≤
+20, and the event-name pattern <code>^[a-z0-9][a-z0-9 ._-]{0,63}$</code>) are the <strong>schema</strong>: violations are
+422 and owe no metric. Only the <strong>per-principal rate cap</strong> is a bounded path in the ops-parity
+sense: over it → <strong>429</strong> + <code>Retry-After</code> + <code>LIMIT_REJECTIONS{limit="client_events"}</code> + a warning
+(setting <code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code>). The limiter runs <em>after</em> body validation on
+purpose: it bounds what reaches the log stream, and a rejected batch emits nothing.</p>
+<p>RBAC: <strong>registry-exempt</strong>, not capability-gated: any authenticated user's browser reports its own
+events, so "without the capability → 403" is unrepresentable. The regime it carries instead (401
+anonymous, 403 on a <code>must_change</code> session, the rate cap) is asserted in <code>test_client_events_route</code>.</p>
+<h2 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h2>
+<p>Structured JSON via the <strong>shared <code>libs/javv-common</code> structlog pipeline only</strong> (observability.md
+§1). Every request binds a <code>request_id</code> (from <code>X-Request-ID</code> if well-formed (<code>[A-Za-z0-9-]{1,64}</code>),
+else minted; echoed in the <code>X-Request-ID</code> response header and, on every non-2xx including a
+500, in the error body's <code>request_id</code>); ingest also binds <code>cluster_id</code>/<code>scanner</code>. An unhandled
+exception logs one <code>error</code> line, <code>unhandled error</code>, with the stack, <code>method</code>, <code>path</code> and the same
+<code>request_id</code>. uvicorn's own duplicate traceback is filtered out (issue 644). The
+redaction processor masks token/secret/password/authorization/pepper/session/cookie keys and
+scrubs <code>Bearer …</code> substrings from every event; tokens never reach a log line (tested at both
+layers). OpenSearch client request/response <strong>bodies never log at any level</strong>.</p>
+<h2 id="auth-model-mvp-summary">Auth model (MVP): summary<a class="headerlink" href="#auth-model-mvp-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Machine:</strong> per-<code>(cluster, scanner)</code> bearer tokens (<code>system-tokens</code>), peppered-SHA-256 at
+  rest, scope-bound, mint/revoke/rotate via the admin API (or <code>python -m backend.core.tokens</code>).</li>
+<li><strong>Human:</strong> local users (argon2id), server-side sessions, capability-based RBAC (D33), bootstrap
+  admin seeded from env/secret with forced first-login rotation (SEC-6), login lockout, no
+  user-existence oracles.</li>
+<li><strong>Tenancy:</strong> <code>cluster_id</code> always-applied data filter (per-user cluster grants post-MVP).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","content.code.copy"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      
+    
+  </body>
+</html>
