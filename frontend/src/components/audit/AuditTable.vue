@@ -18,7 +18,7 @@ import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 import { actionLabel } from '@/audit/actionLabels'
-import { bulkJson } from '@/audit/bulkAudit'
+import { auditDetail } from '@/audit/auditDetail'
 import { causalOrder } from '@/audit/causalOrder'
 import ActionTag from '@/components/chips/ActionTag.vue'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
@@ -61,22 +61,6 @@ const clickable = (e: AuditEvent) => e.entity_type === 'finding' && !!e.finding_
 const shortId = (id: string) => (id.length > 72 ? `${id.slice(0, 68)}…` : id)
 
 const shortImage = (e: AuditEvent) => (e.finding?.image_repo ?? '').split('/').pop() ?? ''
-
-/** one-line what-changed; empty when the tag + target already say it all (auth events) */
-function detail(e: AuditEvent): string {
-  const bulk = bulkJson(e)
-  if (bulk) {
-    const patch = Object.entries(bulk.patch ?? {})
-      .map(([k, v]) => `${k} → ${String(v)}`)
-      .join(' · ')
-    return `${patch}: ${bulk.result_count ?? '?'} findings (frozen set)`
-  }
-  if (e.field == null) return ''
-  if (e.old_value == null && e.new_value == null) return ''
-  if (e.old_value == null) return `${e.field}: ${e.new_value}`
-  if (e.new_value == null) return `${e.field}: ${e.old_value} cleared`
-  return `${e.field}: ${e.old_value} → ${e.new_value}`
-}
 
 function onRowClick(row: AuditEvent) {
   if (clickable(row)) emit('rowClick', row)
@@ -132,7 +116,7 @@ function onRowClick(row: AuditEvent) {
       <Column header="Detail" class="fit">
         <template #body="{ data }">
           <span class="detail-cell">
-            <span class="wrap-cell soft" :title="detail(data)">{{ detail(data) || '-' }}</span>
+            <span class="wrap-cell soft" :title="auditDetail(data)">{{ auditDetail(data) || '-' }}</span>
             <span
               v-if="data.revision != null && data.field != null"
               class="rev-badge"

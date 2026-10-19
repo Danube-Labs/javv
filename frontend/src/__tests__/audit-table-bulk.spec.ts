@@ -25,6 +25,7 @@ describe('AuditTable, a bulk change', () => {
       props: { rows: [row] },
       global: { plugins: [[PrimeVue, { unstyled: true }]], stubs: { RouterLink: true } },
     })
-    expect(w.text()).toContain('state → acknowledged: 2 findings (frozen set)')
+    expect(w.text()).toContain('State → Acknowledged: 2 findings (frozen set)')
+    expect(w.text()).not.toContain('state →')
   })
 })

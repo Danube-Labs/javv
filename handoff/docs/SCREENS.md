@@ -352,8 +352,10 @@ the Audit log's action pill (`ActionTag`, the same pill the Contributors feed us
 change adds nothing after the pill, because the pill names the state it set. A bulk row adds the
 state tag, the assignee and the note that it set. An assignee or note row adds the new value, with
 its label and value kept together. Operator decision 2026-10-18 (issue 918, option B), made on
-built pictures of options A, B and C. A new reason on a Not affected finding adds "Reason:" and
-the plain label of the triage panel, for example "Reason: Component not present" (issue 924).
+built pictures of options A, B and C. A change to Not affected, a new reason and a bulk change
+to Not affected add "Reason:" and the plain label of the triage panel, for example "Reason:
+Component not present" (issues 924 and 931). The assignee and note rows say "Assigned to:" and
+"Note:", the names of the triage panel.
 
 **SLA box:** server-computed deadline + overdue flag from the findings read (B-5).
 
@@ -520,6 +522,12 @@ entity_type+action tag pair · Target (frozen `target_ids`, rendered verbatim �
 re-evaluated selector) · Detail. **Click-through only where `entity_type=="finding"`** (A-5).
 Task column dropped (no field; Jira linkage is v1.1 — V4-DELTA-1).
 
+**Detail (issue 931):** a field reads by its plain name, and a state or a reason by its label, for
+example `State: Open → Not affected` and `Reason: Component not present → Vulnerable code not
+present`. The names are in `audit/fieldLabels.ts`, taken from the screen that sets the value (the
+triage panel, the settings pages). A test fails when the backend writes a field with no name. The
+stored field and value do not change: the CSV export and the API keep them.
+
 **States:** loading; empty; degraded; retention note ("audit window bounded by
 `system-audit-log` retention"). The count shows "-" until the first read answers (issue 833 G3).
 Paging and the open search follow the Findings rules in §3 (issue 832): Back from a finding
@@ -551,7 +559,8 @@ TTR/SLA-hit computed server-side from `system-audit-log`. Scoped by the global t
 
 **Layout preserved:** team KPI strip → podium → leaderboard → resolved-over-time
 (`GET /api/v1/trends/findings`, labeled per A-m9) → activity feed (from the M8c audit read —
-same dependency as screen 10, feed only).
+same dependency as screen 10, feed only). The detail line of a feed row uses the plain names of
+the Audit log's Detail column, for example `State → Risk accepted` (issue 931).
 
 **States:** loading; empty (no triage activity in window); degraded; `T<now` fine (audit-log ≤T
 is supported, C-1).

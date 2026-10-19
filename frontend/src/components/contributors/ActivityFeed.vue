@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router'
 import { closeUnpaged } from '@/api/cursors'
 import { readAuditLogApiV1AuditGet } from '@/api/generated'
 import type { ReadAuditLogApiV1AuditGetData } from '@/api/generated'
+import { feedDetail } from '@/audit/auditDetail'
 import ActionTag from '@/components/chips/ActionTag.vue'
 import SevChip from '@/components/chips/SevChip.vue'
 import ContributorIdentity from '@/components/contributors/ContributorIdentity.vue'
@@ -71,13 +72,6 @@ function openFinding(row: AuditEvent) {
     },
   })
 }
-
-/** one factual detail line: the journaled field change, nothing invented */
-function detail(row: AuditEvent): string {
-  if (!row.field) return ''
-  const to = row.new_value ?? (row.new_value_json ? 'updated' : '∅')
-  return `${row.field} → ${to}`
-}
 </script>
 
 <template>
@@ -112,7 +106,7 @@ function detail(row: AuditEvent): string {
             >{{ row.decision.cve_id }} · decision</span
           >
         </div>
-        <div v-if="detail(row)" class="feed-note">{{ detail(row) }}</div>
+        <div v-if="feedDetail(row)" class="feed-note">{{ feedDetail(row) }}</div>
       </div>
       <span class="feed-when mono-cell" :title="row['@timestamp']">{{
         lastDataAt(row['@timestamp'])
