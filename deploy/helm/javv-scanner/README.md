@@ -1,6 +1,6 @@
 # javv-scanner
 
-![Version: 0.8.3](https://img.shields.io/badge/Version-0.8.3-informational?style=flat-square) ![AppVersion: 0.8.3](https://img.shields.io/badge/AppVersion-0.8.3-informational?style=flat-square)
+![Version: 0.8.4](https://img.shields.io/badge/Version-0.8.4-informational?style=flat-square) ![AppVersion: 0.8.4](https://img.shields.io/badge/AppVersion-0.8.4-informational?style=flat-square)
 
 This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
 CronJob. Each scanner pushes its own results to JAVV. JAVV never merges them. Install the chart in
