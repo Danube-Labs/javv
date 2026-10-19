@@ -7,7 +7,7 @@ dependencies = [
     # Ceiling is load-bearing: FastAPI is pre-1.0, so a MINOR can change route-table internals.
     # 0.139 wrapped included routers in `_IncludedRouter`, which silently emptied the RBAC/IDOR
     # presence check (it walked `app.routes`). Raise this deliberately, not by lock refresh.
-    "fastapi>=0.143,<0.144",
+    "fastapi>=0.146,<0.147",
     "uvicorn[standard]>=0.30",
     "opensearch-py[async]>=2.6",
     "pydantic>=2.9,<3",
