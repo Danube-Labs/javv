@@ -92,6 +92,22 @@ const WARN_WINDOW_MS = 10_000
 // opening is timed: once connected, a slow or streamed answer (an export) is never cut.
 export const CONNECT_TIMEOUT_S = 5
 
+// Milliseconds that a pooled connection to the backend may stay idle. The backend (uvicorn) closes
+// an idle connection after 5 s, and a request sent on one that it is closing gets a reset, which is
+// a 502 (issue 924). Node's shared pool also waits 5 s, so this pool closes its sockets first. Not a
+// setting: CONFIGURATION.md, "Values that are not settings".
+export const BACKEND_IDLE_MS = 4_000
+
+/**
+ * The pool of connections to the backend. Its timeout closes only an idle socket: a slow or
+ * streamed answer is never cut.
+ * @param {typeof http | typeof https} transport
+ * @param {number} [idleMs]
+ */
+export function backendAgent(transport, idleMs = BACKEND_IDLE_MS) {
+  return new transport.Agent({ keepAlive: true, scheduling: 'lifo', timeout: idleMs })
+}
+
 // Vite puts every hashed build file under /assets/, so its name changes whenever its content does
 const IMMUTABLE = 'public, max-age=31536000, immutable'
 
@@ -199,7 +215,8 @@ function sendFile(res, file, cache, head) {
 /**
  * @param {{
  *   backendUrl: string, distDir: string, log: Logger, warnWindowMs?: number,
- *   connectMs?: number, createConnection?: import('node:http').RequestOptions['createConnection']
+ *   connectMs?: number, idleMs?: number,
+ *   createConnection?: import('node:http').RequestOptions['createConnection']
  * }} options  createConnection replaces the socket the forward opens (tests only)
  * @returns {import('node:http').Server}
  */
@@ -209,12 +226,14 @@ export function createFrontendServer({
   log,
   warnWindowMs = WARN_WINDOW_MS,
   connectMs = CONNECT_TIMEOUT_S * 1000,
+  idleMs = BACKEND_IDLE_MS,
   createConnection,
 }) {
   const backend = new URL(backendUrl)
   const root = normalize(distDir)
   const index = join(root, 'index.html')
   const transport = backend.protocol === 'https:' ? https : http
+  const agent = backendAgent(transport, idleMs)
   let lastWarning = -Infinity
   let heldBack = 0
 
@@ -236,9 +255,9 @@ export function createFrontendServer({
       method: req.method,
       path: target,
       headers: { ...withoutHopByHop(req.headers), host: backend.host, 'x-request-id': requestId },
-      // given only in tests: with no agent named, the request uses this socket instead of one
-      // from the shared pool
-      ...(createConnection ? { createConnection } : {}),
+      // createConnection is given only in tests: with no agent named, the request uses this socket
+      // instead of one from the pool
+      ...(createConnection ? { createConnection } : { agent }),
     })
 
     // An address whose pod is gone but still listed (its node died) never answers the connection,

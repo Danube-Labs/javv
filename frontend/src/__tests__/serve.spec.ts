@@ -5,13 +5,20 @@
  */
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
+import https from 'node:https'
 import net, { type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { createLogger } from '../../server/log.mjs'
-import { connectTimeoutMs, createFrontendServer, SECURITY_HEADERS } from '../../server/serve.mjs'
+import {
+  BACKEND_IDLE_MS,
+  backendAgent,
+  connectTimeoutMs,
+  createFrontendServer,
+  SECURITY_HEADERS,
+} from '../../server/serve.mjs'
 
 type Seen = { method?: string; url?: string; headers: http.IncomingHttpHeaders; body: string }
 
@@ -385,6 +392,96 @@ describe('the connect timeout (JAVV_BACKEND_CONNECT_TIMEOUT)', () => {
     expect(connectTimeoutMs('0.5')).toBe(500)
     for (const bad of ['0', '-1', 'five', 'Infinity']) {
       expect(() => connectTimeoutMs(bad)).toThrow(/JAVV_BACKEND_CONNECT_TIMEOUT/)
+    }
+  })
+})
+
+/** A backend that keeps an idle connection for a minute, and notes when the other side ends one. */
+async function patientBackend() {
+  const ended: number[] = []
+  const clientPorts: (number | undefined)[] = []
+  const server = http.createServer((req, res) => {
+    clientPorts.push(req.socket.remotePort)
+    if (req.url === '/api/v1/slow') {
+      setTimeout(() => res.end('{"slow":true}'), 150)
+    } else {
+      res.end('{}')
+    }
+  })
+  server.keepAliveTimeout = 60_000
+  server.on('connection', (socket: net.Socket) => socket.on('end', () => ended.push(performance.now())))
+  const url = await listen(server)
+  const stop = () => {
+    server.closeAllConnections()
+    return new Promise((r) => server.close(r))
+  }
+  return { url, ended, clientPorts, stop }
+}
+
+async function until(done: () => boolean, ms: number): Promise<boolean> {
+  const end = performance.now() + ms
+  while (!done() && performance.now() < end) await new Promise((r) => setTimeout(r, 10))
+  return done()
+}
+
+describe('the pool to the backend (issue 924)', () => {
+  // the backend closes an idle connection after 5 s; a request sent on one that it is closing gets
+  // a reset, which the frontend server answers with a 502. So the frontend server must close first.
+  it('closes an idle connection to the backend before the backend does', async () => {
+    const patient = await patientBackend()
+    try {
+      const log = createLogger('info', (line) => lines.push(line))
+      const server = createFrontendServer({ backendUrl: patient.url, distDir: dist, log, idleMs: 200 })
+      servers.push(server)
+      expect((await fetch(`${await listen(server)}/api/v1/x`)).status).toBe(200)
+      const answered = performance.now()
+      expect(await until(() => patient.ended.length === 1, 2_000)).toBe(true)
+      expect(patient.ended[0]! - answered).toBeGreaterThanOrEqual(150)
+    } finally {
+      await patient.stop()
+    }
+  })
+
+  it('still keeps a connection for the requests that follow soon', async () => {
+    const patient = await patientBackend()
+    try {
+      const log = createLogger('info', (line) => lines.push(line))
+      const server = createFrontendServer({ backendUrl: patient.url, distDir: dist, log, idleMs: 500 })
+      servers.push(server)
+      const base = await listen(server)
+      await fetch(`${base}/api/v1/x`)
+      await new Promise((r) => setTimeout(r, 50))
+      await fetch(`${base}/api/v1/x`)
+      expect(patient.clientPorts).toHaveLength(2)
+      expect(patient.clientPorts[1]).toBe(patient.clientPorts[0]) // one connection, used twice
+    } finally {
+      await patient.stop()
+    }
+  })
+
+  it('never cuts an answer slower than the idle time', async () => {
+    const patient = await patientBackend()
+    try {
+      const log = createLogger('info', (line) => lines.push(line))
+      const server = createFrontendServer({ backendUrl: patient.url, distDir: dist, log, idleMs: 50 })
+      servers.push(server)
+      const res = await fetch(`${await listen(server)}/api/v1/slow`) // 150 ms, three times the idle time
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ slow: true })
+      expect(lines).toHaveLength(0)
+    } finally {
+      await patient.stop()
+    }
+  })
+
+  it('keeps connections and closes an idle one after 4 s by default, below the backend 5 s', () => {
+    expect(BACKEND_IDLE_MS).toBe(4_000)
+    for (const transport of [http, https]) {
+      const agent = backendAgent(transport) as http.Agent & { keepAlive: boolean; options: { timeout: number } }
+      expect(agent).toBeInstanceOf(transport.Agent)
+      expect(agent.keepAlive).toBe(true)
+      expect(agent.options.timeout).toBe(BACKEND_IDLE_MS)
+      agent.destroy()
     }
   })
 })
