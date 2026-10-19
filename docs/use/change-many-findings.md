@@ -2,9 +2,6 @@
 
 <video controls preload="metadata" width="100%" src="videos/change-many-findings.mp4"></video>
 
-The video is 1.5 minutes long and has no sound.
-[Download the video](videos/change-many-findings.mp4).
-
 Bulk triage changes many findings at once. First, filter the findings.
 
 ## Steps

@@ -2,9 +2,6 @@
 
 <video controls preload="metadata" width="100%" src="videos/from-a-scan-to-a-finding.mp4"></video>
 
-The video is 1 minute long and has no sound.
-[Download the video](videos/from-a-scan-to-a-finding.mp4).
-
 ## How the results get to JAVV
 
 Trivy and Grype run in your cluster. They scan each running image. Each scanner sends its results

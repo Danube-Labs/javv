@@ -1,8 +1,7 @@
 # Use JAVV
 
 These pages show how to triage the findings in JAVV, from the first scan to a finding with a
-decision. Each page has a short video with captions and no sound. The same steps are in text
-below each video.
+decision. Each page has a short video. The same steps are in text below each video.
 
 | Video | What it shows |
 |---|---|
