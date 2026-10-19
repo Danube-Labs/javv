@@ -73,6 +73,35 @@ describe('ActivityCard', () => {
     expect(row.find('.act-part').text()).toBe('· notes: Fix ships with the next base image')
   })
 
+  it('a new reason on a Not affected finding reads as the plain label of the triage panel', () => {
+    const row = rowOf({
+      event_id: 'e-6',
+      action: 'not_affected',
+      actor: 'lead',
+      field: 'vex_justification',
+      old_value: 'vulnerable_code_not_present',
+      new_value: 'component_not_present',
+      '@timestamp': at,
+    })
+    expect(row.find('.action-tag').text()).toBe('Not affected')
+    expect(row.find('.act-part').text()).toBe('· Reason: Component not present')
+    expect(row.text()).not.toContain('vex_justification')
+    expect(row.text()).not.toContain('component_not_present')
+    expect(row.find('.act-part .mono-cell').exists()).toBe(false)
+  })
+
+  it('a reason that is not one of the five shows its value as it is', () => {
+    const row = rowOf({
+      event_id: 'e-7',
+      action: 'not_affected',
+      actor: 'lead',
+      field: 'vex_justification',
+      new_value: 'some_future_reason',
+      '@timestamp': at,
+    })
+    expect(row.find('.act-part').text()).toBe('· Reason: some_future_reason')
+  })
+
   it('an action with no label reads as words, never as snake_case', () => {
     const row = rowOf({ event_id: 'e-4', action: 'store_inspect', actor: 'lead', '@timestamp': at })
     expect(row.find('.action-tag').text()).toBe('store inspect')
