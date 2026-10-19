@@ -3,7 +3,7 @@
  * the Contributors feed. Fields and values read by their plain names (`fieldLabels.ts`).
  */
 import { bulkJson } from '@/audit/bulkAudit'
-import { fieldLabel, fieldValue } from '@/audit/fieldLabels'
+import { fieldLabel, fieldValue, reasonLabel } from '@/audit/fieldLabels'
 
 interface Change {
   action: string
@@ -26,9 +26,15 @@ export function auditDetail(e: Change): string {
   if (field == null) return ''
   if (e.old_value == null && e.new_value == null) return ''
   const label = fieldLabel(field)
-  if (e.old_value == null) return `${label}: ${fieldValue(field, e.new_value!)}`
+  if (e.old_value == null) return `${label}: ${fieldValue(field, e.new_value!)}${reasonPart(e)}`
   if (e.new_value == null) return `${label}: ${fieldValue(field, e.old_value)} cleared`
-  return `${label}: ${fieldValue(field, e.old_value)} → ${fieldValue(field, e.new_value)}`
+  return `${label}: ${fieldValue(field, e.old_value)} → ${fieldValue(field, e.new_value)}${reasonPart(e)}`
+}
+
+/** A change to Not affected keeps its reason beside the state, in `new_value_json`. */
+function reasonPart(e: Change): string {
+  const reason = e.field === 'state' ? e.new_value_json?.['vex_justification'] : undefined
+  return typeof reason === 'string' ? ` · ${fieldLabel('vex_justification')}: ${reasonLabel(reason)}` : ''
 }
 
 /** The Contributors feed's line: the journaled field change, nothing invented. */

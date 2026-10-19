@@ -37,9 +37,17 @@ export const fieldLabel = (field: string): string => FIELD_LABELS[field] ?? fiel
 /** The plain label of a Not affected reason; one not in the list shows as it is. */
 export const reasonLabel = (id: string): string => CISA_JUSTIFICATIONS.find((j) => j.id === id)?.label ?? id
 
+/**
+ * The number settings the backend keeps as floats: a saved 105 is written as "105.0", while the
+ * default it replaced is "90". Only these fields lose the ".0", since a cluster name can look
+ * like a number.
+ */
+const NUMBER_FIELDS = new Set(['retention_days', 'cleanup_days', 'hours'])
+
 /** A value as it reads: a state or a reason by its label, any other value as it is. */
 export function fieldValue(field: string, value: string): string {
   if (field === 'state') return stateLabel(value)
   if (field === 'vex_justification') return reasonLabel(value)
+  if (NUMBER_FIELDS.has(field)) return value.replace(/^(-?\d+)\.0+$/, '$1')
   return value
 }

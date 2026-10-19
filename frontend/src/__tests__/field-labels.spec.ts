@@ -62,6 +62,17 @@ describe('the plain names of audit fields', () => {
     expect(fieldValue('vex_justification', 'component_not_present')).toBe('Component not present')
   })
 
+  it('a number setting loses a ".0" the backend wrote, and keeps a real fraction', () => {
+    expect(fieldValue('retention_days', '105.0')).toBe('105')
+    expect(fieldValue('cleanup_days', '365.0')).toBe('365')
+    expect(fieldValue('hours', '48')).toBe('48')
+    expect(fieldValue('retention_days', '0.5')).toBe('0.5')
+  })
+
+  it('a value of another field that looks like a number keeps its words', () => {
+    expect(fieldValue('cluster_name', '2.0')).toBe('2.0')
+  })
+
   it('a value of another field, or one with no label, shows as it is', () => {
     expect(fieldValue('assignee', 'alice_b')).toBe('alice_b')
     expect(fieldValue('vex_justification', 'some_future_reason')).toBe('some_future_reason')

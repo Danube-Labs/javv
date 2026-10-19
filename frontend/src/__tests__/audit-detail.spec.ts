@@ -16,6 +16,34 @@ describe('auditDetail, the Detail column of the Audit log', () => {
     )
   })
 
+  it('a change to Not affected shows the reason that came with it', () => {
+    expect(
+      auditDetail(
+        row({
+          field: 'state',
+          old_value: 'open',
+          new_value: 'not_affected',
+          new_value_json: { vex_justification: 'component_not_present' },
+        }),
+      ),
+    ).toBe('State: Open → Not affected · Reason: Component not present')
+  })
+
+  it('a state change with no reason, or other JSON, shows the states only', () => {
+    expect(auditDetail(row({ field: 'state', old_value: 'not_affected', new_value: 'open', new_value_json: null }))).toBe(
+      'State: Not affected → Open',
+    )
+    expect(
+      auditDetail(row({ field: 'state', old_value: 'open', new_value: 'risk_accepted', new_value_json: { expires: 'x' } })),
+    ).toBe('State: Open → Risk accepted')
+  })
+
+  it('a settings value that the backend wrote as a float shows as a whole number', () => {
+    expect(auditDetail(row({ field: 'retention_days', old_value: '90', new_value: '105.0' }))).toBe(
+      'History retention: 90 → 105',
+    )
+  })
+
   it('a change of reason shows both reasons by their labels', () => {
     expect(
       auditDetail(
