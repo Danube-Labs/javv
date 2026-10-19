@@ -5,7 +5,7 @@ description: >-
   A wrapper around the official opensearch chart.
 type: application
 # the JAVV release this chart ships with (issue 725 ruling 4); release-please moves it
-version: 0.8.3  # x-release-please-version
+version: 0.8.4  # x-release-please-version
 # the OpenSearch inside: versions.yaml datastore.opensearch, held by check-versions.sh
 appVersion: "3.9.0"
 home: https://github.com/Danube-Labs/javv-poc

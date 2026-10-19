@@ -102,7 +102,7 @@ services:
       start_period: 30s
 
   backend:
-    image: ghcr.io/danube-labs/javv-backend:0.8.3 # x-release-please-version
+    image: ghcr.io/danube-labs/javv-backend:0.8.4 # x-release-please-version
     restart: unless-stopped
     depends_on:
       opensearch:
@@ -225,7 +225,7 @@ services:
     #   - "8000:8000"
 
   frontend:
-    image: ghcr.io/danube-labs/javv-frontend:0.8.3 # x-release-please-version
+    image: ghcr.io/danube-labs/javv-frontend:0.8.4 # x-release-please-version
     restart: unless-stopped
     depends_on:
       backend:

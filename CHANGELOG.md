@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.4](https://github.com/Danube-Labs/javv-poc/compare/v0.8.3...v0.8.4) (2026-10-19)
+
+
+### Features
+
+* a loading bar in the top bar, and page code that loads early ([#904](https://github.com/Danube-Labs/javv-poc/issues/904)) ([a944b39](https://github.com/Danube-Labs/javv-poc/commit/a944b3946c11e8e31bef02e304cf82c474285223))
+* pages and their data come in with a short fade, and the header card stretches ([#905](https://github.com/Danube-Labs/javv-poc/issues/905)) ([72e6bbe](https://github.com/Danube-Labs/javv-poc/commit/72e6bbebb12e7b41a886edff24a955aaa39da3c4))
+
+
+### Bug Fixes
+
+* a finding's activity card shows a bulk change with its state and note ([#917](https://github.com/Danube-Labs/javv-poc/issues/917)) ([d7541fb](https://github.com/Danube-Labs/javv-poc/commit/d7541fba8fa2752c1b889a430df98b5b5a1a0333))
+* **deps:** update dependency fastapi to &gt;=0.146,&lt;0.147 ([#923](https://github.com/Danube-Labs/javv-poc/issues/923)) ([3542ea6](https://github.com/Danube-Labs/javv-poc/commit/3542ea643d5358c807d2cf5cdd31fb429b9713a5))
+* plain reason text, the finding page after a decision, and the revoke toast ([#915](https://github.com/Danube-Labs/javv-poc/issues/915)) ([7a872bc](https://github.com/Danube-Labs/javv-poc/commit/7a872bcc0efa6697ee3bbb0aac8ab38222e479b7))
+* the activity card names each action with the audit log's action pill ([#920](https://github.com/Danube-Labs/javv-poc/issues/920)) ([bb81d91](https://github.com/Danube-Labs/javv-poc/commit/bb81d915aadb2bf49cb470dbf4854e19c4db0e22))
+* the audit read for one finding also returns the bulk changes that included it ([#916](https://github.com/Danube-Labs/javv-poc/issues/916)) ([766d92c](https://github.com/Danube-Labs/javv-poc/commit/766d92c77a296526ee00581abf42ea56091aeae0))
+
 ## [0.8.3](https://github.com/Danube-Labs/javv-poc/compare/v0.8.2...v0.8.3) (2026-10-17)
 
 
