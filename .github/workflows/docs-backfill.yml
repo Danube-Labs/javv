@@ -1,0 +1,57 @@
+name: Docs backfill
+
+# Issue 925: publishes the operator docs of releases that are already out, each into a folder of
+# its own on the gh-pages branch, with the same script as a release. Run it by hand with a list of
+# release tags. Before issue 925 a patch release wrote over the docs of the patch before it, so this
+# brings those versions back. Every tag needs the docs site (0.7.0 and later).
+
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: Release tags, separated by spaces (for example v0.8.3 v0.8.2)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-site-publish # docs.yml's and the release's: one job at a time pushes gh-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish the docs of each tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # mike commits the built site to gh-pages and pushes it
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0 # every release tag: the script reads them to choose the aliases
+      - name: Read uv pin from versions.yaml (D42)
+        id: uv
+        run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          version: ${{ steps.uv.outputs.version }}
+          enable-cache: true
+      - name: Publish each tag
+        env:
+          TAGS: ${{ inputs.tags }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # an older tag has no copy of the script: run this branch's copy in each tag's checkout
+          script="$RUNNER_TEMP/publish-docs-version.sh"
+          cp development/scripts/publish-docs-version.sh "$script"
+          for tag in $TAGS; do
+            if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::not a release tag: $tag"
+              exit 1
+            fi
+            git checkout -q "$tag"
+            bash "$script" "${tag#v}"
+          done

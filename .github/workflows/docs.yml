@@ -1,8 +1,8 @@
 name: Docs site
 
 # Issue 639: publishes the `dev` version of the operator docs site, built from main, to the
-# gh-pages branch that GitHub Pages serves. mike keeps one folder per version there; release-please
-# publishes the numbered versions. The paths are every file docs-site/src/ links to, plus the
+# gh-pages branch that GitHub Pages serves. mike keeps one folder per version there; a release
+# publishes its own numbered version, and docs-backfill.yml an older one (issue 925). The paths are every file docs-site/src/ links to, plus the
 # config, the tooling and README.md, whose supported-versions table the site includes
 # (backend/tests/test_docs_site.py holds the list in step).
 

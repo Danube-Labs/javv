@@ -1,4 +1,4 @@
-"""The docs site (issue 639), read from `docs-site/` and its two workflows.
+"""The docs site (issue 639), read from `docs-site/` and its three workflows.
 
 `docs-site/src/` holds a symlink to each published file, laid out as in the repository; that tree
 is the list of what is published. Zensical's strict build checks links between pages, but not
@@ -11,7 +11,8 @@ links to other files, nor that the tree publishes only the listed files. These t
 - the supported-versions page includes README's table, which check-versions.sh keeps in step;
 - CI builds the site strict and checks the theme's files were written, blocks and videos render
   and no list rendered as a paragraph;
-- a release publishes its docs as its `major.minor` version and as `latest`;
+- a release publishes its docs as a version of its own with the script that chooses the aliases
+  (`major.minor`, `latest`), and the backfill workflow publishes older releases the same way;
 - no published page carries an em dash;
 - the pages carry no engineering references (milestones, decisions, audit ids, issue
   numbers), except links to issues that track a limit an operator meets today;
@@ -296,15 +297,28 @@ def test_the_release_publishes_its_docs_as_its_version_and_latest() -> None:
     assert "publish-charts" in job["needs"]
     checkout = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/checkout@"))
     assert checkout["with"]["ref"] == "${{ needs.release-please.outputs.tag_name }}"
-    runs = " ".join(" ".join(s.get("run", "").split()) for s in job["steps"]).replace("\\ ", "")
-    assert 'minor="${VERSION%.*}"' in runs
-    assert (
-        "mike deploy --config-file docs-site/mkdocs.yml --push --update-aliases"
-        ' --alias-type=redirect --title "$VERSION" "$minor" latest'
-    ) in runs
-    assert "mike set-default --config-file docs-site/mkdocs.yml --push latest" in runs
+    # the script reads every release tag to choose the aliases (issue 925)
+    assert checkout["with"]["fetch-depth"] == 0
+    runs = "\n".join(s.get("run", "") for s in job["steps"])
+    assert 'development/scripts/publish-docs-version.sh "$VERSION"' in runs
+    assert "mike" not in runs  # the script alone writes the site, as the backfill does
     # docs.yml pushes the same branch: one job at a time
     assert job["concurrency"]["group"] == _workflow("docs.yml")["concurrency"]["group"]
+
+
+def test_the_backfill_publishes_older_releases_with_the_same_script() -> None:
+    workflow = _workflow("docs-backfill.yml")
+    assert set(workflow[True]) == {"workflow_dispatch"}  # by hand only; yaml reads `on:` as True
+    assert workflow["concurrency"]["group"] == _workflow("docs.yml")["concurrency"]["group"]
+    steps = workflow["jobs"]["publish"]["steps"]
+    checkout = next(s for s in steps if s.get("uses", "").startswith("actions/checkout@"))
+    assert checkout["with"]["fetch-depth"] == 0
+    step = next(s for s in steps if s.get("name") == "Publish each tag")
+    # the tags reach the shell as data, never pasted into the script text
+    assert step["env"]["TAGS"] == "${{ inputs.tags }}"
+    assert "${{" not in step["run"]
+    assert "cp development/scripts/publish-docs-version.sh" in step["run"]
+    assert 'bash "$script" "${tag#v}"' in step["run"]
 
 
 def test_the_publish_workflow_runs_for_every_published_file() -> None:
