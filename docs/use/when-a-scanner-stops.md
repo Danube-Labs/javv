@@ -2,9 +2,6 @@
 
 <video controls preload="metadata" width="100%" src="videos/when-a-scanner-stops.mp4"></video>
 
-The video is 1 minute long and has no sound.
-[Download the video](videos/when-a-scanner-stops.mp4).
-
 ## What JAVV does
 
 Each scan refreshes the findings that the scanner sees. If a scanner sends no results for too

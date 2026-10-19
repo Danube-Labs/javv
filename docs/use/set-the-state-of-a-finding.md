@@ -2,9 +2,6 @@
 
 <video controls preload="metadata" width="100%" src="videos/set-the-state-of-a-finding.mp4"></video>
 
-The video is 1 minute long and has no sound.
-[Download the video](videos/set-the-state-of-a-finding.mp4).
-
 ## Steps
 
 1. Open a finding from the Findings table. The triage panel sets the state of this one finding.

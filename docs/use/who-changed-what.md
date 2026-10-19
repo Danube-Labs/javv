@@ -2,9 +2,6 @@
 
 <video controls preload="metadata" width="100%" src="videos/who-changed-what.mp4"></video>
 
-The video is 1 minute long and has no sound.
-[Download the video](videos/who-changed-what.mp4).
-
 ## The Audit log
 
 1. Open the Audit log from the side menu. It lists each change: when, who, what and the target.

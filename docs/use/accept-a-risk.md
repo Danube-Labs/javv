@@ -2,9 +2,6 @@
 
 <video controls preload="metadata" width="100%" src="videos/accept-a-risk.mp4"></video>
 
-The video is 1.5 minutes long and has no sound.
-[Download the video](videos/accept-a-risk.mp4).
-
 A risk acceptance applies to one CVE in a scope. It also covers the new findings of that CVE in
 the scope. To accept a risk, your role must allow risk acceptance.
 
