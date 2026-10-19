@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.5](https://github.com/Danube-Labs/javv-poc/compare/v0.8.4...v0.8.5) (2026-10-19)
+
+
+### Bug Fixes
+
+* audit changes show plain field names and the reason of each change to not affected ([#932](https://github.com/Danube-Labs/javv-poc/issues/932)) ([c9d3fb7](https://github.com/Danube-Labs/javv-poc/commit/c9d3fb71f26bb43a1c09930ea266000739599ae1))
+* each release keeps its own docs on the docs site ([#927](https://github.com/Danube-Labs/javv-poc/issues/927)) ([463c066](https://github.com/Danube-Labs/javv-poc/commit/463c0668b01be95087e3a7b6b88999eabe2d59ea))
+* the activity card shows a new reason as its plain label ([#930](https://github.com/Danube-Labs/javv-poc/issues/930)) ([5e507b5](https://github.com/Danube-Labs/javv-poc/commit/5e507b58ef732a6824cb95154d9e29c2f8cb7593))
+* the frontend server closes an idle backend connection before the backend does ([#929](https://github.com/Danube-Labs/javv-poc/issues/929)) ([89f8bf7](https://github.com/Danube-Labs/javv-poc/commit/89f8bf72237244b4e730ee65601b8c7d85f4d39f))
+
 ## [0.8.4](https://github.com/Danube-Labs/javv-poc/compare/v0.8.3...v0.8.4) (2026-10-19)
 
 
