@@ -41,10 +41,22 @@ export async function record(dir, walk, { view: VIEW = DEFAULT_VIEW } = {}) {
 
   const shots = []
   async function box(locator) {
-    const b = await locator.first().boundingBox()
-    if (!b) throw new Error('no box for a locator')
-    const sy = await page.evaluate(() => window.scrollY)
-    return { x: b.x, y: b.y + sy, w: b.width, h: b.height }
+    // a row of a table that scrolls sideways is wider than the part on screen: keep only the
+    // width that its clipping parents show, so the spotlight stops at the table's edge
+    const b = await locator.first().evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      let left = r.left
+      let right = r.right
+      for (let p = el.parentElement; p; p = p.parentElement) {
+        if (getComputedStyle(p).overflowX === 'visible') continue
+        const c = p.getBoundingClientRect()
+        left = Math.max(left, c.left)
+        right = Math.min(right, c.right)
+      }
+      return { x: left, y: r.top + window.scrollY, w: right - left, h: r.height }
+    })
+    if (!(b.w > 0 && b.h > 0)) throw new Error('no box for a locator')
+    return b
   }
   /** a full-page screenshot and the boxes of the named controls */
   async function shot(name, targets = {}) {
