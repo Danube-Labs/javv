@@ -8,6 +8,7 @@ The video is 1 minute long and has no sound.
 ## The Audit log
 
 1. Open the Audit log from the side menu. It lists each change: when, who, what and the target.
+   A settings change shows the old and the new value of each setting that changed.
 2. To see the changes of one person, filter by user.
 3. To see one type of change, filter by action, for example Bulk triage. One bulk change is one
    entry in the Audit log.

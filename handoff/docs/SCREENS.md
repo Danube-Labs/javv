@@ -526,7 +526,19 @@ Task column dropped (no field; Jira linkage is v1.1 — V4-DELTA-1).
 example `State: Open → Not affected` and `Reason: Component not present → Vulnerable code not
 present`. The names are in `audit/fieldLabels.ts`, taken from the screen that sets the value (the
 triage panel, the settings pages). A test fails when the backend writes a field with no name. The
-stored field and value do not change: the CSV export and the API keep them.
+stored field and value do not change: the CSV export and the API keep them. Issue 933 adds:
+- A change to Not affected shows its reason after the states:
+  `State: Open → Not affected · Reason: Component not present`.
+- A number setting shows as a whole number: `History retention: 90 → 105`, not `105.0`.
+- A settings change kept as JSON shows only the values that changed, with the names and units of
+  its settings page: `SLA policy: Critical 2 → 7 days`. A save with the same values shows
+  `no change`. A job run shows its counts: `Counts: Sessions deleted 15096 · Grace period 24
+  hours`. The names are in `audit/jsonChange.ts`, and a test fails when a backend setting or job
+  count has no name.
+
+**Action rail (issue 933):** the rail lists each action that the backend writes, by its plain name
+(`audit/actionLabels.ts`). A settings change uses the name of its setting, for example `History
+retention`. A test fails when the backend writes an action with no name or with no rail entry.
 
 **States:** loading; empty; degraded; retention note ("audit window bounded by
 `system-audit-log` retention"). The count shows "-" until the first read answers (issue 833 G3).
@@ -560,7 +572,9 @@ TTR/SLA-hit computed server-side from `system-audit-log`. Scoped by the global t
 **Layout preserved:** team KPI strip → podium → leaderboard → resolved-over-time
 (`GET /api/v1/trends/findings`, labeled per A-m9) → activity feed (from the M8c audit read —
 same dependency as screen 10, feed only). The detail line of a feed row uses the plain names of
-the Audit log's Detail column, for example `State → Risk accepted` (issue 931).
+the Audit log's Detail column, for example `State → Risk accepted` (issue 931). A settings change
+or a job run shows the same line as in the Audit log, for example `SLA policy: Critical 2 → 7
+days`, not `SLA policy → updated` (issue 933).
 
 **States:** loading; empty (no triage activity in window); degraded; `T<now` fine (audit-log ≤T
 is supported, C-1).
