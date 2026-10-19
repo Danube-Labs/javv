@@ -4,14 +4,14 @@
  * capped at a glance, the full trail lives on the Audit screen. DetailCard chrome; the body
  * stays a list, not a table (two columns of prose is not tabular data).
  */
-import { bulkChange } from '@/audit/bulkAudit'
+import { bulkChange, bulkJson } from '@/audit/bulkAudit'
+import { fieldLabel, reasonLabel } from '@/audit/fieldLabels'
 import ActionTag from '@/components/chips/ActionTag.vue'
 import StateTag from '@/components/chips/StateTag.vue'
 import DetailCard from '@/components/finding/DetailCard.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import { usePagedSlice } from '@/composables/usePagedSlice'
 import { fmtAt } from '@/findings/format'
-import { CISA_JUSTIFICATIONS } from '@/findings/triageRules'
 
 export interface ActivityRow {
   event_id: string
@@ -34,7 +34,13 @@ const props = defineProps<{
 /* display slices through the shared GridPager — the FULL trail still lives on Audit */
 const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activity)
 
-const reasonLabel = (id: string) => CISA_JUSTIFICATIONS.find((j) => j.id === id)?.label ?? id
+/** the Not affected reason a state change or a bulk change came with; the backend keeps it in
+ * `new_value_json`, not in `new_value` (one row per action, triage/service.py) */
+function reasonOf(a: ActivityRow): string | null {
+  const json = a.field === 'state' ? a.new_value_json : bulkJson(a)?.patch
+  const reason = json?.vex_justification
+  return typeof reason === 'string' && reason ? reason : null
+}
 </script>
 
 <template>
@@ -46,21 +52,25 @@ const reasonLabel = (id: string) => CISA_JUSTIFICATIONS.find((j) => j.id === id)
         <span class="act-when mono-cell">{{ fmtAt(a['@timestamp']) }}</span>
         <span class="act-what">
           <b>{{ a.actor }}</b> · <ActionTag :action="a.action" />
-          <!-- a single state change adds nothing: the action pill already names the state it set -->
+          <!-- a single state change adds only its reason: the action pill already names the state -->
           <template v-if="bulkChange(a)">
             <template v-if="bulkChange(a)!.state"> · <StateTag :state="bulkChange(a)!.state!" /></template>
+            <span v-if="reasonOf(a)" class="act-part">· {{ fieldLabel('vex_justification') }}: {{ reasonLabel(reasonOf(a)!) }}</span>
             <span v-if="bulkChange(a)!.assignee" class="act-part">
-              · assignee: <span class="mono-cell sm">{{ bulkChange(a)!.assignee }}</span>
+              · {{ fieldLabel('assignee') }}: <span class="mono-cell sm">{{ bulkChange(a)!.assignee }}</span>
             </span>
             <span v-if="bulkChange(a)!.notes" class="act-part">
-              · notes: <span class="mono-cell sm">{{ bulkChange(a)!.notes }}</span>
+              · {{ fieldLabel('notes') }}: <span class="mono-cell sm">{{ bulkChange(a)!.notes }}</span>
             </span>
           </template>
-          <span v-else-if="a.new_value && a.field === 'vex_justification'" class="act-part">
-            · Reason: {{ reasonLabel(a.new_value) }}
+          <span v-else-if="reasonOf(a)" class="act-part">
+            · {{ fieldLabel('vex_justification') }}: {{ reasonLabel(reasonOf(a)!) }}
           </span>
-          <span v-else-if="a.new_value && a.field !== 'state'" class="act-part">
-            · {{ a.field }}: <span class="mono-cell sm">{{ a.new_value }}</span>
+          <span v-else-if="a.new_value && a.field === 'vex_justification'" class="act-part">
+            · {{ fieldLabel('vex_justification') }}: {{ reasonLabel(a.new_value) }}
+          </span>
+          <span v-else-if="a.new_value && a.field && a.field !== 'state'" class="act-part">
+            · {{ fieldLabel(a.field) }}: <span class="mono-cell sm">{{ a.new_value }}</span>
           </span>
         </span>
       </li>
