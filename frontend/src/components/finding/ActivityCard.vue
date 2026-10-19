@@ -11,6 +11,7 @@ import DetailCard from '@/components/finding/DetailCard.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import { usePagedSlice } from '@/composables/usePagedSlice'
 import { fmtAt } from '@/findings/format'
+import { CISA_JUSTIFICATIONS } from '@/findings/triageRules'
 
 export interface ActivityRow {
   event_id: string
@@ -32,6 +33,8 @@ const props = defineProps<{
 
 /* display slices through the shared GridPager — the FULL trail still lives on Audit */
 const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activity)
+
+const reasonLabel = (id: string) => CISA_JUSTIFICATIONS.find((j) => j.id === id)?.label ?? id
 </script>
 
 <template>
@@ -53,6 +56,9 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.activi
               · notes: <span class="mono-cell sm">{{ bulkChange(a)!.notes }}</span>
             </span>
           </template>
+          <span v-else-if="a.new_value && a.field === 'vex_justification'" class="act-part">
+            · Reason: {{ reasonLabel(a.new_value) }}
+          </span>
           <span v-else-if="a.new_value && a.field !== 'state'" class="act-part">
             · {{ a.field }}: <span class="mono-cell sm">{{ a.new_value }}</span>
           </span>

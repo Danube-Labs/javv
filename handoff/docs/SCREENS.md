@@ -352,7 +352,8 @@ the Audit log's action pill (`ActionTag`, the same pill the Contributors feed us
 change adds nothing after the pill, because the pill names the state it set. A bulk row adds the
 state tag, the assignee and the note that it set. An assignee or note row adds the new value, with
 its label and value kept together. Operator decision 2026-10-18 (issue 918, option B), made on
-built pictures of options A, B and C.
+built pictures of options A, B and C. A new reason on a Not affected finding adds "Reason:" and
+the plain label of the triage panel, for example "Reason: Component not present" (issue 924).
 
 **SLA box:** server-computed deadline + overdue flag from the findings read (B-5).
 
