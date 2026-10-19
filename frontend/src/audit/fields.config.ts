@@ -37,6 +37,19 @@ export const AUDIT_ACTIONS = [
   'cluster_unretire',
   'cluster_delete',
   'cluster_delete_recheck',
+  // settings (entity_type=config)
+  'retention_change',
+  'findings_cleanup_change',
+  'report_ttl_change',
+  'rollover_change',
+  'retirement_window_change',
+  'scan_scope_change',
+  'staleness_timers_change',
+  // snapshots and job runs (entity_type=config/job)
+  'snapshot_taken',
+  'snapshot_restored',
+  'findings_cleanup_run',
+  'session_sweep_run',
   // auth + admin (entity_type=user/token)
   'login',
   'logout',
