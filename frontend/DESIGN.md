@@ -331,7 +331,8 @@ that failed while it was drawn). A new "this could not be shown" page uses it; S
 - Print a stored value by its display name wherever it has one: a filter field carries
   `valueLabel` (finding states read `findings/stateLabels.ts`, audit actions
   `audit/actionLabels.ts`), and the rail, the pills, the saved-view summary and the chips all
-  print through it. The value in the URL, the API and saved views never changes (operator
+  print through it. An audit row's field reads by `audit/fieldLabels.ts`, and a settings value
+  kept as JSON by `audit/jsonChange.ts`, with the name and unit of its settings page. The value in the URL, the API and saved views never changes (operator
   ruling 2026-10-02, issue 674; `value-labels.spec.ts` fails a rail option with an underscore).
 - Labels say what the user does or sees, not how it is built: no "lens", "selector", "append
   family" or implementation notes in a label or a hint.

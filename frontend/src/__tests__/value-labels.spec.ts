@@ -42,8 +42,8 @@ describe('display names for stored values', () => {
   })
 
   it('an action with no entry reads as its words, never as snake_case', () => {
-    expect(ACTION_LABELS['store_inspect']).toBeUndefined() // the case this fallback exists for
-    expect(actionLabel('store_inspect')).toBe('store inspect')
+    expect(ACTION_LABELS['some_future_action']).toBeUndefined() // the case this fallback exists for
+    expect(actionLabel('some_future_action')).toBe('some future action')
   })
 
   it('no rail option with a fixed vocabulary shows an underscore', () => {

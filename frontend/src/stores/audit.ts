@@ -21,6 +21,8 @@ export interface AuditEvent {
   field_type?: string | null
   old_value?: string | null
   new_value?: string | null
+  /** the whole setting before a settings change; the API sends the record as stored */
+  old_value_json?: Record<string, unknown> | null
   new_value_json?: Record<string, unknown> | null
   revision?: number | null
   cluster_id?: string

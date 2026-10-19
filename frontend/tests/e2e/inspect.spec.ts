@@ -143,7 +143,7 @@ test('the repair card triggers a job that settles to done with counts, and it la
   // row than before is what proves this run was recorded, rather than an old one being matched.
   expect(await auditTriggerTotal(page)).toBe(triggersBefore + 1)
   // and it is rendered: the newest row (the read's default order is desc) names the job kind.
-  // NB the action column renders humanized — "job trigger", not the raw `job_trigger` filtered on
+  // NB the action column renders humanized — "Job started", not the raw `job_trigger` filtered on
   await expect(page.locator(DATA_ROW).first()).toContainText('staleness_sweep', {
     timeout: 20_000,
   })

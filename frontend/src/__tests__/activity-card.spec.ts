@@ -138,7 +138,7 @@ describe('ActivityCard', () => {
   })
 
   it('an action with no label reads as words, never as snake_case', () => {
-    const row = rowOf({ event_id: 'e-4', action: 'store_inspect', actor: 'lead', '@timestamp': at })
-    expect(row.find('.action-tag').text()).toBe('store inspect')
+    const row = rowOf({ event_id: 'e-4', action: 'some_future_action', actor: 'lead', '@timestamp': at })
+    expect(row.find('.action-tag').text()).toBe('some future action')
   })
 })
