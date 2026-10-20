@@ -398,7 +398,7 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/v1/findings` | session | One page of findings, with a cursor ([Read a list page by page](#read-a-list-page-by-page)). `size` is 1 to 500, default 50. `sort` is `severity_rank`, `first_seen_at`, `last_scan_at`, `cvss` or `epss`. The last page closes the search of the cursor. With `keep_open=true`, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with `POST /api/v1/cursors/close`. |
-| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. |
+| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not remove the other values from the list. All other facets count with all filters. |
 | GET | `/api/v1/findings/groups` | session | Findings in groups, page by page with a cursor. `by` is `image_repo`, `image_digest`, `namespaces`, `cve_id`, `assignee`, `app` or `ptype`. |
 | GET | `/api/v1/findings/top-components` | session | The packages with the most findings, and the count of different CVEs for each scanner. A past `as_of` gets 422. |
 | GET | `/api/v1/trends/scans` · `/api/v1/trends/findings` | session | Counts for each day over `days` (1 to 365, default 30), for each scanner. [Trends](#trends) gives the details. |
@@ -425,8 +425,8 @@ the same filters:
 |---|---|
 | `severity` | `critical`, `high`, `medium`, `low`, `negligible` or `unknown`. The facet uses the same words. A row also shows the word of its scanner in `severity`. |
 | `state` | `open`, `acknowledged`, `not_affected`, `risk_accepted`, `resolved` or `stale` |
-| `scanner`, `assignee`, `namespace`, `image_repo`, `image_digest`, `cve_id`, `ptype` | The rows with that value |
-| `package_name` | The rows with exactly that package name. It is not a facet. `fields=package_name` gets 422. |
+| `scanner`, `image_digest` | The rows with that value |
+| `namespace`, `ptype`, `assignee`, `image_repo`, `cve_id`, `package_name` | The rows with one of the values. Give the parameter one time for each value, for example `namespace=a&namespace=b`. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces. |
 | `kev`, `fixable`, `disagree` | `true` or `false` |
 | `present` | `true` (default): the findings in the last scan. `false`: the findings that are gone. |
 | `new_within_days` | The findings first seen in the last 1 to 365 days |
@@ -437,7 +437,9 @@ the same filters:
 - Each filter except `kev`, `fixable`, `disagree`, `present`, `new_within_days`, `overdue`,
   `unassigned`, `image_digest` and `q` has an `exclude_` form, for example `exclude_severity`.
   An `exclude_` filter leaves out the rows with that value. A row with no value for the field stays.
-  Thus `exclude_assignee=bob` keeps the rows with no owner.
+  Thus `exclude_assignee=bob` keeps the rows with no owner. An `exclude_` filter with more than one
+  value leaves out the rows with any of the values.
+- `package_name` is not a facet. `fields=package_name` gets 422.
 - One field takes the filter or its `exclude_` form, not both. Both get 422.
 
 #### A past time: `as_of`
