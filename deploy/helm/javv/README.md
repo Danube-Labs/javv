@@ -2,29 +2,42 @@
 
 ![Version: 0.8.5](https://img.shields.io/badge/Version-0.8.5-informational?style=flat-square) ![AppVersion: 0.8.5](https://img.shields.io/badge/AppVersion-0.8.5-informational?style=flat-square)
 
-This chart installs the backend and the frontend of JAVV on Kubernetes. It uses the settings and
-defaults of the JAVV [compose file](../../compose/compose.yaml). It runs one backend, which also
-runs the background jobs. It runs a frontend Service that browsers and scanners both use. The
-chart makes Services only. For https, put your own Ingress, gateway or load balancer in front of
-the frontend Service.
+This chart installs the backend and the frontend of JAVV on Kubernetes.
 
-OpenSearch comes from the [`javv-opensearch`](../javv-opensearch/README.md) chart. The scanners
-come from the [`javv-scanner`](../javv-scanner/README.md) chart, in each cluster that you scan.
+- It uses the settings and defaults of the JAVV [compose file](../../compose/compose.yaml).
+- It runs one backend, which also runs the background jobs.
+- It runs a frontend Service that browsers and scanners both use.
+- It makes Services only. For https, put your own Ingress, gateway or load balancer in front of
+  the frontend Service.
+
+Other charts:
+
+- OpenSearch comes from the [`javv-opensearch`](../javv-opensearch/README.md) chart.
+- The scanners come from the [`javv-scanner`](../javv-scanner/README.md) chart, in each cluster
+  that you scan.
+
 [Deploying](../../../docs/DEPLOYING.md#install-on-kubernetes-with-helm) gives the full procedure.
 
 ## Install
 
-The commands read each secret at a prompt, or make it in place. Thus no secret goes into your
-shell history or into the arguments of a process. The commands need bash.
+### Prerequisites
+
+- A Kubernetes cluster, and `kubectl` and Helm that can connect to it.
+- bash and `openssl`. The commands read each secret at a prompt, or make it in place. Thus no
+  secret goes into your shell history or into the arguments of a process.
+- One namespace for this chart and the [`javv-opensearch`](../javv-opensearch/README.md) chart.
+
+### Steps
 
 1. Install OpenSearch, with the password of `admin` and the password of `javv` in Secrets:
     ```bash
+    VERSION=0.8.5
     read -rs -p 'OpenSearch admin password: ' pw && echo
     printf '%s' "$pw" | kubectl create secret generic javv-opensearch-admin --from-file=password=/dev/stdin
     unset pw
     kubectl create secret generic javv-opensearch-backend \
       --from-file=password=<(openssl rand -hex 24 | tr -d '\n')
-    helm install store oci://ghcr.io/danube-labs/charts/javv-opensearch --version <version> \
+    helm install store oci://ghcr.io/danube-labs/charts/javv-opensearch --version "$VERSION" \
       --set opensearch.javv.auth.existingSecret=javv-opensearch-admin \
       --set opensearch.javv.backend.existingSecret=javv-opensearch-backend
     ```
@@ -38,19 +51,21 @@ shell history or into the arguments of a process. The commands need bash.
     ```
 3. Install JAVV. The backend signs in to OpenSearch as `javv`, with the Secret of `javv`:
     ```bash
-    helm install javv oci://ghcr.io/danube-labs/charts/javv --version <version> \
+    VERSION=0.8.5
+    helm install javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" \
       --set secrets.existingSecret=javv-secrets \
       --set opensearch.passwordSecret.name=javv-opensearch-backend
     helm test javv
     ```
+    If OpenSearch has its own certificate, from a Secret or from cert-manager, also add
+    `--set opensearch.caSecret.name=<the Secret with its ca.crt>`. The backend then verifies the
+    certificate of OpenSearch.
 
-If OpenSearch has its own certificate, from a Secret or from cert-manager, also add
-`--set opensearch.caSecret.name=<the Secret with its ca.crt>`. The backend then verifies the
-certificate of OpenSearch.
+### Where the chart comes from
 
-Each JAVV release publishes this chart at `oci://ghcr.io/danube-labs/charts`, and signs it
-([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)). From a
-checkout, use the folder of the chart in `deploy/helm/`.
+- Each JAVV release publishes this chart at `oci://ghcr.io/danube-labs/charts`, and signs it
+  ([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)).
+- From a checkout, use the folder of the chart in `deploy/helm/`.
 
 ## What the chart runs
 
@@ -66,16 +81,15 @@ checkout, use the folder of the chart in `deploy/helm/`.
 
 ## Settings
 
-Each backend setting is under `backend.config`, at its default, by the name that the backend reads.
-Each one has the comment that the compose file gives it.
-[Configuring JAVV](../../../docs/CONFIGURATION.md#backend-settings) describes each setting. The
-secrets are not settings here. The secret key and the bootstrap password come from `secrets`. The
-password and the CA of OpenSearch come from `opensearch`.
-
-`values.schema.json` makes the install fail for a key with a wrong name. This does not apply in
-`backend.config` and `frontend.config`, which accept each name. Thus the chart passes a setting
-with a wrong name to the backend, and the backend ignores it.
-`backend/tests/test_compose_settings.py` keeps the settings of this chart equal to the code.
+- Each backend setting is under `backend.config`, at its default, by the name that the backend
+  reads. Each one has the comment that the compose file gives it.
+  [Configuring JAVV](../../../docs/CONFIGURATION.md#backend-settings) describes each setting.
+- The secrets are not settings here. The secret key and the bootstrap password come from
+  `secrets`. The password and the CA of OpenSearch come from `opensearch`.
+- `values.schema.json` makes the install fail for a key with a wrong name. This does not apply in
+  `backend.config` and `frontend.config`, which accept each name. Thus the chart passes a setting
+  with a wrong name to the backend, and the backend ignores it.
+- `backend/tests/test_compose_settings.py` keeps the settings of this chart equal to the code.
 
 ## Values
 

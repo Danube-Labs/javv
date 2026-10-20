@@ -3,39 +3,50 @@
 {{ template "chart.versionBadge" . }}{{ template "chart.appVersionBadge" . }}
 
 This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
-CronJob. Each scanner pushes its own results to JAVV. JAVV never merges them. Install the chart in
-each cluster that you scan. JAVV itself, the [`javv`](../javv/README.md) chart, can run in that
-cluster or at each place that the scanners can reach over HTTP.
+CronJob.
+
+- Each scanner pushes its own results to JAVV. JAVV never merges them.
+- Install the chart in each cluster that you scan.
+- JAVV itself, the [`javv`](../javv/README.md) chart, can run in that cluster or at each place
+  that the scanners can reach over HTTP.
 [Connect the scanners](../../../docs/DEPLOYING.md#connect-the-scanners) gives the full procedure.
 
 ## Install
 
-Each scanner needs its own ingest token for this cluster. Make it in JAVV: **Settings › Access &
-tokens › Mint token**. For the first token, select **New cluster…** and enter the cluster id from
-the first command. Then select the name of the scanner.
+### Prerequisites
 
-```bash
-kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'   # the id of this cluster in JAVV
+- A running JAVV, and an address of JAVV that this cluster can connect to.
+- An admin sign-in to JAVV.
+- `kubectl` and Helm that can connect to this cluster, and bash.
 
-kubectl create namespace javv-scanner
-for s in trivy grype; do  # each token at a prompt: not in shell history, not in process arguments
-  read -rs -p "$s token: " token && echo
-  printf '%s' "$token" | kubectl -n javv-scanner create secret generic "javv-$s-token" \
-    --from-file=token=/dev/stdin
-done; unset token
-helm install scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version <version> \
-  -n javv-scanner \
-  --set backendUrl=http://<JAVV's address>:8080 \
-  --set trivy.token.existingSecret=javv-trivy-token \
-  --set grype.token.existingSecret=javv-grype-token
-helm test scanner -n javv-scanner
-```
+### Steps
 
-Each JAVV release publishes this chart at `oci://ghcr.io/danube-labs/charts`, and signs it
-([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)). From a
-checkout, use the folder of the chart in `deploy/helm/`.
+1. Find the id of this cluster:
+    ```bash
+    kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
+    ```
+2. Make one ingest token for each scanner, in JAVV: **Settings › Access & tokens › Mint token**.
+    - For the first token, select **New cluster…** and enter the cluster id.
+    - Select the name of the scanner.
+3. Put each token in its own Secret, and install the chart:
+    ```bash
+    VERSION={{ template "chart.version" . }}
+    kubectl create namespace javv-scanner
+    for s in trivy grype; do  # each token at a prompt: not in shell history, not in process arguments
+      read -rs -p "$s token: " token && echo
+      printf '%s' "$token" | kubectl -n javv-scanner create secret generic "javv-$s-token" \
+        --from-file=token=/dev/stdin
+    done; unset token
+    helm install scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version "$VERSION" \
+      -n javv-scanner \
+      --set backendUrl=http://<JAVV's address>:8080 \
+      --set trivy.token.existingSecret=javv-trivy-token \
+      --set grype.token.existingSecret=javv-grype-token
+    helm test scanner -n javv-scanner
+    ```
+    `helm test` verifies that JAVV replies at `backendUrl` and accepts each token. It does not
+    scan.
 
-`helm test` verifies that JAVV replies at `backendUrl` and accepts each token. It does not scan.
 Each scanner then runs on its `schedule`. To start a cycle now, follow the safe sequence in
 `NOTES`:
 
@@ -43,6 +54,12 @@ Each scanner then runs on its `schedule`. To start a cycle now, follow the safe 
 2. Wait until no Job of that scanner runs.
 3. Make a Job from the CronJob.
 4. Start the CronJob again.
+
+### Where the chart comes from
+
+- Each JAVV release publishes this chart at `oci://ghcr.io/danube-labs/charts`, and signs it
+  ([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)).
+- From a checkout, use the folder of the chart in `deploy/helm/`.
 
 ## What the chart runs
 
@@ -80,10 +97,11 @@ Each scanner then runs on its `schedule`. To start a cycle now, follow the safe 
 
 ## Images
 
-`image.tag` is the scanner version from `versions.yaml` in the repository. JAVV publishes that tag
-again when it changes the scanner image. Thus the default `pullPolicy` is `Always`. To run one
-exact build, set `image.digest`. **The chart of a release sets the digest.** For each scanner, it
-is the digest that the tag named when JAVV made the release, after cosign verified the signature
-of `scanner-images.yml`. A checkout of the repository has the tag only.
+- `image.tag` is the scanner version from `versions.yaml` in the repository. JAVV publishes that
+  tag again when it changes the scanner image. Thus the default `pullPolicy` is `Always`.
+- To run one exact build, set `image.digest`.
+- **The chart of a release sets the digest.** For each scanner, it is the digest that the tag named
+  when JAVV made the release, after cosign verified the signature of `scanner-images.yml`.
+- A checkout of the repository has the tag only.
 
 {{ template "chart.valuesSection" . }}

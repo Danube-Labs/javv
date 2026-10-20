@@ -22,6 +22,10 @@
         },
         {
           "type": "generic",
+          "path": "docs/DEPLOYING.md"
+        },
+        {
+          "type": "generic",
           "path": "deploy/helm/javv-opensearch/Chart.yaml"
         },
         {
@@ -35,6 +39,10 @@
         {
           "type": "generic",
           "path": "deploy/helm/javv-scanner/Chart.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "docs/UPGRADING.md"
         }
       ]
     }

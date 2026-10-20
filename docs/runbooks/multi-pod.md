@@ -3,8 +3,11 @@
 This page tells you how many copies of each part of JAVV run, and why. It also tells you how each
 part recovers when it fails.
 
-JAVV runs as **one backend, one frontend and one OpenSearch node**. The compose file and the charts
-install this setup. CI tests this setup. JAVV supports only this setup.
+JAVV runs as **one backend, one frontend and one OpenSearch node**:
+
+- The compose file and the charts install this setup.
+- CI tests this setup.
+- JAVV supports only this setup.
 
 ## What the charts run
 
@@ -17,10 +20,12 @@ install this setup. CI tests this setup. JAVV supports only this setup.
 
 ## Why one backend
 
-The backend runs the background jobs of JAVV on schedules. The schedules are the `JAVV_JOB_*_CRON`
-settings in [Configuration](../CONFIGURATION.md). The jobs are staleness, lifecycle, findings
-cleanup, cluster retirement, report drain, report sweep and session sweep. No CronJob and no second
-container runs these jobs. Thus the backend is one process.
+The backend runs the background jobs of JAVV on schedules:
+
+- The jobs are staleness, lifecycle, findings cleanup, cluster retirement, report drain, report
+  sweep and session sweep.
+- The schedules are the `JAVV_JOB_*_CRON` settings in [Configuration](../CONFIGURATION.md).
+- No CronJob and no second container runs these jobs. Thus the backend is one process.
 
 A rolling update can run two backends for a short time. To prevent this, the Deployment uses
 `Recreate`: Kubernetes stops the old pod before it starts the new pod. During an upgrade, there is
@@ -36,16 +41,17 @@ a short time when no backend runs:
 JAVV has no high-availability layer of its own. Each part is one copy. Kubernetes or docker compose
 starts the part again when it fails.
 
-- **The backend** stops at start when it cannot connect to OpenSearch. Its restart policy starts it
-  again until OpenSearch replies. When OpenSearch stops, the backend reports that it is not ready
-  (`/readyz`). Then its Service stops sending requests to it, and nothing restarts it.
+- **The backend** stops at start when it cannot connect to OpenSearch.
+    - Its restart policy starts it again until OpenSearch replies.
+    - When OpenSearch stops, the backend reports that it is not ready (`/readyz`). Then its
+      Service stops sending requests to it, and nothing restarts it.
 - **The frontend** keeps no state. A new frontend is ready immediately. When a frontend stops during
   a scanner push, the scanner sends that push again.
 - **OpenSearch** keeps its data on its volume. When OpenSearch starts again, it reads the data
-  again. To keep the data available when a node fails, you need more nodes and replica shards. For
-  this, use an OpenSearch that you operate. JAVV connects to it with no change. See
-  [Deploying: an OpenSearch of your own](../DEPLOYING.md#an-opensearch-of-your-own) and
-  [Sizing OpenSearch](opensearch-sizing.md).
+  again.
+    - To keep the data available when a node fails, you need more nodes and replica shards.
+    - For this, use an OpenSearch that you operate. JAVV connects to it with no change. See
+      [Deploying: an OpenSearch of your own](../DEPLOYING.md#an-opensearch-of-your-own) and
+      [Sizing OpenSearch](opensearch-sizing.md).
 - **Backups:** make a snapshot manually in **Settings › Data & OpenSearch › Snapshots**. JAVV does
-  not make scheduled snapshots yet
-  ([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
+  not make scheduled snapshots yet.
