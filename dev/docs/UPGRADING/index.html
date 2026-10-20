@@ -1688,7 +1688,7 @@ This is safe, because each schema change until now only added fields:</p>
 <li>In the folder of your installation, keep a copy of the old file, and get the file of the new
     release. <code>VERSION</code> is the release that you upgrade to:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.6
 cp<span class="w"> </span>compose.yaml<span class="w"> </span>compose.yaml.old
 curl<span class="w"> </span>-fsSLO<span class="w"> </span><span class="s2">"https://raw.githubusercontent.com/Danube-Labs/javv-poc/v</span><span class="nv">$VERSION</span><span class="s2">/deploy/compose/compose.yaml"</span>
 </code></pre></div>
@@ -1795,7 +1795,7 @@ helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </
 <li>Upgrade with the chart of the new release and the same files. <code>VERSION</code> is the release that you
     upgrade to:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.6
 helm<span class="w"> </span>upgrade<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-f<span class="w"> </span>my-store-values.yaml
 helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span>my-javv-values.yaml
@@ -1811,7 +1811,7 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 <li>Upgrade the scanners last, in each cluster that you scan, after JAVV runs the new release. Keep
     your values file (<code>backendUrl</code> and the token Secrets):
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.6
 helm<span class="w"> </span>upgrade<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-f<span class="w"> </span>my-scanner-values.yaml
 </code></pre></div>
