@@ -244,6 +244,12 @@ risk_accepted, resolved, stale) · Assignee (incl. Unassigned) · Namespace · *
 > **RULED (A-1, 2026-07-07):** `negligible` IS its own muted bucket — Grype emits it; hiding it
 > breaks "counts sum". Display muted grey, never red.
 
+**Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
+without the filter of their own field. After you pick a namespace, the other namespaces stay in
+the list with their counts. An excluded value also stays in the list, with a line through it and
+its count. All other groups count with all filters. Thus Severity shows only the counts of the
+rows that the grid shows.
+
 **Table columns:** checkbox · Vulnerability (`cve_id`, mono) · Severity (verbatim word, display
 uppercase) · EPSS (raw `epss` 0–1 bar; **Grype rows only**, em-dash on Trivy — B-3: no
 percentile) · KEV · Component (`app`) · Package (`package_name`) · Current (`installed_version`) ·
