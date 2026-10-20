@@ -717,6 +717,67 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prerequisites
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-passwords" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The passwords
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Steps
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-the-chart-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the chart comes from
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-helm-test-verifies" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What <code>helm test</code> verifies
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1274,6 +1335,67 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prerequisites
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-passwords" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The passwords
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Steps
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-the-chart-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the chart comes from
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-helm-test-verifies" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What <code>helm test</code> verifies
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1343,40 +1465,68 @@
 <h1 id="javv-opensearch">javv-opensearch<a class="headerlink" href="#javv-opensearch" title="Permanent link">&para;</a></h1>
 <p><img alt="Version: 0.8.5" src="https://img.shields.io/badge/Version-0.8.5-informational?style=flat-square" /> <img alt="AppVersion: 3.9.0" src="https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square" /></p>
 <p>This chart installs OpenSearch for JAVV: one node, with its security plugin on and two users with
-a password. The users are <code>admin</code> and <code>javv</code>, the user that the JAVV backend signs in as. The chart
-wraps the official
+a password.</p>
+<ul>
+<li><code>admin</code>: the superuser of OpenSearch.</li>
+<li><code>javv</code>: the user that the JAVV backend signs in as.</li>
+</ul>
+<p>The chart wraps the official
 <a href="https://github.com/opensearch-project/helm-charts/tree/main/charts/opensearch"><code>opensearch</code> chart</a>
 3.9.0. It sets the same values as the JAVV
 <a href="../../compose/compose.yaml">compose file</a>.</p>
-<p>The Service is <code>javv-opensearch</code>, https on port 9200. JAVV signs in to it as <code>javv</code>, with
-<code>JAVV_OPENSEARCH_URL=https://javv-opensearch:9200</code>, <code>JAVV_OPENSEARCH_USERNAME=javv</code> and
-<code>JAVV_OPENSEARCH_PASSWORD</code> from the Secret of <code>javv</code>
-(<a href="../../../docs/CONFIGURATION/#connection-to-opensearch">Connection to OpenSearch</a>). This user
-has only the <code>javv</code> role: the indices of JAVV, their snapshots and the health of the cluster
-(<a href="../../../docs/DEPLOYING/#an-opensearch-of-your-own">An OpenSearch of your own</a>).</p>
+<p>The Service is <code>javv-opensearch</code>, https on port 9200. JAVV signs in to it as <code>javv</code>, with these
+settings (<a href="../../../docs/CONFIGURATION/#connection-to-opensearch">Connection to OpenSearch</a>):</p>
+<ul>
+<li><code>JAVV_OPENSEARCH_URL=https://javv-opensearch:9200</code></li>
+<li><code>JAVV_OPENSEARCH_USERNAME=javv</code></li>
+<li><code>JAVV_OPENSEARCH_PASSWORD</code> from the Secret of <code>javv</code></li>
+</ul>
+<p>This user has only the <code>javv</code> role: the indices of JAVV, their snapshots and the health of the
+cluster (<a href="../../../docs/DEPLOYING/#an-opensearch-of-your-own">An OpenSearch of your own</a>).</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
-<p>Each password comes from a Secret with the key <code>password</code>, or from a value that the chart puts in
-a Secret. The password of <code>admin</code> comes from <code>opensearch.javv.auth</code>. The password of <code>javv</code> comes
-from <code>opensearch.javv.backend</code>. OpenSearch refuses a weak admin password. The password must have 8
-characters or more, with upper case, lower case, a digit and a special character. It must not be
-a common password. For <code>javv</code>, use a long random string.</p>
-<p>The commands read the admin password at a prompt, and make the password of <code>javv</code> in place. Thus
-neither password goes into your shell history or into the arguments of a process:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'OpenSearch admin password: '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A Kubernetes cluster, and <code>kubectl</code> and Helm that can connect to it.</li>
+<li>bash and <code>openssl</code>. The commands read the admin password at a prompt, and make the password of
+  <code>javv</code> in place. Thus neither password goes into your shell history or into the arguments of a
+  process.</li>
+<li>An admin password that OpenSearch accepts:<ul>
+<li>8 characters or more, with upper case, lower case, a digit and a special character.</li>
+<li>Not a common password.</li>
+</ul>
+</li>
+</ul>
+<h3 id="the-passwords">The passwords<a class="headerlink" href="#the-passwords" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Each password comes from a Secret with the key <code>password</code>, or from a value that the chart puts
+  in a Secret.</li>
+<li>The password of <code>admin</code> comes from <code>opensearch.javv.auth</code>.</li>
+<li>The password of <code>javv</code> comes from <code>opensearch.javv.backend</code>. Use a long random string.</li>
+</ul>
+<h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Make the Secrets and install the chart:
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+<span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'OpenSearch admin password: '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
 <span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$pw</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>javv-opensearch-admin<span class="w"> </span>--from-file<span class="o">=</span><span class="nv">password</span><span class="o">=</span>/dev/stdin
 <span class="nb">unset</span><span class="w"> </span>pw
 kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>javv-opensearch-backend<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--from-file<span class="o">=</span><span class="nv">password</span><span class="o">=</span>&lt;<span class="o">(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s1">'\n'</span><span class="o">)</span>
-helm<span class="w"> </span>install<span class="w"> </span>javv-opensearch<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span>&lt;version&gt;<span class="w"> </span><span class="se">\</span>
+helm<span class="w"> </span>install<span class="w"> </span>javv-opensearch<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>opensearch.javv.auth.existingSecret<span class="o">=</span>javv-opensearch-admin<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>opensearch.javv.backend.existingSecret<span class="o">=</span>javv-opensearch-backend
 helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>javv-opensearch
-</code></pre></div>
-<p>Then the <code>javv</code> chart signs in with <code>opensearch.passwordSecret.name=javv-opensearch-backend</code>.</p>
-<p>Each JAVV release publishes this chart at <code>oci://ghcr.io/danube-labs/charts</code>, and signs it
-(<a href="../../../docs/DEPLOYING/#verify-the-images-and-charts">Verify the images and charts</a>). From a
-checkout, use the folder of the chart in <code>deploy/helm/</code>.</p>
-<p><code>helm test</code> verifies these points:</p>
+</code></pre></div></li>
+<li>Install the <a href="../javv/"><code>javv</code></a> chart with
+    <code>opensearch.passwordSecret.name=javv-opensearch-backend</code>.</li>
+</ol>
+<h3 id="where-the-chart-comes-from">Where the chart comes from<a class="headerlink" href="#where-the-chart-comes-from" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Each JAVV release publishes this chart at <code>oci://ghcr.io/danube-labs/charts</code>, and signs it
+  (<a href="../../../docs/DEPLOYING/#verify-the-images-and-charts">Verify the images and charts</a>).</li>
+<li>From a checkout, use the folder of the chart in <code>deploy/helm/</code>.</li>
+</ul>
+<h3 id="what-helm-test-verifies">What <code>helm test</code> verifies<a class="headerlink" href="#what-helm-test-verifies" title="Permanent link">&para;</a></h3>
 <ul>
 <li>OpenSearch refuses a request without a sign-in.</li>
 <li><code>admin</code> and <code>javv</code> are the only users in the user list of OpenSearch.</li>
@@ -1411,43 +1561,63 @@ checkout, use the folder of the chart in <code>deploy/helm/</code>.</p>
 </tr>
 </tbody>
 </table>
-<p>With your own certificate, the node reads a new certificate without a restart. The chart mounts
-the Secret as a folder, and sets <code>plugins.security.ssl.certificates_hot_reload.enabled</code>. The chart
-never makes a certificate itself.</p>
+<ul>
+<li>With your own certificate, the node reads a new certificate without a restart. The chart mounts
+  the Secret as a folder, and sets <code>plugins.security.ssl.certificates_hot_reload.enabled</code>.</li>
+<li>The chart never makes a certificate itself.</li>
+</ul>
 <h2 id="users-and-roles">Users and roles<a class="headerlink" href="#users-and-roles" title="Permanent link">&para;</a></h2>
-<p>The users file of the image holds <code>admin</code> and six demo users whose passwords are their own names.
-No setting turns them off. An init container puts a new file in its place, with only <code>admin</code> and
-<code>javv</code>. The init container hashes each password from its Secret with <code>hash.sh</code> of OpenSearch,
-which reads the password from the environment. The <code>javv</code> role and its mapping come from the
-<code>files/</code> folder of the chart, as in the compose file. The mapping is <code>admin</code> on <code>all_access</code>, and
-<code>javv</code> on <code>javv</code>. These files replace the demo files of the image. OpenSearch loads them at its
-first start. After that, its security index holds them.</p>
+<ul>
+<li>The users file of the image holds <code>admin</code> and six demo users whose passwords are their own
+  names. No setting turns them off.</li>
+<li>An init container puts a new file in its place, with only <code>admin</code> and <code>javv</code>. It hashes each
+  password from its Secret with <code>hash.sh</code> of OpenSearch, which reads the password from the
+  environment.</li>
+<li>The <code>javv</code> role and its mapping come from the <code>files/</code> folder of the chart, as in the compose
+  file. The mapping is <code>admin</code> on <code>all_access</code>, and <code>javv</code> on <code>javv</code>. These files replace the demo
+  files of the image.</li>
+<li>OpenSearch loads these files at its first start. After that, its security index holds them.</li>
+</ul>
 <h2 id="change-a-password">Change a password<a class="headerlink" href="#change-a-password" title="Permanent link">&para;</a></h2>
 <p>A new password in the Secret alone changes nothing: OpenSearch keeps the password in its security
-index. To change a password and keep the data:</p>
+index.</p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>The new password.</li>
+<li>For your own certificates: a client certificate that the CA in your Secret signed, with its
+  subject in <code>opensearch.javv.tls.adminDn</code>, and its PKCS#8 key.</li>
+</ul>
+<p><strong>Steps:</strong></p>
 <ol>
 <li>Put the new password in its Secret, or in the value of the chart and run <code>helm upgrade</code>.</li>
 <li>Restart the node. The init container then writes the users file with the new password:
     <code>kubectl rollout restart statefulset/javv-opensearch-master</code>. The old password still works.</li>
-<li>Load the file into the security index with <code>securityadmin.sh</code> of OpenSearch. This tool signs in
+<li>
+<p>Load the file into the security index with <code>securityadmin.sh</code> of OpenSearch. This tool signs in
     with an admin certificate. With the demo certificates, use the certificate of the image:
     <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>javv-opensearch-master-0<span class="w"> </span>-c<span class="w"> </span>opensearch<span class="w"> </span>--<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>plugins/opensearch-security/tools/securityadmin.sh<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-f<span class="w"> </span>config/opensearch-security/internal_users.yml<span class="w"> </span>-t<span class="w"> </span>internalusers<span class="w"> </span>-icl<span class="w"> </span>-nhnv<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-cacert<span class="w"> </span>config/root-ca.pem<span class="w"> </span>-cert<span class="w"> </span>config/kirk.pem<span class="w"> </span>-key<span class="w"> </span>config/kirk-key.pem
 </code></pre></div>
-    With your own certificates, use a client certificate that the CA in your Secret signed. Its
-    subject must be in <code>opensearch.javv.tls.adminDn</code>. Copy it and its PKCS#8 key into the pod with
+    With your own certificates, copy your client certificate and its key into the pod with
     <code>kubectl cp</code>. Run the same command with
-    <code>-cacert config/certs/ca.crt -cert &lt;the certificate&gt; -key &lt;its key&gt;</code>. Then delete the two files.</li>
-</ol>
+    <code>-cacert config/certs/ca.crt -cert &lt;the certificate&gt; -key &lt;its key&gt;</code>. Then delete the two files.</p>
 <p>The command ends with <code>Done with success</code>. From then on, the new password works and the old
-password does not. For the password of <code>javv</code>, restart the JAVV backend. It then reads the new
-password from the same Secret. For a <code>javv</code> release with the name <code>javv</code>, as in
-<a href="../../../docs/DEPLOYING/#install-on-kubernetes-with-helm">Deploying</a>, the command is
-<code>kubectl rollout restart deploy/javv-backend</code>. A release name that holds <code>javv</code> gives the name
-<code>&lt;release&gt;-backend</code>. Each other release name gives <code>&lt;release&gt;-javv-backend</code>.</p>
-<p>The same command loads the role file and the mapping file. Use
+password does not.</p>
+</li>
+<li>
+<p>For the password of <code>javv</code>, restart the JAVV backend. It then reads the new password from the
+    same Secret. The name of the Deployment comes from the name of the <code>javv</code> release:</p>
+<ul>
+<li>Release <code>javv</code>, as in <a href="../../../docs/DEPLOYING/#install-on-kubernetes-with-helm">Deploying</a>:
+  <code>kubectl rollout restart deploy/javv-backend</code>.</li>
+<li>A release name that holds <code>javv</code>: <code>&lt;release&gt;-backend</code>.</li>
+<li>Each other release name: <code>&lt;release&gt;-javv-backend</code>.</li>
+</ul>
+</li>
+</ol>
+<p>The same <code>securityadmin.sh</code> command loads the role file and the mapping file. Use
 <code>-f config/opensearch-security/roles.yml -t roles</code>, then
 <code>-f config/opensearch-security/roles_mapping.yml -t rolesmapping</code>. Do this for an OpenSearch that
 started without these files, or for a release that changes the role.</p>
