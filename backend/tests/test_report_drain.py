@@ -8,6 +8,7 @@ bytes/chunk_count/expires_at; the bell rings for the requester; over-ceiling →
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any, get_args, get_origin, get_type_hints
 
 import pytest
 from opensearchpy import AsyncOpenSearch
@@ -283,3 +284,13 @@ def test_export_params_mirror_search_filters_one_to_one() -> None:
     param_fields = set(ExportParams.model_fields) - {"format"}
     filter_fields = {f for f in SearchFilters.__dataclass_fields__}
     assert param_fields == filter_fields
+    # and the same SHAPE (issue 949): the drain hands the stored values to SearchFilters as
+    # they are, so a string where the query expects a list would fail the export
+    filter_types = get_type_hints(SearchFilters)
+    for name in filter_fields:
+        param_type = ExportParams.model_fields[name].annotation
+        assert _takes_a_list(param_type) == _takes_a_list(filter_types[name]), name
+
+
+def _takes_a_list(annotation: Any) -> bool:
+    return any(get_origin(a) is list for a in (get_args(annotation) or (annotation,)))

@@ -18,11 +18,12 @@ import binascii
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 
 import structlog
 from opensearchpy import AsyncOpenSearch
 from opensearchpy.exceptions import NotFoundError, RequestError
+from pydantic import StringConstraints
 
 from backend.core.settings import get_settings
 from backend.query.trends import window_bounds
@@ -36,6 +37,12 @@ _SORT_FIELDS = ("severity_rank", "first_seen_at", "last_scan_at", "cvss", "epss"
 # the most values one list filter takes (issue 949). It mirrors the facet list, which shows at
 # most 32 values of a field (docs/API.md, `/findings/facets`): the most a user can pick there.
 MAX_FILTER_VALUES = 32
+# one value of a list filter, with the length cap the field had as one string. The findings
+# route, saved views and export settings all use these, so the three cannot drift apart.
+FilterValue64 = Annotated[str, StringConstraints(max_length=64)]
+FilterValue128 = Annotated[str, StringConstraints(max_length=128)]
+FilterValue256 = Annotated[str, StringConstraints(max_length=256)]
+FilterValue512 = Annotated[str, StringConstraints(max_length=512)]
 _SCALAR = (str, int, float, bool)
 
 

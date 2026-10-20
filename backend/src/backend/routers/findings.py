@@ -28,7 +28,6 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from opensearchpy.exceptions import ConnectionError as OSConnectionError
 from opensearchpy.exceptions import ConnectionTimeout
-from pydantic import StringConstraints
 
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
@@ -45,6 +44,10 @@ from backend.query.as_of import AsOfTReader, AsOfTUnavailable, as_of_t_reader, p
 from backend.query.search import (
     MAX_FILTER_VALUES,
     CursorExpired,
+    FilterValue64,
+    FilterValue128,
+    FilterValue256,
+    FilterValue512,
     SearchFilters,
     cursor_pit_id,
     run_search,
@@ -60,23 +63,11 @@ router = APIRouter(prefix="/api/v1/findings", tags=["findings"])
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
 
 # several values for one filter (issue 949): `?namespace=a&namespace=b`. `Query(max_length)` on a
-# list caps the NUMBER of values, so each value keeps its own length cap on the item type.
-_Values64 = Annotated[
-    list[Annotated[str, StringConstraints(max_length=64)]] | None,
-    Query(max_length=MAX_FILTER_VALUES),
-]
-_Values128 = Annotated[
-    list[Annotated[str, StringConstraints(max_length=128)]] | None,
-    Query(max_length=MAX_FILTER_VALUES),
-]
-_Values256 = Annotated[
-    list[Annotated[str, StringConstraints(max_length=256)]] | None,
-    Query(max_length=MAX_FILTER_VALUES),
-]
-_Values512 = Annotated[
-    list[Annotated[str, StringConstraints(max_length=512)]] | None,
-    Query(max_length=MAX_FILTER_VALUES),
-]
+# list caps the NUMBER of values; each value keeps its own length cap on the item type.
+_Values64 = Annotated[list[FilterValue64] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values128 = Annotated[list[FilterValue128] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values256 = Annotated[list[FilterValue256] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values512 = Annotated[list[FilterValue512] | None, Query(max_length=MAX_FILTER_VALUES)]
 
 _GROUP_CLOCK_PAGE = 1_000  # composite agg page for the exact min(first_seen_at) per (cve, digest)
 

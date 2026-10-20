@@ -7,6 +7,7 @@ extra field, bad ptype shape) → 422 and NEVER stored; the preset mirrors `Sear
 one-to-one (drift here silently breaks the §6 deep-link contract)."""
 
 import uuid
+from typing import Any, get_args, get_origin, get_type_hints
 
 import httpx
 import pytest
@@ -141,7 +142,7 @@ async def test_garbage_presets_are_422_and_never_stored(env) -> None:
         {"severity": ["urgent"]},  # not a canonical bucket
         {"state": ["closed"]},  # not one of the 6 states
         {"scanner": "snyk"},  # per-scanner is sacred — only the two exist
-        {"ptype": "OS Pkgs"},  # ptype shape (M8d)
+        {"ptype": ["OS Pkgs"]},  # ptype shape (M8d), checked on each value of the list
         {"bogus_field": 1},  # extra=forbid
     ):
         r = await http.post("/api/v1/views", json={"name": marker, "preset": preset})
@@ -154,6 +155,15 @@ def test_preset_mirrors_search_filters_one_to_one() -> None:
     """Drift here silently breaks the deep-link contract (SCREENS §6): a preset must map
     onto the findings query params exactly — same rule as the ExportParams mirror."""
     assert set(ViewPreset.model_fields) == set(SearchFilters.__dataclass_fields__)
+    # and the same SHAPE (issue 949): a field that holds one string here but a list in
+    # SearchFilters would save a view the findings query cannot read
+    filter_types = get_type_hints(SearchFilters)
+    for name, field in ViewPreset.model_fields.items():
+        assert _takes_a_list(field.annotation) == _takes_a_list(filter_types[name]), name
+
+
+def _takes_a_list(annotation: Any) -> bool:
+    return any(get_origin(a) is list for a in (get_args(annotation) or (annotation,)))
 
 
 # --- slice 2: owner-or-admin mutations + the deep-link round-trip ------------------------------
@@ -256,7 +266,7 @@ async def test_saved_preset_round_trips_to_findings_query_params(env) -> None:
     await client.indices.refresh(index="findings")
 
     view = await _create(
-        http, f"rt-{uuid.uuid4().hex[:8]}", severity=["low"], scanner="trivy", ptype="os"
+        http, f"rt-{uuid.uuid4().hex[:8]}", severity=["low"], scanner="trivy", ptype=["os"]
     )
     params = {k: v for k, v in view["preset"].items() if v is not None}
     assert params.pop("present") is True  # the default rides the preset explicitly
@@ -293,16 +303,16 @@ def test_golden_preset_serialization_is_pinned() -> None:
         state=["open"],
         scanner="trivy",
         kev=True,
-        ptype="os",
-        namespace="team-a",
-        package_name="zlib",
+        ptype=["os"],
+        namespace=["team-a"],
+        package_name=["zlib"],
     )
     assert populated.model_dump() == golden["populated"]
     negated = ViewPreset(
         exclude_severity=["low", "negligible"],
-        exclude_namespace="kube-system",
-        exclude_cve_id="CVE-2021-3711",
-        exclude_package_name="openssl",
+        exclude_namespace=["kube-system"],
+        exclude_cve_id=["CVE-2021-3711"],
+        exclude_package_name=["openssl"],
         state=["open"],
     )
     assert negated.model_dump() == golden["negated"]
