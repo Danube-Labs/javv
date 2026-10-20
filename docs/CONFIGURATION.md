@@ -1,7 +1,11 @@
 # Configuring JAVV
 
-This page lists the settings of JAVV. For each setting, it gives the default, what the setting does
-and where you set it. It is for the people who install and operate JAVV.
+This page lists the settings of JAVV, for the people who install and operate JAVV. For each
+setting, it gives:
+
+- The default.
+- What the setting does.
+- Where you set it.
 
 ## Where the settings are
 
@@ -12,13 +16,15 @@ and where you set it. It is for the people who install and operate JAVV.
 | Scanner and OpenSearch versions | The image tag | When you change the tag. The web app has no control to select a version. |
 | [Frontend build settings](#frontend-build-settings) | The build of the frontend image | Only when you build a new image. A published image has the default values. |
 
-Credentials go only in a secret store: `.env`, a Kubernetes Secret or the OpenSearch keystore.
-JAVV never keeps a credential in an image or in its runtime settings. In the tables below, a
-**Secret** row holds a credential.
+**Credentials:**
 
-The backend checks its settings when it starts. A value that is not valid stops the start, and
-the error names the setting. Thus a bad value does not let the backend pass `/readyz` and then fail
-each request. Examples of bad values:
+- Credentials go only in a secret store: `.env`, a Kubernetes Secret or the OpenSearch keystore.
+- JAVV never keeps a credential in an image or in its runtime settings.
+- In the tables below, a **Secret** row holds a credential.
+
+**Checks at start:** the backend checks its settings when it starts. A value that is not valid
+stops the start, and the error names the setting. Thus a bad value does not let the backend pass
+`/readyz` and then fail each request. Examples of bad values:
 
 - a limit of zero or less
 - a keep-alive that is not a duration
@@ -51,10 +57,12 @@ description.
 
 ## Backend settings
 
-The backend reads these environment variables. It ignores a `JAVV_` name that it does not know.
-[`compose.yaml`](../deploy/compose/compose.yaml) lists each one with its default. The `javv` chart
-sets each one under `backend.config`. `backend/tests/test_compose_settings.py` keeps both equal to
-the code.
+The backend reads these environment variables.
+
+- It ignores a `JAVV_` name that it does not know.
+- [`compose.yaml`](../deploy/compose/compose.yaml) lists each one with its default.
+- The `javv` chart sets each one under `backend.config`.
+- `backend/tests/test_compose_settings.py` keeps both equal to the code.
 
 ### Deployment
 
@@ -148,9 +156,11 @@ the code.
 ### Job schedules and the time zone
 
 Each `JAVV_JOB_<KIND>_CRON` is a cron expression with five fields: minute, hour, day of month,
-month and day of week. The backend does not accept shortcuts such as `@daily`. An empty value
-means that the job never runs on a schedule. An expression that is not valid stops the start,
-and the error names the setting.
+month and day of week.
+
+- The backend does not accept shortcuts such as `@daily`.
+- An empty value means that the job never runs on a schedule.
+- An expression that is not valid stops the start, and the error names the setting.
 
 - One job runs at a time. When several jobs are due, the report drain starts first.
 - A job does not run because the backend started. Each job waits for its next scheduled time.
@@ -164,22 +174,24 @@ The backend reads the expressions in its local time zone. It finds the zone in t
 2. the zone that `/etc/localtime` links to
 3. UTC.
 
-A `TZ` name that the zone database does not know also gives UTC, and the backend still starts.
-The log line `scheduler started` shows the zone that the backend uses, in `zone` and `zone_source`
-(`TZ`, `system` or `default`). Examine that line after you change `TZ`.
-
-A container has no zone of its own. Thus set `TZ` if `0 3 * * *` must mean 03:00 local time.
-Backends that use the same OpenSearch must use the same zone.
-
-When the clock goes back one hour, a local time that occurs two times runs one time. When the
-clock goes forward, a local time that does not exist runs at the first time after the gap. Thus
-a daily job runs on each day.
+- A `TZ` name that the zone database does not know also gives UTC, and the backend still starts.
+- The log line `scheduler started` shows the zone that the backend uses, in `zone` and
+  `zone_source` (`TZ`, `system` or `default`). Examine that line after you change `TZ`.
+- A container has no zone of its own. Thus set `TZ` if `0 3 * * *` must mean 03:00 local time.
+- Backends that use the same OpenSearch must use the same zone.
+- When the clock goes back one hour, a local time that occurs two times runs one time. When the
+  clock goes forward, a local time that does not exist runs at the first time after the gap. Thus
+  a daily job runs on each day.
 
 ### The javv chart
 
 The `javv` chart sets each backend setting under `backend.config`, by its environment name and at
-its default. To change one, use `--set backend.config.<NAME>=<value>` or your values file. The
-secrets are not in `backend.config`. These values are not settings of the backend:
+its default.
+
+- To change one, use `--set backend.config.<NAME>=<value>` or your values file.
+- The secrets are not in `backend.config`.
+
+These values are not settings of the backend:
 
 | Value | Default | What it does |
 |---|---|---|
@@ -196,10 +208,13 @@ The backend runs as one replica with `strategy: Recreate`. No value changes this
 ## Scanner settings
 
 Each scanner runs as a CronJob in a cluster that you scan. It keeps no state from one cycle to the
-next. The scanner checks each value that you set when it starts. A value that is not valid stops
-the scanner with exit code 2, and the error names the setting. Examples are an unknown scanner
-name, a URL with no scheme, a cluster id with a bad shape and an unknown flag. A setting that you
-do not set always has the default in the table.
+next.
+
+- The scanner checks each value that you set when it starts.
+- A value that is not valid stops the scanner with exit code 2, and the error names the setting.
+  Examples are an unknown scanner name, a URL with no scheme, a cluster id with a bad shape and an
+  unknown flag.
+- A setting that you do not set always has the default in the table.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -214,9 +229,9 @@ do not set always has the default in the table.
 
 ### Files that the scanner writes
 
-The published scanner images run as a user that is not root, `65532:65532`. The entrypoint is
-`python -m scanner`, from the virtual environment of the project. The process writes to three
-places only. Thus the root file system can be read-only.
+- The published scanner images run as a user that is not root, `65532:65532`.
+- The entrypoint is `python -m scanner`, from the virtual environment of the project.
+- The process writes to three places only. Thus the root file system can be read-only.
 
 | Path | Set by | What it holds |
 |---|---|---|
@@ -224,8 +239,9 @@ places only. Thus the root file system can be read-only.
 | `/var/lib/javv` | `JAVV_DEAD_LETTER`, in the `ENV` of the image | The dead-letter file. |
 | `/tmp` | the scanners | The image layers that a scan pulls. |
 
-You can change each path for each CronJob. User 65532 must be able to write to each path that you
-mount. Outside a cluster, user 65532 must also be able to read the kubeconfig that you mount.
+- You can change each path for each CronJob.
+- User 65532 must be able to write to each path that you mount.
+- Outside a cluster, user 65532 must also be able to read the kubeconfig that you mount.
 
 ### Scan scope, scan settings and versions
 
@@ -250,11 +266,16 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
 
 ### The javv-scanner chart
 
-The `javv-scanner` chart runs one CronJob for each scanner in a cluster that you scan. Each scanner
-block (`trivy`, `grype`) has its own image, token, schedule, database source and cache. Each block
-also has `config`: its settings from the [Trivy](#trivy-settings) or [Grype](#grype-settings) table,
-`JAVV_LOG_LEVEL` and `JAVV_PUSH_RETRY_BUDGET_SECONDS`, by environment name, at their defaults. An empty value means not set.
-`scanner/tests/test_helm_config.py` keeps them equal to the code. The other values:
+The `javv-scanner` chart runs one CronJob for each scanner in a cluster that you scan.
+
+- Each scanner block (`trivy`, `grype`) has its own image, token, schedule, database source and
+  cache.
+- Each block also has `config`: its settings from the [Trivy](#trivy-settings) or
+  [Grype](#grype-settings) table, `JAVV_LOG_LEVEL` and `JAVV_PUSH_RETRY_BUDGET_SECONDS`, by
+  environment name, at their defaults. An empty value means not set.
+- `scanner/tests/test_helm_config.py` keeps them equal to the code.
+
+The other values:
 
 | Value | Default | What it does |
 |---|---|---|
@@ -271,11 +292,14 @@ also has `config`: its settings from the [Trivy](#trivy-settings) or [Grype](#gr
 
 ### The database refresh
 
-Each cycle starts with an init container on the image of the scanner. This container refreshes
-the database in the cache volume. Then the scan runs with the update switches of the vendor off:
-`TRIVY_SKIP_DB_UPDATE`, `TRIVY_SKIP_JAVA_DB_UPDATE`, `TRIVY_SKIP_CHECK_UPDATE` and
-`GRYPE_DB_AUTO_UPDATE=false`. The chart sets them. Thus a cycle reads one database and does not
-connect to the vendor during the scan.
+Each cycle starts with an init container on the image of the scanner:
+
+1. This container refreshes the database in the cache volume.
+2. Then the scan runs with the update switches of the vendor off: `TRIVY_SKIP_DB_UPDATE`,
+    `TRIVY_SKIP_JAVA_DB_UPDATE`, `TRIVY_SKIP_CHECK_UPDATE` and `GRYPE_DB_AUTO_UPDATE=false`. The
+    chart sets them.
+
+Thus a cycle reads one database and does not connect to the vendor during the scan.
 
 - If the refresh fails, the scan uses the database in the cache. With no database in the cache,
   the cycle fails.
@@ -294,9 +318,11 @@ connect to the vendor during the scan.
 
 ## Trivy settings
 
-The scanner reads these environment variables. Set them on the CronJob of the scanner, or in
-`trivy.config` of the `javv-scanner` chart. A setting that you do not set has the default in the
-table. The output format stays `json`, because the parser of JAVV needs it.
+The scanner reads these environment variables.
+
+- Set them on the CronJob of the scanner, or in `trivy.config` of the `javv-scanner` chart.
+- A setting that you do not set has the default in the table.
+- The output format stays `json`, because the parser of JAVV needs it.
 
 The scanner checks each value against the values that the pinned Trivy binary accepts:
 
@@ -317,9 +343,11 @@ The scanner checks each value against the values that the pinned Trivy binary ac
 
 ## Grype settings
 
-The scanner reads these environment variables. Set them on the CronJob of the scanner, or in
-`grype.config` of the `javv-scanner` chart. A setting that you do not set has the default in the
-table. The output format stays `json`, because the parser of JAVV needs it.
+The scanner reads these environment variables.
+
+- Set them on the CronJob of the scanner, or in `grype.config` of the `javv-scanner` chart.
+- A setting that you do not set has the default in the table.
+- The output format stays `json`, because the parser of JAVV needs it.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -333,10 +361,12 @@ table. The output format stays `json`, because the parser of JAVV needs it.
 
 ### Frontend server settings
 
-The frontend image runs a small Node server. The server sends the web app to the browser, and
-sends the requests to `/api`, `/auth` and `/readyz` on to the backend. Thus the browser uses one
-address. The server reads these settings when its container starts. A restart applies a change,
-with no new build.
+The frontend image runs a small Node server.
+
+- The server sends the web app to the browser, and sends the requests to `/api`, `/auth` and
+  `/readyz` on to the backend. Thus the browser uses one address.
+- The server reads these settings when its container starts. A restart applies a change, with no
+  new build.
 
 The server sends these headers on each reply, so that JAVV needs no proxy to add them:
 
@@ -345,8 +375,9 @@ The server sends these headers on each reply, so that JAVV needs no proxy to add
 - `X-Frame-Options: DENY` and `frame-ancestors 'none'`: no other site can show JAVV in a frame.
 - `X-Content-Type-Options: nosniff` and `Referrer-Policy: same-origin`.
 
-The server does not send on the `Server` header of the backend. If a proxy in front of JAVV sets
-its own security headers, make sure that they do not replace these headers with weaker ones.
+- The server does not send on the `Server` header of the backend.
+- If a proxy in front of JAVV sets its own security headers, make sure that they do not replace
+  these headers with weaker ones.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -357,8 +388,11 @@ its own security headers, make sure that they do not replace these headers with 
 
 ### Frontend build settings
 
-These settings apply only when you build the frontend image yourself. Vite writes them into the web
-app at build time. To change one, build the image again. A published image has the defaults.
+These settings apply only when you build the frontend image yourself.
+
+- Vite writes them into the web app at build time.
+- To change one, build the image again.
+- A published image has the defaults.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -386,9 +420,12 @@ The browser sends its warnings and errors in batches, and it accepts some loss:
 
 ## OpenSearch settings
 
-These settings belong to OpenSearch. The compose file and the `javv-opensearch` chart set them.
-When you operate your own OpenSearch, you set them. `datastore.opensearch` in
-[`versions.yaml`](../versions.yaml) gives the version that JAVV supports.
+These settings belong to OpenSearch.
+
+- The compose file and the `javv-opensearch` chart set them.
+- When you operate your own OpenSearch, you set them.
+- `datastore.opensearch` in [`versions.yaml`](../versions.yaml) gives the version that JAVV
+  supports.
 
 | Setting | Compose value | What it does | With your own OpenSearch |
 |---|---|---|---|
@@ -407,10 +444,12 @@ When you operate your own OpenSearch, you set them. `datastore.opensearch` in
 ### The javv-opensearch chart
 
 The `javv-opensearch` chart runs the same OpenSearch settings as compose, as values of the
-official chart under `opensearch:`. The keys of JAVV are under `opensearch.javv`. A wrapper chart
-cannot calculate the values of its subchart, so these keys are at a place that both charts can
-read. The [chart README](../deploy/helm/javv-opensearch/README.md) gives the full list, with the
-keys of the official chart that this chart sets.
+official chart under `opensearch:`.
+
+- The keys of JAVV are under `opensearch.javv`. A wrapper chart cannot calculate the values of its
+  subchart, so these keys are at a place that both charts can read.
+- The [chart README](../deploy/helm/javv-opensearch/README.md) gives the full list, with the keys
+  of the official chart that this chart sets.
 
 | Value | Default | What it does |
 |---|---|---|
@@ -426,10 +465,12 @@ keys of the official chart that this chart sets.
 
 ## Runtime settings
 
-JAVV keeps these settings as data in OpenSearch, in the `system-config` index. You change them in
-the web app or with the API, while JAVV runs. You do not need a new build or a restart. Each
-change writes an entry to the audit log. A per-cluster value replaces the fleet value for that
-cluster.
+JAVV keeps these settings as data in OpenSearch, in the `system-config` index.
+
+- You change them in the web app or with the API, while JAVV runs. You do not need a new build or
+  a restart.
+- Each change writes an entry to the audit log.
+- A per-cluster value replaces the fleet value for that cluster.
 
 | Setting | Default | Scope | Where in the web app | Permission to change it |
 |---|---|---|---|---|
@@ -458,8 +499,7 @@ cluster.
   `javv-inventory-runs-*` and `javv-ingest-failures-*`). Time travel reads this history. A snapshot
   also does not hold `javv-scan-orders` and `javv-scan-watermarks`. Thus a restore from a snapshot
   does not bring back the history.
-- JAVV does not make scheduled snapshots yet
-  ([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
+- JAVV does not make scheduled snapshots yet.
 
 ### Retention and rollover
 
@@ -586,14 +626,19 @@ cluster.
 
 ## Fixed values
 
-Some values in the code never change. They are not `JAVV_*` settings and not runtime settings. A
-setting for them would add work for operators. Also, a wrong value would hide a bug, not change a
-workload.
+Some values in the code never change. They are not `JAVV_*` settings and not runtime settings:
+
+- A setting for them would add work for operators.
+- A wrong value would hide a bug, not change a workload.
 
 To decide, ask this question: does an operator have a reason to change the value for their
-workload? If yes, the value is a setting. If the only reason is "a bug makes us get to the limit",
-the value stays in the code: fix the bug. For example, the bulk limit is a setting
-(`JAVV_BULK_MAX_TARGETS`), but the page size of a bulk selection (`_FREEZE_PAGE`) stays in the code.
+workload?
+
+- If yes, the value is a setting.
+- If the only reason is "a bug makes us get to the limit", the value stays in the code: fix the
+  bug.
+- For example, the bulk limit is a setting (`JAVV_BULK_MAX_TARGETS`), but the page size of a bulk
+  selection (`_FREEZE_PAGE`) stays in the code.
 
 | Kind | Values | Why they are not settings |
 |---|---|---|

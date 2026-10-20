@@ -4,10 +4,11 @@ This page tells you which OpenSearch indices JAVV uses, what each index holds, a
 keeps the data. It also tells you what a snapshot holds. For the disk space and the shards that the
 data needs, see [Sizing OpenSearch](opensearch-sizing.md).
 
-JAVV keeps all of its data in one OpenSearch. The name of each index of JAVV is `findings`, or it
-starts with `javv-` or `system-`. The `javv` role of OpenSearch permits only these indices, and the
-`restored-*` copies that a restore writes
-([An OpenSearch of your own](../DEPLOYING.md#an-opensearch-of-your-own)).
+JAVV keeps all of its data in one OpenSearch:
+
+- The name of each index of JAVV is `findings`, or it starts with `javv-` or `system-`.
+- The `javv` role of OpenSearch permits only these indices, and the `restored-*` copies that a
+  restore writes ([An OpenSearch of your own](../DEPLOYING.md#an-opensearch-of-your-own)).
 
 ## See the indices
 
@@ -22,35 +23,39 @@ starts with `javv-` or `system-`. The `javv` role of OpenSearch permits only the
 2. Go to **Settings › Data & OpenSearch**.
 3. In **Retention**, set the days for all clusters, or for one cluster.
 
-The lifecycle sweep deletes the history indices that are older than the new retention at its next
-run (03:00 by default). After that, time travel cannot show that period.
-[Retention and rollover](../CONFIGURATION.md#retention-and-rollover) gives the settings.
+- The lifecycle sweep deletes the history indices that are older than the new retention at its
+  next run (03:00 by default).
+- After that, time travel cannot show that period.
+- [Retention and rollover](../CONFIGURATION.md#retention-and-rollover) gives the settings.
 
 ## Back up the data
 
-A snapshot from **Settings › Data & OpenSearch › Snapshot now** holds `findings`, `javv-images-*`
-and `system-*`, except `system-sessions`. These indices hold the current state, the triage, the
-decisions, the users, the settings and the audit log.
+A snapshot from **Settings › Data & OpenSearch › Snapshot now**:
 
-A snapshot does not hold the sessions. A sign-out only marks its session as ended, so a restored
-copy could make an ended session valid again. After a restore, the users sign in again.
+- **Holds** `findings`, `javv-images-*` and `system-*`, except `system-sessions`. These indices hold
+  the current state, the triage, the decisions, the users, the settings and the audit log.
+- **Does not hold the sessions.** A sign-out only marks its session as ended, so a restored copy
+  could make an ended session valid again. After a restore, the users sign in again.
+- **Does not hold the scan history** (`javv-finding-occurrences-*`, `javv-scan-events-*`,
+  `javv-inventory-runs-*` and `javv-ingest-failures-*`), `javv-scan-orders` or
+  `javv-scan-watermarks`. Thus a restore does not bring back the history that time travel reads.
 
-A snapshot does not hold the scan history (`javv-finding-occurrences-*`, `javv-scan-events-*`,
-`javv-inventory-runs-*` and `javv-ingest-failures-*`), `javv-scan-orders` or
-`javv-scan-watermarks`. Thus a restore does not bring back the history that time travel reads. JAVV
-also does not make scheduled snapshots yet
-([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
+Also:
 
-A restore writes `restored-*` copies, and never writes over the live indices.
-[Snapshots](../CONFIGURATION.md#snapshots) tells you how to set up the snapshot repository.
+- JAVV does not make scheduled snapshots yet.
+- A restore writes `restored-*` copies, and never writes over the live indices.
+- [Snapshots](../CONFIGURATION.md#snapshots) tells you how to set up the snapshot repository.
 
 ## The history indices
 
-Each cluster has its own series of each of these indices. JAVV makes the first index of a series
-when the cluster sends its first data. The lifecycle sweep starts a new index in a series at 30
-days, 5,000,000 documents or 50 GB, the first limit that the series gets to. The sweep deletes an
-index when its newest data is older than the retention of the cluster (90 days by default). Each
-limit is a setting ([Retention and rollover](../CONFIGURATION.md#retention-and-rollover)).
+Each cluster has its own series of each of these indices:
+
+- JAVV makes the first index of a series when the cluster sends its first data.
+- The lifecycle sweep starts a new index in a series at 30 days, 5,000,000 documents or 50 GB, the
+  first limit that the series gets to.
+- The sweep deletes an index when its newest data is older than the retention of the cluster (90
+  days by default).
+- Each limit is a setting ([Retention and rollover](../CONFIGURATION.md#retention-and-rollover)).
 
 | Index | What it holds |
 |---|---|

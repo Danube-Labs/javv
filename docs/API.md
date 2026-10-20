@@ -13,7 +13,14 @@ connect the JAVV scanners, read [Connect the scanners](DEPLOYING.md#connect-the-
 ## Sign in from a script
 
 A script uses the same address as a browser. The frontend sends `/api`, `/auth` and `/readyz` to
-the backend. These commands need bash, `curl` and `jq`.
+the backend.
+
+**Prerequisites:**
+
+- bash, `curl` and `jq`.
+- A JAVV user name and password.
+
+**Steps:**
 
 1. Set the address of JAVV:
     ```bash
@@ -54,16 +61,21 @@ Keep the file `jar` private. Until the session ends, the cookie in it gives acce
 A list endpoint gives one page of rows. [List responses](#list-responses) shows the three forms of
 a list. This procedure reads all the findings of one cluster with the cursor.
 
-1. Sign in ([Sign in from a script](#sign-in-from-a-script)).
-2. Find the id of the cluster:
+**Prerequisites:**
+
+- A session cookie in the file `jar` ([Sign in from a script](#sign-in-from-a-script)).
+
+**Steps:**
+
+1. Find the id of the cluster:
     ```bash
     curl -sf -b jar "$JAVV/api/v1/clusters" | jq -r '.clusters[] | "\(.cluster_id) \(.cluster_name)"'
     ```
-3. Set the id:
+2. Set the id:
     ```bash
     cluster=<cluster_id>
     ```
-4. Read each page, 500 rows at a time. Send `next_cursor` back as `cursor` until it is `null`:
+3. Read each page, 500 rows at a time. Send `next_cursor` back as `cursor` until it is `null`:
     ```bash
     cursor=
     while :; do
@@ -74,10 +86,10 @@ a list. This procedure reads all the findings of one cluster with the cursor.
       [ -n "$cursor" ] || break
     done > findings.jsonl
     ```
-5. Compare the number of lines in `findings.jsonl` with `total.value` of a page. If they are not
+4. Compare the number of lines in `findings.jsonl` with `total.value` of a page. If they are not
    equal, a page failed. Read the list again.
 
-A cursor stays valid for a short time only. If a page answers 410, start again at step 4.
+A cursor stays valid for a short time only. If a page answers 410, start again at step 3.
 
 To stop before the last page, close the cursor. Until then, it keeps one of your open-cursor
 slots ([Exports and reports](#exports-and-reports)):
@@ -88,8 +100,17 @@ jq -n --arg c "$cursor" '{cursor: $c}' |
 
 ## Scrape the metrics
 
-The backend gives its metrics at `/metrics`, in the Prometheus format. This path needs no sign-in.
-The frontend does not send it to the backend. [Metrics](#metrics) lists each metric.
+The backend gives its metrics at `/metrics`, in the Prometheus format.
+
+- This path needs no sign-in.
+- The frontend does not send it to the backend.
+- [Metrics](#metrics) lists each metric.
+
+**Prerequisites:**
+
+- A Prometheus that can connect to the backend port, 8000.
+
+**Steps:**
 
 1. Let your Prometheus connect to the backend port, 8000:
     - with docker compose: publish the port. Use the `ports` block in comments under `backend` in
@@ -219,7 +240,7 @@ Each answer that is not a success has the same body, with the type `application/
 | 415 | The sign-in body has a JSON type that is not `application/json`. |
 | 422 | A field is not valid. `detail` names the field. |
 | 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has `Retry-After: 5`. |
-| 503 | OpenSearch is not available. Do the request again later. The type `store-read-only`, with the title "The store is read-only: its disk is full", tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
+| 503 | OpenSearch is not available. Do the request again later. The type `store-read-only`, with the title `The store is read-only: its disk is full`, tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
 
 ## List responses
 

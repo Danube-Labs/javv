@@ -39,6 +39,10 @@
         {
           "type": "generic",
           "path": "deploy/helm/javv-scanner/Chart.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "docs/UPGRADING.md"
         }
       ]
     }
