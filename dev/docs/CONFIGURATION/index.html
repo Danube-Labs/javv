@@ -2259,8 +2259,13 @@
 
 
 <h1 id="configuring-javv">Configuring JAVV<a class="headerlink" href="#configuring-javv" title="Permanent link">&para;</a></h1>
-<p>This page lists the settings of JAVV. For each setting, it gives the default, what the setting does
-and where you set it. It is for the people who install and operate JAVV.</p>
+<p>This page lists the settings of JAVV, for the people who install and operate JAVV. For each
+setting, it gives:</p>
+<ul>
+<li>The default.</li>
+<li>What the setting does.</li>
+<li>Where you set it.</li>
+</ul>
 <h2 id="where-the-settings-are">Where the settings are<a class="headerlink" href="#where-the-settings-are" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2293,12 +2298,15 @@ and where you set it. It is for the people who install and operate JAVV.</p>
 </tr>
 </tbody>
 </table>
-<p>Credentials go only in a secret store: <code>.env</code>, a Kubernetes Secret or the OpenSearch keystore.
-JAVV never keeps a credential in an image or in its runtime settings. In the tables below, a
-<strong>Secret</strong> row holds a credential.</p>
-<p>The backend checks its settings when it starts. A value that is not valid stops the start, and
-the error names the setting. Thus a bad value does not let the backend pass <code>/readyz</code> and then fail
-each request. Examples of bad values:</p>
+<p><strong>Credentials:</strong></p>
+<ul>
+<li>Credentials go only in a secret store: <code>.env</code>, a Kubernetes Secret or the OpenSearch keystore.</li>
+<li>JAVV never keeps a credential in an image or in its runtime settings.</li>
+<li>In the tables below, a <strong>Secret</strong> row holds a credential.</li>
+</ul>
+<p><strong>Checks at start:</strong> the backend checks its settings when it starts. A value that is not valid
+stops the start, and the error names the setting. Thus a bad value does not let the backend pass
+<code>/readyz</code> and then fail each request. Examples of bad values:</p>
 <ul>
 <li>a limit of zero or less</li>
 <li>a keep-alive that is not a duration</li>
@@ -2330,10 +2338,13 @@ description.</p>
 <li>Change the value, then save it.</li>
 </ol>
 <h2 id="backend-settings">Backend settings<a class="headerlink" href="#backend-settings" title="Permanent link">&para;</a></h2>
-<p>The backend reads these environment variables. It ignores a <code>JAVV_</code> name that it does not know.
-<a href="../../deploy/compose/compose.yaml"><code>compose.yaml</code></a> lists each one with its default. The <code>javv</code> chart
-sets each one under <code>backend.config</code>. <code>backend/tests/test_compose_settings.py</code> keeps both equal to
-the code.</p>
+<p>The backend reads these environment variables.</p>
+<ul>
+<li>It ignores a <code>JAVV_</code> name that it does not know.</li>
+<li><a href="../../deploy/compose/compose.yaml"><code>compose.yaml</code></a> lists each one with its default.</li>
+<li>The <code>javv</code> chart sets each one under <code>backend.config</code>.</li>
+<li><code>backend/tests/test_compose_settings.py</code> keeps both equal to the code.</li>
+</ul>
 <h3 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2664,11 +2675,16 @@ the code.</p>
 </table>
 <h3 id="job-schedules-and-the-time-zone">Job schedules and the time zone<a class="headerlink" href="#job-schedules-and-the-time-zone" title="Permanent link">&para;</a></h3>
 <p>Each <code>JAVV_JOB_&lt;KIND&gt;_CRON</code> is a cron expression with five fields: minute, hour, day of month,
-month and day of week. The backend does not accept shortcuts such as <code>@daily</code>. An empty value
-means that the job never runs on a schedule. An expression that is not valid stops the start,
-and the error names the setting.</p>
+month and day of week.</p>
 <ul>
-<li>One job runs at a time. When several jobs are due, the report drain starts first.</li>
+<li>The backend does not accept shortcuts such as <code>@daily</code>.</li>
+<li>An empty value means that the job never runs on a schedule.</li>
+<li>
+<p>An expression that is not valid stops the start, and the error names the setting.</p>
+</li>
+<li>
+<p>One job runs at a time. When several jobs are due, the report drain starts first.</p>
+</li>
 <li>A job does not run because the backend started. Each job waits for its next scheduled time.</li>
 <li>A restart can stop a job before it ends. That job runs again when its lease becomes stale
   (<code>JAVV_REPORT_LEASE_TTL_SECONDS</code>).</li>
@@ -2678,20 +2694,28 @@ and the error names the setting.</p>
 <ol>
 <li>the <code>TZ</code> environment variable, for example <code>TZ=Europe/Bucharest</code></li>
 <li>the zone that <code>/etc/localtime</code> links to</li>
-<li>UTC.</li>
+<li>
+<p>UTC.</p>
+</li>
+<li>
+<p>A <code>TZ</code> name that the zone database does not know also gives UTC, and the backend still starts.</p>
+</li>
+<li>The log line <code>scheduler started</code> shows the zone that the backend uses, in <code>zone</code> and
+  <code>zone_source</code> (<code>TZ</code>, <code>system</code> or <code>default</code>). Examine that line after you change <code>TZ</code>.</li>
+<li>A container has no zone of its own. Thus set <code>TZ</code> if <code>0 3 * * *</code> must mean 03:00 local time.</li>
+<li>Backends that use the same OpenSearch must use the same zone.</li>
+<li>When the clock goes back one hour, a local time that occurs two times runs one time. When the
+  clock goes forward, a local time that does not exist runs at the first time after the gap. Thus
+  a daily job runs on each day.</li>
 </ol>
-<p>A <code>TZ</code> name that the zone database does not know also gives UTC, and the backend still starts.
-The log line <code>scheduler started</code> shows the zone that the backend uses, in <code>zone</code> and <code>zone_source</code>
-(<code>TZ</code>, <code>system</code> or <code>default</code>). Examine that line after you change <code>TZ</code>.</p>
-<p>A container has no zone of its own. Thus set <code>TZ</code> if <code>0 3 * * *</code> must mean 03:00 local time.
-Backends that use the same OpenSearch must use the same zone.</p>
-<p>When the clock goes back one hour, a local time that occurs two times runs one time. When the
-clock goes forward, a local time that does not exist runs at the first time after the gap. Thus
-a daily job runs on each day.</p>
 <h3 id="the-javv-chart">The javv chart<a class="headerlink" href="#the-javv-chart" title="Permanent link">&para;</a></h3>
 <p>The <code>javv</code> chart sets each backend setting under <code>backend.config</code>, by its environment name and at
-its default. To change one, use <code>--set backend.config.&lt;NAME&gt;=&lt;value&gt;</code> or your values file. The
-secrets are not in <code>backend.config</code>. These values are not settings of the backend:</p>
+its default.</p>
+<ul>
+<li>To change one, use <code>--set backend.config.&lt;NAME&gt;=&lt;value&gt;</code> or your values file.</li>
+<li>The secrets are not in <code>backend.config</code>.</li>
+</ul>
+<p>These values are not settings of the backend:</p>
 <table>
 <thead>
 <tr>
@@ -2741,10 +2765,14 @@ secrets are not in <code>backend.config</code>. These values are not settings of
 <p>The backend runs as one replica with <code>strategy: Recreate</code>. No value changes this.</p>
 <h2 id="scanner-settings">Scanner settings<a class="headerlink" href="#scanner-settings" title="Permanent link">&para;</a></h2>
 <p>Each scanner runs as a CronJob in a cluster that you scan. It keeps no state from one cycle to the
-next. The scanner checks each value that you set when it starts. A value that is not valid stops
-the scanner with exit code 2, and the error names the setting. Examples are an unknown scanner
-name, a URL with no scheme, a cluster id with a bad shape and an unknown flag. A setting that you
-do not set always has the default in the table.</p>
+next.</p>
+<ul>
+<li>The scanner checks each value that you set when it starts.</li>
+<li>A value that is not valid stops the scanner with exit code 2, and the error names the setting.
+  Examples are an unknown scanner name, a URL with no scheme, a cluster id with a bad shape and an
+  unknown flag.</li>
+<li>A setting that you do not set always has the default in the table.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -2797,9 +2825,11 @@ do not set always has the default in the table.</p>
 </tbody>
 </table>
 <h3 id="files-that-the-scanner-writes">Files that the scanner writes<a class="headerlink" href="#files-that-the-scanner-writes" title="Permanent link">&para;</a></h3>
-<p>The published scanner images run as a user that is not root, <code>65532:65532</code>. The entrypoint is
-<code>python -m scanner</code>, from the virtual environment of the project. The process writes to three
-places only. Thus the root file system can be read-only.</p>
+<ul>
+<li>The published scanner images run as a user that is not root, <code>65532:65532</code>.</li>
+<li>The entrypoint is <code>python -m scanner</code>, from the virtual environment of the project.</li>
+<li>The process writes to three places only. Thus the root file system can be read-only.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -2826,8 +2856,11 @@ places only. Thus the root file system can be read-only.</p>
 </tr>
 </tbody>
 </table>
-<p>You can change each path for each CronJob. User 65532 must be able to write to each path that you
-mount. Outside a cluster, user 65532 must also be able to read the kubeconfig that you mount.</p>
+<ul>
+<li>You can change each path for each CronJob.</li>
+<li>User 65532 must be able to write to each path that you mount.</li>
+<li>Outside a cluster, user 65532 must also be able to read the kubeconfig that you mount.</li>
+</ul>
 <h3 id="scan-scope-scan-settings-and-versions">Scan scope, scan settings and versions<a class="headerlink" href="#scan-scope-scan-settings-and-versions" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Scan scope</strong> (the namespaces, images and kinds to scan) is a
@@ -2850,11 +2883,16 @@ mount. Outside a cluster, user 65532 must also be able to read the kubeconfig th
   change the image tag. The web app shows the version and has no control to select one.</li>
 </ul>
 <h3 id="the-javv-scanner-chart">The javv-scanner chart<a class="headerlink" href="#the-javv-scanner-chart" title="Permanent link">&para;</a></h3>
-<p>The <code>javv-scanner</code> chart runs one CronJob for each scanner in a cluster that you scan. Each scanner
-block (<code>trivy</code>, <code>grype</code>) has its own image, token, schedule, database source and cache. Each block
-also has <code>config</code>: its settings from the <a href="#trivy-settings">Trivy</a> or <a href="#grype-settings">Grype</a> table,
-<code>JAVV_LOG_LEVEL</code> and <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code>, by environment name, at their defaults. An empty value means not set.
-<code>scanner/tests/test_helm_config.py</code> keeps them equal to the code. The other values:</p>
+<p>The <code>javv-scanner</code> chart runs one CronJob for each scanner in a cluster that you scan.</p>
+<ul>
+<li>Each scanner block (<code>trivy</code>, <code>grype</code>) has its own image, token, schedule, database source and
+  cache.</li>
+<li>Each block also has <code>config</code>: its settings from the <a href="#trivy-settings">Trivy</a> or
+  <a href="#grype-settings">Grype</a> table, <code>JAVV_LOG_LEVEL</code> and <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code>, by
+  environment name, at their defaults. An empty value means not set.</li>
+<li><code>scanner/tests/test_helm_config.py</code> keeps them equal to the code.</li>
+</ul>
+<p>The other values:</p>
 <table>
 <thead>
 <tr>
@@ -2917,11 +2955,14 @@ also has <code>config</code>: its settings from the <a href="#trivy-settings">Tr
 </tbody>
 </table>
 <h3 id="the-database-refresh">The database refresh<a class="headerlink" href="#the-database-refresh" title="Permanent link">&para;</a></h3>
-<p>Each cycle starts with an init container on the image of the scanner. This container refreshes
-the database in the cache volume. Then the scan runs with the update switches of the vendor off:
-<code>TRIVY_SKIP_DB_UPDATE</code>, <code>TRIVY_SKIP_JAVA_DB_UPDATE</code>, <code>TRIVY_SKIP_CHECK_UPDATE</code> and
-<code>GRYPE_DB_AUTO_UPDATE=false</code>. The chart sets them. Thus a cycle reads one database and does not
-connect to the vendor during the scan.</p>
+<p>Each cycle starts with an init container on the image of the scanner:</p>
+<ol>
+<li>This container refreshes the database in the cache volume.</li>
+<li>Then the scan runs with the update switches of the vendor off: <code>TRIVY_SKIP_DB_UPDATE</code>,
+    <code>TRIVY_SKIP_JAVA_DB_UPDATE</code>, <code>TRIVY_SKIP_CHECK_UPDATE</code> and <code>GRYPE_DB_AUTO_UPDATE=false</code>. The
+    chart sets them.</li>
+</ol>
+<p>Thus a cycle reads one database and does not connect to the vendor during the scan.</p>
 <ul>
 <li>If the refresh fails, the scan uses the database in the cache. With no database in the cache,
   the cycle fails.</li>
@@ -2939,9 +2980,12 @@ connect to the vendor during the scan.</p>
   <code>resources</code> or <code>pullPolicy</code>.</li>
 </ul>
 <h2 id="trivy-settings">Trivy settings<a class="headerlink" href="#trivy-settings" title="Permanent link">&para;</a></h2>
-<p>The scanner reads these environment variables. Set them on the CronJob of the scanner, or in
-<code>trivy.config</code> of the <code>javv-scanner</code> chart. A setting that you do not set has the default in the
-table. The output format stays <code>json</code>, because the parser of JAVV needs it.</p>
+<p>The scanner reads these environment variables.</p>
+<ul>
+<li>Set them on the CronJob of the scanner, or in <code>trivy.config</code> of the <code>javv-scanner</code> chart.</li>
+<li>A setting that you do not set has the default in the table.</li>
+<li>The output format stays <code>json</code>, because the parser of JAVV needs it.</li>
+</ul>
 <p>The scanner checks each value against the values that the pinned Trivy binary accepts:</p>
 <ul>
 <li>scanners: <code>vuln</code>, <code>misconfig</code>, <code>secret</code>, <code>license</code></li>
@@ -2996,9 +3040,12 @@ table. The output format stays <code>json</code>, because the parser of JAVV nee
 </tbody>
 </table>
 <h2 id="grype-settings">Grype settings<a class="headerlink" href="#grype-settings" title="Permanent link">&para;</a></h2>
-<p>The scanner reads these environment variables. Set them on the CronJob of the scanner, or in
-<code>grype.config</code> of the <code>javv-scanner</code> chart. A setting that you do not set has the default in the
-table. The output format stays <code>json</code>, because the parser of JAVV needs it.</p>
+<p>The scanner reads these environment variables.</p>
+<ul>
+<li>Set them on the CronJob of the scanner, or in <code>grype.config</code> of the <code>javv-scanner</code> chart.</li>
+<li>A setting that you do not set has the default in the table.</li>
+<li>The output format stays <code>json</code>, because the parser of JAVV needs it.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -3037,19 +3084,27 @@ table. The output format stays <code>json</code>, because the parser of JAVV nee
 </table>
 <h2 id="frontend-settings">Frontend settings<a class="headerlink" href="#frontend-settings" title="Permanent link">&para;</a></h2>
 <h3 id="frontend-server-settings">Frontend server settings<a class="headerlink" href="#frontend-server-settings" title="Permanent link">&para;</a></h3>
-<p>The frontend image runs a small Node server. The server sends the web app to the browser, and
-sends the requests to <code>/api</code>, <code>/auth</code> and <code>/readyz</code> on to the backend. Thus the browser uses one
-address. The server reads these settings when its container starts. A restart applies a change,
-with no new build.</p>
+<p>The frontend image runs a small Node server.</p>
+<ul>
+<li>The server sends the web app to the browser, and sends the requests to <code>/api</code>, <code>/auth</code> and
+  <code>/readyz</code> on to the backend. Thus the browser uses one address.</li>
+<li>The server reads these settings when its container starts. A restart applies a change, with no
+  new build.</li>
+</ul>
 <p>The server sends these headers on each reply, so that JAVV needs no proxy to add them:</p>
 <ul>
 <li><code>Content-Security-Policy</code>: the browser loads scripts, styles, fonts and data only from the JAVV
   address. Each page gets a new nonce for the styles of the web app. No inline script runs.</li>
 <li><code>X-Frame-Options: DENY</code> and <code>frame-ancestors 'none'</code>: no other site can show JAVV in a frame.</li>
-<li><code>X-Content-Type-Options: nosniff</code> and <code>Referrer-Policy: same-origin</code>.</li>
+<li>
+<p><code>X-Content-Type-Options: nosniff</code> and <code>Referrer-Policy: same-origin</code>.</p>
+</li>
+<li>
+<p>The server does not send on the <code>Server</code> header of the backend.</p>
+</li>
+<li>If a proxy in front of JAVV sets its own security headers, make sure that they do not replace
+  these headers with weaker ones.</li>
 </ul>
-<p>The server does not send on the <code>Server</code> header of the backend. If a proxy in front of JAVV sets
-its own security headers, make sure that they do not replace these headers with weaker ones.</p>
 <table>
 <thead>
 <tr>
@@ -3082,8 +3137,12 @@ its own security headers, make sure that they do not replace these headers with 
 </tbody>
 </table>
 <h3 id="frontend-build-settings">Frontend build settings<a class="headerlink" href="#frontend-build-settings" title="Permanent link">&para;</a></h3>
-<p>These settings apply only when you build the frontend image yourself. Vite writes them into the web
-app at build time. To change one, build the image again. A published image has the defaults.</p>
+<p>These settings apply only when you build the frontend image yourself.</p>
+<ul>
+<li>Vite writes them into the web app at build time.</li>
+<li>To change one, build the image again.</li>
+<li>A published image has the defaults.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -3132,9 +3191,13 @@ app at build time. To change one, build the image again. A published image has t
   fewer arrives with no change.</li>
 </ul>
 <h2 id="opensearch-settings">OpenSearch settings<a class="headerlink" href="#opensearch-settings" title="Permanent link">&para;</a></h2>
-<p>These settings belong to OpenSearch. The compose file and the <code>javv-opensearch</code> chart set them.
-When you operate your own OpenSearch, you set them. <code>datastore.opensearch</code> in
-<a href="../../versions.yaml"><code>versions.yaml</code></a> gives the version that JAVV supports.</p>
+<p>These settings belong to OpenSearch.</p>
+<ul>
+<li>The compose file and the <code>javv-opensearch</code> chart set them.</li>
+<li>When you operate your own OpenSearch, you set them.</li>
+<li><code>datastore.opensearch</code> in <a href="../../versions.yaml"><code>versions.yaml</code></a> gives the version that JAVV
+  supports.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -3215,10 +3278,13 @@ When you operate your own OpenSearch, you set them. <code>datastore.opensearch</
 </table>
 <h3 id="the-javv-opensearch-chart">The javv-opensearch chart<a class="headerlink" href="#the-javv-opensearch-chart" title="Permanent link">&para;</a></h3>
 <p>The <code>javv-opensearch</code> chart runs the same OpenSearch settings as compose, as values of the
-official chart under <code>opensearch:</code>. The keys of JAVV are under <code>opensearch.javv</code>. A wrapper chart
-cannot calculate the values of its subchart, so these keys are at a place that both charts can
-read. The <a href="../../deploy/helm/javv-opensearch/">chart README</a> gives the full list, with the
-keys of the official chart that this chart sets.</p>
+official chart under <code>opensearch:</code>.</p>
+<ul>
+<li>The keys of JAVV are under <code>opensearch.javv</code>. A wrapper chart cannot calculate the values of its
+  subchart, so these keys are at a place that both charts can read.</li>
+<li>The <a href="../../deploy/helm/javv-opensearch/">chart README</a> gives the full list, with the keys
+  of the official chart that this chart sets.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -3276,10 +3342,13 @@ keys of the official chart that this chart sets.</p>
 </tbody>
 </table>
 <h2 id="runtime-settings">Runtime settings<a class="headerlink" href="#runtime-settings" title="Permanent link">&para;</a></h2>
-<p>JAVV keeps these settings as data in OpenSearch, in the <code>system-config</code> index. You change them in
-the web app or with the API, while JAVV runs. You do not need a new build or a restart. Each
-change writes an entry to the audit log. A per-cluster value replaces the fleet value for that
-cluster.</p>
+<p>JAVV keeps these settings as data in OpenSearch, in the <code>system-config</code> index.</p>
+<ul>
+<li>You change them in the web app or with the API, while JAVV runs. You do not need a new build or
+  a restart.</li>
+<li>Each change writes an entry to the audit log.</li>
+<li>A per-cluster value replaces the fleet value for that cluster.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -3377,8 +3446,7 @@ cluster.</p>
   <code>javv-inventory-runs-*</code> and <code>javv-ingest-failures-*</code>). Time travel reads this history. A snapshot
   also does not hold <code>javv-scan-orders</code> and <code>javv-scan-watermarks</code>. Thus a restore from a snapshot
   does not bring back the history.</li>
-<li>JAVV does not make scheduled snapshots yet
-  (<a href="https://github.com/Danube-Labs/javv-poc/issues/664">issue 664</a>).</li>
+<li>JAVV does not make scheduled snapshots yet.</li>
 </ul>
 <h3 id="retention-and-rollover">Retention and rollover<a class="headerlink" href="#retention-and-rollover" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3504,13 +3572,20 @@ cluster.</p>
 <li>Each user has a role and a copy of the capabilities of that role, in <code>system-users</code>.</li>
 </ul>
 <h2 id="fixed-values">Fixed values<a class="headerlink" href="#fixed-values" title="Permanent link">&para;</a></h2>
-<p>Some values in the code never change. They are not <code>JAVV_*</code> settings and not runtime settings. A
-setting for them would add work for operators. Also, a wrong value would hide a bug, not change a
-workload.</p>
+<p>Some values in the code never change. They are not <code>JAVV_*</code> settings and not runtime settings:</p>
+<ul>
+<li>A setting for them would add work for operators.</li>
+<li>A wrong value would hide a bug, not change a workload.</li>
+</ul>
 <p>To decide, ask this question: does an operator have a reason to change the value for their
-workload? If yes, the value is a setting. If the only reason is "a bug makes us get to the limit",
-the value stays in the code: fix the bug. For example, the bulk limit is a setting
-(<code>JAVV_BULK_MAX_TARGETS</code>), but the page size of a bulk selection (<code>_FREEZE_PAGE</code>) stays in the code.</p>
+workload?</p>
+<ul>
+<li>If yes, the value is a setting.</li>
+<li>If the only reason is "a bug makes us get to the limit", the value stays in the code: fix the
+  bug.</li>
+<li>For example, the bulk limit is a setting (<code>JAVV_BULK_MAX_TARGETS</code>), but the page size of a bulk
+  selection (<code>_FREEZE_PAGE</code>) stays in the code.</li>
+</ul>
 <table>
 <thead>
 <tr>
