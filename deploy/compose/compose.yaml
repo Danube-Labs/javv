@@ -1,13 +1,13 @@
-# JAVV on one machine: OpenSearch, the backend and the frontend (issue 452).
+# JAVV on one machine: OpenSearch, the backend and the frontend.
 #
-#   cp .env.example .env      # then set the three secrets in .env
+#   ./setup.sh                # makes .env with the four secrets (docs/DEPLOYING.md, step 2)
 #   docker compose up -d
 #   open http://<this machine>:8080
 #
 # Every backend setting is listed below with its default and what it does
 # (docs/CONFIGURATION.md has the long form). Each one is written ${NAME:-default}, so a line in
-# .env overrides it without an edit here. backend/tests/test_compose_settings.py holds this file
-# to the code defaults. Guide: docs/DEPLOYING.md.
+# .env overrides it without an edit here. A test keeps these defaults equal to the defaults in
+# the code. Guide: docs/DEPLOYING.md.
 #
 # The backend and frontend images are the ones a release publishes under its version; each release
 # PR moves both tags. To run a checkout that is not a release, build them first with
@@ -22,14 +22,14 @@ services:
   opensearch:
     image: opensearchproject/opensearch:3.9.0
     restart: unless-stopped
-    # The demo security setup also loads six users whose password is their own name (readall can
-    # search every index), and no setting turns them off. So before the image's own entrypoint
-    # runs, its users file keeps only _meta and admin (issue 736) and adds javv, the user the
-    # backend signs in as, with its password hashed by OpenSearch's own tool (issue 729). The demo
-    # setup then sets admin's password from OPENSEARCH_INITIAL_ADMIN_PASSWORD as before. OpenSearch
-    # reads the users, roles and role-mapping files on its first start with security on. The
-    # command below reaches the image's entrypoint as it would without this one (javv-opensearch
-    # is only bash's $0), so `compose run` still works.
+    # The demo security setup of the image also adds six users whose password is their own name
+    # (readall can read every index), and no setting turns them off. So, before the start script of
+    # the image runs, the command below keeps only _meta and admin in the users file. It also adds
+    # javv, the user that the backend signs in as, with its password hashed by the hash.sh tool of
+    # OpenSearch. The demo setup then sets the admin password from
+    # OPENSEARCH_INITIAL_ADMIN_PASSWORD. OpenSearch reads the users, roles and role-mapping files on
+    # its first start with security on. The command then starts the script of the image with the
+    # same arguments, so `compose run` still works.
     entrypoint:
       - /bin/bash
       - -c
@@ -54,9 +54,9 @@ services:
       discovery.type: single-node
       # The security plugin is on, with OpenSearch's demo certificates: a real login, but not
       # private TLS, since the demo key ships in the image. OpenSearch is still reachable only on
-      # this compose network (no published port), and the backend is its only client. Both
-      # passwords are used once, when the store first starts with security on (issue 715): admin's
-      # stays with the store and its health check, javv's is what the backend signs in with.
+      # this compose network (no published port), and the backend is its only client. OpenSearch
+      # reads both passwords one time, on its first start with security on. The admin password
+      # stays with the store and its health check. The backend signs in with the javv password.
       # See docs/DEPLOYING.md.
       OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${JAVV_OPENSEARCH_ADMIN_PASSWORD:?set JAVV_OPENSEARCH_ADMIN_PASSWORD in .env}
       OPENSEARCH_JAVV_PASSWORD: ${JAVV_OPENSEARCH_PASSWORD:?set JAVV_OPENSEARCH_PASSWORD in .env}
@@ -72,7 +72,7 @@ services:
       path.repo: /usr/share/opensearch/data/snapshots
       # OpenSearch's own audit log is off: the demo security setup would write a new
       # security-auditlog-<date> index every day, and with ISM off nothing deletes them. JAVV keeps
-      # its own audit trail (system-audit-log). Issue 715.
+      # its own audit trail (system-audit-log).
       plugins.security.audit.type: noop
     ulimits:
       memlock: { soft: -1, hard: -1 }
@@ -86,10 +86,10 @@ services:
       - source: opensearch-roles-mapping
         target: /usr/share/opensearch/config/opensearch-security/roles_mapping.yml
     healthcheck:
-      # $$ leaves the variable to the container's shell; one $ would write the password into the
-      # container's command, where docker inspect shows it. The login reaches curl as config on
-      # stdin (-K -) from the shell's printf, so it is in no process's arguments either. curl reads
-      # a double-quoted config value with escapes, so sed escapes " and \ first.
+      # $$ gives the variable to the shell in the container. With one $, compose would put the
+      # password in the command of the container, where docker inspect shows it. printf gives the
+      # login to curl on its input (-K -), so the password is in the arguments of no process. curl
+      # reads a quoted value with escapes, so sed first escapes " and \.
       test:
         - CMD-SHELL
         - >-
@@ -127,15 +127,16 @@ services:
       JAVV_OPENSEARCH_USERNAME: ${JAVV_OPENSEARCH_USERNAME:-javv}
       # --- secret (required, from .env): javv's password, which the OpenSearch service sets ---
       JAVV_OPENSEARCH_PASSWORD: ${JAVV_OPENSEARCH_PASSWORD:?set JAVV_OPENSEARCH_PASSWORD in .env}
-      # a PEM file of CA certificates for a private CA; empty = the system's CAs
+      # a PEM file of CA certificates for a private CA. When empty, the backend uses the system CAs
       JAVV_OPENSEARCH_CA_BUNDLE: ${JAVV_OPENSEARCH_CA_BUNDLE:-}
-      # false here: the demo certificate names node-0.example.com and localhost, not opensearch,
-      # and its CA key is public anyway. The backend logs one warning at start for it.
+      # false here: the demo certificate names node-0.example.com and localhost, not opensearch.
+      # Its CA key is also public. The backend logs one warning at start for it.
       JAVV_OPENSEARCH_VERIFY_CERTS: ${JAVV_OPENSEARCH_VERIFY_CERTS:-false}
 
       # --- secrets (required, from .env) ---
       # the backend's secret key: hashes ingest tokens and session ids, signs download links.
-      # A long random string, kept for good: a new one stops every scanner token and session.
+      # A long random string. Do not change it: a new key makes every scanner token and session
+      # invalid.
       JAVV_SECRET_KEY: ${JAVV_SECRET_KEY:?set JAVV_SECRET_KEY in .env}
       # the first admin's password, used once when the admin does not exist yet
       JAVV_BOOTSTRAP_ADMIN_PASSWORD: ${JAVV_BOOTSTRAP_ADMIN_PASSWORD:?set JAVV_BOOTSTRAP_ADMIN_PASSWORD in .env}
@@ -143,8 +144,8 @@ services:
       JAVV_BOOTSTRAP_ADMIN_USERNAME: ${JAVV_BOOTSTRAP_ADMIN_USERNAME:-admin}
 
       # --- sign-in ---
-      # the session cookie's Secure flag: keep true behind anything that terminates TLS;
-      # set false in .env only when the app is reached over plain http (or login fails)
+      # the session cookie's Secure flag: keep true when browsers use https:// (through a proxy).
+      # when people open JAVV over plain http, set false in .env, or sign-in fails
       JAVV_SESSION_COOKIE_SECURE: ${JAVV_SESSION_COOKIE_SECURE:-true}
       # hours a sign-in lasts
       JAVV_SESSION_TTL_HOURS: ${JAVV_SESSION_TTL_HOURS:-24.0}
@@ -156,7 +157,7 @@ services:
       JAVV_LOGIN_LOCKOUT_MINUTES: ${JAVV_LOGIN_LOCKOUT_MINUTES:-15.0}
 
       # --- scanner pushes ---
-      # largest push on the wire, in bytes (10 MiB)
+      # largest push as it arrives (still compressed), in bytes (10 MiB)
       JAVV_INGEST_MAX_COMPRESSED_BYTES: ${JAVV_INGEST_MAX_COMPRESSED_BYTES:-10485760}
       # largest push once decompressed, in bytes (60 MiB)
       JAVV_INGEST_MAX_BODY_BYTES: ${JAVV_INGEST_MAX_BODY_BYTES:-62914560}
@@ -168,7 +169,7 @@ services:
       # --- triage, search and exports ---
       # a bulk action on at most this many findings applies at once; more is refused
       JAVV_BULK_INLINE_LIMIT: ${JAVV_BULK_INLINE_LIMIT:-5000}
-      # a bulk selector may match at most this many findings
+      # the most findings that one bulk selection can hold. The backend refuses a larger one
       JAVV_BULK_MAX_TARGETS: ${JAVV_BULK_MAX_TARGETS:-10000}
       # how long a page of a search cursor stays open between pages
       JAVV_SEARCH_PIT_KEEP_ALIVE: ${JAVV_SEARCH_PIT_KEEP_ALIVE:-2m}
@@ -176,7 +177,8 @@ services:
       JAVV_EXPORT_MAX_ROWS: ${JAVV_EXPORT_MAX_ROWS:-50000}
       # open search cursors and exports per user at one time
       JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL: ${JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL:-10}
-      # browser warning batches per user per minute
+      # batches of browser warnings and errors that one user can send in one minute
+      # (a batch holds 20 at most)
       JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE: ${JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE:-60}
 
       # --- scheduled exports ---
@@ -197,12 +199,12 @@ services:
       # seconds before an inspector query gives up
       JAVV_INSPECT_TIMEOUT_SECONDS: ${JAVV_INSPECT_TIMEOUT_SECONDS:-10.0}
       # cluster retirement: the fleet defaults until a value is saved at runtime
-      # days without an accepted scan before a cluster is retired (0 = never)
+      # days without an accepted scan before JAVV retires a cluster (0 means never)
       JAVV_CLUSTER_RETIRE_AFTER_DAYS: ${JAVV_CLUSTER_RETIRE_AFTER_DAYS:-45}
       # days before retirement that the warning banner and the bell start
       JAVV_CLUSTER_RETIREMENT_WARN_DAYS: ${JAVV_CLUSTER_RETIREMENT_WARN_DAYS:-7}
 
-      # --- background jobs: cron expressions read in TZ; empty = never on a schedule ---
+      # --- background jobs: cron expressions, read in TZ. An empty one never runs on a schedule ---
       # false stops every schedule; the jobs can still be run from the Data inspector
       JAVV_SCHEDULER_ENABLED: ${JAVV_SCHEDULER_ENABLED:-true}
       # builds queued exports and bulk actions
@@ -211,11 +213,12 @@ services:
       JAVV_JOB_REPORT_SWEEP_CRON: ${JAVV_JOB_REPORT_SWEEP_CRON:-15 * * * *}
       # marks findings stale and ends expired risk acceptances
       JAVV_JOB_STALENESS_SWEEP_CRON: ${JAVV_JOB_STALENESS_SWEEP_CRON:-0 2 * * *}
-      # rolls history indices over and drops those past retention
+      # starts new history indices, and deletes the ones older than the retention
       JAVV_JOB_LIFECYCLE_SWEEP_CRON: ${JAVV_JOB_LIFECYCLE_SWEEP_CRON:-0 3 * * *}
-      # removes findings gone from every scan for longer than the cleanup window
+      # deletes the findings that no scan found for longer than the cleanup window
       JAVV_JOB_FINDINGS_CLEANUP_CRON: ${JAVV_JOB_FINDINGS_CLEANUP_CRON:-0 4 * * *}
-      # retires clusters silent past their window, brings back the ones that scan again
+      # retires the clusters that sent no scan for longer than their window, and brings back the
+      # ones that scan again
       JAVV_JOB_CLUSTER_RETIREMENT_CRON: ${JAVV_JOB_CLUSTER_RETIREMENT_CRON:-15 4 * * *}
       # deletes expired sign-in sessions
       JAVV_JOB_SESSION_SWEEP_CRON: ${JAVV_JOB_SESSION_SWEEP_CRON:-30 4 * * *}
@@ -248,10 +251,11 @@ services:
 volumes:
   opensearch-data:
 
-# OpenSearch's security configuration for JAVV (issue 729), read on the store's first start with
-# security on. The javv role holds what the backend calls and nothing more; docs/DEPLOYING.md
-# gives the same role for a cluster you run yourself. The mapping keeps admin on all_access (the
-# image's own mapping file, which this one replaces, is where admin gets it) and puts javv on javv.
+# The security configuration of OpenSearch for JAVV. OpenSearch reads it on the first start of the
+# store with security on. The javv role allows only the calls that the backend makes.
+# docs/DEPLOYING.md gives the same role for a cluster that you run yourself. The mapping gives the
+# all_access role to admin, as the mapping file of the image does (this file replaces it), and the
+# javv role to javv.
 configs:
   opensearch-roles:
     content: |

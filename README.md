@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://danube-labs.github.io/javv-poc/"><b>Docs</b></a> ·
+  <a href="https://danube-labs.github.io/javv-poc/latest/"><b>Docs</b></a> ·
   <a href="REPO-MAP.md">Repo map</a> ·
   <a href="development/RUNNING-THE-STACK.md">Run the stack</a> ·
   <a href="docs/API.md">API</a> ·
@@ -109,7 +109,7 @@ frontend with `docker compose up -d`, on the images the release publishes, and s
 cluster push to it. **On Kubernetes:** the `javv-opensearch` and `javv` charts, and `javv-scanner`
 in each cluster you scan. The guide for both, including http or https and pointing scanners at
 JAVV, is **[`docs/DEPLOYING.md`](docs/DEPLOYING.md)**, also on the
-[docs site](https://danube-labs.github.io/javv-poc/) with configuration, sizing, upgrades and the
+[docs site](https://danube-labs.github.io/javv-poc/latest/) with configuration, sizing, upgrades and the
 API.
 
 **From source**, for development: bring the stack up by hand (backend + UI against a local OpenSearch, or the full end-to-end path
@@ -120,7 +120,7 @@ fresh Ubuntu host, `bash development/setup/setup-dev.sh` installs every prerequi
 
 ## Documentation
 
-**Operator docs: <https://danube-labs.github.io/javv-poc/>**. Deploying, configuration, sizing and
+**Operator docs: <https://danube-labs.github.io/javv-poc/latest/>**. Deploying, configuration, sizing and
 scaling, upgrading, release notes, the API and the ingest contract, published from the files in
 this repository whenever they change on `main`.
 

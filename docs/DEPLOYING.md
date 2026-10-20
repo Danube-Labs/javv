@@ -61,17 +61,18 @@ chmod +x setup.sh
     To keep the limit after a reboot, also add it to `/etc/sysctl.conf`.
 2. **Make the `.env` file.** In the folder with the three files, run one of these commands:
     ```bash
-    ./setup.sh           # browsers use plain http, for example http://<this machine>:8080
-    ./setup.sh --https   # a proxy or a load balancer in front of JAVV ends https
+    ./setup.sh           # .env turns off the cookie's Secure flag, so sign-in works over http
+    ./setup.sh --https   # .env keeps the cookie's Secure flag: the browser sends it only over https
     ```
+    Use `--https` only when people open JAVV at an `https://` address, through a proxy or a load
+    balancer in front of JAVV. JAVV itself serves only http ([http or https](#http-or-https)).
+
     The script:
 
     - Copies `.env.example` to `.env`. Only you can read `.env`.
     - Sets the four secrets to long random values that compose does not change. The OpenSearch
       admin password obeys the rules of OpenSearch.
     - Shows the password of the first JAVV admin one time. Keep it for step 4.
-    - With `--https`, keeps the `Secure` flag of the session cookie
-      ([http or https](#http-or-https)).
     - Shows the `sysctl` command again if the limit of step 1 is too low.
     - Does not change an `.env` that exists. Thus it cannot change the secret key of an
       installation.
@@ -81,7 +82,7 @@ chmod +x setup.sh
 3. **Start JAVV:**
     ```bash
     docker compose up -d   # pulls the images of the release the first time
-    docker compose ps      # opensearch, backend and frontend all "healthy"
+    docker compose ps      # wait until opensearch, backend and frontend all show "healthy"
     ```
     The backend makes its indices at its first start.
 4. **Sign in** at `http://<this machine>:8080` as `admin`, with the password that `setup.sh` showed.
@@ -166,11 +167,13 @@ different folder uses the containers and the volumes of the first.
 
 **Steps:**
 
-1. Put the three files of the release in a different folder, with its own `.env`.
-2. In that `.env`, add a project name for this installation:
+1. Put the three files of the release in a different folder.
+2. In that folder, make the `.env` with a project name for this installation:
     ```bash
-    COMPOSE_PROJECT_NAME=javv-test
+    COMPOSE_PROJECT_NAME=javv-test ./setup.sh
     ```
+    `setup.sh` writes `COMPOSE_PROJECT_NAME=javv-test` to `.env`.
+
 3. In that `compose.yaml`, change the host port of `frontend` (the left side of `"8080:8080"`),
     for example to `"8090:8080"`.
 4. Run each `docker compose` command of this installation in its folder. Compose reads the project
@@ -179,13 +182,38 @@ different folder uses the containers and the volumes of the first.
 Do not change the project name of an installation that has data. Its volumes have the old name.
 Under a new name, JAVV starts with empty volumes.
 
+### If OpenSearch stays unhealthy
+
+`docker compose up -d` stops with `container javv-opensearch-1 is unhealthy`, and the health
+test of OpenSearch gets `401`. To see the results of that test:
+
+```bash
+docker inspect javv-opensearch-1 --format '{{range .State.Health.Log}}{{.Output}}{{end}}'
+```
+
+The cause: OpenSearch started on the volume of an earlier installation with the same project name.
+OpenSearch keeps the passwords of its first start, and the new `.env` has other passwords.
+`setup.sh` stops before this occurs. An `.env` that you made or replaced yourself can still cause
+it.
+
+Do one of these:
+
+- **To delete the earlier installation and its data:**
+    ```bash
+    docker compose down -v
+    docker compose up -d
+    ```
+- **To keep the earlier installation:** stop this one with `docker compose down`. Then add
+  `COMPOSE_PROJECT_NAME=<new name>` to `.env`, and run `docker compose up -d`.
+
 ### http or https
 
 By default, the session cookie has the `Secure` flag. A browser keeps a `Secure` cookie only from
 `https` or from `localhost`.
 
-- **With TLS in front of JAVV** (a proxy, a load balancer or a gateway that ends `https`): keep the
-  default. Delete `JAVV_SESSION_COOKIE_SECURE=false` from `.env`. `./setup.sh --https` does this.
+- **With https in front of JAVV** (browsers use an `https://` address, and a proxy, a load balancer
+  or a gateway sends their requests to JAVV): keep the default. Delete
+  `JAVV_SESSION_COOKIE_SECURE=false` from `.env`. `./setup.sh --https` does this.
 - **With plain http** (for example `http://<machine>:8080` on a LAN): set
   `JAVV_SESSION_COOKIE_SECURE=false` in `.env`. `.env.example` sets this value. Without it, the
   sign-in fails, and the sign-in page says that the browser refused the session cookie.
@@ -391,7 +419,8 @@ network. Each pair of a cluster and a scanner has its own token.
     ```bash
     VERSION=0.8.6
     kubectl create namespace javv-scanner
-    for s in trivy grype; do  # each token at a prompt: out of shell history and process arguments
+    # asks for each token, so it is not in your shell history or the process list
+    for s in trivy grype; do
       read -rs -p "$s token: " token && echo
       printf '%s' "$token" | kubectl -n javv-scanner create secret generic "javv-$s-token" \
         --from-file=token=/dev/stdin

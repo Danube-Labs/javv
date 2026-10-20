@@ -53,7 +53,8 @@ jobs:
           # mike commits on top of gh-pages; the branch is absent only before the first publish
           git fetch origin gh-pages:gh-pages || true
           uv run --project docs-site --frozen mike deploy --config-file docs-site/mkdocs.yml --push dev
-          # the site opens on dev until a release publishes `latest` (issue 639, decision 2)
-          if ! uv run --project docs-site --frozen mike list --config-file docs-site/mkdocs.yml | grep -q '\[latest\]'; then
+          # the site opens on dev until a release publishes `latest` (issue 639, decision 2). It reads
+          # the JSON list: the text list shows `0.8.5 [0.8, latest]`, which a grep for `[latest]` misses.
+          if ! uv run --project docs-site --frozen mike list --config-file docs-site/mkdocs.yml --json | jq -e 'any(.[]; .aliases | index("latest"))' > /dev/null; then
             uv run --project docs-site --frozen mike set-default --config-file docs-site/mkdocs.yml --push dev
           fi

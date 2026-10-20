@@ -32,7 +32,8 @@ CronJob.
     ```bash
     VERSION=0.8.6
     kubectl create namespace javv-scanner
-    for s in trivy grype; do  # each token at a prompt: not in shell history, not in process arguments
+    # asks for each token, so it is not in your shell history or the process list
+    for s in trivy grype; do
       read -rs -p "$s token: " token && echo
       printf '%s' "$token" | kubectl -n javv-scanner create secret generic "javv-$s-token" \
         --from-file=token=/dev/stdin

@@ -40,7 +40,7 @@ the backend.
       | curl -sf -c jar -b jar -H 'Content-Type: application/json' --data @- "$JAVV/auth/password"
     unset new
     ```
-    JAVV ends each session of the user, then writes a new session cookie to `jar`.
+    JAVV signs the user out of each session, then writes a new session cookie to `jar`.
 4. Delete the password from the shell:
     ```bash
     unset pw
@@ -309,7 +309,7 @@ in a scan cycle.
 |---|---|---|---|
 | POST | `/auth/login` | none | Signs in and sets the session cookie. A wrong username or password gets 401. Too many failures get 429 ([Authentication](#authentication)). |
 | POST | `/auth/logout` | none | Signs out. It ends the session of the cookie on the server, if the request has a cookie, and deletes the cookie. The answer is 204, also with no session. |
-| POST | `/auth/password` | session | Changes your password. Body: `{current_password, new_password}`. It ends each session of the user and sets a new cookie. The rules and the refusals are in [A password change](#a-password-change). |
+| POST | `/auth/password` | session | Changes your password. Body: `{current_password, new_password}`. It signs you out of each session and sets a new cookie. The rules and the refusals are in [A password change](#a-password-change). |
 | GET | `/auth/me` | session | Your user: `username`, `role`, `capabilities` and `must_change` |
 
 ### Admin
@@ -320,9 +320,9 @@ in a scan cycle.
 | POST | `/api/v1/admin/tokens/{token_id}/revoke` | `can_manage_tokens` | Disables a token |
 | POST | `/api/v1/admin/tokens/{token_id}/rotate` | `can_manage_tokens` | Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. |
 | GET/POST | `/api/v1/admin/users` | `can_manage_users` | GET lists the users, with `size` (1 to 1000, default 100) and `offset` (0 to 9000). POST makes a user with `{username, temp_password, role}`. The usernames `system` and `fleet` get 422. |
-| PATCH | `/api/v1/admin/users/{username}/role` | `can_manage_users` | Changes the role of a user, and ends each session of that user |
+| PATCH | `/api/v1/admin/users/{username}/role` | `can_manage_users` | Changes the role of a user, and signs that user out of each session |
 | PATCH | `/api/v1/admin/users/{username}/disabled` | `can_manage_users` | Disables or enables a user. A disabled user loses each session. The last enabled admin gets 409. |
-| POST | `/api/v1/admin/users/{username}/password-reset` | `can_manage_users` | Sets a temporary password, which the user must change. It ends each session of that user. |
+| POST | `/api/v1/admin/users/{username}/password-reset` | `can_manage_users` | Sets a temporary password, which the user must change. It signs that user out of each session. |
 | GET | `/api/v1/admin/roles` | `can_manage_users` | The roles and their permissions |
 | GET | `/api/v1/admin/snapshots` | `can_manage_retention` | The snapshots in the configured repository, newest first. With no repository, `configured` is `false`. |
 | POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of `findings`, `javv-images-*` and `system-*` except `system-sessions`, and answers 202 at once. The scan history is not in the snapshot ([Snapshots](CONFIGURATION.md#snapshots)). With no repository, it answers 409. |

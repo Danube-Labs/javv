@@ -90,9 +90,9 @@ JAVV.
   wait and send the same envelope again. Increase the wait each time. After `400`, `401`, `403`,
   `413` or `422`, do not send again: correct the cause. To send the same envelope again is safe.
   JAVV makes the same IDs from the same data, so it keeps one copy.
-- **Keep each push in the size limits.** The limit is 10 MiB on the wire and 60 MiB after gzip, by
-  default. To send a large envelope, compress it and send the header `Content-Encoding: gzip`.
-  The limit is 100,000 findings for each envelope.
+- **Keep each push in the size limits.** The limit is 10 MiB as it arrives (still compressed) and
+  60 MiB after decompression, by default. To send a large envelope, compress it and send the
+  header `Content-Encoding: gzip`. The limit is 100,000 findings for each envelope.
 - **Keep the token secret.** Do not write the token in a log or in the envelope.
 
 ## Field reference
@@ -277,7 +277,7 @@ validates the envelope on this page. For a larger example with 29 findings, see
 `backend/tests/fixtures/envelope-trivy-golden.json` in the repository.
 
 ```bash
-TOKEN=…            # from "Before you start", for (my-nomad-fleet-01, trivy)
+TOKEN=…            # from "Before you start": the token of my-nomad-fleet-01 for Trivy
 ORDER=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   https://javv.example/api/v1/scan-runs | jq .scan_order)
 
