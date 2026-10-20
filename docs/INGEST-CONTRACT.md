@@ -5,10 +5,11 @@ scanners. Use it from each environment that can make JSON and send HTTP requests
 Nomad, Docker hosts or CI pipelines.
 
 The page gives the sequence of calls, the rules for the script, and a reference for each field.
-The machine-readable schema is **[`ingest-envelope.schema.json`](ingest-envelope.schema.json)**.
-JAVV makes the schema from the model that the backend uses to validate each push. A CI test
-compares the two, and a second CI test compares the field tables on this page with the model. Thus
-the schema and this page always agree with the backend.
+
+- The machine-readable schema is **[`ingest-envelope.schema.json`](ingest-envelope.schema.json)**.
+- JAVV makes the schema from the model that the backend uses to validate each push.
+- A CI test compares the two, and a second CI test compares the field tables on this page with the
+  model. Thus the schema and this page always agree with the backend.
 
 !!! tip "For AI agents"
     This page and the schema file are sufficient to make a script that pushes to JAVV. Read all of
