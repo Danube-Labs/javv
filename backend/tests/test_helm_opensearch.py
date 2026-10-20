@@ -130,6 +130,19 @@ def test_every_container_is_the_pinned_opensearch_image_and_none_runs_as_root() 
         assert (container.get("securityContext") or {}).get("runAsUser") != 0, container["name"]
 
 
+def test_the_helm_test_pod_meets_the_restricted_pod_security_level() -> None:
+    # the pod is this chart's own template: in a namespace that enforces restricted, Kubernetes
+    # refuses a pod without these fields, and `helm test` fails
+    (pod,) = _kind(_render(*DEMO), "Pod")
+    spec = pod["spec"]
+    assert spec["securityContext"]["runAsNonRoot"] is True
+    assert spec["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
+    for container in spec["containers"]:
+        context = container["securityContext"]
+        assert context["allowPrivilegeEscalation"] is False, container["name"]
+        assert context["capabilities"]["drop"] == ["ALL"], container["name"]
+
+
 def test_the_image_is_the_opensearch_versions_yaml_pins() -> None:
     docs = _render(*DEMO)
     image = f"opensearchproject/opensearch:{_pinned_opensearch()}"
