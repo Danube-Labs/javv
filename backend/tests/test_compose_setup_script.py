@@ -3,10 +3,12 @@ survive compose's rewriting of `$`, `#`, quotes and spaces, an OpenSearch admin 
 OpenSearch accepts, and the first admin password shown one time. The script runs here on a copy of
 the real template, so a template that loses one of its keys fails here, not on an install."""
 
+import os
 import re
 import shutil
 import stat
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -33,15 +35,41 @@ def folder(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _run(folder: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    # from another folder: the script works in its own folder, wherever it is called from
-    return subprocess.run(
-        ["sh", str(folder / "setup.sh"), *args],
-        capture_output=True,
-        text=True,
-        cwd=folder.parent,
-        check=False,
-    )
+# the tools that the script calls, for a PATH without docker
+TOOLS = ("sh", "od", "tr", "grep", "awk", "mktemp", "chmod", "mv", "rm", "cat", "sed", "dirname")
+
+
+def _run(
+    folder: Path,
+    *args: str,
+    volumes: tuple[str, ...] = (),
+    docker: bool = True,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    # from another folder: the script works in its own folder, wherever it is called from. A
+    # stand-in docker knows only `volumes`, so no test sees the volumes of the machine it runs on.
+    with tempfile.TemporaryDirectory() as bin_dir:
+        if docker:
+            fake = Path(bin_dir) / "docker"
+            fake.write_text(
+                '#!/bin/sh\n[ "$1 $2" = "volume inspect" ] || exit 1\n'
+                f'for v in {" ".join(volumes)}; do [ "$3" = "$v" ] && exit 0; done\nexit 1\n'
+            )
+            fake.chmod(0o755)
+            path = bin_dir + os.pathsep + os.environ["PATH"]
+        else:
+            for tool in TOOLS:
+                os.symlink(shutil.which(tool) or tool, Path(bin_dir) / tool)
+            path = bin_dir
+        run_env = {k: v for k, v in os.environ.items() if k != "COMPOSE_PROJECT_NAME"}
+        return subprocess.run(
+            ["sh", str(folder / "setup.sh"), *args],
+            capture_output=True,
+            text=True,
+            cwd=folder.parent,
+            env=run_env | {"PATH": path} | (env or {}),
+            check=False,
+        )
 
 
 def _values(env_file: Path) -> dict[str, str]:
@@ -114,6 +142,48 @@ def test_an_env_file_that_exists_is_never_replaced(folder: Path) -> None:
     assert ".env exists" in result.stderr
 
 
+def test_an_earlier_install_stops_the_script_and_makes_no_file(folder: Path) -> None:
+    # a new .env on the volume of an earlier install fails: OpenSearch keeps the passwords of its
+    # first start, so the health check of the new install gets 401
+    result = _run(folder, volumes=("javv_opensearch-data",))
+    assert result.returncode == 1
+    assert "javv_opensearch-data" in result.stderr
+    assert "docker compose down -v" in result.stderr
+    assert "COMPOSE_PROJECT_NAME=" in result.stderr
+    assert not (folder / ".env").exists()
+
+
+def test_a_project_name_makes_a_second_install_and_goes_in_the_env_file(folder: Path) -> None:
+    result = _run(
+        folder, volumes=("javv_opensearch-data",), env={"COMPOSE_PROJECT_NAME": "javv-test"}
+    )
+    assert result.returncode == 0, result.stderr
+    assert _values(folder / ".env")["COMPOSE_PROJECT_NAME"] == "javv-test"
+
+
+def test_the_volume_of_that_project_name_also_stops_the_script(folder: Path) -> None:
+    result = _run(
+        folder, volumes=("javv-test_opensearch-data",), env={"COMPOSE_PROJECT_NAME": "javv-test"}
+    )
+    assert result.returncode == 1
+    assert "javv-test_opensearch-data" in result.stderr
+    assert not (folder / ".env").exists()
+
+
+@pytest.mark.parametrize("name", ["Javv", "javv test", "-javv"])
+def test_a_project_name_that_compose_refuses_stops_the_script(folder: Path, name: str) -> None:
+    result = _run(folder, env={"COMPOSE_PROJECT_NAME": name})
+    assert result.returncode == 2
+    assert not (folder / ".env").exists()
+
+
+def test_without_docker_the_script_still_makes_the_env_file(folder: Path) -> None:
+    # docker can be missing here, or need sudo: the script then cannot look for a volume
+    result = _run(folder, docker=False)
+    assert result.returncode == 0, result.stderr
+    assert (folder / ".env").exists()
+
+
 def test_plain_http_keeps_the_cookie_line_and_https_removes_it(
     folder: Path, tmp_path: Path
 ) -> None:
@@ -130,6 +200,22 @@ def test_plain_http_keeps_the_cookie_line_and_https_removes_it(
 def test_an_unknown_option_stops_the_script_and_makes_no_file(folder: Path) -> None:
     result = _run(folder, "--http")
     assert result.returncode == 2
+    assert not (folder / ".env").exists()
+
+
+def test_help_by_a_relative_path_shows_both_commands_and_makes_no_file(folder: Path) -> None:
+    # `sh compose/setup.sh --help` from the parent folder: the script changes folder before it
+    # reads its own help, so a relative path to it must still work
+    result = subprocess.run(
+        ["sh", f"{folder.name}/setup.sh", "--help"],
+        capture_output=True,
+        text=True,
+        cwd=folder.parent,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "./setup.sh --https" in result.stdout
+    assert "Use --https only when" in result.stdout
     assert not (folder / ".env").exists()
 
 

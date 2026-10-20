@@ -21,8 +21,10 @@ links to other files, nor that the tree publishes only the listed files. These t
 """
 
 import fnmatch
+import json
 import os
 import re
+import subprocess
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -319,6 +321,33 @@ def test_the_backfill_publishes_older_releases_with_the_same_script() -> None:
     assert "${{" not in step["run"]
     assert "cp development/scripts/publish-docs-version.sh" in step["run"]
     assert 'bash "$script" "${tag#v}"' in step["run"]
+
+
+def test_dev_is_the_default_only_while_no_release_has_latest() -> None:
+    # `mike list` prints `0.8.5 [0.8, latest]` for a release with two aliases. A grep for
+    # `[latest]` missed that line, and each push to main made dev the default of the site again.
+    runs = "\n".join(s.get("run", "") for s in _workflow("docs.yml")["jobs"]["dev"]["steps"])
+    check = next(line for line in runs.splitlines() if "mike list" in line)
+    assert "--json" in check
+    jq_filter = re.search(r"jq -e '([^']+)'", check)
+    assert jq_filter, check
+
+    def has_latest(versions: list[dict[str, Any]]) -> bool:
+        result = subprocess.run(
+            ["jq", "-e", jq_filter.group(1)],
+            input=json.dumps(versions),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.returncode == 0
+
+    assert has_latest([{"version": "0.8.5", "aliases": ["0.8", "latest"]}])
+    assert has_latest(
+        [{"version": "dev", "aliases": []}, {"version": "0.9.0", "aliases": ["latest"]}]
+    )
+    assert not has_latest([{"version": "dev", "aliases": []}])
+    assert not has_latest([{"version": "0.8.5", "aliases": ["0.8"]}])
 
 
 def test_the_publish_workflow_runs_for_every_published_file() -> None:
