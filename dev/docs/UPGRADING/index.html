@@ -1597,13 +1597,12 @@
 
 
 <h1 id="upgrading-javv">Upgrading JAVV<a class="headerlink" href="#upgrading-javv" title="Permanent link">&para;</a></h1>
-<p>This page tells you how to move a running JAVV to a newer release. It tells you what to check
-before you start, the sequence of the upgrade, how to check the result, and how to go back to the
-previous release.</p>
-<p>The design note
-<a href="https://github.com/Danube-Labs/javv-poc/blob/main/docs/engineering/UPGRADES.md"><code>docs/engineering/UPGRADES.md</code></a>
-tells you where the index setup runs, and why an older release can use indices that a newer release
-changed.</p>
+<p>This page tells you how to move a running JAVV to a newer release:</p>
+<ul>
+<li>What to check before you start.</li>
+<li>The sequence of the upgrade, with docker compose or with Helm.</li>
+<li>How to check the result, and how to go back to the previous release.</li>
+</ul>
 <p>JAVV has three parts. You upgrade each part separately:</p>
 <table>
 <thead>
@@ -1638,27 +1637,30 @@ own deployment. To install JAVV, see <a href="../DEPLOYING/"><code>DEPLOYING.md<
 <li><strong>Read the release notes.</strong> Each release has a GitHub Release and an entry in
     <a href="../../CHANGELOG/"><code>CHANGELOG.md</code></a>. Then read <a href="#version-notes">Version notes</a> on this page. They
     tell you what a release needs from you.</li>
-<li>
-<p><strong>Make a snapshot.</strong> Use <strong>Settings › Data &amp; OpenSearch › Snapshot now</strong>, or
-    <code>POST /api/v1/admin/snapshots</code>. The request needs <code>can_manage_retention</code>. It returns 409 when
-    OpenSearch has no snapshot repository. <a href="../CONFIGURATION/#snapshots">Snapshots</a> tells you how
-    to add the repository. The upgrade does not need the snapshot.</p>
-<p>The snapshot keeps the current state, the triage, the decisions, the users, the settings and
-the audit log. <strong>It does not keep the scan history</strong> that time travel reads. Thus a restore
-does not bring the history back (<a href="https://github.com/Danube-Labs/javv-poc/issues/664">issue 664</a>).</p>
+<li><strong>Make a snapshot.</strong> The upgrade does not need it.<ul>
+<li>Use <strong>Settings › Data &amp; OpenSearch › Snapshot now</strong>, or <code>POST /api/v1/admin/snapshots</code>. The
+  request needs <code>can_manage_retention</code>.</li>
+<li>The request returns 409 when OpenSearch has no snapshot repository.
+  <a href="../CONFIGURATION/#snapshots">Snapshots</a> tells you how to add the repository.</li>
+<li>The snapshot keeps the current state, the triage, the decisions, the users, the settings and
+  the audit log. <strong>It does not keep the scan history</strong> that time travel reads. Thus a restore
+  does not bring the history back.</li>
+</ul>
 </li>
-<li>
-<p><strong>Check the OpenSearch version.</strong> CI tests JAVV with the version in <code>datastore.opensearch</code> in
-    <a href="../../versions.yaml"><code>versions.yaml</code></a>.</p>
-</li>
+<li><strong>Check the OpenSearch version.</strong> CI tests JAVV with the version in <code>datastore.opensearch</code> in
+    <a href="../../versions.yaml"><code>versions.yaml</code></a>.</li>
 </ol>
 <h2 id="sequence-of-the-upgrade">Sequence of the upgrade<a class="headerlink" href="#sequence-of-the-upgrade" title="Permanent link">&para;</a></h2>
 <p><strong>Upgrade the backend first, then the frontend, then the scanner images.</strong></p>
 <ol>
-<li><strong>Backend.</strong> Each new backend pod upgrades the indices when it starts. It compares each index and
-    template with the schema version of the release, and it adds the missing parts. The backend
-    opens its port only after this step. Thus it receives no requests before its indices are ready.
-    You do not need to do a step manually.</li>
+<li><strong>Backend.</strong> Each new backend pod upgrades the indices when it starts.<ul>
+<li>It compares each index and template with the schema version of the release, and it adds the
+  missing parts.</li>
+<li>It opens its port only after this step. Thus it receives no requests before its indices are
+  ready.</li>
+<li>You do not need to do a step manually.</li>
+</ul>
+</li>
 <li><strong>Frontend.</strong> Upgrade it together with the backend, or immediately after the backend. A newer
     frontend can send requests that an older backend does not have.</li>
 <li><strong>Scanner images.</strong> Change the Trivy and Grype image tags after the backend runs the new
@@ -1666,39 +1668,60 @@ does not bring the history back (<a href="https://github.com/Danube-Labs/javv-po
     accepts. <code>GET /api/v1/meta</code> → <code>envelope_versions</code> lists the formats that the backend accepts.</li>
 </ol>
 <p>There is only one backend, and an upgrade replaces it. Thus two backend releases never run at the
-same time. After you go back to an older release, an older backend reads indices that a newer
-backend changed. This is safe, because each schema change until now only added fields. An older
-backend ignores the fields that it does not know. A newer backend reads a missing field as empty.</p>
+same time.</p>
+<p>After you go back to an older release, an older backend reads indices that a newer backend changed.
+This is safe, because each schema change until now only added fields:</p>
+<ul>
+<li>An older backend ignores the fields that it does not know.</li>
+<li>A newer backend reads a missing field as empty.</li>
+</ul>
 <h3 id="with-docker-compose">With docker compose<a class="headerlink" href="#with-docker-compose" title="Permanent link">&para;</a></h3>
-<p>Each release publishes <code>ghcr.io/danube-labs/javv-backend</code> and <code>javv-frontend</code> with its version.
-The <code>deploy/compose/compose.yaml</code> file of the release names these images. To upgrade:</p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>Your <code>.env</code> file. Keep it: it holds your settings.</li>
+<li>The <code>compose.yaml</code> of the new release. It names the backend and frontend images of that release.</li>
+<li>A copy of your changes to <code>compose.yaml</code>, for example the host port. Make the same changes in the
+  new file.</li>
+</ul>
+<p><strong>Steps:</strong></p>
 <ol>
-<li>Replace your <code>compose.yaml</code> with the file of the new release. Keep your <code>.env</code> file. It holds
-    your settings. If you changed your <code>compose.yaml</code>, for example the host port, make the same
-    change in the new file.</li>
-<li>Run <code>docker compose pull</code>, then <code>docker compose up -d</code>.</li>
+<li>In the folder of your installation, keep a copy of the old file, and get the file of the new
+    release. <code>VERSION</code> is the release that you upgrade to:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+cp<span class="w"> </span>compose.yaml<span class="w"> </span>compose.yaml.old
+curl<span class="w"> </span>-fsSLO<span class="w"> </span><span class="s2">"https://raw.githubusercontent.com/Danube-Labs/javv-poc/v</span><span class="nv">$VERSION</span><span class="s2">/deploy/compose/compose.yaml"</span>
+</code></pre></div>
+    <!-- x-release-please-end --></li>
+<li>Make your changes to <code>compose.yaml</code> again, if you had changes.</li>
+<li>Pull the images and start them:
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>pull
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div></li>
 </ol>
-<p>There is only one backend. Thus JAVV is not available for some seconds, while the new backend
-starts and upgrades the indices. The frontend waits until the backend reports healthy
-(<code>depends_on</code>).</p>
-<p>To go back to the previous release, put the <code>compose.yaml</code> of that release back. Then run the same
-two commands. To go back to a release before 0.7.0, first put back the old name of the secret key
-(see <a href="#go-back-to-a-previous-release">Go back to a previous release</a>).</p>
+<p>JAVV is not available for some seconds, while the new backend starts and upgrades the indices. The
+frontend waits until the backend reports healthy (<code>depends_on</code>).</p>
+<p><strong>To go back to the previous release,</strong> put the <code>compose.yaml</code> of that release back
+(<code>compose.yaml.old</code>), and run the two commands of step 3. To go back to a release before 0.7.0,
+first put back the old name of the secret key
+(<a href="#go-back-to-a-previous-release">Go back to a previous release</a>).</p>
 <h4 id="upgrade-from-051-to-061-or-later">Upgrade from 0.5.1 to 0.6.1 or later<a class="headerlink" href="#upgrade-from-051-to-061-or-later" title="Permanent link">&para;</a></h4>
-<p>From 0.6.0, OpenSearch requires a sign-in. 0.6.0 published no images, so use 0.6.1 or later. Before
-step 2:</p>
-<ol>
-<li>Add <code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code> to your <code>.env</code>. This is the password of the OpenSearch
-    admin.</li>
-<li>Add <code>JAVV_OPENSEARCH_PASSWORD</code> to your <code>.env</code>. This is the password of <code>javv</code>, the user that the
-    backend signs in as.</li>
-</ol>
+<p>From 0.6.0, OpenSearch requires a sign-in. 0.6.0 published no images, so use 0.6.1 or later.
+Before step 3, add these two values to your <code>.env</code>:</p>
+<ul>
+<li><code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code>: the password of the OpenSearch admin.</li>
+<li><code>JAVV_OPENSEARCH_PASSWORD</code>: the password of <code>javv</code>, the user that the backend signs in as.</li>
+</ul>
 <p>The compose file does not start without these two values. OpenSearch refuses a weak admin password.
-<a href="../DEPLOYING/"><code>DEPLOYING.md</code></a> gives the rules.</p>
-<p>Your data stays. When OpenSearch first starts with its sign-in on, it keeps each index, and it
-adds its security configuration. You can also go back to a 0.5.x <code>compose.yaml</code> with the same data.
-Then OpenSearch runs without its sign-in again. We did these steps on the real compose files, from a
-0.5.1 installation with data.</p>
+<a href="../DEPLOYING/#install-with-docker-compose"><code>DEPLOYING.md</code></a> gives the rules.</p>
+<p>Your data stays:</p>
+<ul>
+<li>When OpenSearch first starts with its sign-in on, it keeps each index, and it adds its security
+  configuration.</li>
+<li>You can also go back to a 0.5.x <code>compose.yaml</code> with the same data. Then OpenSearch runs without
+  its sign-in again.</li>
+</ul>
+<p>We did these steps on the real compose files, from a 0.5.1 installation with data.</p>
 <h4 id="change-an-opensearch-password">Change an OpenSearch password<a class="headerlink" href="#change-an-opensearch-password" title="Permanent link">&para;</a></h4>
 <p>OpenSearch reads <code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code> and <code>JAVV_OPENSEARCH_PASSWORD</code> only on its first
 start with its sign-in on. It keeps the two passwords in its data. Thus OpenSearch ignores a new
@@ -1724,8 +1747,11 @@ value in <code>.env</code>:</p>
     <code>.env</code> at each start. Thus the file holds the two new passwords.</li>
 <li>Run <code>docker compose up -d</code>.</li>
 </ol>
-<p><code>docker compose down -v</code> also makes OpenSearch use a new password. But it deletes all JAVV data.
-The account API of OpenSearch cannot change the admin password: <code>admin</code> is a reserved user (403).</p>
+<p>Other methods do not work, or delete data:</p>
+<ul>
+<li><code>docker compose down -v</code> also makes OpenSearch use a new password. But it deletes all JAVV data.</li>
+<li>The account API of OpenSearch cannot change the admin password: <code>admin</code> is a reserved user (403).</li>
+</ul>
 <h4 id="only-for-opensearch-started-from-a-main-checkout-load-the-missing-users">Only for OpenSearch started from a <code>main</code> checkout: load the missing users<a class="headerlink" href="#only-for-opensearch-started-from-a-main-checkout-load-the-missing-users" title="Permanent link">&para;</a></h4>
 <p>Do these steps only when the security index of OpenSearch holds only <code>admin</code>. No release made this
 state. A <code>main</code> checkout before 0.6.0 can make it, because OpenSearch reads the files for users,
@@ -1752,52 +1778,83 @@ these steps on the real compose files, from an OpenSearch that a <code>main</cod
 <h3 id="on-kubernetes-helm">On Kubernetes (Helm)<a class="headerlink" href="#on-kubernetes-helm" title="Permanent link">&para;</a></h3>
 <p>Each release publishes the JAVV chart and the OpenSearch chart
 (<a href="../DEPLOYING/#install-on-kubernetes-with-helm"><code>DEPLOYING.md</code></a>) at <code>oci://ghcr.io/danube-labs/charts</code>,
-with the version of the release. Keep your settings in your own values files. An install with
-<code>--set</code>, as in <code>DEPLOYING.md</code>, writes no values file. Thus, before the first upgrade, write the
-values of each release to a file:</p>
-<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>store<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-store-values.yaml
+with the version of the release.</p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>Your settings in your own values files. An install with <code>--set</code>, as in <code>DEPLOYING.md</code>, writes no
+  values file. Thus, before the first upgrade, write the values of each release to a file:
+    <div class="highlight"><pre><span></span><code>helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>store<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-store-values.yaml
 helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>javv<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-javv-values.yaml
 helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>scanner<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-scanner-values.yaml<span class="w">   </span><span class="c1"># in each scanned cluster</span>
-</code></pre></div>
-<p>These files hold each value that you set, the passwords included. Keep them as safe as your
-Secrets. Then each upgrade uses the chart of the new release with the same files:</p>
-<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>upgrade<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span>&lt;new<span class="w"> </span>version&gt;<span class="w"> </span><span class="se">\</span>
+</code></pre></div></li>
+<li>These files hold each value that you set, the passwords included. Keep them as safe as your
+  Secrets.</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Upgrade with the chart of the new release and the same files. <code>VERSION</code> is the release that you
+    upgrade to:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+helm<span class="w"> </span>upgrade<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-f<span class="w"> </span>my-store-values.yaml
-helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span>&lt;new<span class="w"> </span>version&gt;<span class="w"> </span>-f<span class="w"> </span>my-javv-values.yaml
+helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span>my-javv-values.yaml
 helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>javv
 </code></pre></div>
-<p>Do the <code>store</code> upgrade when the release changed the OpenSearch chart.
-<a href="#version-notes">Version notes</a> tells you which releases did. It is safe to do it when the chart did
-not change. Then the upgrade changes only labels, and OpenSearch does not restart.</p>
-<p>The backend runs as one pod with <code>strategy: Recreate</code>. The backend runs the background jobs, so
-two backends must never run at the same time. Kubernetes stops the old pod before it starts the new
-pod. Thus JAVV is not available for some seconds, while the new pod checks OpenSearch and upgrades
-the indices. The startup probe gives this step 300 seconds. During this time, the frontend replies
-502, and the web app shows "backend not answering". Kubernetes replaces the frontend with no gap.</p>
+    <!-- x-release-please-end --><ul>
+<li>Do the <code>store</code> upgrade when the release changed the OpenSearch chart.
+  <a href="#version-notes">Version notes</a> tells you which releases did.</li>
+<li>It is safe to do it when the chart did not change. Then the upgrade changes only labels, and
+  OpenSearch does not restart.</li>
+</ul>
+</li>
+<li>Upgrade the scanners last, in each cluster that you scan, after JAVV runs the new release. Keep
+    your values file (<code>backendUrl</code> and the token Secrets):
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
+helm<span class="w"> </span>upgrade<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-f<span class="w"> </span>my-scanner-values.yaml
+</code></pre></div>
+    <!-- x-release-please-end --><ul>
+<li>A newer scanner can send a report format that only the newer backend accepts.</li>
+<li>The <code>javv-scanner</code> chart holds the scanner versions of its release.</li>
+<li>When the refresh container changes, the upgrade starts a vuln-DB refresh. The refresh
+  container changes with the image, the DB source, <code>extraEnv</code>, <code>resources</code> or <code>pullPolicy</code>.</li>
+<li>The next cycle uses the new image.</li>
+</ul>
+</li>
+</ol>
+<p><strong>While the backend restarts:</strong></p>
+<ul>
+<li>The backend runs as one pod with <code>strategy: Recreate</code>. The backend runs the background jobs, so
+  two backends must never run at the same time. Kubernetes stops the old pod before it starts the
+  new pod.</li>
+<li>JAVV is not available for some seconds, while the new pod checks OpenSearch and upgrades the
+  indices. The startup probe gives this step 300 seconds.</li>
+<li>During this time, the frontend replies 502, and the web app shows "backend not answering".</li>
+<li>Kubernetes replaces the frontend with no gap.</li>
+</ul>
 <p><strong>To go back to a previous revision,</strong> use one command. <code>helm history javv</code> lists the revisions:</p>
 <div class="highlight"><pre><span></span><code>helm<span class="w"> </span>rollback<span class="w"> </span>javv<span class="w">          </span><span class="c1"># to the revision before the current one</span>
 helm<span class="w"> </span>rollback<span class="w"> </span>javv<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># or to a specific revision</span>
 </code></pre></div>
-<p>The settings and the images of that revision come back. The indices stay as the newer release left
-them, and an older backend can read them (see <a href="#go-back-to-a-previous-release">Go back to a previous release</a>).
-CI does an upgrade and a rollback for each change to the charts.</p>
-<p><strong>Upgrade the scanners last,</strong> in each cluster that you scan, after JAVV runs the new release. A
-newer scanner can send a report format that only the newer backend accepts. The <code>javv-scanner</code>
-chart holds the scanner versions of its release. Keep your values file (<code>backendUrl</code> and the token
-Secrets):</p>
-<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>upgrade<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span>&lt;new<span class="w"> </span>version&gt;<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-f<span class="w"> </span>my-scanner-values.yaml
-</code></pre></div>
-<p>When the refresh container changes, the upgrade starts a vuln-DB refresh. The refresh container
-changes with the image, the DB source, <code>extraEnv</code>, <code>resources</code> or <code>pullPolicy</code>. The next cycle uses
-the new image. To go back, run <code>helm rollback scanner</code> in that cluster. Do this before you go back
-to the previous JAVV release.</p>
+<ul>
+<li>The settings and the images of that revision come back.</li>
+<li>The indices stay as the newer release left them, and an older backend can read them
+  (<a href="#go-back-to-a-previous-release">Go back to a previous release</a>).</li>
+<li>CI does an upgrade and a rollback for each change to the charts.</li>
+<li>For the scanners, run <code>helm rollback scanner</code> in each scanned cluster. Do this before you go back
+  to the previous JAVV release.</li>
+</ul>
 <p><strong>To change an OpenSearch password</strong> (of <code>admin</code>, or of <code>javv</code>, the user that the backend signs in
 as), see the
-<a href="../../deploy/helm/javv-opensearch/#change-a-password"><code>javv-opensearch</code> chart README</a>.
-After you change the <code>javv</code> password, restart the backend. Then it reads the new password from the
-same Secret: <code>kubectl rollout restart deploy/javv-backend</code>. The same section of the README tells
-you how to load the <code>javv</code> role and its mapping into an OpenSearch that first started without them.</p>
+<a href="../../deploy/helm/javv-opensearch/#change-a-password"><code>javv-opensearch</code> chart README</a>.</p>
+<ul>
+<li>After you change the <code>javv</code> password, restart the backend. Then it reads the new password from
+  the same Secret: <code>kubectl rollout restart deploy/javv-backend</code>.</li>
+<li>The same section of the README tells you how to load the <code>javv</code> role and its mapping into an
+  OpenSearch that first started without them.</li>
+</ul>
 <h2 id="check-what-runs">Check what runs<a class="headerlink" href="#check-what-runs" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1889,10 +1946,13 @@ only manually, or never, the first scheduled runs do all the work at the same ti
 <li><strong>The findings cleanup</strong> (04:00) deletes the findings that no scan reported for longer than its
   period (180 days).</li>
 </ul>
-<p>A job does not run because the backend started. Each job waits for its next scheduled time. To
-stop all the jobs, start the backend with <code>JAVV_SCHEDULER_ENABLED=false</code>. To stop one job, set its
-<code>JAVV_JOB_&lt;KIND&gt;_CRON</code> to an empty value. <a href="../CONFIGURATION/#job-schedules-and-the-time-zone">Job schedules and the time zone</a> gives the
-schedules, and the time zone that the backend uses for them.</p>
+<p>A job does not run because the backend started. Each job waits for its next scheduled time.</p>
+<ul>
+<li>To stop all the jobs, start the backend with <code>JAVV_SCHEDULER_ENABLED=false</code>.</li>
+<li>To stop one job, set its <code>JAVV_JOB_&lt;KIND&gt;_CRON</code> to an empty value.</li>
+<li><a href="../CONFIGURATION/#job-schedules-and-the-time-zone">Job schedules and the time zone</a> gives the
+  schedules, and the time zone that the backend uses for them.</li>
+</ul>
 <p>If you ran these jobs from your own cron or from CronJobs, delete them. The scheduler of the
 backend replaces them. If both run, nothing breaks: the backend does not start a job that is
 already running. But the second run is work for no result.</p>
@@ -1956,18 +2016,23 @@ at each start.</p>
 <p>If you see this error, set a password of 256 characters or fewer. A new value does not change
 the password of an admin that exists.</p>
 <h3 id="070-javv_token_pepper-is-now-javv_secret_key">0.7.0: <code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code><a class="headerlink" href="#070-javv_token_pepper-is-now-javv_secret_key" title="Permanent link">&para;</a></h3>
-<p>Only the name changes. <strong>Keep the same value.</strong> If you change the value, every scanner gets 401,
-every user must sign in again, and every open download link stops working. The stored data cannot
-restore them, and each scanner then needs a new token. A backend that finds the old name stops at
-start, and it shows the new name.</p>
+<p>Only the name changes. <strong>Keep the same value.</strong> A backend that finds the old name stops at start,
+and it shows the new name. If you change the value:</p>
 <ul>
-<li><strong>docker compose:</strong> in <code>.env</code>, add the new name with the same value. Keep the line with the old
+<li>Each scanner gets 401 and needs a new token.</li>
+<li>Each user must sign in again.</li>
+<li>
+<p>Each open download link stops working.</p>
+</li>
+<li>
+<p><strong>docker compose:</strong> in <code>.env</code>, add the new name with the same value. Keep the line with the old
   name until you do not need to go back to a release before 0.7.0:
   <div class="highlight"><pre><span></span><code>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'s/^JAVV_TOKEN_PEPPER=/JAVV_SECRET_KEY=/p'</span><span class="w"> </span>.env<span class="w"> </span>&gt;&gt;<span class="w"> </span>.env
 </code></pre></div>
   Until you add the new name, <code>docker compose up</code> stops with <code>set JAVV_SECRET_KEY in .env</code>. The
   <code>compose.yaml</code> of 0.7.0 and later gives only <code>JAVV_SECRET_KEY</code> to the backend. Thus the old name
-  in <code>.env</code> has no effect on it.</li>
+  in <code>.env</code> has no effect on it.</p>
+</li>
 <li><strong>Helm, with the value in your values file:</strong> change the name <code>secrets.tokenPepper</code> to
   <code>secrets.secretKey</code>, and keep its value. Until you do this, the upgrade stops with
   <code>additional properties 'tokenPepper' not allowed</code>. If you set the value with <code>--set</code>, write your

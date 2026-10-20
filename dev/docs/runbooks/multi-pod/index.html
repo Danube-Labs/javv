@@ -1299,8 +1299,12 @@
 <h1 id="scaling-and-failures">Scaling and failures<a class="headerlink" href="#scaling-and-failures" title="Permanent link">&para;</a></h1>
 <p>This page tells you how many copies of each part of JAVV run, and why. It also tells you how each
 part recovers when it fails.</p>
-<p>JAVV runs as <strong>one backend, one frontend and one OpenSearch node</strong>. The compose file and the charts
-install this setup. CI tests this setup. JAVV supports only this setup.</p>
+<p>JAVV runs as <strong>one backend, one frontend and one OpenSearch node</strong>:</p>
+<ul>
+<li>The compose file and the charts install this setup.</li>
+<li>CI tests this setup.</li>
+<li>JAVV supports only this setup.</li>
+</ul>
 <h2 id="what-the-charts-run">What the charts run<a class="headerlink" href="#what-the-charts-run" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1334,10 +1338,13 @@ install this setup. CI tests this setup. JAVV supports only this setup.</p>
 </tbody>
 </table>
 <h2 id="why-one-backend">Why one backend<a class="headerlink" href="#why-one-backend" title="Permanent link">&para;</a></h2>
-<p>The backend runs the background jobs of JAVV on schedules. The schedules are the <code>JAVV_JOB_*_CRON</code>
-settings in <a href="../../CONFIGURATION/">Configuration</a>. The jobs are staleness, lifecycle, findings
-cleanup, cluster retirement, report drain, report sweep and session sweep. No CronJob and no second
-container runs these jobs. Thus the backend is one process.</p>
+<p>The backend runs the background jobs of JAVV on schedules:</p>
+<ul>
+<li>The jobs are staleness, lifecycle, findings cleanup, cluster retirement, report drain, report
+  sweep and session sweep.</li>
+<li>The schedules are the <code>JAVV_JOB_*_CRON</code> settings in <a href="../../CONFIGURATION/">Configuration</a>.</li>
+<li>No CronJob and no second container runs these jobs. Thus the backend is one process.</li>
+</ul>
 <p>A rolling update can run two backends for a short time. To prevent this, the Deployment uses
 <code>Recreate</code>: Kubernetes stops the old pod before it starts the new pod. During an upgrade, there is
 a short time when no backend runs:</p>
@@ -1351,19 +1358,24 @@ a short time when no backend runs:</p>
 <p>JAVV has no high-availability layer of its own. Each part is one copy. Kubernetes or docker compose
 starts the part again when it fails.</p>
 <ul>
-<li><strong>The backend</strong> stops at start when it cannot connect to OpenSearch. Its restart policy starts it
-  again until OpenSearch replies. When OpenSearch stops, the backend reports that it is not ready
-  (<code>/readyz</code>). Then its Service stops sending requests to it, and nothing restarts it.</li>
+<li><strong>The backend</strong> stops at start when it cannot connect to OpenSearch.<ul>
+<li>Its restart policy starts it again until OpenSearch replies.</li>
+<li>When OpenSearch stops, the backend reports that it is not ready (<code>/readyz</code>). Then its
+  Service stops sending requests to it, and nothing restarts it.</li>
+</ul>
+</li>
 <li><strong>The frontend</strong> keeps no state. A new frontend is ready immediately. When a frontend stops during
   a scanner push, the scanner sends that push again.</li>
 <li><strong>OpenSearch</strong> keeps its data on its volume. When OpenSearch starts again, it reads the data
-  again. To keep the data available when a node fails, you need more nodes and replica shards. For
-  this, use an OpenSearch that you operate. JAVV connects to it with no change. See
+  again.<ul>
+<li>To keep the data available when a node fails, you need more nodes and replica shards.</li>
+<li>For this, use an OpenSearch that you operate. JAVV connects to it with no change. See
   <a href="../../DEPLOYING/#an-opensearch-of-your-own">Deploying: an OpenSearch of your own</a> and
   <a href="../opensearch-sizing/">Sizing OpenSearch</a>.</li>
+</ul>
+</li>
 <li><strong>Backups:</strong> make a snapshot manually in <strong>Settings › Data &amp; OpenSearch › Snapshots</strong>. JAVV does
-  not make scheduled snapshots yet
-  (<a href="https://github.com/Danube-Labs/javv-poc/issues/664">issue 664</a>).</li>
+  not make scheduled snapshots yet.</li>
 </ul>
 
 

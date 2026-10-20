@@ -1424,18 +1424,25 @@ default retention of 90 days:</p>
 <code>JAVV_EXPORT_TTL_HOURS</code> (24 hours by default). The maximum size of one export is
 <code>JAVV_EXPORT_MAX_BYTES</code> (500 MiB).</p>
 <h2 id="check-the-shard-count">Check the shard count<a class="headerlink" href="#check-the-shard-count" title="Permanent link">&para;</a></h2>
-<p>Shards are usually the first limit. Each index has <strong>one primary shard</strong>. Each cluster that you
-scan has five series of indices.</p>
-<p>JAVV starts a new index in a series at the first of these limits: 30 days, 5 million documents or
-50 GB. JAVV deletes an index when all of its data is older than the retention of the cluster. With
-the default settings (a new index each 30 days, a retention of 90 days), each series keeps about
-five indices. Thus <strong>each cluster that you scan uses about 25 shards</strong>.</p>
-<p>Other indices use about 15 shards. This number does not change when you add clusters. The audit
-log is not in that count. It starts a new index each 30 days, and JAVV never deletes it.</p>
-<p>By default, OpenSearch permits <strong>1,000 shards on each node</strong> (<code>cluster.max_shards_per_node</code>).
-With the default settings, one node has space for <strong>about 38 clusters that you scan</strong>. This number
-is a calculation from the default settings. Nobody did a load test to get it. Each shard also uses
-heap memory, whatever its size.</p>
+<p>Shards are usually the first limit.</p>
+<ul>
+<li>Each index has <strong>one primary shard</strong>.</li>
+<li>Each cluster that you scan has five series of indices.</li>
+<li>JAVV starts a new index in a series at the first of these limits: 30 days, 5 million documents or
+  50 GB.</li>
+<li>JAVV deletes an index when all of its data is older than the retention of the cluster.</li>
+<li>With the default settings (a new index each 30 days, a retention of 90 days), each series keeps
+  about five indices. Thus <strong>each cluster that you scan uses about 25 shards</strong>.</li>
+<li>Other indices use about 15 shards. This number does not change when you add clusters.</li>
+<li>The audit log is not in that count. It starts a new index each 30 days, and JAVV never deletes
+  it.</li>
+</ul>
+<p>By default, OpenSearch permits <strong>1,000 shards on each node</strong> (<code>cluster.max_shards_per_node</code>):</p>
+<ul>
+<li>With the default settings, one node has space for <strong>about 38 clusters that you scan</strong>.</li>
+<li>This number is a calculation from the default settings. Nobody did a load test to get it.</li>
+<li>Each shard also uses heap memory, whatever its size.</li>
+</ul>
 <p>To see the current shard count, do one of these steps:</p>
 <ul>
 <li>In JAVV, go to <strong>Settings › Data &amp; OpenSearch</strong>. The runtime card shows the active shards.</li>
@@ -1456,9 +1463,12 @@ heap memory, whatever its size.</p>
     and increase the heap by the same proportion.</li>
 </ol>
 <h2 id="memory">Memory<a class="headerlink" href="#memory" title="Permanent link">&para;</a></h2>
-<p>The default heap is <strong>1 GB</strong>. The compose file sets it in <code>OPENSEARCH_JAVA_OPTS</code>. The
-<code>javv-opensearch</code> chart sets it in <code>opensearchJavaOpts</code>. <em>Measured:</em> 4 clusters, 1.7 million
-documents and 42 shards used about half of the heap.</p>
+<p>The default heap is <strong>1 GB</strong>:</p>
+<ul>
+<li>The compose file sets it in <code>OPENSEARCH_JAVA_OPTS</code>.</li>
+<li>The <code>javv-opensearch</code> chart sets it in <code>opensearchJavaOpts</code>.</li>
+<li><em>Measured:</em> 4 clusters, 1.7 million documents and 42 shards used about half of the heap.</li>
+</ul>
 <p>Increase the heap in these two conditions:</p>
 <ul>
 <li>The heap use stays high.</li>
@@ -1482,8 +1492,8 @@ watermark of OpenSearch. When it occurs:</p>
   <code>storage_error</code>.</li>
 <li>The scanners try the push again, with a longer wait each time. When all tries fail, a scanner
   keeps the push in its dead-letter file. In its next cycle, it scans the image again.</li>
-<li>In the web app, reads work. Sign-in and each change fail with "The store is read-only: its disk
-  is full", and a banner on each screen says so.</li>
+<li>In the web app, reads work. Sign-in and each change fail with
+  <code>The store is read-only: its disk is full</code>, and a banner on each screen says so.</li>
 <li>OpenSearch keeps all the data that it stored before. New scans wait until there is disk space.</li>
 <li>When there is disk space again, OpenSearch lifts the block itself. JAVV needs no restart.</li>
 </ul>
@@ -1499,11 +1509,13 @@ watermark of OpenSearch. When it occurs:</p>
 <h2 id="beyond-one-node">Beyond one node<a class="headerlink" href="#beyond-one-node" title="Permanent link">&para;</a></h2>
 <p>The compose file and the <code>javv-opensearch</code> chart run <strong>one OpenSearch node</strong>. The chart refuses
 all other values.</p>
-<p>You can need more capacity, or OpenSearch data that stays available when a node fails. For these
-conditions, operate your own OpenSearch with more nodes and with replica shards, and connect JAVV
-to it. See <a href="../../DEPLOYING/#an-opensearch-of-your-own">Deploying: an OpenSearch of your own</a>.
-JAVV needs no change for this. <a href="../multi-pod/">Scaling and failures</a> tells you which parts of JAVV
-scale.</p>
+<p>For more capacity, or for OpenSearch data that stays available when a node fails:</p>
+<ul>
+<li>Operate your own OpenSearch with more nodes and with replica shards, and connect JAVV to it. See
+  <a href="../../DEPLOYING/#an-opensearch-of-your-own">Deploying: an OpenSearch of your own</a>.</li>
+<li>JAVV needs no change for this.</li>
+<li><a href="../multi-pod/">Scaling and failures</a> tells you which parts of JAVV scale.</li>
+</ul>
 
 
 
