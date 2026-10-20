@@ -2,6 +2,11 @@
 
 <video controls preload="metadata" width="100%" src="videos/set-the-state-of-a-finding.mp4"></video>
 
+## Prerequisites
+
+- A role that allows triage: `triager`, `security_lead` or `admin`
+  ([What your role lets you do](index.md#what-your-role-lets-you-do)).
+
 ## Steps
 
 1. Open a finding from the Findings table. The triage panel sets the state of this one finding.
