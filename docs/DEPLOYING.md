@@ -317,14 +317,14 @@ The answers are for the default values of the three charts.
 | Pod Security level | `javv` and `javv-scanner`: `restricted`. `javv-opensearch`: `baseline`, as the official OpenSearch chart ([Pod Security](#pod-security)). |
 | Objects outside the namespace (RBAC) | Only `javv-scanner` makes them: one ClusterRole and its ClusterRoleBinding. The scanners can `list` pods and `get` the `kube-system` namespace. They cannot read Secrets. No chart makes CRDs or webhooks. |
 | CPU | amd64 only. |
-| Images | `ghcr.io/danube-labs/javv-backend`, `javv-frontend`, `javv-scanner-trivy` and `javv-scanner-grype`, and `opensearchproject/opensearch` from Docker Hub. For a mirror, set the `image.repository` value of each image in its chart. |
-| Connections out | The frontend connects to the backend, and the backend to OpenSearch. The scanners connect to the registries of the images that they scan, to the sources of the vulnerability databases ([mirrors](#what-the-scanner-chart-runs)) and to the JAVV address. |
+| Images | `ghcr.io/danube-labs/javv-backend`, `javv-frontend`, `javv-scanner-trivy` and `javv-scanner-grype`, and `opensearchproject/opensearch` from Docker Hub. For a mirror, set the `image.repository` value of each image in its chart. Docker Hub limits the pulls of anonymous users, so a mirror of the OpenSearch image also prevents refused pulls. |
+| Connections out | The frontend connects to the backend, and the backend to OpenSearch. The scanners connect to the registries of the images that they scan, to the sources of the vulnerability databases and to the JAVV address. The default database hosts are `mirror.gcr.io`, then `ghcr.io` and `pkg-containers.githubusercontent.com` for Trivy, and `grype.anchore.io` for Grype ([mirrors](#what-the-scanner-chart-runs)). |
 | Ports and sign-in | 8080: the frontend Service. Each API call needs a session or a scanner token, except the sign-in, the sign-out and `/readyz`. 8000: the backend, `ClusterIP` only ([Open routes on port 8000](#open-routes-on-port-8000)). 9200: OpenSearch, `ClusterIP` only, with a password or a client certificate. |
 | Certificates | By default, OpenSearch uses its demo certificates. With them, the demo admin certificate of the public image has full access to OpenSearch. With your own certificates ([Steps](#steps), step 1), it has no access. Use your own certificates for each installation that is not a trial. |
 | Storage | OpenSearch: one 8Gi `ReadWriteOnce` volume, the default of the official chart. `javv-scanner`: one 10Gi `ReadWriteOnce` volume for each scanner. Both use the default StorageClass. |
-| CPU and memory requests | Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (`opensearch.opensearchJavaOpts`). |
+| CPU and memory requests | Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (`opensearch.opensearchJavaOpts`), more than the request. Thus Kubernetes can put OpenSearch on a node without the memory for it. Set `opensearch.resources.requests.memory` to 2Gi or more. The OpenSearch docs recommend a heap of half the memory or less. |
 | NetworkPolicy | The charts make none. To limit the connections, allow port 8000 only from the frontend pods, and port 9200 only from the backend pods. |
-| Tested on | The CI installs the charts in kind. |
+| Tested on | The CI installs the charts in kind. On 2026-10-20, this was kind v0.33.0 with Kubernetes v1.37.0. |
 | Uninstall | `helm uninstall` keeps the volume of OpenSearch, because a StatefulSet makes it. To delete the data, also delete that PersistentVolumeClaim. |
 
 #### The memory map limit
@@ -361,7 +361,9 @@ The answers are for the default values of the three charts.
           type: RuntimeDefault
     ```
     We checked the pod that `helm template` makes with these values. The CI does not start
-    OpenSearch with them. The `helm test` Pod of `javv-opensearch` does not set `seccompProfile`.
+    OpenSearch with them.
+- The `helm test` Pod of `javv-opensearch` does not set `seccompProfile`. In a namespace that
+  enforces `restricted`, Kubernetes refuses this Pod, and `helm test` fails.
 
 #### Open routes on port 8000
 
