@@ -446,6 +446,11 @@ A digest-pinned image (`repo@sha256:…`) has no tag anywhere in Kubernetes: its
 empty-value dash with the title "Pinned by digest: the pod names no tag." (operator ruling
 2026-10-11, issue 817).
 
+**Filters:** the rail and the filter bar filter the served inventory in the browser. Severity,
+Namespace, Image and Tag take several values: OR within a field, AND across fields. A second pick
+adds the value (issue 950). Scanner takes one value. Findings keeps the one-value limit of its
+backend (issue 949).
+
 **States:** loading; empty/first-run; **scanner-silent** banner ("Inventory as of T; scanner
 silent since…"); **last-run-incomplete** banner ("showing the last complete inventory"); `T<now`
 history banner; degraded. Never shows partial/stale inventory as live (V4-DELTA).
