@@ -167,11 +167,13 @@ different folder uses the containers and the volumes of the first.
 
 **Steps:**
 
-1. Put the three files of the release in a different folder, with its own `.env`.
-2. In that `.env`, add a project name for this installation:
+1. Put the three files of the release in a different folder.
+2. In that folder, make the `.env` with a project name for this installation:
     ```bash
-    COMPOSE_PROJECT_NAME=javv-test
+    COMPOSE_PROJECT_NAME=javv-test ./setup.sh
     ```
+    `setup.sh` writes `COMPOSE_PROJECT_NAME=javv-test` to `.env`.
+
 3. In that `compose.yaml`, change the host port of `frontend` (the left side of `"8080:8080"`),
     for example to `"8090:8080"`.
 4. Run each `docker compose` command of this installation in its folder. Compose reads the project
@@ -179,6 +181,30 @@ different folder uses the containers and the volumes of the first.
 
 Do not change the project name of an installation that has data. Its volumes have the old name.
 Under a new name, JAVV starts with empty volumes.
+
+### If OpenSearch stays unhealthy
+
+`docker compose up -d` stops with `container javv-opensearch-1 is unhealthy`, and the health
+test of OpenSearch gets `401`. To see the results of that test:
+
+```bash
+docker inspect javv-opensearch-1 --format '{{range .State.Health.Log}}{{.Output}}{{end}}'
+```
+
+The cause: OpenSearch started on the volume of an earlier installation with the same project name.
+OpenSearch keeps the passwords of its first start, and the new `.env` has other passwords.
+`setup.sh` stops before this occurs. An `.env` that you made or replaced yourself can still cause
+it.
+
+Do one of these:
+
+- **To delete the earlier installation and its data:**
+    ```bash
+    docker compose down -v
+    docker compose up -d
+    ```
+- **To keep the earlier installation:** stop this one with `docker compose down`. Then add
+  `COMPOSE_PROJECT_NAME=<new name>` to `.env`, and run `docker compose up -d`.
 
 ### http or https
 
