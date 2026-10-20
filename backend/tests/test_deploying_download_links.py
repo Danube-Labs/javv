@@ -14,7 +14,13 @@ from backend.version import APP_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
 GUIDE = ROOT / "docs" / "DEPLOYING.md"
-PAGES = ("docs/DEPLOYING.md",)
+CONFIG = json.loads((ROOT / "release-please-config.json").read_text())
+# each docs page that release-please moves: it holds the version in its commands
+PAGES = sorted(
+    entry["path"]
+    for entry in CONFIG["packages"]["."]["extra-files"]
+    if entry["path"].endswith(".md")
+)
 LINK = re.compile(
     r"https://raw\.githubusercontent\.com/Danube-Labs/javv-poc/v(?P<version>[^/]+)"
     r"/deploy/compose/(?P<file>[^\")\s]+)"
@@ -63,9 +69,10 @@ def test_no_command_has_a_version_placeholder(page: str) -> None:
     assert "<version>" not in (ROOT / page).read_text()
 
 
+def test_the_install_guide_is_one_of_the_pages() -> None:
+    assert "docs/DEPLOYING.md" in PAGES
+
+
 @pytest.mark.parametrize("page", PAGES)
 def test_release_please_moves_each_version(page: str) -> None:
     assert all(updated for _, updated in _versioned_lines(ROOT / page))
-    config = json.loads((ROOT / "release-please-config.json").read_text())
-    paths = {entry["path"] for entry in config["packages"]["."]["extra-files"]}
-    assert page in paths
