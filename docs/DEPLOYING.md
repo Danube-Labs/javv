@@ -287,6 +287,9 @@ jobs run for the first time.
 - bash and `openssl`. The commands read each secret at a prompt, or make it in place. Thus no
   secret goes into your shell history or into the arguments of a process.
 - One namespace for `javv-opensearch` and `javv`.
+- Nodes with amd64 CPUs.
+- Read [What the charts need from your cluster](#what-the-charts-need-from-your-cluster) before you
+  install.
 
 ### The charts
 
@@ -302,6 +305,75 @@ of its values.
 
 From a checkout that is not a release, use `deploy/helm/<chart>` in place of
 `oci://ghcr.io/danube-labs/charts/<chart> --version "$VERSION"`.
+
+### What the charts need from your cluster
+
+The answers are for the default values of the three charts.
+
+| Question | Answer |
+|---|---|
+| Privileged containers, host access | None. No container has `privileged: true`. No pod uses `hostPath`, the host network or sysctls. |
+| Memory map limit (`vm.max_map_count`) | The charts do not change it ([The memory map limit](#the-memory-map-limit)). |
+| Pod Security level | `javv` and `javv-scanner`: `restricted`. `javv-opensearch`: `baseline`, as the official OpenSearch chart ([Pod Security](#pod-security)). |
+| Objects outside the namespace (RBAC) | Only `javv-scanner` makes them: one ClusterRole and its ClusterRoleBinding. The scanners can `list` pods and `get` the `kube-system` namespace. They cannot read Secrets. No chart makes CRDs or webhooks. |
+| CPU | amd64 only. |
+| Images | `ghcr.io/danube-labs/javv-backend`, `javv-frontend`, `javv-scanner-trivy` and `javv-scanner-grype`, and `opensearchproject/opensearch` from Docker Hub. For a mirror, set the `image.repository` value of each image in its chart. |
+| Connections out | The frontend connects to the backend, and the backend to OpenSearch. The scanners connect to the registries of the images that they scan, to the sources of the vulnerability databases ([mirrors](#what-the-scanner-chart-runs)) and to the JAVV address. |
+| Ports and sign-in | 8080: the frontend Service. Each API call needs a session or a scanner token, except the sign-in, the sign-out and `/readyz`. 8000: the backend, `ClusterIP` only ([Open routes on port 8000](#open-routes-on-port-8000)). 9200: OpenSearch, `ClusterIP` only, with a password or a client certificate. |
+| Certificates | By default, OpenSearch uses its demo certificates. With them, the demo admin certificate of the public image has full access to OpenSearch. With your own certificates ([Steps](#steps), step 1), it has no access. Use your own certificates for each installation that is not a trial. |
+| Storage | OpenSearch: one 8Gi `ReadWriteOnce` volume, the default of the official chart. `javv-scanner`: one 10Gi `ReadWriteOnce` volume for each scanner. Both use the default StorageClass. |
+| CPU and memory requests | Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (`opensearch.opensearchJavaOpts`). |
+| NetworkPolicy | The charts make none. To limit the connections, allow port 8000 only from the frontend pods, and port 9200 only from the backend pods. |
+| Tested on | The CI installs the charts in kind. |
+| Uninstall | `helm uninstall` keeps the volume of OpenSearch, because a StatefulSet makes it. To delete the data, also delete that PersistentVolumeClaim. |
+
+#### The memory map limit
+
+- The charts do not set `vm.max_map_count`, and no container changes the node.
+- On 2026-10-20, our development OpenSearch (one node, 42 indices, 1.74 million documents) used 1118
+  memory maps. The default limit of Linux is 65530. This is a measurement of one store, not a load
+  test. The CI does not run the charts on a node at 65530.
+- To get a higher limit, use one of these:
+    - Set `vm.max_map_count=262144` on the nodes. The OpenSearch docs recommend this for
+      production.
+    - Set `opensearch.sysctlInit.enabled=true`. An init container of the official chart then sets
+      the limit on the node. This container has `privileged: true` and runs as root.
+    - Add `node.store.allow_mmap: false` to `opensearch.config."opensearch.yml"`. OpenSearch then
+      uses no memory maps for its index files, and the limit has no effect. Reads are slower. Helm
+      replaces the full `opensearch.yml` value. Thus copy the full value from
+      `deploy/helm/javv-opensearch/values.yaml` and add the line, or the TLS settings of the chart
+      go away.
+
+#### Pod Security
+
+- `javv` and `javv-scanner`: each container runs as user 65532, with `runAsNonRoot`,
+  `seccompProfile: RuntimeDefault`, `allowPrivilegeEscalation: false`, no capabilities and a
+  read-only root file system.
+- `javv-opensearch`: each container runs as user 1000, with `runAsNonRoot` and no capabilities. The
+  official chart does not set `seccompProfile` or `allowPrivilegeEscalation: false`.
+- To make the OpenSearch pod meet `restricted`, add these values:
+    ```yaml
+    opensearch:
+      securityContext:
+        allowPrivilegeEscalation: false
+      podSecurityContext:
+        seccompProfile:
+          type: RuntimeDefault
+    ```
+    We checked the pod that `helm template` makes with these values. The CI does not start
+    OpenSearch with them. The `helm test` Pod of `javv-opensearch` does not set `seccompProfile`.
+
+#### Open routes on port 8000
+
+The backend serves these routes with no sign-in. Of these routes, the frontend sends only `/readyz`
+to the backend.
+
+- `/metrics`: Prometheus metrics. No label holds a user, a cluster, a token or an image.
+  [Metrics](API.md#metrics) lists each metric and its labels.
+- `/docs` and `/openapi.json`: the description of the API. The same description is in the
+  repository (`frontend/openapi.json`). An API call from `/docs` needs the same sign-in or token as
+  any other API call.
+- `/healthz` and `/readyz`: the health checks.
 
 ### Steps
 
@@ -502,8 +574,8 @@ The [chart README](../deploy/helm/javv-scanner/README.md) lists all of its value
 - **The DB sources:** by default, the sources of the scanner vendors, over the internet. To use a
   mirror, set `trivy.vulnDb.repository` and `trivy.vulnDb.javaRepository` (OCI repositories), or
   `grype.vulnDb.updateUrl` (a DB listing).
-- **What the scanners can read in the cluster:** the pods in all namespaces, to find the images
-  that run, and the `kube-system` namespace, because its UID is the cluster ID. They can read
+- **What the scanners can read in the cluster (RBAC):** the pods in all namespaces, to find the
+  images that run, and the `kube-system` namespace, because its UID is the cluster ID. They can read
   nothing more, and no Secrets. A registry login comes as a file in the scan container
   ([Scan images from private registries](#scan-images-from-private-registries)).
 - **The images** are the scanner versions in [`versions.yaml`](../versions.yaml).
