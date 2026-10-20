@@ -8,8 +8,9 @@ Scanners for this cluster, pushing to {{ .Values.backendUrl }}{{ with .Values.cl
 
 Check that JAVV answers and accepts the tokens: helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
 
-Run a cycle now instead of waiting for the schedule. One cycle at a time per scanner holds only
-for the cycles the CronJob starts itself, so pause it first and start yours when none is running:
+Run a cycle now instead of waiting for the schedule. The CronJob runs one cycle at a time, but it
+does not see a cycle that you start yourself. So pause the CronJob first, and start your cycle when
+no cycle is running:
 {{- range $name := include "javv-scanner.scanners" . | fromJsonArray }}
 {{- if (index $.Values $name).enabled }}
 {{- $cj := printf "%s-%s" (include "javv-scanner.fullname" $) $name }}

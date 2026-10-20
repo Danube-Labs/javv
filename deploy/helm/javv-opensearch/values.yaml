@@ -1,8 +1,8 @@
-# OpenSearch for JAVV. Everything sits under `opensearch:`, the official chart's values,
-# set to what deploy/compose/compose.yaml runs. JAVV's own keys are under `opensearch.javv`: a
-# wrapper chart cannot compute its subchart's values, so they live where the subchart's templated
-# fields (config, extraVolumes, extraVolumeMounts, extraInitContainers) and this chart's own
-# templates can both read them. Any other key of the official chart can be set here too:
+# OpenSearch for JAVV. Everything is under `opensearch:`: the values of the official OpenSearch
+# chart, set to what deploy/compose/compose.yaml runs. The keys of JAVV are under
+# `opensearch.javv`. Only there can both the templates of the official chart (config,
+# extraVolumes, extraVolumeMounts, extraInitContainers) and the templates of this chart read them.
+# You can also set any other key of the official chart here:
 # https://github.com/opensearch-project/helm-charts/blob/main/charts/opensearch/values.yaml
 
 opensearch:

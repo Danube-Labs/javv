@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Makes .env for a new compose install of JAVV (issue 869): random secrets in place of the four
-# empty ones in .env.example, and the first admin password shown one time. Run it once, in the
+# Makes .env for a new compose install of JAVV: random secrets in place of the four empty ones
+# in .env.example, and the first admin password shown one time. Run it once, in the
 # folder of compose.yaml, before the first `docker compose up -d`.
 #
 #   ./setup.sh           .env turns off the cookie's Secure flag, so sign-in works over http
@@ -10,7 +10,8 @@
 # Use --https only when people open JAVV at an https:// address, through a proxy or a load
 # balancer in front of JAVV. JAVV itself serves only http.
 #
-# It never replaces an .env that exists: a new JAVV_SECRET_KEY ends every token and session.
+# It never replaces an .env that exists: a new JAVV_SECRET_KEY makes every token and session
+# invalid.
 set -eu
 
 cd "$(dirname "$0")"
@@ -20,7 +21,7 @@ case "${1:-}" in
   "") ;;
   --https) https=true ;;
   -h | --help)
-    sed -n '3,13p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '3,14p' "$(basename "$0")" | sed 's/^# \{0,1\}//'
     exit 0
     ;;
   *)
@@ -49,7 +50,7 @@ admin_password=$(random_hex 12)
 opensearch_admin_password="Javv-$(random_hex 16)-0"
 opensearch_password=$(random_hex 24)
 
-# the template must have each line that this script fills, once, or the install is half made
+# the template must have each line that this script fills, one time. If not, nothing changes
 for line in JAVV_SECRET_KEY= JAVV_BOOTSTRAP_ADMIN_PASSWORD= JAVV_OPENSEARCH_ADMIN_PASSWORD= \
   JAVV_OPENSEARCH_PASSWORD= JAVV_SESSION_COOKIE_SECURE=false; do
   if [ "$(grep -c -x -- "$line" .env.example)" != 1 ]; then

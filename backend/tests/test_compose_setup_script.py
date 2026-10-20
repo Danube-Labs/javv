@@ -133,6 +133,22 @@ def test_an_unknown_option_stops_the_script_and_makes_no_file(folder: Path) -> N
     assert not (folder / ".env").exists()
 
 
+def test_help_by_a_relative_path_shows_both_commands_and_makes_no_file(folder: Path) -> None:
+    # `sh compose/setup.sh --help` from the parent folder: the script changes folder before it
+    # reads its own help, so a relative path to it must still work
+    result = subprocess.run(
+        ["sh", f"{folder.name}/setup.sh", "--help"],
+        capture_output=True,
+        text=True,
+        cwd=folder.parent,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "./setup.sh --https" in result.stdout
+    assert "Use --https only when" in result.stdout
+    assert not (folder / ".env").exists()
+
+
 @pytest.mark.parametrize("key", [*SECRETS, "JAVV_SESSION_COOKIE_SECURE"])
 def test_a_template_without_a_key_stops_the_script_and_makes_no_file(
     folder: Path, key: str

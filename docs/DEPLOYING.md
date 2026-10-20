@@ -82,7 +82,7 @@ chmod +x setup.sh
 3. **Start JAVV:**
     ```bash
     docker compose up -d   # pulls the images of the release the first time
-    docker compose ps      # opensearch, backend and frontend all "healthy"
+    docker compose ps      # wait until opensearch, backend and frontend all show "healthy"
     ```
     The backend makes its indices at its first start.
 4. **Sign in** at `http://<this machine>:8080` as `admin`, with the password that `setup.sh` showed.
@@ -393,7 +393,8 @@ network. Each pair of a cluster and a scanner has its own token.
     ```bash
     VERSION=0.8.5
     kubectl create namespace javv-scanner
-    for s in trivy grype; do  # each token at a prompt: out of shell history and process arguments
+    # asks for each token, so it is not in your shell history or the process list
+    for s in trivy grype; do
       read -rs -p "$s token: " token && echo
       printf '%s' "$token" | kubectl -n javv-scanner create secret generic "javv-$s-token" \
         --from-file=token=/dev/stdin

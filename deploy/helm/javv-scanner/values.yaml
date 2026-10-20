@@ -83,7 +83,7 @@ trivy:
     JAVV_TRIVY_PKG_TYPES: ""
     # one image's scan limit (5m0s); empty is Trivy's default
     JAVV_TRIVY_TIMEOUT: ""
-    # seconds a cycle may spend retrying its pushes and its inventory commit, in all
+    # the total seconds that a cycle can spend on retries of its pushes and its inventory commit
     JAVV_PUSH_RETRY_BUDGET_SECONDS: "360"
 
   # -- More environment variables for the refresh and the scan, in the form of Kubernetes.
@@ -153,7 +153,7 @@ grype:
     JAVV_GRYPE_SCOPE: ""
     # seconds before one image's scan is stopped
     JAVV_GRYPE_SCAN_TIMEOUT: "600"
-    # seconds a cycle may spend retrying its pushes and its inventory commit, in all
+    # the total seconds that a cycle can spend on retries of its pushes and its inventory commit
     JAVV_PUSH_RETRY_BUDGET_SECONDS: "360"
 
   # -- More environment variables for the refresh and the scan, in the form of Kubernetes.

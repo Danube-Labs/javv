@@ -1,6 +1,6 @@
-# JAVV's backend and frontend. Built from deploy/compose/compose.yaml: the same settings, the same
-# defaults, the same comments. backend/tests/test_compose_settings.py holds the settings below to
-# the code exactly as it holds the compose file. Guide: docs/DEPLOYING.md.
+# The backend and the frontend of JAVV. Built from deploy/compose/compose.yaml: the same settings,
+# the same defaults, the same comments. A test keeps the defaults below equal to the defaults in
+# the code, as for the compose file. Guide: docs/DEPLOYING.md.
 #
 # The store is the javv-opensearch chart (same namespace by default); scanners in each monitored
 # cluster are the javv-scanner chart.
@@ -44,8 +44,8 @@ backend:
     JAVV_BOOTSTRAP_ADMIN_USERNAME: "admin"
 
     # --- sign-in ---
-    # the session cookie's Secure flag: keep true when browsers use https:// (through a proxy);
-    # set false only when the app is reached over plain http (or login fails)
+    # the session cookie's Secure flag: keep true when browsers use https:// (through a proxy).
+    # when people open JAVV over plain http, set false, or sign-in fails
     JAVV_SESSION_COOKIE_SECURE: "true"
     # hours a sign-in lasts
     JAVV_SESSION_TTL_HOURS: "24.0"
@@ -57,7 +57,7 @@ backend:
     JAVV_LOGIN_LOCKOUT_MINUTES: "15.0"
 
     # --- scanner pushes ---
-    # largest push on the wire, in bytes (10 MiB)
+    # largest push as it arrives (still compressed), in bytes (10 MiB)
     JAVV_INGEST_MAX_COMPRESSED_BYTES: "10485760"
     # largest push once decompressed, in bytes (60 MiB)
     JAVV_INGEST_MAX_BODY_BYTES: "62914560"
@@ -69,7 +69,7 @@ backend:
     # --- triage, search and exports ---
     # a bulk action on at most this many findings applies at once; more is refused
     JAVV_BULK_INLINE_LIMIT: "5000"
-    # a bulk selector may match at most this many findings
+    # the most findings that one bulk selection can hold. The backend refuses a larger one
     JAVV_BULK_MAX_TARGETS: "10000"
     # how long a page of a search cursor stays open between pages
     JAVV_SEARCH_PIT_KEEP_ALIVE: "2m"
@@ -77,7 +77,8 @@ backend:
     JAVV_EXPORT_MAX_ROWS: "50000"
     # open search cursors and exports per user at one time
     JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL: "10"
-    # browser warning batches per user per minute
+    # batches of browser warnings and errors that one user can send in one minute
+    # (a batch holds 20 at most)
     JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE: "60"
 
     # --- scheduled exports ---
@@ -98,12 +99,12 @@ backend:
     # seconds before an inspector query gives up
     JAVV_INSPECT_TIMEOUT_SECONDS: "10.0"
     # cluster retirement: the fleet defaults until a value is saved at runtime
-    # days without an accepted scan before a cluster is retired (0 = never)
+    # days without an accepted scan before JAVV retires a cluster (0 means never)
     JAVV_CLUSTER_RETIRE_AFTER_DAYS: "45"
     # days before retirement that the warning banner and the bell start
     JAVV_CLUSTER_RETIREMENT_WARN_DAYS: "7"
 
-    # --- background jobs: cron expressions read in TZ; empty = never on a schedule ---
+    # --- background jobs: cron expressions, read in TZ. An empty one never runs on a schedule ---
     # false stops every schedule; the jobs can still be run from the Data inspector
     JAVV_SCHEDULER_ENABLED: "true"
     # builds queued exports and bulk actions
@@ -112,11 +113,12 @@ backend:
     JAVV_JOB_REPORT_SWEEP_CRON: "15 * * * *"
     # marks findings stale and ends expired risk acceptances
     JAVV_JOB_STALENESS_SWEEP_CRON: "0 2 * * *"
-    # rolls history indices over and drops those past retention
+    # starts new history indices, and deletes the ones older than the retention
     JAVV_JOB_LIFECYCLE_SWEEP_CRON: "0 3 * * *"
-    # removes findings gone from every scan for longer than the cleanup window
+    # deletes the findings that no scan found for longer than the cleanup window
     JAVV_JOB_FINDINGS_CLEANUP_CRON: "0 4 * * *"
-    # retires clusters silent past their window, brings back the ones that scan again
+    # retires the clusters that sent no scan for longer than their window, and brings back the
+    # ones that scan again
     JAVV_JOB_CLUSTER_RETIREMENT_CRON: "15 4 * * *"
     # deletes expired sign-in sessions
     JAVV_JOB_SESSION_SWEEP_CRON: "30 4 * * *"
@@ -165,7 +167,7 @@ frontend:
 
   # -- The settings of the frontend server (docs/CONFIGURATION.md, "Frontend server settings").
   config:
-    # where /api, /auth and /readyz are forwarded; empty = this chart's backend Service
+    # where the frontend sends /api, /auth and /readyz. When empty, this chart's backend Service
     JAVV_BACKEND_URL: ""
     # seconds a connection to the backend may take to open before the answer is a 502; a slow
     # answer (an export) is never cut
