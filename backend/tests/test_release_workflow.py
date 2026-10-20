@@ -147,9 +147,9 @@ def test_the_release_verifies_with_the_identity_the_docs_give() -> None:
 
     docs = DEPLOYING.read_text()
     section = docs.split("## Verify the images and charts\n", 1)[1].split("\n## ", 1)[0]
-    assert "cosign verify ghcr.io/danube-labs/charts/javv:<version>" in section
-    identity = re.search(r"^IDENTITY='(.+)'$", section, re.M)
-    issuer = re.search(r"^ISSUER=(\S+)$", section, re.M)
+    assert 'cosign verify "ghcr.io/danube-labs/charts/javv:$VERSION"' in section
+    identity = re.search(r"^\s*IDENTITY='(.+)'$", section, re.M)
+    issuer = re.search(r"^\s*ISSUER=(\S+)$", section, re.M)
     assert identity and issuer
     assert (identity[1], issuer[1]) == (verify["IDENTITY"], verify["ISSUER"])
 
