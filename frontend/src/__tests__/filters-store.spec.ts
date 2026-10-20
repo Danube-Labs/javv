@@ -28,6 +28,38 @@ describe('filters store', () => {
     expect(s.selections.scanner).toEqual(['grype'])
   })
 
+  // issue 949: the three list facets of the Findings rail take several values
+  it.each(['namespace', 'ptype', 'assignee'])('a second %s pick adds the value', (field) => {
+    const s = useStore()
+    s.toggle(field, 'one')
+    s.toggle(field, 'two')
+    expect(s.selections[field]).toEqual(['one', 'two'])
+    s.toggle(field, 'one')
+    expect(s.selections[field]).toEqual(['two'])
+  })
+
+  it('several namespaces, package types and assignees round-trip the URL in both modes', () => {
+    const s = useStore()
+    s.toggle('namespace', 'payments')
+    s.toggle('namespace', 'edge')
+    s.pickValue('ptype', 'debian', 'not')
+    s.pickValue('ptype', 'npm', 'not')
+    s.toggle('assignee', 'ana')
+    s.toggle('assignee', 'bob')
+    const query = s.toQuery()
+    expect(query).toMatchObject({
+      namespace: 'payments,edge',
+      ptype: '!debian,!npm',
+      assignee: 'ana,bob',
+    })
+    s.clearAll()
+    s.fromQuery(query)
+    expect(s.selections.namespace).toEqual(['payments', 'edge'])
+    expect(s.selections.ptype).toEqual(['debian', 'npm'])
+    expect(s.modeOf('ptype')).toBe('not')
+    expect(s.selections.assignee).toEqual(['ana', 'bob'])
+  })
+
   it('clearField and clearAll empty the selections', () => {
     const s = useStore()
     s.toggle('severity', 'low')

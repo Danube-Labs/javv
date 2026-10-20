@@ -31,7 +31,7 @@ const MODES = { severity: 'not' } as const
 
 const GOLDEN_PRESET = {
   exclude_severity: ['low', 'negligible'],
-  namespace: 'payments',
+  namespace: ['payments'],
   kev: true,
   new_within_days: 7,
   q: 'curl',
@@ -95,6 +95,46 @@ describe('saved views — the golden capture ⇄ apply round-trip (SCREENS §6)'
 
   it('an empty workbench captures an empty preset — "everything" is a valid view', () => {
     expect(captureLens(FINDINGS_FIELDS, emptySelections(FINDINGS_FIELDS), {}, 30)).toEqual({})
+  })
+})
+
+/**
+ * Issue 949: namespace, package type and assignee are lists in a preset. A view saved before
+ * that holds a plain string. The API sends the stored document as it is, so the frontend must
+ * still read such a view, and its card count must still send a valid query.
+ */
+describe('saved views — several values in one field (issue 949)', () => {
+  const MULTI = {
+    ...emptySelections(FINDINGS_FIELDS),
+    namespace: ['payments', 'edge'],
+    ptype: ['debian', 'npm'],
+    assignee: ['ana'],
+  }
+
+  it('capture and apply keep every value, in both modes', () => {
+    const preset = captureLens(FINDINGS_FIELDS, MULTI, { ptype: 'not' }, 30)
+    expect(preset).toEqual({
+      namespace: ['payments', 'edge'],
+      exclude_ptype: ['debian', 'npm'],
+      assignee: ['ana'],
+    })
+    expect(presetToRouteQuery(FINDINGS_FIELDS, preset as never)).toEqual({
+      namespace: 'payments,edge',
+      ptype: '!debian,!npm',
+      assignee: 'ana',
+    })
+    expect(presetSummary(FINDINGS_FIELDS, preset as never)).toContain('Namespace is one of payments, edge')
+  })
+
+  it('a view saved before issue 949, with one string value, still applies and counts', () => {
+    const old = { namespace: 'payments', exclude_assignee: 'bob' }
+    expect(presetToRouteQuery(FINDINGS_FIELDS, old as never)).toEqual({
+      namespace: 'payments',
+      assignee: '!bob',
+    })
+    expect(presetSummary(FINDINGS_FIELDS, old as never)).toContain('Namespace is payments')
+    // the card count sends the stored value as it is: one value is a valid list param
+    expect(presetCountQuery(old as never, CID)).toEqual({ cluster_id: CID, ...old })
   })
 })
 

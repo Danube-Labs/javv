@@ -157,6 +157,13 @@ as pure units** (Vitest).
   Fields without a backend aggregation (namespace/image/assignee) are FilterBar-only free-text —
   no invented client-side buckets.
 
+- **2026-10-20 — several values for namespace, package type and assignee (issue 949):** the
+  backend now takes lists for `namespace`, `ptype`, `assignee`, `image_repo`, `cve_id` and
+  `package_name` (PR 953). The Findings config gives `multi: true` to `namespace`, `ptype` and
+  `assignee`, so a second pick adds the value. Their facets count without their own field's
+  filter, so the other values stay in the list. Image, CVE and Package wait for a ruling on their
+  control (issue 949, PR C). `scanner` stays one value.
+
 ## Config tracking
 
 > **When this bolt introduces config**, add each new knob (a `JAVV_*` / OpenSearch env var, a

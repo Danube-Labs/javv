@@ -46,6 +46,13 @@ describe('lensToSelector (bulk never widens the lens)', () => {
     expect(r.blocked).toMatch(/exactly one/)
   })
 
+  // issue 949: assignee takes several values now; the selector still takes exactly one
+  it('blocks two assignees, as it blocks two severities', () => {
+    const r = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical'], assignee: ['ana', 'bob'] }))
+    expect(r.selector).toBeNull()
+    expect(r.blocked).toBe('Pick a single Assignee value. Bulk triage works on exactly one at a time.')
+  })
+
   it('refuses an empty lens — whole-cluster bulk is never offered', () => {
     const r = lensToSelector(FINDINGS_FIELDS, sel())
     expect(r.selector).toBeNull()
