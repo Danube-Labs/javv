@@ -143,7 +143,7 @@ services:
       JAVV_BOOTSTRAP_ADMIN_USERNAME: ${JAVV_BOOTSTRAP_ADMIN_USERNAME:-admin}
 
       # --- sign-in ---
-      # the session cookie's Secure flag: keep true behind anything that terminates TLS;
+      # the session cookie's Secure flag: keep true when browsers use https:// (through a proxy);
       # set false in .env only when the app is reached over plain http (or login fails)
       JAVV_SESSION_COOKIE_SECURE: ${JAVV_SESSION_COOKIE_SECURE:-true}
       # hours a sign-in lasts

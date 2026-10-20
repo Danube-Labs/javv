@@ -62,7 +62,7 @@ chmod +x setup.sh
 2. **Make the `.env` file.** In the folder with the three files, run one of these commands:
     ```bash
     ./setup.sh           # browsers use plain http, for example http://<this machine>:8080
-    ./setup.sh --https   # a proxy or a load balancer in front of JAVV ends https
+    ./setup.sh --https   # browsers use https://, through a proxy or a load balancer
     ```
     The script:
 
@@ -184,8 +184,9 @@ Under a new name, JAVV starts with empty volumes.
 By default, the session cookie has the `Secure` flag. A browser keeps a `Secure` cookie only from
 `https` or from `localhost`.
 
-- **With TLS in front of JAVV** (a proxy, a load balancer or a gateway that ends `https`): keep the
-  default. Delete `JAVV_SESSION_COOKIE_SECURE=false` from `.env`. `./setup.sh --https` does this.
+- **With https in front of JAVV** (browsers use an `https://` address, and a proxy, a load balancer
+  or a gateway sends their requests to JAVV): keep the default. Delete
+  `JAVV_SESSION_COOKIE_SECURE=false` from `.env`. `./setup.sh --https` does this.
 - **With plain http** (for example `http://<machine>:8080` on a LAN): set
   `JAVV_SESSION_COOKIE_SECURE=false` in `.env`. `.env.example` sets this value. Without it, the
   sign-in fails, and the sign-in page says that the browser refused the session cookie.

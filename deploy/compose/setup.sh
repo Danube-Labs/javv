@@ -4,8 +4,8 @@
 # empty ones in .env.example, and the first admin password shown one time. Run it once, in the
 # folder of compose.yaml, before the first `docker compose up -d`.
 #
-#   ./setup.sh           plain http, for example http://<this machine>:8080 on a LAN
-#   ./setup.sh --https   a proxy in front of JAVV ends https: the session cookie keeps Secure
+#   ./setup.sh           browsers use plain http, for example http://<this machine>:8080
+#   ./setup.sh --https   browsers use https://, through a proxy or a load balancer
 #
 # It never replaces an .env that exists: a new JAVV_SECRET_KEY ends every token and session.
 set -eu

@@ -8,7 +8,8 @@ other clusters and the known limits, is [`docs/DEPLOYING.md`](../../docs/DEPLOYI
 sudo sysctl -w vm.max_map_count=262144
 
 cd deploy/compose
-./setup.sh             # makes .env with random secrets; --https behind a proxy that ends https
+./setup.sh             # makes .env with random secrets, for browsers on plain http
+# ./setup.sh --https   # the same, for browsers on https://, through a proxy in front of JAVV
 docker compose up -d   # pulls this release's JAVV images
 docker compose ps      # wait until all three are healthy
 ```
