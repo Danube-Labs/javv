@@ -4,8 +4,11 @@
 # empty ones in .env.example, and the first admin password shown one time. Run it once, in the
 # folder of compose.yaml, before the first `docker compose up -d`.
 #
-#   ./setup.sh           browsers use plain http, for example http://<this machine>:8080
-#   ./setup.sh --https   browsers use https://, through a proxy or a load balancer
+#   ./setup.sh           .env turns off the cookie's Secure flag, so sign-in works over http
+#   ./setup.sh --https   .env keeps the cookie's Secure flag: the browser sends it only over https
+#
+# Use --https only when people open JAVV at an https:// address, through a proxy or a load
+# balancer in front of JAVV. JAVV itself serves only http.
 #
 # It never replaces an .env that exists: a new JAVV_SECRET_KEY ends every token and session.
 set -eu
@@ -17,7 +20,7 @@ case "${1:-}" in
   "") ;;
   --https) https=true ;;
   -h | --help)
-    sed -n '3,10p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '3,13p' "$0" | sed 's/^# \{0,1\}//'
     exit 0
     ;;
   *)

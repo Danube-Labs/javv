@@ -61,17 +61,18 @@ chmod +x setup.sh
     To keep the limit after a reboot, also add it to `/etc/sysctl.conf`.
 2. **Make the `.env` file.** In the folder with the three files, run one of these commands:
     ```bash
-    ./setup.sh           # browsers use plain http, for example http://<this machine>:8080
-    ./setup.sh --https   # browsers use https://, through a proxy or a load balancer
+    ./setup.sh           # .env turns off the cookie's Secure flag, so sign-in works over http
+    ./setup.sh --https   # .env keeps the cookie's Secure flag: the browser sends it only over https
     ```
+    Use `--https` only when people open JAVV at an `https://` address, through a proxy or a load
+    balancer in front of JAVV. JAVV itself serves only http ([http or https](#http-or-https)).
+
     The script:
 
     - Copies `.env.example` to `.env`. Only you can read `.env`.
     - Sets the four secrets to long random values that compose does not change. The OpenSearch
       admin password obeys the rules of OpenSearch.
     - Shows the password of the first JAVV admin one time. Keep it for step 4.
-    - With `--https`, keeps the `Secure` flag of the session cookie
-      ([http or https](#http-or-https)).
     - Shows the `sysctl` command again if the limit of step 1 is too low.
     - Does not change an `.env` that exists. Thus it cannot change the secret key of an
       installation.
