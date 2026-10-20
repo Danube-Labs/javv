@@ -3,7 +3,12 @@
 <video controls preload="metadata" width="100%" src="videos/accept-a-risk.mp4"></video>
 
 A risk acceptance applies to one CVE in a scope. It also covers the new findings of that CVE in
-the scope. To accept a risk, your role must allow risk acceptance.
+the scope.
+
+## Prerequisites
+
+- A role that allows risk acceptance: `security_lead` or `admin`
+  ([What your role lets you do](index.md#what-your-role-lets-you-do)).
 
 ## Steps
 
