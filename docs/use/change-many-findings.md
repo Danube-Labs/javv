@@ -4,6 +4,11 @@
 
 Bulk triage changes many findings at once. First, filter the findings.
 
+## Prerequisites
+
+- A role that allows triage: `triager`, `security_lead` or `admin`
+  ([What your role lets you do](index.md#what-your-role-lets-you-do)).
+
 ## Steps
 
 1. Select a value in a filter, for example Low in the Severity filter. The count shows how many
