@@ -165,8 +165,8 @@ async def test_as_of_t_reconstruction_carries_filters_and_facets_ptype(env, read
 
 
 def test_builders_carry_the_ptype_clauses() -> None:
-    body = build_search_body(SearchFilters(ptype="os"), size=10)
-    assert {"term": {"ptype": "os"}} in body["query"]["bool"]["filter"]
+    body = build_search_body(SearchFilters(ptype=["os"]), size=10)
+    assert {"terms": {"ptype": ["os"]}} in body["query"]["bool"]["filter"]
 
     facets = build_facets_body(SearchFilters(), fields=["ptype"])
     assert facets["aggs"]["ptype"]["terms"]["missing"] == "unknown"

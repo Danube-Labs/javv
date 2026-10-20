@@ -19,6 +19,7 @@ from backend.auth.passwords import hash_password
 from backend.core.settings import get_settings
 from backend.main import create_app
 from backend.models.envelope import canonical_severity
+from backend.query.search import MAX_FILTER_VALUES
 from os_env import OS_URL, clear_pits, requires_opensearch
 
 PASSWORD = "findings-route-password"
@@ -563,6 +564,68 @@ async def test_new_excludes_are_pure_must_not_with_a_missing_field(env) -> None:
     ):
         r = await http.get("/api/v1/findings", params={"cluster_id": cid, **pair})
         assert r.status_code == 422
+
+
+async def test_several_values_in_one_filter_against_a_real_index(env) -> None:
+    """Issue 949: a repeated parameter is a list. The values are ORed inside the field, an
+    exclude list drops every listed value, and one value keeps the meaning it always had.
+    `namespaces` is a keyword array, so a row in two namespaces matches either one."""
+    login, client = env
+    cid = f"c-x949-{uuid.uuid4().hex[:8]}"
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(1, cve="CVE-2024-0001", namespaces=["a"], assignee="alice"),
+            *_rows(1, cve="CVE-2024-0002", namespaces=["b"], assignee="bob"),
+            *_rows(1, cve="CVE-2024-0003", namespaces=["c"]),
+            *_rows(1, cve="CVE-2024-0004", namespaces=["a", "c"], assignee="carol"),
+        ],
+    )
+    http = await login()
+
+    async def cves(**params: Any) -> set[str]:
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, "size": 50, **params})
+        assert r.status_code == 200, r.text
+        return {d["cve_id"] for d in r.json()["data"]}
+
+    assert await cves(namespace=["a", "b"]) == {"CVE-2024-0001", "CVE-2024-0002", "CVE-2024-0004"}
+    assert await cves(namespace="c") == {"CVE-2024-0003", "CVE-2024-0004"}
+    # "is not a, b" drops a row in EITHER, including the row that is also in c
+    assert await cves(exclude_namespace=["a", "b"]) == {"CVE-2024-0003"}
+    assert await cves(assignee=["alice", "bob"]) == {"CVE-2024-0001", "CVE-2024-0002"}
+    # the pure must_not rule holds for a list: the row with no assignee stays
+    assert await cves(exclude_assignee=["alice", "bob"]) == {"CVE-2024-0003", "CVE-2024-0004"}
+    assert await cves(cve_id=["CVE-2024-0001", "CVE-2024-0003"]) == {
+        "CVE-2024-0001",
+        "CVE-2024-0003",
+    }
+
+    # the groups route and the facets route read the same filter dependency
+    r = await http.get(
+        "/api/v1/findings/groups",
+        params={"cluster_id": cid, "by": "cve_id", "namespace": ["a", "b"]},
+    )
+    assert {g["key"] for g in r.json()["data"]} == {
+        "CVE-2024-0001",
+        "CVE-2024-0002",
+        "CVE-2024-0004",
+    }
+
+    refused = (
+        {"namespace": [f"n{i}" for i in range(MAX_FILTER_VALUES + 1)]},  # one value too many
+        {"namespace": "x" * 257},  # each value keeps its own length cap
+        {"namespace": ["a"], "exclude_namespace": ["b"]},  # include OR exclude, never both
+        {"assignee": ["alice", "bob"], "unassigned": "true"},
+    )
+    for params in refused:
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, **params})
+        assert r.status_code == 422, params
+    ok = await http.get(
+        "/api/v1/findings",
+        params={"cluster_id": cid, "namespace": [f"n{i}" for i in range(MAX_FILTER_VALUES)]},
+    )
+    assert ok.status_code == 200
 
 
 async def test_groups_paginate_via_after_key_to_exhaustion(env) -> None:

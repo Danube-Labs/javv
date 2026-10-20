@@ -352,30 +352,37 @@ class AsOfTQuery:
                 continue
             checks = (
                 (f.scanner, r["scanner"]),
-                (f.assignee, r["assignee"]),
                 (f.fixable, r["fixable"]),
-                (f.cve_id, r["cve_id"]),
                 (f.image_digest, r["image_digest"]),
+            )
+            if any(want is not None and want != got for want, got in checks):
+                continue
+            # the list filters (issue 949) are MEMBERSHIP, mirroring the live `terms`: an
+            # equality test against a list would drop every row and still look like a filter
+            in_checks = (
+                (f.assignee, r["assignee"]),
+                (f.cve_id, r["cve_id"]),
                 # ptype IS recorded on occurrences from M8d on — a filter at a past T matches
                 # rows as-scanned; v3-era rows carry null and correctly drop out
                 (f.ptype, r["ptype"]),
                 # package_name likewise rides the occurrence row (issue 492)
                 (f.package_name, r["package_name"]),
             )
-            if any(want is not None and want != got for want, got in checks):
+            if any(want and got not in want for want, got in in_checks):
                 continue
-            if f.namespace is not None and f.namespace not in (r["namespaces"] or []):
+            if f.namespace and not set(f.namespace) & set(r["namespaces"] or []):
                 continue
             ex_checks = (
-                (f.exclude_scanner, r["scanner"]),
                 (f.exclude_assignee, r["assignee"]),
                 (f.exclude_ptype, r["ptype"]),
                 (f.exclude_cve_id, r["cve_id"]),
                 (f.exclude_package_name, r["package_name"]),
             )
-            if any(want is not None and want == got for want, got in ex_checks):
+            if f.exclude_scanner is not None and f.exclude_scanner == r["scanner"]:
                 continue
-            if f.exclude_namespace is not None and f.exclude_namespace in (r["namespaces"] or []):
+            if any(want and got in want for want, got in ex_checks):
+                continue
+            if f.exclude_namespace and set(f.exclude_namespace) & set(r["namespaces"] or []):
                 continue
             out.append(r)
         return out

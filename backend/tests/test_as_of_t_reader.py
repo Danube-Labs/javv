@@ -450,16 +450,16 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "severity": ["critical"],
         "state": ["open"],
         "scanner": "trivy",
-        "assignee": "someone",
+        "assignee": ["someone"],
         "kev": True,
         "fixable": True,
         "disagree": True,
-        "cve_id": "CVE-0000-0000",
+        "cve_id": ["CVE-0000-0000"],
         "image_digest": "sha256:x",
-        "image_repo": "nginx",
-        "namespace": "ns",
-        "ptype": "os",
-        "package_name": "zlib",
+        "image_repo": ["nginx"],
+        "namespace": ["ns"],
+        "ptype": ["os"],
+        "package_name": ["zlib"],
         "q": "krb5",
         "present": False,
         "new_within_days": 30,
@@ -470,12 +470,14 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "exclude_severity": ["high"],
         "exclude_state": ["resolved"],
         "exclude_scanner": "grype",
-        "exclude_assignee": "someone",  # row has assignee=None — pure-must_not KEEPS it; see below
-        "exclude_image_repo": "nginx",
-        "exclude_namespace": "default",
-        "exclude_ptype": "os",  # row has ptype=None — same missing-field carve-out
-        "exclude_cve_id": "CVE-1",  # issue 492 — matches the row, so it drops
-        "exclude_package_name": "zlib",  # row has package_name=None — carve-out again
+        "exclude_assignee": [
+            "someone"
+        ],  # row has assignee=None — pure-must_not KEEPS it; see below
+        "exclude_image_repo": ["nginx"],
+        "exclude_namespace": ["default"],
+        "exclude_ptype": ["os"],  # row has ptype=None — same missing-field carve-out
+        "exclude_cve_id": ["CVE-1"],  # issue 492 — matches the row, so it drops
+        "exclude_package_name": ["zlib"],  # row has package_name=None — carve-out again
     }
     missing = set(probe_values) ^ {f.name for f in dc_fields(SearchFilters)}
     assert not missing, f"probe map drifted from SearchFilters: {missing}"
@@ -508,3 +510,48 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
             assert len(out) == 1, f"exclude semantics drifted: {name} must keep a field-less row"
             continue
         assert out == [], f"SearchFilters.{name} was silently ignored by the as_of reader"
+
+
+def test_several_values_at_past_t_are_membership_not_equality() -> None:
+    """Issue 949: the six list filters at a past T. The guard above cannot see this bug: an
+    equality check against a list drops EVERY row, which still reads as "filtered". So each
+    case here lists two values where exactly one matches the row, and the include must KEEP
+    the row while the exclude must DROP it. The live query does the same with `terms`."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    row = {
+        "present": True,
+        "severity_canonical": "high",
+        "state": "open",
+        "scanner": "trivy",
+        "assignee": "ana",
+        "fixable": False,
+        "cve_id": "CVE-1",
+        "image_digest": "sha256:y",
+        "ptype": "deb",
+        "package_name": "zlib",
+        "namespaces": ["default", "prod"],
+        "overdue": False,
+    }
+    hits: dict[str, Any] = {
+        "assignee": ["bob", "ana"],
+        "cve_id": ["CVE-9", "CVE-1"],
+        "ptype": ["npm", "deb"],
+        "package_name": ["openssl", "zlib"],
+        "namespace": ["staging", "prod"],  # any overlap with the row's namespaces
+    }
+    for name, values in hits.items():
+        keep = AsOfTQuery._apply_filters([dict(row)], SearchFilters(**{name: values}))
+        assert len(keep) == 1, f"{name}={values} must keep a row that holds one of the values"
+        drop = AsOfTQuery._apply_filters([dict(row)], SearchFilters(**{f"exclude_{name}": values}))
+        assert drop == [], f"exclude_{name}={values} must drop a row that holds one value"
+        miss = AsOfTQuery._apply_filters(
+            [dict(row)], SearchFilters(**dict[str, Any]({name: ["x", "y"]}))
+        )
+        assert miss == [], f"{name}=['x', 'y'] must drop a row that holds neither value"
+    # an empty list is no filter, as in the live query
+    assert len(AsOfTQuery._apply_filters([dict(row)], SearchFilters(namespace=[]))) == 1
+    # image_repo is not in the scan history: a list is refused like one value always was
+    with pytest.raises(ValueError, match="image_repo"):
+        AsOfTQuery._apply_filters([dict(row)], SearchFilters(image_repo=["a", "b"]))
