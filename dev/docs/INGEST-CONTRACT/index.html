@@ -1638,9 +1638,9 @@ JAVV.</p>
   wait and send the same envelope again. Increase the wait each time. After <code>400</code>, <code>401</code>, <code>403</code>,
   <code>413</code> or <code>422</code>, do not send again: correct the cause. To send the same envelope again is safe.
   JAVV makes the same IDs from the same data, so it keeps one copy.</li>
-<li><strong>Keep each push in the size limits.</strong> The limit is 10 MiB on the wire and 60 MiB after gzip, by
-  default. To send a large envelope, compress it and send the header <code>Content-Encoding: gzip</code>.
-  The limit is 100,000 findings for each envelope.</li>
+<li><strong>Keep each push in the size limits.</strong> The limit is 10 MiB as it arrives (still compressed) and
+  60 MiB after decompression, by default. To send a large envelope, compress it and send the
+  header <code>Content-Encoding: gzip</code>. The limit is 100,000 findings for each envelope.</li>
 <li><strong>Keep the token secret.</strong> Do not write the token in a log or in the envelope.</li>
 </ul>
 <h2 id="field-reference">Field reference<a class="headerlink" href="#field-reference" title="Permanent link">&para;</a></h2>
@@ -2314,7 +2314,7 @@ after it validated the token.</p>
 <p>This example is a complete envelope with one finding. The example is a real finding, and a test
 validates the envelope on this page. For a larger example with 29 findings, see
 <code>backend/tests/fixtures/envelope-trivy-golden.json</code> in the repository.</p>
-<div class="highlight"><pre><span></span><code><span class="nv">TOKEN</span><span class="o">=</span>…<span class="w">            </span><span class="c1"># from "Before you start", for (my-nomad-fleet-01, trivy)</span>
+<div class="highlight"><pre><span></span><code><span class="nv">TOKEN</span><span class="o">=</span>…<span class="w">            </span><span class="c1"># from "Before you start": the token of my-nomad-fleet-01 for Trivy</span>
 <span class="nv">ORDER</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>https://javv.example/api/v1/scan-runs<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.scan_order<span class="k">)</span>
 

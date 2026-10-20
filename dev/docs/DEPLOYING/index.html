@@ -695,6 +695,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#if-opensearch-stays-unhealthy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        If OpenSearch stays unhealthy
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#http-or-https" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1655,6 +1666,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#if-opensearch-stays-unhealthy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        If OpenSearch stays unhealthy
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#http-or-https" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2040,17 +2062,17 @@ chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
     To keep the limit after a reboot, also add it to <code>/etc/sysctl.conf</code>.</li>
 <li>
 <p><strong>Make the <code>.env</code> file.</strong> In the folder with the three files, run one of these commands:
-    <div class="highlight"><pre><span></span><code>./setup.sh<span class="w">           </span><span class="c1"># browsers use plain http, for example http://&lt;this machine&gt;:8080</span>
-./setup.sh<span class="w"> </span>--https<span class="w">   </span><span class="c1"># a proxy or a load balancer in front of JAVV ends https</span>
+    <div class="highlight"><pre><span></span><code>./setup.sh<span class="w">           </span><span class="c1"># .env turns off the cookie's Secure flag, so sign-in works over http</span>
+./setup.sh<span class="w"> </span>--https<span class="w">   </span><span class="c1"># .env keeps the cookie's Secure flag: the browser sends it only over https</span>
 </code></pre></div>
-    The script:</p>
+    Use <code>--https</code> only when people open JAVV at an <code>https://</code> address, through a proxy or a load
+    balancer in front of JAVV. JAVV itself serves only http (<a href="#http-or-https">http or https</a>).</p>
+<p>The script:</p>
 <ul>
 <li>Copies <code>.env.example</code> to <code>.env</code>. Only you can read <code>.env</code>.</li>
 <li>Sets the four secrets to long random values that compose does not change. The OpenSearch
   admin password obeys the rules of OpenSearch.</li>
 <li>Shows the password of the first JAVV admin one time. Keep it for step 4.</li>
-<li>With <code>--https</code>, keeps the <code>Secure</code> flag of the session cookie
-  (<a href="#http-or-https">http or https</a>).</li>
 <li>Shows the <code>sysctl</code> command again if the limit of step 1 is too low.</li>
 <li>Does not change an <code>.env</code> that exists. Thus it cannot change the secret key of an
   installation.</li>
@@ -2060,7 +2082,7 @@ chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
 <li>
 <p><strong>Start JAVV:</strong>
     <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w">   </span><span class="c1"># pulls the images of the release the first time</span>
-docker<span class="w"> </span>compose<span class="w"> </span>ps<span class="w">      </span><span class="c1"># opensearch, backend and frontend all "healthy"</span>
+docker<span class="w"> </span>compose<span class="w"> </span>ps<span class="w">      </span><span class="c1"># wait until opensearch, backend and frontend all show "healthy"</span>
 </code></pre></div>
     The backend makes its indices at its first start.</p>
 </li>
@@ -2149,23 +2171,47 @@ different folder uses the containers and the volumes of the first.</p>
 </ul>
 <p><strong>Steps:</strong></p>
 <ol>
-<li>Put the three files of the release in a different folder, with its own <code>.env</code>.</li>
-<li>In that <code>.env</code>, add a project name for this installation:
-    <div class="highlight"><pre><span></span><code><span class="nv">COMPOSE_PROJECT_NAME</span><span class="o">=</span>javv-test
-</code></pre></div></li>
-<li>In that <code>compose.yaml</code>, change the host port of <code>frontend</code> (the left side of <code>"8080:8080"</code>),
-    for example to <code>"8090:8080"</code>.</li>
+<li>Put the three files of the release in a different folder.</li>
+<li>
+<p>In that folder, make the <code>.env</code> with a project name for this installation:
+    <div class="highlight"><pre><span></span><code><span class="nv">COMPOSE_PROJECT_NAME</span><span class="o">=</span>javv-test<span class="w"> </span>./setup.sh
+</code></pre></div>
+    <code>setup.sh</code> writes <code>COMPOSE_PROJECT_NAME=javv-test</code> to <code>.env</code>.</p>
+</li>
+<li>
+<p>In that <code>compose.yaml</code>, change the host port of <code>frontend</code> (the left side of <code>"8080:8080"</code>),
+    for example to <code>"8090:8080"</code>.</p>
+</li>
 <li>Run each <code>docker compose</code> command of this installation in its folder. Compose reads the project
     name from the <code>.env</code> in that folder.</li>
 </ol>
 <p>Do not change the project name of an installation that has data. Its volumes have the old name.
 Under a new name, JAVV starts with empty volumes.</p>
+<h3 id="if-opensearch-stays-unhealthy">If OpenSearch stays unhealthy<a class="headerlink" href="#if-opensearch-stays-unhealthy" title="Permanent link">&para;</a></h3>
+<p><code>docker compose up -d</code> stops with <code>container javv-opensearch-1 is unhealthy</code>, and the health
+test of OpenSearch gets <code>401</code>. To see the results of that test:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>inspect<span class="w"> </span>javv-opensearch-1<span class="w"> </span>--format<span class="w"> </span><span class="s1">'{{range .State.Health.Log}}{{.Output}}{{end}}'</span>
+</code></pre></div>
+<p>The cause: OpenSearch started on the volume of an earlier installation with the same project name.
+OpenSearch keeps the passwords of its first start, and the new <code>.env</code> has other passwords.
+<code>setup.sh</code> stops before this occurs. An <code>.env</code> that you made or replaced yourself can still cause
+it.</p>
+<p>Do one of these:</p>
+<ul>
+<li><strong>To delete the earlier installation and its data:</strong>
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>-v
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div></li>
+<li><strong>To keep the earlier installation:</strong> stop this one with <code>docker compose down</code>. Then add
+  <code>COMPOSE_PROJECT_NAME=&lt;new name&gt;</code> to <code>.env</code>, and run <code>docker compose up -d</code>.</li>
+</ul>
 <h3 id="http-or-https">http or https<a class="headerlink" href="#http-or-https" title="Permanent link">&para;</a></h3>
 <p>By default, the session cookie has the <code>Secure</code> flag. A browser keeps a <code>Secure</code> cookie only from
 <code>https</code> or from <code>localhost</code>.</p>
 <ul>
-<li><strong>With TLS in front of JAVV</strong> (a proxy, a load balancer or a gateway that ends <code>https</code>): keep the
-  default. Delete <code>JAVV_SESSION_COOKIE_SECURE=false</code> from <code>.env</code>. <code>./setup.sh --https</code> does this.</li>
+<li><strong>With https in front of JAVV</strong> (browsers use an <code>https://</code> address, and a proxy, a load balancer
+  or a gateway sends their requests to JAVV): keep the default. Delete
+  <code>JAVV_SESSION_COOKIE_SECURE=false</code> from <code>.env</code>. <code>./setup.sh --https</code> does this.</li>
 <li><strong>With plain http</strong> (for example <code>http://&lt;machine&gt;:8080</code> on a LAN): set
   <code>JAVV_SESSION_COOKIE_SECURE=false</code> in <code>.env</code>. <code>.env.example</code> sets this value. Without it, the
   sign-in fails, and the sign-in page says that the browser refused the session cookie.</li>
@@ -2363,7 +2409,8 @@ network. Each pair of a cluster and a scanner has its own token.</p>
     <!-- x-release-please-start-version -->
     <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.5
 kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>javv-scanner
-<span class="k">for</span><span class="w"> </span>s<span class="w"> </span><span class="k">in</span><span class="w"> </span>trivy<span class="w"> </span>grype<span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w">  </span><span class="c1"># each token at a prompt: out of shell history and process arguments</span>
+<span class="c1"># asks for each token, so it is not in your shell history or the process list</span>
+<span class="k">for</span><span class="w"> </span>s<span class="w"> </span><span class="k">in</span><span class="w"> </span>trivy<span class="w"> </span>grype<span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <span class="w">  </span><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s2">"</span><span class="nv">$s</span><span class="s2"> token: "</span><span class="w"> </span>token<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
 <span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$token</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span><span class="s2">"javv-</span><span class="nv">$s</span><span class="s2">-token"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--from-file<span class="o">=</span><span class="nv">token</span><span class="o">=</span>/dev/stdin

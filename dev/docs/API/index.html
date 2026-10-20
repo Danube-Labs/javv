@@ -2161,7 +2161,7 @@ jq<span class="w"> </span>-n<span class="w"> </span>--arg<span class="w"> </span
 <span class="w">  </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-sf<span class="w"> </span>-c<span class="w"> </span>jar<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>--data<span class="w"> </span>@-<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/auth/password"</span>
 <span class="nb">unset</span><span class="w"> </span>new
 </code></pre></div>
-    JAVV ends each session of the user, then writes a new session cookie to <code>jar</code>.</li>
+    JAVV signs the user out of each session, then writes a new session cookie to <code>jar</code>.</li>
 <li>Delete the password from the shell:
     <div class="highlight"><pre><span></span><code><span class="nb">unset</span><span class="w"> </span>pw
 </code></pre></div></li>
@@ -2612,7 +2612,7 @@ in a scan cycle.</p>
 <td>POST</td>
 <td><code>/auth/password</code></td>
 <td>session</td>
-<td>Changes your password. Body: <code>{current_password, new_password}</code>. It ends each session of the user and sets a new cookie. The rules and the refusals are in <a href="#a-password-change">A password change</a>.</td>
+<td>Changes your password. Body: <code>{current_password, new_password}</code>. It signs you out of each session and sets a new cookie. The rules and the refusals are in <a href="#a-password-change">A password change</a>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -2661,7 +2661,7 @@ in a scan cycle.</p>
 <td>PATCH</td>
 <td><code>/api/v1/admin/users/{username}/role</code></td>
 <td><code>can_manage_users</code></td>
-<td>Changes the role of a user, and ends each session of that user</td>
+<td>Changes the role of a user, and signs that user out of each session</td>
 </tr>
 <tr>
 <td>PATCH</td>
@@ -2673,7 +2673,7 @@ in a scan cycle.</p>
 <td>POST</td>
 <td><code>/api/v1/admin/users/{username}/password-reset</code></td>
 <td><code>can_manage_users</code></td>
-<td>Sets a temporary password, which the user must change. It ends each session of that user.</td>
+<td>Sets a temporary password, which the user must change. It signs that user out of each session.</td>
 </tr>
 <tr>
 <td>GET</td>
