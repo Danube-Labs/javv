@@ -1,13 +1,10 @@
 # Upgrading JAVV
 
-This page tells you how to move a running JAVV to a newer release. It tells you what to check
-before you start, the sequence of the upgrade, how to check the result, and how to go back to the
-previous release.
+This page tells you how to move a running JAVV to a newer release:
 
-The design note
-[`docs/engineering/UPGRADES.md`](https://github.com/Danube-Labs/javv-poc/blob/main/docs/engineering/UPGRADES.md)
-tells you where the index setup runs, and why an older release can use indices that a newer release
-changed.
+- What to check before you start.
+- The sequence of the upgrade, with docker compose or with Helm.
+- How to check the result, and how to go back to the previous release.
 
 JAVV has three parts. You upgrade each part separately:
 
@@ -25,15 +22,14 @@ own deployment. To install JAVV, see [`DEPLOYING.md`](DEPLOYING.md).
 1. **Read the release notes.** Each release has a GitHub Release and an entry in
     [`CHANGELOG.md`](../CHANGELOG.md). Then read [Version notes](#version-notes) on this page. They
     tell you what a release needs from you.
-2. **Make a snapshot.** Use **Settings › Data & OpenSearch › Snapshot now**, or
-    `POST /api/v1/admin/snapshots`. The request needs `can_manage_retention`. It returns 409 when
-    OpenSearch has no snapshot repository. [Snapshots](CONFIGURATION.md#snapshots) tells you how
-    to add the repository. The upgrade does not need the snapshot.
-
-    The snapshot keeps the current state, the triage, the decisions, the users, the settings and
-    the audit log. **It does not keep the scan history** that time travel reads. Thus a restore
-    does not bring the history back ([issue 664](https://github.com/Danube-Labs/javv-poc/issues/664)).
-
+2. **Make a snapshot.** The upgrade does not need it.
+    - Use **Settings › Data & OpenSearch › Snapshot now**, or `POST /api/v1/admin/snapshots`. The
+      request needs `can_manage_retention`.
+    - The request returns 409 when OpenSearch has no snapshot repository.
+      [Snapshots](CONFIGURATION.md#snapshots) tells you how to add the repository.
+    - The snapshot keeps the current state, the triage, the decisions, the users, the settings and
+      the audit log. **It does not keep the scan history** that time travel reads. Thus a restore
+      does not bring the history back.
 3. **Check the OpenSearch version.** CI tests JAVV with the version in `datastore.opensearch` in
     [`versions.yaml`](../versions.yaml).
 
@@ -41,10 +37,12 @@ own deployment. To install JAVV, see [`DEPLOYING.md`](DEPLOYING.md).
 
 **Upgrade the backend first, then the frontend, then the scanner images.**
 
-1. **Backend.** Each new backend pod upgrades the indices when it starts. It compares each index and
-    template with the schema version of the release, and it adds the missing parts. The backend
-    opens its port only after this step. Thus it receives no requests before its indices are ready.
-    You do not need to do a step manually.
+1. **Backend.** Each new backend pod upgrades the indices when it starts.
+    - It compares each index and template with the schema version of the release, and it adds the
+      missing parts.
+    - It opens its port only after this step. Thus it receives no requests before its indices are
+      ready.
+    - You do not need to do a step manually.
 2. **Frontend.** Upgrade it together with the backend, or immediately after the backend. A newer
     frontend can send requests that an older backend does not have.
 3. **Scanner images.** Change the Trivy and Grype image tags after the backend runs the new
@@ -52,45 +50,68 @@ own deployment. To install JAVV, see [`DEPLOYING.md`](DEPLOYING.md).
     accepts. `GET /api/v1/meta` → `envelope_versions` lists the formats that the backend accepts.
 
 There is only one backend, and an upgrade replaces it. Thus two backend releases never run at the
-same time. After you go back to an older release, an older backend reads indices that a newer
-backend changed. This is safe, because each schema change until now only added fields. An older
-backend ignores the fields that it does not know. A newer backend reads a missing field as empty.
+same time.
+
+After you go back to an older release, an older backend reads indices that a newer backend changed.
+This is safe, because each schema change until now only added fields:
+
+- An older backend ignores the fields that it does not know.
+- A newer backend reads a missing field as empty.
 
 ### With docker compose
 
-Each release publishes `ghcr.io/danube-labs/javv-backend` and `javv-frontend` with its version.
-The `deploy/compose/compose.yaml` file of the release names these images. To upgrade:
+**Prerequisites:**
 
-1. Replace your `compose.yaml` with the file of the new release. Keep your `.env` file. It holds
-    your settings. If you changed your `compose.yaml`, for example the host port, make the same
-    change in the new file.
-2. Run `docker compose pull`, then `docker compose up -d`.
+- Your `.env` file. Keep it: it holds your settings.
+- The `compose.yaml` of the new release. It names the backend and frontend images of that release.
+- A copy of your changes to `compose.yaml`, for example the host port. Make the same changes in the
+  new file.
 
-There is only one backend. Thus JAVV is not available for some seconds, while the new backend
-starts and upgrades the indices. The frontend waits until the backend reports healthy
-(`depends_on`).
+**Steps:**
 
-To go back to the previous release, put the `compose.yaml` of that release back. Then run the same
-two commands. To go back to a release before 0.7.0, first put back the old name of the secret key
-(see [Go back to a previous release](#go-back-to-a-previous-release)).
+1. In the folder of your installation, keep a copy of the old file, and get the file of the new
+    release. `VERSION` is the release that you upgrade to:
+    <!-- x-release-please-start-version -->
+    ```bash
+    VERSION=0.8.5
+    cp compose.yaml compose.yaml.old
+    curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv-poc/v$VERSION/deploy/compose/compose.yaml"
+    ```
+    <!-- x-release-please-end -->
+2. Make your changes to `compose.yaml` again, if you had changes.
+3. Pull the images and start them:
+    ```bash
+    docker compose pull
+    docker compose up -d
+    ```
+
+JAVV is not available for some seconds, while the new backend starts and upgrades the indices. The
+frontend waits until the backend reports healthy (`depends_on`).
+
+**To go back to the previous release,** put the `compose.yaml` of that release back
+(`compose.yaml.old`), and run the two commands of step 3. To go back to a release before 0.7.0,
+first put back the old name of the secret key
+([Go back to a previous release](#go-back-to-a-previous-release)).
 
 #### Upgrade from 0.5.1 to 0.6.1 or later
 
-From 0.6.0, OpenSearch requires a sign-in. 0.6.0 published no images, so use 0.6.1 or later. Before
-step 2:
+From 0.6.0, OpenSearch requires a sign-in. 0.6.0 published no images, so use 0.6.1 or later.
+Before step 3, add these two values to your `.env`:
 
-1. Add `JAVV_OPENSEARCH_ADMIN_PASSWORD` to your `.env`. This is the password of the OpenSearch
-    admin.
-2. Add `JAVV_OPENSEARCH_PASSWORD` to your `.env`. This is the password of `javv`, the user that the
-    backend signs in as.
+- `JAVV_OPENSEARCH_ADMIN_PASSWORD`: the password of the OpenSearch admin.
+- `JAVV_OPENSEARCH_PASSWORD`: the password of `javv`, the user that the backend signs in as.
 
 The compose file does not start without these two values. OpenSearch refuses a weak admin password.
-[`DEPLOYING.md`](DEPLOYING.md) gives the rules.
+[`DEPLOYING.md`](DEPLOYING.md#install-with-docker-compose) gives the rules.
 
-Your data stays. When OpenSearch first starts with its sign-in on, it keeps each index, and it
-adds its security configuration. You can also go back to a 0.5.x `compose.yaml` with the same data.
-Then OpenSearch runs without its sign-in again. We did these steps on the real compose files, from a
-0.5.1 installation with data.
+Your data stays:
+
+- When OpenSearch first starts with its sign-in on, it keeps each index, and it adds its security
+  configuration.
+- You can also go back to a 0.5.x `compose.yaml` with the same data. Then OpenSearch runs without
+  its sign-in again.
+
+We did these steps on the real compose files, from a 0.5.1 installation with data.
 
 #### Change an OpenSearch password
 
@@ -119,8 +140,10 @@ To change a password and keep the data:
     `.env` at each start. Thus the file holds the two new passwords.
 4. Run `docker compose up -d`.
 
-`docker compose down -v` also makes OpenSearch use a new password. But it deletes all JAVV data.
-The account API of OpenSearch cannot change the admin password: `admin` is a reserved user (403).
+Other methods do not work, or delete data:
+
+- `docker compose down -v` also makes OpenSearch use a new password. But it deletes all JAVV data.
+- The account API of OpenSearch cannot change the admin password: `admin` is a reserved user (403).
 
 #### Only for OpenSearch started from a `main` checkout: load the missing users
 
@@ -152,35 +175,61 @@ these steps on the real compose files, from an OpenSearch that a `main` checkout
 
 Each release publishes the JAVV chart and the OpenSearch chart
 ([`DEPLOYING.md`](DEPLOYING.md#install-on-kubernetes-with-helm)) at `oci://ghcr.io/danube-labs/charts`,
-with the version of the release. Keep your settings in your own values files. An install with
-`--set`, as in `DEPLOYING.md`, writes no values file. Thus, before the first upgrade, write the
-values of each release to a file:
+with the version of the release.
 
-```bash
-helm get values store -o yaml > my-store-values.yaml
-helm get values javv -o yaml > my-javv-values.yaml
-helm get values scanner -n javv-scanner -o yaml > my-scanner-values.yaml   # in each scanned cluster
-```
+**Prerequisites:**
 
-These files hold each value that you set, the passwords included. Keep them as safe as your
-Secrets. Then each upgrade uses the chart of the new release with the same files:
+- Your settings in your own values files. An install with `--set`, as in `DEPLOYING.md`, writes no
+  values file. Thus, before the first upgrade, write the values of each release to a file:
+    ```bash
+    helm get values store -o yaml > my-store-values.yaml
+    helm get values javv -o yaml > my-javv-values.yaml
+    helm get values scanner -n javv-scanner -o yaml > my-scanner-values.yaml   # in each scanned cluster
+    ```
+- These files hold each value that you set, the passwords included. Keep them as safe as your
+  Secrets.
 
-```bash
-helm upgrade store oci://ghcr.io/danube-labs/charts/javv-opensearch --version <new version> \
-  -f my-store-values.yaml
-helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version <new version> -f my-javv-values.yaml
-helm test javv
-```
+**Steps:**
 
-Do the `store` upgrade when the release changed the OpenSearch chart.
-[Version notes](#version-notes) tells you which releases did. It is safe to do it when the chart did
-not change. Then the upgrade changes only labels, and OpenSearch does not restart.
+1. Upgrade with the chart of the new release and the same files. `VERSION` is the release that you
+    upgrade to:
+    <!-- x-release-please-start-version -->
+    ```bash
+    VERSION=0.8.5
+    helm upgrade store oci://ghcr.io/danube-labs/charts/javv-opensearch --version "$VERSION" \
+      -f my-store-values.yaml
+    helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" -f my-javv-values.yaml
+    helm test javv
+    ```
+    <!-- x-release-please-end -->
+    - Do the `store` upgrade when the release changed the OpenSearch chart.
+      [Version notes](#version-notes) tells you which releases did.
+    - It is safe to do it when the chart did not change. Then the upgrade changes only labels, and
+      OpenSearch does not restart.
+2. Upgrade the scanners last, in each cluster that you scan, after JAVV runs the new release. Keep
+    your values file (`backendUrl` and the token Secrets):
+    <!-- x-release-please-start-version -->
+    ```bash
+    VERSION=0.8.5
+    helm upgrade scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version "$VERSION" \
+      -n javv-scanner -f my-scanner-values.yaml
+    ```
+    <!-- x-release-please-end -->
+    - A newer scanner can send a report format that only the newer backend accepts.
+    - The `javv-scanner` chart holds the scanner versions of its release.
+    - When the refresh container changes, the upgrade starts a vuln-DB refresh. The refresh
+      container changes with the image, the DB source, `extraEnv`, `resources` or `pullPolicy`.
+    - The next cycle uses the new image.
 
-The backend runs as one pod with `strategy: Recreate`. The backend runs the background jobs, so
-two backends must never run at the same time. Kubernetes stops the old pod before it starts the new
-pod. Thus JAVV is not available for some seconds, while the new pod checks OpenSearch and upgrades
-the indices. The startup probe gives this step 300 seconds. During this time, the frontend replies
-502, and the web app shows "backend not answering". Kubernetes replaces the frontend with no gap.
+**While the backend restarts:**
+
+- The backend runs as one pod with `strategy: Recreate`. The backend runs the background jobs, so
+  two backends must never run at the same time. Kubernetes stops the old pod before it starts the
+  new pod.
+- JAVV is not available for some seconds, while the new pod checks OpenSearch and upgrades the
+  indices. The startup probe gives this step 300 seconds.
+- During this time, the frontend replies 502, and the web app shows "backend not answering".
+- Kubernetes replaces the frontend with no gap.
 
 **To go back to a previous revision,** use one command. `helm history javv` lists the revisions:
 
@@ -189,31 +238,21 @@ helm rollback javv          # to the revision before the current one
 helm rollback javv 3        # or to a specific revision
 ```
 
-The settings and the images of that revision come back. The indices stay as the newer release left
-them, and an older backend can read them (see [Go back to a previous release](#go-back-to-a-previous-release)).
-CI does an upgrade and a rollback for each change to the charts.
-
-**Upgrade the scanners last,** in each cluster that you scan, after JAVV runs the new release. A
-newer scanner can send a report format that only the newer backend accepts. The `javv-scanner`
-chart holds the scanner versions of its release. Keep your values file (`backendUrl` and the token
-Secrets):
-
-```bash
-helm upgrade scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version <new version> \
-  -n javv-scanner -f my-scanner-values.yaml
-```
-
-When the refresh container changes, the upgrade starts a vuln-DB refresh. The refresh container
-changes with the image, the DB source, `extraEnv`, `resources` or `pullPolicy`. The next cycle uses
-the new image. To go back, run `helm rollback scanner` in that cluster. Do this before you go back
-to the previous JAVV release.
+- The settings and the images of that revision come back.
+- The indices stay as the newer release left them, and an older backend can read them
+  ([Go back to a previous release](#go-back-to-a-previous-release)).
+- CI does an upgrade and a rollback for each change to the charts.
+- For the scanners, run `helm rollback scanner` in each scanned cluster. Do this before you go back
+  to the previous JAVV release.
 
 **To change an OpenSearch password** (of `admin`, or of `javv`, the user that the backend signs in
 as), see the
 [`javv-opensearch` chart README](../deploy/helm/javv-opensearch/README.md#change-a-password).
-After you change the `javv` password, restart the backend. Then it reads the new password from the
-same Secret: `kubectl rollout restart deploy/javv-backend`. The same section of the README tells
-you how to load the `javv` role and its mapping into an OpenSearch that first started without them.
+
+- After you change the `javv` password, restart the backend. Then it reads the new password from
+  the same Secret: `kubectl rollout restart deploy/javv-backend`.
+- The same section of the README tells you how to load the `javv` role and its mapping into an
+  OpenSearch that first started without them.
 
 ## Check what runs
 
@@ -280,10 +319,12 @@ only manually, or never, the first scheduled runs do all the work at the same ti
 - **The findings cleanup** (04:00) deletes the findings that no scan reported for longer than its
   period (180 days).
 
-A job does not run because the backend started. Each job waits for its next scheduled time. To
-stop all the jobs, start the backend with `JAVV_SCHEDULER_ENABLED=false`. To stop one job, set its
-`JAVV_JOB_<KIND>_CRON` to an empty value. [Job schedules and the time zone](CONFIGURATION.md#job-schedules-and-the-time-zone) gives the
-schedules, and the time zone that the backend uses for them.
+A job does not run because the backend started. Each job waits for its next scheduled time.
+
+- To stop all the jobs, start the backend with `JAVV_SCHEDULER_ENABLED=false`.
+- To stop one job, set its `JAVV_JOB_<KIND>_CRON` to an empty value.
+- [Job schedules and the time zone](CONFIGURATION.md#job-schedules-and-the-time-zone) gives the
+  schedules, and the time zone that the backend uses for them.
 
 If you ran these jobs from your own cron or from CronJobs, delete them. The scheduler of the
 backend replaces them. If both run, nothing breaks: the backend does not start a job that is
@@ -328,10 +369,12 @@ the password of an admin that exists.
 
 ### 0.7.0: `JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`
 
-Only the name changes. **Keep the same value.** If you change the value, every scanner gets 401,
-every user must sign in again, and every open download link stops working. The stored data cannot
-restore them, and each scanner then needs a new token. A backend that finds the old name stops at
-start, and it shows the new name.
+Only the name changes. **Keep the same value.** A backend that finds the old name stops at start,
+and it shows the new name. If you change the value:
+
+- Each scanner gets 401 and needs a new token.
+- Each user must sign in again.
+- Each open download link stops working.
 
 - **docker compose:** in `.env`, add the new name with the same value. Keep the line with the old
   name until you do not need to go back to a release before 0.7.0:
