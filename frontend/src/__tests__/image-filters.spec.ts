@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { emptySelections } from '@/filters/fields.config'
 import { IMAGES_FIELDS } from '@/images/fields.config'
 import { filterImages, imagesCsv, imagesFacets } from '@/images/imageFilters'
+import { makeFiltersStore } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
 
 const row = (over: Partial<ImageRow>): ImageRow => ({
@@ -194,5 +196,56 @@ describe('filterImages — exclude mode', () => {
   it('repo matches the FULL image_repo the row carries, never a shortened display form', () => {
     expect(filterImages(rows, { ...sel(), repo: ['nginx'] })).toHaveLength(0)
     expect(filterImages(rows, { ...sel(), repo: ['library/nginx'] })).toHaveLength(0)
+  })
+})
+
+/**
+ * Namespace, Image and Tag take several values (issue 950). The inventory is filtered in the
+ * browser, so the one-value limit of the Findings backend does not apply here.
+ */
+describe('Images filters with several values in one field', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  const useStore = makeFiltersStore('test-image-filters', IMAGES_FIELDS)
+  const sel = () => emptySelections(IMAGES_FIELDS)
+  const digests = (rs: ImageRow[]) => rs.map((r) => r.image_digest)
+  const three = [
+    ...rows,
+    row({ image_digest: 'sha256:d', namespaces: ['billing'], image_repo: 'docker.io/library/redis', tag: '7.0.0' }),
+  ]
+
+  it.each(['namespace', 'repo', 'tag'])('a second pick of %s adds the value', (key) => {
+    const s = useStore()
+    s.toggle(key, 'one')
+    s.toggle(key, 'two')
+    expect(s.selections[key]).toEqual(['one', 'two'])
+  })
+
+  it('two namespaces give the images of both', () => {
+    const s = { ...sel(), namespace: ['payments', 'billing'] }
+    expect(digests(filterImages(three, s))).toEqual(['sha256:a', 'sha256:d'])
+    expect(digests(filterImages(three, s, { namespace: 'not' }))).toEqual(['sha256:b', 'sha256:c'])
+  })
+
+  it('two images and two tags give the images of both', () => {
+    const repos = { ...sel(), repo: ['docker.io/rancher/klipper-lb', 'docker.io/library/redis'] }
+    expect(digests(filterImages(three, repos))).toEqual(['sha256:b', 'sha256:d'])
+    const tags = { ...sel(), tag: ['v0.4.17', '7.0.0'] }
+    expect(digests(filterImages(three, tags))).toEqual(['sha256:b', 'sha256:d'])
+    expect(digests(filterImages(three, tags, { tag: 'not' }))).toEqual(['sha256:a', 'sha256:c'])
+  })
+
+  it('the URL keeps every value after a reload', () => {
+    const s = useStore()
+    s.toggle('namespace', 'payments')
+    s.toggle('namespace', 'billing')
+    s.pickValue('tag', 'v0.4.17', 'not')
+    s.pickValue('tag', '7.0.0', 'not')
+    const query = s.toQuery()
+    const reloaded = useStore()
+    reloaded.clearAll()
+    reloaded.fromQuery(query)
+    expect(reloaded.selections.namespace).toEqual(['payments', 'billing'])
+    expect(reloaded.selections.tag).toEqual(['v0.4.17', '7.0.0'])
+    expect(reloaded.modeOf('tag')).toBe('not')
   })
 })

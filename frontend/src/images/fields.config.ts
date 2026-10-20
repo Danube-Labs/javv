@@ -48,9 +48,11 @@ export const IMAGES_FIELDS: readonly FilterField[] = [
     type: 'flags',
     values: [{ key: 'fixable', param: 'fixable', label: 'Fix available' }],
   },
-  { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', facetKey: 'namespaces', negatable: true },
+  // namespace, repo and tag take several values: this screen filters the served run in the
+  // browser, so the one-value limit of the findings backend does not apply (issue 950)
+  { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', multi: true, facetKey: 'namespaces', negatable: true },
   // repo + tag are DATA-DRIVEN dims (no fixed vocabulary) — this screen filters the served
   // run in the browser, so both are matched client-side and neither needs a server param
-  { key: 'repo', label: 'Image', type: 'terms', param: 'image_repo', facetKey: 'repos', negatable: true },
-  { key: 'tag', label: 'Tag', type: 'terms', param: 'tag', facetKey: 'tags', negatable: true },
+  { key: 'repo', label: 'Image', type: 'terms', param: 'image_repo', multi: true, facetKey: 'repos', negatable: true },
+  { key: 'tag', label: 'Tag', type: 'terms', param: 'tag', multi: true, facetKey: 'tags', negatable: true },
 ]
