@@ -2500,8 +2500,7 @@ of its values.</p>
 </code></pre></div>
     We checked the pod that <code>helm template</code> makes with these values. The CI does not start
     OpenSearch with them.</li>
-<li>The <code>helm test</code> Pod of <code>javv-opensearch</code> does not set <code>seccompProfile</code>. In a namespace that
-  enforces <code>restricted</code>, Kubernetes refuses this Pod, and <code>helm test</code> fails.</li>
+<li>The <code>helm test</code> Pod of <code>javv-opensearch</code> meets <code>restricted</code> with the default values.</li>
 </ul>
 <h4 id="open-routes-on-port-8000">Open routes on port 8000<a class="headerlink" href="#open-routes-on-port-8000" title="Permanent link">&para;</a></h4>
 <p>The backend serves these routes with no sign-in. Of these routes, the frontend sends only <code>/readyz</code>
