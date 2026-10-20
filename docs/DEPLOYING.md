@@ -33,11 +33,25 @@ Kubernetes**. Both use the same images, with the same settings and defaults.
 
 ## Install with docker compose
 
-You need Docker Engine with the compose plugin, version 2.23.1 or later. The compose file holds the
-OpenSearch role for JAVV in `configs`, and older versions cannot read it. You also need three files
-from the release that you install, in one folder: `deploy/compose/compose.yaml`,
-`deploy/compose/.env.example` and `deploy/compose/setup.sh`. `setup.sh` needs a POSIX shell, as on
-Linux and macOS.
+### Prerequisites
+
+- Docker Engine with the compose plugin 2.23.1 or later.
+- A POSIX shell (Linux or macOS).
+- These three files, in one folder:
+    - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.8.5/deploy/compose/compose.yaml) <!-- x-release-please-version -->
+    - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.8.5/deploy/compose/.env.example) <!-- x-release-please-version -->
+    - [`setup.sh`](https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.8.5/deploy/compose/setup.sh) <!-- x-release-please-version -->
+
+To get the files, run these commands in an empty folder:
+
+<!-- x-release-please-start-version -->
+```bash
+for f in compose.yaml .env.example setup.sh; do
+  curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.8.5/deploy/compose/$f"
+done
+chmod +x setup.sh
+```
+<!-- x-release-please-end -->
 
 Each release publishes the backend image and the frontend image with its version
 (`ghcr.io/danube-labs/javv-backend:<version>` and `javv-frontend:<version>`). The compose file of

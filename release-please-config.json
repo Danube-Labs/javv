@@ -22,6 +22,10 @@
         },
         {
           "type": "generic",
+          "path": "docs/DEPLOYING.md"
+        },
+        {
+          "type": "generic",
           "path": "deploy/helm/javv-opensearch/Chart.yaml"
         },
         {
