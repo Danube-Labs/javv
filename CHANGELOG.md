@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.6](https://github.com/Danube-Labs/javv-poc/compare/v0.8.5...v0.8.6) (2026-10-20)
+
+
+### Bug Fixes
+
+* the audit log names every action and shows the values of each settings change ([#934](https://github.com/Danube-Labs/javv-poc/issues/934)) ([e5d848f](https://github.com/Danube-Labs/javv-poc/commit/e5d848fd28e75647e460fe547556d229556b3e88))
+
 ## [0.8.5](https://github.com/Danube-Labs/javv-poc/compare/v0.8.4...v0.8.5) (2026-10-19)
 
 
