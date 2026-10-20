@@ -362,8 +362,7 @@ The answers are for the default values of the three charts.
     ```
     We checked the pod that `helm template` makes with these values. The CI does not start
     OpenSearch with them.
-- The `helm test` Pod of `javv-opensearch` does not set `seccompProfile`. In a namespace that
-  enforces `restricted`, Kubernetes refuses this Pod, and `helm test` fails.
+- The `helm test` Pod of `javv-opensearch` meets `restricted` with the default values.
 
 #### Open routes on port 8000
 
