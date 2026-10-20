@@ -39,6 +39,7 @@ from backend.query.aggs import (
     build_top_components_body,
     decode_after,
     encode_after,
+    facet_aggregation,
 )
 from backend.query.as_of import AsOfTReader, AsOfTUnavailable, as_of_t_reader, parse_as_of
 from backend.query.search import (
@@ -462,7 +463,9 @@ async def facet_findings(
                 if "buckets" in agg
                 else [_bucket({"key": "true", "doc_count": agg["doc_count"], **agg})]
             )
-            for field, agg in resp["aggregations"].items()
+            for field, agg in (
+                (name, facet_aggregation(raw)) for name, raw in resp["aggregations"].items()
+            )
         }
     }
 

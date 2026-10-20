@@ -628,6 +628,54 @@ async def test_several_values_in_one_filter_against_a_real_index(env) -> None:
     assert ok.status_code == 200
 
 
+async def test_list_facets_leave_out_their_own_filter_against_a_real_index(env) -> None:
+    """Issue 949, ruling 2. After a pick of namespace a, the Namespace facet still lists b and c
+    with their counts, so a second pick is possible. Every other facet still counts under the
+    pick: the saved-view card count is the severity sum under the view's filters, and it must
+    stay equal to the grid total."""
+    login, client = env
+    cid = f"c-f949-{uuid.uuid4().hex[:8]}"
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(2, cve="CVE-2024-0001", namespaces=["a"], severity="critical", ptype="deb"),
+            *_rows(3, cve="CVE-2024-0002", namespaces=["b"], severity="low", ptype="npm"),
+            *_rows(1, cve="CVE-2024-0003", namespaces=["c"], severity="low", ptype="deb"),
+        ],
+    )
+    http = await login()
+
+    async def facets(**params: Any) -> dict[str, dict[str, int]]:
+        r = await http.get(
+            "/api/v1/findings/facets",
+            params={"cluster_id": cid, "fields": ["namespaces", "severity", "ptype"], **params},
+        )
+        assert r.status_code == 200, r.text
+        return {k: {b["key"]: b["count"] for b in v} for k, v in r.json()["facets"].items()}
+
+    picked = await facets(namespace="a")
+    assert picked["namespaces"] == {"a": 2, "b": 3, "c": 1}  # the others stay listed
+    assert picked["severity"] == {"critical": 2}  # severity still counts under the pick
+    assert picked["ptype"] == {"deb": 2}
+
+    two = await facets(namespace=["a", "b"], ptype="deb")
+    assert two["namespaces"] == {"a": 2, "c": 1}  # counts under the ptype pick, not its own
+    assert two["ptype"] == {"deb": 2, "npm": 3}  # counts under the namespace pick only
+    assert two["severity"] == {"critical": 2}
+
+    # an excluded value stays listed with its count, so the rail can show it struck out
+    excluded = await facets(exclude_namespace="a")
+    assert excluded["namespaces"] == {"a": 2, "b": 3, "c": 1}
+    assert excluded["severity"] == {"low": 4}
+
+    # the saved-view count rule: the severity sum equals the grid total under the same filters
+    grid = await http.get(
+        "/api/v1/findings", params={"cluster_id": cid, "namespace": ["a", "b"], "ptype": "deb"}
+    )
+    assert sum(two["severity"].values()) == grid.json()["total"]["value"] == 2
+
+
 async def test_groups_paginate_via_after_key_to_exhaustion(env) -> None:
     login, client = env
     cid = f"c-aggs-{uuid.uuid4().hex[:8]}"

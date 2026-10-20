@@ -33,6 +33,7 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.decisions.projection import project
 from backend.models.envelope import SEVERITY_RANK, canonical_severity
+from backend.query.aggs import OWN_FILTER_FREE_FACETS, without_own_filter
 from backend.query.human_at import decisions_active_at, finding_states_at
 from backend.query.pit import latest_committed_runs
 from backend.query.search import SearchFilters
@@ -480,16 +481,21 @@ class AsOfTQuery:
         bad = [f for f in chosen if f not in _FACET_FIELDS]
         if bad:
             raise ValueError(f"not facetable (whitelist {_FACET_FIELDS}): {bad}")
-        rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
-        )
+        reconstructed = await self._reconstruct(client, cluster_id, t, prefix=prefix)
+        rows = self._apply_filters(reconstructed, filters)
         facets: dict[str, list[dict[str, Any]]] = {}
         for field in chosen:
             if field in _EMPTY_FACETS:  # whitelisted but unrecorded at T — explicit empty
                 facets[field] = []
                 continue
+            # mirrors the live facet (issue 949): a list facet counts without its own filter
+            counted = (
+                self._apply_filters(reconstructed, without_own_filter(filters, field))
+                if field in OWN_FILTER_FREE_FACETS
+                else rows
+            )
             counts: dict[Any, dict[str, Any]] = {}
-            for r in rows:
+            for r in counted:
                 if field == "unassigned":
                     # issue 349 §1: an expression, not a stored key — an owner is a NON-EMPTY
                     # assignee (a cleared one is ""), the same reading as the live filter agg

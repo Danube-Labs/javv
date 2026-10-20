@@ -9,7 +9,7 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from opensearchpy import AsyncOpenSearch
@@ -555,3 +555,43 @@ def test_several_values_at_past_t_are_membership_not_equality() -> None:
     # image_repo is not in the scan history: a list is refused like one value always was
     with pytest.raises(ValueError, match="image_repo"):
         AsOfTQuery._apply_filters([dict(row)], SearchFilters(image_repo=["a", "b"]))
+
+
+async def test_past_t_package_type_facet_leaves_out_its_own_filter(monkeypatch) -> None:
+    """Issue 949, ruling 2, at a past T: the same rule as the live facet. After a pick of
+    `deb`, the Package type facet still counts `npm`; severity still counts under the pick."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    def _row(ptype: str, sev: str) -> dict[str, Any]:
+        return {
+            "present": True,
+            "severity_canonical": sev,
+            "state": "open",
+            "scanner": "trivy",
+            "assignee": None,
+            "fixable": False,
+            "cve_id": "CVE-1",
+            "image_digest": "sha256:y",
+            "ptype": ptype,
+            "package_name": None,
+            "namespaces": ["default"],
+            "overdue": False,
+        }
+
+    rows = [_row("deb", "high"), _row("deb", "high"), _row("npm", "low")]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_facets(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(ptype=["deb"]),
+        fields=["ptype", "severity"],
+    )
+    counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
+    assert counts["ptype"] == {"deb": 2, "npm": 1}
+    assert counts["severity"] == {"high": 2}

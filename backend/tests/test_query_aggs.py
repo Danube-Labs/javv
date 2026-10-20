@@ -8,6 +8,7 @@ search (no silently-capped buckets — DoD); the current filter context (SearchF
 every aggregation body.
 """
 
+import json
 from typing import Any
 
 import pytest
@@ -21,6 +22,7 @@ from backend.query.aggs import (
     build_top_components_body,
     decode_after,
     encode_after,
+    facet_aggregation,
 )
 from backend.query.search import SearchFilters
 
@@ -123,3 +125,77 @@ def test_top_components_body_is_per_scanner_cardinality_only() -> None:
     assert body["size"] == 0
     # the caller's filter context applies to the body like every other agg
     assert {"term": {"fixable": True}} in body["query"]["bool"]["filter"]
+
+
+# issue 949, ruling 2: the namespace, package type and assignee facets leave out the filter
+# of their OWN field, so a picked value does not hide the others from the list. Every other
+# facet keeps the full filter context: the saved-view card count sums the severity facet
+# under the view's filters, so severity must stay exactly as it is.
+_OWN_FILTER_FREE = (("namespaces", "namespace"), ("ptype", "ptype"), ("assignee", "assignee"))
+
+
+def _query_of(agg: dict[str, Any]) -> str:
+    """The filter context an agg counts under, as text, for clause lookups."""
+    return json.dumps(agg.get("filter", {}))
+
+
+def test_no_own_field_filter_keeps_the_body_unchanged() -> None:
+    """Zero cost when it does not apply: no wrapper, the same body as before issue 949."""
+    f = SearchFilters(severity=["high"], scanner="trivy")
+    body = build_facets_body(f, fields=["severity", "namespaces", "ptype", "assignee"])
+    for name in ("severity", "namespaces", "ptype", "assignee"):
+        assert "terms" in body["aggs"][name], name
+
+
+@pytest.mark.parametrize(("facet", "param"), _OWN_FILTER_FREE)
+@pytest.mark.parametrize("mode", ["", "exclude_"])
+def test_a_list_facet_leaves_out_its_own_filter_only(facet: str, param: str, mode: str) -> None:
+    f = SearchFilters(**dict[str, Any]({f"{mode}{param}": ["a"]}), severity=["high"])
+    body = build_facets_body(f, fields=["severity", facet])
+    field = "namespaces" if param == "namespace" else param
+    own_clause = json.dumps({"terms": {field: ["a"]}})
+    # the top-level query no longer carries the field's filter...
+    assert own_clause not in json.dumps(body["query"])
+    # ...the facet of that field counts without it, but with every other filter...
+    own = body["aggs"][facet]
+    assert own_clause not in _query_of(own)
+    assert json.dumps({"terms": {"severity_canonical": ["high"]}}) in _query_of(own)
+    assert own["aggs"]["values"]["terms"]["field"] == facet
+    # ...and every other facet still counts under the field's filter
+    assert own_clause in _query_of(body["aggs"]["severity"])
+    assert body["aggs"]["severity"]["aggs"]["values"]["terms"]["field"] == "severity_canonical"
+
+
+def test_two_list_facets_each_leave_out_only_their_own_filter() -> None:
+    f = SearchFilters(namespace=["a", "b"], ptype=["deb"])
+    body = build_facets_body(f, fields=["namespaces", "ptype"])
+    ns, pt = body["aggs"]["namespaces"], body["aggs"]["ptype"]
+    assert '"namespaces": ["a", "b"]' not in _query_of(ns)
+    assert '"ptype": ["deb"]' in _query_of(ns)
+    assert '"ptype": ["deb"]' not in _query_of(pt)
+    assert '"namespaces": ["a", "b"]' in _query_of(pt)
+
+
+def test_flag_facets_keep_the_full_filter_context_when_wrapped() -> None:
+    """`overdue` and `unassigned` are filter aggs: with a list facet active they must still
+    count under the namespace filter that the top-level query no longer carries."""
+    f = SearchFilters(namespace=["a"])
+    body = build_facets_body(
+        f, fields=["namespaces", "unassigned", "overdue"], sla_cutoffs=_CUTOFFS
+    )
+    for name in ("unassigned", "overdue"):
+        agg = body["aggs"][name]
+        assert '"namespaces": ["a"]' in _query_of(agg), name
+        assert "by_scanner" in agg["aggs"]["values"]["aggs"], name
+
+
+def test_facet_buckets_unwraps_both_shapes() -> None:
+    """The route reads one shape whether or not the body wrapped an agg."""
+    plain = {"buckets": [{"key": "a", "doc_count": 1}]}
+    wrapped = {"doc_count": 9, "values": plain}
+    flag = {"doc_count": 3, "by_scanner": {"buckets": []}}
+    wrapped_flag = {"doc_count": 9, "values": flag}
+    assert facet_aggregation(plain) is plain
+    assert facet_aggregation(wrapped) is plain
+    assert facet_aggregation(flag) is flag
+    assert facet_aggregation(wrapped_flag) is flag
