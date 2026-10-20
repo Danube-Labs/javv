@@ -31,7 +31,7 @@ Other charts:
 
 1. Install OpenSearch, with the password of `admin` and the password of `javv` in Secrets:
     ```bash
-    VERSION=0.8.5
+    VERSION=0.8.6
     read -rs -p 'OpenSearch admin password: ' pw && echo
     printf '%s' "$pw" | kubectl create secret generic javv-opensearch-admin --from-file=password=/dev/stdin
     unset pw
@@ -51,7 +51,7 @@ Other charts:
     ```
 3. Install JAVV. The backend signs in to OpenSearch as `javv`, with the Secret of `javv`:
     ```bash
-    VERSION=0.8.5
+    VERSION=0.8.6
     helm install javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" \
       --set secrets.existingSecret=javv-secrets \
       --set opensearch.passwordSecret.name=javv-opensearch-backend

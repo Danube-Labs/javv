@@ -30,7 +30,7 @@ CronJob.
     - Select the name of the scanner.
 3. Put each token in its own Secret, and install the chart:
     ```bash
-    VERSION=0.8.5
+    VERSION=0.8.6
     kubectl create namespace javv-scanner
     for s in trivy grype; do  # each token at a prompt: not in shell history, not in process arguments
       read -rs -p "$s token: " token && echo
