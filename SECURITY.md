@@ -31,15 +31,17 @@ A small team maintains JAVV. These times are our targets. They are not a service
 | We do the first assessment and give a severity | 7 business days or less |
 | We release a fix or a documented workaround for a problem that we accept as a vulnerability | As fast as the severity requires |
 
-While we work on the report, we tell you about our progress. If we decide that the problem is not a
-vulnerability, we tell you why. When we release the fix, we publish an advisory. Before you make
-the problem public, give us a reasonable time to release the fix.
+- While we work on the report, we tell you about our progress.
+- If we decide that the problem is not a vulnerability, we tell you why.
+- When we release the fix, we publish an advisory.
+- Before you make the problem public, give us a reasonable time to release the fix.
 
 ## Supported versions
 
-JAVV is before version 1.0 and changes quickly. Security fixes go into `main` and into the next
-release. Thus **we support only the latest release**. See
-[Releases](https://github.com/Danube-Labs/javv-poc/releases) for the current release.
+- JAVV is before version 1.0 and changes quickly.
+- Security fixes go into `main` and into the next release.
+- Thus **we support only the latest release**. See
+  [Releases](https://github.com/Danube-Labs/javv-poc/releases) for the current release.
 
 ## Scope
 
