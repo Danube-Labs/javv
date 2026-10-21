@@ -440,6 +440,9 @@ the same filters:
   Thus `exclude_assignee=bob` keeps the rows with no owner. An `exclude_` filter with more than one
   value leaves out the rows with any of the values.
 - `package_name` is not a facet. `fields=package_name` gets 422.
+- In a saved view (`preset`) and in a report (`params`), the filters that take more than one value
+  (`namespace`, `ptype`, `assignee`, `image_repo`, `cve_id`, `package_name` and their `exclude_`
+  forms) also take one string. JAVV keeps it as a list with that one value.
 - One field takes the filter or its `exclude_` form, not both. Both get 422.
 
 #### A past time: `as_of`
