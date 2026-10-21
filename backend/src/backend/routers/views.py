@@ -39,10 +39,12 @@ from backend.audit.writer import append_field_change
 from backend.auth.principal import Principal, get_current_principal
 from backend.models.envelope import SEVERITY_RANK
 from backend.query.search import (
+    LIST_FILTER_FIELDS,
     MAX_FILTER_VALUES,
     FilterValue128,
     FilterValue256,
     FilterValue512,
+    one_value_as_list,
 )
 from backend.triage.state_machine import STATES
 
@@ -100,6 +102,11 @@ class ViewPreset(BaseModel):
     exclude_package_name: list[FilterValue512] | None = Field(
         default=None, max_length=MAX_FILTER_VALUES
     )
+
+    @field_validator(*LIST_FILTER_FIELDS, mode="before")
+    @classmethod
+    def _one_value_as_list(cls, v: Any) -> Any:
+        return one_value_as_list(v)
 
     @field_validator("severity", "exclude_severity")
     @classmethod

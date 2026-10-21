@@ -34,8 +34,9 @@ from backend.tenancy.read_path import tenant_query
 log = structlog.get_logger()
 
 _SORT_FIELDS = ("severity_rank", "first_seen_at", "last_scan_at", "cvss", "epss")
-# the most values one list filter takes (issue 949). It mirrors the facet list, which shows at
-# most 32 values of a field (docs/API.md, `/findings/facets`): the most a user can pick there.
+# the most values one list filter takes (issue 949). It matches the facet list, which shows at
+# most 32 values of a field (docs/API.md, `/findings/facets`), so every value a facet offers fits.
+# Typed values (image, CVE, package) have no facet list and share the same cap.
 MAX_FILTER_VALUES = 32
 # one value of a list filter, with the length cap the field had as one string. The findings
 # route, saved views and export settings all use these, so the three cannot drift apart.
@@ -43,6 +44,20 @@ FilterValue64 = Annotated[str, StringConstraints(max_length=64)]
 FilterValue128 = Annotated[str, StringConstraints(max_length=128)]
 FilterValue256 = Annotated[str, StringConstraints(max_length=256)]
 FilterValue512 = Annotated[str, StringConstraints(max_length=512)]
+# the six filters that take a list, each with its exclude_ pair
+LIST_FILTER_FIELDS = tuple(
+    f"{prefix}{name}"
+    for prefix in ("", "exclude_")
+    for name in ("assignee", "cve_id", "image_repo", "namespace", "ptype", "package_name")
+)
+
+
+def one_value_as_list(value: Any) -> Any:
+    """A saved view or export written as one string reads as a list of that one value, so a
+    client that still sends one string and a stored blob from before issue 949 keep working."""
+    return [value] if isinstance(value, str) else value
+
+
 _SCALAR = (str, int, float, bool)
 
 

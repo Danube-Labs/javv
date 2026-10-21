@@ -10,15 +10,17 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from backend.core.identifiers import ClusterId
 from backend.query.search import (
+    LIST_FILTER_FIELDS,
     MAX_FILTER_VALUES,
     FilterValue64,
     FilterValue128,
     FilterValue256,
     FilterValue512,
+    one_value_as_list,
 )
 
 REPORTS_INDEX = "system-reports"
@@ -76,6 +78,11 @@ class ExportParams(BaseModel):
     exclude_package_name: list[FilterValue512] | None = Field(
         default=None, max_length=MAX_FILTER_VALUES
     )
+
+    @field_validator(*LIST_FILTER_FIELDS, mode="before")
+    @classmethod
+    def _one_value_as_list(cls, v: Any) -> Any:
+        return one_value_as_list(v)
 
     @model_validator(mode="after")
     def _vex_needs_scanner(self) -> "ExportParams":

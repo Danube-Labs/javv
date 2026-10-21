@@ -143,12 +143,32 @@ async def test_garbage_presets_are_422_and_never_stored(env) -> None:
         {"state": ["closed"]},  # not one of the 6 states
         {"scanner": "snyk"},  # per-scanner is sacred — only the two exist
         {"ptype": ["OS Pkgs"]},  # ptype shape (M8d), checked on each value of the list
+        {"ptype": "OS Pkgs"},  # the same check when the value comes as one string
         {"bogus_field": 1},  # extra=forbid
     ):
         r = await http.post("/api/v1/views", json={"name": marker, "preset": preset})
         assert r.status_code == 422, f"stored a garbage preset: {preset}"
     listed = (await http.get("/api/v1/views")).json()["views"]
     assert all(v["name"] != marker for v in listed)  # nothing landed
+
+
+async def test_a_preset_sent_with_one_string_saves_as_a_list(env) -> None:
+    """issue 949: Save view on a screen that sends one string per filter still saves, and the
+    stored preset has the list shape the findings query reads."""
+    http, _, _ = env
+    sent = {
+        "assignee": "ana",
+        "cve_id": "CVE-2021-3711",
+        "image_repo": "registry.local/api",
+        "namespace": "payments",
+        "ptype": "os",
+        "exclude_package_name": "openssl",
+    }
+    view = await _create(http, f"one-{uuid.uuid4().hex[:8]}", **sent)
+    assert {k: view["preset"][k] for k in sent} == {k: [v] for k, v in sent.items()}
+    listed = (await http.get("/api/v1/views")).json()["views"]
+    stored = next(v for v in listed if v["view_id"] == view["view_id"])
+    assert {k: stored["preset"][k] for k in sent} == {k: [v] for k, v in sent.items()}
 
 
 def test_preset_mirrors_search_filters_one_to_one() -> None:

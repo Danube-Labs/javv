@@ -13,7 +13,7 @@ from typing import Any, get_args, get_origin, get_type_hints
 import pytest
 from opensearchpy import AsyncOpenSearch
 
-from backend.jobs.report_drain import run_job
+from backend.jobs.report_drain import _filters_from_params, run_job
 from backend.query.search import SearchFilters
 from backend.reports.claim import claim_next
 from backend.reports.models import (
@@ -284,8 +284,8 @@ def test_export_params_mirror_search_filters_one_to_one() -> None:
     param_fields = set(ExportParams.model_fields) - {"format"}
     filter_fields = {f for f in SearchFilters.__dataclass_fields__}
     assert param_fields == filter_fields
-    # and the same SHAPE (issue 949): the drain hands the stored values to SearchFilters as
-    # they are, so a string where the query expects a list would fail the export
+    # and the same SHAPE (issue 949): a field that holds one string here but a list in
+    # SearchFilters would queue an export the query cannot read
     filter_types = get_type_hints(SearchFilters)
     for name in filter_fields:
         param_type = ExportParams.model_fields[name].annotation
@@ -294,3 +294,12 @@ def test_export_params_mirror_search_filters_one_to_one() -> None:
 
 def _takes_a_list(annotation: Any) -> bool:
     return any(get_origin(a) is list for a in (get_args(annotation) or (annotation,)))
+
+
+def test_a_stored_string_reaches_the_query_as_a_list() -> None:
+    # issue 949: a job queued before the filters took lists stored one string
+    filters = _filters_from_params(
+        {"format": "csv", "namespace": "payments", "exclude_ptype": "os", "severity": ["low"]}
+    )
+    assert filters.namespace == ["payments"] and filters.exclude_ptype == ["os"]
+    assert filters.severity == ["low"]

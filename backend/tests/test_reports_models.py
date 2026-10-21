@@ -3,6 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
+from backend.query.search import LIST_FILTER_FIELDS
 from backend.reports.models import (
     PENDING,
     EnqueueReport,
@@ -29,6 +30,16 @@ def test_new_report_doc_builds_a_pending_job() -> None:
     assert doc["scheduled_for"] is None and doc["as_of_t"] is None
     # a pending job has no result yet — the drain stamps these at completion
     assert "expires_at" not in doc and "attempt_id" not in doc and "bytes" not in doc
+
+
+@pytest.mark.parametrize("name", LIST_FILTER_FIELDS)
+def test_one_string_reads_as_a_list_of_that_value(name: str) -> None:
+    # issue 949: a client that still sends one string keeps working; the cap still applies
+    assert getattr(ExportParams(**{name: "os"}), name) == ["os"]
+    assert getattr(ExportParams(**{name: ["os", "npm"]}), name) == ["os", "npm"]
+    assert getattr(ExportParams(**{name: None}), name) is None
+    with pytest.raises(ValidationError):
+        ExportParams(**{name: "x" * 513})
 
 
 def test_vex_export_requires_a_scanner() -> None:
