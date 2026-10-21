@@ -111,12 +111,13 @@ export function makeFiltersStore(
         for (const field of fields) {
           const raw = query[field.key]
           if (typeof raw !== 'string' || raw === '') continue
-          let values = [...new Set(raw.split(',').filter(Boolean))]
+          let values = raw.split(',').filter(Boolean)
           if (isNegatable(field) && values.some((v) => v.startsWith('!'))) {
             // any `!` flips the whole field to exclude (one mode per field, never mixed)
             nextModes[field.key] = 'not'
             values = values.map((v) => (v.startsWith('!') ? v.slice(1) : v)).filter(Boolean)
           }
+          values = [...new Set(values)]
           if (field.type === 'text') {
             // a shared URL can carry under-minLength text — drop it here so the chip never
             // shows a filter the builder refuses to emit (contract-guard, audit 343)

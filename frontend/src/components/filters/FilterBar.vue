@@ -256,7 +256,7 @@ function onKeydown(e: KeyboardEvent) {
   align-items: center;
   white-space: nowrap;
   gap: 6px;
-  height: 38px; /* same register as .fpill — see above */
+  height: 38px; /* same register as .fpill in FilterPill.vue */
   border: 1px dashed var(--add-filter-line);
   background: var(--card);
   color: var(--ink);

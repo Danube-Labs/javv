@@ -266,4 +266,11 @@ describe('filters store — the API cap of 32 values (issue 949)', () => {
     expect(s.selections.cve).toEqual(['a'])
     expect(s.selections.severity).toEqual(['critical'])
   })
+
+  it('a value repeated with and without a leading ! is kept once', () => {
+    const s = useStore()
+    s.fromQuery({ cve: 'a,!a,!b,b' })
+    expect(s.selections.cve).toEqual(['a', 'b'])
+    expect(s.modes.cve).toBe('not')
+  })
 })
