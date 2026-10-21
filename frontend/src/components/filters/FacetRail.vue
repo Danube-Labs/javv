@@ -37,7 +37,7 @@ function activeMode(field: FilterField, value: string): FilterMode | null {
 
 const groups = computed(() =>
   props.fields
-    .map((field) => ({ field, items: facetItems(field, props.facets) }))
+    .map((field) => ({ field, items: facetItems(field, props.facets, props.selections[field.key]) }))
     .filter((g): g is { field: FilterField; items: NonNullable<typeof g.items> } => g.items !== null)
     // data-driven sections (no fixed vocabulary) hide until they HAVE buckets — a bare header
     // over nothing reads as broken on a first-run cluster
@@ -114,7 +114,10 @@ const fmt = (n: number) => n.toLocaleString('en-US')
       >
         {{ isOpen(g) ? 'show fewer' : `show all ${fmt(g.items.length)}` }}
       </button>
-      <p v-if="isOpen(g) && g.items.length >= 32" class="facet-cap">top 32 by count; search reaches the rest</p>
+      <!-- the cap counts the server's buckets, not the picked values added after them -->
+      <p v-if="isOpen(g) && g.items.filter((it) => it.count !== null).length >= 32" class="facet-cap">
+        top 32 by count; search reaches the rest
+      </p>
     </div>
   </aside>
 </template>

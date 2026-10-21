@@ -33,8 +33,14 @@ const item = (value: string, label: string, bucket?: FacetBucket, hint?: string)
   ...(hint !== undefined ? { hint } : {}),
 })
 
-/** Display items for one field, or null when the field has no listable values (text fields). */
-export function facetItems(field: FilterField, facets: FacetsResponse): FacetItem[] | null {
+/** Display items for one field, or null when the field has no listable values (text fields).
+ * `selected` are the field's picked values: on a field with no fixed vocabulary, one the server's
+ * buckets leave out still gets a row. A fixed vocabulary lists its own values only. */
+export function facetItems(
+  field: FilterField,
+  facets: FacetsResponse,
+  selected: readonly string[] = [],
+): FacetItem[] | null {
   if (field.type === 'text') return null
 
   if (field.type === 'flags') {
@@ -48,8 +54,14 @@ export function facetItems(field: FilterField, facets: FacetsResponse): FacetIte
     // static vocabulary: config order, counts filled in where the server aggregated
     return field.values.map((v) => item(v, valueLabel(field, v), buckets.find((b) => b.key === v)))
   }
-  // dynamic vocabulary: the server's buckets, in server order
-  return buckets.map((b) => item(b.key, valueLabel(field, b.key), b))
+  // dynamic vocabulary: the server's buckets, in server order. A picked value can be missing from
+  // them: below the top 32, or (a facet that counts with its own filter) excluded. It is added
+  // last, with no count, so it can still be seen and taken out (issue 949)
+  const listed = new Set(buckets.map((b) => b.key))
+  const extra = [...new Set(selected)]
+    .filter((v) => !listed.has(v))
+    .map((v) => item(v, valueLabel(field, v)))
+  return [...buckets.map((b) => item(b.key, valueLabel(field, b.key), b)), ...extra]
 }
 
 /** `trivy 791 · grype 854` — tooltip text for the per-scanner split. */

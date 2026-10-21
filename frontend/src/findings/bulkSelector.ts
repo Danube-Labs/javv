@@ -2,9 +2,9 @@
  * Grid lens → M5d bulk selector (M9b slice 4). The shipped contract is SELECTOR-based (a frozen
  * server-side id-set from cve_id/image_digest/severity/state/assignee predicates) — NOT a list
  * of checked rows. Anything the selector can't express (scanner, KEV/fixable/disagree flags,
- * namespace, image_repo, ptype, multi-value severity/state) must BLOCK the bulk action, never
- * silently widen it: a selector that ignores an active filter would triage MORE rows than the
- * operator is looking at.
+ * namespace, image_repo, ptype, multi-value severity/state/assignee) must BLOCK the bulk
+ * action, never silently widen it: a selector that ignores an active filter would triage MORE
+ * rows than the operator is looking at.
  */
 import type { FilterField } from '@/filters/fields.config'
 

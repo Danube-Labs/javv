@@ -1,9 +1,9 @@
 /**
  * The one `fields` config that drives BOTH FacetRail and FilterBar (PLAN gate: adding a field
  * here surfaces it in both with no component edits). Shape mirrors the backend contract, not
- * the prototype: only `severity`/`state` are multi-value params; `scanner`/`ptype`/`namespace`/
- * `image_repo`/`assignee` are single-valued; KEV / fix-available / disagree are boolean flags
- * (grouped as one "Attribute" facet, as in the prototype).
+ * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values
+ * (the last three since issue 949); `scanner` and the text fields send one; KEV / fix-available /
+ * disagree are boolean flags (grouped as one "Attribute" facet, as in the prototype).
  */
 import { stateLabel } from '@/findings/stateLabels'
 import { SEVERITIES } from '@/styles/tokens'
@@ -142,10 +142,10 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
     ],
   },
   { key: 'state', label: 'State', type: 'terms', param: 'state', multi: true, facetKey: 'state', values: ['open', 'acknowledged', 'not_affected', 'risk_accepted', 'resolved', 'stale'], negatable: true, valueLabel: stateLabel },
-  { key: 'ptype', label: 'Package type', type: 'terms', param: 'ptype', facetKey: 'ptype', negatable: true },
+  { key: 'ptype', label: 'Package type', type: 'terms', param: 'ptype', multi: true, facetKey: 'ptype', negatable: true },
   // rail dims are top-N by count (server caps at 32); the value-search in Add-filter still
   // reaches anything the rail's cap hides
-  { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', facetKey: 'namespaces', negatable: true },
+  { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', multi: true, facetKey: 'namespaces', negatable: true },
   // `image_repo` is an exact `term` server-side, so the grid's image cell can filter on the
   // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2)
   { key: 'image', label: 'Image', type: 'text', param: 'image_repo', negatable: true },
@@ -154,5 +154,5 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   // so they are bar-and-cell fields, like `image` above.
   { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', negatable: true },
   { key: 'package', label: 'Package', type: 'text', param: 'package_name', negatable: true },
-  { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', facetKey: 'assignee', negatable: true },
+  { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
 ]

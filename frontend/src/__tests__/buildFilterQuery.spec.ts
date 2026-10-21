@@ -53,12 +53,34 @@ describe('buildFilterQuery', () => {
     expect(blank).not.toHaveProperty('image_repo')
   })
 
-  it('rail dims namespace/assignee emit their single-value params', () => {
-    const q = buildFilterQuery(FINDINGS_FIELDS, sel({ namespace: ['payments'], assignee: ['admin'] }), {
+  // issue 949: the three list facets take several values, so they always emit an array
+  it('namespace, package type and assignee emit arrays, one value or several', () => {
+    const one = buildFilterQuery(FINDINGS_FIELDS, sel({ namespace: ['payments'], assignee: ['admin'] }), {
       cluster_id: CID,
     })
-    expect(q.namespace).toBe('payments')
-    expect(q.assignee).toBe('admin')
+    expect(one.namespace).toEqual(['payments'])
+    expect(one.assignee).toEqual(['admin'])
+    const two = buildFilterQuery(
+      FINDINGS_FIELDS,
+      sel({ namespace: ['payments', 'edge'], ptype: ['debian', 'npm'], assignee: ['ana', 'bob'] }),
+      { cluster_id: CID },
+    )
+    expect(two.namespace).toEqual(['payments', 'edge'])
+    expect(two.ptype).toEqual(['debian', 'npm'])
+    expect(two.assignee).toEqual(['ana', 'bob'])
+  })
+
+  it('several excluded values go to the exclude_* param as one array', () => {
+    const q = buildFilterQuery(
+      FINDINGS_FIELDS,
+      sel({ namespace: ['payments', 'edge'], ptype: ['debian', 'npm'], assignee: ['ana', 'bob'] }),
+      { cluster_id: CID },
+      { namespace: 'not', ptype: 'not', assignee: 'not' },
+    )
+    expect(q.exclude_namespace).toEqual(['payments', 'edge'])
+    expect(q.exclude_ptype).toEqual(['debian', 'npm'])
+    expect(q.exclude_assignee).toEqual(['ana', 'bob'])
+    expect(q).not.toHaveProperty('namespace')
   })
 
   it('the "new" window flag emits the picker days (API-clamped), never a bare true', () => {
@@ -87,7 +109,7 @@ describe('buildFilterQuery', () => {
       { severity: 'not', namespace: 'not' },
     )
     expect(q.exclude_severity).toEqual(['low', 'negligible']) // lowercased like the include side
-    expect(q.exclude_namespace).toBe('kube-system')
+    expect(q.exclude_namespace).toEqual(['kube-system'])
     expect(q.state).toEqual(['open']) // is-mode fields keep their include param
     expect(q).not.toHaveProperty('severity')
     expect(q).not.toHaveProperty('namespace')

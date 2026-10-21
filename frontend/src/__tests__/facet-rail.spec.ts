@@ -8,6 +8,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import FacetRail from '@/components/filters/FacetRail.vue'
+import FilterBar from '@/components/filters/FilterBar.vue'
 import type { FacetsResponse } from '@/filters/facets'
 import { emptySelections, type FilterField } from '@/filters/fields.config'
 
@@ -52,5 +53,49 @@ describe('FacetRail with counts that could not be loaded (issue 833, F9)', () =>
     })
     expect(w.find('.facet-text').text()).toBe(LONG)
     expect(w.find('.facet-count').text()).toBe('-')
+  })
+})
+
+describe('a picked value the server leaves out of its top 32 (issue 949)', () => {
+  // the Namespace facet counts without its own filter, so a picked namespace that ranks below
+  // the top 32 is not in the buckets; it must still have a row, or it cannot be taken out alone
+  const MULTI: FilterField[] = [{ ...FIELDS[0]!, multi: true } as FilterField]
+  const selections = { ...emptySelections(MULTI), namespace: [LONG, 'payments'] }
+
+  it('the rail lists it after the buckets, checked, with no count', async () => {
+    const w = mount(FacetRail, { props: { fields: MULTI, selections, facets: FACETS } })
+    const rows = w.findAll('.facet-row')
+    expect(rows.map((r) => r.find('.facet-text').text())).toEqual([LONG, 'payments'])
+    expect(rows[1]!.find('.facet-count').exists()).toBe(false)
+    expect(rows[1]!.classes()).toContain('facet-on')
+    await rows[1]!.trigger('click')
+    expect(w.emitted('toggle')?.[0]).toEqual(['namespace', 'payments'])
+  })
+
+  it('a value picked twice in the URL gets one row', () => {
+    const twice = { ...emptySelections(MULTI), namespace: ['payments', 'payments'] }
+    const w = mount(FacetRail, { props: { fields: MULTI, selections: twice, facets: FACETS } })
+    expect(w.findAll('.facet-text').map((t) => t.text())).toEqual([LONG, 'payments'])
+  })
+
+  it('the "top 32" note counts the buckets, not the picked values added after them', async () => {
+    const thirty: FacetsResponse = {
+      namespaces: Array.from({ length: 30 }, (_, i) => ({ key: `ns-${i}`, count: 30 - i, by_scanner: {} })),
+    }
+    const picked = { ...emptySelections(MULTI), namespace: ['x', 'y'] }
+    const w = mount(FacetRail, { props: { fields: MULTI, selections: picked, facets: thirty } })
+    await w.find('.facet-more').trigger('click')
+    expect(w.findAll('.facet-row')).toHaveLength(32)
+    expect(w.find('.facet-cap').exists()).toBe(false)
+  })
+
+  it('the filter bar lists it too', async () => {
+    const bar = mount(FilterBar, { props: { fields: MULTI, selections, facets: FACETS } })
+    await bar.find('.add-filter').trigger('click')
+    await bar.find('.filter-field').trigger('click')
+    expect(bar.findAll('.filter-menu .facet-row').map((r) => r.text())).toEqual([
+      expect.stringContaining(LONG),
+      'payments',
+    ])
   })
 })
