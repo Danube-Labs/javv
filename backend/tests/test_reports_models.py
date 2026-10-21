@@ -35,11 +35,11 @@ def test_new_report_doc_builds_a_pending_job() -> None:
 @pytest.mark.parametrize("name", LIST_FILTER_FIELDS)
 def test_one_string_reads_as_a_list_of_that_value(name: str) -> None:
     # issue 949: a client that still sends one string keeps working; the cap still applies
-    assert getattr(ExportParams(**{name: "os"}), name) == ["os"]
-    assert getattr(ExportParams(**{name: ["os", "npm"]}), name) == ["os", "npm"]
-    assert getattr(ExportParams(**{name: None}), name) is None
+    assert getattr(ExportParams.model_validate({name: "os"}), name) == ["os"]
+    assert getattr(ExportParams.model_validate({name: ["os", "npm"]}), name) == ["os", "npm"]
+    assert getattr(ExportParams.model_validate({name: None}), name) is None
     with pytest.raises(ValidationError):
-        ExportParams(**{name: "x" * 513})
+        ExportParams.model_validate({name: "x" * 513})
 
 
 def test_vex_export_requires_a_scanner() -> None:
