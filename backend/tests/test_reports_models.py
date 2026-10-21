@@ -38,8 +38,9 @@ def test_one_string_reads_as_a_list_of_that_value(name: str) -> None:
     assert getattr(ExportParams.model_validate({name: "os"}), name) == ["os"]
     assert getattr(ExportParams.model_validate({name: ["os", "npm"]}), name) == ["os", "npm"]
     assert getattr(ExportParams.model_validate({name: None}), name) is None
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as err:
         ExportParams.model_validate({name: "x" * 513})
+    assert err.value.errors()[0]["type"] == "string_too_long"  # not list_type: read as a list
 
 
 def test_vex_export_requires_a_scanner() -> None:

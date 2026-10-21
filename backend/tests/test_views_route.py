@@ -12,6 +12,7 @@ from typing import Any, get_args, get_origin, get_type_hints
 import httpx
 import pytest
 from opensearchpy import AsyncOpenSearch
+from pydantic import ValidationError
 
 from backend.auth.passwords import hash_password
 from backend.core.bootstrap import bootstrap
@@ -169,6 +170,17 @@ async def test_a_preset_sent_with_one_string_saves_as_a_list(env) -> None:
     listed = (await http.get("/api/v1/views")).json()["views"]
     stored = next(v for v in listed if v["view_id"] == view["view_id"])
     assert {k: stored["preset"][k] for k in sent} == {k: [v] for k, v in sent.items()}
+
+
+def test_one_string_still_meets_the_value_checks() -> None:
+    # the string is read as a list first, so it fails the value check, not the list check
+    for preset, kind in (
+        ({"ptype": "OS Pkgs"}, "string_pattern_mismatch"),
+        ({"namespace": "x" * 257}, "string_too_long"),
+    ):
+        with pytest.raises(ValidationError) as err:
+            ViewPreset.model_validate(preset)
+        assert err.value.errors()[0]["type"] == kind, preset
 
 
 def test_preset_mirrors_search_filters_one_to_one() -> None:
