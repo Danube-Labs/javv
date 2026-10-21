@@ -120,6 +120,15 @@ describe('filters store', () => {
   })
 
   /** The rail/grid value actions (issue 349 §2) — pick a value straight into a mode. */
+  // issue 949 PR C: Image, CVE and Package keep several typed values
+  it('keeps several typed values across the URL; a one-value text field keeps one', () => {
+    const s = useStore()
+    s.fromQuery({ image: 'api,web', q: 'curl,wget' })
+    expect(s.selections.image).toEqual(['api', 'web'])
+    expect(s.selections.q).toEqual(['curl'])
+    expect(s.toQuery().image).toBe('api,web')
+  })
+
   describe('pickValue', () => {
     it('excludes in one action, where before it took a toggle plus a pill flip', () => {
       const s = useStore()
@@ -200,5 +209,27 @@ describe('filters store', () => {
     expect(s.hasFilters).toBe(true)
     // and it round-trips: the screen re-emits the same URL it was opened with
     expect(s.toQuery()).toEqual({ action: 'login' })
+  })
+})
+
+describe('filters store — a table cell adds a typed value (issue 949 PR C)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('a second image from a cell adds it; the same one again takes it out', () => {
+    const s = useStore()
+    s.pickValue('image', 'api', 'is')
+    s.pickValue('image', 'web', 'is')
+    expect(s.selections.image).toEqual(['api', 'web'])
+    s.pickValue('image', 'api', 'is')
+    expect(s.selections.image).toEqual(['web'])
+  })
+
+  it('a pick in the other mode starts over with that value, as for a terms field', () => {
+    const s = useStore()
+    s.pickValue('cve', 'CVE-1', 'is')
+    s.pickValue('cve', 'CVE-2', 'is')
+    s.pickValue('cve', 'CVE-3', 'not')
+    expect(s.selections.cve).toEqual(['CVE-3'])
+    expect(s.modeOf('cve')).toBe('not')
   })
 })

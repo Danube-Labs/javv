@@ -48,7 +48,7 @@ describe('buildFilterQuery', () => {
     const q = buildFilterQuery(FINDINGS_FIELDS, sel({ image: ['  nginx  '] }), {
       cluster_id: CID,
     })
-    expect(q.image_repo).toBe('nginx')
+    expect(q.image_repo).toEqual(['nginx']) // a list since issue 949 PR C
     const blank = buildFilterQuery(FINDINGS_FIELDS, sel({ image: ['   '] }), { cluster_id: CID })
     expect(blank).not.toHaveProperty('image_repo')
   })
@@ -124,7 +124,7 @@ describe('buildFilterQuery', () => {
       { cluster_id: CID },
       { image: 'not' },
     )
-    expect(q.exclude_image_repo).toBe('docker.io/library/nginx')
+    expect(q.exclude_image_repo).toEqual(['docker.io/library/nginx'])
     expect(q).not.toHaveProperty('image_repo')
   })
 
@@ -136,8 +136,8 @@ describe('buildFilterQuery', () => {
       sel({ cve: ['CVE-2021-3711'], package: ['zlib'] }),
       { cluster_id: CID },
     )
-    expect(inc.cve_id).toBe('CVE-2021-3711')
-    expect(inc.package_name).toBe('zlib')
+    expect(inc.cve_id).toEqual(['CVE-2021-3711'])
+    expect(inc.package_name).toEqual(['zlib'])
 
     const exc = buildFilterQuery(
       FINDINGS_FIELDS,
@@ -145,11 +145,25 @@ describe('buildFilterQuery', () => {
       { cluster_id: CID },
       { cve: 'not', package: 'not' },
     )
-    expect(exc.exclude_cve_id).toBe('CVE-2021-3711')
-    expect(exc.exclude_package_name).toBe('zlib')
+    expect(exc.exclude_cve_id).toEqual(['CVE-2021-3711'])
+    expect(exc.exclude_package_name).toEqual(['zlib'])
     // a field is include OR exclude — the mirror replaces the param, never doubles it
     expect(exc).not.toHaveProperty('cve_id')
     expect(exc).not.toHaveProperty('package_name')
+  })
+
+  // issue 949 PR C: Image, CVE and Package take several typed values
+  it('typed values go out as one list, trimmed, blanks dropped, in both modes', () => {
+    const inc = buildFilterQuery(FINDINGS_FIELDS, sel({ image: [' api ', '   ', 'web'] }), { cluster_id: CID })
+    expect(inc.image_repo).toEqual(['api', 'web'])
+    const exc = buildFilterQuery(
+      FINDINGS_FIELDS,
+      sel({ cve: ['CVE-1', 'CVE-2'] }),
+      { cluster_id: CID },
+      { cve: 'not' },
+    )
+    expect(exc.exclude_cve_id).toEqual(['CVE-1', 'CVE-2'])
+    expect(exc).not.toHaveProperty('cve_id')
   })
 
   it('a text field with no exclude twin ignores the mode entirely', () => {

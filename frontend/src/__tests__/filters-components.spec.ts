@@ -160,16 +160,79 @@ describe('FilterBar interactions', () => {
     expect(bar.emitted('toggle')?.[0]).toEqual(['severity', 'critical'])
   })
 
-  it('gives text fields an input and emits setText on Enter', async () => {
+  it('gives a one-value text field an input and emits setText on Enter', async () => {
+    const fields: FilterField[] = [{ key: 'image', label: 'Image', type: 'text', param: 'image_repo' }]
     const bar = mount(FilterBar, {
-      props: { fields: FINDINGS_FIELDS, selections: emptySelections(FINDINGS_FIELDS), facets: FACETS },
+      props: { fields, selections: emptySelections(fields), facets: FACETS },
     })
     await bar.find('.add-filter').trigger('click')
-    const imgItem = bar.findAll('.filter-field').find((b) => b.text().includes('Image'))
-    await imgItem?.trigger('click')
+    await bar.find('.filter-field').trigger('click')
     const input = bar.find('.filter-vsearch input')
     await input.setValue('nginx')
     await input.trigger('keydown.enter')
     expect(bar.emitted('setText')?.[0]).toEqual(['image', 'nginx'])
+  })
+})
+
+/** Issue 949 PR C: Image, CVE and Package take several typed values (ruled 2026-10-21: the
+ * values listed under the edit box). */
+describe('FilterBar several typed values', () => {
+  const openImage = async (image: string[]) => {
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: { ...emptySelections(FINDINGS_FIELDS), image },
+        facets: FACETS,
+      },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('Image'))?.trigger('click')
+    return bar
+  }
+
+  it('Enter adds the typed value, empties the input and keeps the box open', async () => {
+    const bar = await openImage(['api'])
+    const input = bar.find('.filter-vsearch input')
+    expect((input.element as HTMLInputElement).value).toBe('') // the values list below holds `api`
+    await input.setValue('  web ')
+    await input.trigger('keydown.enter')
+    expect(bar.emitted('toggle')?.[0]).toEqual(['image', 'web'])
+    expect(bar.emitted('setText')).toBeUndefined()
+    expect((input.element as HTMLInputElement).value).toBe('')
+    expect(bar.find('.filter-menu').exists()).toBe(true)
+  })
+
+  it('a value already in the list or an empty input adds nothing', async () => {
+    const bar = await openImage(['api'])
+    const input = bar.find('.filter-vsearch input')
+    await input.setValue('api')
+    await input.trigger('keydown.enter')
+    await input.setValue('   ')
+    await input.trigger('keydown.enter')
+    expect(bar.emitted('toggle')).toBeUndefined()
+  })
+
+  it('lists the values under the input; a click on one takes it out', async () => {
+    const bar = await openImage(['api', 'web'])
+    const rows = bar.findAll('.filter-menu .facet-row')
+    expect(rows.map((r) => r.text())).toEqual(['api', 'web'])
+    expect(rows.every((r) => r.classes('facet-on'))).toBe(true)
+    expect(rows[1]!.attributes('title')).toBe('Remove web')
+    await rows[1]!.trigger('click')
+    expect(bar.emitted('toggle')?.[0]).toEqual(['image', 'web'])
+  })
+
+  it('the pill reads "is one of" for two typed values', () => {
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: { ...emptySelections(FINDINGS_FIELDS), cve: ['CVE-1', 'CVE-2'] },
+        facets: FACETS,
+      },
+    })
+    const pill = bar.find('.fpill')
+    expect(pill.text()).toContain('CVE')
+    expect(pill.text()).toContain('is one of')
+    expect(pill.text()).toContain('CVE-1, CVE-2')
   })
 })

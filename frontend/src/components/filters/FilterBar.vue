@@ -8,6 +8,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 
+import FilterValueRows, { type ValueRow } from '@/components/filters/FilterValueRows.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
@@ -63,8 +64,20 @@ const editItems = computed(() => {
   const q = valueQuery.value.toLowerCase()
   // match the name on screen AND the stored value: someone who knows `not_affected` from a
   // URL or the API finds it too
-  return q ? items.filter((it) => it.label.toLowerCase().includes(q) || it.value.toLowerCase().includes(q)) : items
+  const chosen = props.selections[field.key] ?? []
+  const shown = q ? items.filter((it) => it.label.toLowerCase().includes(q) || it.value.toLowerCase().includes(q)) : items
+  return shown.map((it): ValueRow => ({ ...it, on: chosen.includes(it.value) }))
 })
+// several typed values (issue 949): the field's values listed under its input
+const typedRows = computed((): ValueRow[] => {
+  const field = editField.value
+  if (!field || !isMultiText(field)) return []
+  return (props.selections[field.key] ?? []).map((v) => ({ value: v, label: v, on: true, count: null }))
+})
+
+function isMultiText(field: FilterField): boolean {
+  return field.type === 'text' && field.multi === true
+}
 
 function pillText(field: FilterField): string {
   const vals = (props.selections[field.key] ?? []).map((v) => valueLabel(field, v))
@@ -79,7 +92,9 @@ function openPicker() {
 function openField(key: string) {
   editKey.value = key
   valueQuery.value = ''
-  textDraft.value = (props.selections[key] ?? [])[0] ?? ''
+  const field = props.fields.find((f) => f.key === key)
+  // a multi text field lists its values under the input, so the input starts empty
+  textDraft.value = field && isMultiText(field) ? '' : ((props.selections[key] ?? [])[0] ?? '')
   open.value = true
 }
 function close() {
@@ -92,8 +107,16 @@ function onClosed() {
 }
 
 function applyText() {
-  if (!editField.value) return
-  emit('setText', editField.value.key, textDraft.value)
+  const field = editField.value
+  if (!field) return
+  if (isMultiText(field)) {
+    // each Enter adds one value and keeps the box open for the next (issue 949)
+    const text = textDraft.value.trim()
+    if (text && !(props.selections[field.key] ?? []).includes(text)) emit('toggle', field.key, text)
+    textDraft.value = ''
+    return
+  }
+  emit('setText', field.key, textDraft.value)
   close()
 }
 
@@ -188,31 +211,29 @@ function onKeydown(e: KeyboardEvent) {
               <AppIcon name="search" :size="13" />
               <input v-model="valueQuery" placeholder="Filter values…" />
             </div>
-            <div class="filter-values">
-              <button
-                v-for="it in editItems"
-                :key="it.value"
-                class="facet-row"
-                :class="{ 'facet-on': (selections[editField.key] ?? []).includes(it.value) }"
-                @click="emit('toggle', editField.key, it.value)"
-              >
-                <span class="facet-check" />
-                <span class="facet-label">{{ it.label }}</span>
-                <span v-if="it.count !== null" class="facet-count">{{
-                  countsUnknown ? '-' : it.count.toLocaleString('en-US')
-                }}</span>
-              </button>
-            </div>
+            <FilterValueRows
+              :rows="editItems"
+              :counts-unknown="countsUnknown"
+              @toggle="(v) => emit('toggle', editField!.key, v)"
+            />
           </template>
 
-          <div v-else class="filter-vsearch">
-            <AppIcon name="search" :size="13" />
-            <input
-              v-model="textDraft"
-              :placeholder="`${editField.label}…`"
-              @keydown.enter="applyText"
+          <template v-else>
+            <div class="filter-vsearch">
+              <AppIcon name="search" :size="13" />
+              <input
+                v-model="textDraft"
+                :placeholder="isMultiText(editField) ? `Add ${editField.label.toLowerCase()}…` : `${editField.label}…`"
+                @keydown.enter="applyText"
+              />
+            </div>
+            <FilterValueRows
+              v-if="typedRows.length > 0"
+              :rows="typedRows"
+              removable
+              @toggle="(v) => emit('toggle', editField!.key, v)"
             />
-          </div>
+          </template>
 
           <button
             v-if="(selections[editField.key] ?? []).length > 0"
@@ -258,7 +279,6 @@ function onKeydown(e: KeyboardEvent) {
 }
 .fpill:focus-visible,
 .add-filter:focus-visible,
-.facet-row:focus-visible,
 .dd-item:focus-visible,
 .clear-all:focus-visible {
   outline: var(--focus-ring);
@@ -453,10 +473,6 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--ink);
   font-family: inherit;
 }
-.filter-values {
-  max-height: 240px;
-  overflow-y: auto;
-}
 .filter-clear-field {
   width: 100%;
   border: 0;
@@ -470,52 +486,5 @@ function onKeydown(e: KeyboardEvent) {
 }
 .filter-clear-field:hover {
   color: var(--coral-text);
-}
-
-/* value rows inside the picker (same look as the rail's facet rows) */
-.facet-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 5px 8px;
-  border-radius: 7px;
-  text-align: left;
-  color: var(--ink);
-  font-size: var(--text-control);
-  cursor: default;
-}
-.facet-row:hover {
-  background: var(--panel);
-}
-.facet-check {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1.5px solid var(--facet-check-line);
-  flex: none;
-  transition: 0.1s;
-}
-.facet-on .facet-check {
-  background: var(--coral);
-  border-color: var(--coral);
-  box-shadow: inset 0 0 0 2px var(--card);
-}
-.facet-on {
-  color: var(--ink);
-  font-weight: 500;
-}
-.facet-label {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.facet-count {
-  font-family: var(--font-mono);
-  font-size: var(--text-facet-count);
-  color: var(--soft);
 }
 </style>

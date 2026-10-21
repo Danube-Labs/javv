@@ -66,8 +66,14 @@ export function buildFilterQuery(
     } else {
       // under-minLength text is OMITTED, never sent — the API would 422 it; the input layer
       // owns the user feedback (contract-guard, audit 343)
-      const text = (selected[0] ?? '').trim()
-      if (text && text.length >= (field.minLength ?? 1)) query[excludeParam(field, modes)] = text
+      const ok = (t: string) => t.length >= (field.minLength ?? 1)
+      if (field.multi) {
+        const texts = selected.map((v) => v.trim()).filter((t) => t && ok(t))
+        if (texts.length > 0) query[excludeParam(field, modes)] = texts
+      } else {
+        const text = (selected[0] ?? '').trim()
+        if (text && ok(text)) query[excludeParam(field, modes)] = text
+      }
     }
   }
 

@@ -77,8 +77,9 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           this.setMode(fieldKey, mode)
           return
         }
-        // a text field holds one value, so picking it again clears rather than accumulates
-        if (field.type === 'text') {
+        // a one-value text field holds one value, so picking it again clears rather than
+        // accumulates; a multi one (issue 949) toggles like a terms field
+        if (field.type === 'text' && !field.multi) {
           const on = (this.selections[fieldKey] ?? [])[0] === value
           this.selections[fieldKey] = on ? [] : [value]
         } else {
@@ -112,7 +113,8 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
             // a shared URL can carry under-minLength text — drop it here so the chip never
             // shows a filter the builder refuses to emit (contract-guard, audit 343)
             const min = field.minLength ?? 1
-            next[field.key] = values.slice(0, 1).filter((v) => v.trim().length >= min)
+            const kept = field.multi ? values : values.slice(0, 1)
+            next[field.key] = kept.filter((v) => v.trim().length >= min)
           } else if (field.type === 'flags') {
             const known = new Set(field.values.map((v) => v.key))
             next[field.key] = values.filter((v) => known.has(v))

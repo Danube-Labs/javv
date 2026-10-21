@@ -47,11 +47,10 @@ export function captureLens(
         }
       }
     } else {
-      const text = (selected[0] ?? '').trim()
-      if (text && text.length >= (field.minLength ?? 1)) {
-        const not = isNegatable(field) && (modes[field.key] ?? 'is') === 'not'
-        preset[not ? `exclude_${field.param}` : field.param] = text
-      }
+      const not = isNegatable(field) && (modes[field.key] ?? 'is') === 'not'
+      const param = not ? `exclude_${field.param}` : field.param
+      const texts = selected.map((v) => v.trim()).filter((t) => t && t.length >= (field.minLength ?? 1))
+      if (texts.length > 0) preset[param] = field.multi ? texts : texts[0]
     }
   }
   return preset as ViewPreset
@@ -80,10 +79,10 @@ export function presetToRouteQuery(
       if (attr.length > 0) query[field.key] = attr.join(',')
     } else {
       // a negated text field round-trips through the same `!` prefix as a terms field
-      const exc = textValue(p[`exclude_${field.param}`])
-      const inc = textValue(p[field.param])
-      if (exc) query[field.key] = `!${exc}`
-      else if (inc) query[field.key] = inc
+      const exc = textValues(field, p[`exclude_${field.param}`])
+      const inc = textValues(field, p[field.param])
+      if (exc.length > 0) query[field.key] = exc.map((v) => `!${v}`).join(',')
+      else if (inc.length > 0) query[field.key] = inc.join(',')
     }
   }
   return query
@@ -96,10 +95,11 @@ function termValues(v: unknown): unknown[] {
   return Array.isArray(v) ? v : [v]
 }
 
-// the server stores a text filter as a list of one value (issue 949); the screen edits one value
-function textValue(v: unknown): string | undefined {
-  const one = Array.isArray(v) ? v[0] : v
-  return typeof one === 'string' && one !== '' ? one : undefined
+// a stored text filter is a list (issue 949), or one string in a view saved before; a field that
+// takes one value on screen applies the first
+function textValues(field: FilterField, v: unknown): string[] {
+  const all = (Array.isArray(v) ? v : [v]).filter((s): s is string => typeof s === 'string' && s !== '')
+  return field.type === 'text' && field.multi ? all : all.slice(0, 1)
 }
 
 const names = (field: FilterField, values: unknown[]): string =>
@@ -125,10 +125,11 @@ export function presetSummary(fields: readonly FilterField[], preset: ViewPreset
         if (flag.window ? typeof v === 'number' : v === true) parts.push(flag.label)
       }
     } else {
-      const exc = textValue(p[`exclude_${field.param}`])
-      const inc = textValue(p[field.param])
-      if (exc) parts.push(`${field.label} is not "${exc}"`)
-      else if (inc) parts.push(`${field.label} "${inc}"`)
+      const exc = textValues(field, p[`exclude_${field.param}`]).map((v) => `"${v}"`)
+      const inc = textValues(field, p[field.param]).map((v) => `"${v}"`)
+      if (exc.length > 0) parts.push(`${field.label} is ${exc.length > 1 ? 'none of' : 'not'} ${exc.join(', ')}`)
+      else if (inc.length === 1) parts.push(`${field.label} ${inc[0]}`)
+      else if (inc.length > 1) parts.push(`${field.label} is one of ${inc.join(', ')}`)
     }
   }
   return parts.join(' · ') || 'No filters: everything'

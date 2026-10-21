@@ -55,6 +55,9 @@ export interface TextField extends BaseField {
    * of these params are EXACT terms server-side (`image_repo` is a `term` clause, not a
    * wildcard) — the free-text input is just the entry affordance, not the match semantics. */
   negatable?: boolean
+  /** The param takes several values (issue 949): each Enter in the filter bar adds one, and a
+   * second pick from a table cell adds rather than replaces. Off by default. */
+  multi?: boolean
 }
 
 export type FilterField = TermsField | FlagsField | TextField
@@ -148,11 +151,11 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', multi: true, facetKey: 'namespaces', negatable: true },
   // `image_repo` is an exact `term` server-side, so the grid's image cell can filter on the
   // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2)
-  { key: 'image', label: 'Image', type: 'text', param: 'image_repo', negatable: true },
+  { key: 'image', label: 'Image', type: 'text', param: 'image_repo', multi: true, negatable: true },
   // issue 492 completes the negation family. Both are exact `term`s server-side and neither
   // is a facet — package cardinality is unbounded, and one CVE per bucket is not a rail dim —
   // so they are bar-and-cell fields, like `image` above.
-  { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', negatable: true },
-  { key: 'package', label: 'Package', type: 'text', param: 'package_name', negatable: true },
+  { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', multi: true, negatable: true },
+  { key: 'package', label: 'Package', type: 'text', param: 'package_name', multi: true, negatable: true },
   { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
 ]
