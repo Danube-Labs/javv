@@ -1,12 +1,17 @@
 /**
  * The one `fields` config that drives BOTH FacetRail and FilterBar (PLAN gate: adding a field
  * here surfaces it in both with no component edits). Shape mirrors the backend contract, not
- * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values
- * (the last three since issue 949); `scanner` and the text fields send one; KEV / fix-available /
- * disagree are boolean flags (grouped as one "Attribute" facet, as in the prototype).
+ * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values,
+ * and so do the text fields `image`, `cve` and `package` (issue 949); `scanner` and the other text
+ * fields send one; KEV / fix-available / disagree are boolean flags (grouped as one "Attribute"
+ * facet, as in the prototype).
  */
 import { stateLabel } from '@/findings/stateLabels'
 import { SEVERITIES } from '@/styles/tokens'
+
+// the most values one list filter takes: mirrors the backend's MAX_FILTER_VALUES (docs/API.md,
+// filters), so a pick past it never sends a query the API refuses with 422
+export const MAX_FILTER_VALUES = 32
 
 interface BaseField {
   key: string
@@ -45,7 +50,7 @@ export interface FlagsField extends BaseField {
   }[]
 }
 
-/** Free-text single-value param (no facet buckets). `minLength` mirrors the API's own
+/** Free-text param (no facet buckets), one value unless `multi`. `minLength` mirrors the API's own
  * validation — a keystroke must never emit a known-invalid query (contract-guard, audit 343). */
 export interface TextField extends BaseField {
   type: 'text'
@@ -55,6 +60,9 @@ export interface TextField extends BaseField {
    * of these params are EXACT terms server-side (`image_repo` is a `term` clause, not a
    * wildcard) — the free-text input is just the entry affordance, not the match semantics. */
   negatable?: boolean
+  /** The param takes several values (issue 949): each Enter in the filter bar adds one, and a
+   * second pick from a table cell adds rather than replaces. Off by default. */
+  multi?: boolean
 }
 
 export type FilterField = TermsField | FlagsField | TextField
@@ -90,7 +98,7 @@ export function activeMode(
   return modes?.[fieldKey] ?? 'is'
 }
 
-/** Active selections, keyed by field key. Text fields hold a single-entry array. */
+/** Active selections, keyed by field key. A one-value field holds a single-entry array. */
 export type Selections = Record<string, string[]>
 
 export const emptySelections = (fields: readonly FilterField[]): Selections =>
@@ -148,11 +156,11 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', multi: true, facetKey: 'namespaces', negatable: true },
   // `image_repo` is an exact `term` server-side, so the grid's image cell can filter on the
   // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2)
-  { key: 'image', label: 'Image', type: 'text', param: 'image_repo', negatable: true },
+  { key: 'image', label: 'Image', type: 'text', param: 'image_repo', multi: true, negatable: true },
   // issue 492 completes the negation family. Both are exact `term`s server-side and neither
   // is a facet — package cardinality is unbounded, and one CVE per bucket is not a rail dim —
   // so they are bar-and-cell fields, like `image` above.
-  { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', negatable: true },
-  { key: 'package', label: 'Package', type: 'text', param: 'package_name', negatable: true },
+  { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', multi: true, negatable: true },
+  { key: 'package', label: 'Package', type: 'text', param: 'package_name', multi: true, negatable: true },
   { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
 ]

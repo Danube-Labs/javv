@@ -24,7 +24,13 @@ import {
 export type FilterMode = 'is' | 'not'
 export type Modes = Record<string, FilterMode>
 
-export function makeFiltersStore(storeId: string, fields: readonly FilterField[]) {
+/** `maxValues` caps a multi field where the API does (Findings: 32, issue 949); a screen that
+ * filters in the browser leaves it unset. */
+export function makeFiltersStore(
+  storeId: string,
+  fields: readonly FilterField[],
+  maxValues = Number.POSITIVE_INFINITY,
+) {
   return defineStore(storeId, {
     state: () => ({ selections: emptySelections(fields) as Selections, modes: {} as Modes }),
     getters: {
@@ -41,6 +47,8 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           this.selections[fieldKey] = current.filter((v) => v !== value)
         } else if (field.type === 'terms' && !field.multi) {
           this.selections[fieldKey] = [value] // single-value param: replace, never accumulate
+        } else if (current.length >= maxValues) {
+          return // the API refuses a longer list; the rail and the filter bar say so
         } else {
           this.selections[fieldKey] = [...current, value]
         }
@@ -77,8 +85,9 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           this.setMode(fieldKey, mode)
           return
         }
-        // a text field holds one value, so picking it again clears rather than accumulates
-        if (field.type === 'text') {
+        // a one-value text field holds one value, so picking it again clears rather than
+        // accumulates; a multi one (issue 949) toggles like a terms field
+        if (field.type === 'text' && !field.multi) {
           const on = (this.selections[fieldKey] ?? [])[0] === value
           this.selections[fieldKey] = on ? [] : [value]
         } else {
@@ -108,20 +117,22 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
             nextModes[field.key] = 'not'
             values = values.map((v) => (v.startsWith('!') ? v.slice(1) : v)).filter(Boolean)
           }
+          values = [...new Set(values)]
           if (field.type === 'text') {
             // a shared URL can carry under-minLength text — drop it here so the chip never
             // shows a filter the builder refuses to emit (contract-guard, audit 343)
             const min = field.minLength ?? 1
-            next[field.key] = values.slice(0, 1).filter((v) => v.trim().length >= min)
+            const kept = field.multi ? values.slice(0, maxValues) : values.slice(0, 1)
+            next[field.key] = kept.filter((v) => v.trim().length >= min)
           } else if (field.type === 'flags') {
             const known = new Set(field.values.map((v) => v.key))
             next[field.key] = values.filter((v) => known.has(v))
           } else if (field.values) {
             const known = new Set(field.values)
             const kept = values.filter((v) => known.has(v))
-            next[field.key] = field.multi ? kept : kept.slice(0, 1)
+            next[field.key] = field.multi ? kept.slice(0, maxValues) : kept.slice(0, 1)
           } else {
-            next[field.key] = field.multi ? values : values.slice(0, 1)
+            next[field.key] = field.multi ? values.slice(0, maxValues) : values.slice(0, 1)
           }
         }
         this.selections = next

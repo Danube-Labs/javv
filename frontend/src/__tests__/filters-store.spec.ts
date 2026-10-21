@@ -2,7 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { AUDIT_FIELDS } from '@/audit/fields.config'
-import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { makeFiltersStore } from '@/stores/filters'
 
 const useStore = makeFiltersStore('test-filters', FINDINGS_FIELDS)
@@ -120,6 +120,15 @@ describe('filters store', () => {
   })
 
   /** The rail/grid value actions (issue 349 §2) — pick a value straight into a mode. */
+  // issue 949 PR C: Image, CVE and Package keep several typed values
+  it('keeps several typed values across the URL; a one-value text field keeps one', () => {
+    const s = useStore()
+    s.fromQuery({ image: 'api,web', q: 'curl,wget' })
+    expect(s.selections.image).toEqual(['api', 'web'])
+    expect(s.selections.q).toEqual(['curl'])
+    expect(s.toQuery().image).toBe('api,web')
+  })
+
   describe('pickValue', () => {
     it('excludes in one action, where before it took a toggle plus a pill flip', () => {
       const s = useStore()
@@ -200,5 +209,68 @@ describe('filters store', () => {
     expect(s.hasFilters).toBe(true)
     // and it round-trips: the screen re-emits the same URL it was opened with
     expect(s.toQuery()).toEqual({ action: 'login' })
+  })
+})
+
+describe('filters store — a table cell adds a typed value (issue 949 PR C)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('a second image from a cell adds it; the same one again takes it out', () => {
+    const s = useStore()
+    s.pickValue('image', 'api', 'is')
+    s.pickValue('image', 'web', 'is')
+    expect(s.selections.image).toEqual(['api', 'web'])
+    s.pickValue('image', 'api', 'is')
+    expect(s.selections.image).toEqual(['web'])
+  })
+
+  it('a pick in the other mode starts over with that value, as for a terms field', () => {
+    const s = useStore()
+    s.pickValue('cve', 'CVE-1', 'is')
+    s.pickValue('cve', 'CVE-2', 'is')
+    s.pickValue('cve', 'CVE-3', 'not')
+    expect(s.selections.cve).toEqual(['CVE-3'])
+    expect(s.modeOf('cve')).toBe('not')
+  })
+})
+
+describe('filters store — the API cap of 32 values (issue 949)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  const useCapped = makeFiltersStore('test-capped', FINDINGS_FIELDS, MAX_FILTER_VALUES)
+
+  it('a URL with more values keeps the first 32', () => {
+    const s = useCapped()
+    const many = Array.from({ length: 40 }, (_, i) => `ns-${i}`)
+    s.fromQuery({ namespace: many.join(','), cve: many.join(',') })
+    expect(s.selections.namespace).toHaveLength(32)
+    expect(s.selections.cve).toHaveLength(32)
+  })
+
+  it('a 33rd pick adds nothing', () => {
+    const s = useCapped()
+    for (let i = 0; i < 33; i++) s.pickValue('image', `img-${i}`, 'is')
+    expect(s.selections.image).toHaveLength(32)
+    expect(s.selections.image).not.toContain('img-32')
+  })
+
+  it('a store without a cap keeps every value (Running images filters in the browser)', () => {
+    const s = useStore()
+    const many = Array.from({ length: 40 }, (_, i) => `ns-${i}`)
+    s.fromQuery({ namespace: many.join(',') })
+    expect(s.selections.namespace).toHaveLength(40)
+  })
+
+  it('a value repeated in the URL is kept once', () => {
+    const s = useStore()
+    s.fromQuery({ cve: 'a,a,a', severity: 'critical,critical' })
+    expect(s.selections.cve).toEqual(['a'])
+    expect(s.selections.severity).toEqual(['critical'])
+  })
+
+  it('a value repeated with and without a leading ! is kept once', () => {
+    const s = useStore()
+    s.fromQuery({ cve: 'a,!a,!b,b' })
+    expect(s.selections.cve).toEqual(['a', 'b'])
+    expect(s.modes.cve).toBe('not')
   })
 })

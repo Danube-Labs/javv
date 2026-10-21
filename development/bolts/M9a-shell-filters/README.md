@@ -165,6 +165,14 @@ as pure units** (Vitest).
   with the control ruled on 2026-10-21 (a list of values under the edit box). `scanner` stays one
   value.
 
+- **2026-10-21 — several typed values for image, CVE and package (issue 949 PR C):** the three
+  text fields get `multi: true`. The operator ruled the control on a built specimen: Enter in the
+  edit box adds the value to a list under the input (`FilterValueRows`, shared with the facet
+  values), and a click removes it. A table cell pick adds the value. The URL, the saved views and
+  the query keep every value. On Findings a filter stops at 32 values (the API cap) and says so
+  in the edit box, and in the rail for a facet field; a pasted comma list adds each value. A
+  refused cell pick at the cap shows nothing yet (known gap on the PR).
+
 ## Config tracking
 
 > **When this bolt introduces config**, add each new knob (a `JAVV_*` / OpenSearch env var, a
