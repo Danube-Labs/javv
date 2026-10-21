@@ -69,6 +69,7 @@ describe('saved views — the golden capture ⇄ apply round-trip (SCREENS §6)'
   it('card count query = preset params verbatim + tenant (facets — a size-0 agg, no PIT)', () => {
     expect(presetCountQuery(GOLDEN_PRESET as never, CID)).toEqual({
       cluster_id: CID,
+      fields: ['severity'], // the one facet facetsTotal sums
       ...GOLDEN_PRESET,
     })
     expect(presetCountQuery({} as never, CID, '2026-07-01T00:00:00Z').as_of).toBe(

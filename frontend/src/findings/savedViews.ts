@@ -138,7 +138,8 @@ export function presetCountQuery(
   clusterId: string,
   asOf?: string,
 ): Record<string, unknown> {
-  const query: Record<string, unknown> = { cluster_id: clusterId }
+  // the card sums only the severity facet (facetsTotal), so the other facets are not asked for
+  const query: Record<string, unknown> = { cluster_id: clusterId, fields: ['severity'] }
   if (asOf !== undefined) query.as_of = asOf
   for (const [k, v] of Object.entries(preset as Record<string, unknown>)) {
     if (v !== null && v !== undefined) query[k] = v
