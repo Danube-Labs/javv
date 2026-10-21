@@ -58,7 +58,7 @@ const editField = computed(() => props.fields.find((f) => f.key === editKey.valu
 const editItems = computed(() => {
   const field = editField.value
   if (!field) return null
-  const items = facetItems(field, props.facets)
+  const items = facetItems(field, props.facets, props.selections[field.key])
   if (!items) return null
   const q = valueQuery.value.toLowerCase()
   // match the name on screen AND the stored value: someone who knows `not_affected` from a

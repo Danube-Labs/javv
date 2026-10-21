@@ -37,7 +37,7 @@ function activeMode(field: FilterField, value: string): FilterMode | null {
 
 const groups = computed(() =>
   props.fields
-    .map((field) => ({ field, items: facetItems(field, props.facets) }))
+    .map((field) => ({ field, items: facetItems(field, props.facets, props.selections[field.key]) }))
     .filter((g): g is { field: FilterField; items: NonNullable<typeof g.items> } => g.items !== null)
     // data-driven sections (no fixed vocabulary) hide until they HAVE buckets — a bare header
     // over nothing reads as broken on a first-run cluster
