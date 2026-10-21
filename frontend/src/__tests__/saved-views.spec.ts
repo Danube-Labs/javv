@@ -181,3 +181,29 @@ describe('saved views — cve + package round-trip (issue 492)', () => {
     )
   })
 })
+
+describe('saved views — the stored text filters are one-value lists (issue 949)', () => {
+  // the server reads the one string the screen sends as a list and stores the list; a view
+  // read back must apply and describe the same filter the user saved
+  const STORED = { image_repo: ['registry.local/api'], exclude_cve_id: ['CVE-2021-3711'] }
+
+  it('apply: a stored one-value list restores the text filter', () => {
+    expect(presetToRouteQuery(FINDINGS_FIELDS, STORED as never)).toEqual({
+      image: 'registry.local/api',
+      cve: '!CVE-2021-3711',
+    })
+    expect(
+      presetToRouteQuery(FINDINGS_FIELDS, { exclude_package_name: ['zlib'] } as never),
+    ).toEqual({ package: '!zlib' })
+  })
+
+  it('summary: the card names the stored text filters', () => {
+    expect(presetSummary(FINDINGS_FIELDS, STORED as never)).toBe(
+      'Image "registry.local/api" · CVE is not "CVE-2021-3711"',
+    )
+  })
+
+  it('an empty stored list is no filter', () => {
+    expect(presetToRouteQuery(FINDINGS_FIELDS, { image_repo: [] } as never)).toEqual({})
+  })
+})
