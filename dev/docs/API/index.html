@@ -2819,7 +2819,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/findings/facets</code></td>
 <td>session</td>
-<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values.</td>
+<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not remove the other values from the list. All other facets count with all filters.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -2939,12 +2939,12 @@ the same filters:</p>
 <td><code>open</code>, <code>acknowledged</code>, <code>not_affected</code>, <code>risk_accepted</code>, <code>resolved</code> or <code>stale</code></td>
 </tr>
 <tr>
-<td><code>scanner</code>, <code>assignee</code>, <code>namespace</code>, <code>image_repo</code>, <code>image_digest</code>, <code>cve_id</code>, <code>ptype</code></td>
+<td><code>scanner</code>, <code>image_digest</code></td>
 <td>The rows with that value</td>
 </tr>
 <tr>
-<td><code>package_name</code></td>
-<td>The rows with exactly that package name. It is not a facet. <code>fields=package_name</code> gets 422.</td>
+<td><code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code></td>
+<td>The rows with one of the values. Give the parameter one time for each value, for example <code>namespace=a&amp;namespace=b</code>. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces.</td>
 </tr>
 <tr>
 <td><code>kev</code>, <code>fixable</code>, <code>disagree</code></td>
@@ -2976,7 +2976,12 @@ the same filters:</p>
 <li>Each filter except <code>kev</code>, <code>fixable</code>, <code>disagree</code>, <code>present</code>, <code>new_within_days</code>, <code>overdue</code>,
   <code>unassigned</code>, <code>image_digest</code> and <code>q</code> has an <code>exclude_</code> form, for example <code>exclude_severity</code>.
   An <code>exclude_</code> filter leaves out the rows with that value. A row with no value for the field stays.
-  Thus <code>exclude_assignee=bob</code> keeps the rows with no owner.</li>
+  Thus <code>exclude_assignee=bob</code> keeps the rows with no owner. An <code>exclude_</code> filter with more than one
+  value leaves out the rows with any of the values.</li>
+<li><code>package_name</code> is not a facet. <code>fields=package_name</code> gets 422.</li>
+<li>In a saved view (<code>preset</code>) and in a report (<code>params</code>), the filters that take more than one value
+  (<code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code> and their <code>exclude_</code>
+  forms) also take one string. JAVV keeps it as a list with that one value.</li>
 <li>One field takes the filter or its <code>exclude_</code> form, not both. Both get 422.</li>
 </ul>
 <h4 id="a-past-time-as_of">A past time: <code>as_of</code><a class="headerlink" href="#a-past-time-as_of" title="Permanent link">&para;</a></h4>
