@@ -314,9 +314,10 @@ class AsOfTQuery:
             raise _unrecorded("kev")
         if f.disagree is not None:
             raise _unrecorded("disagree")
-        if f.image_repo is not None:
+        # an empty list is no filter, as on the live read
+        if f.image_repo:
             raise _unrecorded("image_repo")
-        if f.exclude_image_repo is not None:
+        if f.exclude_image_repo:
             raise _unrecorded("exclude_image_repo")
         if f.q is not None:
             # contains-search spans image_repo, which occurrences don't record — a partial match
@@ -489,9 +490,10 @@ class AsOfTQuery:
                 facets[field] = []
                 continue
             # mirrors the live facet (issue 949): a list facet counts without its own filter
+            own = OWN_FILTER_FREE_FACETS.get(field)
             counted = (
                 self._apply_filters(reconstructed, without_own_filter(filters, field))
-                if field in OWN_FILTER_FREE_FACETS
+                if own and (getattr(filters, own) or getattr(filters, f"exclude_{own}"))
                 else rows
             )
             counts: dict[Any, dict[str, Any]] = {}

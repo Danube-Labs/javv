@@ -550,8 +550,10 @@ def test_several_values_at_past_t_are_membership_not_equality() -> None:
             [dict(row)], SearchFilters(**dict[str, Any]({name: ["x", "y"]}))
         )
         assert miss == [], f"{name}=['x', 'y'] must drop a row that holds neither value"
-    # an empty list is no filter, as in the live query
-    assert len(AsOfTQuery._apply_filters([dict(row)], SearchFilters(namespace=[]))) == 1
+    # an empty list is no filter, as in the live query; image_repo too, though it is unrecorded
+    for empty in ("namespace", "image_repo", "exclude_image_repo"):
+        f = SearchFilters(**dict[str, Any]({empty: []}))
+        assert len(AsOfTQuery._apply_filters([dict(row)], f)) == 1, empty
     # image_repo is not in the scan history: a list is refused like one value always was
     with pytest.raises(ValueError, match="image_repo"):
         AsOfTQuery._apply_filters([dict(row)], SearchFilters(image_repo=["a", "b"]))
@@ -595,3 +597,40 @@ async def test_past_t_package_type_facet_leaves_out_its_own_filter(monkeypatch) 
     counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
     assert counts["ptype"] == {"deb": 2, "npm": 1}
     assert counts["severity"] == {"high": 2}
+
+
+async def test_past_t_facets_filter_again_only_for_a_field_with_its_own_filter(
+    monkeypatch,
+) -> None:
+    """The second pass over the rows is only needed when the ptype facet has a filter of its
+    own to leave out; without one it would count the same rows again (as build_facets_body)."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return []
+
+    passes: list[SearchFilters] = []
+    real = AsOfTQuery._apply_filters
+
+    def _counting(rows: list[dict[str, Any]], f: SearchFilters) -> list[dict[str, Any]]:
+        passes.append(f)
+        return real(rows, f)
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    monkeypatch.setattr(AsOfTQuery, "_apply_filters", staticmethod(_counting))
+    for filters, expected in (
+        (SearchFilters(severity=["high"]), 1),
+        (SearchFilters(namespace=["prod"]), 1),  # not the ptype facet's own field
+        (SearchFilters(ptype=["deb"]), 2),
+        (SearchFilters(exclude_ptype=["npm"]), 2),
+    ):
+        passes.clear()
+        await AsOfTQuery().findings_facets(
+            cast(Any, None),
+            cluster_id="c",
+            t=datetime(2026, 1, 1, tzinfo=UTC),
+            filters=filters,
+            fields=["ptype", "severity"],  # ptype is the one freed facet recorded at T
+        )
+        assert len(passes) == expected, filters
