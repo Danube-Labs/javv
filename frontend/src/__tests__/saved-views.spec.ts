@@ -134,7 +134,21 @@ describe('saved views — several values in one field (issue 949)', () => {
     })
     expect(presetSummary(FINDINGS_FIELDS, old as never)).toContain('Namespace is payments')
     // the card count sends the stored value as it is: one value is a valid list param
-    expect(presetCountQuery(old as never, CID)).toEqual({ cluster_id: CID, ...old })
+    expect(presetCountQuery(old as never, CID)).toEqual({
+      cluster_id: CID,
+      fields: ['severity'],
+      ...old,
+    })
+  })
+
+  it('an empty stored list is no filter: no empty pill, no "Namespace is" on the card', () => {
+    const empty = { namespace: [], exclude_ptype: [], assignee: ['ana'] }
+    expect(presetToRouteQuery(FINDINGS_FIELDS, empty as never)).toEqual({ assignee: 'ana' })
+    expect(presetSummary(FINDINGS_FIELDS, empty as never)).toBe('Assignee is ana')
+    // an empty exclude list falls back to the include list of the same field
+    expect(
+      presetToRouteQuery(FINDINGS_FIELDS, { exclude_namespace: [], namespace: ['edge'] } as never),
+    ).toEqual({ namespace: 'edge' })
   })
 })
 

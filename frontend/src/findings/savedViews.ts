@@ -68,15 +68,10 @@ export function presetToRouteQuery(
   const attr: string[] = []
   for (const field of fields) {
     if (field.type === 'terms') {
-      const inc = p[field.param]
-      const exc = p[`exclude_${field.param}`]
-      if (exc !== undefined && exc !== null) {
-        const values = Array.isArray(exc) ? exc : [exc]
-        query[field.key] = values.map((v) => `!${v}`).join(',')
-      } else if (inc !== undefined && inc !== null) {
-        const values = Array.isArray(inc) ? inc : [inc]
-        query[field.key] = values.join(',')
-      }
+      const inc = termValues(p[field.param])
+      const exc = termValues(p[`exclude_${field.param}`])
+      if (exc.length > 0) query[field.key] = exc.map((v) => `!${v}`).join(',')
+      else if (inc.length > 0) query[field.key] = inc.join(',')
     } else if (field.type === 'flags') {
       for (const flag of field.values) {
         const v = p[flag.param]
@@ -92,6 +87,13 @@ export function presetToRouteQuery(
     }
   }
   return query
+}
+
+// a stored terms filter is a list, or one string in a view saved before issue 949; an empty list
+// is no filter, as on the server
+function termValues(v: unknown): unknown[] {
+  if (v === undefined || v === null) return []
+  return Array.isArray(v) ? v : [v]
 }
 
 // the server stores a text filter as a list of one value (issue 949); the screen edits one value
@@ -110,14 +112,12 @@ export function presetSummary(fields: readonly FilterField[], preset: ViewPreset
   const parts: string[] = []
   for (const field of fields) {
     if (field.type === 'terms') {
-      const exc = p[`exclude_${field.param}`]
-      const inc = p[field.param]
-      if (exc !== undefined && exc !== null) {
-        const values = Array.isArray(exc) ? exc : [exc]
-        parts.push(`${field.label} is ${values.length > 1 ? 'none of' : 'not'} ${names(field, values)}`)
-      } else if (inc !== undefined && inc !== null) {
-        const values = Array.isArray(inc) ? inc : [inc]
-        parts.push(`${field.label} ${values.length > 1 ? 'is one of' : 'is'} ${names(field, values)}`)
+      const exc = termValues(p[`exclude_${field.param}`])
+      const inc = termValues(p[field.param])
+      if (exc.length > 0) {
+        parts.push(`${field.label} is ${exc.length > 1 ? 'none of' : 'not'} ${names(field, exc)}`)
+      } else if (inc.length > 0) {
+        parts.push(`${field.label} ${inc.length > 1 ? 'is one of' : 'is'} ${names(field, inc)}`)
       }
     } else if (field.type === 'flags') {
       for (const flag of field.values) {

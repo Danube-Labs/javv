@@ -247,7 +247,7 @@ risk_accepted, resolved, stale) · Assignee (incl. Unassigned) · Namespace · *
 **Several values** (issue 949): Severity, State, Namespace, Package type and Assignee take more than
 one value. A second pick adds the value, and the filter bar reads "is one of". In exclude mode, the
 bar reads "is none of", and the grid leaves out the rows with any of the values. Scanner takes one
-value. Image, CVE and Package take one value until the ruling on their control.
+value. Image, CVE and Package take one value until issue 949 PR C.
 
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in

@@ -161,8 +161,9 @@ as pure units** (Vitest).
   backend now takes lists for `namespace`, `ptype`, `assignee`, `image_repo`, `cve_id` and
   `package_name` (PR 953). The Findings config gives `multi: true` to `namespace`, `ptype` and
   `assignee`, so a second pick adds the value. Their facets count without their own field's
-  filter, so the other values stay in the list. Image, CVE and Package wait for a ruling on their
-  control (issue 949, PR C). `scanner` stays one value.
+  filter, so the other values stay in the list. Image, CVE and Package follow in issue 949 PR C,
+  with the control ruled on 2026-10-21 (a list of values under the edit box). `scanner` stays one
+  value.
 
 ## Config tracking
 
