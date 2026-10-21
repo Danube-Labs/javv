@@ -1,19 +1,25 @@
 /** The typed values of a multi text field (issue 949): what one Enter in the filter bar adds. */
-import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 
 /**
- * The values a typed draft adds to `chosen`. A pasted list splits on commas and a leading `!` is
- * dropped: the URL reads both as separators, so a value that kept them would mean something else
- * after a reload (the mode control sets is / is not). Values already chosen and values past the
- * API's cap are left out.
+ * The values a typed draft adds to `chosen`, and the ones left over past `max`. A pasted list
+ * splits on commas and a leading `!` is dropped: the URL reads both as separators, so a value
+ * that kept them would mean something else after a reload (the mode control sets is / is not).
+ * A value already chosen is dropped.
  */
-export function typedValuesToAdd(draft: string, chosen: readonly string[]): string[] {
+export function typedValuesToAdd(
+  draft: string,
+  chosen: readonly string[],
+  max = Number.POSITIVE_INFINITY,
+): { add: string[]; left: string[] } {
   const all = [...chosen]
+  const left: string[] = []
   for (const part of draft.split(',')) {
     const text = part.trim().replace(/^!+/, '').trim()
-    if (text && !all.includes(text) && all.length < MAX_FILTER_VALUES) all.push(text)
+    if (!text || all.includes(text) || left.includes(text)) continue
+    if (all.length < max) all.push(text)
+    else left.push(text)
   }
-  return all.slice(chosen.length)
+  return { add: all.slice(chosen.length), left }
 }
 
 /** A field label inside a sentence: "Add image…", "Clear package", but "Add CVE…". */

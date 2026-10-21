@@ -183,6 +183,7 @@ describe('FilterBar several typed values', () => {
         fields: FINDINGS_FIELDS,
         selections: { ...emptySelections(FINDINGS_FIELDS), image },
         facets: FACETS,
+        maxValues: 32,
       },
     })
     await bar.find('.add-filter').trigger('click')
@@ -237,9 +238,37 @@ describe('FilterBar several typed values', () => {
     const bar = await openImage(Array.from({ length: 32 }, (_, i) => `img-${i}`))
     expect(bar.find('.filter-note').text()).toBe('A filter takes at most 32 values.')
     const input = bar.find('.filter-vsearch input')
+    expect(bar.find('.filter-note').attributes('role')).toBe('status')
     await input.setValue('one-more')
     await input.trigger('keydown.enter')
     expect(bar.emitted('toggle')).toBeUndefined()
+    // what did not fit stays in the input
+    expect((input.element as HTMLInputElement).value).toBe('one-more')
+  })
+
+  it('at 32 values a facet field says so too', async () => {
+    const ns = Array.from({ length: 32 }, (_, i) => `ns-${i}`)
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: { ...emptySelections(FINDINGS_FIELDS), namespace: ns },
+        facets: FACETS,
+        maxValues: 32,
+      },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('Namespace'))?.trigger('click')
+    expect(bar.find('.filter-note').exists()).toBe(true)
+  })
+
+  it('with no cap (Running images), no note shows', async () => {
+    const ns = Array.from({ length: 40 }, (_, i) => `ns-${i}`)
+    const bar = mount(FilterBar, {
+      props: { fields: FINDINGS_FIELDS, selections: { ...emptySelections(FINDINGS_FIELDS), namespace: ns }, facets: FACETS },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('Namespace'))?.trigger('click')
+    expect(bar.find('.filter-note').exists()).toBe(false)
   })
 
   it('a removable row names its action for a screen reader; CVE keeps its capitals', async () => {

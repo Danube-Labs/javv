@@ -99,3 +99,24 @@ describe('a picked value the server leaves out of its top 32 (issue 949)', () =>
     ])
   })
 })
+
+describe('the rail at the API cap (issue 949)', () => {
+  const MULTI: FilterField[] = [{ ...FIELDS[0]!, multi: true } as FilterField]
+  const ns = Array.from({ length: 32 }, (_, i) => `ns-${i}`)
+
+  it('says a filter takes at most 32 values, for a screen reader too', () => {
+    const w = mount(FacetRail, {
+      props: { fields: MULTI, selections: { ...emptySelections(MULTI), namespace: ns }, facets: FACETS, maxValues: 32 },
+    })
+    const note = w.findAll('.facet-cap').find((p) => p.text().includes('at most'))
+    expect(note?.text()).toBe('A filter takes at most 32 values.')
+    expect(note?.attributes('role')).toBe('status')
+  })
+
+  it('shows no note without a cap', () => {
+    const w = mount(FacetRail, {
+      props: { fields: MULTI, selections: { ...emptySelections(MULTI), namespace: ns }, facets: FACETS },
+    })
+    expect(w.findAll('.facet-cap').some((p) => p.text().includes('at most'))).toBe(false)
+  })
+})

@@ -17,7 +17,6 @@ import type { LocationQuery } from 'vue-router'
 import {
   emptySelections,
   isNegatable,
-  MAX_FILTER_VALUES,
   type FilterField,
   type Selections,
 } from '@/filters/fields.config'
@@ -25,7 +24,13 @@ import {
 export type FilterMode = 'is' | 'not'
 export type Modes = Record<string, FilterMode>
 
-export function makeFiltersStore(storeId: string, fields: readonly FilterField[]) {
+/** `maxValues` caps a multi field where the API does (Findings: 32, issue 949); a screen that
+ * filters in the browser leaves it unset. */
+export function makeFiltersStore(
+  storeId: string,
+  fields: readonly FilterField[],
+  maxValues = Number.POSITIVE_INFINITY,
+) {
   return defineStore(storeId, {
     state: () => ({ selections: emptySelections(fields) as Selections, modes: {} as Modes }),
     getters: {
@@ -42,8 +47,8 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           this.selections[fieldKey] = current.filter((v) => v !== value)
         } else if (field.type === 'terms' && !field.multi) {
           this.selections[fieldKey] = [value] // single-value param: replace, never accumulate
-        } else if (current.length >= MAX_FILTER_VALUES) {
-          return // the API refuses a longer list; the filter bar says so
+        } else if (current.length >= maxValues) {
+          return // the API refuses a longer list; the rail and the filter bar say so
         } else {
           this.selections[fieldKey] = [...current, value]
         }
@@ -106,7 +111,7 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
         for (const field of fields) {
           const raw = query[field.key]
           if (typeof raw !== 'string' || raw === '') continue
-          let values = raw.split(',').filter(Boolean)
+          let values = [...new Set(raw.split(',').filter(Boolean))]
           if (isNegatable(field) && values.some((v) => v.startsWith('!'))) {
             // any `!` flips the whole field to exclude (one mode per field, never mixed)
             nextModes[field.key] = 'not'
@@ -116,7 +121,7 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
             // a shared URL can carry under-minLength text — drop it here so the chip never
             // shows a filter the builder refuses to emit (contract-guard, audit 343)
             const min = field.minLength ?? 1
-            const kept = field.multi ? values.slice(0, MAX_FILTER_VALUES) : values.slice(0, 1)
+            const kept = field.multi ? values.slice(0, maxValues) : values.slice(0, 1)
             next[field.key] = kept.filter((v) => v.trim().length >= min)
           } else if (field.type === 'flags') {
             const known = new Set(field.values.map((v) => v.key))
@@ -124,9 +129,9 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           } else if (field.values) {
             const known = new Set(field.values)
             const kept = values.filter((v) => known.has(v))
-            next[field.key] = field.multi ? kept.slice(0, MAX_FILTER_VALUES) : kept.slice(0, 1)
+            next[field.key] = field.multi ? kept.slice(0, maxValues) : kept.slice(0, 1)
           } else {
-            next[field.key] = field.multi ? values.slice(0, MAX_FILTER_VALUES) : values.slice(0, 1)
+            next[field.key] = field.multi ? values.slice(0, maxValues) : values.slice(0, 1)
           }
         }
         this.selections = next

@@ -169,7 +169,8 @@ as pure units** (Vitest).
   text fields get `multi: true`. The operator ruled the control on a built specimen: Enter in the
   edit box adds the value to a list under the input (`FilterValueRows`, shared with the facet
   values), and a click removes it. A table cell pick adds the value. The URL, the saved views and
-  the query keep every value.
+  the query keep every value. On Findings a filter stops at 32 values (the API cap) and says so
+  in the rail and the edit box; a pasted comma list adds each value.
 
 ## Config tracking
 

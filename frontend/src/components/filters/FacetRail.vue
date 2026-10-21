@@ -19,6 +19,8 @@ const props = defineProps<{
   /** the counts read was refused: keep the values, show no count (issue 833, F9) */
   countsUnknown?: boolean
   modes?: Modes
+  /** the most values one field takes, where the API caps it (Findings, issue 949) */
+  maxValues?: number
 }>()
 
 const emit = defineEmits<{
@@ -117,6 +119,13 @@ const fmt = (n: number) => n.toLocaleString('en-US')
       <!-- the cap counts the server's buckets, not the picked values added after them -->
       <p v-if="isOpen(g) && g.items.filter((it) => it.count !== null).length >= 32" class="facet-cap">
         top 32 by count; search reaches the rest
+      </p>
+      <p
+        v-if="maxValues !== undefined && (selections[g.field.key] ?? []).length >= maxValues"
+        class="facet-cap"
+        role="status"
+      >
+        A filter takes at most {{ maxValues }} values.
       </p>
     </div>
   </aside>

@@ -2,7 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { AUDIT_FIELDS } from '@/audit/fields.config'
-import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { makeFiltersStore } from '@/stores/filters'
 
 const useStore = makeFiltersStore('test-filters', FINDINGS_FIELDS)
@@ -236,9 +236,10 @@ describe('filters store — a table cell adds a typed value (issue 949 PR C)', (
 
 describe('filters store — the API cap of 32 values (issue 949)', () => {
   beforeEach(() => setActivePinia(createPinia()))
+  const useCapped = makeFiltersStore('test-capped', FINDINGS_FIELDS, MAX_FILTER_VALUES)
 
   it('a URL with more values keeps the first 32', () => {
-    const s = useStore()
+    const s = useCapped()
     const many = Array.from({ length: 40 }, (_, i) => `ns-${i}`)
     s.fromQuery({ namespace: many.join(','), cve: many.join(',') })
     expect(s.selections.namespace).toHaveLength(32)
@@ -246,9 +247,23 @@ describe('filters store — the API cap of 32 values (issue 949)', () => {
   })
 
   it('a 33rd pick adds nothing', () => {
-    const s = useStore()
+    const s = useCapped()
     for (let i = 0; i < 33; i++) s.pickValue('image', `img-${i}`, 'is')
     expect(s.selections.image).toHaveLength(32)
     expect(s.selections.image).not.toContain('img-32')
+  })
+
+  it('a store without a cap keeps every value (Running images filters in the browser)', () => {
+    const s = useStore()
+    const many = Array.from({ length: 40 }, (_, i) => `ns-${i}`)
+    s.fromQuery({ namespace: many.join(',') })
+    expect(s.selections.namespace).toHaveLength(40)
+  })
+
+  it('a value repeated in the URL is kept once', () => {
+    const s = useStore()
+    s.fromQuery({ cve: 'a,a,a', severity: 'critical,critical' })
+    expect(s.selections.cve).toEqual(['a'])
+    expect(s.selections.severity).toEqual(['critical'])
   })
 })

@@ -8,12 +8,13 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 
+import FilterPill from '@/components/filters/FilterPill.vue'
 import FilterValueRows, { type ValueRow } from '@/components/filters/FilterValueRows.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { facetItems, type FacetsResponse } from '@/filters/facets'
-import { isNegatable, MAX_FILTER_VALUES, valueLabel, type FilterField, type Selections } from '@/filters/fields.config'
+import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
 import { inText, typedValuesToAdd } from '@/filters/typedValues'
 import type { FilterMode, Modes } from '@/stores/filters'
 
@@ -24,6 +25,8 @@ const props = defineProps<{
   facets: FacetsResponse
   /** the counts read was refused: the menu shows no count (issue 833, F9) */
   countsUnknown?: boolean
+  /** the most values one field takes, where the API caps it (Findings, issue 949) */
+  maxValues?: number
 }>()
 
 const emit = defineEmits<{
@@ -44,10 +47,6 @@ function modeOf(fieldKey: string): FilterMode {
   return props.modes?.[fieldKey] ?? 'is'
 }
 const negatable = isNegatable
-function opText(field: FilterField): string {
-  const many = (props.selections[field.key] ?? []).length > 1
-  return modeOf(field.key) === 'not' ? (many ? 'is none of' : 'is not') : many ? 'is one of' : 'is'
-}
 
 const open = ref(false)
 const editKey = ref<string | null>(null)
@@ -79,12 +78,9 @@ const typedRows = computed((): ValueRow[] => {
 function isMultiText(field: FilterField): boolean {
   return field.type === 'text' && field.multi === true
 }
-const atCap = computed(() => (props.selections[editKey.value ?? ''] ?? []).length >= MAX_FILTER_VALUES)
-
-function pillText(field: FilterField): string {
-  const vals = (props.selections[field.key] ?? []).map((v) => valueLabel(field, v))
-  return vals.length <= 2 ? vals.join(', ') : `${vals.slice(0, 2).join(', ')} +${vals.length - 2}`
-}
+const atCap = computed(
+  () => props.maxValues !== undefined && (props.selections[editKey.value ?? ''] ?? []).length >= props.maxValues,
+)
 
 function openPicker() {
   editKey.value = null
@@ -113,8 +109,10 @@ function applyText() {
   if (!field) return
   if (isMultiText(field)) {
     // each Enter adds and keeps the box open for the next (issue 949)
-    for (const v of typedValuesToAdd(textDraft.value, props.selections[field.key] ?? [])) emit('toggle', field.key, v)
-    textDraft.value = ''
+    // a value past the cap stays in the input, so a long pasted list loses nothing
+    const { add, left } = typedValuesToAdd(textDraft.value, props.selections[field.key] ?? [], props.maxValues)
+    for (const v of add) emit('toggle', field.key, v)
+    textDraft.value = left.join(', ')
     return
   }
   emit('setText', field.key, textDraft.value)
@@ -141,37 +139,16 @@ function onKeydown(e: KeyboardEvent) {
 
 <template>
   <div ref="wrap" class="filter-bar" @keydown="onKeydown">
-    <button
+    <FilterPill
       v-for="f in active"
       :key="f.key"
-      class="fpill"
-      :class="{ 'fpill-not': modeOf(f.key) === 'not' }"
-      @click="openField(f.key)"
-    >
-      <span class="fpill-field">{{ f.label }}</span>
-      <!-- ruled NOT-pill (issue 349, operator 2026-07-17): hollow body, ONLY the op words in
-           red; on a negatable field the op word is the include⇄exclude toggle -->
-      <span
-        v-if="negatable(f)"
-        class="fpill-op fpill-op-btn"
-        role="button"
-        :aria-label="`Switch to ${modeOf(f.key) === 'not' ? 'include' : 'exclude'}`"
-        :title="modeOf(f.key) === 'not' ? 'Click to include' : 'Click to exclude'"
-        @click.stop="emit('toggleMode', f.key)"
-        >{{ opText(f) }}</span
-      >
-      <span v-else class="fpill-op">{{ opText(f) }}</span>
-      <span class="fpill-vals" :title="(selections[f.key] ?? []).map((v) => valueLabel(f, v)).join(', ')">{{
-        pillText(f)
-      }}</span>
-      <span
-        class="fpill-x"
-        role="button"
-        :aria-label="`Clear ${f.label}`"
-        @click.stop="emit('clearField', f.key)"
-        >×</span
-      >
-    </button>
+      :field="f"
+      :values="selections[f.key] ?? []"
+      :mode="modeOf(f.key)"
+      @open="openField(f.key)"
+      @toggle-mode="emit('toggleMode', f.key)"
+      @clear="emit('clearField', f.key)"
+    />
 
     <UiDropdown v-model:open="open" @closed="onClosed">
       <template #trigger>
@@ -230,9 +207,6 @@ function onKeydown(e: KeyboardEvent) {
                 @keydown.enter="applyText"
               />
             </div>
-            <p v-if="isMultiText(editField) && atCap" class="filter-note">
-              A filter takes at most {{ MAX_FILTER_VALUES }} values.
-            </p>
             <FilterValueRows
               v-if="typedRows.length > 0"
               :rows="typedRows"
@@ -241,6 +215,9 @@ function onKeydown(e: KeyboardEvent) {
             />
           </template>
 
+          <p v-if="atCap" class="filter-note" role="status">
+            A filter takes at most {{ maxValues }} values.
+          </p>
           <button
             v-if="(selections[editField.key] ?? []).length > 0"
             class="filter-clear-field"
@@ -264,83 +241,11 @@ function onKeydown(e: KeyboardEvent) {
   align-items: center;
   gap: 8px;
 }
-.fpill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  /* control register (operator, 2026-07-17): the band's controls share one height — the
-     28px pills read as undersized next to every neighboring control */
-  height: 38px;
-  background: var(--card);
-  border: 1px solid var(--fpill-line);
-  border-radius: var(--r-sm);
-  padding: 0 6px 0 10px;
-  font-size: var(--text-control);
-  color: var(--ink);
-  box-shadow: var(--shadow);
-  cursor: default;
-}
-.fpill:hover {
-  border-color: var(--coral);
-}
-.fpill:focus-visible,
 .add-filter:focus-visible,
 .dd-item:focus-visible,
 .clear-all:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 1px;
-}
-.fpill-field {
-  font-weight: 600;
-}
-.fpill-op {
-  color: var(--soft);
-  font-style: italic;
-  font-size: var(--text-sm);
-}
-.fpill-vals {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--coral-text);
-  max-width: 230px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.fpill-x {
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 5px;
-  color: var(--soft);
-  font-size: var(--text-card-title);
-  line-height: 1;
-}
-.fpill-x:hover {
-  background: var(--fpill-x-hover-bg);
-  color: var(--coral-text);
-}
-/* the NOT-pill (issue 349, ruled 2026-07-17 on built specimens): the include pill is FILLED
-   (card on beige), the exclude pill is HOLLOW — fill/outline duality — and ONLY the op words
-   carry the red; the rest of the pill stays in the quiet register */
-.fpill-not {
-  background: transparent;
-  border: 1.5px solid var(--fpill-line);
-  box-shadow: none;
-}
-.fpill-not .fpill-op {
-  color: var(--fpill-not-op);
-  font-weight: 600;
-}
-/* the op word doubles as the include⇄exclude toggle on negatable fields */
-.fpill-op-btn {
-  border-radius: 4px;
-  padding: 1px 3px;
-  margin: -1px -3px;
-}
-.fpill-op-btn:hover {
-  background: var(--fpill-x-hover-bg);
 }
 .filter-mode {
   padding: 8px 10px 2px;

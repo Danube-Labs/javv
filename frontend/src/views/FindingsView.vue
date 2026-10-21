@@ -29,7 +29,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import { useApi } from '@/composables/useApi'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import type { FacetsResponse } from '@/filters/facets'
-import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { captureLens } from '@/findings/savedViews'
@@ -44,7 +44,7 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
 
-const useFindingsFilters = makeFiltersStore('findings-filters', FINDINGS_FIELDS)
+const useFindingsFilters = makeFiltersStore('findings-filters', FINDINGS_FIELDS, MAX_FILTER_VALUES)
 const filters = useFindingsFilters()
 const auth = useAuthStore()
 const clusterStore = useClusterStore()
@@ -310,6 +310,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         :facets="facets"
         :counts-unknown="facetsFailed"
         :modes="filters.modes"
+        :max-values="MAX_FILTER_VALUES"
         @toggle="filters.toggle"
         @pick="filters.pickValue"
       >
@@ -328,6 +329,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :modes="filters.modes"
             :facets="facets"
             :counts-unknown="facetsFailed"
+            :max-values="MAX_FILTER_VALUES"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"

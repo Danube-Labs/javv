@@ -97,6 +97,7 @@ const emit = defineEmits<{ toggle: [value: string] }>()
   text-overflow: ellipsis;
 }
 .facet-count {
+  flex: none;
   font-family: var(--font-mono);
   font-size: var(--text-facet-count);
   color: var(--soft);
