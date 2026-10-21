@@ -252,7 +252,9 @@ value.
 **Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, CVE and Package
 also take more than one value. In the filter bar's edit box, Enter adds the typed value to a list
 under the input, and the box stays open for the next value. A click on a value in the list removes
-it. A pick from a table cell adds the value, and the same pick again removes it.
+it. A pick from a table cell adds the value, and the same pick again removes it. A pasted list with
+commas adds each value. A filter takes at most 32 values (the API limit), and the edit box says so
+when the list is full.
 
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in

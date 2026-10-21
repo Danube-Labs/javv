@@ -222,6 +222,41 @@ describe('FilterBar several typed values', () => {
     expect(bar.emitted('toggle')?.[0]).toEqual(['image', 'web'])
   })
 
+  it('a pasted comma list adds each value', async () => {
+    const bar = await openImage([])
+    const input = bar.find('.filter-vsearch input')
+    await input.setValue('api, web')
+    await input.trigger('keydown.enter')
+    expect(bar.emitted('toggle')).toEqual([
+      ['image', 'api'],
+      ['image', 'web'],
+    ])
+  })
+
+  it('at 32 values the box says so and Enter adds nothing', async () => {
+    const bar = await openImage(Array.from({ length: 32 }, (_, i) => `img-${i}`))
+    expect(bar.find('.filter-note').text()).toBe('A filter takes at most 32 values.')
+    const input = bar.find('.filter-vsearch input')
+    await input.setValue('one-more')
+    await input.trigger('keydown.enter')
+    expect(bar.emitted('toggle')).toBeUndefined()
+  })
+
+  it('a removable row names its action for a screen reader; CVE keeps its capitals', async () => {
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: { ...emptySelections(FINDINGS_FIELDS), cve: ['CVE-1'] },
+        facets: FACETS,
+      },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('CVE'))?.trigger('click')
+    expect(bar.find('.filter-vsearch input').attributes('placeholder')).toBe('Add CVE…')
+    expect(bar.find('.filter-menu .facet-row').attributes('aria-label')).toBe('Remove CVE-1')
+    expect(bar.find('.filter-clear-field').text()).toBe('Clear CVE')
+  })
+
   it('the pill reads "is one of" for two typed values', () => {
     const bar = mount(FilterBar, {
       props: {
@@ -234,5 +269,7 @@ describe('FilterBar several typed values', () => {
     expect(pill.text()).toContain('CVE')
     expect(pill.text()).toContain('is one of')
     expect(pill.text()).toContain('CVE-1, CVE-2')
+    // the pill truncates long values; the title holds them all
+    expect(pill.find('.fpill-vals').attributes('title')).toBe('CVE-1, CVE-2')
   })
 })

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * The checked value rows of the filter bar's edit box: a facet's values with their counts, or
- * the typed values of a text field (issue 949), where a click takes the value out. Same look as
- * the rail's facet rows.
+ * the typed values of a text field (issue 949), where a click takes the value out. The hover
+ * wash and the one-line label follow the rail's facet rows.
  */
 export interface ValueRow {
   value: string
@@ -30,7 +30,8 @@ const emit = defineEmits<{ toggle: [value: string] }>()
       :key="r.value"
       class="facet-row"
       :class="{ 'facet-on': r.on }"
-      :title="removable ? `Remove ${r.label}` : undefined"
+      :title="removable ? `Remove ${r.label}` : r.label"
+      :aria-label="removable ? `Remove ${r.label}` : undefined"
       @click="emit('toggle', r.value)"
     >
       <span class="facet-check" />
@@ -61,8 +62,10 @@ const emit = defineEmits<{ toggle: [value: string] }>()
   font-size: var(--text-control);
   cursor: default;
 }
+/* the wash every other control uses, as on the rail's rows (`--panel` was invisible, operator
+   2026-07-28) */
 .facet-row:hover {
-  background: var(--panel);
+  background: var(--control-hover-bg);
 }
 .facet-row:focus-visible {
   outline: var(--focus-ring);
@@ -85,11 +88,13 @@ const emit = defineEmits<{ toggle: [value: string] }>()
   color: var(--ink);
   font-weight: 500;
 }
+/* a long value (a full image repo) stays on one line and truncates; its full text is the title */
 .facet-label {
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .facet-count {
   font-family: var(--font-mono);

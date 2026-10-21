@@ -17,6 +17,7 @@ import type { LocationQuery } from 'vue-router'
 import {
   emptySelections,
   isNegatable,
+  MAX_FILTER_VALUES,
   type FilterField,
   type Selections,
 } from '@/filters/fields.config'
@@ -41,6 +42,8 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           this.selections[fieldKey] = current.filter((v) => v !== value)
         } else if (field.type === 'terms' && !field.multi) {
           this.selections[fieldKey] = [value] // single-value param: replace, never accumulate
+        } else if (current.length >= MAX_FILTER_VALUES) {
+          return // the API refuses a longer list; the filter bar says so
         } else {
           this.selections[fieldKey] = [...current, value]
         }
@@ -113,7 +116,7 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
             // a shared URL can carry under-minLength text — drop it here so the chip never
             // shows a filter the builder refuses to emit (contract-guard, audit 343)
             const min = field.minLength ?? 1
-            const kept = field.multi ? values : values.slice(0, 1)
+            const kept = field.multi ? values.slice(0, MAX_FILTER_VALUES) : values.slice(0, 1)
             next[field.key] = kept.filter((v) => v.trim().length >= min)
           } else if (field.type === 'flags') {
             const known = new Set(field.values.map((v) => v.key))
@@ -121,9 +124,9 @@ export function makeFiltersStore(storeId: string, fields: readonly FilterField[]
           } else if (field.values) {
             const known = new Set(field.values)
             const kept = values.filter((v) => known.has(v))
-            next[field.key] = field.multi ? kept : kept.slice(0, 1)
+            next[field.key] = field.multi ? kept.slice(0, MAX_FILTER_VALUES) : kept.slice(0, 1)
           } else {
-            next[field.key] = field.multi ? values : values.slice(0, 1)
+            next[field.key] = field.multi ? values.slice(0, MAX_FILTER_VALUES) : values.slice(0, 1)
           }
         }
         this.selections = next

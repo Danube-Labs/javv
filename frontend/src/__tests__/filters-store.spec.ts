@@ -233,3 +233,22 @@ describe('filters store — a table cell adds a typed value (issue 949 PR C)', (
     expect(s.modeOf('cve')).toBe('not')
   })
 })
+
+describe('filters store — the API cap of 32 values (issue 949)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('a URL with more values keeps the first 32', () => {
+    const s = useStore()
+    const many = Array.from({ length: 40 }, (_, i) => `ns-${i}`)
+    s.fromQuery({ namespace: many.join(','), cve: many.join(',') })
+    expect(s.selections.namespace).toHaveLength(32)
+    expect(s.selections.cve).toHaveLength(32)
+  })
+
+  it('a 33rd pick adds nothing', () => {
+    const s = useStore()
+    for (let i = 0; i < 33; i++) s.pickValue('image', `img-${i}`, 'is')
+    expect(s.selections.image).toHaveLength(32)
+    expect(s.selections.image).not.toContain('img-32')
+  })
+})

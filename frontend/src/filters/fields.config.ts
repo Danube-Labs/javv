@@ -1,12 +1,17 @@
 /**
  * The one `fields` config that drives BOTH FacetRail and FilterBar (PLAN gate: adding a field
  * here surfaces it in both with no component edits). Shape mirrors the backend contract, not
- * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values
- * (the last three since issue 949); `scanner` and the text fields send one; KEV / fix-available /
- * disagree are boolean flags (grouped as one "Attribute" facet, as in the prototype).
+ * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values,
+ * and so do the text fields `image`, `cve` and `package` (issue 949); `scanner` and the other text
+ * fields send one; KEV / fix-available / disagree are boolean flags (grouped as one "Attribute"
+ * facet, as in the prototype).
  */
 import { stateLabel } from '@/findings/stateLabels'
 import { SEVERITIES } from '@/styles/tokens'
+
+// the most values one list filter takes: mirrors the backend's MAX_FILTER_VALUES (docs/API.md,
+// filters), so a pick past it never sends a query the API refuses with 422
+export const MAX_FILTER_VALUES = 32
 
 interface BaseField {
   key: string
@@ -45,7 +50,7 @@ export interface FlagsField extends BaseField {
   }[]
 }
 
-/** Free-text single-value param (no facet buckets). `minLength` mirrors the API's own
+/** Free-text param (no facet buckets), one value unless `multi`. `minLength` mirrors the API's own
  * validation — a keystroke must never emit a known-invalid query (contract-guard, audit 343). */
 export interface TextField extends BaseField {
   type: 'text'
@@ -93,7 +98,7 @@ export function activeMode(
   return modes?.[fieldKey] ?? 'is'
 }
 
-/** Active selections, keyed by field key. Text fields hold a single-entry array. */
+/** Active selections, keyed by field key. A one-value field holds a single-entry array. */
 export type Selections = Record<string, string[]>
 
 export const emptySelections = (fields: readonly FilterField[]): Selections =>

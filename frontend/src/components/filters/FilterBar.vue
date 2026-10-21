@@ -13,7 +13,8 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { facetItems, type FacetsResponse } from '@/filters/facets'
-import { isNegatable, valueLabel, type FilterField, type Selections } from '@/filters/fields.config'
+import { isNegatable, MAX_FILTER_VALUES, valueLabel, type FilterField, type Selections } from '@/filters/fields.config'
+import { inText, typedValuesToAdd } from '@/filters/typedValues'
 import type { FilterMode, Modes } from '@/stores/filters'
 
 const props = defineProps<{
@@ -78,6 +79,7 @@ const typedRows = computed((): ValueRow[] => {
 function isMultiText(field: FilterField): boolean {
   return field.type === 'text' && field.multi === true
 }
+const atCap = computed(() => (props.selections[editKey.value ?? ''] ?? []).length >= MAX_FILTER_VALUES)
 
 function pillText(field: FilterField): string {
   const vals = (props.selections[field.key] ?? []).map((v) => valueLabel(field, v))
@@ -110,9 +112,8 @@ function applyText() {
   const field = editField.value
   if (!field) return
   if (isMultiText(field)) {
-    // each Enter adds one value and keeps the box open for the next (issue 949)
-    const text = textDraft.value.trim()
-    if (text && !(props.selections[field.key] ?? []).includes(text)) emit('toggle', field.key, text)
+    // each Enter adds and keeps the box open for the next (issue 949)
+    for (const v of typedValuesToAdd(textDraft.value, props.selections[field.key] ?? [])) emit('toggle', field.key, v)
     textDraft.value = ''
     return
   }
@@ -160,7 +161,9 @@ function onKeydown(e: KeyboardEvent) {
         >{{ opText(f) }}</span
       >
       <span v-else class="fpill-op">{{ opText(f) }}</span>
-      <span class="fpill-vals">{{ pillText(f) }}</span>
+      <span class="fpill-vals" :title="(selections[f.key] ?? []).map((v) => valueLabel(f, v)).join(', ')">{{
+        pillText(f)
+      }}</span>
       <span
         class="fpill-x"
         role="button"
@@ -223,10 +226,13 @@ function onKeydown(e: KeyboardEvent) {
               <AppIcon name="search" :size="13" />
               <input
                 v-model="textDraft"
-                :placeholder="isMultiText(editField) ? `Add ${editField.label.toLowerCase()}…` : `${editField.label}…`"
+                :placeholder="isMultiText(editField) ? `Add ${inText(editField.label)}…` : `${editField.label}…`"
                 @keydown.enter="applyText"
               />
             </div>
+            <p v-if="isMultiText(editField) && atCap" class="filter-note">
+              A filter takes at most {{ MAX_FILTER_VALUES }} values.
+            </p>
             <FilterValueRows
               v-if="typedRows.length > 0"
               :rows="typedRows"
@@ -240,7 +246,7 @@ function onKeydown(e: KeyboardEvent) {
             class="filter-clear-field"
             @click="emit('clearField', editField.key)"
           >
-            Clear {{ editField.label.toLowerCase() }}
+            Clear {{ inText(editField.label) }}
           </button>
         </template>
       </div>
@@ -472,6 +478,11 @@ function onKeydown(e: KeyboardEvent) {
   font-size: var(--text-control);
   color: var(--ink);
   font-family: inherit;
+}
+.filter-note {
+  margin: 0 8px 6px;
+  font-size: var(--text-quiet-action);
+  color: var(--soft);
 }
 .filter-clear-field {
   width: 100%;
