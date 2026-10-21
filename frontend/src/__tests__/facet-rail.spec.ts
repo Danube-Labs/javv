@@ -67,8 +67,26 @@ describe('a picked value the server leaves out of its top 32 (issue 949)', () =>
     const rows = w.findAll('.facet-row')
     expect(rows.map((r) => r.find('.facet-text').text())).toEqual([LONG, 'payments'])
     expect(rows[1]!.find('.facet-count').exists()).toBe(false)
+    expect(rows[1]!.classes()).toContain('facet-on')
     await rows[1]!.trigger('click')
     expect(w.emitted('toggle')?.[0]).toEqual(['namespace', 'payments'])
+  })
+
+  it('a value picked twice in the URL gets one row', () => {
+    const twice = { ...emptySelections(MULTI), namespace: ['payments', 'payments'] }
+    const w = mount(FacetRail, { props: { fields: MULTI, selections: twice, facets: FACETS } })
+    expect(w.findAll('.facet-text').map((t) => t.text())).toEqual([LONG, 'payments'])
+  })
+
+  it('the "top 32" note counts the buckets, not the picked values added after them', async () => {
+    const thirty: FacetsResponse = {
+      namespaces: Array.from({ length: 30 }, (_, i) => ({ key: `ns-${i}`, count: 30 - i, by_scanner: {} })),
+    }
+    const picked = { ...emptySelections(MULTI), namespace: ['x', 'y'] }
+    const w = mount(FacetRail, { props: { fields: MULTI, selections: picked, facets: thirty } })
+    await w.find('.facet-more').trigger('click')
+    expect(w.findAll('.facet-row')).toHaveLength(32)
+    expect(w.find('.facet-cap').exists()).toBe(false)
   })
 
   it('the filter bar lists it too', async () => {

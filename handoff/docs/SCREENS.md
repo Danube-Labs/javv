@@ -253,7 +253,8 @@ value. Image, CVE and Package take one value until issue 949 PR C.
 without the filter of their own field. After you pick a namespace, the other namespaces stay in
 the list with their counts. An excluded value also stays in the list, with a line through it and
 its count. All other groups count with all filters. Thus Severity shows only the counts of the
-rows that the grid shows.
+rows that the grid shows. A list shows at most 32 values. A picked value that is not in them stays
+at the end of the list, with no count, on every screen that uses the rail.
 
 **Table columns:** checkbox · Vulnerability (`cve_id`, mono) · Severity (verbatim word, display
 uppercase) · EPSS (raw `epss` 0–1 bar; **Grype rows only**, em-dash on Trivy — B-3: no
