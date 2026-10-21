@@ -18,6 +18,7 @@ body, and `tenant_query` (the tenant read path) forces the cluster filter on top
 import base64
 import binascii
 import json
+from dataclasses import replace
 from typing import Any
 
 from backend.query.search import (
@@ -67,6 +68,26 @@ def _base(filters: SearchFilters, sla_cutoffs: dict[str, str] | None = None) -> 
     return body
 
 
+# facet name -> the SearchFilters field whose filter that facet leaves out (issue 949, ruling
+# 2). These facets list the values a user picks several of, so a pick must not hide the other
+# values. Only these three: the saved-view card count sums the severity facet under the view's
+# own filters, so severity, state and scanner keep the full filter context.
+OWN_FILTER_FREE_FACETS = {"namespaces": "namespace", "ptype": "ptype", "assignee": "assignee"}
+
+
+def without_own_filter(filters: SearchFilters, facet: str) -> SearchFilters:
+    """The filters a facet in OWN_FILTER_FREE_FACETS counts under: all but its own field's
+    include and exclude."""
+    field = OWN_FILTER_FREE_FACETS[facet]
+    return replace(filters, **{field: None, f"exclude_{field}": None})
+
+
+def facet_aggregation(agg: dict[str, Any]) -> dict[str, Any]:
+    """One facet's aggregation from the response, whether or not the body wrapped it in its
+    own filter context (see build_facets_body)."""
+    return agg.get("values", agg)
+
+
 def build_facets_body(
     filters: SearchFilters,
     fields: list[str] | None = None,
@@ -101,7 +122,37 @@ def build_facets_body(
         # the rail flag's count: absence is an expression, so the facet reuses the grid's own
         # clause — count ≡ filtered rows by construction, same contract as overdue
         body["aggs"]["unassigned"] = {"filter": unassigned_clause(), "aggs": dict(_BY_SCANNER)}
-    return body
+    freed = [
+        f
+        for f in chosen
+        if f in OWN_FILTER_FREE_FACETS
+        and (
+            getattr(filters, OWN_FILTER_FREE_FACETS[f])
+            or getattr(filters, f"exclude_{OWN_FILTER_FREE_FACETS[f]}")
+        )
+    ]
+    if not freed:
+        return body
+    # disjunctive facets: the top-level query drops the freed fields' filters, and each facet
+    # counts inside a `filter` agg that puts back every filter except its own field's. Other
+    # facets get the full query back, so their counts do not change.
+    top = filters
+    for f in freed:
+        top = without_own_filter(top, f)
+    full = body["query"]
+    wrapped = _base(top, sla_cutoffs)
+    wrapped["aggs"] = {
+        name: {
+            "filter": (
+                _base(without_own_filter(filters, name), sla_cutoffs)["query"]
+                if name in freed
+                else full
+            ),
+            "aggs": {"values": agg},
+        }
+        for name, agg in body["aggs"].items()
+    }
+    return wrapped
 
 
 # the Overview Top-components board cap — the contributors-leaderboard model (a ≤100-row

@@ -327,11 +327,11 @@ export type ExportParams = {
     /**
      * Assignee
      */
-    assignee?: string | null;
+    assignee?: Array<string> | null;
     /**
      * Cve Id
      */
-    cve_id?: string | null;
+    cve_id?: Array<string> | null;
     /**
      * Disagree
      */
@@ -339,27 +339,27 @@ export type ExportParams = {
     /**
      * Exclude Assignee
      */
-    exclude_assignee?: string | null;
+    exclude_assignee?: Array<string> | null;
     /**
      * Exclude Cve Id
      */
-    exclude_cve_id?: string | null;
+    exclude_cve_id?: Array<string> | null;
     /**
      * Exclude Image Repo
      */
-    exclude_image_repo?: string | null;
+    exclude_image_repo?: Array<string> | null;
     /**
      * Exclude Namespace
      */
-    exclude_namespace?: string | null;
+    exclude_namespace?: Array<string> | null;
     /**
      * Exclude Package Name
      */
-    exclude_package_name?: string | null;
+    exclude_package_name?: Array<string> | null;
     /**
      * Exclude Ptype
      */
-    exclude_ptype?: string | null;
+    exclude_ptype?: Array<string> | null;
     /**
      * Exclude Scanner
      */
@@ -387,7 +387,7 @@ export type ExportParams = {
     /**
      * Image Repo
      */
-    image_repo?: string | null;
+    image_repo?: Array<string> | null;
     /**
      * Kev
      */
@@ -395,7 +395,7 @@ export type ExportParams = {
     /**
      * Namespace
      */
-    namespace?: string | null;
+    namespace?: Array<string> | null;
     /**
      * New Within Days
      */
@@ -407,7 +407,7 @@ export type ExportParams = {
     /**
      * Package Name
      */
-    package_name?: string | null;
+    package_name?: Array<string> | null;
     /**
      * Present
      */
@@ -415,7 +415,7 @@ export type ExportParams = {
     /**
      * Ptype
      */
-    ptype?: string | null;
+    ptype?: Array<string> | null;
     /**
      * Q
      */
@@ -775,11 +775,11 @@ export type ViewPreset = {
     /**
      * Assignee
      */
-    assignee?: string | null;
+    assignee?: Array<string> | null;
     /**
      * Cve Id
      */
-    cve_id?: string | null;
+    cve_id?: Array<string> | null;
     /**
      * Disagree
      */
@@ -787,27 +787,27 @@ export type ViewPreset = {
     /**
      * Exclude Assignee
      */
-    exclude_assignee?: string | null;
+    exclude_assignee?: Array<string> | null;
     /**
      * Exclude Cve Id
      */
-    exclude_cve_id?: string | null;
+    exclude_cve_id?: Array<string> | null;
     /**
      * Exclude Image Repo
      */
-    exclude_image_repo?: string | null;
+    exclude_image_repo?: Array<string> | null;
     /**
      * Exclude Namespace
      */
-    exclude_namespace?: string | null;
+    exclude_namespace?: Array<string> | null;
     /**
      * Exclude Package Name
      */
-    exclude_package_name?: string | null;
+    exclude_package_name?: Array<string> | null;
     /**
      * Exclude Ptype
      */
-    exclude_ptype?: string | null;
+    exclude_ptype?: Array<string> | null;
     /**
      * Exclude Scanner
      */
@@ -831,7 +831,7 @@ export type ViewPreset = {
     /**
      * Image Repo
      */
-    image_repo?: string | null;
+    image_repo?: Array<string> | null;
     /**
      * Kev
      */
@@ -839,7 +839,7 @@ export type ViewPreset = {
     /**
      * Namespace
      */
-    namespace?: string | null;
+    namespace?: Array<string> | null;
     /**
      * New Within Days
      */
@@ -851,7 +851,7 @@ export type ViewPreset = {
     /**
      * Package Name
      */
-    package_name?: string | null;
+    package_name?: Array<string> | null;
     /**
      * Present
      */
@@ -859,7 +859,7 @@ export type ViewPreset = {
     /**
      * Ptype
      */
-    ptype?: string | null;
+    ptype?: Array<string> | null;
     /**
      * Q
      */
@@ -2248,7 +2248,7 @@ export type SearchFindingsApiV1FindingsGetData = {
         /**
          * Assignee
          */
-        assignee?: string | null;
+        assignee?: Array<string> | null;
         /**
          * Kev
          */
@@ -2264,7 +2264,7 @@ export type SearchFindingsApiV1FindingsGetData = {
         /**
          * Cve Id
          */
-        cve_id?: string | null;
+        cve_id?: Array<string> | null;
         /**
          * Image Digest
          */
@@ -2272,19 +2272,19 @@ export type SearchFindingsApiV1FindingsGetData = {
         /**
          * Image Repo
          */
-        image_repo?: string | null;
+        image_repo?: Array<string> | null;
         /**
          * Namespace
          */
-        namespace?: string | null;
+        namespace?: Array<string> | null;
         /**
          * Ptype
          */
-        ptype?: string | null;
+        ptype?: Array<string> | null;
         /**
          * Package Name
          */
-        package_name?: string | null;
+        package_name?: Array<string> | null;
         /**
          * Q
          */
@@ -2320,27 +2320,27 @@ export type SearchFindingsApiV1FindingsGetData = {
         /**
          * Exclude Assignee
          */
-        exclude_assignee?: string | null;
+        exclude_assignee?: Array<string> | null;
         /**
          * Exclude Image Repo
          */
-        exclude_image_repo?: string | null;
+        exclude_image_repo?: Array<string> | null;
         /**
          * Exclude Namespace
          */
-        exclude_namespace?: string | null;
+        exclude_namespace?: Array<string> | null;
         /**
          * Exclude Ptype
          */
-        exclude_ptype?: string | null;
+        exclude_ptype?: Array<string> | null;
         /**
          * Exclude Cve Id
          */
-        exclude_cve_id?: string | null;
+        exclude_cve_id?: Array<string> | null;
         /**
          * Exclude Package Name
          */
-        exclude_package_name?: string | null;
+        exclude_package_name?: Array<string> | null;
         /**
          * As Of
          */
@@ -2419,7 +2419,7 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
         /**
          * Assignee
          */
-        assignee?: string | null;
+        assignee?: Array<string> | null;
         /**
          * Kev
          */
@@ -2435,7 +2435,7 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
         /**
          * Cve Id
          */
-        cve_id?: string | null;
+        cve_id?: Array<string> | null;
         /**
          * Image Digest
          */
@@ -2443,19 +2443,19 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
         /**
          * Image Repo
          */
-        image_repo?: string | null;
+        image_repo?: Array<string> | null;
         /**
          * Namespace
          */
-        namespace?: string | null;
+        namespace?: Array<string> | null;
         /**
          * Ptype
          */
-        ptype?: string | null;
+        ptype?: Array<string> | null;
         /**
          * Package Name
          */
-        package_name?: string | null;
+        package_name?: Array<string> | null;
         /**
          * Q
          */
@@ -2491,27 +2491,27 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
         /**
          * Exclude Assignee
          */
-        exclude_assignee?: string | null;
+        exclude_assignee?: Array<string> | null;
         /**
          * Exclude Image Repo
          */
-        exclude_image_repo?: string | null;
+        exclude_image_repo?: Array<string> | null;
         /**
          * Exclude Namespace
          */
-        exclude_namespace?: string | null;
+        exclude_namespace?: Array<string> | null;
         /**
          * Exclude Ptype
          */
-        exclude_ptype?: string | null;
+        exclude_ptype?: Array<string> | null;
         /**
          * Exclude Cve Id
          */
-        exclude_cve_id?: string | null;
+        exclude_cve_id?: Array<string> | null;
         /**
          * Exclude Package Name
          */
-        exclude_package_name?: string | null;
+        exclude_package_name?: Array<string> | null;
         /**
          * As Of
          */
@@ -2563,7 +2563,7 @@ export type ExportVexApiV1FindingsExportVexGetData = {
         /**
          * Assignee
          */
-        assignee?: string | null;
+        assignee?: Array<string> | null;
         /**
          * Kev
          */
@@ -2579,7 +2579,7 @@ export type ExportVexApiV1FindingsExportVexGetData = {
         /**
          * Cve Id
          */
-        cve_id?: string | null;
+        cve_id?: Array<string> | null;
         /**
          * Image Digest
          */
@@ -2587,19 +2587,19 @@ export type ExportVexApiV1FindingsExportVexGetData = {
         /**
          * Image Repo
          */
-        image_repo?: string | null;
+        image_repo?: Array<string> | null;
         /**
          * Namespace
          */
-        namespace?: string | null;
+        namespace?: Array<string> | null;
         /**
          * Ptype
          */
-        ptype?: string | null;
+        ptype?: Array<string> | null;
         /**
          * Package Name
          */
-        package_name?: string | null;
+        package_name?: Array<string> | null;
         /**
          * Q
          */
@@ -2635,27 +2635,27 @@ export type ExportVexApiV1FindingsExportVexGetData = {
         /**
          * Exclude Assignee
          */
-        exclude_assignee?: string | null;
+        exclude_assignee?: Array<string> | null;
         /**
          * Exclude Image Repo
          */
-        exclude_image_repo?: string | null;
+        exclude_image_repo?: Array<string> | null;
         /**
          * Exclude Namespace
          */
-        exclude_namespace?: string | null;
+        exclude_namespace?: Array<string> | null;
         /**
          * Exclude Ptype
          */
-        exclude_ptype?: string | null;
+        exclude_ptype?: Array<string> | null;
         /**
          * Exclude Cve Id
          */
-        exclude_cve_id?: string | null;
+        exclude_cve_id?: Array<string> | null;
         /**
          * Exclude Package Name
          */
-        exclude_package_name?: string | null;
+        exclude_package_name?: Array<string> | null;
         /**
          * As Of
          */
@@ -2713,7 +2713,7 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
         /**
          * Assignee
          */
-        assignee?: string | null;
+        assignee?: Array<string> | null;
         /**
          * Kev
          */
@@ -2729,7 +2729,7 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
         /**
          * Cve Id
          */
-        cve_id?: string | null;
+        cve_id?: Array<string> | null;
         /**
          * Image Digest
          */
@@ -2737,19 +2737,19 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
         /**
          * Image Repo
          */
-        image_repo?: string | null;
+        image_repo?: Array<string> | null;
         /**
          * Namespace
          */
-        namespace?: string | null;
+        namespace?: Array<string> | null;
         /**
          * Ptype
          */
-        ptype?: string | null;
+        ptype?: Array<string> | null;
         /**
          * Package Name
          */
-        package_name?: string | null;
+        package_name?: Array<string> | null;
         /**
          * Q
          */
@@ -2785,27 +2785,27 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
         /**
          * Exclude Assignee
          */
-        exclude_assignee?: string | null;
+        exclude_assignee?: Array<string> | null;
         /**
          * Exclude Image Repo
          */
-        exclude_image_repo?: string | null;
+        exclude_image_repo?: Array<string> | null;
         /**
          * Exclude Namespace
          */
-        exclude_namespace?: string | null;
+        exclude_namespace?: Array<string> | null;
         /**
          * Exclude Ptype
          */
-        exclude_ptype?: string | null;
+        exclude_ptype?: Array<string> | null;
         /**
          * Exclude Cve Id
          */
-        exclude_cve_id?: string | null;
+        exclude_cve_id?: Array<string> | null;
         /**
          * Exclude Package Name
          */
-        exclude_package_name?: string | null;
+        exclude_package_name?: Array<string> | null;
         /**
          * As Of
          */
@@ -2871,7 +2871,7 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
         /**
          * Assignee
          */
-        assignee?: string | null;
+        assignee?: Array<string> | null;
         /**
          * Kev
          */
@@ -2887,7 +2887,7 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
         /**
          * Cve Id
          */
-        cve_id?: string | null;
+        cve_id?: Array<string> | null;
         /**
          * Image Digest
          */
@@ -2895,19 +2895,19 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
         /**
          * Image Repo
          */
-        image_repo?: string | null;
+        image_repo?: Array<string> | null;
         /**
          * Namespace
          */
-        namespace?: string | null;
+        namespace?: Array<string> | null;
         /**
          * Ptype
          */
-        ptype?: string | null;
+        ptype?: Array<string> | null;
         /**
          * Package Name
          */
-        package_name?: string | null;
+        package_name?: Array<string> | null;
         /**
          * Q
          */
@@ -2943,27 +2943,27 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
         /**
          * Exclude Assignee
          */
-        exclude_assignee?: string | null;
+        exclude_assignee?: Array<string> | null;
         /**
          * Exclude Image Repo
          */
-        exclude_image_repo?: string | null;
+        exclude_image_repo?: Array<string> | null;
         /**
          * Exclude Namespace
          */
-        exclude_namespace?: string | null;
+        exclude_namespace?: Array<string> | null;
         /**
          * Exclude Ptype
          */
-        exclude_ptype?: string | null;
+        exclude_ptype?: Array<string> | null;
         /**
          * Exclude Cve Id
          */
-        exclude_cve_id?: string | null;
+        exclude_cve_id?: Array<string> | null;
         /**
          * Exclude Package Name
          */
-        exclude_package_name?: string | null;
+        exclude_package_name?: Array<string> | null;
         /**
          * As Of
          */
@@ -3017,7 +3017,7 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
         /**
          * Assignee
          */
-        assignee?: string | null;
+        assignee?: Array<string> | null;
         /**
          * Kev
          */
@@ -3033,7 +3033,7 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
         /**
          * Cve Id
          */
-        cve_id?: string | null;
+        cve_id?: Array<string> | null;
         /**
          * Image Digest
          */
@@ -3041,19 +3041,19 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
         /**
          * Image Repo
          */
-        image_repo?: string | null;
+        image_repo?: Array<string> | null;
         /**
          * Namespace
          */
-        namespace?: string | null;
+        namespace?: Array<string> | null;
         /**
          * Ptype
          */
-        ptype?: string | null;
+        ptype?: Array<string> | null;
         /**
          * Package Name
          */
-        package_name?: string | null;
+        package_name?: Array<string> | null;
         /**
          * Q
          */
@@ -3089,27 +3089,27 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
         /**
          * Exclude Assignee
          */
-        exclude_assignee?: string | null;
+        exclude_assignee?: Array<string> | null;
         /**
          * Exclude Image Repo
          */
-        exclude_image_repo?: string | null;
+        exclude_image_repo?: Array<string> | null;
         /**
          * Exclude Namespace
          */
-        exclude_namespace?: string | null;
+        exclude_namespace?: Array<string> | null;
         /**
          * Exclude Ptype
          */
-        exclude_ptype?: string | null;
+        exclude_ptype?: Array<string> | null;
         /**
          * Exclude Cve Id
          */
-        exclude_cve_id?: string | null;
+        exclude_cve_id?: Array<string> | null;
         /**
          * Exclude Package Name
          */
-        exclude_package_name?: string | null;
+        exclude_package_name?: Array<string> | null;
         /**
          * As Of
          */

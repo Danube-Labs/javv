@@ -33,6 +33,7 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.decisions.projection import project
 from backend.models.envelope import SEVERITY_RANK, canonical_severity
+from backend.query.aggs import OWN_FILTER_FREE_FACETS, without_own_filter
 from backend.query.human_at import decisions_active_at, finding_states_at
 from backend.query.pit import latest_committed_runs
 from backend.query.search import SearchFilters
@@ -313,9 +314,10 @@ class AsOfTQuery:
             raise _unrecorded("kev")
         if f.disagree is not None:
             raise _unrecorded("disagree")
-        if f.image_repo is not None:
+        # an empty list is no filter, as on the live read
+        if f.image_repo:
             raise _unrecorded("image_repo")
-        if f.exclude_image_repo is not None:
+        if f.exclude_image_repo:
             raise _unrecorded("exclude_image_repo")
         if f.q is not None:
             # contains-search spans image_repo, which occurrences don't record — a partial match
@@ -352,30 +354,37 @@ class AsOfTQuery:
                 continue
             checks = (
                 (f.scanner, r["scanner"]),
-                (f.assignee, r["assignee"]),
                 (f.fixable, r["fixable"]),
-                (f.cve_id, r["cve_id"]),
                 (f.image_digest, r["image_digest"]),
+            )
+            if any(want is not None and want != got for want, got in checks):
+                continue
+            # the list filters (issue 949) are MEMBERSHIP, mirroring the live `terms`: an
+            # equality test against a list would drop every row and still look like a filter
+            in_checks = (
+                (f.assignee, r["assignee"]),
+                (f.cve_id, r["cve_id"]),
                 # ptype IS recorded on occurrences from M8d on — a filter at a past T matches
                 # rows as-scanned; v3-era rows carry null and correctly drop out
                 (f.ptype, r["ptype"]),
                 # package_name likewise rides the occurrence row (issue 492)
                 (f.package_name, r["package_name"]),
             )
-            if any(want is not None and want != got for want, got in checks):
+            if any(want and got not in want for want, got in in_checks):
                 continue
-            if f.namespace is not None and f.namespace not in (r["namespaces"] or []):
+            if f.namespace and not set(f.namespace) & set(r["namespaces"] or []):
                 continue
             ex_checks = (
-                (f.exclude_scanner, r["scanner"]),
                 (f.exclude_assignee, r["assignee"]),
                 (f.exclude_ptype, r["ptype"]),
                 (f.exclude_cve_id, r["cve_id"]),
                 (f.exclude_package_name, r["package_name"]),
             )
-            if any(want is not None and want == got for want, got in ex_checks):
+            if f.exclude_scanner is not None and f.exclude_scanner == r["scanner"]:
                 continue
-            if f.exclude_namespace is not None and f.exclude_namespace in (r["namespaces"] or []):
+            if any(want and got in want for want, got in ex_checks):
+                continue
+            if f.exclude_namespace and set(f.exclude_namespace) & set(r["namespaces"] or []):
                 continue
             out.append(r)
         return out
@@ -473,16 +482,22 @@ class AsOfTQuery:
         bad = [f for f in chosen if f not in _FACET_FIELDS]
         if bad:
             raise ValueError(f"not facetable (whitelist {_FACET_FIELDS}): {bad}")
-        rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
-        )
+        reconstructed = await self._reconstruct(client, cluster_id, t, prefix=prefix)
+        rows = self._apply_filters(reconstructed, filters)
         facets: dict[str, list[dict[str, Any]]] = {}
         for field in chosen:
             if field in _EMPTY_FACETS:  # whitelisted but unrecorded at T — explicit empty
                 facets[field] = []
                 continue
+            # mirrors the live facet (issue 949): a list facet counts without its own filter
+            own = OWN_FILTER_FREE_FACETS.get(field)
+            counted = (
+                self._apply_filters(reconstructed, without_own_filter(filters, field))
+                if own and (getattr(filters, own) or getattr(filters, f"exclude_{own}"))
+                else rows
+            )
             counts: dict[Any, dict[str, Any]] = {}
-            for r in rows:
+            for r in counted:
                 if field == "unassigned":
                     # issue 349 §1: an expression, not a stored key — an owner is a NON-EMPTY
                     # assignee (a cleared one is ""), the same reading as the live filter agg

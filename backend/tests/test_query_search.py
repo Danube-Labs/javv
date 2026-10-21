@@ -44,14 +44,14 @@ def test_every_facet_filter_is_a_filter_clause_never_scoring() -> None:
         severity=["critical", "high"],
         state=["open"],
         scanner="trivy",
-        assignee="ana",
+        assignee=["ana"],
         kev=True,
         fixable=True,
         disagree=False,
-        cve_id="CVE-2024-1",
+        cve_id=["CVE-2024-1"],
         image_digest="sha256:abc123",
-        image_repo="nginx",
-        namespace="prod",
+        image_repo=["nginx"],
+        namespace=["prod"],
     )
     body = build_search_body(f, size=10)
     fl = body["query"]["bool"]["filter"]
@@ -59,14 +59,14 @@ def test_every_facet_filter_is_a_filter_clause_never_scoring() -> None:
     assert {"terms": {"severity_canonical": ["critical", "high"]}} in fl
     assert {"terms": {"state": ["open"]}} in fl
     assert {"term": {"scanner": "trivy"}} in fl
-    assert {"term": {"assignee": "ana"}} in fl
+    assert {"terms": {"assignee": ["ana"]}} in fl
     assert {"term": {"kev": True}} in fl
     assert {"term": {"fixable": True}} in fl
     assert {"term": {"disagree": False}} in fl  # False is a real filter, not "unset"
-    assert {"term": {"cve_id": "CVE-2024-1"}} in fl
+    assert {"terms": {"cve_id": ["CVE-2024-1"]}} in fl
     assert {"term": {"image_digest": "sha256:abc123"}} in fl
-    assert {"term": {"image_repo": "nginx"}} in fl
-    assert {"term": {"namespaces": "prod"}} in fl  # keyword[] — array-contains semantics
+    assert {"terms": {"image_repo": ["nginx"]}} in fl
+    assert {"terms": {"namespaces": ["prod"]}} in fl  # keyword[] — array-contains semantics
     assert "must" not in body["query"]["bool"]  # facets never score
 
 
@@ -407,20 +407,20 @@ def test_exclude_facets_land_as_pure_must_not() -> None:
             exclude_severity=["low", "negligible"],
             exclude_state=["resolved"],
             exclude_scanner="trivy",
-            exclude_assignee="bob",
-            exclude_image_repo="docker.io/library/memcached",
-            exclude_namespace="kube-system",
-            exclude_ptype="deb",
-            exclude_cve_id="CVE-2021-3711",
-            exclude_package_name="zlib",
+            exclude_assignee=["bob"],
+            exclude_image_repo=["docker.io/library/memcached"],
+            exclude_namespace=["kube-system"],
+            exclude_ptype=["deb"],
+            exclude_cve_id=["CVE-2021-3711"],
+            exclude_package_name=["zlib"],
         ),
         size=10,
     )
     mn = body["query"]["bool"]["must_not"]
     assert {"terms": {"severity_canonical": ["low", "negligible"]}} in mn
     assert {"terms": {"state": ["resolved"]}} in mn
+    assert {"term": {"scanner": "trivy"}} in mn  # scanner stays one value (issue 949)
     for field, term in (
-        ("scanner", "trivy"),
         ("assignee", "bob"),
         ("image_repo", "docker.io/library/memcached"),
         ("namespaces", "kube-system"),
@@ -431,7 +431,7 @@ def test_exclude_facets_land_as_pure_must_not() -> None:
         ("cve_id", "CVE-2021-3711"),
         ("package_name", "zlib"),
     ):
-        assert {"term": {field: term}} in mn
+        assert {"terms": {field: [term]}} in mn
     assert not any("exists" in json.dumps(c) for c in mn)
     # the include side stays untouched — excludes never leak into the filter context
     assert body["query"]["bool"]["filter"] == [{"term": {"present": True}}]
@@ -443,22 +443,26 @@ def test_include_and_exclude_on_one_field_is_rejected() -> None:
     with pytest.raises(ValueError, match="severity"):
         build_search_body(SearchFilters(severity=["high"], exclude_severity=["low"]), size=10)
     with pytest.raises(ValueError, match="namespace"):
-        build_search_body(SearchFilters(namespace="prod", exclude_namespace="kube-system"), size=10)
+        build_search_body(
+            SearchFilters(namespace=["prod"], exclude_namespace=["kube-system"]), size=10
+        )
     with pytest.raises(ValueError, match="cve_id"):
         build_search_body(
-            SearchFilters(cve_id="CVE-2021-3711", exclude_cve_id="CVE-2022-0001"), size=10
+            SearchFilters(cve_id=["CVE-2021-3711"], exclude_cve_id=["CVE-2022-0001"]), size=10
         )
     with pytest.raises(ValueError, match="package_name"):
         build_search_body(
-            SearchFilters(package_name="zlib", exclude_package_name="openssl"), size=10
+            SearchFilters(package_name=["zlib"], exclude_package_name=["openssl"]), size=10
         )
+    with pytest.raises(ValueError, match="scanner"):
+        build_search_body(SearchFilters(scanner="trivy", exclude_scanner="grype"), size=10)
 
 
 def test_package_name_include_is_an_exact_term() -> None:
     """Issue 492: `package_name` filters the keyword field exactly — the fuzzy reading of a
     package name is `q`'s wildcard, which is a different question and stays include-only."""
-    body = build_search_body(SearchFilters(package_name="zlib"), size=10)
-    assert {"term": {"package_name": "zlib"}} in body["query"]["bool"]["filter"]
+    body = build_search_body(SearchFilters(package_name=["zlib"]), size=10)
+    assert {"terms": {"package_name": ["zlib"]}} in body["query"]["bool"]["filter"]
     assert "must_not" not in body["query"]["bool"]
 
 
@@ -513,7 +517,7 @@ def test_an_owner_means_a_NON_EMPTY_assignee() -> None:
 
 def test_unassigned_and_a_named_assignee_are_mutually_exclusive() -> None:
     with pytest.raises(ValueError, match="unassigned"):
-        build_search_body(SearchFilters(assignee="bob", unassigned=True), size=10)
+        build_search_body(SearchFilters(assignee=["bob"], unassigned=True), size=10)
 
 
 def test_unassigned_composes_with_the_other_must_not_writers() -> None:
@@ -548,3 +552,48 @@ async def test_run_search_overdue_policy_failure_opens_no_pit(monkeypatch) -> No
             size=2,
         )
     assert fake.created == 0 and fake.deleted == []  # never opened → nothing to leak
+
+
+# issue 949: six filters take several values. Each list is ONE `terms` clause, so the values
+# are ORed inside a field and ANDed with the other fields, the way severity and state work.
+_LIST_FIELDS = (
+    ("namespace", "namespaces"),  # keyword[]: a row matches when ANY of its namespaces is listed
+    ("ptype", "ptype"),
+    ("assignee", "assignee"),
+    ("image_repo", "image_repo"),
+    ("cve_id", "cve_id"),
+    ("package_name", "package_name"),
+)
+
+
+@pytest.mark.parametrize(("param", "field"), _LIST_FIELDS)
+def test_several_values_in_one_field_are_one_terms_clause(param: str, field: str) -> None:
+    body = build_search_body(SearchFilters(**dict[str, Any]({param: ["a", "b"]})), size=10)
+    q = body["query"]["bool"]
+    assert {"terms": {field: ["a", "b"]}} in q["filter"]
+    assert "must_not" not in q
+
+
+@pytest.mark.parametrize(("param", "field"), _LIST_FIELDS)
+def test_several_excluded_values_drop_every_listed_value(param: str, field: str) -> None:
+    """Ruling 4 on issue 949: "is not A, B" drops the rows in A and the rows in B, the same
+    rule as severity. Still PURE must_not: a row without the field survives."""
+    body = build_search_body(
+        SearchFilters(**dict[str, Any]({f"exclude_{param}": ["a", "b"]})), size=10
+    )
+    q = body["query"]["bool"]
+    assert q["must_not"] == [{"terms": {field: ["a", "b"]}}]
+    assert q["filter"] == [{"term": {"present": True}}]
+
+
+@pytest.mark.parametrize(("param", "_field"), _LIST_FIELDS)
+def test_an_empty_list_is_no_filter(param: str, _field: str) -> None:
+    """Same reading as severity: an empty list adds no clause and does not trip the
+    include-or-exclude rule."""
+    body = build_search_body(SearchFilters(**{param: [], f"exclude_{param}": ["x"]}), size=10)
+    assert body["query"]["bool"]["filter"] == [{"term": {"present": True}}]
+
+
+def test_unassigned_and_several_named_assignees_are_mutually_exclusive() -> None:
+    with pytest.raises(ValueError, match="unassigned"):
+        build_search_body(SearchFilters(assignee=["bob", "ana"], unassigned=True), size=10)

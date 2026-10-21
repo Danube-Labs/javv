@@ -117,6 +117,25 @@ async def test_enqueue_writes_a_pending_doc_and_status_reads_it_back(env) -> Non
     assert "params" not in got and "attempt_id" not in got
 
 
+async def test_a_filter_sent_as_one_string_is_stored_as_a_list(env) -> None:
+    """issue 949: Schedule export on a screen that sends one string per filter still enqueues,
+    and the drain gets the list shape the query reads."""
+    login, client = env
+    http = await login()
+    sent = {
+        "assignee": "ana",
+        "cve_id": "CVE-2021-3711",
+        "image_repo": "registry.local/api",
+        "namespace": "payments",
+        "ptype": "os",
+        "package_name": "openssl",
+    }
+    r = await http.post("/api/v1/reports", json=_body(params={"format": "csv", **sent}))
+    assert r.status_code == 201
+    doc = (await client.get(index=REPORTS_INDEX, id=r.json()["report_id"]))["_source"]
+    assert {k: doc["params"][k] for k in sent} == {k: [v] for k, v in sent.items()}
+
+
 async def test_bad_request_shapes_are_422(env) -> None:
     login, _ = env
     http = await login()

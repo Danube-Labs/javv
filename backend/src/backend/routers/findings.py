@@ -39,9 +39,20 @@ from backend.query.aggs import (
     build_top_components_body,
     decode_after,
     encode_after,
+    facet_aggregation,
 )
 from backend.query.as_of import AsOfTReader, AsOfTUnavailable, as_of_t_reader, parse_as_of
-from backend.query.search import CursorExpired, SearchFilters, cursor_pit_id, run_search
+from backend.query.search import (
+    MAX_FILTER_VALUES,
+    CursorExpired,
+    FilterValue64,
+    FilterValue128,
+    FilterValue256,
+    FilterValue512,
+    SearchFilters,
+    cursor_pit_id,
+    run_search,
+)
 from backend.sla.overdue import compute_overdue, overdue_cutoffs
 from backend.sla.policy import read_sla_policy
 from backend.tenancy.read_path import tenant_search
@@ -51,6 +62,13 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/api/v1/findings", tags=["findings"])
 
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
+
+# several values for one filter (issue 949): `?namespace=a&namespace=b`. `Query(max_length)` on a
+# list caps the NUMBER of values; each value keeps its own length cap on the item type.
+_Values64 = Annotated[list[FilterValue64] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values128 = Annotated[list[FilterValue128] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values256 = Annotated[list[FilterValue256] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values512 = Annotated[list[FilterValue512] | None, Query(max_length=MAX_FILTER_VALUES)]
 
 _GROUP_CLOCK_PAGE = 1_000  # composite agg page for the exact min(first_seen_at) per (cve, digest)
 
@@ -87,16 +105,16 @@ def _filters(
     severity: Annotated[list[str] | None, Query()] = None,
     state: Annotated[list[str] | None, Query()] = None,
     scanner: Annotated[str | None, Query(max_length=32)] = None,
-    assignee: Annotated[str | None, Query(max_length=128)] = None,
+    assignee: _Values128 = None,
     kev: bool | None = None,
     fixable: bool | None = None,
     disagree: bool | None = None,
-    cve_id: Annotated[str | None, Query(max_length=128)] = None,
+    cve_id: _Values128 = None,
     image_digest: Annotated[str | None, Query(max_length=128)] = None,
-    image_repo: Annotated[str | None, Query(max_length=512)] = None,
-    namespace: Annotated[str | None, Query(max_length=256)] = None,
-    ptype: Annotated[str | None, Query(max_length=64)] = None,
-    package_name: Annotated[str | None, Query(max_length=512)] = None,
+    image_repo: _Values512 = None,
+    namespace: _Values256 = None,
+    ptype: _Values64 = None,
+    package_name: _Values512 = None,
     q: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
     present: bool = True,
     new_within_days: Annotated[int | None, Query(ge=1, le=365)] = None,
@@ -105,12 +123,12 @@ def _filters(
     exclude_severity: Annotated[list[str] | None, Query()] = None,
     exclude_state: Annotated[list[str] | None, Query()] = None,
     exclude_scanner: Annotated[str | None, Query(max_length=32)] = None,
-    exclude_assignee: Annotated[str | None, Query(max_length=128)] = None,
-    exclude_image_repo: Annotated[str | None, Query(max_length=512)] = None,
-    exclude_namespace: Annotated[str | None, Query(max_length=256)] = None,
-    exclude_ptype: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_cve_id: Annotated[str | None, Query(max_length=128)] = None,
-    exclude_package_name: Annotated[str | None, Query(max_length=512)] = None,
+    exclude_assignee: _Values128 = None,
+    exclude_image_repo: _Values512 = None,
+    exclude_namespace: _Values256 = None,
+    exclude_ptype: _Values64 = None,
+    exclude_cve_id: _Values128 = None,
+    exclude_package_name: _Values512 = None,
 ) -> SearchFilters:
     # include+exclude on one field is ambiguous — 422 here so the builder's ValueError
     # (kept as defense for direct constructors like report_drain) never costs a 500
@@ -445,7 +463,9 @@ async def facet_findings(
                 if "buckets" in agg
                 else [_bucket({"key": "true", "doc_count": agg["doc_count"], **agg})]
             )
-            for field, agg in resp["aggregations"].items()
+            for field, agg in (
+                (name, facet_aggregation(raw)) for name, raw in resp["aggregations"].items()
+            )
         }
     }
 

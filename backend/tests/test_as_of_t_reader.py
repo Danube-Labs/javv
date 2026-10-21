@@ -9,7 +9,7 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from opensearchpy import AsyncOpenSearch
@@ -450,16 +450,16 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "severity": ["critical"],
         "state": ["open"],
         "scanner": "trivy",
-        "assignee": "someone",
+        "assignee": ["someone"],
         "kev": True,
         "fixable": True,
         "disagree": True,
-        "cve_id": "CVE-0000-0000",
+        "cve_id": ["CVE-0000-0000"],
         "image_digest": "sha256:x",
-        "image_repo": "nginx",
-        "namespace": "ns",
-        "ptype": "os",
-        "package_name": "zlib",
+        "image_repo": ["nginx"],
+        "namespace": ["ns"],
+        "ptype": ["os"],
+        "package_name": ["zlib"],
         "q": "krb5",
         "present": False,
         "new_within_days": 30,
@@ -470,12 +470,14 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "exclude_severity": ["high"],
         "exclude_state": ["resolved"],
         "exclude_scanner": "grype",
-        "exclude_assignee": "someone",  # row has assignee=None — pure-must_not KEEPS it; see below
-        "exclude_image_repo": "nginx",
-        "exclude_namespace": "default",
-        "exclude_ptype": "os",  # row has ptype=None — same missing-field carve-out
-        "exclude_cve_id": "CVE-1",  # issue 492 — matches the row, so it drops
-        "exclude_package_name": "zlib",  # row has package_name=None — carve-out again
+        "exclude_assignee": [
+            "someone"
+        ],  # row has assignee=None — pure-must_not KEEPS it; see below
+        "exclude_image_repo": ["nginx"],
+        "exclude_namespace": ["default"],
+        "exclude_ptype": ["os"],  # row has ptype=None — same missing-field carve-out
+        "exclude_cve_id": ["CVE-1"],  # issue 492 — matches the row, so it drops
+        "exclude_package_name": ["zlib"],  # row has package_name=None — carve-out again
     }
     missing = set(probe_values) ^ {f.name for f in dc_fields(SearchFilters)}
     assert not missing, f"probe map drifted from SearchFilters: {missing}"
@@ -508,3 +510,127 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
             assert len(out) == 1, f"exclude semantics drifted: {name} must keep a field-less row"
             continue
         assert out == [], f"SearchFilters.{name} was silently ignored by the as_of reader"
+
+
+def test_several_values_at_past_t_are_membership_not_equality() -> None:
+    """Issue 949: the six list filters at a past T. The guard above cannot see this bug: an
+    equality check against a list drops EVERY row, which still reads as "filtered". So each
+    case here lists two values where exactly one matches the row, and the include must KEEP
+    the row while the exclude must DROP it. The live query does the same with `terms`."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    row = {
+        "present": True,
+        "severity_canonical": "high",
+        "state": "open",
+        "scanner": "trivy",
+        "assignee": "ana",
+        "fixable": False,
+        "cve_id": "CVE-1",
+        "image_digest": "sha256:y",
+        "ptype": "deb",
+        "package_name": "zlib",
+        "namespaces": ["default", "prod"],
+        "overdue": False,
+    }
+    hits: dict[str, Any] = {
+        "assignee": ["bob", "ana"],
+        "cve_id": ["CVE-9", "CVE-1"],
+        "ptype": ["npm", "deb"],
+        "package_name": ["openssl", "zlib"],
+        "namespace": ["staging", "prod"],  # any overlap with the row's namespaces
+    }
+    for name, values in hits.items():
+        keep = AsOfTQuery._apply_filters([dict(row)], SearchFilters(**{name: values}))
+        assert len(keep) == 1, f"{name}={values} must keep a row that holds one of the values"
+        drop = AsOfTQuery._apply_filters([dict(row)], SearchFilters(**{f"exclude_{name}": values}))
+        assert drop == [], f"exclude_{name}={values} must drop a row that holds one value"
+        miss = AsOfTQuery._apply_filters(
+            [dict(row)], SearchFilters(**dict[str, Any]({name: ["x", "y"]}))
+        )
+        assert miss == [], f"{name}=['x', 'y'] must drop a row that holds neither value"
+    # an empty list is no filter, as in the live query; image_repo too, though it is unrecorded
+    for empty in ("namespace", "image_repo", "exclude_image_repo"):
+        f = SearchFilters(**dict[str, Any]({empty: []}))
+        assert len(AsOfTQuery._apply_filters([dict(row)], f)) == 1, empty
+    # image_repo is not in the scan history: a list is refused like one value always was
+    with pytest.raises(ValueError, match="image_repo"):
+        AsOfTQuery._apply_filters([dict(row)], SearchFilters(image_repo=["a", "b"]))
+
+
+async def test_past_t_package_type_facet_leaves_out_its_own_filter(monkeypatch) -> None:
+    """Issue 949, ruling 2, at a past T: the same rule as the live facet. After a pick of
+    `deb`, the Package type facet still counts `npm`; severity still counts under the pick."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    def _row(ptype: str, sev: str) -> dict[str, Any]:
+        return {
+            "present": True,
+            "severity_canonical": sev,
+            "state": "open",
+            "scanner": "trivy",
+            "assignee": None,
+            "fixable": False,
+            "cve_id": "CVE-1",
+            "image_digest": "sha256:y",
+            "ptype": ptype,
+            "package_name": None,
+            "namespaces": ["default"],
+            "overdue": False,
+        }
+
+    rows = [_row("deb", "high"), _row("deb", "high"), _row("npm", "low")]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_facets(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(ptype=["deb"]),
+        fields=["ptype", "severity"],
+    )
+    counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
+    assert counts["ptype"] == {"deb": 2, "npm": 1}
+    assert counts["severity"] == {"high": 2}
+
+
+async def test_past_t_facets_filter_again_only_for_a_field_with_its_own_filter(
+    monkeypatch,
+) -> None:
+    """The second pass over the rows is only needed when the ptype facet has a filter of its
+    own to leave out; without one it would count the same rows again (as build_facets_body)."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return []
+
+    passes: list[SearchFilters] = []
+    real = AsOfTQuery._apply_filters
+
+    def _counting(rows: list[dict[str, Any]], f: SearchFilters) -> list[dict[str, Any]]:
+        passes.append(f)
+        return real(rows, f)
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    monkeypatch.setattr(AsOfTQuery, "_apply_filters", staticmethod(_counting))
+    for filters, expected in (
+        (SearchFilters(severity=["high"]), 1),
+        (SearchFilters(namespace=["prod"]), 1),  # not the ptype facet's own field
+        (SearchFilters(ptype=["deb"]), 2),
+        (SearchFilters(exclude_ptype=["npm"]), 2),
+    ):
+        passes.clear()
+        await AsOfTQuery().findings_facets(
+            cast(Any, None),
+            cluster_id="c",
+            t=datetime(2026, 1, 1, tzinfo=UTC),
+            filters=filters,
+            fields=["ptype", "severity"],  # ptype is the one freed facet recorded at T
+        )
+        assert len(passes) == expected, filters

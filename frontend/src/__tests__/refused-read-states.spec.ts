@@ -487,8 +487,8 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     const held: ((v: unknown) => void)[] = []
     const hold = () => new Promise((resolve) => held.push(resolve)) as never
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async (opts) => {
-      const q = (opts as { query: { cve_id: string; size: number } }).query
-      if (q.cve_id === 'CVE-2026-0001') return q.size === 10 ? (findingsPage('CVE-2026-0001', 1, null) as never) : hold()
+      const q = (opts as { query: { cve_id: string[]; size: number } }).query
+      if (q.cve_id[0] === 'CVE-2026-0001') return q.size === 10 ? (findingsPage('CVE-2026-0001', 1, null) as never) : hold()
       return (q.size === 10 ? findingsPage('CVE-2026-0009', 1, null) : refusedWith(503)) as never
     })
     vi.mocked(listDecisionsApiV1DecisionsGet).mockImplementationOnce(hold)
@@ -510,9 +510,9 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
   it('F3: a late answer for the previous CVE never replaces the finding on screen', async () => {
     let answerOld: (v: unknown) => void = () => {}
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async (opts) => {
-      const q = (opts as { query: { cve_id: string; size: number } }).query
+      const q = (opts as { query: { cve_id: string[]; size: number } }).query
       if (q.size !== 10) return ok({ data: [], total: 0 }) as never
-      if (q.cve_id === 'CVE-2026-0001') return new Promise((resolve) => (answerOld = resolve)) as never
+      if (q.cve_id[0] === 'CVE-2026-0001') return new Promise((resolve) => (answerOld = resolve)) as never
       return findingsPage('CVE-2026-0009', 1, null) as never
     })
     const { w, router } = await mountDetail()

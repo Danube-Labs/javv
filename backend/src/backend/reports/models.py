@@ -10,9 +10,18 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from backend.core.identifiers import ClusterId
+from backend.query.search import (
+    LIST_FILTER_FIELDS,
+    MAX_FILTER_VALUES,
+    FilterValue64,
+    FilterValue128,
+    FilterValue256,
+    FilterValue512,
+    one_value_as_list,
+)
 
 REPORTS_INDEX = "system-reports"
 REPORT_CHUNKS_INDEX = "system-report-chunks"
@@ -37,16 +46,16 @@ class ExportParams(BaseModel):
     severity: list[str] | None = Field(default=None, max_length=16)
     state: list[str] | None = Field(default=None, max_length=16)
     scanner: str | None = Field(default=None, max_length=32)
-    assignee: str | None = Field(default=None, max_length=128)
+    assignee: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     kev: bool | None = None
     fixable: bool | None = None
     disagree: bool | None = None
-    cve_id: str | None = Field(default=None, max_length=128)
+    cve_id: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     image_digest: str | None = Field(default=None, max_length=128)
-    image_repo: str | None = Field(default=None, max_length=512)
-    namespace: str | None = Field(default=None, max_length=256)
-    ptype: str | None = Field(default=None, max_length=64)
-    package_name: str | None = Field(default=None, max_length=512)
+    image_repo: list[FilterValue512] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    namespace: list[FilterValue256] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    ptype: list[FilterValue64] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    package_name: list[FilterValue512] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     q: str | None = Field(default=None, min_length=2, max_length=128)
     present: bool = True
     new_within_days: int | None = Field(default=None, ge=1, le=365)
@@ -55,12 +64,25 @@ class ExportParams(BaseModel):
     exclude_severity: list[str] | None = Field(default=None, max_length=16)
     exclude_state: list[str] | None = Field(default=None, max_length=16)
     exclude_scanner: str | None = Field(default=None, max_length=32)
-    exclude_assignee: str | None = Field(default=None, max_length=128)
-    exclude_image_repo: str | None = Field(default=None, max_length=512)
-    exclude_namespace: str | None = Field(default=None, max_length=256)
-    exclude_ptype: str | None = Field(default=None, max_length=64)
-    exclude_cve_id: str | None = Field(default=None, max_length=128)
-    exclude_package_name: str | None = Field(default=None, max_length=512)
+    exclude_assignee: list[FilterValue128] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+    exclude_image_repo: list[FilterValue512] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+    exclude_namespace: list[FilterValue256] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+    exclude_ptype: list[FilterValue64] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    exclude_cve_id: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    exclude_package_name: list[FilterValue512] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+
+    @field_validator(*LIST_FILTER_FIELDS, mode="before")
+    @classmethod
+    def _one_value_as_list(cls, v: Any) -> Any:
+        return one_value_as_list(v)
 
     @model_validator(mode="after")
     def _vex_needs_scanner(self) -> "ExportParams":

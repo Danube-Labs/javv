@@ -35,7 +35,7 @@ from backend.core.settings import get_settings
 from backend.export.csv_stream import stream_csv
 from backend.export.sweep import sweep_findings
 from backend.export.vex import to_cyclonedx, to_openvex
-from backend.query.search import SearchFilters
+from backend.query.search import LIST_FILTER_FIELDS, SearchFilters, one_value_as_list
 from backend.reports.claim import ClaimedJob, claim_next
 from backend.reports.lease import finalize, heartbeat
 from backend.reports.models import DONE, FAILED, NOTIFICATIONS_INDEX
@@ -56,7 +56,13 @@ _THROTTLE_EVERY_ROWS = 500  # matches the sweep's internal page size — one sle
 def _filters_from_params(params: dict[str, Any]) -> SearchFilters:
     """The stored `params` blob → the M6 lens. Fields mirror 1:1 (asserted by test)."""
     known = {f for f in SearchFilters.__dataclass_fields__}
-    return SearchFilters(**{k: v for k, v in params.items() if k in known})
+    return SearchFilters(
+        **{
+            k: one_value_as_list(v) if k in LIST_FILTER_FIELDS else v
+            for k, v in params.items()
+            if k in known
+        }
+    )
 
 
 def _checked_patch(patch: dict[str, Any]) -> dict[str, Any]:

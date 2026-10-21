@@ -44,9 +44,15 @@
     "cve_id": null,
     "image_digest": null,
     "image_repo": null,
-    "namespace": "team-a",
-    "ptype": "os",
-    "package_name": "zlib",
+    "namespace": [
+      "team-a"
+    ],
+    "ptype": [
+      "os"
+    ],
+    "package_name": [
+      "zlib"
+    ],
     "q": null,
     "present": true,
     "new_within_days": null,
@@ -91,9 +97,15 @@
     "exclude_scanner": null,
     "exclude_assignee": null,
     "exclude_image_repo": null,
-    "exclude_namespace": "kube-system",
+    "exclude_namespace": [
+      "kube-system"
+    ],
     "exclude_ptype": null,
-    "exclude_cve_id": "CVE-2021-3711",
-    "exclude_package_name": "openssl"
+    "exclude_cve_id": [
+      "CVE-2021-3711"
+    ],
+    "exclude_package_name": [
+      "openssl"
+    ]
   }
 }

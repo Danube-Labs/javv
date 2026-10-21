@@ -18,11 +18,12 @@ import binascii
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 
 import structlog
 from opensearchpy import AsyncOpenSearch
 from opensearchpy.exceptions import NotFoundError, RequestError
+from pydantic import StringConstraints
 
 from backend.core.settings import get_settings
 from backend.query.trends import window_bounds
@@ -33,6 +34,30 @@ from backend.tenancy.read_path import tenant_query
 log = structlog.get_logger()
 
 _SORT_FIELDS = ("severity_rank", "first_seen_at", "last_scan_at", "cvss", "epss")
+# the most values one list filter takes (issue 949). It matches the facet list, which shows at
+# most 32 values of a field (docs/API.md, `/findings/facets`), so every value a facet offers fits.
+# Typed values (image, CVE, package) have no facet list and share the same cap.
+MAX_FILTER_VALUES = 32
+# one value of a list filter, with the length cap the field had as one string. The findings
+# route, saved views and export settings all use these, so the three cannot drift apart.
+FilterValue64 = Annotated[str, StringConstraints(max_length=64)]
+FilterValue128 = Annotated[str, StringConstraints(max_length=128)]
+FilterValue256 = Annotated[str, StringConstraints(max_length=256)]
+FilterValue512 = Annotated[str, StringConstraints(max_length=512)]
+# the six filters that take a list, each with its exclude_ pair
+LIST_FILTER_FIELDS = tuple(
+    f"{prefix}{name}"
+    for prefix in ("", "exclude_")
+    for name in ("assignee", "cve_id", "image_repo", "namespace", "ptype", "package_name")
+)
+
+
+def one_value_as_list(value: Any) -> Any:
+    """A saved view or export written as one string reads as a list of that one value, so a
+    client that still sends one string and a stored blob from before issue 949 keep working."""
+    return [value] if isinstance(value, str) else value
+
+
 _SCALAR = (str, int, float, bool)
 
 
@@ -47,21 +72,23 @@ class CursorExpired(Exception):
 class SearchFilters:
     """The FR-12 facet set. `None` = facet unset; `False` is a real filter."""
 
+    # list fields take several values (issue 949): ORed inside the field, ANDed across fields.
+    # `scanner` stays one value: it has two, and both together are no filter at all.
     severity: list[str] | None = None
     state: list[str] | None = None
     scanner: str | None = None
-    assignee: str | None = None
+    assignee: list[str] | None = None
     kev: bool | None = None
     fixable: bool | None = None
     disagree: bool | None = None
-    cve_id: str | None = None
+    cve_id: list[str] | None = None
     image_digest: str | None = None
-    image_repo: str | None = None
-    namespace: str | None = None
-    ptype: str | None = None  # package type (M8d/B-1): "os" | ecosystem string
+    image_repo: list[str] | None = None
+    namespace: list[str] | None = None
+    ptype: list[str] | None = None  # package type (M8d/B-1): "os" | ecosystem string
     # the package a finding sits in (issue 492) — an EXACT keyword term, not the fuzzy reading
     # `q` offers. `ptype` is the package's TYPE and answers a different question.
-    package_name: str | None = None
+    package_name: list[str] | None = None
     q: str | None = None  # contains-search across cve/image/namespace/assignee/package (slice 4)
     present: bool = True  # the "now" grid; tombstones are opt-in
     # "new in range": first_seen_at ≥ the trend window's day-floored start — the SAME bounds
@@ -81,12 +108,12 @@ class SearchFilters:
     exclude_severity: list[str] | None = None
     exclude_state: list[str] | None = None
     exclude_scanner: str | None = None
-    exclude_assignee: str | None = None
-    exclude_image_repo: str | None = None
-    exclude_namespace: str | None = None
-    exclude_ptype: str | None = None
-    exclude_cve_id: str | None = None
-    exclude_package_name: str | None = None
+    exclude_assignee: list[str] | None = None
+    exclude_image_repo: list[str] | None = None
+    exclude_namespace: list[str] | None = None
+    exclude_ptype: list[str] | None = None
+    exclude_cve_id: list[str] | None = None
+    exclude_package_name: list[str] | None = None
 
 
 def has_owner_clause() -> dict[str, Any]:
@@ -171,21 +198,21 @@ def build_search_body(
         # vocabulary silently matched nothing on real rows
         ("severity_canonical", filters.severity),
         ("state", filters.state),
+        ("assignee", filters.assignee),
+        ("cve_id", filters.cve_id),
+        ("image_repo", filters.image_repo),
+        ("namespaces", filters.namespace),  # keyword[]: matches when ANY namespace is listed
+        ("ptype", filters.ptype),
+        ("package_name", filters.package_name),
     ):
         if value:
             fl.append({"terms": {field: value}})
     for field, term in (
         ("scanner", filters.scanner),
-        ("assignee", filters.assignee),
         ("kev", filters.kev),
         ("fixable", filters.fixable),
         ("disagree", filters.disagree),
-        ("cve_id", filters.cve_id),
         ("image_digest", filters.image_digest),
-        ("image_repo", filters.image_repo),
-        ("namespaces", filters.namespace),  # keyword[] — array-contains
-        ("ptype", filters.ptype),
-        ("package_name", filters.package_name),
     ):
         if term is not None:
             fl.append({"term": {field: term}})
@@ -196,13 +223,6 @@ def build_search_body(
     for name, field, include, exclude in (
         ("severity", "severity_canonical", filters.severity, filters.exclude_severity),
         ("state", "state", filters.state, filters.exclude_state),
-    ):
-        if exclude:
-            if include:
-                raise ValueError(f"{name} and exclude_{name} are mutually exclusive")
-            mn.append({"terms": {field: exclude}})
-    for name, field, inc_term, exc_term in (
-        ("scanner", "scanner", filters.scanner, filters.exclude_scanner),
         ("assignee", "assignee", filters.assignee, filters.exclude_assignee),
         ("image_repo", "image_repo", filters.image_repo, filters.exclude_image_repo),
         ("namespace", "namespaces", filters.namespace, filters.exclude_namespace),
@@ -210,10 +230,14 @@ def build_search_body(
         ("cve_id", "cve_id", filters.cve_id, filters.exclude_cve_id),
         ("package_name", "package_name", filters.package_name, filters.exclude_package_name),
     ):
-        if exc_term is not None:
-            if inc_term is not None:
+        if exclude:
+            if include:
                 raise ValueError(f"{name} and exclude_{name} are mutually exclusive")
-            mn.append({"term": {field: exc_term}})
+            mn.append({"terms": {field: exclude}})
+    if filters.exclude_scanner is not None:
+        if filters.scanner is not None:
+            raise ValueError("scanner and exclude_scanner are mutually exclusive")
+        mn.append({"term": {"scanner": filters.exclude_scanner}})
     bool_q: dict[str, Any] = {"filter": fl}
     if filters.overdue is not None:
         if sla_cutoffs is None:
@@ -224,7 +248,7 @@ def build_search_body(
         else:
             mn.append(clause)
     if filters.unassigned is not None:
-        if filters.assignee is not None:
+        if filters.assignee:
             raise ValueError("assignee and unassigned are mutually exclusive")
         if filters.unassigned:
             mn.append(has_owner_clause())

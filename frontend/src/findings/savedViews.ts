@@ -85,13 +85,19 @@ export function presetToRouteQuery(
       if (attr.length > 0) query[field.key] = attr.join(',')
     } else {
       // a negated text field round-trips through the same `!` prefix as a terms field
-      const exc = p[`exclude_${field.param}`]
-      const inc = p[field.param]
-      if (typeof exc === 'string' && exc !== '') query[field.key] = `!${exc}`
-      else if (typeof inc === 'string' && inc !== '') query[field.key] = inc
+      const exc = textValue(p[`exclude_${field.param}`])
+      const inc = textValue(p[field.param])
+      if (exc) query[field.key] = `!${exc}`
+      else if (inc) query[field.key] = inc
     }
   }
   return query
+}
+
+// the server stores a text filter as a list of one value (issue 949); the screen edits one value
+function textValue(v: unknown): string | undefined {
+  const one = Array.isArray(v) ? v[0] : v
+  return typeof one === 'string' && one !== '' ? one : undefined
 }
 
 const names = (field: FilterField, values: unknown[]): string =>
@@ -119,10 +125,10 @@ export function presetSummary(fields: readonly FilterField[], preset: ViewPreset
         if (flag.window ? typeof v === 'number' : v === true) parts.push(flag.label)
       }
     } else {
-      const exc = p[`exclude_${field.param}`]
-      const inc = p[field.param]
-      if (typeof exc === 'string' && exc !== '') parts.push(`${field.label} is not "${exc}"`)
-      else if (typeof inc === 'string' && inc !== '') parts.push(`${field.label} "${inc}"`)
+      const exc = textValue(p[`exclude_${field.param}`])
+      const inc = textValue(p[field.param])
+      if (exc) parts.push(`${field.label} is not "${exc}"`)
+      else if (inc) parts.push(`${field.label} "${inc}"`)
     }
   }
   return parts.join(' · ') || 'No filters: everything'
@@ -138,7 +144,8 @@ export function presetCountQuery(
   clusterId: string,
   asOf?: string,
 ): Record<string, unknown> {
-  const query: Record<string, unknown> = { cluster_id: clusterId }
+  // the card sums only the severity facet (facetsTotal), so the other facets are not asked for
+  const query: Record<string, unknown> = { cluster_id: clusterId, fields: ['severity'] }
   if (asOf !== undefined) query.as_of = asOf
   for (const [k, v] of Object.entries(preset as Record<string, unknown>)) {
     if (v !== null && v !== undefined) query[k] = v

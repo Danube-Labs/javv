@@ -26,11 +26,26 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from opensearchpy.exceptions import ConflictError, NotFoundError
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from backend.audit.writer import append_field_change
 from backend.auth.principal import Principal, get_current_principal
 from backend.models.envelope import SEVERITY_RANK
+from backend.query.search import (
+    LIST_FILTER_FIELDS,
+    MAX_FILTER_VALUES,
+    FilterValue128,
+    FilterValue256,
+    FilterValue512,
+    one_value_as_list,
+)
 from backend.triage.state_machine import STATES
 
 router = APIRouter(prefix="/api/v1/views", tags=["views"])
@@ -42,6 +57,10 @@ VIEW_SCHEMA_VERSION = 2  # v2 (M9f slice 4): + `workbench` (columns/density/sort
 _MAX_VIEWS = 1_000  # list ceiling; a fleet has dozens of views, not thousands
 
 
+# a package type as a stored preset holds it: lowercase, the same check the field had as one string
+_PtypeValue = Annotated[str, StringConstraints(max_length=64, pattern=r"^[a-z0-9][a-z0-9+._-]*$")]
+
+
 class ViewPreset(BaseModel):
     """The stored filter lens — MIRRORS `SearchFilters` one-to-one (drift fails the mirror
     test). Closed vocabularies validated here; free-string fields keep the route caps."""
@@ -51,16 +70,16 @@ class ViewPreset(BaseModel):
     severity: list[str] | None = Field(default=None, max_length=16)
     state: list[str] | None = Field(default=None, max_length=16)
     scanner: Literal["trivy", "grype"] | None = None
-    assignee: str | None = Field(default=None, max_length=128)
+    assignee: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     kev: bool | None = None
     fixable: bool | None = None
     disagree: bool | None = None
-    cve_id: str | None = Field(default=None, max_length=128)
+    cve_id: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     image_digest: str | None = Field(default=None, max_length=128)
-    image_repo: str | None = Field(default=None, max_length=512)
-    namespace: str | None = Field(default=None, max_length=256)
-    ptype: str | None = Field(default=None, max_length=64, pattern=r"^[a-z0-9][a-z0-9+._-]*$")
-    package_name: str | None = Field(default=None, max_length=512)
+    image_repo: list[FilterValue512] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    namespace: list[FilterValue256] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    ptype: list[_PtypeValue] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    package_name: list[FilterValue512] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     q: str | None = Field(default=None, min_length=2, max_length=128)
     present: bool = True
     new_within_days: int | None = Field(default=None, ge=1, le=365)
@@ -69,14 +88,25 @@ class ViewPreset(BaseModel):
     exclude_severity: list[str] | None = Field(default=None, max_length=16)
     exclude_state: list[str] | None = Field(default=None, max_length=16)
     exclude_scanner: Literal["trivy", "grype"] | None = None
-    exclude_assignee: str | None = Field(default=None, max_length=128)
-    exclude_image_repo: str | None = Field(default=None, max_length=512)
-    exclude_namespace: str | None = Field(default=None, max_length=256)
-    exclude_ptype: str | None = Field(
-        default=None, max_length=64, pattern=r"^[a-z0-9][a-z0-9+._-]*$"
+    exclude_assignee: list[FilterValue128] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
     )
-    exclude_cve_id: str | None = Field(default=None, max_length=128)
-    exclude_package_name: str | None = Field(default=None, max_length=512)
+    exclude_image_repo: list[FilterValue512] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+    exclude_namespace: list[FilterValue256] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+    exclude_ptype: list[_PtypeValue] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    exclude_cve_id: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    exclude_package_name: list[FilterValue512] | None = Field(
+        default=None, max_length=MAX_FILTER_VALUES
+    )
+
+    @field_validator(*LIST_FILTER_FIELDS, mode="before")
+    @classmethod
+    def _one_value_as_list(cls, v: Any) -> Any:
+        return one_value_as_list(v)
 
     @field_validator("severity", "exclude_severity")
     @classmethod
