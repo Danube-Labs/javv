@@ -139,11 +139,17 @@ def _query_of(agg: dict[str, Any]) -> str:
     return json.dumps(agg.get("filter", {}))
 
 
-def test_no_own_field_filter_keeps_the_body_unchanged() -> None:
-    """Zero cost when it does not apply: no wrapper, the same body as before issue 949."""
-    f = SearchFilters(severity=["high"], scanner="trivy")
-    body = build_facets_body(f, fields=["severity", "namespaces", "ptype", "assignee"])
-    for name in ("severity", "namespaces", "ptype", "assignee"):
+def test_no_own_field_filter_keeps_the_body_unchanged(monkeypatch) -> None:
+    """Zero cost when it does not apply: no wrapper, the same body as before issue 949. The
+    body with no freed facets at all is the reference, so the whole body is compared."""
+    from backend.query import aggs
+
+    f = SearchFilters(severity=["high"], scanner="trivy", cve_id=["CVE-1"])
+    fields = ["severity", "namespaces", "ptype", "assignee"]
+    body = build_facets_body(f, fields=fields)
+    monkeypatch.setattr(aggs, "OWN_FILTER_FREE_FACETS", {})
+    assert body == build_facets_body(f, fields=fields)
+    for name in fields:
         assert "terms" in body["aggs"][name], name
 
 
