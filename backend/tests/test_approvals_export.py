@@ -353,3 +353,77 @@ async def test_a_date_only_expiry_does_not_truncate_the_stream(env) -> None:
     assert r.status_code == 200
     rows = {row["cve_id"]: row["status"] for row in _rows(r.text)}
     assert rows == {"CVE-2024-DATEONLY": "expired", "CVE-2024-DATEFAR": "active"}
+
+
+async def test_several_approvers_and_statuses_give_the_same_rows_in_the_queue_and_the_file(
+    env,
+) -> None:
+    """issue 952: `created_by` and `status` take several values. The queue moves the approver
+    filter to post_filter so its count keeps the other approvers, so the queue rows, its total
+    and the CSV must still be the same set; the status count follows the approver pick."""
+    login_with, client = env
+    cid = f"c-aexp-{uuid.uuid4().hex[:8]}"
+    now = datetime.now(UTC)
+    await _accept(client, cid, cve="CVE-2024-A1", created_by="ann", expiry=now + timedelta(days=60))
+    await _accept(client, cid, cve="CVE-2024-A2", created_by="ann")  # open-ended
+    await _accept(client, cid, cve="CVE-2024-B1", created_by="bob", expiry=now - timedelta(days=1))
+    await _accept(client, cid, cve="CVE-2024-C1", created_by="cy", expiry=now + timedelta(days=60))
+    lead = await login_with(LEAD)
+
+    lens = {"cluster_id": cid, "created_by": ["ann", "bob"]}
+    r = await lead.get("/api/v1/decisions/approvals", params=lens)
+    assert r.status_code == 200
+    queue = r.json()
+    assert sorted(a["cve_id"] for a in queue["approvals"]) == [
+        "CVE-2024-A1",
+        "CVE-2024-A2",
+        "CVE-2024-B1",
+    ]
+    assert queue["total"] == 3
+    # the approver count keeps cy, who is not picked; the status count stays ann's and bob's
+    assert {f["key"]: f["count"] for f in queue["facets"]["created_by"]} == {
+        "ann": 2,
+        "bob": 1,
+        "cy": 1,
+    }
+    statuses = {f["key"]: f["count"] for f in queue["facets"]["status"]}
+    assert statuses == {"active": 1, "expiring": 0, "expired": 1, "open-ended": 1}
+    r = await lead.get("/api/v1/decisions/approvals/export.csv", params=lens)
+    assert sorted(row["cve_id"] for row in _rows(r.text)) == [
+        a["cve_id"] for a in sorted(queue["approvals"], key=lambda a: a["cve_id"])
+    ]
+
+    r = await lead.get(
+        "/api/v1/decisions/approvals",
+        params={"cluster_id": cid, "status": ["expired", "open-ended"]},
+    )
+    assert sorted(a["cve_id"] for a in r.json()["approvals"]) == ["CVE-2024-A2", "CVE-2024-B1"]
+    r = await lead.get(
+        "/api/v1/decisions/approvals",
+        params={"cluster_id": cid, "exclude_status": ["expired", "open-ended"]},
+    )
+    assert sorted(a["cve_id"] for a in r.json()["approvals"]) == ["CVE-2024-A1", "CVE-2024-C1"]
+    r = await lead.get(
+        "/api/v1/decisions/approvals", params={"cluster_id": cid, "exclude_created_by": ["ann"]}
+    )
+    assert sorted(a["cve_id"] for a in r.json()["approvals"]) == ["CVE-2024-B1", "CVE-2024-C1"]
+
+
+async def test_the_approvals_filters_take_at_most_32_values_and_check_each_status(env) -> None:
+    login_with, _ = env
+    cid = f"c-aexp-{uuid.uuid4().hex[:8]}"
+    lead = await login_with(LEAD)
+    many = [f"user-{i}" for i in range(33)]
+    for path in ("/api/v1/decisions/approvals", "/api/v1/decisions/approvals/export.csv"):
+        r = await lead.get(path, params={"cluster_id": cid, "created_by": many})
+        assert r.status_code == 422, path
+        r = await lead.get(path, params={"cluster_id": cid, "status": ["active", "soon"]})
+        assert r.status_code == 422, path  # each value is checked, not only the first
+        r = await lead.get(
+            path, params={"cluster_id": cid, "status": ["active"], "exclude_status": ["expired"]}
+        )
+        assert r.status_code == 422, path  # include and exclude of one field
+    r = await lead.get(
+        "/api/v1/decisions/approvals", params={"cluster_id": cid, "created_by": many[:32]}
+    )
+    assert r.status_code == 200

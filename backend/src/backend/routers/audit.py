@@ -26,13 +26,13 @@ from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS, OS
 from backend.core.settings import get_settings
 from backend.export.audit_csv import count_audit_lens, stream_audit_csv
 from backend.query import pit_guard
+from backend.query.aggs import facet_aggregation
 from backend.query.as_of import parse_as_of
 from backend.query.audit import (
     AuditFilters,
     CursorExpired,
     audit_tenant_query,
     build_audit_facets_body,
-    facet_aggregation,
     run_audit_search,
 )
 from backend.query.search import (

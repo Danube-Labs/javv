@@ -279,12 +279,6 @@ async def decorate_rows(
             row["decision"] = decisions.get(row["entity_id"])
 
 
-def facet_aggregation(agg: dict[str, Any]) -> dict[str, Any]:
-    """One rail dim's aggregation from the response, whether or not the body wrapped it in a
-    filter context of its own (see build_audit_facets_body)."""
-    return agg.get("values", agg)
-
-
 def build_audit_facets_body(
     filters: AuditFilters,
     *,
