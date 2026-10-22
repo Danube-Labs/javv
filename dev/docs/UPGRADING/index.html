@@ -1122,6 +1122,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#087-javv-refuses-a-user-name-with-a-capital-letter" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.7: JAVV refuses a user name with a capital letter
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1526,6 +1537,17 @@
   
     <nav class="md-nav" aria-label="Version notes">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#087-javv-refuses-a-user-name-with-a-capital-letter" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.7: JAVV refuses a user name with a capital letter
+      </span>
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" class="md-nav__link">
@@ -1977,6 +1999,12 @@ applied it automatically on the first start.</p>
 </thead>
 <tbody>
 <tr>
+<td>0.8.7</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>JAVV refuses a user name with a capital letter</strong> below</td>
+</tr>
+<tr>
 <td>0.8.0</td>
 <td>18</td>
 <td>3 and 4</td>
@@ -2007,6 +2035,23 @@ backend accepts (3 and 4).</p>
 <p>No release up to and including 0.8.0 changed the OpenSearch chart in a way that needs the <code>store</code>
 upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
 of the comments in <code>values.yaml</code>, and no value.</p>
+<h3 id="087-javv-refuses-a-user-name-with-a-capital-letter">0.8.7: JAVV refuses a user name with a capital letter<a class="headerlink" href="#087-javv-refuses-a-user-name-with-a-capital-letter" title="Permanent link">&para;</a></h3>
+<p>A new user name must be in lower case. JAVV keeps <code>Alice</code> and <code>alice</code> as two different users, so
+two user names that are the same except for the case could cause confusion. Users that exist
+keep their names.</p>
+<ul>
+<li><strong>New users.</strong> <code>POST /api/v1/admin/users</code> gives 422 for a user name with a capital letter. The
+  message is <code>a username must be in lower case</code>.</li>
+<li><strong>The first admin.</strong> The backend reads <code>JAVV_BOOTSTRAP_ADMIN_USERNAME</code> at each start. A value
+  with a capital letter stops the backend, also when the first admin exists. The backend shows
+  <code>invalid settings: JAVV_BOOTSTRAP_ADMIN_USERNAME: Value error, a username must be in lower case</code>.</li>
+<li><strong>Sign-in.</strong> A user can type the name in any case. The backend looks for the name as typed, then
+  for the name in lower case. A user whose name has a capital letter still signs in with the name as
+  typed. The sign-in lock counts the failures of all cases of a name together.</li>
+</ul>
+<p>If you see this error, set the name in lower case. If no user has that name in lower case, and you
+set <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>, the backend makes a new first admin with that name. The
+admin with the old name stays.</p>
 <h3 id="080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend">0.8.0: a bootstrap admin password longer than 256 characters stops the backend<a class="headerlink" href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" title="Permanent link">&para;</a></h3>
 <p>A sign-in accepts a password of 256 characters at most. A first admin with a longer
 <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code> could never sign in. The backend now refuses such a value at start,

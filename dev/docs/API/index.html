@@ -2600,7 +2600,7 @@ in a scan cycle.</p>
 <td>POST</td>
 <td><code>/auth/login</code></td>
 <td>none</td>
-<td>Signs in and sets the session cookie. A wrong username or password gets 401. Too many failures get 429 (<a href="#authentication">Authentication</a>).</td>
+<td>Signs in and sets the session cookie. The username can be in any case: the backend looks for the name as typed, then for the name in lower case. A wrong username or password gets 401. Too many failures get 429 (<a href="#authentication">Authentication</a>).</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -2655,7 +2655,7 @@ in a scan cycle.</p>
 <td>GET/POST</td>
 <td><code>/api/v1/admin/users</code></td>
 <td><code>can_manage_users</code></td>
-<td>GET lists the users, with <code>size</code> (1 to 1000, default 100) and <code>offset</code> (0 to 9000). POST makes a user with <code>{username, temp_password, role}</code>. The usernames <code>system</code> and <code>fleet</code> get 422.</td>
+<td>GET lists the users, with <code>size</code> (1 to 1000, default 100) and <code>offset</code> (0 to 9000). POST makes a user with <code>{username, temp_password, role}</code>. A username has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. A username with a capital letter gets 422, and so do <code>system</code> and <code>fleet</code>. A username that exists gets 409.</td>
 </tr>
 <tr>
 <td>PATCH</td>
