@@ -307,7 +307,7 @@ in a scan cycle.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| POST | `/auth/login` | none | Signs in and sets the session cookie. A wrong username or password gets 401. Too many failures get 429 ([Authentication](#authentication)). |
+| POST | `/auth/login` | none | Signs in and sets the session cookie. The username can be in any case: the backend looks for the name as typed, then for the name in lower case. A wrong username or password gets 401. Too many failures get 429 ([Authentication](#authentication)). |
 | POST | `/auth/logout` | none | Signs out. It ends the session of the cookie on the server, if the request has a cookie, and deletes the cookie. The answer is 204, also with no session. |
 | POST | `/auth/password` | session | Changes your password. Body: `{current_password, new_password}`. It signs you out of each session and sets a new cookie. The rules and the refusals are in [A password change](#a-password-change). |
 | GET | `/auth/me` | session | Your user: `username`, `role`, `capabilities` and `must_change` |

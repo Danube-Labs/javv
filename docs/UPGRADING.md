@@ -368,6 +368,9 @@ keep their names.
 - **The first admin.** The backend reads `JAVV_BOOTSTRAP_ADMIN_USERNAME` at each start. A value
   with a capital letter stops the backend, also when the first admin exists. The backend shows
   `invalid settings: JAVV_BOOTSTRAP_ADMIN_USERNAME: Value error, a username must be in lower case`.
+- **Sign-in.** A user can type the name in any case. The backend looks for the name as typed, then
+  for the name in lower case. A user whose name has a capital letter still signs in with the name as
+  typed. The sign-in lock counts the failures of all cases of a name together.
 
 If you see this error, set the name in lower case. If no user has that name in lower case, and you
 set `JAVV_BOOTSTRAP_ADMIN_PASSWORD`, the backend makes a new first admin with that name. The
