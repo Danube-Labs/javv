@@ -2896,7 +2896,7 @@ sign-in.</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>backend.auth.reset_password<span class="w"> </span>admin<span class="w">          </span><span class="c1"># compose</span>
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/javv-backend<span class="w"> </span>--<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>backend.auth.reset_password<span class="w"> </span>admin<span class="w">  </span><span class="c1"># Helm, release javv</span>
 </code></pre></div>
-<p>The command:</p>
+<p>Type the username exactly, in the same case as the user has. The command:</p>
 <ul>
 <li>Shows a temporary password one time, and nothing more. Sign in with it. JAVV then asks for a new
   password before you can do other work.</li>
