@@ -93,8 +93,9 @@ class ExportParams(BaseModel):
 
     @model_validator(mode="after")
     def _no_conflicting_filters(self) -> "ExportParams":
-        # the pairs Findings refuses with a 422, now and at a past time (issue 962): a job with
-        # one failed when it ran, as the search raises; the past-time reader applied both sides
+        # the pairs Findings refuses with a 422, now and at a past time (issue 962): a queued job
+        # with one fails when it runs (the search raises), and at a past time the reader applies
+        # both sides
         for name in type(self).model_fields:
             if not name.startswith("exclude_"):
                 continue
