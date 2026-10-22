@@ -113,7 +113,7 @@ async function submitInvite() {
     logger.warn('user_create_failed', { status: response?.status })
     inviteError.value = detailOr(
       error,
-      'Rejected: usernames are 3–64 chars (letters, digits, . _ -); system and fleet are reserved.',
+      'Rejected: a username has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. You cannot use system or fleet.',
     )
     return
   }
@@ -310,7 +310,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
 
     <!-- invite -->
     <ModalShell v-if="inviteOpen" title="Invite a user" subtitle="they log in with the temp password and must change it" @close="inviteOpen = false">
-      <UiField label="Username" first hint="3–64 chars; letters, digits, . _ -" for="inv-name">
+      <UiField label="Username" first hint="3 to 64 lower-case letters, digits, dots, underscores or hyphens" for="inv-name">
         <SettingsInput id="inv-name" v-model="inviteName" />
       </UiField>
       <UiField label="Temp password" hint="policy-checked server-side; forced change at first login" for="inv-pass">
