@@ -25,7 +25,8 @@ export interface TermsField extends BaseField {
   multi?: boolean
   /** Field name in the facets response; omit for fields with no aggregation. */
   facetKey?: string
-  /** Static vocabulary; omit to take values from the facet buckets. */
+  /** Static vocabulary; omit to take values from the facet buckets. Only a field with this list
+   * sends its values in lower case (`termQueryValues`). */
   values?: readonly string[]
   /** The backend has an `exclude_<param>` mirror (issue 349) — the bar offers is/is not and
    * the URL carries `!`-prefixed values. Only findings fields today. */

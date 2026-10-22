@@ -3,12 +3,19 @@
  * object sent to the backend. The primary unit-tested surface (bolt M9a DoD):
  *   - `cluster_id` is ALWAYS present (tenant read path — throws if missing);
  *   - `as_of` passes through only when time-traveling (T=now omits it, D28);
- *   - term values are lowercased (severity case-insensitive, D16);
+ *   - term values of a field with a fixed list are lowercased (severity case-insensitive, D16);
+ *     any other value goes out as picked (see `termQueryValues`);
  *   - single-value params never join/merge multiple selections — a second selection is a bug
  *     upstream and throws here rather than silently mangling the query.
  */
-import { isNegatable, type FilterField, type Selections } from './fields.config'
+import { isNegatable, type FilterField, type Selections, type TermsField } from './fields.config'
 import type { Modes } from '@/stores/filters'
+
+/** The values of a terms field as the API gets them. A fixed list is lower case, so a typed or
+ * linked `CRITICAL` still matches. A value from the store (a username, a package type) goes out
+ * as picked: the store matches it exactly, and a username keeps its capitals (issue 961). */
+export const termQueryValues = (field: TermsField, selected: readonly string[]): string[] =>
+  field.values ? selected.map((v) => v.toLowerCase()) : [...selected]
 
 /** `severity` or `exclude_severity`, depending on the field's mode (issue 349). */
 const excludeParam = (field: FilterField & { param: string }, modes: Modes): string =>
@@ -41,7 +48,7 @@ export function buildFilterQuery(
     if (selected.length === 0) continue
 
     if (field.type === 'terms') {
-      const values = selected.map((v) => v.toLowerCase())
+      const values = termQueryValues(field, selected)
       // exclude mode (issue 349): the API mirror param, only on fields that declare one
       const param = excludeParam(field, modes)
       if (field.multi) {
