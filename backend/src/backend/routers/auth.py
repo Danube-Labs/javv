@@ -91,7 +91,9 @@ async def login(request: Request, creds: LoginCredentials, response: Response) -
     # Enforcing the content type here closes the text/plain JSON-smuggling arm.
     if "application/json" not in request.headers.get("content-type", ""):
         raise HTTPException(415, "login requires application/json")
-    if lockout.locked(creds.username):
+    # sign-in takes a name in any case, so every case of it shares one failure budget (issue 965)
+    budget_key = creds.username.lower()
+    if lockout.locked(budget_key):
         # the client sees only 429 — this warning is the operator's ONLY trace (#156)
         log.warning("login locked out", username=creds.username)
         AUTH_FAILURES.labels("locked_out").inc()  # M-5 (#220): reason only, never a username
@@ -99,10 +101,10 @@ async def login(request: Request, creds: LoginCredentials, response: Response) -
     client = _os(request)
     result = await _provider.authenticate(client, creds)
     if result is None:
-        lockout.record_failure(creds.username)
+        lockout.record_failure(budget_key)
         AUTH_FAILURES.labels("bad_credentials").inc()  # M-5 (#220)
         raise _GENERIC_401
-    lockout.clear(creds.username)
+    lockout.clear(budget_key)
     # task C m-10 (#140): a login that arrives with a still-valid session cookie is this
     # browser replacing its session (account switch without logout) — revoke the old one so
     # no live orphan outlasts the cookie that held it. Idempotent; unknown cookie is a no-op.

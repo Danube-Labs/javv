@@ -25,6 +25,12 @@ from backend.auth.capabilities import ROLES_INDEX, require_capability
 from backend.auth.passwords import check_policy, hash_password
 from backend.auth.principal import Principal
 from backend.auth.sessions import revoke_all_for_user
+from backend.auth.usernames import (
+    USERNAME_MAX_LENGTH,
+    USERNAME_MIN_LENGTH,
+    USERNAME_PATTERN,
+    check_username,
+)
 
 router = APIRouter(prefix="/api/v1/admin/users", tags=["user-admin"])
 roles_router = APIRouter(prefix="/api/v1/admin/roles", tags=["user-admin"])
@@ -43,24 +49,20 @@ _PUBLIC_FIELDS = (  # never password_hash — the hash never leaves the server
 ManageUsers = Annotated[Principal, Depends(require_capability("can_manage_users"))]
 
 
-_RESERVED_USERNAMES = frozenset({"system", "fleet"})  # machine actor literals (audit A-m6)
-
-
 class CreateUser(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    username: str = Field(min_length=3, max_length=64, pattern=r"^[a-zA-Z0-9._-]+$")
+    username: str = Field(
+        min_length=USERNAME_MIN_LENGTH, max_length=USERNAME_MAX_LENGTH, pattern=USERNAME_PATTERN
+    )
     temp_password: str = Field(min_length=1, max_length=256)
     role: str = Field(min_length=1, max_length=64)
 
-    @field_validator("username")
+    # before the pattern, so a capital letter gets the plain "lower case" message, not a regex
+    @field_validator("username", mode="before")
     @classmethod
-    def _not_reserved(cls, v: str) -> str:
-        # `system`/`fleet` are machine actor literals (audit log + fleet-wide config): a human so
-        # named would do triage that never charts AND blur machine-vs-human audit forensics (A-m6)
-        if v.lower() in _RESERVED_USERNAMES:
-            raise ValueError(f"username {v!r} is reserved")
-        return v
+    def _username_rule(cls, v: object) -> object:
+        return check_username(v) if isinstance(v, str) else v
 
 
 class RolePatch(BaseModel):
