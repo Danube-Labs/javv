@@ -89,7 +89,7 @@ describe('findingsRoute (where a decision row leads)', () => {
 
 describe('APPROVAL_FIELDS (issue 952)', () => {
   it('Status and Approver take several values; Scanner and the CVE search take one', () => {
-    const multi = Object.fromEntries(APPROVAL_FIELDS.map((f) => [f.key, f.multi === true]))
+    const multi = Object.fromEntries(APPROVAL_FIELDS.map((f) => [f.key, 'multi' in f && f.multi === true]))
     expect(multi).toEqual({ q: false, status: true, scanner: false, approver: true })
   })
 })

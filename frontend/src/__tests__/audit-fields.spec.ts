@@ -38,7 +38,7 @@ describe('auditFields', () => {
 describe('AUDIT_FIELDS (issue 952)', () => {
   it('Entity, Action and User take several values, for every role', () => {
     for (const fields of [auditFields(true), auditFields(false)])
-      expect(fields.map((f) => [f.key, f.multi === true])).toEqual([
+      expect(fields.map((f) => [f.key, 'multi' in f && f.multi === true])).toEqual([
         ['entity', true],
         ['action', true],
         ['actor', true],
