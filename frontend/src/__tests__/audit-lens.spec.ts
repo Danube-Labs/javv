@@ -52,13 +52,13 @@ describe('causalOrder', () => {
 describe('audit query params', () => {
   const sel = (over: Record<string, string[]> = {}) => ({ entity: [], action: [], actor: [], ...over })
 
-  it('cluster_id is always on; terms emit single values; actor passes as text', () => {
+  it('cluster_id is always on; each field sends its values as a list (issue 952)', () => {
     const q = buildFilterQuery(
       AUDIT_FIELDS,
       sel({ entity: ['finding'], action: ['resolve'], actor: ['admin'] }),
       { cluster_id: 'c-1' },
     )
-    expect(q).toEqual({ cluster_id: 'c-1', entity_type: 'finding', action: 'resolve', actor: 'admin' })
+    expect(q).toEqual({ cluster_id: 'c-1', entity_type: ['finding'], action: ['resolve'], actor: ['admin'] })
   })
 
   it('as_of rides only when time-traveling (D28)', () => {

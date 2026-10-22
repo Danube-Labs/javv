@@ -28,6 +28,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
+import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { readFailureCopy } from '@/findings/failureCopy'
 import type { FacetsResponse } from '@/filters/facets'
 import { logger } from '@/lib/logger'
@@ -39,7 +40,7 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
 
-const useAuditFilters = makeFiltersStore('audit-filters', AUDIT_FIELDS)
+const useAuditFilters = makeFiltersStore('audit-filters', AUDIT_FIELDS, MAX_FILTER_VALUES)
 // the values this user can find rows for: no account events without can_manage_users
 const auth = useAuthStore()
 const railFields = computed(() => auditFields(auth.hasCapability('can_manage_users')))
@@ -242,6 +243,7 @@ async function exportCsv() {
           :facets="facets"
           :counts-unknown="facetsFailed"
           :modes="filters.modes"
+          :max-values="MAX_FILTER_VALUES"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
         />
@@ -255,6 +257,7 @@ async function exportCsv() {
             :modes="filters.modes"
             :facets="facets"
             :counts-unknown="facetsFailed"
+            :max-values="MAX_FILTER_VALUES"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"
