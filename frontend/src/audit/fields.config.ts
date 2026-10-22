@@ -1,8 +1,8 @@
 /**
  * Audit screen filter config (M9d slice 1) — same shape/grammar as FINDINGS_FIELDS, driving
- * FacetRail + FilterBar through the shared module. The backend takes ONE term per field
- * (`entity_type`/`action`/`actor` on GET /api/v1/audit), so nothing here is `multi`; counts
- * come live from GET /api/v1/audit/facets (M9d rework — the rail shows the current lens's
+ * FacetRail + FilterBar through the shared module. Each field takes several values (issue 952):
+ * `entity_type`/`action`/`actor` are lists on GET /api/v1/audit, at most MAX_FILTER_VALUES;
+ * counts come live from GET /api/v1/audit/facets (M9d rework — the rail shows the current lens's
  * numbers, server-side). entity/action keep their static D32 vocabularies (writer call sites)
  * so quiet values still list; actor is data-driven from the facet buckets.
  */
@@ -67,10 +67,11 @@ export const AUDIT_ACTIONS = [
 ] as const
 
 export const AUDIT_FIELDS: readonly FilterField[] = [
-  { key: 'entity', label: 'Entity', type: 'terms', param: 'entity_type', facetKey: 'entity_type', values: AUDIT_ENTITY_TYPES, negatable: true },
-  { key: 'action', label: 'Action', type: 'terms', param: 'action', facetKey: 'action', values: AUDIT_ACTIONS, negatable: true, valueLabel: actionLabel },
-  // data-driven from the facet buckets (exact keyword term on the backend)
-  { key: 'actor', label: 'User', type: 'terms', param: 'actor', facetKey: 'actor', negatable: true },
+  { key: 'entity', label: 'Entity', type: 'terms', param: 'entity_type', multi: true, facetKey: 'entity_type', values: AUDIT_ENTITY_TYPES, negatable: true },
+  { key: 'action', label: 'Action', type: 'terms', param: 'action', multi: true, facetKey: 'action', values: AUDIT_ACTIONS, negatable: true, valueLabel: actionLabel },
+  // data-driven from the facet buckets; the backend counts users without the user filter, so a
+  // picked user does not hide the others (issue 952)
+  { key: 'actor', label: 'User', type: 'terms', param: 'actor', multi: true, facetKey: 'actor', negatable: true },
 ]
 
 /** The actions of the account rows (entity_type `user` and `token`). */

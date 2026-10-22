@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
+import { APPROVAL_FIELDS } from '@/approvals/fields.config'
 import {
   EXPIRY_WARN_DAYS,
   daysUntil,
@@ -83,5 +84,12 @@ describe('findingsRoute (where a decision row leads)', () => {
 
   it('does not narrow when the scope names several images', () => {
     expect(findingsRoute({ cve_id: 'CVE-2024-1', scope: scope(['nginx', 'redis']) }).query).toEqual({ q: 'CVE-2024-1' })
+  })
+})
+
+describe('APPROVAL_FIELDS (issue 952)', () => {
+  it('Status and Approver take several values; Scanner and the CVE search take one', () => {
+    const multi = Object.fromEntries(APPROVAL_FIELDS.map((f) => [f.key, f.multi === true]))
+    expect(multi).toEqual({ q: false, status: true, scanner: false, approver: true })
   })
 })

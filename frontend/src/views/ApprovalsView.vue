@@ -14,38 +14,27 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { approvalListApiV1DecisionsApprovalsGet, revokeApiV1DecisionsDecisionIdRevokePost } from '@/api/generated'
 import { APPROVAL_FIELDS } from '@/approvals/fields.config'
-import {
-  EXPIRY_WARN_DAYS,
-  expiryStatus,
-  findingsRoute,
-  scannerLabel,
-  scopeLabel,
-  type ApprovalRow,
-} from '@/approvals/viewModel'
-import ValueActions from '@/components/filters/ValueActions.vue'
+import { EXPIRY_WARN_DAYS, findingsRoute, type ApprovalRow } from '@/approvals/viewModel'
+import ApprovalsTable from '@/components/approvals/ApprovalsTable.vue'
 import EditDecisionDialog from '@/components/approvals/EditDecisionDialog.vue'
-import ExpiryChip from '@/components/chips/ExpiryChip.vue'
-import ScannerTag from '@/components/chips/ScannerTag.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
 import LimitedHistoricalNotice from '@/components/dashboards/LimitedHistoricalNotice.vue'
 import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
-import RowLink from '@/components/ui/RowLink.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
-import { activeMode } from '@/filters/fields.config'
+import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 import type { FacetsResponse } from '@/filters/facets'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
-import { makeFiltersStore, type FilterMode } from '@/stores/filters'
+import { makeFiltersStore } from '@/stores/filters'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import { refNowMs } from '@/system/clock'
-import { lastDataAt } from '@/system/freshness'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
 import { readFailureCopy } from '@/findings/failureCopy'
 
@@ -57,7 +46,7 @@ const router = useRouter()
 
 /* the 4b rail (operator re-ruling on the built 4a screen): one config drives rail + bar +
    URL sync, the audit-screen setup verbatim; every dim is served by the endpoint itself */
-const useApprovalFilters = makeFiltersStore('approvals-filters', APPROVAL_FIELDS)
+const useApprovalFilters = makeFiltersStore('approvals-filters', APPROVAL_FIELDS, MAX_FILTER_VALUES)
 const filters = useApprovalFilters()
 filters.fromQuery(route.query)
 
@@ -72,15 +61,6 @@ const facets = ref<FacetsResponse>({})
 
 /** countdowns measure from the display clock (D28) — wall time at now, T when rewound */
 const nowMs = computed(() => refNowMs(timeTravel.t))
-
-/** The scanner column's own value — the `both | trivy | grype` the filter field takes, not
- * the tag's display text (issue 349 §2). */
-const scannerValue = (row: ApprovalRow) =>
-  row.apply_both_scanners || !row.scanner ? 'both' : row.scanner
-
-/** The mode this exact value is already filtered under, so the active side reads as pressed. */
-const cellActive = (fieldKey: string, value: string): FilterMode | null =>
-  activeMode(fieldKey, value, filters.selections, filters.modes)
 
 // no as_of in the globals: the queue is now-only (the T<now notice owns the rewound state)
 const filterQuery = computed(() =>
@@ -200,17 +180,11 @@ function openFindings(row: ApprovalRow) {
   void router.push(findingsRoute(row))
 }
 
-/* ---- actions: revoke (confirm-in-row) + edit (revoke+new dialog) ---- */
-const confirmRevoke = ref<string | null>(null) // decision_id awaiting the second click
+/* ---- actions: revoke (the table confirms in-row first) + edit (revoke+new dialog) ---- */
 const busy = ref(false)
 const editing = ref<ApprovalRow | null>(null)
 
 async function revoke(row: ApprovalRow) {
-  if (confirmRevoke.value !== row.decision_id) {
-    confirmRevoke.value = row.decision_id
-    return
-  }
-  confirmRevoke.value = null
   busy.value = true
   const response = await revokeApiV1DecisionsDecisionIdRevokePost({
     path: { decision_id: row.decision_id },
@@ -277,6 +251,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           :facets="facets"
           :counts-unknown="failed"
           :modes="filters.modes"
+          :max-values="MAX_FILTER_VALUES"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
         />
@@ -290,6 +265,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
             :modes="filters.modes"
             :facets="facets"
             :counts-unknown="failed"
+            :max-values="MAX_FILTER_VALUES"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"
@@ -313,95 +289,17 @@ const fmt = (n: number) => n.toLocaleString('en-US')
         {{ readFailureCopy(failedStatus, 'Could not load the queue. Check the backend connection.') }}
       </p>
       <section v-else class="card queue-card">
-        <div class="tbl-scroll-pin">
-          <table class="tbl tbl-hover">
-            <thead>
-              <tr>
-                <th>CVE</th>
-                <th>Scope</th>
-                <th>Scanner</th>
-                <th>Justification</th>
-                <th>Approver</th>
-                <th class="fit">Expires</th>
-                <th class="fit">Status</th>
-                <th class="fit">Created</th>
-                <th class="fit"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in rows" :key="row.decision_id" @click="openFindings(row)">
-                <td>
-                  <RowLink :to="findingsRoute(row)" @open="openFindings(row)"><span class="mono-cell strong nowrap cve-link">{{ row.cve_id }}</span></RowLink>
-                </td>
-                <td>
-                  <span class="scope-cell" :class="{ 'scope-wide': scopeLabel(row.scope) === 'cluster-wide' }">
-                    {{ scopeLabel(row.scope) }}
-                  </span>
-                </td>
-                <td>
-                  <span class="cell-actionable">
-                    <ScannerTag v-if="!row.apply_both_scanners && row.scanner" :name="row.scanner" />
-                    <span v-else class="both-tag">{{ scannerLabel(row) }}</span>
-                    <ValueActions
-                      class="val-act-reveal"
-                      field="Scanner"
-                      :value="scannerValue(row)"
-                      :active="cellActive('scanner', scannerValue(row))"
-                      @pick="(m) => filters.pickValue('scanner', scannerValue(row), m)"
-                    />
-                  </span>
-                </td>
-                <td class="just-cell" :title="row.justification">{{ row.justification }}</td>
-                <td class="sm">
-                  <span class="cell-actionable">
-                    {{ row.created_by }}
-                    <ValueActions
-                      v-if="row.created_by"
-                      class="val-act-reveal"
-                      field="Approver"
-                      :value="row.created_by"
-                      :active="cellActive('approver', row.created_by)"
-                      @pick="(m) => filters.pickValue('approver', row.created_by, m)"
-                    />
-                  </span>
-                </td>
-                <td class="fit">
-                  <span class="mono-cell sm nowrap" :title="row.expiry ?? 'no expiry set'">
-                    <template v-if="row.expiry">{{ lastDataAt(row.expiry) }}</template><span v-else class="muted-dash">-</span>
-                  </span>
-                </td>
-                <td class="fit">
-                  <span class="cell-actionable">
-                    <ExpiryChip :expiry="row.expiry" :now-ms="nowMs" />
-                    <!-- status is DERIVED, so the action reuses the chip's own helper rather
-                         than re-deriving it — the cell and the filter cannot disagree -->
-                    <ValueActions
-                      class="val-act-reveal"
-                      field="Status"
-                      :value="expiryStatus(row.expiry, nowMs)"
-                      :active="cellActive('status', expiryStatus(row.expiry, nowMs))"
-                      @pick="(m) => filters.pickValue('status', expiryStatus(row.expiry, nowMs), m)"
-                    />
-                  </span>
-                </td>
-                <td class="fit">
-                  <span class="mono-cell sm nowrap" :title="row.created_at">{{ lastDataAt(row.created_at) }}</span>
-                </td>
-                <td class="fit row-actions" @click.stop>
-                  <UiButton variant="mini" :disabled="busy" @click="editing = row">Edit</UiButton>
-                  <UiButton
-                    variant="mini"
-                    :class="{ 'revoke-armed': confirmRevoke === row.decision_id }"
-                    :disabled="busy"
-                    @click="revoke(row)"
-                  >
-                    {{ confirmRevoke === row.decision_id ? 'Confirm revoke' : 'Revoke' }}
-                  </UiButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ApprovalsTable
+          :rows="rows"
+          :now-ms="nowMs"
+          :selections="filters.selections"
+          :modes="filters.modes"
+          :busy="busy"
+          @open="openFindings"
+          @pick="filters.pickValue"
+          @edit="(row) => (editing = row)"
+          @revoke="revoke"
+        />
         <div v-if="rows.length === 0" class="empty-row">
           {{
             Object.values(filters.selections).some((v) => v.length > 0)
@@ -441,58 +339,6 @@ const fmt = (n: number) => n.toLocaleString('en-US')
   box-shadow: var(--shadow);
   overflow: hidden;
   margin-top: 16px;
-}
-.queue-card .tbl th:first-child,
-.queue-card .tbl td:first-child {
-  padding-left: 16px;
-}
-/* link affordance on the identifier, the findings-grid grammar */
-.queue-card :deep(.cve-link) {
-  transition: color 0.12s ease-out;
-}
-.queue-card .tbl-hover tbody tr:hover :deep(.cve-link) {
-  color: var(--coral-text);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .queue-card :deep(.cve-link) {
-    transition: none;
-  }
-}
-.scope-cell {
-  font-size: var(--text-sm);
-}
-.scope-wide {
-  color: var(--soft);
-  font-style: italic;
-}
-.both-tag {
-  font-family: var(--font-mono);
-  font-size: var(--text-chip-sm);
-  color: var(--soft);
-  background: var(--line2);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-.just-cell {
-  max-width: 340px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--text-sm);
-}
-.row-actions {
-  display: flex;
-  gap: 6px;
-  white-space: nowrap;
-}
-/* two-click revoke: the armed state speaks in the alarm register — hue in bg/border,
-   prose stays ink (the style rules' same-hue rule, DESIGN.md §2) */
-.row-actions :deep(.revoke-armed) {
-  background: var(--sev-critical-bg);
-  border-color: var(--sev-critical-solid);
-  color: var(--ink);
 }
 .skel-gap {
   margin-top: 16px;
