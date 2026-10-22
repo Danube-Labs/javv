@@ -262,6 +262,31 @@ describe('saved views — the stored text filters are one-value lists (issue 949
   })
 })
 
+// issue 961: the store keeps a username as typed, so a saved view must keep it too
+describe('saved views — the case of a picked value', () => {
+  const SEL = { ...emptySelections(FINDINGS_FIELDS), assignee: ['Alice'], severity: ['HIGH'] }
+
+  it('capture keeps the capitals of a username and lowercases a fixed-list value', () => {
+    expect(captureLens(FINDINGS_FIELDS, SEL, {}, 30)).toEqual({ assignee: ['Alice'], severity: ['high'] })
+    expect(captureLens(FINDINGS_FIELDS, SEL, { assignee: 'not' }, 30)).toMatchObject({
+      exclude_assignee: ['Alice'],
+    })
+  })
+
+  it('round-trip: the applied view sends the username as saved, and its card counts it', () => {
+    const preset = captureLens(FINDINGS_FIELDS, SEL, {}, 30)
+    const route = presetToRouteQuery(FINDINGS_FIELDS, preset)
+    expect(route).toEqual({ assignee: 'Alice', severity: 'high' })
+    setActivePinia(createPinia())
+    const store = makeFiltersStore('golden-961', FINDINGS_FIELDS)()
+    store.fromQuery(route)
+    const body = buildFilterQuery(FINDINGS_FIELDS, store.selections, { cluster_id: CID }, store.modes)
+    expect(body).toEqual({ cluster_id: CID, assignee: ['Alice'], severity: ['high'] })
+    expect(presetCountQuery(preset, CID).assignee).toEqual(['Alice'])
+    expect(presetSummary(FINDINGS_FIELDS, preset)).toContain('Assignee is Alice')
+  })
+})
+
 describe('saved views — several typed values (issue 949 PR C)', () => {
   const SEL = { ...emptySelections(FINDINGS_FIELDS), image: ['api', 'web'], package: ['zlib'] }
 

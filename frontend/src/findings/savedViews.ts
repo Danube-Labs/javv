@@ -6,6 +6,7 @@
  * touches cluster_id or an absolute `t` — a deep link carries `?cluster=` separately.
  */
 import type { ViewPreset, ViewWorkbench } from '@/api/generated'
+import { termQueryValues } from '@/filters/buildFilterQuery'
 import {
   isNegatable,
   valueLabel,
@@ -33,7 +34,7 @@ export function captureLens(
     const selected = selections[field.key] ?? []
     if (selected.length === 0) continue
     if (field.type === 'terms') {
-      const values = selected.map((v) => v.toLowerCase())
+      const values = termQueryValues(field, selected)
       const not = field.negatable && (modes[field.key] ?? 'is') === 'not'
       const param = not ? `exclude_${field.param}` : field.param
       preset[param] = field.multi ? values : values[0]
