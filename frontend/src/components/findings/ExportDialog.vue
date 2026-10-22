@@ -20,7 +20,7 @@ import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
-import { scheduleBlockMessage, scheduleParams } from '@/findings/exportParams'
+import { exportBlockMessage, scheduleParams } from '@/findings/exportParams'
 import type { FilterField } from '@/filters/fields.config'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -67,15 +67,25 @@ const lensQuery = computed(() =>
     props.modes ?? {},
   ),
 )
-/** A lens key the schedule contract can't represent BLOCKS scheduling — never silently
- * widens the export past what's on screen (audit F-07). */
-const scheduleBlocked = computed(() => scheduleBlockMessage(props.fields, lensQuery.value))
+/** An export the backend would refuse, or one with other rows than the screen, is BLOCKED on
+ * either tab — never silently widened past what's on screen (audit F-07, issue 962). */
+const blocked = computed(() =>
+  exportBlockMessage(props.fields, lensQuery.value, {
+    schedule: tab.value === 'schedule',
+    historical: props.historical,
+    format: format.value,
+    vexScanner: vexScanner.value,
+  }),
+)
 
 function openDialog() {
   error.value = null
   report.value = null
   // at a past T only the queued path exists — inline streams describe current state
   tab.value = props.historical ? 'schedule' : 'now'
+  // a VEX file speaks for the scanner the screen shows, when it shows one
+  const shown = lensQuery.value.scanner
+  if (shown === 'trivy' || shown === 'grype') vexScanner.value = shown
   open.value = true
 }
 function close() {
@@ -224,10 +234,11 @@ const downloadHref = computed(() =>
             </div>
 
             <template v-if="tab === 'now'">
-              <p class="ex-note">Streams up to the inline cap; a bigger lens gets a 413 and the schedule path.</p>
+              <p v-if="blocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ blocked }}</p>
+              <p v-else class="ex-note">Streams up to the inline cap; a bigger lens gets a 413 and the schedule path.</p>
             </template>
             <template v-else>
-              <p v-if="scheduleBlocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ scheduleBlocked }}</p>
+              <p v-if="blocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ blocked }}</p>
               <p v-else class="ex-note">Runs in the off-peak window; the result keeps for ~24h after completion.</p>
               <div v-if="report" class="report-status">
                 <template v-if="report.status === 'done' && downloadHref">
@@ -251,7 +262,7 @@ const downloadHref = computed(() =>
           <UiButton
             v-if="tab === 'now'"
             variant="primary"
-            :disabled="busy || exporting"
+            :disabled="busy || exporting || !!blocked"
             @click="runNow"
           >
             {{ exporting ? 'Exporting…' : 'Download' }}
@@ -259,7 +270,7 @@ const downloadHref = computed(() =>
           <UiButton
             v-else
             variant="primary"
-            :disabled="busy || exporting || !!scheduleBlocked || report !== null"
+            :disabled="busy || exporting || !!blocked || report !== null"
             @click="schedule"
           >
             {{ busy ? 'Scheduling…' : 'Schedule' }}

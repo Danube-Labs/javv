@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest'
 import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 import {
   EXPORT_PARAM_KEYS,
+  type ExportChoice,
+  PAST_TIME_UNRECORDED_KEYS,
+  exportBlockMessage,
   filterNames,
-  scheduleBlockMessage,
   scheduleParams,
   unrepresentableKeys,
 } from '@/findings/exportParams'
@@ -72,7 +74,7 @@ describe('EXPORT_PARAM_KEYS and the backend contract (issue 962)', () => {
     expect([...EXPORT_PARAM_KEYS].sort()).toEqual(backend)
   })
 
-  it('a lens with the four filters it used to refuse can be scheduled', () => {
+  it('the four filters it used to refuse can be scheduled', () => {
     const lens = {
       cluster_id: 'c-1',
       package_name: ['openssl'],
@@ -86,6 +88,11 @@ describe('EXPORT_PARAM_KEYS and the backend contract (issue 962)', () => {
   })
 })
 
+const SCHEDULE: ExportChoice = { schedule: true, historical: false, format: 'csv', vexScanner: 'trivy' }
+const RUN_NOW: ExportChoice = { ...SCHEDULE, schedule: false }
+const block = (query: Record<string, unknown>, choice: ExportChoice = SCHEDULE) =>
+  exportBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', ...query }, choice)
+
 describe('the block message names filters as the screen does (issue 962)', () => {
   it('a field gives its label, an exclude key its field label, a flag its label', () => {
     expect(
@@ -98,22 +105,72 @@ describe('the block message names filters as the screen does (issue 962)', () =>
       ...FINDINGS_FIELDS,
       { key: 'base', label: 'Base image', type: 'text', param: 'base_image' },
     ]
-    expect(scheduleBlockMessage(fields, { cluster_id: 'c-1', base_image: 'alpine' })).toBe(
+    const query = { cluster_id: 'c-1', base_image: 'alpine' }
+    expect(exportBlockMessage(fields, query, SCHEDULE)).toBe(
       'A schedule cannot use these filters: Base image. Clear them, or use Run now.',
     )
-  })
-
-  it('Assignee with Unassigned blocks: Findings and the schedule both refuse the pair', () => {
-    expect(scheduleBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', assignee: ['bob'], unassigned: true })).toBe(
-      'A schedule cannot use Assignee and Unassigned together. Clear one of them.',
+    // at a past time Run now is not offered
+    expect(exportBlockMessage(fields, query, { ...SCHEDULE, historical: true })).toBe(
+      'A schedule cannot use these filters: Base image. Clear them.',
     )
   })
 
-  it('a lens the schedule can carry has no message', () => {
-    expect(scheduleBlockMessage(FINDINGS_FIELDS, LENS)).toBeNull()
-    expect(scheduleBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', unassigned: true })).toBeNull()
-    expect(
-      scheduleBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', exclude_assignee: ['bob'], unassigned: true }),
-    ).toBeNull()
+  it('nothing blocks the filters a schedule can carry', () => {
+    expect(block(LENS)).toBeNull()
+    expect(block({ unassigned: true })).toBeNull()
+    expect(block({ exclude_assignee: ['bob'], unassigned: true })).toBeNull()
+  })
+})
+
+describe('Assignee with Unassigned, which Findings and the schedule refuse', () => {
+  it('blocks Run now and the schedule alike', () => {
+    const message = 'An export cannot use Assignee and Unassigned together. Clear one of them.'
+    expect(block({ assignee: ['bob'], unassigned: true })).toBe(message)
+    expect(block({ assignee: ['bob'], unassigned: true }, RUN_NOW)).toBe(message)
+  })
+})
+
+describe('a VEX file covers the one scanner the screen shows', () => {
+  const vex = (vexScanner: string, schedule = true): ExportChoice => ({ ...SCHEDULE, format: 'vex', vexScanner, schedule })
+
+  it('Scanner is not X blocks VEX on both tabs, and CSV keeps it', () => {
+    const message = 'A VEX file covers one scanner. Clear the Scanner filter first.'
+    expect(block({ exclude_scanner: 'trivy' }, vex('grype'))).toBe(message)
+    expect(block({ exclude_scanner: 'trivy' }, vex('grype', false))).toBe(message)
+    expect(block({ exclude_scanner: 'trivy' })).toBeNull()
+  })
+
+  it('a VEX scanner other than the screen scanner blocks, the same one passes', () => {
+    expect(block({ scanner: 'trivy' }, vex('grype'))).toBe(
+      'This screen shows trivy findings only. Pick trivy for the VEX file.',
+    )
+    expect(block({ scanner: 'trivy' }, vex('grype', false))).not.toBeNull()
+    expect(block({ scanner: 'trivy' }, vex('trivy'))).toBeNull()
+    expect(block({}, vex('grype'))).toBeNull()
+  })
+})
+
+describe('a schedule at a past time', () => {
+  const PAST: ExportChoice = { ...SCHEDULE, historical: true }
+
+  it('names each filter the scan history does not record', () => {
+    expect(block({ q: 'openssl', kev: true, image_repo: ['nginx'] }, PAST)).toBe(
+      'At a past time, a schedule cannot use these filters: KEV, Image, Search. Clear them.',
+    )
+    expect(block({ new_within_days: 30, disagree: true }, PAST)).toBe(
+      'At a past time, a schedule cannot use these filters: Scanners disagree, New in range. Clear them.',
+    )
+  })
+
+  it('takes the filters the history records, and the same filters now', () => {
+    expect(block({ severity: ['high'], package_name: ['openssl'], unassigned: true }, PAST)).toBeNull()
+    expect(block({ q: 'openssl', kev: true })).toBeNull()
+  })
+
+  it('the list equals the filters the backend refuses at a past time', () => {
+    const reader = readFileSync(resolve(process.cwd(), '../backend/src/backend/query/as_of_t.py'), 'utf8')
+    const backend = [...reader.matchAll(/_unrecorded\("(\w+)"\)/g)].map((m) => m[1]).sort()
+    expect(backend.length).toBeGreaterThan(0)
+    expect([...PAST_TIME_UNRECORDED_KEYS].sort()).toEqual(backend)
   })
 })

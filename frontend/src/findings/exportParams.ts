@@ -38,17 +38,48 @@ export function filterNames(fields: readonly FilterField[], keys: readonly strin
   return [...new Set(keys.map((key) => names.get(key) ?? key))]
 }
 
-/** Why this lens cannot be scheduled, or null. Assignee with Unassigned is refused by Findings
- * and by the schedule route alike, so the dialog says so instead of a failed request. */
-export function scheduleBlockMessage(
+/** The filters the backend cannot answer at a past time, because the scan history does not
+ * record them (`_unrecorded` in backend/src/backend/query/as_of_t.py). `export-params.spec.ts`
+ * keeps this list equal to the backend's. */
+export const PAST_TIME_UNRECORDED_KEYS = [
+  'kev', 'disagree', 'image_repo', 'exclude_image_repo', 'q', 'new_within_days',
+] as const
+
+/** What the user picked in the export dialog. */
+export interface ExportChoice {
+  /** The Schedule tab; false is Run now. */
+  schedule: boolean
+  /** A past time is picked: only a schedule can export it. */
+  historical: boolean
+  format: 'csv' | 'vex'
+  vexScanner: string
+}
+
+/** Why this export cannot run, or null. Each case is a request that the backend refuses, or one
+ * that would export other rows than the screen shows (issue 962). */
+export function exportBlockMessage(
   fields: readonly FilterField[],
-  lensQuery: Record<string, unknown>,
+  query: Record<string, unknown>,
+  choice: ExportChoice,
 ): string | null {
-  const offenders = unrepresentableKeys(lensQuery)
-  if (offenders.length)
-    return `A schedule cannot use these filters: ${filterNames(fields, offenders).join(', ')}. Clear them, or use Run now.`
-  if (lensQuery.assignee !== undefined && lensQuery.unassigned !== undefined)
-    return `A schedule cannot use ${filterNames(fields, ['assignee', 'unassigned']).join(' and ')} together. Clear one of them.`
+  if (choice.schedule) {
+    const offenders = unrepresentableKeys(query)
+    if (offenders.length)
+      return `A schedule cannot use these filters: ${filterNames(fields, offenders).join(', ')}. ${choice.historical ? 'Clear them.' : 'Clear them, or use Run now.'}`
+    const unrecorded = choice.historical
+      ? PAST_TIME_UNRECORDED_KEYS.filter((key) => query[key] !== undefined)
+      : []
+    if (unrecorded.length)
+      return `At a past time, a schedule cannot use these filters: ${filterNames(fields, unrecorded).join(', ')}. Clear them.`
+  }
+  if (query.assignee !== undefined && query.unassigned !== undefined)
+    return `An export cannot use ${filterNames(fields, ['assignee', 'unassigned']).join(' and ')} together. Clear one of them.`
+  if (choice.format === 'vex') {
+    if (query.exclude_scanner !== undefined)
+      return 'A VEX file covers one scanner. Clear the Scanner filter first.'
+    if (query.scanner !== undefined && query.scanner !== choice.vexScanner)
+      return `This screen shows ${String(query.scanner)} findings only. Pick ${String(query.scanner)} for the VEX file.`
+  }
   return null
 }
 
