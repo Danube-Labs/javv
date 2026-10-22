@@ -91,6 +91,20 @@ class ExportParams(BaseModel):
             raise ValueError("VEX export requires a scanner filter (per-scanner is sacred)")
         return self
 
+    @model_validator(mode="after")
+    def _no_conflicting_filters(self) -> "ExportParams":
+        # the pairs Findings refuses with a 422: the search raises on them, so a queued job that
+        # held one would fail only when it ran (issue 962)
+        for name in type(self).model_fields:
+            if not name.startswith("exclude_"):
+                continue
+            include = name.removeprefix("exclude_")
+            if getattr(self, include) is not None and getattr(self, name) is not None:
+                raise ValueError(f"{include} and {name} are mutually exclusive")
+        if self.assignee is not None and self.unassigned is not None:
+            raise ValueError("assignee and unassigned are mutually exclusive")
+        return self
+
 
 class BulkTriageParams(BaseModel):
     """The scheduled-bulk request (slice 5, audit A-Mc): selector + patch, exactly the inline

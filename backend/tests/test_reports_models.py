@@ -50,6 +50,44 @@ def test_vex_export_requires_a_scanner() -> None:
             ExportParams(format=fmt)  # per-scanner is sacred — a VEX doc speaks for ONE scanner
 
 
+# one value for each filter that has an exclude side; the pairs Findings refuses with a 422
+_ONE_VALUE = {
+    "severity": ["high"],
+    "state": ["open"],
+    "scanner": "trivy",
+    "assignee": ["ana"],
+    "image_repo": ["nginx"],
+    "namespace": ["default"],
+    "ptype": ["os"],
+    "cve_id": ["CVE-2021-3711"],
+    "package_name": ["openssl"],
+}
+
+
+def test_every_exclude_filter_has_a_case_here() -> None:
+    excludes = {
+        n.removeprefix("exclude_") for n in ExportParams.model_fields if n.startswith("exclude_")
+    }
+    assert excludes == set(_ONE_VALUE)
+
+
+@pytest.mark.parametrize("name", sorted(_ONE_VALUE))
+def test_a_filter_and_its_exclude_side_are_refused_together(name: str) -> None:
+    value = _ONE_VALUE[name]
+    ExportParams.model_validate({name: value})
+    ExportParams.model_validate({f"exclude_{name}": value})
+    with pytest.raises(ValidationError, match=f"{name} and exclude_{name} are mutually exclusive"):
+        ExportParams.model_validate({name: value, f"exclude_{name}": value})
+
+
+@pytest.mark.parametrize("unassigned", [True, False])
+def test_assignee_and_unassigned_are_refused_together(unassigned: bool) -> None:
+    ExportParams(unassigned=unassigned)
+    ExportParams(unassigned=unassigned, exclude_assignee=["ana"])  # Findings takes this pair
+    with pytest.raises(ValidationError, match="assignee and unassigned are mutually exclusive"):
+        ExportParams(assignee=["ana"], unassigned=unassigned)
+
+
 def test_enqueue_rejects_unknown_kind_and_extra_fields() -> None:
     with pytest.raises(ValidationError):
         EnqueueReport(cluster_id="c-reports", kind="bulk_triage")  # type: ignore[arg-type]  # not a valid kind yet
