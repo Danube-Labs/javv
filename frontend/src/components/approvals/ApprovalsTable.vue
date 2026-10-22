@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * The Approvals queue table: one row per standing risk-acceptance, with the cell filter actions and the in-row Edit and two-click Revoke. The
- * view owns the fetch, the filters and the revoke request; this table owns only its rows.
+ * The Approvals queue table: one row per standing risk-acceptance, with the cell filter actions
+ * and the in-row Edit and two-click Revoke. The view owns the fetch, the filters and the revoke
+ * request; this table owns only its rows.
  */
 import { ref } from 'vue'
 
