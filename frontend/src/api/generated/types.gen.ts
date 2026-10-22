@@ -1427,33 +1427,9 @@ export type ReadAuditLogApiV1AuditGetData = {
          */
         cluster_id: string;
         /**
-         * Entity Type
-         */
-        entity_type?: string | null;
-        /**
-         * Action
-         */
-        action?: string | null;
-        /**
-         * Actor
-         */
-        actor?: string | null;
-        /**
          * Finding Key
          */
         finding_key?: string | null;
-        /**
-         * Exclude Entity Type
-         */
-        exclude_entity_type?: string | null;
-        /**
-         * Exclude Action
-         */
-        exclude_action?: string | null;
-        /**
-         * Exclude Actor
-         */
-        exclude_actor?: string | null;
         /**
          * Order
          */
@@ -1474,6 +1450,30 @@ export type ReadAuditLogApiV1AuditGetData = {
          * Keep Open
          */
         keep_open?: boolean;
+        /**
+         * Entity Type
+         */
+        entity_type?: Array<string> | null;
+        /**
+         * Action
+         */
+        action?: Array<string> | null;
+        /**
+         * Actor
+         */
+        actor?: Array<string> | null;
+        /**
+         * Exclude Entity Type
+         */
+        exclude_entity_type?: Array<string> | null;
+        /**
+         * Exclude Action
+         */
+        exclude_action?: Array<string> | null;
+        /**
+         * Exclude Actor
+         */
+        exclude_actor?: Array<string> | null;
     };
     url: '/api/v1/audit';
 };
@@ -1509,33 +1509,33 @@ export type ExportAuditCsvApiV1AuditExportCsvGetData = {
          */
         cluster_id: string;
         /**
-         * Entity Type
-         */
-        entity_type?: string | null;
-        /**
-         * Action
-         */
-        action?: string | null;
-        /**
-         * Actor
-         */
-        actor?: string | null;
-        /**
-         * Exclude Entity Type
-         */
-        exclude_entity_type?: string | null;
-        /**
-         * Exclude Action
-         */
-        exclude_action?: string | null;
-        /**
-         * Exclude Actor
-         */
-        exclude_actor?: string | null;
-        /**
          * As Of
          */
         as_of?: string | null;
+        /**
+         * Entity Type
+         */
+        entity_type?: Array<string> | null;
+        /**
+         * Action
+         */
+        action?: Array<string> | null;
+        /**
+         * Actor
+         */
+        actor?: Array<string> | null;
+        /**
+         * Exclude Entity Type
+         */
+        exclude_entity_type?: Array<string> | null;
+        /**
+         * Exclude Action
+         */
+        exclude_action?: Array<string> | null;
+        /**
+         * Exclude Actor
+         */
+        exclude_actor?: Array<string> | null;
     };
     url: '/api/v1/audit/export.csv';
 };
@@ -1565,30 +1565,6 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
          */
         cluster_id: string;
         /**
-         * Entity Type
-         */
-        entity_type?: string | null;
-        /**
-         * Action
-         */
-        action?: string | null;
-        /**
-         * Actor
-         */
-        actor?: string | null;
-        /**
-         * Exclude Entity Type
-         */
-        exclude_entity_type?: string | null;
-        /**
-         * Exclude Action
-         */
-        exclude_action?: string | null;
-        /**
-         * Exclude Actor
-         */
-        exclude_actor?: string | null;
-        /**
          * As Of
          */
         as_of?: string | null;
@@ -1600,6 +1576,30 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
          * Window Days
          */
         window_days?: number;
+        /**
+         * Entity Type
+         */
+        entity_type?: Array<string> | null;
+        /**
+         * Action
+         */
+        action?: Array<string> | null;
+        /**
+         * Actor
+         */
+        actor?: Array<string> | null;
+        /**
+         * Exclude Entity Type
+         */
+        exclude_entity_type?: Array<string> | null;
+        /**
+         * Exclude Action
+         */
+        exclude_action?: Array<string> | null;
+        /**
+         * Exclude Actor
+         */
+        exclude_actor?: Array<string> | null;
     };
     url: '/api/v1/audit/facets';
 };
@@ -2030,11 +2030,11 @@ export type ApprovalListApiV1DecisionsApprovalsGetData = {
         /**
          * Status
          */
-        status?: string | null;
+        status?: Array<string> | null;
         /**
          * Created By
          */
-        created_by?: string | null;
+        created_by?: Array<string> | null;
         /**
          * Scanner
          */
@@ -2042,11 +2042,11 @@ export type ApprovalListApiV1DecisionsApprovalsGetData = {
         /**
          * Exclude Status
          */
-        exclude_status?: string | null;
+        exclude_status?: Array<string> | null;
         /**
          * Exclude Created By
          */
-        exclude_created_by?: string | null;
+        exclude_created_by?: Array<string> | null;
         /**
          * Exclude Scanner
          */
@@ -2096,11 +2096,11 @@ export type ExportApprovalsCsvApiV1DecisionsApprovalsExportCsvGetData = {
         /**
          * Status
          */
-        status?: string | null;
+        status?: Array<string> | null;
         /**
          * Created By
          */
-        created_by?: string | null;
+        created_by?: Array<string> | null;
         /**
          * Scanner
          */
@@ -2108,11 +2108,11 @@ export type ExportApprovalsCsvApiV1DecisionsApprovalsExportCsvGetData = {
         /**
          * Exclude Status
          */
-        exclude_status?: string | null;
+        exclude_status?: Array<string> | null;
         /**
          * Exclude Created By
          */
-        exclude_created_by?: string | null;
+        exclude_created_by?: Array<string> | null;
         /**
          * Exclude Scanner
          */

@@ -2817,57 +2817,6 @@
           },
           {
             "in": "query",
-            "name": "entity_type",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Entity Type"
-            }
-          },
-          {
-            "in": "query",
-            "name": "action",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Action"
-            }
-          },
-          {
-            "in": "query",
-            "name": "actor",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 128,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Actor"
-            }
-          },
-          {
-            "in": "query",
             "name": "finding_key",
             "required": false,
             "schema": {
@@ -2881,57 +2830,6 @@
                 }
               ],
               "title": "Finding Key"
-            }
-          },
-          {
-            "in": "query",
-            "name": "exclude_entity_type",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Exclude Entity Type"
-            }
-          },
-          {
-            "in": "query",
-            "name": "exclude_action",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Exclude Action"
-            }
-          },
-          {
-            "in": "query",
-            "name": "exclude_actor",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 128,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Exclude Actor"
             }
           },
           {
@@ -3000,6 +2898,132 @@
               "title": "Keep Open",
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Entity Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Actor"
+            }
           }
         ],
         "responses": {
@@ -3048,13 +3072,34 @@
           },
           {
             "in": "query",
-            "name": "entity_type",
+            "name": "as_of",
             "required": false,
             "schema": {
               "anyOf": [
                 {
                   "maxLength": 64,
                   "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -3070,8 +3115,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 64,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -3087,8 +3136,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 128,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -3104,8 +3157,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 64,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -3121,8 +3178,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 64,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -3138,31 +3199,18 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 128,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
                 }
               ],
               "title": "Exclude Actor"
-            }
-          },
-          {
-            "in": "query",
-            "name": "as_of",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "As Of"
             }
           }
         ],
@@ -3204,108 +3252,6 @@
             "schema": {
               "title": "Cluster Id",
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "entity_type",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Entity Type"
-            }
-          },
-          {
-            "in": "query",
-            "name": "action",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Action"
-            }
-          },
-          {
-            "in": "query",
-            "name": "actor",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 128,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Actor"
-            }
-          },
-          {
-            "in": "query",
-            "name": "exclude_entity_type",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Exclude Entity Type"
-            }
-          },
-          {
-            "in": "query",
-            "name": "exclude_action",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Exclude Action"
-            }
-          },
-          {
-            "in": "query",
-            "name": "exclude_actor",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 128,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Exclude Actor"
             }
           },
           {
@@ -3352,6 +3298,132 @@
               "minimum": 1,
               "title": "Window Days",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Entity Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Actor"
             }
           }
         ],
@@ -4045,8 +4117,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 16,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4062,8 +4138,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 128,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4096,8 +4176,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 16,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4113,8 +4197,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 128,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4222,8 +4310,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 16,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4239,8 +4331,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 128,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4273,8 +4369,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 16,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4290,8 +4390,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 128,
-                  "type": "string"
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
                 },
                 {
                   "type": "null"

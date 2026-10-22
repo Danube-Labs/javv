@@ -408,9 +408,9 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | GET | `/api/v1/scanners/freshness` | session | For each scanner of the cluster: `last_ingest_at` and `silent_for_seconds`. With no push yet, both are `null`. |
 | GET | `/api/v1/scanners/ingest-failures` | session | The pushes that the ingest refused after the token check, newest first. `scanner` is necessary. `days` is 1 to 365 (default 30), and `size` is 1 to 100 (default 25). [Failed pushes](#failed-pushes) gives the fields. |
 | GET | `/api/v1/scanners/provenance` | session | For each scanner: the versions and `effective_config` of the last committed run, and the last `runs` runs (1 to 50, default 10) |
-| GET | `/api/v1/audit` | session | The audit log, page by page with a cursor. Filters: `entity_type`, `action`, `actor` and `finding_key`, each with an `exclude_` form except `finding_key`. `finding_key` also returns each bulk change that included the finding (`action` `bulk_triage`). Such a row lists the changed findings in `target_ids`. `order` is `desc` (default) or `asc`. `keep_open` is as in `/findings`. Each row also shows the CVE, image and scanner of the finding or decision that it changed. |
+| GET | `/api/v1/audit` | session | The audit log, page by page with a cursor. Filters: `entity_type`, `action`, `actor` and `finding_key`, each with an `exclude_` form except `finding_key`. `entity_type`, `action` and `actor` take several values, for example `actor=a&actor=b`, at most 32 for each filter. A row matches when it has one of the values. An `exclude_` filter with several values leaves out the rows with any of them. `finding_key` also returns each bulk change that included the finding (`action` `bulk_triage`). Such a row lists the changed findings in `target_ids`. `order` is `desc` (default) or `asc`. `keep_open` is as in `/findings`. Each row also shows the CVE, image and scanner of the finding or decision that it changed. |
 | POST | `/api/v1/cursors/close` | session | Closes a cursor of `/findings` or `/audit` before its last page. Body: `{cursor}`. It closes the search of the cursor and frees your slot ([Exports and reports](#exports-and-reports)), and answers 204. A cursor of a different user, of a list that ended, or that expired also gets 204, and nothing changes. A cursor that is not valid gets 422. |
-| GET | `/api/v1/audit/facets` | session | The counts of `entity_type`, `action` and `actor`, with the same filters. With `interval` (`day` or `hour`) and `window_days`, it also gives `activity`: the events in each interval. |
+| GET | `/api/v1/audit/facets` | session | The counts of `entity_type`, `action` and `actor`, with the same filters. The `actor` counts leave out the `actor` filter, so the other users keep their counts. With `interval` (`day` or `hour`) and `window_days`, it also gives `activity`: the events in each interval. |
 | GET | `/api/v1/audit/export.csv` | session | The audit log as CSV, with the same filters. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
 | GET | `/api/v1/images` | session | The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, `inventory` is `null`. |
 | GET | `/api/v1/images/timeline` | session | The scan history of one image tag. `image_repo` and `tag` are necessary. |
@@ -519,8 +519,13 @@ that fails during your read can show on a later page.
 - `created_by`.
 - `scanner`: `both`, `trivy` or `grype`.
 
-Each filter except `q` has an `exclude_` form. The answer also has `facets`: the counts of `status`,
-`created_by` and `scanner` with the same filters. A revoked acceptance is never in the queue.
+`status` and `created_by` take several values, for example `status=expired&status=expiring`, at
+most 32 for each filter. An acceptance matches when it has one of the values. `q` and `scanner`
+take one value. Each filter except `q` has an `exclude_` form. An `exclude_` filter with several
+values leaves out the acceptances with any of them. The answer also has `facets`: the counts of
+`status`, `created_by` and `scanner` with the same filters. The `created_by` counts leave out the
+`created_by` filter, so the other approvers keep their counts. A revoked acceptance is never in the
+queue.
 
 The CSV export has the same rows. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413.
 Two columns are different from the screen:
