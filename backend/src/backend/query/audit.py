@@ -290,7 +290,8 @@ def build_audit_facets_body(
     walk — pure builder, tenant filter forced in by the executor's `tenant_query`. With
     `interval` (day|hour), adds the `activity` date_histogram over the picker window ending at
     the D28 bound (the audit lens): `extended_bounds` renders quiet buckets as zeros, and the
-    window's `gte` scopes ONLY the histogram — the rail counts stay whole-lens.
+    window's `gte` scopes ONLY the histogram — the rail counts stay whole-lens, except the one
+    below.
 
     The `actor` count leaves out the user filter (issue 952), so a picked user does
     not hide the others from the list. Entity and action keep their own filter, as severity

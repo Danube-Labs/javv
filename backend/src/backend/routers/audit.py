@@ -158,7 +158,8 @@ async def audit_facets(
     window_days: Annotated[int, Query(ge=1, le=365)] = 30,
 ) -> dict[str, Any]:
     """Rail counts for the audit screen (M9d rework): entity_type/action/actor terms under the
-    same filters + D28 bound as the walk — the counts describe the current lens, server-side.
+    same filters + D28 bound as the walk (the actor count leaves out the user filter, so the
+    other users stay listed) — the counts describe the current lens, server-side.
     With `interval` (day|hour) the response adds `activity`: the audit lens's events-over-time
     histogram across the picker window (quiet buckets included as zeros)."""
     client = cast(Any, request.app.state.opensearch)

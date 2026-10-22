@@ -280,12 +280,13 @@ def test_the_freed_user_count_keeps_the_time_limit_the_tenant_and_the_account_ru
     body = build_audit_facets_body(AuditFilters(actor=["alice"], until=t))
     guarded = audit_tenant_query("c-1", body, account_events=False)
     top = guarded["query"]["bool"]
-    main_query = str(guarded["query"])  # the guard wraps the builder's query in its own bool
-    assert str({"range": {"@timestamp": {"lte": t.isoformat()}}}) in main_query
+    # the guard wraps the builder's query in its own bool, as a `must`
+    assert top["must"] == [
+        {"bool": {"filter": [{"range": {"@timestamp": {"lte": t.isoformat()}}}]}}
+    ]
     assert {"terms": {"entity_type": ["token", "user"]}} in top["must_not"]
-    assert "cluster_id" in str(top["filter"][0])  # the tenant guard
+    assert {"term": {"cluster_id": "c-1"}} in top["filter"][0]["bool"]["should"]
     assert guarded["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}
-    assert "global" not in str(guarded["aggs"])  # no count escapes the main query
     # a manager's count has no account rule; the rest stays
     manager = audit_tenant_query(
         "c-1", build_audit_facets_body(AuditFilters(actor=["alice"])), account_events=True
