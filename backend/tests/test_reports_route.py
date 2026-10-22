@@ -159,6 +159,28 @@ async def test_bad_request_shapes_are_422(env) -> None:
     ).status_code == 201
 
 
+@pytest.mark.parametrize(
+    "pair",
+    [
+        {"package_name": ["openssl"], "exclude_package_name": ["zlib"]},
+        {"assignee": ["ana"], "unassigned": True},
+    ],
+)
+async def test_a_filter_pair_findings_refuses_is_422_and_queues_nothing(env, pair) -> None:
+    """issue 962: Findings answers 422 for these pairs and the search raises on them, so a job
+    that held one would fail only when it ran."""
+    login, client = env
+    http = await login()
+    body = _body(params={"format": "csv", **pair})
+    r = await http.post("/api/v1/reports", json=body)
+    assert r.status_code == 422
+    await client.indices.refresh(index=REPORTS_INDEX)
+    queued = await client.count(
+        index=REPORTS_INDEX, body={"query": {"term": {"cluster_id": body["cluster_id"]}}}
+    )
+    assert queued["count"] == 0
+
+
 async def test_unknown_report_is_404_and_auth_is_required(env) -> None:
     login, _ = env
     http = await login()

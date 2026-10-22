@@ -303,3 +303,56 @@ def test_a_stored_string_reaches_the_query_as_a_list() -> None:
     )
     assert filters.namespace == ["payments"] and filters.exclude_ptype == ["os"]
     assert filters.severity == ["low"]
+
+
+# issue 962: the four filters the schedule did not carry. Rows 1 and 2 have openssl, row 1 and
+# row 3 share a CVE, and only row 1 has an owner.
+_FOUR_FILTER_ROWS = {
+    0: {"package_name": "libx", "cve_id": "CVE-2026-0100", "assignee": None},
+    1: {"package_name": "openssl", "cve_id": "CVE-2026-0200", "assignee": "ana"},
+    2: {"package_name": "openssl", "cve_id": "CVE-2026-0300", "assignee": None},
+    3: {"package_name": "zlib", "cve_id": "CVE-2026-0200", "assignee": None},
+}
+
+
+@pytest.mark.parametrize(
+    ("params", "kept"),
+    [
+        ({"package_name": ["openssl"]}, {1, 2}),
+        ({"exclude_package_name": ["openssl"]}, {0, 3}),
+        ({"exclude_cve_id": ["CVE-2026-0200"]}, {0, 2}),
+        ({"unassigned": True}, {0, 2, 3}),
+    ],
+)
+async def test_a_scheduled_export_keeps_the_rows_of_the_screen(client, params, kept) -> None:
+    """The schedule dialog sends these four filters once issue 962 lets it. The job must give
+    the rows the inline export gives for the same filter, and only those."""
+    from backend.export.csv_stream import stream_csv
+
+    cluster_id = f"c-drain-{uuid.uuid4().hex[:8]}"
+    for i, fields in _FOUR_FILTER_ROWS.items():
+        doc = {**_finding(cluster_id, i), **fields}
+        await client.index(index="findings", id=doc["finding_key"], body=doc)
+    await client.indices.refresh(index="findings")
+    report_id = await _enqueue(
+        client, cluster_id, params=ExportParams.model_validate(params).model_dump()
+    )
+
+    job = await claim_next(client, worker="w-drain", report_id=report_id)
+    assert job is not None
+    assert await run_job(client, job) is True
+    doc = await _report(client, report_id)
+    assert doc["status"] == DONE
+
+    queued = "".join([d async for d in stream_chunks(client, report_id, doc["attempt_id"])])
+    inline = "".join(
+        [
+            line
+            async for line in stream_csv(
+                client, cluster_id=cluster_id, filters=SearchFilters(**params)
+            )
+        ]
+    )
+    assert queued == inline
+    keys = {line.split(",")[0] for line in queued.splitlines()[1:]}
+    assert keys == {f"fk-{cluster_id}-{i}" for i in kept}
