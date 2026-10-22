@@ -405,15 +405,19 @@ Reachable from Findings/Overview/Images "Export".
   sanitized). VEX: `GET /api/v1/findings/export.vex?scanner=<one>&…` — **`scanner` required**,
   one scanner per file (per-scanner sacred).
 - Schedule: `POST /api/v1/reports` (`kind: export`, session-only by design — A-6). Status:
-  `GET /api/v1/reports/{report_id}`. Download: `GET /api/v1/reports/{id}/download` — **M7
-  slice 3, not shipped yet**; until it lands the "schedule" path is **BLOCKED: needs backend
-  (planned, M7 slice 3)**.
+  `GET /api/v1/reports/{report_id}`. Download: `GET /api/v1/reports/{id}/download`. The
+  schedule carries every filter of the lens; `EXPORT_PARAM_KEYS` must equal `ExportParams` in
+  openapi.json (`export-params.spec.ts`, issue 962).
 
 **States (C-2 — all drawn):** run-now streaming progress · **413 over
 `JAVV_EXPORT_MAX_ROWS` (50k)** → "narrow the lens or **schedule off-peak**" (switch tab) ·
 scheduled-pending → bell on done · **"expires in Xh"** on the bell item and the download row
 (`JAVV_EXPORT_TTL_HOURS`, default 24 h) · **410 expired** → "download expired — re-run the
-export" · 429 PIT cap with `Retry-After`.
+export" · 429 PIT cap with `Retry-After` · **schedule blocked** (issue 962; Schedule stays off):
+a filter the schedule cannot carry → "A schedule cannot use these filters: Package. Clear them,
+or use Run now." (the screen's filter names); Assignee with Unassigned, which Findings and the
+schedule both refuse → "A schedule cannot use Assignee and Unassigned together. Clear one of
+them."
 
 **Changed vs SCREENS.md:** C-2 (TTL/expiry affordances + 410 state — new), A-6 **RULED
 (2026-07-07): export stays session-only** — available to every authenticated user; the v4

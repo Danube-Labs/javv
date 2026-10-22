@@ -20,7 +20,7 @@ import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
-import { scheduleParams, unrepresentableKeys } from '@/findings/exportParams'
+import { scheduleBlockMessage, scheduleParams } from '@/findings/exportParams'
 import type { FilterField } from '@/filters/fields.config'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -69,13 +69,7 @@ const lensQuery = computed(() =>
 )
 /** A lens key the schedule contract can't represent BLOCKS scheduling — never silently
  * widens the export past what's on screen (audit F-07). */
-const scheduleBlocked = computed(() => {
-  const offenders = unrepresentableKeys(lensQuery.value)
-  return offenders.length
-    ? `${offenders.join(', ')} filter(s) are not part of scheduled-export params. ` +
-        'Clear them or use Run now.'
-    : null
-})
+const scheduleBlocked = computed(() => scheduleBlockMessage(props.fields, lensQuery.value))
 
 function openDialog() {
   error.value = null

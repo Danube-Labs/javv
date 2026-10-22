@@ -4,6 +4,8 @@
  * export. `export-params.spec.ts` compares this list with `ExportParams` in openapi.json, so
  * a field the backend gains fails that spec until it is added here (issue 962). */
 
+import type { FilterField } from '@/filters/fields.config'
+
 export const EXPORT_PARAM_KEYS = [
   'severity', 'state', 'scanner', 'assignee', 'kev', 'fixable', 'disagree', 'cve_id',
   'image_digest', 'image_repo', 'namespace', 'ptype', 'package_name', 'q', 'present',
@@ -19,6 +21,35 @@ export function unrepresentableKeys(lensQuery: Record<string, unknown>): string[
   return Object.keys(lensQuery).filter(
     (k) => !GLOBAL_KEYS.has(k) && !(EXPORT_PARAM_KEYS as readonly string[]).includes(k),
   )
+}
+
+/** What the screen calls each key: a field's label, also for its exclude side, or a flag's
+ * label. A key that no field has keeps its own name. */
+export function filterNames(fields: readonly FilterField[], keys: readonly string[]): string[] {
+  const names = new Map<string, string>()
+  for (const field of fields) {
+    if (field.type === 'flags') {
+      for (const flag of field.values) names.set(flag.param, flag.label)
+    } else {
+      names.set(field.param, field.label)
+      names.set(`exclude_${field.param}`, field.label)
+    }
+  }
+  return [...new Set(keys.map((key) => names.get(key) ?? key))]
+}
+
+/** Why this lens cannot be scheduled, or null. Assignee with Unassigned is refused by Findings
+ * and by the schedule route alike, so the dialog says so instead of a failed request. */
+export function scheduleBlockMessage(
+  fields: readonly FilterField[],
+  lensQuery: Record<string, unknown>,
+): string | null {
+  const offenders = unrepresentableKeys(lensQuery)
+  if (offenders.length)
+    return `A schedule cannot use these filters: ${filterNames(fields, offenders).join(', ')}. Clear them, or use Run now.`
+  if (lensQuery.assignee !== undefined && lensQuery.unassigned !== undefined)
+    return `A schedule cannot use ${filterNames(fields, ['assignee', 'unassigned']).join(' and ')} together. Clear one of them.`
+  return null
 }
 
 /** The ExportParams blob for one schedule: whole lens + format; VEX pins its one scanner. */

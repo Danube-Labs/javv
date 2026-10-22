@@ -3,7 +3,14 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { EXPORT_PARAM_KEYS, scheduleParams, unrepresentableKeys } from '@/findings/exportParams'
+import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
+import {
+  EXPORT_PARAM_KEYS,
+  filterNames,
+  scheduleBlockMessage,
+  scheduleParams,
+  unrepresentableKeys,
+} from '@/findings/exportParams'
 
 // a full findings lens the way buildFilterQuery emits it
 const LENS = {
@@ -76,5 +83,37 @@ describe('EXPORT_PARAM_KEYS and the backend contract (issue 962)', () => {
     expect(unrepresentableKeys(lens)).toEqual([])
     const { cluster_id: _c, ...lensParams } = lens
     expect(scheduleParams(lens, 'csv', 'trivy')).toEqual({ format: 'csv', ...lensParams })
+  })
+})
+
+describe('the block message names filters as the screen does (issue 962)', () => {
+  it('a field gives its label, an exclude key its field label, a flag its label', () => {
+    expect(
+      filterNames(FINDINGS_FIELDS, ['package_name', 'exclude_cve_id', 'unassigned', 'some_new_dim']),
+    ).toEqual(['Package', 'CVE', 'Unassigned', 'some_new_dim'])
+  })
+
+  it('a filter the schedule lacks is named by its label', () => {
+    const fields: FilterField[] = [
+      ...FINDINGS_FIELDS,
+      { key: 'base', label: 'Base image', type: 'text', param: 'base_image' },
+    ]
+    expect(scheduleBlockMessage(fields, { cluster_id: 'c-1', base_image: 'alpine' })).toBe(
+      'A schedule cannot use these filters: Base image. Clear them, or use Run now.',
+    )
+  })
+
+  it('Assignee with Unassigned blocks: Findings and the schedule both refuse the pair', () => {
+    expect(scheduleBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', assignee: ['bob'], unassigned: true })).toBe(
+      'A schedule cannot use Assignee and Unassigned together. Clear one of them.',
+    )
+  })
+
+  it('a lens the schedule can carry has no message', () => {
+    expect(scheduleBlockMessage(FINDINGS_FIELDS, LENS)).toBeNull()
+    expect(scheduleBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', unassigned: true })).toBeNull()
+    expect(
+      scheduleBlockMessage(FINDINGS_FIELDS, { cluster_id: 'c-1', exclude_assignee: ['bob'], unassigned: true }),
+    ).toBeNull()
   })
 })
