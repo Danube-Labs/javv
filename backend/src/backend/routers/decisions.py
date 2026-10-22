@@ -19,7 +19,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal, get_current_principal
@@ -42,6 +42,7 @@ from backend.query.approvals import (
     build_approvals_body,
     shape_facets,
 )
+from backend.query.search import MAX_FILTER_VALUES, FilterValue128
 
 router = APIRouter(prefix="/api/v1/decisions", tags=["decisions"])
 log = structlog.get_logger()
@@ -131,25 +132,33 @@ async def edit(
     return {"revoked": revoked, "decision": new}
 
 
+# several values per filter (issue 952), each with the length cap it had as one string
+_Statuses = Annotated[
+    list[Annotated[str, StringConstraints(max_length=16)]] | None,
+    Query(max_length=MAX_FILTER_VALUES),
+]
+_Approvers = Annotated[list[FilterValue128] | None, Query(max_length=MAX_FILTER_VALUES)]
+
+
 def _approval_lens(
     q: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
-    status: Annotated[str | None, Query(max_length=16)] = None,
-    created_by: Annotated[str | None, Query(max_length=128)] = None,
+    status: _Statuses = None,
+    created_by: _Approvers = None,
     scanner: Annotated[str | None, Query(max_length=8)] = None,
-    exclude_status: Annotated[str | None, Query(max_length=16)] = None,
-    exclude_created_by: Annotated[str | None, Query(max_length=128)] = None,
+    exclude_status: _Statuses = None,
+    exclude_created_by: _Approvers = None,
     exclude_scanner: Annotated[str | None, Query(max_length=8)] = None,
 ) -> ApprovalFilters:
     """The 4b lens, validated once at the edge (the `findings._filters` pattern). The queue read
     and its CSV export (issue 359) share it, so an export can never accept a lens the screen
     would have rejected."""
-    for name, value, vocabulary in (
-        ("status", status, STATUS_VALUES),
-        ("exclude_status", exclude_status, STATUS_VALUES),
-        ("scanner", scanner, SCANNER_VALUES),
-        ("exclude_scanner", exclude_scanner, SCANNER_VALUES),
+    for name, values, vocabulary in (
+        ("status", status or [], STATUS_VALUES),
+        ("exclude_status", exclude_status or [], STATUS_VALUES),
+        ("scanner", [] if scanner is None else [scanner], SCANNER_VALUES),
+        ("exclude_scanner", [] if exclude_scanner is None else [exclude_scanner], SCANNER_VALUES),
     ):
-        if value is not None and value not in vocabulary:
+        if any(v not in vocabulary for v in values):
             raise HTTPException(422, f"{name} must be one of {vocabulary}")
     # a field is included OR excluded, never both (issue 349) — same 422 as the findings edge,
     # instead of silently ANDing a clause with its own must_not into zero rows
@@ -158,7 +167,7 @@ def _approval_lens(
         ("created_by", created_by, exclude_created_by),
         ("scanner", scanner, exclude_scanner),
     ):
-        if inc is not None and exc is not None:
+        if inc and exc:
             raise HTTPException(422, f"{name} and exclude_{name} are mutually exclusive")
     return ApprovalFilters(
         q=q,

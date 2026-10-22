@@ -10,7 +10,7 @@ same opaque cursor contract (`encode_cursor`/`decode_cursor` reused verbatim) �
 410, a tampered cursor is 422, never a 500. Tenancy: the body goes through `tenant_query`
 (SEC-4 — a PIT search carries no index name, so the body filter is the only guard)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -37,23 +37,25 @@ _LEGACY_FLEET_CLUSTER_ID = "fleet"
 
 @dataclass(frozen=True)
 class AuditFilters:
-    """The M8c filter set (bolt #240): all keyword `term`s; `None` = unset.
+    """The M8c filter set (bolt #240): keyword filters; `None` or an empty list = unset.
 
-    The `exclude_*` twins are the negation side (issue 349): a field is included OR excluded,
-    never both, so the pair is set by the caller from one UI mode. A row missing the field
-    entirely survives its exclusion — `must_not term` only drops rows that actually match, so
+    `entity_type`, `action` and `actor` take several values (issue 952): a row matches any of
+    them, and an exclusion leaves out a row with any of them. The `exclude_*` twins are the
+    negation side (issue 349): a field is included OR excluded, never both, so the pair is set
+    by the caller from one UI mode. A row missing the field entirely survives its exclusion —
+    `must_not terms` only drops rows that actually match, so
     "actor is not alice" keeps system rows that have no actor. That is the reading the client
     matcher uses for images too, and it is what the pill claims.
     """
 
-    entity_type: str | None = None
-    action: str | None = None
-    actor: str | None = None
+    entity_type: list[str] | None = None
+    action: list[str] | None = None
+    actor: list[str] | None = None
     finding_key: str | None = None  # per-finding activity (M9b slice 4 — the detail screen)
     until: datetime | None = None  # D28: a rewound picker must not see post-T events (M9d)
-    exclude_entity_type: str | None = None
-    exclude_action: str | None = None
-    exclude_actor: str | None = None
+    exclude_entity_type: list[str] | None = None
+    exclude_action: list[str] | None = None
+    exclude_actor: list[str] | None = None
 
 
 def audit_tenant_query(
@@ -99,13 +101,13 @@ def build_audit_body(
     if order not in ("asc", "desc"):
         raise ValueError("order must be asc or desc")
     fl: list[dict[str, Any]] = [
-        {"term": {field: value}}
-        for field, value in (
+        {"terms": {field: values}}
+        for field, values in (
             ("entity_type", filters.entity_type),
             ("action", filters.action),
             ("actor", filters.actor),
         )
-        if value is not None
+        if values
     ]
     if filters.finding_key is not None:
         # a bulk change names its findings in `target_ids`, never in `finding_key` (issue 912)
@@ -123,13 +125,13 @@ def build_audit_body(
     if filters.until is not None:
         fl.append({"range": {_SORT_KEY: {"lte": filters.until.isoformat()}}})
     must_not: list[dict[str, Any]] = [
-        {"term": {field: value}}
-        for field, value in (
+        {"terms": {field: values}}
+        for field, values in (
             ("entity_type", filters.exclude_entity_type),
             ("action", filters.exclude_action),
             ("actor", filters.exclude_actor),
         )
-        if value is not None
+        if values
     ]
     body: dict[str, Any] = {
         "size": size,
@@ -288,7 +290,12 @@ def build_audit_facets_body(
     walk — pure builder, tenant filter forced in by the executor's `tenant_query`. With
     `interval` (day|hour), adds the `activity` date_histogram over the picker window ending at
     the D28 bound (the audit lens): `extended_bounds` renders quiet buckets as zeros, and the
-    window's `gte` scopes ONLY the histogram — the rail counts stay whole-lens."""
+    window's `gte` scopes ONLY the histogram — the rail counts stay whole-lens, except the one
+    below.
+
+    The `actor` count leaves out the user filter (issue 952), so a picked user does
+    not hide the others from the list. Entity and action keep their own filter, as severity
+    and state do on Findings: their values are a fixed list, so each stays offered."""
     body = build_audit_body(filters, size=0)
     body.pop("sort")
     body.pop("track_total_hits")
@@ -296,13 +303,15 @@ def build_audit_facets_body(
         field: {"terms": {"field": field, "size": _FACET_TERMS_SIZE}}  # the findings rail cap
         for field in ("entity_type", "action", "actor")
     }
+    window: dict[str, Any] | None = None
     if interval is not None:
         if interval not in ("day", "hour"):
             raise ValueError("interval must be day or hour")
         end = filters.until or now or datetime.now(UTC)
         start = end - timedelta(days=window_days)
+        window = {"range": {_SORT_KEY: {"gte": start.isoformat(), "lte": end.isoformat()}}}
         body["aggs"]["activity"] = {
-            "filter": {"range": {_SORT_KEY: {"gte": start.isoformat(), "lte": end.isoformat()}}},
+            "filter": window,
             "aggs": {
                 "buckets": {
                     "date_histogram": {
@@ -317,4 +326,25 @@ def build_audit_facets_body(
                 }
             },
         }
-    return body
+    if not (filters.actor or filters.exclude_actor):
+        return body
+    # the main query drops the user filter, so the actor count sees every user; each other
+    # aggregation puts every filter back, so its counts do not change
+    full = body["query"]
+    wrapped = build_audit_body(replace(filters, actor=None, exclude_actor=None), size=0)
+    wrapped.pop("sort")
+    wrapped.pop("track_total_hits")
+    aggs = body["aggs"]
+    wrapped["aggs"] = {
+        "actor": aggs["actor"],
+        **{
+            field: {"filter": full, "aggs": {"values": aggs[field]}}
+            for field in ("entity_type", "action")
+        },
+    }
+    if window is not None:
+        wrapped["aggs"]["activity"] = {
+            **aggs["activity"],
+            "filter": {"bool": {"filter": [full, window]}},
+        }
+    return wrapped

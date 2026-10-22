@@ -35,18 +35,18 @@ def test_base_body_keeps_the_review_contract() -> None:
 def test_status_boundaries_mirror_the_expiry_chip() -> None:
     iso = NOW.isoformat()
     warn = (NOW + timedelta(days=7)).isoformat()
-    expired = build_approvals_body(ApprovalFilters(status="expired"), **KW)
+    expired = build_approvals_body(ApprovalFilters(status=["expired"]), **KW)
     assert {"range": {"expiry": {"lte": iso}}} in _filters(expired)  # AT now = expired
-    expiring = build_approvals_body(ApprovalFilters(status="expiring"), **KW)
+    expiring = build_approvals_body(ApprovalFilters(status=["expiring"]), **KW)
     assert {"range": {"expiry": {"gt": iso, "lte": warn}}} in _filters(expiring)
-    active = build_approvals_body(ApprovalFilters(status="active"), **KW)
+    active = build_approvals_body(ApprovalFilters(status=["active"]), **KW)
     assert {"range": {"expiry": {"gt": warn}}} in _filters(active)
-    open_ended = build_approvals_body(ApprovalFilters(status="open-ended"), **KW)
+    open_ended = build_approvals_body(ApprovalFilters(status=["open-ended"]), **KW)
     assert {"bool": {"must_not": [{"exists": {"field": "expiry"}}]}} in _filters(open_ended)
 
 
 def test_warn_days_moves_the_expiring_window() -> None:
-    body = build_approvals_body(ApprovalFilters(status="expiring"), **{**KW, "warn_days": 30})
+    body = build_approvals_body(ApprovalFilters(status=["expiring"]), **{**KW, "warn_days": 30})
     warn = (NOW + timedelta(days=30)).isoformat()
     assert {"range": {"expiry": {"gt": NOW.isoformat(), "lte": warn}}} in _filters(body)
 
@@ -76,8 +76,9 @@ def test_scanner_filters_the_column_value() -> None:
 
 
 def test_facets_ride_the_same_lens_and_shape_to_the_rail_wire() -> None:
-    body = build_approvals_body(ApprovalFilters(created_by="lead"), **KW)
-    assert {"term": {"created_by": "lead"}} in _filters(body)  # facets share this query
+    body = build_approvals_body(ApprovalFilters(status=["active"]), **KW)
+    assert _status_clause_present(body, "active")  # the facets share this query
+    assert "post_filter" not in body  # no approver filter, nothing moves out of the query
     assert set(body["aggs"]) == {"status", "created_by", "scanner"}
     assert set(body["aggs"]["status"]["filters"]["filters"]) == {
         "active",
@@ -118,23 +119,33 @@ def _must_not(body: dict) -> list[dict]:
 def test_exclusions_append_to_the_revoked_guard_never_replace_it() -> None:
     """issue 349: the revoked guard defines the queue. An exclusion that overwrote it would
     put revoked acceptances back in front of the reviewer."""
-    body = build_approvals_body(ApprovalFilters(exclude_created_by="lead"), **KW)
+    body = build_approvals_body(ApprovalFilters(exclude_status=["expired"]), **KW)
     assert {"exists": {"field": "revoked_at"}} in _must_not(body)
-    assert {"term": {"created_by": "lead"}} in _must_not(body)
+    assert len(_must_not(body)) == 2
+    query = build_approvals_query(
+        ApprovalFilters(exclude_created_by=["lead"]),
+        cluster_id="c-1",
+        now=NOW,
+        warn_days=7,
+    )
+    assert query["bool"]["must_not"] == [
+        {"exists": {"field": "revoked_at"}},
+        {"terms": {"created_by": ["lead"]}},
+    ]
 
 
 def test_excluding_a_status_is_the_complement_of_its_own_clause() -> None:
     # the four buckets partition the queue, so "not expiring" is the other three — and a doc
     # with no expiry never matches the range, so open-ended survives the exclusion
-    body = build_approvals_body(ApprovalFilters(exclude_status="expiring"), **KW)
-    included = build_approvals_body(ApprovalFilters(status="expiring"), **KW)
+    body = build_approvals_body(ApprovalFilters(exclude_status=["expiring"]), **KW)
+    included = build_approvals_body(ApprovalFilters(status=["expiring"]), **KW)
     clause = _filters(included)[-1]
     assert clause in _must_not(body)
     assert clause not in _filters(body)
 
 
 def test_excluding_open_ended_keeps_only_the_dated_ones() -> None:
-    body = build_approvals_body(ApprovalFilters(exclude_status="open-ended"), **KW)
+    body = build_approvals_body(ApprovalFilters(exclude_status=["open-ended"]), **KW)
     assert {"bool": {"must_not": [{"exists": {"field": "expiry"}}]}} in _must_not(body)
 
 
@@ -149,15 +160,17 @@ def test_exclude_scanner_negates_the_composite_column_clause() -> None:
 
 
 def test_include_and_exclude_ride_the_same_query_so_facets_follow_the_lens() -> None:
-    body = build_approvals_body(ApprovalFilters(status="active", exclude_created_by="lead"), **KW)
+    body = build_approvals_body(
+        ApprovalFilters(status=["active"], exclude_created_by=["lead"]), **KW
+    )
     assert _status_clause_present(body, "active")
-    assert {"term": {"created_by": "lead"}} in _must_not(body)
-    # the aggs are scoped by this query, so a rail count can never contradict the page
+    # the approver exclusion filters the rows through post_filter, see the test below
+    assert body["post_filter"] == {"bool": {"must_not": [{"terms": {"created_by": ["lead"]}}]}}
     assert set(body["aggs"]) == {"status", "created_by", "scanner"}
 
 
 def _status_clause_present(body: dict, status: str) -> bool:
-    expected = build_approvals_body(ApprovalFilters(status=status), **KW)
+    expected = build_approvals_body(ApprovalFilters(status=[status]), **KW)
     return _filters(expected)[-1] in _filters(body)
 
 
@@ -168,12 +181,65 @@ def test_the_export_lens_is_the_page_lens_not_a_second_definition() -> None:
     """The CSV export runs `build_approvals_query` directly. If the page body stopped being
     built from it, an export could silently describe a different set of rows than the screen
     it came from — so the identity is pinned, not assumed."""
-    filters = ApprovalFilters(status="expiring", created_by="lead", exclude_scanner="trivy")
+    filters = ApprovalFilters(status=["expiring"], exclude_scanner="trivy")
     page = build_approvals_body(filters, **KW)
     lens = build_approvals_query(
         filters, cluster_id=KW["cluster_id"], now=KW["now"], warn_days=KW["warn_days"]
     )
     assert page["query"] == lens
+    # with an approver filter the page splits its filters into its query and its post_filter,
+    # and the two together are the export's query: the same clauses, nothing more
+    with_approver = ApprovalFilters(status=["expiring"], created_by=["lead", "ops"])
+    page = build_approvals_body(with_approver, **KW)
+    export = build_approvals_query(
+        with_approver, cluster_id=KW["cluster_id"], now=KW["now"], warn_days=KW["warn_days"]
+    )
+    approver = {"terms": {"created_by": ["lead", "ops"]}}
+    assert page["post_filter"] == {"bool": {"filter": [approver]}}
+    assert export["bool"]["filter"] == [*page["query"]["bool"]["filter"], approver]
+    assert export["bool"]["must_not"] == page["query"]["bool"]["must_not"]
+
+
+def test_several_statuses_match_any_of_them_and_an_exclusion_leaves_out_each() -> None:
+    """issue 952: status is calculated, so two statuses are two clauses joined by OR. One
+    status stays its own clause, so the one-value body does not change."""
+    two = build_approvals_body(ApprovalFilters(status=["expired", "open-ended"]), **KW)
+    expired = _filters(build_approvals_body(ApprovalFilters(status=["expired"]), **KW))[-1]
+    open_ended = _filters(build_approvals_body(ApprovalFilters(status=["open-ended"]), **KW))[-1]
+    assert _filters(two)[-1] == {
+        "bool": {"should": [expired, open_ended], "minimum_should_match": 1}
+    }
+    excluded = build_approvals_body(ApprovalFilters(exclude_status=["expired", "active"]), **KW)
+    active = _filters(build_approvals_body(ApprovalFilters(status=["active"]), **KW))[-1]
+    assert _must_not(excluded)[1:] == [expired, active]
+    # an empty list is no filter, never a clause that matches nothing
+    assert build_approvals_body(ApprovalFilters(status=[], created_by=[]), **KW) == (
+        build_approvals_body(ApprovalFilters(), **KW)
+    )
+
+
+def test_the_approver_count_leaves_out_the_approver_filter_and_nothing_else_does() -> None:
+    """issue 952: the rows and the total keep the approver filter (post_filter), the
+    approver count does not, and the status and scanner counts put it back."""
+    body = build_approvals_body(ApprovalFilters(created_by=["lead"], scanner="trivy"), **KW)
+    approver = {"bool": {"filter": [{"terms": {"created_by": ["lead"]}}]}}
+    assert body["post_filter"] == approver
+    assert not any("created_by" in str(c) for c in _filters(body))
+    assert {"term": {"cluster_id": "c-1"}} in _filters(body)  # the tenant stays in the query
+    assert body["aggs"]["created_by"] == {"terms": {"field": "created_by", "size": 32}}
+    for field in ("status", "scanner"):
+        assert body["aggs"][field]["filter"] == approver
+        assert "filters" in body["aggs"][field]["aggs"]["values"]
+    # the wrapped buckets reach the screen in the same shape as the plain ones
+    shaped = shape_facets(
+        {
+            "status": {"doc_count": 1, "values": {"buckets": {"active": {"doc_count": 1}}}},
+            "scanner": {"doc_count": 1, "values": {"buckets": {"trivy": {"doc_count": 1}}}},
+            "created_by": {"buckets": [{"key": "lead", "doc_count": 1}]},
+        }
+    )
+    assert shaped["status"] == [{"key": "active", "count": 1}]
+    assert shaped["scanner"] == [{"key": "trivy", "count": 1}]
 
 
 def test_derive_status_agrees_with_the_clause_that_filters_on_it() -> None:
