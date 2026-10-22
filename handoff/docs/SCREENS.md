@@ -521,6 +521,13 @@ struck-through / expired) · when. Row → finding detail's "Decisions on this C
 keeps the rail's values with "-" for each count, since the counts come with the rows (operator
 ruling 2026-10-13, issue 833).
 
+**Filters (issue 952):** Status and Approver take several values. A second pick adds the value,
+and the pill reads "is one of" (or "is none of" in exclude mode). Scanner and the CVE search take
+one value, as on Findings. The Approver counts leave out the Approver filter, so a picked approver
+does not hide the others. The Status counts follow the pick, as Severity does on Findings. A
+filter stops at 32 values, the API cap, and the rail and the edit box show "A filter takes at most
+32 values." The queue table is `components/approvals/ApprovalsTable.vue`.
+
 **Changed vs SCREENS.md:** decisions shape replaces approval fields (V4-DELTA-2); capability
 gate + nav hiding (A-4); revoke+new editing (D40).
 
@@ -572,6 +579,12 @@ A refused read follows the Findings rules in §3 (issue 833): the rows clear, a 
 page stays put with Prev, a 429 says busy and a 410 says the results expired, an older answer
 never replaces a newer one, and refused filter counts alone leave the rows and show "-" in the
 rail (operator ruling 2026-10-12: F9's rule applies here too).
+
+**Filters (issue 952):** Entity, Action and User take several values. A second pick adds the
+value, and the pill reads "is one of" (or "is none of" in exclude mode). The User counts leave out
+the User filter, so a picked user does not hide the others. The Entity and Action counts and the
+activity chart follow every filter, as Severity does on Findings. A filter stops at 32 values, the
+API cap, and the rail and the edit box show "A filter takes at most 32 values."
 
 **Default view (issue 681):** the sidebar and command palette open the log at
 `/audit?action=!login`, so it starts with a removable "Action is not Login" pill and the first

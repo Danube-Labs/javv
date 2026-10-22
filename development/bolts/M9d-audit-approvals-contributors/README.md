@@ -51,6 +51,13 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
 - VEX import (decision-from-VEX) → v1.1.
 
 ## Updates
+- **2026-10-22 — several values per filter (issue 952, rulings on the issue):** on the Audit log,
+  Entity, Action and User take several values; on Approvals, Status and Approver do. Scanner and
+  the CVE search stay one value, as on Findings. The User and Approver counts leave out their own
+  filter, so a pick does not hide the other people; Entity, Action and Status counts follow the
+  pick, as Severity and State do on Findings. A filter stops at 32 values, the API cap. The
+  Approvals queue table moved to `components/approvals/ApprovalsTable.vue` (the view had 505
+  lines). PR A (#960) is the backend and the contract, PR B the screens.
 - **2026-07-13 — slice 4 (Approvals) rulings + adaptations:**
   - Five pre-build decisions RULED (operator, on the #38 plan): rail trimmed v1 · band lens =
     decision-activity audit strip (`entity_type=decision` — create+revoke are its only actions) ·
