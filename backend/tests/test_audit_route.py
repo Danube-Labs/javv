@@ -1,10 +1,11 @@
 """GET /api/v1/audit (M8c slice 1, #240) — the plain-session audit read.
 
 Contract pins: session required (401 anonymous); ordering is the `(@timestamp, event_id)` pair in
-one direction (DoD); filters entity_type/action/actor narrow correctly; the cursor walk pages the
-whole log without gaps or duplicates and A-m1 semantics hold (tampered cursor → 422, bad order →
-422); tenant isolation (another cluster's rows never appear). Rows are written through the real
-M5b writer — the read must see exactly what the journal contract produces."""
+one direction (DoD); filters entity_type/action/actor narrow correctly, with several values each;
+the cursor walk pages the whole log without gaps or duplicates and A-m1 semantics hold (tampered
+cursor → 422, bad order → 422); tenant isolation (another cluster's rows never appear). Rows are
+written through the real M5b writer — the read must see exactly what the journal contract
+produces."""
 
 import uuid
 from datetime import UTC, datetime
@@ -187,15 +188,19 @@ async def test_a_m1_cursor_and_order_semantics(env) -> None:
     assert r.status_code == 200 and r.json()["data"] == []
 
 
-def test_build_audit_body_is_the_fixed_pair_sort_plus_term_filters() -> None:
-    body = build_audit_body(AuditFilters(entity_type="finding", actor="u1"), size=10, order="asc")
+def test_build_audit_body_is_the_fixed_pair_sort_plus_terms_filters() -> None:
+    body = build_audit_body(
+        AuditFilters(entity_type=["finding"], actor=["u1", "u2"]), size=10, order="asc"
+    )
     assert body["sort"] == [{"@timestamp": {"order": "asc"}}, {"event_id": {"order": "asc"}}]
-    assert {"term": {"entity_type": "finding"}} in body["query"]["bool"]["filter"]
-    assert {"term": {"actor": "u1"}} in body["query"]["bool"]["filter"]
+    assert {"terms": {"entity_type": ["finding"]}} in body["query"]["bool"]["filter"]
+    assert {"terms": {"actor": ["u1", "u2"]}} in body["query"]["bool"]["filter"]
     assert body["track_total_hits"] is True
     with pytest.raises(ValueError):
         build_audit_body(AuditFilters(), size=10, order="sideways")
     assert "query" not in build_audit_body(AuditFilters(), size=10)  # unset filters add nothing
+    # an empty list is no filter, never a clause that matches nothing
+    assert "query" not in build_audit_body(AuditFilters(actor=[], exclude_action=[]), size=10)
 
 
 def test_finding_key_filter_scopes_to_one_finding_and_the_bulk_rows_that_name_it() -> None:
@@ -216,25 +221,53 @@ def test_finding_key_filter_scopes_to_one_finding_and_the_bulk_rows_that_name_it
 def test_exclude_filters_become_must_not_clauses() -> None:
     # issue 349: the negation side of the rail dims — one mode per field, never both
     body = build_audit_body(
-        AuditFilters(exclude_entity_type="finding", exclude_actor="alice"), size=10
+        AuditFilters(exclude_entity_type=["finding"], exclude_actor=["alice", "bob"]), size=10
     )
-    assert {"term": {"entity_type": "finding"}} in body["query"]["bool"]["must_not"]
-    assert {"term": {"actor": "alice"}} in body["query"]["bool"]["must_not"]
+    assert {"terms": {"entity_type": ["finding"]}} in body["query"]["bool"]["must_not"]
+    # issue 952: an exclusion with two values leaves out the rows of either
+    assert {"terms": {"actor": ["alice", "bob"]}} in body["query"]["bool"]["must_not"]
     assert "filter" not in body["query"]["bool"]  # nothing included = no filter clause
 
 
 def test_include_and_exclude_coexist_on_different_fields() -> None:
-    body = build_audit_body(AuditFilters(action="login", exclude_actor="alice"), size=10)
-    assert body["query"]["bool"]["filter"] == [{"term": {"action": "login"}}]
-    assert body["query"]["bool"]["must_not"] == [{"term": {"actor": "alice"}}]
+    body = build_audit_body(AuditFilters(action=["login"], exclude_actor=["alice"]), size=10)
+    assert body["query"]["bool"]["filter"] == [{"terms": {"action": ["login"]}}]
+    assert body["query"]["bool"]["must_not"] == [{"terms": {"actor": ["alice"]}}]
 
 
 def test_facets_and_count_inherit_exclusion_from_the_shared_builder() -> None:
     # the rail counts and the export pre-count must describe the SAME lens as the walk
     from backend.query.audit import build_audit_facets_body
 
-    facets = build_audit_facets_body(AuditFilters(exclude_action="login"))
-    assert facets["query"]["bool"]["must_not"] == [{"term": {"action": "login"}}]
+    facets = build_audit_facets_body(AuditFilters(exclude_action=["login"]))
+    assert facets["query"]["bool"]["must_not"] == [{"terms": {"action": ["login"]}}]
+
+
+def test_the_user_count_leaves_out_the_user_filter_and_nothing_else_does() -> None:
+    """issue 952 ruling 2: a picked user must not hide the other users from the rail, so the
+    actor count runs without the user filter. Entity, action and the activity chart keep the
+    whole lens, user filter included."""
+    from backend.query.audit import build_audit_facets_body
+
+    now = datetime(2026, 7, 10, tzinfo=UTC)
+    lens = AuditFilters(actor=["alice"], exclude_action=["login"])
+    body = build_audit_facets_body(lens, interval="day", window_days=2, now=now)
+    full = build_audit_body(lens, size=0)["query"]
+    # the main query has every filter but the user one
+    assert body["query"] == {"bool": {"must_not": [{"terms": {"action": ["login"]}}]}}
+    assert body["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}
+    for field in ("entity_type", "action"):
+        assert body["aggs"][field] == {
+            "filter": full,
+            "aggs": {"values": {"terms": {"field": field, "size": 32}}},
+        }
+    window = {"range": {"@timestamp": {"gte": "2026-07-08T00:00:00+00:00", "lte": now.isoformat()}}}
+    assert body["aggs"]["activity"]["filter"] == {"bool": {"filter": [full, window]}}
+    assert "date_histogram" in body["aggs"]["activity"]["aggs"]["buckets"]
+    # without a user filter nothing is wrapped: the body is the one it always was
+    plain = build_audit_facets_body(AuditFilters(action=["login"]))
+    assert plain["aggs"]["action"] == {"terms": {"field": "action", "size": 32}}
+    assert plain["query"] == {"bool": {"filter": [{"terms": {"action": ["login"]}}]}}
 
 
 def test_until_bounds_the_walk_at_t() -> None:
@@ -266,6 +299,82 @@ async def test_facets_count_the_rail_dims_tenant_scoped(env) -> None:
     # tenant guard: the other cluster's actor is invisible under cid
     r = await http.get("/api/v1/audit/facets", params={"cluster_id": cid, "actor": theirs})
     assert r.json()["facets"]["action"] == []
+
+
+async def test_several_values_match_any_of_them_at_every_door(env) -> None:
+    """issue 952: `actor=a&actor=b` returns the rows of either user, and the CSV and the counts
+    take the same lens. An exclusion with two values leaves out the rows of both."""
+    http, client = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    a, b, c = (f"u-multi-{uuid.uuid4().hex[:8]}" for _ in range(3))
+    await _journal(client, cid, n=2, actor=a, action="assign")
+    await _journal(client, cid, n=3, actor=b, action="note")
+    await _journal(client, cid, n=1, actor=c, action="assign")
+
+    r = await http.get("/api/v1/audit", params={"cluster_id": cid, "actor": [a, b]})
+    assert r.status_code == 200
+    assert sorted({row["actor"] for row in r.json()["data"]}) == sorted([a, b])
+    assert r.json()["total"]["value"] == 5
+    r = await http.get(
+        "/api/v1/audit", params={"cluster_id": cid, "actor": [a, b, c], "action": ["assign"]}
+    )
+    assert r.json()["total"]["value"] == 3  # OR inside a field, AND across fields
+    r = await http.get(
+        "/api/v1/audit",
+        params={"cluster_id": cid, "actor": [a, b, c], "exclude_action": ["assign", "note"]},
+    )
+    assert r.json()["total"]["value"] == 0
+    r = await http.get("/api/v1/audit/export.csv", params={"cluster_id": cid, "actor": [a, b]})
+    assert r.status_code == 200
+    assert len(r.text.strip().splitlines()) == 1 + 5  # the header, then the same five rows
+
+
+async def test_the_user_count_keeps_the_other_users_and_the_action_count_follows_the_pick(
+    env,
+) -> None:
+    """issue 952 ruling 2 against the store: with one user picked, the user count still lists
+    the others with their real counts, while the action count stays that user's."""
+    http, client = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    a, b = (f"u-count-{uuid.uuid4().hex[:8]}" for _ in range(2))
+    # fleet rows of other tests share the log and the user count is top-32, so a kind of row
+    # of this test's own scopes the lens; it stays in the main query, the user filter does not
+    kind = f"kind-{uuid.uuid4().hex[:8]}"
+    await _journal(client, cid, n=2, actor=a, action="assign", entity_type=kind)
+    await _journal(client, cid, n=3, actor=b, action="note", entity_type=kind)
+    lens = {"cluster_id": cid, "entity_type": [kind]}
+
+    r = await http.get(
+        "/api/v1/audit/facets",
+        params={**lens, "actor": [a], "interval": "day", "window_days": 1},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert {f["key"]: f["count"] for f in body["facets"]["actor"]} == {a: 2, b: 3}
+    assert {f["key"]: f["count"] for f in body["facets"]["action"]} == {"assign": 2}
+    assert {f["key"]: f["count"] for f in body["facets"]["entity_type"]} == {kind: 2}
+    assert sum(day["count"] for day in body["activity"]) == 2  # the chart keeps the user pick
+    # an excluded user stays in the user count too, so it can be taken back out of the filter
+    r = await http.get("/api/v1/audit/facets", params={**lens, "exclude_actor": [a]})
+    assert {f["key"]: f["count"] for f in r.json()["facets"]["actor"]} == {a: 2, b: 3}
+    assert {f["key"]: f["count"] for f in r.json()["facets"]["action"]} == {"note": 3}
+
+
+async def test_a_filter_takes_at_most_32_values_at_every_door(env) -> None:
+    """The cap of the findings filters (issue 949), at all three doors. Each value also keeps
+    the length cap it had as one string."""
+    http, _ = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    users = [f"u-{i}" for i in range(33)]
+    for path in ("/api/v1/audit", "/api/v1/audit/facets", "/api/v1/audit/export.csv"):
+        r = await http.get(path, params={"cluster_id": cid, "actor": users})
+        assert r.status_code == 422, path
+        r = await http.get(path, params={"cluster_id": cid, "exclude_action": users})
+        assert r.status_code == 422, path
+        r = await http.get(path, params={"cluster_id": cid, "entity_type": ["x" * 65]})
+        assert r.status_code == 422, path
+    r = await http.get("/api/v1/audit", params={"cluster_id": cid, "actor": users[:32]})
+    assert r.status_code == 200
 
 
 async def test_fleet_events_are_visible_under_any_cluster(env) -> None:

@@ -9,6 +9,7 @@ Cursor-paged with the A-m1 machinery (`query/audit.py`): opaque cursor, 410 on a
 reserve a per-principal PIT slot (A-m12/#189), same budget as the findings grid."""
 
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 
@@ -31,27 +32,55 @@ from backend.query.audit import (
     CursorExpired,
     audit_tenant_query,
     build_audit_facets_body,
+    facet_aggregation,
     run_audit_search,
 )
-from backend.query.search import cursor_pit_id
+from backend.query.search import (
+    MAX_FILTER_VALUES,
+    FilterValue64,
+    FilterValue128,
+    cursor_pit_id,
+)
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 log = structlog.get_logger()
 
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
+# several values per filter (issue 952), each with the length cap it had as one string
+_Values64 = Annotated[list[FilterValue64] | None, Query(max_length=MAX_FILTER_VALUES)]
+_Values128 = Annotated[list[FilterValue128] | None, Query(max_length=MAX_FILTER_VALUES)]
 
 
-def _reject_conflicting_modes(filters: AuditFilters) -> None:
-    """A field is included OR excluded, never both (issue 349) — the same 422 the findings
-    edge raises, so the negation surfaces answer a malformed request identically instead of
-    silently ANDing a term with its own must_not into zero rows."""
+def _audit_lens(
+    entity_type: _Values64 = None,
+    action: _Values64 = None,
+    actor: _Values128 = None,
+    exclude_entity_type: _Values64 = None,
+    exclude_action: _Values64 = None,
+    exclude_actor: _Values128 = None,
+) -> AuditFilters:
+    """The rail filters, read once for the walk, its counts and its CSV, so the three cannot
+    take different lenses. A field is included OR excluded, never both (issue 349) — the same
+    422 the findings edge raises, instead of silently ANDing a clause with its own must_not
+    into zero rows."""
     for name, inc, exc in (
-        ("entity_type", filters.entity_type, filters.exclude_entity_type),
-        ("action", filters.action, filters.exclude_action),
-        ("actor", filters.actor, filters.exclude_actor),
+        ("entity_type", entity_type, exclude_entity_type),
+        ("action", action, exclude_action),
+        ("actor", actor, exclude_actor),
     ):
-        if inc is not None and exc is not None:
+        if inc and exc:
             raise HTTPException(422, f"{name} and exclude_{name} are mutually exclusive")
+    return AuditFilters(
+        entity_type=entity_type,
+        action=action,
+        actor=actor,
+        exclude_entity_type=exclude_entity_type,
+        exclude_action=exclude_action,
+        exclude_actor=exclude_actor,
+    )
+
+
+AuditLens = Annotated[AuditFilters, Depends(_audit_lens)]
 
 
 @router.get("")
@@ -59,13 +88,8 @@ async def read_audit_log(
     request: Request,
     principal: Authenticated,
     cluster_id: ClusterId,
-    entity_type: Annotated[str | None, Query(max_length=64)] = None,
-    action: Annotated[str | None, Query(max_length=64)] = None,
-    actor: Annotated[str | None, Query(max_length=128)] = None,
+    lens: AuditLens,
     finding_key: Annotated[str | None, Query(max_length=256)] = None,
-    exclude_entity_type: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_action: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_actor: Annotated[str | None, Query(max_length=128)] = None,
     order: Annotated[str, Query(max_length=4)] = "desc",
     size: Annotated[int, Query(ge=1, le=500)] = 50,
     cursor: Annotated[str | None, Query(max_length=4096)] = None,
@@ -77,17 +101,7 @@ async def read_audit_log(
         until = parse_as_of(as_of)  # D28: absent/now = unbounded; a past T = lte bound
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    filters = AuditFilters(
-        entity_type=entity_type,
-        action=action,
-        actor=actor,
-        finding_key=finding_key,
-        until=until,
-        exclude_entity_type=exclude_entity_type,
-        exclude_action=exclude_action,
-        exclude_actor=exclude_actor,
-    )
-    _reject_conflicting_modes(filters)
+    filters = replace(lens, finding_key=finding_key, until=until)
     slot: pit_guard.Slot | None = None  # a cursor-less page opens a fresh PIT and takes a slot
     if cursor is None:
         try:
@@ -138,12 +152,7 @@ async def audit_facets(
     request: Request,
     principal: Authenticated,
     cluster_id: ClusterId,
-    entity_type: Annotated[str | None, Query(max_length=64)] = None,
-    action: Annotated[str | None, Query(max_length=64)] = None,
-    actor: Annotated[str | None, Query(max_length=128)] = None,
-    exclude_entity_type: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_action: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_actor: Annotated[str | None, Query(max_length=128)] = None,
+    lens: AuditLens,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
     interval: Annotated[str | None, Query(max_length=8)] = None,
     window_days: Annotated[int, Query(ge=1, le=365)] = 30,
@@ -154,17 +163,7 @@ async def audit_facets(
     histogram across the picker window (quiet buckets included as zeros)."""
     client = cast(Any, request.app.state.opensearch)
     try:
-        until = parse_as_of(as_of)
-        filters = AuditFilters(
-            entity_type=entity_type,
-            action=action,
-            actor=actor,
-            until=until,
-            exclude_entity_type=exclude_entity_type,
-            exclude_action=exclude_action,
-            exclude_actor=exclude_actor,
-        )
-        _reject_conflicting_modes(filters)
+        filters = replace(lens, until=parse_as_of(as_of))
         body = build_audit_facets_body(filters, interval=interval, window_days=window_days)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -184,7 +183,8 @@ async def audit_facets(
     out: dict[str, Any] = {
         "facets": {
             field: [
-                {"key": b["key"], "count": b["doc_count"], "by_scanner": {}} for b in agg["buckets"]
+                {"key": b["key"], "count": b["doc_count"], "by_scanner": {}}
+                for b in facet_aggregation(agg)["buckets"]
             ]
             for field, agg in aggs.items()
         }
@@ -202,12 +202,7 @@ async def export_audit_csv(
     request: Request,
     principal: Authenticated,
     cluster_id: ClusterId,
-    entity_type: Annotated[str | None, Query(max_length=64)] = None,
-    action: Annotated[str | None, Query(max_length=64)] = None,
-    actor: Annotated[str | None, Query(max_length=128)] = None,
-    exclude_entity_type: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_action: Annotated[str | None, Query(max_length=64)] = None,
-    exclude_actor: Annotated[str | None, Query(max_length=128)] = None,
+    lens: AuditLens,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
 ) -> StreamingResponse:
     """The prototype's Export CSV (M9d): streams the current audit lens — decorated,
@@ -219,16 +214,7 @@ async def export_audit_csv(
         until = parse_as_of(as_of)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    filters = AuditFilters(
-        entity_type=entity_type,
-        action=action,
-        actor=actor,
-        until=until,
-        exclude_entity_type=exclude_entity_type,
-        exclude_action=exclude_action,
-        exclude_actor=exclude_actor,
-    )
-    _reject_conflicting_modes(filters)
+    filters = replace(lens, until=until)
     max_rows = get_settings().export_max_rows
     account_events = holds(principal, "can_manage_users")
     n = await count_audit_lens(
