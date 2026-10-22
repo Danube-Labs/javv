@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { EXPORT_PARAM_KEYS, scheduleParams, unrepresentableKeys } from '@/findings/exportParams'
@@ -50,5 +53,28 @@ describe('unrepresentableKeys (block loudly, never widen silently)', () => {
 
   it('a future lens key the contract lacks blocks by name', () => {
     expect(unrepresentableKeys({ ...LENS, some_new_dim: 'x' })).toEqual(['some_new_dim'])
+  })
+})
+
+describe('EXPORT_PARAM_KEYS and the backend contract (issue 962)', () => {
+  it('has every ExportParams field of openapi.json except format, and nothing else', () => {
+    const openapi = JSON.parse(readFileSync(resolve(process.cwd(), 'openapi.json'), 'utf8'))
+    const backend = Object.keys(openapi.components.schemas.ExportParams.properties)
+      .filter((k) => k !== 'format')
+      .sort()
+    expect([...EXPORT_PARAM_KEYS].sort()).toEqual(backend)
+  })
+
+  it('a lens with the four filters it used to refuse can be scheduled', () => {
+    const lens = {
+      cluster_id: 'c-1',
+      package_name: ['openssl'],
+      exclude_package_name: ['zlib'],
+      exclude_cve_id: ['CVE-2021-3711'],
+      unassigned: true,
+    }
+    expect(unrepresentableKeys(lens)).toEqual([])
+    const { cluster_id: _c, ...lensParams } = lens
+    expect(scheduleParams(lens, 'csv', 'trivy')).toEqual({ format: 'csv', ...lensParams })
   })
 })
