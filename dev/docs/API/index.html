@@ -2879,7 +2879,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/audit</code></td>
 <td>session</td>
-<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>finding_key</code> also returns each bulk change that included the finding (<code>action</code> <code>bulk_triage</code>). Such a row lists the changed findings in <code>target_ids</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. <code>keep_open</code> is as in <code>/findings</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
+<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>entity_type</code>, <code>action</code> and <code>actor</code> take several values, for example <code>actor=a&amp;actor=b</code>, at most 32 for each filter. A row matches when it has one of the values. An <code>exclude_</code> filter with several values leaves out the rows with any of them. <code>finding_key</code> also returns each bulk change that included the finding (<code>action</code> <code>bulk_triage</code>). Such a row lists the changed findings in <code>target_ids</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. <code>keep_open</code> is as in <code>/findings</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -2891,7 +2891,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/audit/facets</code></td>
 <td>session</td>
-<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. With <code>interval</code> (<code>day</code> or <code>hour</code>) and <code>window_days</code>, it also gives <code>activity</code>: the events in each interval.</td>
+<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. The <code>actor</code> counts leave out the <code>actor</code> and <code>exclude_actor</code> filters, so the other users keep their counts. With <code>interval</code> (<code>day</code> or <code>hour</code>) and <code>window_days</code>, it also gives <code>activity</code>: the events in each interval.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3101,8 +3101,13 @@ that fails during your read can show on a later page.</p>
 <li><code>created_by</code>.</li>
 <li><code>scanner</code>: <code>both</code>, <code>trivy</code> or <code>grype</code>.</li>
 </ul>
-<p>Each filter except <code>q</code> has an <code>exclude_</code> form. The answer also has <code>facets</code>: the counts of <code>status</code>,
-<code>created_by</code> and <code>scanner</code> with the same filters. A revoked acceptance is never in the queue.</p>
+<p><code>status</code> and <code>created_by</code> take several values, for example <code>status=expired&amp;status=expiring</code>, at
+most 32 for each filter. An acceptance matches when it has one of the values. <code>q</code> and <code>scanner</code>
+take one value. Each filter except <code>q</code> has an <code>exclude_</code> form. An <code>exclude_</code> filter with several
+values leaves out the acceptances with any of them. The answer also has <code>facets</code>: the counts of
+<code>status</code>, <code>created_by</code> and <code>scanner</code> with the same filters. The <code>created_by</code> counts leave out the
+<code>created_by</code> and <code>exclude_created_by</code> filters, so the other approvers keep their counts. A revoked acceptance is never in the
+queue.</p>
 <p>The CSV export has the same rows. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.
 Two columns are different from the screen:</p>
 <ul>
