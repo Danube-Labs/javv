@@ -4,8 +4,9 @@
  * F-07/F-08). Run-now streams inline (413 past JAVV_EXPORT_MAX_ROWS → offer the schedule
  * path); Schedule enqueues an off-peak report and polls to the signed download link with its
  * expiry. VEX is per-scanner by contract (one scanner per file — per-scanner sacred).
- * Scheduling carries the COMPLETE lens (every ExportParams field); a lens key the contract
- * can't represent BLOCKS scheduling loudly rather than silently widening the export. At
+ * Scheduling carries the COMPLETE lens (every ExportParams field). An export the backend would
+ * refuse, or one with other rows than the screen, is BLOCKED on either tab with the reason
+ * (`exportBlockMessage`, issue 962), never sent and never silently widened. At
  * T<now run-now stays off (inline streams describe current state) but Schedule sends
  * `as_of_t` — the drain reconstructs the rows as-scanned at T (M8b).
  */
@@ -20,7 +21,7 @@ import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
-import { scheduleParams, unrepresentableKeys } from '@/findings/exportParams'
+import { exportBlockMessage, scheduleParams } from '@/findings/exportParams'
 import type { FilterField } from '@/filters/fields.config'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -67,21 +68,25 @@ const lensQuery = computed(() =>
     props.modes ?? {},
   ),
 )
-/** A lens key the schedule contract can't represent BLOCKS scheduling — never silently
- * widens the export past what's on screen (audit F-07). */
-const scheduleBlocked = computed(() => {
-  const offenders = unrepresentableKeys(lensQuery.value)
-  return offenders.length
-    ? `${offenders.join(', ')} filter(s) are not part of scheduled-export params. ` +
-        'Clear them or use Run now.'
-    : null
-})
+/** An export the backend would refuse, or one with other rows than the screen, is BLOCKED on
+ * either tab — never silently widened past what's on screen (audit F-07, issue 962). */
+const blocked = computed(() =>
+  exportBlockMessage(props.fields, lensQuery.value, {
+    schedule: tab.value === 'schedule',
+    historical: props.historical,
+    format: format.value,
+    vexScanner: vexScanner.value,
+  }),
+)
 
 function openDialog() {
   error.value = null
   report.value = null
   // at a past T only the queued path exists — inline streams describe current state
   tab.value = props.historical ? 'schedule' : 'now'
+  // a VEX file speaks for the scanner the screen shows, when it shows one
+  const shown = lensQuery.value.scanner
+  if (shown === 'trivy' || shown === 'grype') vexScanner.value = shown
   open.value = true
 }
 function close() {
@@ -230,10 +235,11 @@ const downloadHref = computed(() =>
             </div>
 
             <template v-if="tab === 'now'">
-              <p class="ex-note">Streams up to the inline cap; a bigger lens gets a 413 and the schedule path.</p>
+              <p v-if="blocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ blocked }}</p>
+              <p v-else class="ex-note">Streams up to the inline cap; a bigger lens gets a 413 and the schedule path.</p>
             </template>
             <template v-else>
-              <p v-if="scheduleBlocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ scheduleBlocked }}</p>
+              <p v-if="blocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ blocked }}</p>
               <p v-else class="ex-note">Runs in the off-peak window; the result keeps for ~24h after completion.</p>
               <div v-if="report" class="report-status">
                 <template v-if="report.status === 'done' && downloadHref">
@@ -257,7 +263,7 @@ const downloadHref = computed(() =>
           <UiButton
             v-if="tab === 'now'"
             variant="primary"
-            :disabled="busy || exporting"
+            :disabled="busy || exporting || !!blocked"
             @click="runNow"
           >
             {{ exporting ? 'Exporting…' : 'Download' }}
@@ -265,7 +271,7 @@ const downloadHref = computed(() =>
           <UiButton
             v-else
             variant="primary"
-            :disabled="busy || exporting || !!scheduleBlocked || report !== null"
+            :disabled="busy || exporting || !!blocked || report !== null"
             @click="schedule"
           >
             {{ busy ? 'Scheduling…' : 'Schedule' }}
