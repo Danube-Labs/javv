@@ -26,6 +26,7 @@ import {
   auditFacetsApiV1AuditFacetsGet,
   readAuditLogApiV1AuditGet,
 } from '@/api/generated'
+import FilterBar from '@/components/filters/FilterBar.vue'
 import { useClusterStore } from '@/stores/cluster'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
@@ -87,6 +88,23 @@ describe('Approvals: Status and Approver take several values', () => {
     const note = w.find('.facet-cap[role="status"]')
     expect(note.exists()).toBe(true)
     expect(note.text()).toBe('A filter takes at most 32 values.')
+    expect(w.findComponent(FilterBar).props('maxValues')).toBe(32) // the edit box says it too
+  })
+
+  it('a cell pick in the queue table adds a second approver', async () => {
+    const row = (id: string, by: string) => ({
+      decision_id: id, cve_id: `CVE-2026-000${id}`, type: 'risk_accepted',
+      scope: { namespaces: [], images: [] }, apply_both_scanners: true, scanner: null,
+      justification: 'x', vex_justification: null, expiry: null, created_by: by,
+      created_at: '2026-10-18T10:00:00Z',
+    })
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValue(
+      ok({ approvals: [row('1', 'ann'), row('2', 'bob')], total: 2, facets: {} }) as never,
+    )
+    const w = await mountAt(ApprovalsView, { approver: 'ann' })
+    await w.find('[aria-label="Filter to Approver bob"]').trigger('click')
+    await flushPromises()
+    expect(lastQuery(approvalListApiV1DecisionsApprovalsGet).created_by).toEqual(['ann', 'bob'])
   })
 })
 
@@ -106,5 +124,6 @@ describe('Audit log: Entity, Action and User take several values', () => {
     expect(lastQuery(readAuditLogApiV1AuditGet).actor).toEqual(forty.slice(0, 32))
     expect(lastQuery(auditFacetsApiV1AuditFacetsGet).actor).toEqual(forty.slice(0, 32))
     expect(w.find('.facet-cap[role="status"]').text()).toBe('A filter takes at most 32 values.')
+    expect(w.findComponent(FilterBar).props('maxValues')).toBe(32)
   })
 })

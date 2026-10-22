@@ -9,8 +9,8 @@
 2. To see the changes of one person, filter by user. To see the changes of a team, select more
    than one user.
 3. To see one type of change, filter by action, for example Bulk triage. One bulk change is one
-   entry in the Audit log. You can select more than one action, for example Acknowledge and
-   Resolve.
+   entry in the Audit log. You can select more than one action, for example Acknowledged and
+   Resolved.
 4. To save the entries as a file, select Export CSV.
 
 ## The history of one finding
