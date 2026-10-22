@@ -164,6 +164,32 @@ async def test_reserved_usernames_are_rejected(admin_env) -> None:
         assert r.status_code == 422, reserved
 
 
+async def test_a_name_with_a_capital_letter_is_refused_and_nothing_is_written(admin_env) -> None:
+    """Issue 965: the user id is the name, so a lower-case-only name makes the create-only write
+    refuse `alice` when `alice` exists, with no second check that two creates could race."""
+    make_http, client = admin_env
+    admin = make_http()
+    await _seed_and_login(admin, client, capabilities=["can_manage_users"])
+    name = _name()
+
+    for typed in (name.capitalize(), name.upper()):
+        r = await admin.post(
+            "/api/v1/admin/users",
+            json={"username": typed, "temp_password": TEMP_PASSWORD, "role": "viewer"},
+        )
+        assert r.status_code == 422, typed
+        assert "a username must be in lower case" in r.text
+        assert typed not in r.text  # the 422 does not send the name back (issue 842)
+        assert not await client.exists(index="system-users", id=typed)
+        assert "user_create" not in await _audit_actions(client, typed)
+
+    r = await admin.post(
+        "/api/v1/admin/users",
+        json={"username": name, "temp_password": TEMP_PASSWORD, "role": "viewer"},
+    )
+    assert r.status_code == 201
+
+
 # --- list ------------------------------------------------------------------------------
 
 
