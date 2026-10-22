@@ -159,10 +159,10 @@ def build_approvals_body(
     """Page + facets in ONE query (the queue is fleet-bounded — one round trip beats two).
     Sort stays the review contract: soonest expiry first, open-ended last.
 
-    The approver count leaves out the approver filter (issue 952, ruling 2), so a picked
+    The approver count leaves out the approver filter (issue 952), so a picked
     approver does not hide the others. The query thus holds every filter but that one, and
     `post_filter` applies it to the rows and the total only. The status and scanner counts
-    put it back, so they still count the whole lens. The cluster filter stays in the query."""
+    put it back, so they still count under every filter. The cluster filter stays in the query."""
     aggs: dict[str, Any] = {
         "status": {
             "filters": {

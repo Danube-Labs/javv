@@ -292,7 +292,7 @@ def build_audit_facets_body(
     the D28 bound (the audit lens): `extended_bounds` renders quiet buckets as zeros, and the
     window's `gte` scopes ONLY the histogram — the rail counts stay whole-lens.
 
-    The `actor` count leaves out the user filter (issue 952, ruling 2), so a picked user does
+    The `actor` count leaves out the user filter (issue 952), so a picked user does
     not hide the others from the list. Entity and action keep their own filter, as severity
     and state do on Findings: their values are a fixed list, so each stays offered."""
     body = build_audit_body(filters, size=0)
@@ -328,7 +328,7 @@ def build_audit_facets_body(
     if not (filters.actor or filters.exclude_actor):
         return body
     # the main query drops the user filter, so the actor count sees every user; each other
-    # aggregation puts the full lens back, so its counts do not change
+    # aggregation puts every filter back, so its counts do not change
     full = body["query"]
     wrapped = build_audit_body(replace(filters, actor=None, exclude_actor=None), size=0)
     wrapped.pop("sort")

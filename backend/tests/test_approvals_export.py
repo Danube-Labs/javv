@@ -370,8 +370,8 @@ async def test_several_approvers_and_statuses_give_the_same_rows_in_the_queue_an
     await _accept(client, cid, cve="CVE-2024-C1", created_by="cy", expiry=now + timedelta(days=60))
     lead = await login_with(LEAD)
 
-    lens = {"cluster_id": cid, "created_by": ["ann", "bob"]}
-    r = await lead.get("/api/v1/decisions/approvals", params=lens)
+    picked = {"cluster_id": cid, "created_by": ["ann", "bob"]}
+    r = await lead.get("/api/v1/decisions/approvals", params=picked)
     assert r.status_code == 200
     queue = r.json()
     assert sorted(a["cve_id"] for a in queue["approvals"]) == [
@@ -388,7 +388,7 @@ async def test_several_approvers_and_statuses_give_the_same_rows_in_the_queue_an
     }
     statuses = {f["key"]: f["count"] for f in queue["facets"]["status"]}
     assert statuses == {"active": 1, "expiring": 0, "expired": 1, "open-ended": 1}
-    r = await lead.get("/api/v1/decisions/approvals/export.csv", params=lens)
+    r = await lead.get("/api/v1/decisions/approvals/export.csv", params=picked)
     assert sorted(row["cve_id"] for row in _rows(r.text)) == [
         a["cve_id"] for a in sorted(queue["approvals"], key=lambda a: a["cve_id"])
     ]

@@ -51,7 +51,7 @@ _Values64 = Annotated[list[FilterValue64] | None, Query(max_length=MAX_FILTER_VA
 _Values128 = Annotated[list[FilterValue128] | None, Query(max_length=MAX_FILTER_VALUES)]
 
 
-def _audit_lens(
+def _audit_filters(
     entity_type: _Values64 = None,
     action: _Values64 = None,
     actor: _Values128 = None,
@@ -59,8 +59,8 @@ def _audit_lens(
     exclude_action: _Values64 = None,
     exclude_actor: _Values128 = None,
 ) -> AuditFilters:
-    """The rail filters, read once for the walk, its counts and its CSV, so the three cannot
-    take different lenses. A field is included OR excluded, never both (issue 349) — the same
+    """The filters, read once for the walk, its counts and its CSV, so the three cannot take
+    different filters. A field is included OR excluded, never both (issue 349) — the same
     422 the findings edge raises, instead of silently ANDing a clause with its own must_not
     into zero rows."""
     for name, inc, exc in (
@@ -80,7 +80,7 @@ def _audit_lens(
     )
 
 
-AuditLens = Annotated[AuditFilters, Depends(_audit_lens)]
+AuditFilterParams = Annotated[AuditFilters, Depends(_audit_filters)]
 
 
 @router.get("")
@@ -88,7 +88,7 @@ async def read_audit_log(
     request: Request,
     principal: Authenticated,
     cluster_id: ClusterId,
-    lens: AuditLens,
+    params: AuditFilterParams,
     finding_key: Annotated[str | None, Query(max_length=256)] = None,
     order: Annotated[str, Query(max_length=4)] = "desc",
     size: Annotated[int, Query(ge=1, le=500)] = 50,
@@ -101,7 +101,7 @@ async def read_audit_log(
         until = parse_as_of(as_of)  # D28: absent/now = unbounded; a past T = lte bound
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    filters = replace(lens, finding_key=finding_key, until=until)
+    filters = replace(params, finding_key=finding_key, until=until)
     slot: pit_guard.Slot | None = None  # a cursor-less page opens a fresh PIT and takes a slot
     if cursor is None:
         try:
@@ -152,7 +152,7 @@ async def audit_facets(
     request: Request,
     principal: Authenticated,
     cluster_id: ClusterId,
-    lens: AuditLens,
+    params: AuditFilterParams,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
     interval: Annotated[str | None, Query(max_length=8)] = None,
     window_days: Annotated[int, Query(ge=1, le=365)] = 30,
@@ -163,7 +163,7 @@ async def audit_facets(
     histogram across the picker window (quiet buckets included as zeros)."""
     client = cast(Any, request.app.state.opensearch)
     try:
-        filters = replace(lens, until=parse_as_of(as_of))
+        filters = replace(params, until=parse_as_of(as_of))
         body = build_audit_facets_body(filters, interval=interval, window_days=window_days)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -202,7 +202,7 @@ async def export_audit_csv(
     request: Request,
     principal: Authenticated,
     cluster_id: ClusterId,
-    lens: AuditLens,
+    params: AuditFilterParams,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
 ) -> StreamingResponse:
     """The prototype's Export CSV (M9d): streams the current audit lens — decorated,
@@ -214,7 +214,7 @@ async def export_audit_csv(
         until = parse_as_of(as_of)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    filters = replace(lens, until=until)
+    filters = replace(params, until=until)
     max_rows = get_settings().export_max_rows
     account_events = holds(principal, "can_manage_users")
     n = await count_audit_lens(

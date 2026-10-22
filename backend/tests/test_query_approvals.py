@@ -122,13 +122,13 @@ def test_exclusions_append_to_the_revoked_guard_never_replace_it() -> None:
     body = build_approvals_body(ApprovalFilters(exclude_status=["expired"]), **KW)
     assert {"exists": {"field": "revoked_at"}} in _must_not(body)
     assert len(_must_not(body)) == 2
-    lens = build_approvals_query(
+    query = build_approvals_query(
         ApprovalFilters(exclude_created_by=["lead"]),
         cluster_id="c-1",
         now=NOW,
         warn_days=7,
     )
-    assert lens["bool"]["must_not"] == [
+    assert query["bool"]["must_not"] == [
         {"exists": {"field": "revoked_at"}},
         {"terms": {"created_by": ["lead"]}},
     ]
@@ -187,17 +187,17 @@ def test_the_export_lens_is_the_page_lens_not_a_second_definition() -> None:
         filters, cluster_id=KW["cluster_id"], now=KW["now"], warn_days=KW["warn_days"]
     )
     assert page["query"] == lens
-    # with an approver filter the page splits the lens into its query and its post_filter, and
-    # the two together are the export's lens: the same clauses, nothing more
+    # with an approver filter the page splits its filters into its query and its post_filter,
+    # and the two together are the export's query: the same clauses, nothing more
     with_approver = ApprovalFilters(status=["expiring"], created_by=["lead", "ops"])
     page = build_approvals_body(with_approver, **KW)
-    lens = build_approvals_query(
+    export = build_approvals_query(
         with_approver, cluster_id=KW["cluster_id"], now=KW["now"], warn_days=KW["warn_days"]
     )
     approver = {"terms": {"created_by": ["lead", "ops"]}}
     assert page["post_filter"] == {"bool": {"filter": [approver]}}
-    assert lens["bool"]["filter"] == [*page["query"]["bool"]["filter"], approver]
-    assert lens["bool"]["must_not"] == page["query"]["bool"]["must_not"]
+    assert export["bool"]["filter"] == [*page["query"]["bool"]["filter"], approver]
+    assert export["bool"]["must_not"] == page["query"]["bool"]["must_not"]
 
 
 def test_several_statuses_match_any_of_them_and_an_exclusion_leaves_out_each() -> None:
@@ -219,7 +219,7 @@ def test_several_statuses_match_any_of_them_and_an_exclusion_leaves_out_each() -
 
 
 def test_the_approver_count_leaves_out_the_approver_filter_and_nothing_else_does() -> None:
-    """issue 952 ruling 2: the rows and the total keep the approver filter (post_filter), the
+    """issue 952: the rows and the total keep the approver filter (post_filter), the
     approver count does not, and the status and scanner counts put it back."""
     body = build_approvals_body(ApprovalFilters(created_by=["lead"], scanner="trivy"), **KW)
     approver = {"bool": {"filter": [{"terms": {"created_by": ["lead"]}}]}}
@@ -230,7 +230,7 @@ def test_the_approver_count_leaves_out_the_approver_filter_and_nothing_else_does
     for field in ("status", "scanner"):
         assert body["aggs"][field]["filter"] == approver
         assert "filters" in body["aggs"][field]["aggs"]["values"]
-    # the wrapped buckets reach the rail in the same shape as the plain ones
+    # the wrapped buckets reach the screen in the same shape as the plain ones
     shaped = shape_facets(
         {
             "status": {"doc_count": 1, "values": {"buckets": {"active": {"doc_count": 1}}}},

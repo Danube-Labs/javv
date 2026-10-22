@@ -244,15 +244,15 @@ def test_facets_and_count_inherit_exclusion_from_the_shared_builder() -> None:
 
 
 def test_the_user_count_leaves_out_the_user_filter_and_nothing_else_does() -> None:
-    """issue 952 ruling 2: a picked user must not hide the other users from the rail, so the
+    """issue 952: a picked user must not hide the other users from the list, so the
     actor count runs without the user filter. Entity, action and the activity chart keep the
-    whole lens, user filter included."""
+    whole set of filters, user filter included."""
     from backend.query.audit import build_audit_facets_body
 
     now = datetime(2026, 7, 10, tzinfo=UTC)
-    lens = AuditFilters(actor=["alice"], exclude_action=["login"])
-    body = build_audit_facets_body(lens, interval="day", window_days=2, now=now)
-    full = build_audit_body(lens, size=0)["query"]
+    filters = AuditFilters(actor=["alice"], exclude_action=["login"])
+    body = build_audit_facets_body(filters, interval="day", window_days=2, now=now)
+    full = build_audit_body(filters, size=0)["query"]
     # the main query has every filter but the user one
     assert body["query"] == {"bool": {"must_not": [{"terms": {"action": ["login"]}}]}}
     assert body["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}
@@ -268,6 +268,29 @@ def test_the_user_count_leaves_out_the_user_filter_and_nothing_else_does() -> No
     plain = build_audit_facets_body(AuditFilters(action=["login"]))
     assert plain["aggs"]["action"] == {"terms": {"field": "action", "size": 32}}
     assert plain["query"] == {"bool": {"filter": [{"terms": {"action": ["login"]}}]}}
+
+
+def test_the_freed_user_count_keeps_the_time_limit_the_tenant_and_the_account_rule() -> None:
+    """issue 952: the user count leaves out only the user filter. The `as_of` limit, the
+    tenant guard and the account rule of issue 892 sit in the main query, which every count
+    runs under, so a viewer's user count never lists a user who only signed in."""
+    from backend.query.audit import audit_tenant_query, build_audit_facets_body
+
+    t = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
+    body = build_audit_facets_body(AuditFilters(actor=["alice"], until=t))
+    guarded = audit_tenant_query("c-1", body, account_events=False)
+    top = guarded["query"]["bool"]
+    main_query = str(guarded["query"])  # the guard wraps the builder's query in its own bool
+    assert str({"range": {"@timestamp": {"lte": t.isoformat()}}}) in main_query
+    assert {"terms": {"entity_type": ["token", "user"]}} in top["must_not"]
+    assert "cluster_id" in str(top["filter"][0])  # the tenant guard
+    assert guarded["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}
+    assert "global" not in str(guarded["aggs"])  # no count escapes the main query
+    # a manager's count has no account rule; the rest stays
+    manager = audit_tenant_query(
+        "c-1", build_audit_facets_body(AuditFilters(actor=["alice"])), account_events=True
+    )
+    assert "must_not" not in manager["query"]["bool"]
 
 
 def test_until_bounds_the_walk_at_t() -> None:
@@ -303,7 +326,7 @@ async def test_facets_count_the_rail_dims_tenant_scoped(env) -> None:
 
 async def test_several_values_match_any_of_them_at_every_door(env) -> None:
     """issue 952: `actor=a&actor=b` returns the rows of either user, and the CSV and the counts
-    take the same lens. An exclusion with two values leaves out the rows of both."""
+    take the same filters. An exclusion with two values leaves out the rows of both."""
     http, client = env
     cid = f"c-audit-{uuid.uuid4().hex[:8]}"
     a, b, c = (f"u-multi-{uuid.uuid4().hex[:8]}" for _ in range(3))
@@ -332,21 +355,21 @@ async def test_several_values_match_any_of_them_at_every_door(env) -> None:
 async def test_the_user_count_keeps_the_other_users_and_the_action_count_follows_the_pick(
     env,
 ) -> None:
-    """issue 952 ruling 2 against the store: with one user picked, the user count still lists
+    """issue 952, against the store: with one user picked, the user count still lists
     the others with their real counts, while the action count stays that user's."""
     http, client = env
     cid = f"c-audit-{uuid.uuid4().hex[:8]}"
     a, b = (f"u-count-{uuid.uuid4().hex[:8]}" for _ in range(2))
     # fleet rows of other tests share the log and the user count is top-32, so a kind of row
-    # of this test's own scopes the lens; it stays in the main query, the user filter does not
+    # of this test's own scopes the rows; it stays in the main query, the user filter does not
     kind = f"kind-{uuid.uuid4().hex[:8]}"
     await _journal(client, cid, n=2, actor=a, action="assign", entity_type=kind)
     await _journal(client, cid, n=3, actor=b, action="note", entity_type=kind)
-    lens = {"cluster_id": cid, "entity_type": [kind]}
+    scope = {"cluster_id": cid, "entity_type": [kind]}
 
     r = await http.get(
         "/api/v1/audit/facets",
-        params={**lens, "actor": [a], "interval": "day", "window_days": 1},
+        params={**scope, "actor": [a], "interval": "day", "window_days": 1},
     )
     assert r.status_code == 200
     body = r.json()
@@ -355,7 +378,7 @@ async def test_the_user_count_keeps_the_other_users_and_the_action_count_follows
     assert {f["key"]: f["count"] for f in body["facets"]["entity_type"]} == {kind: 2}
     assert sum(day["count"] for day in body["activity"]) == 2  # the chart keeps the user pick
     # an excluded user stays in the user count too, so it can be taken back out of the filter
-    r = await http.get("/api/v1/audit/facets", params={**lens, "exclude_actor": [a]})
+    r = await http.get("/api/v1/audit/facets", params={**scope, "exclude_actor": [a]})
     assert {f["key"]: f["count"] for f in r.json()["facets"]["actor"]} == {a: 2, b: 3}
     assert {f["key"]: f["count"] for f in r.json()["facets"]["action"]} == {"note": 3}
 
