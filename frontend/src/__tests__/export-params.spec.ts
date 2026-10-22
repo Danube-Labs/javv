@@ -113,6 +113,8 @@ describe('the block message names filters as the screen does (issue 962)', () =>
     expect(exportBlockMessage(fields, query, { ...SCHEDULE, historical: true })).toBe(
       'A schedule cannot use these filters: Base image. Clear them.',
     )
+    // Run now takes any filter on the screen
+    expect(exportBlockMessage(fields, query, RUN_NOW)).toBeNull()
   })
 
   it('nothing blocks the filters a schedule can carry', () => {

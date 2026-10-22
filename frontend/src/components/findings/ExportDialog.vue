@@ -4,8 +4,9 @@
  * F-07/F-08). Run-now streams inline (413 past JAVV_EXPORT_MAX_ROWS → offer the schedule
  * path); Schedule enqueues an off-peak report and polls to the signed download link with its
  * expiry. VEX is per-scanner by contract (one scanner per file — per-scanner sacred).
- * Scheduling carries the COMPLETE lens (every ExportParams field); a lens key the contract
- * can't represent BLOCKS scheduling loudly rather than silently widening the export. At
+ * Scheduling carries the COMPLETE lens (every ExportParams field). An export the backend would
+ * refuse, or one with other rows than the screen, is BLOCKED on either tab with the reason
+ * (`exportBlockMessage`, issue 962), never sent and never silently widened. At
  * T<now run-now stays off (inline streams describe current state) but Schedule sends
  * `as_of_t` — the drain reconstructs the rows as-scanned at T (M8b).
  */
