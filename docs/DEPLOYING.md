@@ -781,7 +781,7 @@ docker compose exec backend python -m backend.auth.reset_password admin         
 kubectl exec deploy/javv-backend -- python -m backend.auth.reset_password admin  # Helm, release javv
 ```
 
-The command:
+Type the username exactly, in the same case as the user has. The command:
 
 - Shows a temporary password one time, and nothing more. Sign in with it. JAVV then asks for a new
   password before you can do other work.
