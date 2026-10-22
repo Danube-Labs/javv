@@ -103,8 +103,10 @@ The amber is the health ramp's step between fine and down (operator ruling on bu
 ## 0. Login & password change (bolt: **M9a**)
 
 **Data:** `POST /auth/login` (generic 401 — no user-existence hint; `429` lockout after
-`JAVV_LOGIN_MAX_ATTEMPTS`), `POST /auth/password` (the only mutating route a `must_change` session
-may call), `POST /auth/logout`, `GET /auth/me`.
+`JAVV_LOGIN_MAX_ATTEMPTS`, all cases of a name counted together; the username can be typed in any
+case: the backend looks for the name as typed, then in lower case, issue 965),
+`POST /auth/password` (the only mutating route a `must_change` session may call),
+`POST /auth/logout`, `GET /auth/me`.
 **States:** bad-credentials (generic copy), locked-out (429 — "try again later", no countdown
 oracle), forced password change (SEC-6: bootstrap admin / temp password), **server not answering**
 (issue 675: no answer or a `5xx` from the session check, the sign-in or the password change shows
@@ -745,7 +747,12 @@ not reach this page. Rotate it to get a value you can copy.* (operator ruling 20
 **Data:** `GET/POST /api/v1/admin/users`, `PATCH …/{username}/role` (revokes their sessions —
 confirm dialog says so), `PATCH …/{username}/disabled` (**409** on the last enabled admin —
 inline error), `POST …/{username}/password-reset` (temp password + must_change) — all gated
-`can_manage_users`. Reserved usernames `system`/`fleet` → 422 inline.
+`can_manage_users`. A new username has 3 to 64 lower-case letters, digits, dots, underscores or
+hyphens, and is not `system` or `fleet` (issue 965); anything else is a 422. The invite form's
+Username hint says "3 to 64 lower-case letters, digits, dots, underscores or hyphens". A field-check
+422 shows the form's own text inline: "Rejected: a username has 3 to 64 lower-case letters, digits,
+dots, underscores or hyphens. You cannot use system or fleet." Any other refusal, for example the
+409 for a username that exists, shows the backend's message.
 **Roles panel (A-4):** renders the 4 roles as **capability bundles** (viewer — none · triager —
 can_triage · security_lead — + can_accept_audit_final · admin — *), from `system-roles` content.
 The v4 5-role permission matrix is gone.

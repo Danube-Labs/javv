@@ -344,7 +344,7 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
-| 0.8.7 | 18 | 3 and 4 | The note **JAVV refuses a user name with a capital letter** below |
+| 0.8.7 | 18 | 3 and 4 | The note **JAVV refuses a username with a capital letter** below |
 | 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |
 | 0.7.0 | 18 | 3 and 4 | The note **`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`** below |
 | 0.6.2 | 18 | 3 and 4 | The note **JAVV retires clusters that send no scans** below |
@@ -357,24 +357,21 @@ No release up to and including 0.8.0 changed the OpenSearch chart in a way that 
 upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
 of the comments in `values.yaml`, and no value.
 
-### 0.8.7: JAVV refuses a user name with a capital letter
+### 0.8.7: JAVV refuses a username with a capital letter
 
-A new user name must be in lower case. JAVV keeps `Alice` and `alice` as two different users, so
-two user names that are the same except for the case could cause confusion. Users that exist
-keep their names.
+A new username must be in lower case. Before 0.8.7, `Alice` and `alice` could be two different
+users. Users that exist keep their names.
 
-- **New users.** `POST /api/v1/admin/users` gives 422 for a user name with a capital letter. The
-  message is `a username must be in lower case`.
-- **The first admin.** The backend reads `JAVV_BOOTSTRAP_ADMIN_USERNAME` at each start. A value
-  with a capital letter stops the backend, also when the first admin exists. The backend shows
+- **New users.** `POST /api/v1/admin/users` gives 422 for a username with a capital letter, with
+  the message `a username must be in lower case`.
+- **The first admin.** A `JAVV_BOOTSTRAP_ADMIN_USERNAME` with a capital letter stops the backend at
+  each start, also when the first admin exists. The backend shows
   `invalid settings: JAVV_BOOTSTRAP_ADMIN_USERNAME: Value error, a username must be in lower case`.
-- **Sign-in.** A user can type the name in any case. The backend looks for the name as typed, then
-  for the name in lower case. A user whose name has a capital letter still signs in with the name as
-  typed. The sign-in lock counts the failures of all cases of a name together.
-
-If you see this error, set the name in lower case. If no user has that name in lower case, and you
-set `JAVV_BOOTSTRAP_ADMIN_PASSWORD`, the backend makes a new first admin with that name. The
-admin with the old name stays.
+  To fix it, set the name in lower case. If no user has that name, and you set
+  `JAVV_BOOTSTRAP_ADMIN_PASSWORD`, the backend makes a new first admin. The old admin stays.
+- **Sign-in.** A user can type a lower-case username in any case: `ALICE` signs in as `alice`. A
+  user whose name has a capital letter, for example `Alice`, must type the name exactly. The
+  sign-in lock counts the failures of all cases of a name together.
 
 ### 0.8.0: a bootstrap admin password longer than 256 characters stops the backend
 

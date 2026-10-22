@@ -18,7 +18,7 @@ the backend.
 **Prerequisites:**
 
 - bash, `curl` and `jq`.
-- A JAVV user name and password.
+- A JAVV username and password.
 
 **Steps:**
 
@@ -140,8 +140,8 @@ unless `JAVV_SESSION_COOKIE_SECURE` is `false` ([http or https](DEPLOYING.md#htt
 - **Session time:** a session ends `JAVV_SESSION_TTL_HOURS` after the sign-in (default 24), or at
   sign-out. The server decides, not the cookie.
 - **Failed sign-ins:** after `JAVV_LOGIN_MAX_ATTEMPTS` failures (default 5) for one username in
-  `JAVV_LOGIN_LOCKOUT_MINUTES` (default 15), the sign-in answers 429. A successful sign-in sets
-  the count to zero.
+  `JAVV_LOGIN_LOCKOUT_MINUTES` (default 15), the sign-in answers 429. All cases of a name are one
+  count: `Alice` and `alice` count together. A successful sign-in sets the count to zero.
 - **One answer for each failure:** a wrong username, a wrong password, a disabled user and an
   expired session all get the same 401. Thus the answer does not show if a username exists.
 - **The login body:** `POST /auth/login` accepts only `Content-Type: application/json`. A body
