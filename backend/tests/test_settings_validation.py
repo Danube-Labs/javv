@@ -226,3 +226,33 @@ def test_a_bootstrap_password_up_to_the_cap_is_accepted(monkeypatch, length: int
     # under 12 stays allowed: it is a first-login password, changed at once (issue 724)
     monkeypatch.setenv("JAVV_BOOTSTRAP_ADMIN_PASSWORD", "y" * length)
     assert len(get_settings().bootstrap_admin_password) == length
+
+
+# --- the bootstrap admin name (issue 965) ------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Rootadmin", "ROOTADMIN", "system", "ab", "root admin"],
+    ids=["capital", "upper", "reserved", "too-short", "space"],
+)
+async def test_a_bootstrap_name_the_create_route_would_refuse_aborts_startup(
+    monkeypatch, name: str
+) -> None:
+    """The first admin follows the same username rule as every other user. The error names the
+    variable and never holds the value."""
+    from backend.main import create_app
+
+    monkeypatch.setenv("JAVV_BOOTSTRAP_ADMIN_USERNAME", name)
+    app = create_app()
+    with pytest.raises(RuntimeError, match="JAVV_BOOTSTRAP_ADMIN_USERNAME") as caught:
+        async with app.router.lifespan_context(app):
+            pass
+    assert name not in str(caught.value)
+
+
+def test_a_lower_case_bootstrap_name_and_the_default_pass(monkeypatch) -> None:
+    assert get_settings().bootstrap_admin_username == "admin"
+    monkeypatch.setenv("JAVV_BOOTSTRAP_ADMIN_USERNAME", "root.admin-1")
+    get_settings.cache_clear()
+    assert get_settings().bootstrap_admin_username == "root.admin-1"

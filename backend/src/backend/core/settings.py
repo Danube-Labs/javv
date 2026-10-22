@@ -18,10 +18,16 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import SplitResult, urlsplit
 
-from pydantic import Field, SecretStr, ValidationError, model_validator
+from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from backend.auth.passwords import MAX_LENGTH as PASSWORD_MAX_LENGTH
+from backend.auth.usernames import (
+    USERNAME_MAX_LENGTH,
+    USERNAME_MIN_LENGTH,
+    USERNAME_PATTERN,
+    check_username,
+)
 from backend.jobs.schedule import validate_cron
 
 
@@ -87,8 +93,14 @@ class Settings(BaseSettings):
     # bootstrap admin (M5a/SEC-6): password from a mounted k8s Secret; empty = don't seed.
     # Seed-once — rotating the mounted value later has no effect on an existing admin by design.
     # Past the sign-in cap the admin could never sign in, so start-up refuses it (issue 833); the
-    # 12-character minimum does not apply to it (issue 724).
-    bootstrap_admin_username: str = "admin"
+    # 12-character minimum does not apply to it (issue 724). The name follows the create route's
+    # username rule, so the first admin can never be a name that route refuses (issue 965).
+    bootstrap_admin_username: str = Field(
+        default="admin",
+        min_length=USERNAME_MIN_LENGTH,
+        max_length=USERNAME_MAX_LENGTH,
+        pattern=USERNAME_PATTERN,
+    )
     bootstrap_admin_password: str = Field(default="", max_length=PASSWORD_MAX_LENGTH)
     # scheduled reports (M7/#32): results are stored IN OpenSearch (chunked) and TTL-swept.
     export_ttl_hours: int = Field(default=24, ge=1)  # completed export deleted this long after
@@ -119,6 +131,12 @@ class Settings(BaseSettings):
     job_findings_cleanup_cron: str = "0 4 * * *"
     job_cluster_retirement_cron: str = "15 4 * * *"
     job_session_sweep_cron: str = "30 4 * * *"
+
+    # before the pattern, so a capital letter gets the plain "lower case" message, not a regex
+    @field_validator("bootstrap_admin_username", mode="before")
+    @classmethod
+    def _bootstrap_username_rule(cls, v: object) -> object:
+        return check_username(v) if isinstance(v, str) else v
 
     def job_cron(self, kind: str) -> str:
         """The kind's schedule, or "" when it has none (switched off, or `rebuild_state`, which

@@ -47,15 +47,29 @@ class LocalPasswordProvider:
     async def authenticate(
         self, client: AsyncOpenSearch, creds: LoginCredentials, *, prefix: str = ""
     ) -> AuthResult | None:
-        try:
-            doc = (await client.get(index=f"{prefix}{USERS_INDEX}", id=creds.username))["_source"]
-        except NotFoundError:
+        found = await _find_user(client, f"{prefix}{USERS_INDEX}", creds.username)
+        if found is None:
             verify_password(creds.password, DUMMY_HASH)  # timing equalizer — no user oracle
             return None
+        user_id, doc = found
         stored = doc.get("password_hash")
         if doc.get("auth_source", "local") != "local" or not stored:
             verify_password(creds.password, DUMMY_HASH)  # external users have no local password
             return None
         if not verify_password(creds.password, stored) or doc.get("disabled"):
             return None
-        return AuthResult(user_id=creds.username, user=doc)
+        return AuthResult(user_id=user_id, user=doc)
+
+
+async def _find_user(
+    client: AsyncOpenSearch, index: str, typed: str
+) -> tuple[str, dict[str, Any]] | None:
+    """Sign-in accepts a name in any case (RFC 8265's case-mapped lookup, issue 965). New names
+    are lower case only, so the lower-case id is the user; a name stored with a capital letter
+    before that rule still signs in as typed, which is why the exact id is tried first."""
+    for user_id in dict.fromkeys((typed, typed.lower())):
+        try:
+            return user_id, (await client.get(index=index, id=user_id))["_source"]
+        except NotFoundError:
+            continue
+    return None

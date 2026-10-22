@@ -155,6 +155,58 @@ async def test_lockout_answers_429_even_for_the_correct_password(auth_client) ->
     assert r.status_code == 429
 
 
+# --- sign-in in any case (issue 965) ------------------------------------------------
+
+
+async def test_a_name_typed_in_any_case_signs_in_the_lower_case_user(auth_client) -> None:
+    """The session and the answer carry the stored id, never the name as typed: /auth/me loads
+    the user by the session's id, so a typed `U-…` there would not find the user."""
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+
+    r = await _login(http, user.upper())
+
+    assert r.status_code == 200
+    assert r.json()["user"]["username"] == user
+    me = await http.get("/auth/me")
+    assert me.status_code == 200 and me.json()["user"]["username"] == user
+
+
+async def test_the_name_as_typed_wins_over_its_lower_case_twin(auth_client) -> None:
+    """A user with a capital letter from before the lower-case rule still signs in as typed, even
+    when a lower-case twin exists; any other case reaches the lower-case user only."""
+    http, client = auth_client
+    lower = _u() + "ab"  # letters, so the upper and the capitalized forms always differ
+    upper = lower.upper()
+    await _seed_user(client, lower, password="the lower case password")
+    await _seed_user(client, upper, password="the upper case password")
+    try:
+        r = await _login(http, upper, "the upper case password")
+        assert r.status_code == 200 and r.json()["user"]["username"] == upper
+        r = await _login(http, lower.capitalize(), "the lower case password")
+        assert r.status_code == 200 and r.json()["user"]["username"] == lower
+        # the capitalized form is not the stored upper-case id, so it never reaches that user
+        r = await _login(http, lower.capitalize(), "the upper case password")
+        assert r.status_code == 401
+    finally:
+        await client.delete(index="system-users", id=upper, params={"refresh": "true"})
+
+
+async def test_the_lockout_counts_every_case_of_a_name_as_one(auth_client) -> None:
+    """With sign-in in any case, each case of a name tests the same password: one budget."""
+    http, client = auth_client
+    user = _u()
+    await _seed_user(client, user)
+    cases = [user.upper(), user.capitalize(), user, user.swapcase(), user.title()]
+
+    for typed in cases:  # the JAVV_LOGIN_MAX_ATTEMPTS budget, spread over five cases
+        assert (await _login(http, typed, "wrong password xx")).status_code == 401
+
+    assert (await _login(http, user)).status_code == 429
+    assert (await _login(http, user.upper())).status_code == 429
+
+
 async def test_a_sign_in_the_full_disk_blocks_says_the_store_is_read_only(
     auth_client, monkeypatch
 ) -> None:
