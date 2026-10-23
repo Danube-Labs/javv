@@ -35,6 +35,11 @@ Layout unchanged from v4: sidebar (226px slate, lockup → All clusters, grouped
 chip + version line) + topbar (cluster switcher · time picker · global search · bell · avatar).
 Place the real brand SVGs (`brand/lockup.svg`, dark variants in dark chrome) — never approximated.
 
+**Time range, an absolute range (issue 984):** the two date fields take no date after today.
+Apply stays disabled for an end date after today, as it does for a start after the end. A time
+later today reads as now. A later day put dates on the button and the captions that the charts
+did not show.
+
 **Data**
 - `GET /auth/me` — `username`, `role`, `capabilities`, `must_change`. All gating flows from
   `capabilities` (A-4). Nav items whose screen is capability-gated (Approvals, admin Settings
@@ -796,6 +801,9 @@ switcher at once (operator ruling 2026-10-11 on a built A/B, option A; issue 817
 If a mint or rotate succeeds but its reply arrives with a body that could not be read, the token
 exists and its value is lost. An error toast then says: *The token was created, but its value did
 not reach this page. Rotate it to get a value you can copy.* (operator ruling 2026-10-10, issue 749).
+Rotate shows on an active token only (issue 984). The new token takes the old expiry, so an
+expired token needs a new token from Mint token. Revoke stays on an expired token. The server
+answers 409 to a rotation of a revoked or an expired token.
 
 ### 13.6 Users & roles — editable (shipped)
 **Data:** `GET/POST /api/v1/admin/users`, `PATCH …/{username}/role` (revokes their sessions —

@@ -1,11 +1,12 @@
 /**
  * Pins the range-control semantics (#300/#301): range END → global as_of (minute-precise,
  * null when ending now), range SPAN → whole-day windowDays (sub-day quick-selects round UP),
- * strict 24h HH:mm validation, 24-hour labels — never AM/PM.
+ * strict 24h HH:mm validation, 24-hour labels — never AM/PM. A range ends today at the latest:
+ * a later day labelled dates that the charts did not show (issue 984).
  */
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import GlobalTimePicker from '@/components/time-travel/GlobalTimePicker.vue'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -64,7 +65,10 @@ describe('GlobalTimePicker (single range control)', () => {
     expect(store.windowLabel).toContain('14:30')
   })
 
-  it('an absolute range ending in the future stays at T=now (no as_of)', async () => {
+  it('an absolute range ending later today stays at T=now (no as_of)', async () => {
+    // noon, so +1h is still today: a later day is refused (the describe below)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 6, 10, 12, 0))
     const w = mount(GlobalTimePicker)
     const store = useTimeTravelStore()
     const future = new Date(Date.now() + 3_600_000) // +1h local
@@ -78,6 +82,7 @@ describe('GlobalTimePicker (single range control)', () => {
     await w.find('input[aria-label="Range end time (24h)"]').setValue(hm)
     await w.find('.time-abs .time-apply').trigger('click')
     expect(store.t).toBeNull() // ends ahead of now → current state, no as_of
+    expect(store.windowLabel).toMatch(/→/) // applied: the custom range label
     expect(store.windowLabel).not.toMatch(/AM|PM/i)
   })
 
@@ -135,5 +140,45 @@ describe('GlobalTimePicker (single range control)', () => {
     expect(store.t).toBeNull()
     expect(store.windowDays).toBe(30)
     expect(store.windowLabel).toBe('Last 30 days')
+  })
+})
+
+describe('a range that ends after today (issue 984)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 23, 18, 0)) // 23 October, local
+  })
+  afterEach(() => vi.useRealTimers())
+
+  async function pick(w: ReturnType<typeof mount>, fromDay: string, toDay: string) {
+    await open(w)
+    await w.find('input[aria-label="Range start date"]').setValue(fromDay)
+    await w.find('input[aria-label="Range start time (24h)"]').setValue('00:00')
+    await w.find('input[aria-label="Range end date"]').setValue(toDay)
+    await w.find('input[aria-label="Range end time (24h)"]').setValue('00:00')
+  }
+  const apply = (w: ReturnType<typeof mount>) => w.find('.time-abs .time-apply')
+
+  it('the date fields end at today', async () => {
+    const w = mount(GlobalTimePicker)
+    await open(w)
+    for (const label of ['Range start date', 'Range end date'])
+      expect(w.find(`input[aria-label="${label}"]`).attributes('max')).toBe('2026-10-23')
+  })
+
+  it('an end after today keeps Apply disabled, and nothing changes', async () => {
+    const w = mount(GlobalTimePicker)
+    const store = useTimeTravelStore()
+    await pick(w, '2026-10-30', '2026-11-06')
+    expect((apply(w).element as HTMLButtonElement).disabled).toBe(true)
+    await apply(w).trigger('click')
+    expect(store.windowLabel).toBe('Last 30 days')
+  })
+
+  it('a range that ends today applies', async () => {
+    const w = mount(GlobalTimePicker)
+    await pick(w, '2026-10-16', '2026-10-23')
+    expect((apply(w).element as HTMLButtonElement).disabled).toBe(false)
   })
 })

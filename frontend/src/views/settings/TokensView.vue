@@ -278,7 +278,12 @@ const fmt = (iso: string | null) =>
               <td class="fit"><DotWord :tone="TOKEN_STATUS_TONE[tokenStatus(row, now())]" :label="tokenStatus(row, now())" /></td>
               <td class="fit">
                 <span v-if="tokenStatus(row, now()) !== 'revoked'" class="row-actions">
-                  <UiButton :disabled="busy" @click="confirmAction = { kind: 'rotate', row }">Rotate</UiButton>
+                  <!-- the new token takes the old expiry: an expired one is replaced by a mint (issue 984) -->
+                  <UiButton
+                    v-if="tokenStatus(row, now()) === 'active'"
+                    :disabled="busy"
+                    @click="confirmAction = { kind: 'rotate', row }"
+                  >Rotate</UiButton>
                   <UiButton :disabled="busy" @click="confirmAction = { kind: 'revoke', row }">Revoke</UiButton>
                 </span>
               </td>
