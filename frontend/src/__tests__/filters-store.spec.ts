@@ -283,7 +283,7 @@ describe('a pair the API refuses together', () => {
 
   const messages = () => useToastStore().toasts.map((t) => `${t.kind}: ${t.message}`)
 
-  it('Unassigned from the rail clears the Assignee values and says so', () => {
+  it('a click on Unassigned clears the Assignee values and says so', () => {
     const s = usePaired()
     s.toggle('assignee', 'bob')
     s.toggle('assignee', 'ana')
@@ -296,7 +296,7 @@ describe('a pair the API refuses together', () => {
     ])
   })
 
-  it('an Assignee pick from the rail or the bar turns Unassigned off and keeps other flags', () => {
+  it('an Assignee pick in the filter list or bar turns Unassigned off and keeps other flags', () => {
     const s = usePaired()
     s.toggle('attr', 'kev')
     s.toggle('attr', 'unassigned')
@@ -344,6 +344,21 @@ describe('a pair the API refuses together', () => {
     expect(s.selections.assignee).toEqual(['bob'])
     expect(s.selections.attr).toEqual(['unassigned'])
     expect(messages()).toEqual([])
+  })
+
+  it('with both from a link, only a pick of one of the two picks a winner', () => {
+    const s = usePaired()
+    s.fromQuery({ assignee: 'bob,ana', attr: 'unassigned' })
+    s.toggle('attr', 'kev')
+    s.toggle('attr', 'kev')
+    s.toggle('assignee', 'ana') // a removed value is not a pick
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual(['unassigned'])
+    expect(messages()).toEqual([])
+    s.toggle('assignee', 'eve')
+    expect(s.selections.assignee).toEqual(['bob', 'eve'])
+    expect(s.selections.attr).toEqual([])
+    expect(messages()).toHaveLength(1)
   })
 
   it('a store with no pairs keeps both (every other screen)', () => {

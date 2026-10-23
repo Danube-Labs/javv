@@ -38,6 +38,7 @@ import {
 import AuditTable from '@/components/audit/AuditTable.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { FAILURE_COPY } from '@/findings/failureCopy'
 import { APPROVAL_FIELDS } from '@/approvals/fields.config'
 import { AUDIT_FIELDS } from '@/audit/fields.config'
 import { useAuditStore } from '@/stores/audit'
@@ -46,6 +47,7 @@ import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useFindingsStore } from '@/stores/findings'
 import { useTimeTravelStore } from '@/stores/timeTravel'
+import { useToastStore } from '@/stores/toast'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
 import ContributorsView from '@/views/ContributorsView.vue'
@@ -57,7 +59,7 @@ import ImagesView from '@/views/ImagesView.vue'
 
 const CLUSTER = 'c-k3d-0001'
 
-async function mountRouted(component: Component, props: Record<string, unknown> = {}) {
+async function mountRouted(component: Component, props: Record<string, unknown> = {}, path = '/') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -65,7 +67,7 @@ async function mountRouted(component: Component, props: Record<string, unknown> 
       { path: '/:any(.*)*', component: { template: '<div />' } },
     ],
   })
-  await router.push('/')
+  await router.push(path)
   return mount(component, { props, global: { plugins: [router, [PrimeVue, { unstyled: true }]], stubs: { EChart: true } } })
 }
 
@@ -569,5 +571,60 @@ describe('the tables tell a refused read from an empty answer', () => {
     const refused = await mountRouted(AuditTable as Component, { rows: [], loading: false, failed: true })
     expect(refused.text()).toContain('Events could not be loaded.')
     expect(refused.text()).not.toContain('No journaled activity')
+  })
+})
+
+describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
+  const search = () => vi.mocked(searchFindingsApiV1FindingsGet)
+  const lastQuery = () => {
+    const call = search().mock.lastCall
+    if (!call) throw new Error('Findings sent no read')
+    return (call[0] as { query: Record<string, unknown> }).query
+  }
+  let original: ReturnType<ReturnType<typeof search>['getMockImplementation']>
+  beforeEach(() => {
+    original = search().getMockImplementation()
+  })
+  afterEach(() => {
+    search().mockImplementation(original!)
+  })
+
+  it.each([
+    // the route refuses the pair before the past-time reader runs
+    ['a link with both', '/?assignee=bob&attr=unassigned', FAILURE_COPY.bad_filter],
+    // KEV is not in the scan history, so this 422 is about the past time
+    ['a filter the history does not record', '/?attr=kev', FAILURE_COPY.past_t],
+  ])('%s, refused at a past time, gets its own reason', async (_name, path, copy) => {
+    useTimeTravelStore().t = '2026-10-01T00:00:00.000Z'
+    search().mockImplementation(async () => refusedWith(422) as never)
+    const w = await mountRouted(FindingsView as Component, {}, path)
+    await flushPromises()
+    expect(lastQuery().as_of).toBe('2026-10-01T00:00:00.000Z')
+    expect(w.text()).toContain(copy)
+  })
+
+  it('the reason stays the one of the refused read when the time changes', async () => {
+    useTimeTravelStore().t = '2026-10-01T00:00:00.000Z'
+    search().mockImplementation(async () => refusedWith(422) as never)
+    const w = await mountRouted(FindingsView as Component, {}, '/?attr=kev')
+    await flushPromises()
+    search().mockImplementation(() => new Promise(() => {}) as never)
+    useTimeTravelStore().t = null
+    await flushPromises()
+    expect(w.text()).toContain(FAILURE_COPY.past_t)
+  })
+
+  it('a click on Unassigned clears Assignee, says so, and the next read leaves Assignee out', async () => {
+    search().mockImplementation(async () => findingsPage('CVE-2026-0001', 1, null) as never)
+    await mountRouted(FindingsView as Component, {}, '/?assignee=bob')
+    await flushPromises()
+    expect(lastQuery().assignee).toEqual(['bob'])
+    makeFiltersStore('findings-filters', FINDINGS_FIELDS)().toggle('attr', 'unassigned')
+    await flushPromises()
+    expect(lastQuery().assignee).toBeUndefined()
+    expect(lastQuery().unassigned).toBe(true)
+    expect(useToastStore().toasts.map((t) => t.message)).toEqual([
+      "Assignee cleared. Assignee and Unassigned can't be used together.",
+    ])
   })
 })

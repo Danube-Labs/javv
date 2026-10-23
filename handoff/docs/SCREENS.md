@@ -263,8 +263,9 @@ B): Findings refuses the two filters together, so the last pick wins. A click on
 the Assignee values. A pick of an Assignee value, or a change of Assignee from "is not" to "is",
 turns Unassigned off. A message tells the user what changed, for example "Assignee cleared.
 Assignee and Unassigned can't be used together." Assignee "is not" with Unassigned stays, because
-the API accepts it. A link or an old saved view with both filters keeps both, and the grid then
-shows the 422 text (see States).
+the API accepts it. A link that holds both filters keeps both, and the grid shows the 422 text
+(see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
+another filter, or the removal of an Assignee value, keeps both.
 
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in
