@@ -32,7 +32,7 @@ import type { FacetsResponse } from '@/filters/facets'
 import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
-import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
+import { PAST_TIME_UNRECORDED_KEYS, hasAssigneeWithUnassigned } from '@/findings/exportParams'
 import { captureLens } from '@/findings/savedViews'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { FAILURE_COPY, failureKind, readFailureCopy, type FailureKind } from '@/findings/failureCopy'
@@ -78,6 +78,7 @@ const facetsQuery = computed(() =>
 )
 
 let facetsSeq = 0
+const UNRECORDED = new Set<string>(PAST_TIME_UNRECORDED_KEYS)
 async function loadFacets(q: typeof facetsQuery.value) {
   if (!q) return
   const mine = ++facetsSeq
@@ -87,7 +88,12 @@ async function loadFacets(q: typeof facetsQuery.value) {
   })
   if (mine !== facetsSeq) return // a newer read owns the rail now
   if (response.response?.ok && response.data) {
-    facets.value = (response.data as { facets: FacetsResponse }).facets
+    const counts = (response.data as { facets: FacetsResponse }).facets
+    // the scan history does not record these, so at a past time their empty lists are no
+    // counts, not counts of 0: left out, they show no count (issue 980)
+    facets.value = q.as_of
+      ? Object.fromEntries(Object.entries(counts).filter(([key]) => !UNRECORDED.has(key)))
+      : counts
     facetsFailed.value = false
   } else {
     facetsFailed.value = true
