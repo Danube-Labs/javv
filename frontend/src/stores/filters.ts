@@ -17,20 +17,49 @@ import type { LocationQuery } from 'vue-router'
 import {
   emptySelections,
   isNegatable,
+  valueLabel,
+  type ExclusivePair,
   type FilterField,
   type Selections,
 } from '@/filters/fields.config'
+import { useToastStore } from '@/stores/toast'
 
 export type FilterMode = 'is' | 'not'
 export type Modes = Record<string, FilterMode>
 
 /** `maxValues` caps a multi field where the API does (Findings: 32, issue 949); a screen that
- * filters in the browser leaves it unset. */
+ * filters in the browser leaves it unset. `exclusive` lists the picks the API refuses together:
+ * the last pick wins, clears the other side, and a message names what it cleared (issue 975). */
 export function makeFiltersStore(
   storeId: string,
   fields: readonly FilterField[],
   maxValues = Number.POSITIVE_INFINITY,
+  exclusive: readonly ExclusivePair[] = [],
 ) {
+  /** After a pick of `value` in `fieldKey`, clear the other side of the pair it completes. Only
+   * the pair's own flag or a value of its field picks a winner, so a link that holds both stays
+   * as it is until the user picks one of the two. */
+  function keepPairsApart(
+    s: { selections: Selections; modes: Modes; clearField: (fieldKey: string) => void },
+    fieldKey: string,
+    value?: string,
+  ) {
+    for (const pair of exclusive) {
+      const flagPicked = fieldKey === pair.flagField && value === pair.flag
+      if (!flagPicked && fieldKey !== pair.field) continue
+      const flagOn = (s.selections[pair.flagField] ?? []).includes(pair.flag)
+      const fieldIs = (s.selections[pair.field] ?? []).length > 0 && (s.modes[pair.field] ?? 'is') === 'is'
+      if (!flagOn || !fieldIs) continue
+      const fieldLabel = fields.find((f) => f.key === pair.field)?.label ?? pair.field
+      const flagField = fields.find((f) => f.key === pair.flagField)
+      const flagLabel = flagField ? valueLabel(flagField, pair.flag) : pair.flag
+      if (flagPicked) s.clearField(pair.field)
+      else s.selections[pair.flagField] = (s.selections[pair.flagField] ?? []).filter((v) => v !== pair.flag)
+      const cleared = flagPicked ? fieldLabel : flagLabel
+      useToastStore().info(`${cleared} cleared. ${fieldLabel} and ${flagLabel} can't be used together.`)
+    }
+  }
+
   return defineStore(storeId, {
     state: () => ({ selections: emptySelections(fields) as Selections, modes: {} as Modes }),
     getters: {
@@ -45,13 +74,16 @@ export function makeFiltersStore(
         const current = this.selections[fieldKey] ?? []
         if (current.includes(value)) {
           this.selections[fieldKey] = current.filter((v) => v !== value)
-        } else if (field.type === 'terms' && !field.multi) {
+          return
+        }
+        if (field.type === 'terms' && !field.multi) {
           this.selections[fieldKey] = [value] // single-value param: replace, never accumulate
         } else if (current.length >= maxValues) {
           return // the API refuses a longer list; the rail and the filter bar say so
         } else {
           this.selections[fieldKey] = [...current, value]
         }
+        keepPairsApart(this, fieldKey, value)
       },
       setText(fieldKey: string, value: string) {
         this.selections[fieldKey] = value.trim() ? [value.trim()] : []
@@ -98,8 +130,10 @@ export function makeFiltersStore(
       setMode(fieldKey: string, mode: FilterMode) {
         const field = fields.find((f) => f.key === fieldKey)
         if (!field || !isNegatable(field)) return
-        if (mode === 'is') delete this.modes[fieldKey]
-        else this.modes[fieldKey] = mode
+        if (mode === 'is') {
+          delete this.modes[fieldKey]
+          keepPairsApart(this, fieldKey)
+        } else this.modes[fieldKey] = mode
       },
       toggleMode(fieldKey: string) {
         this.setMode(fieldKey, (this.modes[fieldKey] ?? 'is') === 'is' ? 'not' : 'is')

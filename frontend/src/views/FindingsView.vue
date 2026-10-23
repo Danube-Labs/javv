@@ -29,12 +29,13 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import { useApi } from '@/composables/useApi'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import type { FacetsResponse } from '@/filters/facets'
-import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
+import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
+import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
 import { captureLens } from '@/findings/savedViews'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
-import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
+import { FAILURE_COPY, failureKind, readFailureCopy, type FailureKind } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
@@ -44,7 +45,12 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
 
-const useFindingsFilters = makeFiltersStore('findings-filters', FINDINGS_FIELDS, MAX_FILTER_VALUES)
+const useFindingsFilters = makeFiltersStore(
+  'findings-filters',
+  FINDINGS_FIELDS,
+  MAX_FILTER_VALUES,
+  FINDINGS_EXCLUSIVE_PAIRS,
+)
 const filters = useFindingsFilters()
 const auth = useAuthStore()
 const clusterStore = useClusterStore()
@@ -116,6 +122,12 @@ const rowsQuery = computed(() =>
 )
 
 let rowsSeq = 0
+// read from the refused query itself, so a change of time or filter while the next read runs
+// cannot change the reason shown for this one. The grid store keeps a refusal across a remount,
+// so the first value comes from what that store and the filters still hold.
+const failedKind = ref<FailureKind>(
+  failureKind(grid.failedStatus, timeTravel.t !== null, hasAssigneeWithUnassigned(rowsQuery.value ?? {})),
+)
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
   const mine = ++rowsSeq
@@ -142,14 +154,16 @@ async function loadRows(q: typeof rowsQuery.value) {
     grid.failedStatus = null
   } else {
     // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
-    grid.setFailed(response.response?.status ?? null)
+    const status = response.response?.status ?? null
+    failedKind.value = failureKind(status, Boolean(q.as_of), hasAssigneeWithUnassigned(q))
+    grid.setFailed(status)
     logger.warn('findings_search_failed', { status: response.response?.status, page: grid.page })
   }
 }
 // the rows' failure names the whole grid; the counts alone failing leaves the rows standing (F9)
 const failureMessage = computed(() =>
   grid.failed
-    ? FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null)]
+    ? FAILURE_COPY[failedKind.value]
     : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 watch(

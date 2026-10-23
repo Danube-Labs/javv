@@ -105,6 +105,15 @@ export type Selections = Record<string, string[]>
 export const emptySelections = (fields: readonly FilterField[]): Selections =>
   Object.fromEntries(fields.map((f) => [f.key, []]))
 
+/** A flag and a field whose include side the backend refuses together (`FILTER_PAIRS` in
+ * backend/src/backend/query/search.py). The exclude side stays free: "assignee is not bob" with
+ * Unassigned is a valid question. */
+export interface ExclusivePair {
+  flagField: string
+  flag: string
+  field: string
+}
+
 /** Findings screen config (FR-12). Owned here; M9b+ screens import, never copy. */
 export const FINDINGS_FIELDS: readonly FilterField[] = [
   // the rail search box writes this — CONTAINS across cve/image/namespace/assignee/package
@@ -164,4 +173,10 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', multi: true, negatable: true },
   { key: 'package', label: 'Package', type: 'text', param: 'package_name', multi: true, negatable: true },
   { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
+]
+
+/** The one pair the Findings filters can send: the store keeps one mode per field, so a field
+ * never goes out with its own `exclude_` side. */
+export const FINDINGS_EXCLUSIVE_PAIRS: readonly ExclusivePair[] = [
+  { flagField: 'attr', flag: 'unassigned', field: 'assignee' },
 ]

@@ -3,9 +3,15 @@
 
 export type FailureKind = 'past_t' | 'bad_filter' | 'busy' | 'expired' | 'backend'
 
-export function failureKind(status: number | null, rewound: boolean): FailureKind {
+/** `refusedPair`: the refused query held Assignee with Unassigned. The route refuses that pair
+ * before the past-time reader runs, so its 422 is never about the past time (issue 975). */
+export function failureKind(
+  status: number | null,
+  rewound: boolean,
+  refusedPair = false,
+): FailureKind {
   if (status === 501) return 'past_t'
-  if (status === 422) return rewound ? 'past_t' : 'bad_filter'
+  if (status === 422) return rewound && !refusedPair ? 'past_t' : 'bad_filter'
   if (status === 429) return 'busy'
   if (status === 410) return 'expired'
   return 'backend'
@@ -14,7 +20,9 @@ export function failureKind(status: number | null, rewound: boolean): FailureKin
 export const FAILURE_COPY: Record<FailureKind, string> = {
   past_t:
     "This filter isn't answerable at a past point in time. Return to now, or drop the search/attribute filters.",
-  bad_filter: "This search or filter isn't valid: searches need at least 2 characters.",
+  // a 1-character search never gets to the server (the search box stops it), so the text names
+  // the causes that do
+  bad_filter: "These filters can't be used together, or a value isn't valid. Check the filters.",
   busy: 'The search backend is busy. Try again in a few seconds.',
   // the cursor's search context is gone, so the page cannot be asked for again
   expired: 'These results expired. Reload the page to start again.',

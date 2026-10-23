@@ -2,8 +2,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { AUDIT_FIELDS } from '@/audit/fields.config'
-import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
+import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { makeFiltersStore } from '@/stores/filters'
+import { useToastStore } from '@/stores/toast'
 
 const useStore = makeFiltersStore('test-filters', FINDINGS_FIELDS)
 const useAuditStore = makeFiltersStore('test-audit-filters', AUDIT_FIELDS)
@@ -272,5 +273,100 @@ describe('filters store — the API cap of 32 values (issue 949)', () => {
     s.fromQuery({ cve: 'a,!a,!b,b' })
     expect(s.selections.cve).toEqual(['a', 'b'])
     expect(s.modes.cve).toBe('not')
+  })
+})
+
+// issue 975: Findings refuses Assignee with Unassigned, so the last pick clears the other side
+describe('a pair the API refuses together', () => {
+  const usePaired = makeFiltersStore('test-paired-filters', FINDINGS_FIELDS, MAX_FILTER_VALUES, FINDINGS_EXCLUSIVE_PAIRS)
+  beforeEach(() => setActivePinia(createPinia()))
+
+  const messages = () => useToastStore().toasts.map((t) => `${t.kind}: ${t.message}`)
+
+  it('a click on Unassigned clears the Assignee values and says so', () => {
+    const s = usePaired()
+    s.toggle('assignee', 'bob')
+    s.toggle('assignee', 'ana')
+    expect(messages()).toEqual([])
+    s.toggle('attr', 'unassigned')
+    expect(s.selections.attr).toEqual(['unassigned'])
+    expect(s.selections.assignee).toEqual([])
+    expect(messages()).toEqual([
+      "info: Assignee cleared. Assignee and Unassigned can't be used together.",
+    ])
+  })
+
+  it('an Assignee pick in the filter list or bar turns Unassigned off and keeps other flags', () => {
+    const s = usePaired()
+    s.toggle('attr', 'kev')
+    s.toggle('attr', 'unassigned')
+    s.toggle('assignee', 'bob')
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual(['kev'])
+    expect(messages()).toEqual([
+      "info: Unassigned cleared. Assignee and Unassigned can't be used together.",
+    ])
+    s.toggle('assignee', 'ana') // nothing left to clear, so no second message
+    expect(messages()).toHaveLength(1)
+  })
+
+  it('an Assignee pick from a table cell turns Unassigned off', () => {
+    const s = usePaired()
+    s.toggle('attr', 'unassigned')
+    s.pickValue('assignee', 'bob', 'is')
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual([])
+  })
+
+  it('Assignee is not with Unassigned stays, since the API takes it', () => {
+    const s = usePaired()
+    s.pickValue('assignee', 'bob', 'not')
+    s.toggle('attr', 'unassigned')
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.modes.assignee).toBe('not')
+    expect(s.selections.attr).toEqual(['unassigned'])
+    expect(messages()).toEqual([])
+  })
+
+  it('a change of Assignee from is not to is turns Unassigned off', () => {
+    const s = usePaired()
+    s.pickValue('assignee', 'bob', 'not')
+    s.toggle('attr', 'unassigned')
+    s.toggleMode('assignee')
+    expect(s.modes.assignee).toBeUndefined()
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual([])
+  })
+
+  it('a link with both keeps both, so the grid shows the 422 text', () => {
+    const s = usePaired()
+    s.fromQuery({ assignee: 'bob', attr: 'unassigned' })
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual(['unassigned'])
+    expect(messages()).toEqual([])
+  })
+
+  it('with both from a link, only a pick of one of the two picks a winner', () => {
+    const s = usePaired()
+    s.fromQuery({ assignee: 'bob,ana', attr: 'unassigned' })
+    s.toggle('attr', 'kev')
+    s.toggle('attr', 'kev')
+    s.toggle('assignee', 'ana') // a removed value is not a pick
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual(['unassigned'])
+    expect(messages()).toEqual([])
+    s.toggle('assignee', 'eve')
+    expect(s.selections.assignee).toEqual(['bob', 'eve'])
+    expect(s.selections.attr).toEqual([])
+    expect(messages()).toHaveLength(1)
+  })
+
+  it('a store with no pairs keeps both (every other screen)', () => {
+    const s = useStore()
+    s.toggle('assignee', 'bob')
+    s.toggle('attr', 'unassigned')
+    expect(s.selections.assignee).toEqual(['bob'])
+    expect(s.selections.attr).toEqual(['unassigned'])
+    expect(messages()).toEqual([])
   })
 })

@@ -258,6 +258,15 @@ it. A pick from a table cell adds the value, and the same pick again removes it.
 commas adds each value. A filter takes at most 32 values (the API limit), and the edit box says so
 when the list is full.
 
+**Assignee with Unassigned** (operator ruling 2026-10-23 on a built specimen, issue 975, option
+B): Findings refuses the two filters together, so the last pick wins. A click on Unassigned clears
+the Assignee values. A pick of an Assignee value, or a change of Assignee from "is not" to "is",
+turns Unassigned off. A message tells the user what changed, for example "Assignee cleared.
+Assignee and Unassigned can't be used together." Assignee "is not" with Unassigned stays, because
+the API accepts it. A link that holds both filters keeps both, and the grid shows the 422 text
+(see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
+another filter, or the removal of an Assignee value, keeps both.
+
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in
 the list with their counts. An excluded value also stays in the list, with a line through it and
@@ -304,6 +313,10 @@ the user's open searches until the grid closes it.
   query (issue 833 F1). On all four screens an answer to an older request is dropped, so it never
   replaces a newer one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
   current filters answers.
+- **A refused filter, 422** (operator rulings 2026-10-23, issue 975): the alert says "These
+  filters can't be used together, or a value isn't valid. Check the filters." A 1-character search
+  never gets to the server, so no 422 is about a short search. At a past time, a 422 for Assignee
+  with Unassigned gets the same text. Any other 422 at a past time keeps the past-time text.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
   the alert says "Filter counts could not be loaded." with the reason, and the rail and the
   add-filter menu keep their values with "-" for each count.
