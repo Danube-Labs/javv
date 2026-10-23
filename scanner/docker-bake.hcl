@@ -8,7 +8,7 @@ variable "REGISTRY" {
   default = "ghcr.io/danube-labs"
 }
 variable "TRIVY_VERSIONS" {
-  default = "0.76.0,0.70.0"
+  default = "0.76.0,0.76.1,0.70.0"
 }
 variable "GRYPE_VERSIONS" {
   default = "0.120.1,0.114.0"
