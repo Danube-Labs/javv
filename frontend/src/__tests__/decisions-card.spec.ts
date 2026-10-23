@@ -2,10 +2,11 @@
  * The decisions card per role (issue 892, ruling 2 as changed to option 1, and ruling 5): "New
  * decision" makes a risk-accept, so only can_accept_audit_final sees it; a triager revokes a
  * not-affected decision but never a risk-accept or an ignore rule; an ignore rule wears the
- * "Risk accepted" tag, because that is the state it gives the finding.
+ * "Risk accepted" tag, because that is the state it gives the finding. A decision past its
+ * expiry has no effect: it reads "expired", struck through, with no Revoke (issue 984).
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import DecisionsCard, { type DecisionRow } from '@/components/triage/DecisionsCard.vue'
 
@@ -52,5 +53,46 @@ describe('the decisions card per role', () => {
       .findAll('tbody tr')
       .map((row) => row.find('td').text())
     expect(tags).toEqual(['Not affected', 'Risk accepted', 'Risk accepted', 'Not affected'])
+  })
+})
+
+describe('a decision past its expiry (issue 984)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-23T12:00:00Z'))
+  })
+  afterEach(() => vi.useRealTimers())
+
+  const rows: DecisionRow[] = [
+    { decision_id: 'd-old', type: 'risk_accepted', created_by: 'lead', expiry: '2026-09-30' },
+    { decision_id: 'd-today', type: 'risk_accepted', created_by: 'lead', expiry: '2026-10-23' },
+    { decision_id: 'd-live', type: 'risk_accepted', created_by: 'lead', expiry: '2026-10-24' },
+    { decision_id: 'd-open', type: 'not_affected', created_by: 'tri' },
+  ]
+  const mountLead = () =>
+    mount(DecisionsCard, { props: { decisions: rows, canTriage: true, canAcceptFinal: true, busy: false } })
+  const statusOf = (w: ReturnType<typeof mountLead>) =>
+    Object.fromEntries(
+      w.findAll('tbody tr').map((row) => [row.findAll('td')[4]!.text(), row.findAll('td')[5]!.text()]),
+    )
+
+  it('reads expired, as a date stops at 00:00 UTC on that day', () => {
+    expect(statusOf(mountLead())).toEqual({
+      '2026-10-24': 'active',
+      '-': 'active',
+      '2026-09-30': 'expired',
+      '2026-10-23': 'expired',
+    })
+  })
+
+  it('is struck through like a revoked row, and goes after the active rows', () => {
+    const struck = mountLead()
+      .findAll('tbody tr')
+      .map((row) => row.classes().includes('dec-inactive'))
+    expect(struck).toEqual([false, false, true, true])
+  })
+
+  it('offers no Revoke: it has no effect left to stop', async () => {
+    expect(await revocable(mountLead())).toEqual(['d-live', 'd-open'])
   })
 })

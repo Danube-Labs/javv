@@ -1,12 +1,16 @@
 <script setup lang="ts">
 /**
  * "Decisions on this CVE" (issue 434 refresh) — scoped risk-accepts & not-affected calls.
- * Decisions are immutable (D40): revoked rows stay, struck through; expiry never edits.
+ * Decisions are immutable (D40): revoked rows stay, struck through; expiry never edits. A
+ * decision past its expiry has no effect, so it reads "expired" and is struck through too, with
+ * no Revoke, as the prototype shows (issue 984).
  * The buttons follow the server's rule (issue 892): a risk-accept or an ignore rule is made and
  * revoked with can_accept_audit_final only, a not-affected decision is revoked with can_triage.
  * "New decision" makes a risk-accept, so it is the lead's. Kit skin + DetailCard chrome.
  */
 import { computed } from 'vue'
+
+import { expiryStatus } from '@/approvals/viewModel'
 
 import ScannerTag from '@/components/chips/ScannerTag.vue'
 import StateTag from '@/components/chips/StateTag.vue'
@@ -40,16 +44,25 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ revoke: [id: string]; create: [] }>()
 
-const rows = computed(() =>
-  [...props.decisions].sort((a, b) => (a.revoked_at ? 1 : 0) - (b.revoked_at ? 1 : 0)),
-)
+/** The status a row reads: revoked wins, then a past expiry. */
+function status(d: DecisionRow, nowMs: number): 'active' | 'revoked' | 'expired' {
+  if (d.revoked_at) return 'revoked'
+  return expiryStatus(d.expiry ?? null, nowMs) === 'expired' ? 'expired' : 'active'
+}
+
+const rows = computed(() => {
+  const now = Date.now()
+  return props.decisions
+    .map((d) => ({ ...d, status: status(d, now) }))
+    .sort((a, b) => (a.status === 'active' ? 0 : 1) - (b.status === 'active' ? 0 : 1))
+})
 
 /* display slices through the shared GridPager — decisions accrete forever (immutable +
  * revoked kept), so the card pages instead of walling */
 const { page, size, shown, hasNext, setSize } = usePagedSlice(() => rows.value)
 
-function canRevoke(d: DecisionRow): boolean {
-  if (d.revoked_at) return false
+function canRevoke(d: DecisionRow & { status: string }): boolean {
+  if (d.status !== 'active') return false
   return props.canAcceptFinal || (props.canTriage && d.type === 'not_affected')
 }
 
@@ -81,7 +94,7 @@ function scopeLabel(d: DecisionRow): string {
           <tr v-if="rows.length === 0">
             <td colspan="7" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No decisions on this CVE yet.' }}</td>
           </tr>
-          <tr v-for="d in shown" :key="d.decision_id" :class="{ 'dec-inactive': d.revoked_at }">
+          <tr v-for="d in shown" :key="d.decision_id" :class="{ 'dec-inactive': d.status !== 'active' }">
             <!-- an ignore rule gives the finding risk_accepted: it wears that tag -->
             <td><StateTag :state="d.type === 'not_affected' ? 'not_affected' : 'risk_accepted'" /></td>
             <td class="sm">{{ scopeLabel(d) }}</td>
@@ -92,8 +105,8 @@ function scopeLabel(d: DecisionRow): string {
             <td class="sm"><template v-if="(d.approver ?? d.created_by) != null">{{ d.approver ?? d.created_by }}</template><span v-else class="muted-dash">-</span></td>
             <td class="mono-cell sm"><template v-if="d.expiry != null">{{ d.expiry }}</template><span v-else class="muted-dash">-</span></td>
             <td>
-              <span v-if="!d.revoked_at" class="dec-active">active</span>
-              <span v-else class="dec-revoked">revoked</span>
+              <span v-if="d.status === 'active'" class="dec-active">active</span>
+              <span v-else class="dec-ended">{{ d.status }}</span>
             </td>
             <td class="c">
               <UiButton
@@ -160,7 +173,7 @@ function scopeLabel(d: DecisionRow): string {
   font-weight: 700;
   color: var(--state-resolved-fg);
 }
-.dec-revoked {
+.dec-ended {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--soft);

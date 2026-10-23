@@ -374,6 +374,9 @@ right).
   has that `min`. For an earlier date, "Create decision" stays disabled, and the hint says *Pick
   an expiry date after today.* The server refuses the same dates with the `expiry-passed`
   problem type, and the dialog then shows that text.
+  **Expired (issue 984):** a decision with an expiry in the past has no effect. The card shows it
+  as the prototype does. The status reads "expired", and the row has a line through it and no
+  Revoke button. It goes after the active rows, with the revoked rows.
 
 **Header/meta — renders what exists (B-2/B-3):** CVE mono h1, severity tag (verbatim word), KEV
 tag, meta line = CVSS float · raw EPSS (Grype rows only) · first seen (`first_seen_at`) · last
