@@ -102,7 +102,7 @@ describe('RiskAcceptDialog expiry (issue 984)', () => {
     for (const day of ['2026-09-30', '2026-10-23']) {
       document.body.innerHTML = ''
       await open(day)
-      expect(createButton().disabled, day).toBe(true)
+      expect({ day, disabled: createButton().disabled }).toEqual({ day, disabled: true })
       expect(document.body.textContent).toContain(EXPIRY_REFUSED)
     }
   })
@@ -111,7 +111,7 @@ describe('RiskAcceptDialog expiry (issue 984)', () => {
     for (const day of ['2026-10-24', '']) {
       document.body.innerHTML = ''
       await open(day)
-      expect(createButton().disabled, day).toBe(false)
+      expect({ day, disabled: createButton().disabled }).toEqual({ day, disabled: false })
       expect(document.body.textContent).not.toContain(EXPIRY_REFUSED)
     }
   })

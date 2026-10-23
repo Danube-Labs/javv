@@ -97,7 +97,7 @@ describe('EditDecisionDialog expiry (issue 984)', () => {
     for (const day of ['2026-10-23', '2026-01-01']) {
       document.body.innerHTML = ''
       await open('2026-12-31', { expiry: day })
-      expect(saveButton().disabled, day).toBe(true)
+      expect({ day, disabled: saveButton().disabled }).toEqual({ day, disabled: true })
     }
   })
 
