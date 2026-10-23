@@ -1,6 +1,0 @@
-node_modules/
-# made by record.sh and render.sh
-public/
-out/
-# passwords and the secret key of the video stack
-sec/

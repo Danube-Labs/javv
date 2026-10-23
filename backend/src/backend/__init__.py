@@ -1,1 +1,0 @@
-"""JAVV backend — FastAPI + AsyncOpenSearch."""
