@@ -2982,7 +2982,8 @@ the same filters:</p>
 <li>In a saved view (<code>preset</code>) and in a report (<code>params</code>), the filters that take more than one value
   (<code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code> and their <code>exclude_</code>
   forms) also take one string. JAVV keeps it as a list with that one value.</li>
-<li>One field takes the filter or its <code>exclude_</code> form, not both. Both get 422.</li>
+<li>One field takes the filter or its <code>exclude_</code> form, not both. <code>assignee</code> and <code>unassigned</code> also
+  do not go together. Each of these pairs gets 422, also in a saved view and in a report.</li>
 </ul>
 <h4 id="a-past-time-as_of">A past time: <code>as_of</code><a class="headerlink" href="#a-past-time-as_of" title="Permanent link">&para;</a></h4>
 <p>Each read takes <code>as_of</code>. With no value, <code>now</code> or a time in the future, the read shows the current
@@ -3294,13 +3295,13 @@ in the audit log. Snapshots from before keep the data.</p>
 <td>POST</td>
 <td><code>/api/v1/views</code></td>
 <td>session</td>
-<td>Saves a view. You are its <code>owner</code>. <code>preset</code> takes the <a href="#filters">filters</a>. A value that is not valid gets 422. <code>workbench</code> keeps the table setup: <code>columns</code>, <code>dense</code>, <code>sort</code>, <code>order</code> and <code>window_days</code>.</td>
+<td>Saves a view. You are its <code>owner</code>. <code>preset</code> takes the <a href="#filters">filters</a>. A value that is not valid gets 422, and so does a pair that Findings refuses. <code>workbench</code> keeps the table setup: <code>columns</code>, <code>dense</code>, <code>sort</code>, <code>order</code> and <code>window_days</code>.</td>
 </tr>
 <tr>
 <td>PATCH</td>
 <td><code>/api/v1/views/{view_id}</code></td>
 <td>session, the owner or <code>can_manage_settings</code></td>
-<td>Changes the name, the description, <code>preset</code> or <code>workbench</code>. A different user gets 403. A change by a different request first gets 409.</td>
+<td>Changes the name, the description, <code>preset</code> or <code>workbench</code>. A <code>preset</code> gets the same checks as on <code>POST</code>. A different user gets 403. A change by a different request first gets 409.</td>
 </tr>
 <tr>
 <td>DELETE</td>
