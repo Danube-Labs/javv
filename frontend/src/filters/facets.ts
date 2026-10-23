@@ -38,13 +38,22 @@ const item = (value: string, label: string, bucket?: FacetBucket, hint?: string)
   ...(hint !== undefined ? { hint } : {}),
 })
 
+/** The most buckets the server gives for one field: its own size, or FACET_CAP. */
+export function capOf(field: FilterField): number {
+  return field.type === 'terms' && field.facetCap !== undefined ? field.facetCap : FACET_CAP
+}
+
 /** The bucket of one value of a fixed list. A value with no bucket has 0 rows when the server
- * counted the field and gave fewer than FACET_CAP buckets (issue 980). Otherwise its count is
+ * counted the field and gave fewer buckets than its cap (issue 980). Otherwise its count is
  * not known, so it gets no bucket. */
-function countOf(buckets: FacetBucket[] | undefined, value: string): FacetBucket | undefined {
+function countOf(
+  buckets: FacetBucket[] | undefined,
+  value: string,
+  cap: number,
+): FacetBucket | undefined {
   if (!buckets) return undefined
   const hit = buckets.find((b) => b.key === value)
-  if (hit || buckets.length >= FACET_CAP) return hit
+  if (hit || buckets.length >= cap) return hit
   return { key: value, count: 0, by_scanner: {} }
 }
 
@@ -60,7 +69,7 @@ export function facetItems(
 
   if (field.type === 'flags') {
     return field.values.map((flag) =>
-      item(flag.key, flag.label, countOf(facets[flag.param], 'true'), flag.hint),
+      item(flag.key, flag.label, countOf(facets[flag.param], 'true', FACET_CAP), flag.hint),
     )
   }
 
@@ -68,7 +77,7 @@ export function facetItems(
   if (field.values) {
     // static vocabulary: config order, counts filled in where the server aggregated
     const counted = field.facetKey ? facets[field.facetKey] : undefined
-    return field.values.map((v) => item(v, valueLabel(field, v), countOf(counted, v)))
+    return field.values.map((v) => item(v, valueLabel(field, v), countOf(counted, v, capOf(field))))
   }
   // dynamic vocabulary: the server's buckets, in server order. A picked value can be missing from
   // them: below the top 32, or (a facet that counts with its own filter) excluded. It is added

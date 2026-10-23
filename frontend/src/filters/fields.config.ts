@@ -25,6 +25,9 @@ export interface TermsField extends BaseField {
   multi?: boolean
   /** Field name in the facets response; omit for fields with no aggregation. */
   facetKey?: string
+  /** The most buckets the server gives for this field, when it is not FACET_CAP. It must equal
+   * the size of the server's count for the field (issue 983). */
+  facetCap?: number
   /** Static vocabulary; omit to take values from the facet buckets. Only a field with this list
    * sends its values in lower case (`termQueryValues`). */
   values?: readonly string[]

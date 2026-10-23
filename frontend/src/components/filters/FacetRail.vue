@@ -8,7 +8,7 @@
 import { computed, ref } from 'vue'
 
 import ValueActions from '@/components/filters/ValueActions.vue'
-import { FACET_CAP, facetItems, scannerSplit, type FacetsResponse } from '@/filters/facets'
+import { capOf, facetItems, scannerSplit, type FacetsResponse } from '@/filters/facets'
 import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
 import type { FilterMode, Modes } from '@/stores/filters'
 
@@ -62,12 +62,12 @@ const shown = (g: Group) =>
   !hasMore(g) || isOpen(g)
     ? g.items
     : g.items.filter((it, i) => i < VISIBLE || activeMode(g.field, it.value) !== null)
-/** The server stopped at FACET_CAP buckets for this field. It counts the server's buckets, not
- * the items: a 0 of a fixed list (issue 980) or a picked value added at the end is no bucket. */
+/** The server stopped at the cap of this field. It counts the server's buckets, not the items:
+ * a 0 of a fixed list (issue 980) or a picked value added at the end is no bucket. */
 const capped = (g: Group) =>
   g.field.type === 'terms' &&
   g.field.facetKey !== undefined &&
-  (props.facets[g.field.facetKey]?.length ?? 0) >= FACET_CAP
+  (props.facets[g.field.facetKey]?.length ?? 0) >= capOf(g.field)
 function toggleOpen(g: Group) {
   const next = new Set(expanded.value)
   if (!next.delete(g.field.key)) next.add(g.field.key)
@@ -123,7 +123,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
         {{ isOpen(g) ? 'show fewer' : `show all ${fmt(g.items.length)}` }}
       </button>
       <p v-if="isOpen(g) && capped(g)" class="facet-cap">
-        top 32 by count; search reaches the rest
+        top {{ capOf(g.field) }} by count; search reaches the rest
       </p>
       <p
         v-if="maxValues !== undefined && (selections[g.field.key] ?? []).length >= maxValues"
