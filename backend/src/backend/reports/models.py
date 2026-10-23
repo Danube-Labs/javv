@@ -20,6 +20,7 @@ from backend.query.search import (
     FilterValue128,
     FilterValue256,
     FilterValue512,
+    conflicting_filter_pair,
     one_value_as_list,
 )
 
@@ -96,14 +97,8 @@ class ExportParams(BaseModel):
         # the pairs Findings refuses with a 422, now and at a past time (issue 962): a queued job
         # with one fails when it runs (the search raises), and at a past time the reader applies
         # both sides
-        for name in type(self).model_fields:
-            if not name.startswith("exclude_"):
-                continue
-            include = name.removeprefix("exclude_")
-            if getattr(self, include) is not None and getattr(self, name) is not None:
-                raise ValueError(f"{include} and {name} are mutually exclusive")
-        if self.assignee is not None and self.unassigned is not None:
-            raise ValueError("assignee and unassigned are mutually exclusive")
+        if (message := conflicting_filter_pair(dict(self))) is not None:
+            raise ValueError(message)
         return self
 
 

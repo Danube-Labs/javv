@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from backend.auth.passwords import hash_password
 from backend.core.bootstrap import bootstrap
 from backend.main import create_app
-from backend.query.search import SearchFilters
+from backend.query.search import FILTER_PAIRS, SearchFilters
 from backend.routers.views import ViewPreset
 from os_env import OS_URL, requires_opensearch
 
@@ -151,6 +151,60 @@ async def test_garbage_presets_are_422_and_never_stored(env) -> None:
         assert r.status_code == 422, f"stored a garbage preset: {preset}"
     listed = (await http.get("/api/v1/views")).json()["views"]
     assert all(v["name"] != marker for v in listed)  # nothing landed
+
+
+# one valid value for each side of every pair Findings refuses (issue 969)
+_PAIR_VALUE: dict[str, Any] = {
+    "severity": ["high"],
+    "state": ["open"],
+    "scanner": "trivy",
+    "assignee": ["ana"],
+    "image_repo": ["registry.local/api"],
+    "namespace": ["payments"],
+    "ptype": ["os"],
+    "cve_id": ["CVE-2021-3711"],
+    "package_name": ["openssl"],
+    "unassigned": True,
+}
+
+
+def _pair_preset(first: str, second: str) -> dict[str, Any]:
+    return {first: _PAIR_VALUE[first], second: _PAIR_VALUE[second.removeprefix("exclude_")]}
+
+
+def test_every_pair_findings_refuses_has_a_value_here() -> None:
+    assert {n for pair in FILTER_PAIRS for n in pair if not n.startswith("exclude_")} == set(
+        _PAIR_VALUE
+    )
+
+
+@pytest.mark.parametrize(("first", "second"), FILTER_PAIRS)
+def test_a_preset_refuses_every_pair_findings_refuses(first: str, second: str) -> None:
+    with pytest.raises(ValidationError, match=f"{first} and {second} are mutually exclusive"):
+        ViewPreset.model_validate(_pair_preset(first, second))
+    ViewPreset.model_validate({first: _pair_preset(first, second)[first]})
+    ViewPreset.model_validate({second: _pair_preset(first, second)[second]})
+
+
+async def test_a_pair_findings_refuses_is_422_and_stores_nothing(env) -> None:
+    """issue 969: a view that Findings answers with 422 is not stored, on create or on edit.
+    The first pair is the body Save view sends for Assignee with the Unassigned flag."""
+    http, _, _ = env
+    view = await _create(http, f"pairs-{uuid.uuid4().hex[:8]}", severity=["critical"])
+    marker = f"pair-{uuid.uuid4().hex[:8]}"
+    for preset in (
+        {"assignee": ["ana"], "unassigned": True},
+        {"cve_id": ["CVE-2021-3711"], "exclude_cve_id": ["CVE-2024-0001"]},
+        {"package_name": ["openssl"], "exclude_package_name": ["zlib"]},
+    ):
+        r = await http.post("/api/v1/views", json={"name": marker, "preset": preset})
+        assert r.status_code == 422, preset
+        r = await http.patch(f"/api/v1/views/{view['view_id']}", json={"preset": preset})
+        assert r.status_code == 422, preset
+    listed = (await http.get("/api/v1/views")).json()["views"]
+    assert all(v["name"] != marker for v in listed)
+    stored = next(v for v in listed if v["view_id"] == view["view_id"])
+    assert stored["preset"] == view["preset"]
 
 
 async def test_a_preset_sent_with_one_string_saves_as_a_list(env) -> None:
