@@ -2392,6 +2392,8 @@ a hyphen.</p>
 <li><code>cluster-delete-unfinished</code> on a 409 for a cluster whose delete did not finish: a bring
   back (<code>POST /api/v1/clusters/{cluster_id}/unretire</code>) or a new token
   (<code>POST /api/v1/admin/tokens</code>). Delete the cluster again to finish it.</li>
+<li><code>expiry-passed</code> on a 422 for a decision whose <code>expiry</code> is not after today in UTC, or not
+  after now (<code>POST /api/v1/decisions</code>, <code>PATCH /api/v1/decisions/{decision_id}</code>).</li>
 </ul>
 </li>
 <li><code>title</code>: a short text that names the error.</li>
@@ -2649,7 +2651,7 @@ in a scan cycle.</p>
 <td>POST</td>
 <td><code>/api/v1/admin/tokens/{token_id}/rotate</code></td>
 <td><code>can_manage_tokens</code></td>
-<td>Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token.</td>
+<td>Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. A revoked token and an expired token get 409, and nothing changes. Make a new token for them.</td>
 </tr>
 <tr>
 <td>GET/POST</td>
@@ -3059,7 +3061,7 @@ that fails during your read can show on a later page.</p>
 <td>POST</td>
 <td><code>/api/v1/decisions</code></td>
 <td><code>can_triage</code></td>
-<td>Makes a decision. A <code>risk_accepted</code> or <code>ignore_rule</code> decision also needs <code>can_accept_audit_final</code>. <code>expiry</code> is a date (<code>YYYY-MM-DD</code>), or a date and time with a time zone. JAVV keeps a date and time in UTC.</td>
+<td>Makes a decision. A <code>risk_accepted</code> or <code>ignore_rule</code> decision also needs <code>can_accept_audit_final</code>. <code>expiry</code> is a date (<code>YYYY-MM-DD</code>), or a date and time with a time zone. JAVV keeps a date and time in UTC. A date stops at 00:00 UTC on that day. Thus the date must be after today in UTC, and a date and time must be after now. Else the answer is 422.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3071,7 +3073,7 @@ that fails during your read can show on a later page.</p>
 <td>PATCH</td>
 <td><code>/api/v1/decisions/{decision_id}</code></td>
 <td><code>can_triage</code></td>
-<td>Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. A change from or to <code>risk_accepted</code> or <code>ignore_rule</code> also needs <code>can_accept_audit_final</code>.</td>
+<td>Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. A change from or to <code>risk_accepted</code> or <code>ignore_rule</code> also needs <code>can_accept_audit_final</code>. The new decision keeps the old <code>expiry</code> when the change does not set one. When that expiry is not in the future, the answer is 422, as for <code>POST</code>.</td>
 </tr>
 <tr>
 <td>POST</td>
