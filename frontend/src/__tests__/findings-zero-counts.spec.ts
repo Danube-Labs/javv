@@ -17,7 +17,7 @@ vi.mock('@/api/generated', async (importOriginal) => {
     Object.entries(real).map(([name, value]) => [
       name,
       // every other read stays open: this spec looks only at the filter list
-      typeof value === 'function' ? vi.fn(() => new Promise(() => {})) : value,
+      typeof value === 'function' ? vi.fn<() => Promise<never>>(() => new Promise<never>(() => {})) : value,
     ]),
   )
 })
