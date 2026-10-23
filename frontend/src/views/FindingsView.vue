@@ -123,8 +123,11 @@ const rowsQuery = computed(() =>
 
 let rowsSeq = 0
 // read from the refused query itself, so a change of time or filter while the next read runs
-// cannot change the reason shown for this one
-const failedKind = ref<FailureKind>('backend')
+// cannot change the reason shown for this one. The grid store keeps a refusal across a remount,
+// so the first value comes from what that store and the filters still hold.
+const failedKind = ref<FailureKind>(
+  failureKind(grid.failedStatus, timeTravel.t !== null, hasAssigneeWithUnassigned(rowsQuery.value ?? {})),
+)
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
   const mine = ++rowsSeq

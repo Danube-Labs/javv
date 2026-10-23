@@ -589,22 +589,37 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     search().mockImplementation(original!)
   })
 
+  const PAST = '2026-10-01T00:00:00.000Z'
+
   it.each([
     // the route refuses the pair before the past-time reader runs
-    ['a link with both', '/?assignee=bob&attr=unassigned', FAILURE_COPY.bad_filter],
+    ['a link with both, at a past time', PAST, '/?assignee=bob&attr=unassigned', FAILURE_COPY.bad_filter],
     // KEV is not in the scan history, so this 422 is about the past time
-    ['a filter the history does not record', '/?attr=kev', FAILURE_COPY.past_t],
-  ])('%s, refused at a past time, gets its own reason', async (_name, path, copy) => {
-    useTimeTravelStore().t = '2026-10-01T00:00:00.000Z'
+    ['a filter the history does not record, at a past time', PAST, '/?attr=kev', FAILURE_COPY.past_t],
+    ['the same filter now', null, '/?attr=kev', FAILURE_COPY.bad_filter],
+  ])('%s: a 422 gets its own reason', async (_name, t, path, copy) => {
+    useTimeTravelStore().t = t
     search().mockImplementation(async () => refusedWith(422) as never)
     const w = await mountRouted(FindingsView as Component, {}, path)
     await flushPromises()
-    expect(lastQuery().as_of).toBe('2026-10-01T00:00:00.000Z')
+    expect(lastQuery().as_of).toBe(t ?? undefined)
     expect(w.text()).toContain(copy)
   })
 
+  it('the reason survives leaving Findings and coming back while the next read runs', async () => {
+    useTimeTravelStore().t = PAST
+    search().mockImplementation(async () => refusedWith(422) as never)
+    const first = await mountRouted(FindingsView as Component, {}, '/?attr=kev')
+    await flushPromises()
+    first.unmount()
+    search().mockImplementation(() => new Promise(() => {}) as never)
+    const again = await mountRouted(FindingsView as Component, {}, '/?attr=kev')
+    await flushPromises()
+    expect(again.text()).toContain(FAILURE_COPY.past_t)
+  })
+
   it('the reason stays the one of the refused read when the time changes', async () => {
-    useTimeTravelStore().t = '2026-10-01T00:00:00.000Z'
+    useTimeTravelStore().t = PAST
     search().mockImplementation(async () => refusedWith(422) as never)
     const w = await mountRouted(FindingsView as Component, {}, '/?attr=kev')
     await flushPromises()
@@ -614,7 +629,7 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     expect(w.text()).toContain(FAILURE_COPY.past_t)
   })
 
-  it('a click on Unassigned clears Assignee, says so, and the next read leaves Assignee out', async () => {
+  it('Unassigned turned on in the Findings filters clears Assignee, says so, and the next read leaves Assignee out', async () => {
     search().mockImplementation(async () => findingsPage('CVE-2026-0001', 1, null) as never)
     await mountRouted(FindingsView as Component, {}, '/?assignee=bob')
     await flushPromises()
