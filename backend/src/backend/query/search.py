@@ -16,6 +16,7 @@ body filter is the only guard).
 import base64
 import binascii
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated, Any
@@ -114,6 +115,28 @@ class SearchFilters:
     exclude_ptype: list[str] | None = None
     exclude_cve_id: list[str] | None = None
     exclude_package_name: list[str] | None = None
+
+
+# the filters that cannot be sent together: a filter with its exclude_ side, and a named owner
+# with "unassigned". The findings route, saved views and export settings refuse them with 422
+# from this one list, so a stored view or a queued export cannot hold what the screen refuses.
+FILTER_PAIRS: tuple[tuple[str, str], ...] = (
+    *(
+        (name.removeprefix("exclude_"), name)
+        for name in SearchFilters.__dataclass_fields__
+        if name.startswith("exclude_")
+    ),
+    ("assignee", "unassigned"),
+)
+
+
+def conflicting_filter_pair(values: Mapping[str, Any]) -> str | None:
+    """The message for the first pair with both sides set, or None. Set means not None, as the
+    route reads its query: `unassigned=false` and an empty list are both real values here."""
+    for first, second in FILTER_PAIRS:
+        if values.get(first) is not None and values.get(second) is not None:
+            return f"{first} and {second} are mutually exclusive"
+    return None
 
 
 def has_owner_clause() -> dict[str, Any]:

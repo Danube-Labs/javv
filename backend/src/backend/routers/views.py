@@ -44,6 +44,7 @@ from backend.query.search import (
     FilterValue128,
     FilterValue256,
     FilterValue512,
+    conflicting_filter_pair,
     one_value_as_list,
 )
 from backend.triage.state_machine import STATES
@@ -126,11 +127,10 @@ class ViewPreset(BaseModel):
 
     @model_validator(mode="after")
     def _no_mixing(self) -> "ViewPreset":
-        # a stored preset must satisfy the same rule the live route enforces (issue 349)
-        names = ("severity", "state", "scanner", "assignee", "image_repo", "namespace", "ptype")
-        for name in names:
-            if getattr(self, name) is not None and getattr(self, f"exclude_{name}") is not None:
-                raise ValueError(f"{name} and exclude_{name} are mutually exclusive")
+        # a stored preset must satisfy the same rule the live route enforces (issue 349):
+        # Findings answers 422 to a view that holds a pair (issue 969)
+        if (message := conflicting_filter_pair(dict(self))) is not None:
+            raise ValueError(message)
         return self
 
 
