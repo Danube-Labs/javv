@@ -48,6 +48,16 @@ export function expiryStatus(
   return ms - nowMs <= warnDays * DAY_MS ? 'expiring' : 'active'
 }
 
+/** The first expiry date a decision may take, as `YYYY-MM-DD`: tomorrow in UTC. A date stops at
+ * 00:00 UTC on that day, so the server refuses today and any earlier day (issue 984). Near
+ * midnight the UTC day is not the local one, which is why this reads the UTC calendar. */
+export function firstExpiryDate(nowMs: number): string {
+  return new Date(nowMs + DAY_MS).toISOString().slice(0, 10)
+}
+
+/** What a dialog says when an expiry is before `firstExpiryDate`, or the server refuses one. */
+export const EXPIRY_REFUSED = 'Pick an expiry date after today.'
+
 /** "cluster-wide" | "ns: a, b" | "img: nginx +2" — the D22 scope, compact. */
 export function scopeLabel(scope: ApprovalRow['scope']): string {
   const ns = scope.namespaces ?? []

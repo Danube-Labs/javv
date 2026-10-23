@@ -85,16 +85,25 @@ const parseSide = (date: string, time: string): Date | null => {
   return new Date(`${date}T${time.padStart(5, '0')}:00`)
 }
 
+/* the last day a range can end on is the local today: a later time today reads as now (see
+ * applyCustom), but a later day put dates on the button and the captions that the charts did not
+ * show, since they end now (issue 984) */
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const today = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
 const customValid = computed(() => {
   const from = parseSide(fromDate.value, fromTime.value)
   const to = parseSide(toDate.value, toTime.value)
-  return from !== null && to !== null && from.getTime() < to.getTime()
+  return from !== null && to !== null && from.getTime() < to.getTime() && toDate.value <= today()
 })
 
 function applyCustom() {
   const from = parseSide(fromDate.value, fromTime.value)
   const to = parseSide(toDate.value, toTime.value)
-  if (!from || !to || from.getTime() >= to.getTime()) return
+  if (!from || !to || !customValid.value) return
   // charts take whole days (trends contract int 1..365); the END is minute-precise as_of
   const span = Math.min(365, Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS) || 1))
   const label = `${fmtD(from)} → ${fmtD(to)}`
@@ -172,7 +181,7 @@ function backToNow() {
 
       <div class="dd-head">Absolute range (24h)</div>
       <div class="time-abs">
-        <input v-model="fromDate" class="text-input mono-cell" type="date" aria-label="Range start date" />
+        <input v-model="fromDate" class="text-input mono-cell" type="date" :max="today()" aria-label="Range start date" />
         <input
           v-model="fromTime"
           class="text-input mono-cell hhmm"
@@ -182,7 +191,7 @@ function backToNow() {
           aria-label="Range start time (24h)"
         />
         <span class="time-arrow">→</span>
-        <input v-model="toDate" class="text-input mono-cell" type="date" aria-label="Range end date" />
+        <input v-model="toDate" class="text-input mono-cell" type="date" :max="today()" aria-label="Range end date" />
         <input
           v-model="toTime"
           class="text-input mono-cell hhmm"

@@ -155,3 +155,48 @@ describe('the mint dialog', () => {
     expect(vi.mocked(sdk.listClustersApiV1ClustersGet).mock.calls.length).toBe(reads)
   })
 })
+
+describe('the row actions (issue 984)', () => {
+  const token = (id: string, over: Record<string, unknown>) => ({
+    id,
+    cluster_id: 'c-1',
+    scanner: 'trivy',
+    scope: null,
+    created_by: 'admin',
+    created_at: '2026-10-01T00:00:00+00:00',
+    expiry: null,
+    disabled: false,
+    last_ingest_at: null,
+    ...over,
+  })
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('Rotate shows on an active token only: the new token would take a past expiry', async () => {
+    useAuthStore().user = { username: 'admin', capabilities: ['can_manage_tokens'] } as never
+    vi.mocked(sdk.listClustersApiV1ClustersGet).mockResolvedValue({
+      response: { ok: true },
+      data: { clusters: [] },
+    } as never)
+    vi.mocked(sdk.listTokensApiV1AdminTokensGet).mockResolvedValue({
+      response: { ok: true },
+      data: {
+        total: 3,
+        tokens: [
+          token('t-live', { expiry: '2999-01-01T00:00:00+00:00' }),
+          token('t-old', { expiry: '2020-01-01T00:00:00+00:00' }),
+          token('t-off', { disabled: true }),
+        ],
+      },
+    } as never)
+    const w = mount(TokensView)
+    await flushPromises()
+    const actions = w.findAll('tbody tr').map((tr) =>
+      tr.findAll('.row-actions button').map((b) => b.text()),
+    )
+    expect(actions).toEqual([['Rotate', 'Revoke'], ['Revoke'], []])
+  })
+})
