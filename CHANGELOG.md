@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.7](https://github.com/Danube-Labs/javv-poc/compare/v0.8.6...v0.8.7) (2026-10-23)
+
+
+### Features
+
+* findings image, cve and package filters take several typed values ([#957](https://github.com/Danube-Labs/javv-poc/issues/957)) ([190f538](https://github.com/Danube-Labs/javv-poc/commit/190f5381ad5a522d9a142e9a811e7f767174c5a5))
+* findings namespace, package type and assignee filters take several values ([#956](https://github.com/Danube-Labs/javv-poc/issues/956)) ([de9f942](https://github.com/Danube-Labs/javv-poc/commit/de9f942ed3a502e5ba2db2f6fdb5307ae43b5410))
+* six findings filters take several values in the api ([#953](https://github.com/Danube-Labs/javv-poc/issues/953)) ([a003b62](https://github.com/Danube-Labs/javv-poc/commit/a003b62814e49f942dc4aa009ed6f68ff0880df8))
+* the audit log and approvals filters take several values in the api ([#960](https://github.com/Danube-Labs/javv-poc/issues/960)) ([3886f70](https://github.com/Danube-Labs/javv-poc/commit/3886f70683637f9e2bae587d69cf747b513fa56d))
+* the audit log and approvals screens take several values per filter ([#963](https://github.com/Danube-Labs/javv-poc/issues/963)) ([3df0424](https://github.com/Danube-Labs/javv-poc/commit/3df042449bffa5d0f71c0425ee96e0e4f601ae3b))
+* the images filters accept several namespaces, images and tags ([#951](https://github.com/Danube-Labs/javv-poc/issues/951)) ([5a96102](https://github.com/Danube-Labs/javv-poc/commit/5a96102abfa8c623e14e2270d50e6d32e2865259))
+
+
+### Bug Fixes
+
+* a new username is lower case only, and sign-in accepts any case ([#966](https://github.com/Danube-Labs/javv-poc/issues/966)) ([b5c46f6](https://github.com/Danube-Labs/javv-poc/commit/b5c46f6f589c43a0b97c81325333be9d0e71866d))
+* a picked username keeps its capitals in the filters ([#964](https://github.com/Danube-Labs/javv-poc/issues/964)) ([5d5323a](https://github.com/Danube-Labs/javv-poc/commit/5d5323a31d188b1317b7ba8e8eac468a702bfaee))
+* a saved view refuses the filter pairs that findings refuses ([#974](https://github.com/Danube-Labs/javv-poc/issues/974)) ([5875cd9](https://github.com/Danube-Labs/javv-poc/commit/5875cd99241457793be9f6c045cc830ca02f3e11)), closes [#969](https://github.com/Danube-Labs/javv-poc/issues/969)
+* a scheduled export refuses the filter pairs that findings refuses ([#970](https://github.com/Danube-Labs/javv-poc/issues/970)) ([fa055cc](https://github.com/Danube-Labs/javv-poc/commit/fa055cc2f4cbb1b6d1b3de73642ceec377385ce0)), closes [#962](https://github.com/Danube-Labs/javv-poc/issues/962)
+* the helm test pod of javv-opensearch meets pod security restricted ([#947](https://github.com/Danube-Labs/javv-poc/issues/947)) ([174518c](https://github.com/Danube-Labs/javv-poc/commit/174518cfd9eb76f4ebf4471dd05b8595afba0d78))
+* the invite form says that a username is in lower case ([#967](https://github.com/Danube-Labs/javv-poc/issues/967)) ([40229b3](https://github.com/Danube-Labs/javv-poc/commit/40229b3792121c806ce2289fafe37db2288b9dd4))
+* the scheduled export takes four more filters and names a blocked filter as the screen does ([#971](https://github.com/Danube-Labs/javv-poc/issues/971)) ([06adad5](https://github.com/Danube-Labs/javv-poc/commit/06adad536e44053c4fe90ef56a9c511255570ada)), closes [#962](https://github.com/Danube-Labs/javv-poc/issues/962)
+
 ## [0.8.6](https://github.com/Danube-Labs/javv-poc/compare/v0.8.5...v0.8.6) (2026-10-20)
 
 
