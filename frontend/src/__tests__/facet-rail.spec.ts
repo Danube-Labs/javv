@@ -122,27 +122,41 @@ describe('the rail at the API cap (issue 949)', () => {
   })
 })
 
-describe('the "top 32" note on a fixed list (issue 980)', () => {
-  // the Action list has more values than the server's 32 buckets; with a 0 for each action that
-  // has no events, the list has more counted rows than buckets, so the note counts the buckets
+describe('the "top N" note on a fixed list (issues 980 and 983)', () => {
+  // a fixed list gets a 0 for each value with no rows, so it has more counted rows than buckets:
+  // the note counts the server's buckets against the cap of the field
+  const values = Array.from({ length: 40 }, (_, i) => `v-${i}`)
+  const FIXED: FilterField = { key: 'fixed', label: 'Fixed', type: 'terms', param: 'fixed', facetKey: 'fixed', values }
   const ACTION = AUDIT_FIELDS.find((f) => f.key === 'action')!
-  const openAction = async (facets: FacetsResponse) => {
+  const open = async (field: FilterField, facets: FacetsResponse) => {
     const w = mount(FacetRail, {
-      props: { fields: [ACTION], selections: emptySelections([ACTION]), facets },
+      props: { fields: [field], selections: emptySelections([field]), facets },
     })
     await w.find('.facet-more').trigger('click')
     return w
   }
   const bucket = (key: string) => ({ key, count: 1, by_scanner: {} })
 
-  it('is not shown when the server gave fewer than 32 buckets, though each action has a count', async () => {
-    const w = await openAction({ action: [bucket('login')] })
-    expect(w.findAll('.facet-count')).toHaveLength(AUDIT_ACTIONS.length)
+  it('is not shown when the server gave fewer buckets than the cap, though each value has a count', async () => {
+    const w = await open(FIXED, { fixed: [bucket('v-0')] })
+    expect(w.findAll('.facet-count')).toHaveLength(values.length)
     expect(w.find('.facet-cap').exists()).toBe(false)
   })
 
   it('is shown when the server stopped at 32 buckets', async () => {
-    const w = await openAction({ action: AUDIT_ACTIONS.slice(0, FACET_CAP).map(bucket) })
+    const w = await open(FIXED, { fixed: values.slice(0, FACET_CAP).map(bucket) })
     expect(w.find('.facet-cap').text()).toBe('top 32 by count; search reaches the rest')
+  })
+
+  it('names the cap of the field', async () => {
+    const small: FilterField = { ...FIXED, facetCap: 8 } as FilterField
+    const w = await open(small, { fixed: values.slice(0, 8).map(bucket) })
+    expect(w.find('.facet-cap').text()).toBe('top 8 by count; search reaches the rest')
+  })
+
+  it('is not shown on the Action list with 40 actions, and each action has a count (issue 983)', async () => {
+    const w = await open(ACTION, { action: AUDIT_ACTIONS.slice(0, 40).map(bucket) })
+    expect(w.findAll('.facet-count')).toHaveLength(AUDIT_ACTIONS.length)
+    expect(w.find('.facet-cap').exists()).toBe(false)
   })
 })

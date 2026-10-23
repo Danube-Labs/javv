@@ -2,11 +2,12 @@
  * A value of a fixed list with no rows shows 0 (issue 980). A terms aggregation gives no bucket
  * for a value with no rows, so the rail showed no count for it, while SLA breached and
  * Unassigned (filter aggregations) showed 0. The prototype shows each 0. A count stays unknown
- * when the server did not count the field, or stopped at FACET_CAP buckets before the value.
+ * when the server did not count the field, or stopped at the cap of the field before the value
+ * (FACET_CAP, or the field's own `facetCap`, issue 983).
  */
 import { describe, expect, it } from 'vitest'
 
-import { AUDIT_ACTIONS, AUDIT_FIELDS } from '@/audit/fields.config'
+import { AUDIT_ACTIONS, AUDIT_FIELDS, AUDIT_LIST_CAP } from '@/audit/fields.config'
 import { FACET_CAP, facetItems, type FacetBucket, type FacetsResponse } from '@/filters/facets'
 import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 
@@ -51,16 +52,25 @@ describe('a count of 0 on a fixed list (issue 980)', () => {
     expect(Object.values(countsOf(facetItems(ATTR, {})))).toEqual(Array(6).fill(null))
   })
 
-  it(`an Action list the server stopped at ${FACET_CAP} buckets keeps no count for the rest`, () => {
-    // the audit route counts the top 32 actions, and the list has more: an action outside the
-    // top 32 has rows the server did not count, so a 0 there would be false
-    expect(AUDIT_ACTIONS.length).toBeGreaterThan(FACET_CAP)
-    const top = AUDIT_ACTIONS.slice(0, FACET_CAP).map((a, i) => b(a, 100 - i))
-    const items = facetItems(ACTION, { action: top })!
-    const rest = items.filter((i) => !top.some((t) => t.key === i.value))
-    expect(rest.length).toBe(AUDIT_ACTIONS.length - FACET_CAP)
-    expect(rest.every((i) => i.count === null)).toBe(true)
+  it(`a fixed list the server stopped at ${FACET_CAP} buckets keeps no count for the rest`, () => {
+    // a value outside the buckets has rows the server did not count, so a 0 there would be false
+    const values = Array.from({ length: 40 }, (_, i) => `v-${i}`)
+    const FIXED: FilterField = { key: 'fixed', label: 'Fixed', type: 'terms', param: 'fixed', facetKey: 'fixed', values }
+    const top = values.slice(0, FACET_CAP).map((v, i) => b(v, 100 - i))
+    const items = facetItems(FIXED, { fixed: top })!
     expect(items.filter((i) => i.count !== null)).toHaveLength(FACET_CAP)
+    expect(items.slice(FACET_CAP).every((i) => i.count === null)).toBe(true)
+  })
+
+  it(`the Action list counts up to ${AUDIT_LIST_CAP} buckets, so each action has a count (issue 983)`, () => {
+    // the server gives the Action count AUDIT_LIST_CAP buckets: at 40 actions with events, the
+    // other actions have no events, so they show 0, not an unknown count
+    expect(AUDIT_ACTIONS.length).toBeGreaterThan(FACET_CAP)
+    expect(AUDIT_ACTIONS.length).toBeLessThan(AUDIT_LIST_CAP)
+    const forty = AUDIT_ACTIONS.slice(0, 40).map((a, i) => b(a, 100 - i))
+    const items = facetItems(ACTION, { action: forty })!
+    expect(items.every((i) => i.count !== null)).toBe(true)
+    expect(items.filter((i) => i.count === 0)).toHaveLength(AUDIT_ACTIONS.length - 40)
   })
 
   it('an Action list under the cap shows 0 for each action with no events', () => {
