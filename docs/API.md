@@ -221,6 +221,8 @@ Each answer that is not a success has the same body, with the type `application/
     - `cluster-delete-unfinished` on a 409 for a cluster whose delete did not finish: a bring
       back (`POST /api/v1/clusters/{cluster_id}/unretire`) or a new token
       (`POST /api/v1/admin/tokens`). Delete the cluster again to finish it.
+    - `expiry-passed` on a 422 for a decision whose `expiry` is not after today in UTC, or not
+      after now (`POST /api/v1/decisions`, `PATCH /api/v1/decisions/{decision_id}`).
 - `title`: a short text that names the error.
 - `detail`: on a 422 from a field check, the list of the fields that are not valid, with the
   reason for each. It does not hold the value that you sent. Else it is `null`.

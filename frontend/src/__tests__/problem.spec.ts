@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DELETE_UNFINISHED_TYPE,
   detailOr,
+  EXPIRY_PASSED_TYPE,
   STORE_READ_ONLY_TYPE,
   VALIDATION_TITLE,
 } from '@/api/problem'
@@ -43,6 +44,16 @@ describe('the unfinished delete type', () => {
       'utf8',
     )
     expect(/^DELETE_UNFINISHED_TYPE = "([^"]+)"/m.exec(source)?.[1]).toBe(DELETE_UNFINISHED_TYPE)
+  })
+})
+
+describe('the expiry type', () => {
+  it("is the backend's problem type for a decision expiry that has passed (issue 984)", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), '..', 'backend/src/backend/core/errors.py'),
+      'utf8',
+    )
+    expect(/^EXPIRY_PASSED_TYPE = "([^"]+)"/m.exec(source)?.[1]).toBe(EXPIRY_PASSED_TYPE)
   })
 })
 

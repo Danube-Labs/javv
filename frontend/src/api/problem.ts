@@ -10,6 +10,11 @@ export const STORE_READ_ONLY_TYPE = 'store-read-only'
  * pinned by `problem.spec.ts`). Matched instead of the title, which may be reworded. */
 export const DELETE_UNFINISHED_TYPE = 'cluster-delete-unfinished'
 
+/** The problem `type` of the 422 for a decision whose expiry is not after now (`core/errors.py`,
+ * pinned by `problem.spec.ts`). A 422 from a field check has other causes, so a dialog matches
+ * this type before it names the date (issue 984). */
+export const EXPIRY_PASSED_TYPE = 'expiry-passed'
+
 /** Server messages (409 last-admin, 422 policy) surface VERBATIM — the backend speaks RFC-7807
  * and an HTTPException's text lands in the problem's `title`. Pydantic validation 422s only say
  * "Validation error" (their detail is a repr, not user copy) — those get the caller's fallback.

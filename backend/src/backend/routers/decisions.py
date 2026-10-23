@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from backend.auth.capabilities import accept_final_refusal, holds_accept_final, require_capability
 from backend.auth.principal import Principal, get_current_principal
+from backend.core.errors import EXPIRY_PASSED_TYPE, TypedHTTPException
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS
 from backend.core.settings import get_settings
@@ -65,7 +66,11 @@ def _require_future_expiry(expiry: str | None) -> None:
     # a decision that expires before it is made has no effect, while the screens list it (issue
     # 984); the library writer keeps taking past dates, which the replay tests need
     if expiry_has_passed(expiry, datetime.now(UTC)):
-        raise HTTPException(422, "expiry must be after today (UTC), or a time after now")
+        raise TypedHTTPException(
+            422,
+            "expiry must be after today (UTC), or a time after now",
+            problem_type=EXPIRY_PASSED_TYPE,
+        )
 
 
 class DecisionEditRequest(BaseModel):

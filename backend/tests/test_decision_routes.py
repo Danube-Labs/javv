@@ -14,6 +14,7 @@ import pytest
 from opensearchpy import AsyncOpenSearch
 
 from backend.auth.passwords import hash_password
+from backend.core.errors import EXPIRY_PASSED_TYPE
 from backend.decisions.lifecycle import DECISIONS_INDEX
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
@@ -243,7 +244,7 @@ async def test_create_refuses_an_expiry_that_has_passed(env) -> None:
             "/api/v1/decisions",
             json=_body(type="risk_accepted", vex_justification=None, expiry=expiry),
         )
-        assert r.status_code == 422, expiry
+        assert (r.status_code, r.json()["type"]) == (422, EXPIRY_PASSED_TYPE), expiry
         assert expiry not in r.text  # a refusal does not echo the value (issue 842)
     for expiry in (_utc_day(1), _from_now(minutes=5), None):
         r = await lead.post(
@@ -286,7 +287,7 @@ async def test_edit_refuses_a_result_whose_expiry_has_passed(env) -> None:
         params={"refresh": "true"},
     )
     r = await lead.patch(f"/api/v1/decisions/{decision_id}", json={"justification": "still"})
-    assert r.status_code == 422
+    assert (r.status_code, r.json()["type"]) == (422, EXPIRY_PASSED_TYPE)
     doc = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
     assert doc["revoked_at"] is None  # refused before anything was written
 
