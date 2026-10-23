@@ -24,7 +24,7 @@ from backend.query.aggs import (
     encode_after,
     facet_aggregation,
 )
-from backend.query.search import SearchFilters
+from backend.query.search import SearchFilters, unassigned_clause
 
 
 def test_facets_body_aggregates_each_whitelisted_field_by_scanner() -> None:
@@ -193,6 +193,52 @@ def test_flag_facets_keep_the_full_filter_context_when_wrapped() -> None:
         agg = body["aggs"][name]
         assert '"namespaces": ["a"]' in _query_of(agg), name
         assert "by_scanner" in agg["aggs"]["values"]["aggs"], name
+
+
+_ASSIGNEE_IS = json.dumps({"terms": {"assignee": ["lead"]}})
+
+
+def test_the_unassigned_count_leaves_out_assignee_is() -> None:
+    """Issue 979: a click on Unassigned clears the Assignee "is" values (issue 975), so the
+    Unassigned count is what the grid shows after the click: every other filter, no Assignee."""
+    f = SearchFilters(assignee=["lead"], severity=["high"])
+    body = build_facets_body(f, fields=["severity", "unassigned"])
+    unassigned = body["aggs"]["unassigned"]
+    assert _ASSIGNEE_IS not in _query_of(unassigned)
+    assert json.dumps({"terms": {"severity_canonical": ["high"]}}) in _query_of(unassigned)
+    assert "by_scanner" in unassigned["aggs"]["values"]["aggs"]
+    # the other facets still count with the Assignee filter, and the grid query keeps it
+    assert _ASSIGNEE_IS in _query_of(body["aggs"]["severity"])
+    assert _ASSIGNEE_IS not in json.dumps(body["query"])
+
+
+def test_the_unassigned_count_keeps_assignee_is_not() -> None:
+    """The click keeps Assignee "is not" (the API takes that pair), so the count keeps it."""
+    f = SearchFilters(exclude_assignee=["lead"])
+    body = build_facets_body(f, fields=["severity", "unassigned"])
+    assert "values" not in body["aggs"]["unassigned"].get("aggs", {})  # no wrapper needed
+    assert json.dumps({"terms": {"assignee": ["lead"]}}) in json.dumps(body["query"])
+
+
+def test_assignee_and_unassigned_counts_together_with_assignee_is() -> None:
+    """The Assignee list leaves out its own include and exclude. The Unassigned count leaves out
+    only the include. Both are freed at once, and the rest of the rail keeps the filter."""
+    f = SearchFilters(assignee=["lead"], namespace=["shop"])
+    body = build_facets_body(f, fields=["assignee", "unassigned", "kev"])
+    for name in ("assignee", "unassigned"):
+        assert _ASSIGNEE_IS not in _query_of(body["aggs"][name]), name
+        assert '"namespaces": ["shop"]' in _query_of(body["aggs"][name]), name
+    assert _ASSIGNEE_IS in _query_of(body["aggs"]["kev"])
+
+
+def test_with_no_assignee_the_unassigned_count_is_unchanged() -> None:
+    """No Assignee "is": the Unassigned count is the plain filter agg, under the full query."""
+    f = SearchFilters(severity=["high"])
+    body = build_facets_body(f, fields=["severity", "unassigned"])
+    assert body["aggs"]["unassigned"] == {
+        "filter": unassigned_clause(),
+        "aggs": {"by_scanner": {"terms": {"field": "scanner", "size": 4}}},
+    }
 
 
 def test_facet_buckets_unwraps_both_shapes() -> None:

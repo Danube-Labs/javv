@@ -599,6 +599,48 @@ async def test_past_t_package_type_facet_leaves_out_its_own_filter(monkeypatch) 
     assert counts["severity"] == {"high": 2}
 
 
+async def test_past_t_unassigned_count_leaves_out_assignee_is(monkeypatch) -> None:
+    """Issue 979 at a past T: the same rule as the live facet. With Assignee "is lead", the
+    Unassigned count is the rows with no owner (what a click on Unassigned shows), and the
+    other facets still count only the rows of `lead`."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    def _row(assignee: str | None, sev: str) -> dict[str, Any]:
+        return {
+            "present": True,
+            "severity_canonical": sev,
+            "state": "open",
+            "scanner": "trivy",
+            "assignee": assignee,
+            "fixable": False,
+            "cve_id": "CVE-1",
+            "image_digest": "sha256:y",
+            "ptype": "deb",
+            "package_name": None,
+            "namespaces": ["default"],
+            "overdue": False,
+        }
+
+    rows = [_row("lead", "critical"), _row("lead", "critical"), _row(None, "low")]
+    rows += [_row(None, "high"), _row("", "high"), _row("bob", "low")]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_facets(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(assignee=["lead"]),
+        fields=["unassigned", "severity"],
+    )
+    counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
+    assert counts["unassigned"] == {"true": 3, "false": 3}  # None and "" have no owner
+    assert counts["severity"] == {"critical": 2}
+
+
 async def test_past_t_facets_filter_again_only_for_a_field_with_its_own_filter(
     monkeypatch,
 ) -> None:
