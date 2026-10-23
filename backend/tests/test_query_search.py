@@ -16,9 +16,11 @@ from opensearchpy.exceptions import ConnectionError as OSConnectionError
 from opensearchpy.exceptions import NotFoundError
 
 from backend.query.search import (
+    FILTER_PAIRS,
     CursorExpired,
     SearchFilters,
     build_search_body,
+    conflicting_filter_pair,
     decode_cursor,
     encode_cursor,
     has_owner_clause,
@@ -597,3 +599,40 @@ def test_an_empty_list_is_no_filter(param: str, _field: str) -> None:
 def test_unassigned_and_several_named_assignees_are_mutually_exclusive() -> None:
     with pytest.raises(ValueError, match="unassigned"):
         build_search_body(SearchFilters(assignee=["bob", "ana"], unassigned=True), size=10)
+
+
+# --- the pairs that cannot be sent together (issue 969) -------------------------------------
+
+_EXCLUDE_FIELDS = [f for f in SearchFilters.__dataclass_fields__ if f.startswith("exclude_")]
+
+
+def test_every_exclude_filter_is_a_pair_with_its_include_side() -> None:
+    assert len(_EXCLUDE_FIELDS) == 9
+    assert set(FILTER_PAIRS) == {
+        *((f.removeprefix("exclude_"), f) for f in _EXCLUDE_FIELDS),
+        ("assignee", "unassigned"),
+    }
+
+
+@pytest.mark.parametrize(("first", "second"), FILTER_PAIRS)
+def test_a_pair_gets_its_message(first: str, second: str) -> None:
+    values = {first: ["x"], second: ["y"]}
+    assert conflicting_filter_pair(values) == f"{first} and {second} are mutually exclusive"
+
+
+@pytest.mark.parametrize(("first", "second"), FILTER_PAIRS)
+def test_one_side_of_a_pair_alone_is_no_conflict(first: str, second: str) -> None:
+    assert conflicting_filter_pair({first: ["x"], second: None}) is None
+    assert conflicting_filter_pair({first: None, second: ["y"]}) is None
+    assert conflicting_filter_pair({second: ["y"]}) is None
+
+
+def test_a_false_flag_and_an_empty_list_are_set() -> None:
+    # set means "not None", as the findings route reads its query: `unassigned=false` is a
+    # real filter (rows that have an owner), so it still conflicts with a named assignee
+    assert conflicting_filter_pair({"assignee": ["ana"], "unassigned": False}) is not None
+    assert conflicting_filter_pair({"cve_id": [], "exclude_cve_id": ["CVE-1"]}) is not None
+
+
+def test_no_filter_is_no_conflict() -> None:
+    assert conflicting_filter_pair(vars(SearchFilters())) is None
