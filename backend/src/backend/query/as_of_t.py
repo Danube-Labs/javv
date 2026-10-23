@@ -33,7 +33,7 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.decisions.projection import project
 from backend.models.envelope import SEVERITY_RANK, canonical_severity
-from backend.query.aggs import OWN_FILTER_FREE_FACETS, without_own_filter
+from backend.query.aggs import counting_filters
 from backend.query.human_at import decisions_active_at, finding_states_at
 from backend.query.pit import latest_committed_runs
 from backend.query.search import SearchFilters
@@ -489,12 +489,10 @@ class AsOfTQuery:
             if field in _EMPTY_FACETS:  # whitelisted but unrecorded at T — explicit empty
                 facets[field] = []
                 continue
-            # mirrors the live facet (issue 949): a list facet counts without its own filter
-            own = OWN_FILTER_FREE_FACETS.get(field)
+            # mirrors the live facet: the same filters per facet (issues 949 and 979)
+            own_filters = counting_filters(filters, field)
             counted = (
-                self._apply_filters(reconstructed, without_own_filter(filters, field))
-                if own and (getattr(filters, own) or getattr(filters, f"exclude_{own}"))
-                else rows
+                rows if own_filters == filters else self._apply_filters(reconstructed, own_filters)
             )
             counts: dict[Any, dict[str, Any]] = {}
             for r in counted:

@@ -711,6 +711,48 @@ async def test_list_facets_leave_out_their_own_filter_against_a_real_index(env) 
     assert sum(two["severity"].values()) == grid.json()["total"]["value"] == 2
 
 
+async def test_the_unassigned_count_is_the_rows_its_click_shows_against_a_real_index(env) -> None:
+    """Issue 979. With Assignee "is lead", a click on Unassigned clears Assignee (issue 975), so
+    the Unassigned count must equal the grid total of `unassigned=true` under the other
+    filters. With Assignee "is not" (the click keeps it), the count also equals the click."""
+    login, client = env
+    cid = f"c-f979-{uuid.uuid4().hex[:8]}"
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(2, cve="CVE-2024-0011", assignee="lead", severity="critical"),
+            *_rows(3, cve="CVE-2024-0012", severity="critical"),
+            *_rows(1, cve="CVE-2024-0013", assignee="", severity="critical"),
+            *_rows(4, cve="CVE-2024-0014", severity="low"),
+            *_rows(1, cve="CVE-2024-0015", assignee="bob", severity="critical"),
+        ],
+    )
+    http = await login()
+
+    async def facets(**params: Any) -> dict[str, dict[str, int]]:
+        r = await http.get(
+            "/api/v1/findings/facets",
+            params={"cluster_id": cid, "fields": ["unassigned", "severity"], **params},
+        )
+        assert r.status_code == 200, r.text
+        return {k: {b["key"]: b["count"] for b in v} for k, v in r.json()["facets"].items()}
+
+    async def total(**params: Any) -> int:
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, **params})
+        assert r.status_code == 200, r.text
+        return r.json()["total"]["value"]
+
+    picked = await facets(assignee="lead", severity="critical")
+    clicked = await total(unassigned="true", severity="critical")
+    assert picked["unassigned"] == {"true": clicked} == {"true": 4}  # None and "" are no owner
+    assert picked["severity"] == {"critical": 2}  # the other facets keep Assignee "is"
+
+    kept = await facets(exclude_assignee="bob", severity="critical")
+    assert kept["unassigned"] == {"true": await total(unassigned="true", severity="critical")}
+    assert kept["severity"] == {"critical": 6}  # 2 lead + 3 none + 1 empty, bob left out
+
+
 async def test_groups_paginate_via_after_key_to_exhaustion(env) -> None:
     login, client = env
     cid = f"c-aggs-{uuid.uuid4().hex[:8]}"

@@ -270,9 +270,12 @@ another filter, or the removal of an Assignee value, keeps both.
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in
 the list with their counts. An excluded value also stays in the list, with a line through it and
-its count. All other groups count with all filters. Thus Severity shows only the counts of the
-rows that the grid shows. A list shows at most 32 values. A picked value that is not in them stays
-at the end of the list, with no count, on every screen that uses the rail.
+its count. The Unassigned count leaves out the Assignee "is" values (issue 979), because a click
+on Unassigned clears them. Thus the count is the number of rows that the click shows. Assignee
+"is not" stays in that count, because the click keeps it. All other groups count with all
+filters. Thus Severity shows only the counts of the rows that the grid shows. A list shows at
+most 32 values. A picked value that is not in them stays at the end of the list, with no count, on
+every screen that uses the rail.
 
 **A count of 0** (operator ruling 2026-10-23, issue 980, on each screen that uses the rail): a
 value of a fixed list with no rows shows 0, as the prototype does. The fixed lists are Severity,
