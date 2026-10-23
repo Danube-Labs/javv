@@ -1,6 +1,7 @@
 /** Pure filter layer for the Running-images screen (unit-tested): the committed inventory is
  * one run's rows, fully served — matching + bucket counts derive from those rows (IMAGE
  * counts). Severity buckets use the canonical vocabulary mapped from the doc's short keys. */
+import { FACET_CAP } from '@/filters/facets'
 import type { Selections } from '@/filters/fields.config'
 import type { FilterMode, Modes } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
@@ -37,10 +38,10 @@ interface Bucket {
   by_scanner: Record<string, number>
 }
 
-/** Mirrors the server facet cap (the rail's "top 32 by count" note): a fleet-sized run has
- * one repo/tag per image, and an uncapped list would grow the rail without bound. `q` still
- * contains-matches repo and tag, so the tail stays reachable — the note holds here too. */
-const FACET_CAP = 32
+/* The repo and tag lists stop at the server facet cap (the rail's "top 32 by count" note): a
+ * fleet-sized run has one repo/tag per image, and an uncapped list would grow the rail without
+ * bound. `q` still contains-matches repo and tag, so the tail stays reachable — the note holds
+ * here too. */
 
 /** FacetsResponse-shaped buckets for the rail/bar — counts are images, not findings. */
 export function imagesFacets(rows: ImageRow[]): Record<string, Bucket[]> {

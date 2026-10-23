@@ -277,6 +277,13 @@ filters. Thus Severity shows only the counts of the rows that the grid shows. A 
 most 32 values. A picked value that is not in them stays at the end of the list, with no count, on
 every screen that uses the rail.
 
+**A count of 0** (operator ruling 2026-10-23, issue 980, on each screen that uses the rail): a
+value of a fixed list with no rows shows 0, as the prototype does. The fixed lists are Severity,
+Scanner, State, Entity, Action and the Attribute flags. A value shows no count when its count is
+not known: the server did not count the field (New in range), the server stopped at 32 buckets
+before the value, or the scan history does not record the flag (KEV and Scanners disagree at a
+past time).
+
 **Table columns:** checkbox · Vulnerability (`cve_id`, mono) · Severity (verbatim word, display
 uppercase) · EPSS (raw `epss` 0–1 bar; **Grype rows only**, em-dash on Trivy — B-3: no
 percentile) · KEV · Component (`app`) · Package (`package_name`) · Current (`installed_version`) ·
@@ -579,6 +586,8 @@ Contributors already exposes derived views of it), cursor-paged, ordered `(@time
 `can_manage_users`, in the list, the facets and the CSV. For the other users the rail does not offer
 the `user` and `token` values nor their actions (sign-in, password, user, role and token actions),
 which could only count 0 there (`auditFields()` in `audit/fields.config.ts`).
+The Action list has more values than the 32 buckets that the server counts. When the server
+gives 32 buckets, an action outside them shows no count, not 0 (issue 980).
 
 **Layout:** facet rail (entity_type, action, actor) + filter bar + timeline table: When · Actor ·
 entity_type+action tag pair · Target (frozen `target_ids`, rendered verbatim — never a

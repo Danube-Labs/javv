@@ -15,10 +15,15 @@ export interface FacetBucket {
 
 export type FacetsResponse = Record<string, FacetBucket[]>
 
+/** The most buckets one facet gives: backend `query/aggs._FACET_TERMS_SIZE`, a fixed size in
+ * docs/CONFIGURATION.md ("Fixed aggregation sizes"). A list with fewer buckets is complete. */
+export const FACET_CAP = 32
+
 export interface FacetItem {
   value: string
   label: string
-  /** Server-side count; null when the backend has no aggregation for this value. */
+  /** Server-side count; null when the count is not known: the server did not count the field,
+   * or it stopped at FACET_CAP buckets before this value. */
   count: number | null
   byScanner: Record<string, number> | null
   /** Config-declared hover explanation (flags only); wins over the scanner split. */
@@ -33,6 +38,16 @@ const item = (value: string, label: string, bucket?: FacetBucket, hint?: string)
   ...(hint !== undefined ? { hint } : {}),
 })
 
+/** The bucket of one value of a fixed list. A value with no bucket has 0 rows when the server
+ * counted the field and gave fewer than FACET_CAP buckets (issue 980). Otherwise its count is
+ * not known, so it gets no bucket. */
+function countOf(buckets: FacetBucket[] | undefined, value: string): FacetBucket | undefined {
+  if (!buckets) return undefined
+  const hit = buckets.find((b) => b.key === value)
+  if (hit || buckets.length >= FACET_CAP) return hit
+  return { key: value, count: 0, by_scanner: {} }
+}
+
 /** Display items for one field, or null when the field has no listable values (text fields).
  * `selected` are the field's picked values: on a field with no fixed vocabulary, one the server's
  * buckets leave out still gets a row. A fixed vocabulary lists its own values only. */
@@ -45,14 +60,15 @@ export function facetItems(
 
   if (field.type === 'flags') {
     return field.values.map((flag) =>
-      item(flag.key, flag.label, (facets[flag.param] ?? []).find((b) => b.key === 'true'), flag.hint),
+      item(flag.key, flag.label, countOf(facets[flag.param], 'true'), flag.hint),
     )
   }
 
   const buckets = field.facetKey ? (facets[field.facetKey] ?? []) : []
   if (field.values) {
     // static vocabulary: config order, counts filled in where the server aggregated
-    return field.values.map((v) => item(v, valueLabel(field, v), buckets.find((b) => b.key === v)))
+    const counted = field.facetKey ? facets[field.facetKey] : undefined
+    return field.values.map((v) => item(v, valueLabel(field, v), countOf(counted, v)))
   }
   // dynamic vocabulary: the server's buckets, in server order. A picked value can be missing from
   // them: below the top 32, or (a facet that counts with its own filter) excluded. It is added

@@ -7,9 +7,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
+import { AUDIT_ACTIONS, AUDIT_FIELDS } from '@/audit/fields.config'
 import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
-import type { FacetsResponse } from '@/filters/facets'
+import { FACET_CAP, type FacetsResponse } from '@/filters/facets'
 import { emptySelections, type FilterField } from '@/filters/fields.config'
 
 const LONG = 'docker.io/rancher/mirrored-library-traefik'
@@ -118,5 +119,30 @@ describe('the rail at the API cap (issue 949)', () => {
       props: { fields: MULTI, selections: { ...emptySelections(MULTI), namespace: ns }, facets: FACETS },
     })
     expect(w.findAll('.facet-cap').some((p) => p.text().includes('at most'))).toBe(false)
+  })
+})
+
+describe('the "top 32" note on a fixed list (issue 980)', () => {
+  // the Action list has more values than the server's 32 buckets; with a 0 for each action that
+  // has no events, the list has more counted rows than buckets, so the note counts the buckets
+  const ACTION = AUDIT_FIELDS.find((f) => f.key === 'action')!
+  const openAction = async (facets: FacetsResponse) => {
+    const w = mount(FacetRail, {
+      props: { fields: [ACTION], selections: emptySelections([ACTION]), facets },
+    })
+    await w.find('.facet-more').trigger('click')
+    return w
+  }
+  const bucket = (key: string) => ({ key, count: 1, by_scanner: {} })
+
+  it('is not shown when the server gave fewer than 32 buckets, though each action has a count', async () => {
+    const w = await openAction({ action: [bucket('login')] })
+    expect(w.findAll('.facet-count')).toHaveLength(AUDIT_ACTIONS.length)
+    expect(w.find('.facet-cap').exists()).toBe(false)
+  })
+
+  it('is shown when the server stopped at 32 buckets', async () => {
+    const w = await openAction({ action: AUDIT_ACTIONS.slice(0, FACET_CAP).map(bucket) })
+    expect(w.find('.facet-cap').text()).toBe('top 32 by count; search reaches the rest')
   })
 })
