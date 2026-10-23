@@ -3,7 +3,7 @@
 # our package provides the entrypoint. Build context = the REPO ROOT (the package depends
 # on the shared libs/javv-common, #156).
 #   docker build -f scanner/Dockerfile.trivy -t javv-scanner-trivy .
-ARG TRIVY_VERSION=0.76.0
+ARG TRIVY_VERSION=0.76.1
 
 FROM aquasec/trivy:${TRIVY_VERSION} AS trivy
 
