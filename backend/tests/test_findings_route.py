@@ -19,7 +19,7 @@ from backend.auth.passwords import hash_password
 from backend.core.settings import get_settings
 from backend.main import create_app
 from backend.models.envelope import canonical_severity
-from backend.query.search import MAX_FILTER_VALUES
+from backend.query.search import FILTER_PAIRS, MAX_FILTER_VALUES
 from os_env import OS_URL, clear_pits, requires_opensearch
 
 PASSWORD = "findings-route-password"
@@ -564,6 +564,41 @@ async def test_new_excludes_are_pure_must_not_with_a_missing_field(env) -> None:
     ):
         r = await http.get("/api/v1/findings", params={"cluster_id": cid, **pair})
         assert r.status_code == 422
+
+
+# one query value for each side of every pair (issue 969)
+_PAIR_PARAM = {
+    "severity": "high",
+    "state": "open",
+    "scanner": "trivy",
+    "assignee": "ana",
+    "image_repo": "registry.local/api",
+    "namespace": "payments",
+    "ptype": "os",
+    "cve_id": "CVE-2024-1000",
+    "package_name": "zlib",
+    "unassigned": "true",
+}
+
+
+async def test_the_route_refuses_each_pair_of_the_shared_list(env) -> None:
+    """Saved views and export settings refuse the pairs of FILTER_PAIRS; the route reads the same
+    list, so a view or a queued export can never hold a pair the screen answers with 422. The
+    CSV export is the read where only this check stands between a pair and a 500: /findings
+    also turns the builder's own ValueError into a 422."""
+    login, _ = env
+    http = await login()
+    cid = f"c-pairs-{uuid.uuid4().hex[:8]}"
+    for first, second in FILTER_PAIRS:
+        params = {
+            "cluster_id": cid,
+            first: _PAIR_PARAM[first],
+            second: _PAIR_PARAM[second.removeprefix("exclude_")],
+        }
+        for path in ("/api/v1/findings", "/api/v1/findings/export.csv"):
+            r = await http.get(path, params=params)
+            assert r.status_code == 422, (path, first, second)
+            assert r.json()["title"] == f"{first} and {second} are mutually exclusive"
 
 
 async def test_several_values_in_one_filter_against_a_real_index(env) -> None:
