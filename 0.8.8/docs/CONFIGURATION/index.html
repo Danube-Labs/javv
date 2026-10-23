@@ -1,0 +1,3752 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Docs for JAVV, Just Another Vulnerability Viewer">
+      
+      
+      
+        <link rel="canonical" href="https://danube-labs.github.io/javv-poc/0.8.8/docs/CONFIGURATION/">
+      
+      
+      
+        <link rel="prev" href="../../deploy/helm/javv-scanner/">
+      
+      
+        <link rel="next" href="../runbooks/opensearch-sizing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.71">
+    
+    
+      
+        <title>Configure - JAVV</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/javv.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="JAVV" class="md-header__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            JAVV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configure
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark theme"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark theme" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light theme"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light theme" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="JAVV" class="md-nav__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    JAVV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Use JAVV
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Use JAVV
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/from-a-scan-to-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  From a scan to a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/set-the-state-of-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set the state of a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/accept-a-risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Accept a risk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/change-many-findings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Change many findings at once
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/when-a-scanner-stops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  When a scanner stops
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/who-changed-what/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  See who changed what
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Install
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPLOYING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deploying
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supported versions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-opensearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-opensearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-scanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-scanner
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-settings-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the settings are
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#change-a-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change a setting
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Change a setting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        With docker compose
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-helm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        With Helm
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-the-web-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In the web app
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backend-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Backend settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backend settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Deployment
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-to-opensearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Connection to OpenSearch
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sign-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sign-in
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scanner-pushes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanner pushes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#triage-search-and-exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Triage, search and exports
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduled-exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scheduled exports
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-inspector" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Data inspector
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-retirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cluster retirement
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Background jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-schedules-and-the-time-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Job schedules and the time zone
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-javv-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The javv chart
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scanner-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanner settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scanner settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#files-that-the-scanner-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Files that the scanner writes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scan-scope-scan-settings-and-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scan scope, scan settings and versions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-javv-scanner-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The javv-scanner chart
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-database-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The database refresh
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trivy-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Trivy settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grype-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Grype settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frontend-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#frontend-server-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend server settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-build-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend build settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend build settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#browser-warnings-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Browser warnings and errors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opensearch-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        OpenSearch settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenSearch settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-javv-opensearch-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The javv-opensearch chart
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Runtime settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Snapshots
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retention-and-rollover" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Retention and rollover
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export-lifetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Export lifetime
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings cleanup
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staleness" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Staleness
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-retirement-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cluster retirement window
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sla-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        SLA policy
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scan-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scan scope
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ingest-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ingest tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#users-and-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Users and roles
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fixed values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-gate-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CI gate values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Operate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Operate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/opensearch-sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sizing OpenSearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/multi-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scaling and failures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/indices-and-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Indices and data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrade
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Upgrade
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UPGRADING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Integrate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Integrate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INGEST-CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Push from your own script
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-settings-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the settings are
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#change-a-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change a setting
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Change a setting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        With docker compose
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-helm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        With Helm
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-the-web-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In the web app
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backend-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Backend settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backend settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Deployment
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-to-opensearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Connection to OpenSearch
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sign-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sign-in
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scanner-pushes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanner pushes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#triage-search-and-exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Triage, search and exports
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduled-exports" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scheduled exports
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-inspector" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Data inspector
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-retirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cluster retirement
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Background jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-schedules-and-the-time-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Job schedules and the time zone
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-javv-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The javv chart
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scanner-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanner settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scanner settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#files-that-the-scanner-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Files that the scanner writes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scan-scope-scan-settings-and-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scan scope, scan settings and versions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-javv-scanner-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The javv-scanner chart
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-database-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The database refresh
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trivy-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Trivy settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grype-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Grype settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frontend-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#frontend-server-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend server settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-build-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend build settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend build settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#browser-warnings-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Browser warnings and errors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opensearch-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        OpenSearch settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenSearch settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-javv-opensearch-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The javv-opensearch chart
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Runtime settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Snapshots
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retention-and-rollover" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Retention and rollover
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export-lifetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Export lifetime
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings cleanup
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staleness" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Staleness
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cluster-retirement-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cluster retirement window
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sla-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        SLA policy
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scan-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scan scope
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ingest-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ingest tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#users-and-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Users and roles
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fixed values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-gate-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CI gate values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="configuring-javv">Configuring JAVV<a class="headerlink" href="#configuring-javv" title="Permanent link">&para;</a></h1>
+<p>This page lists the settings of JAVV, for the people who install and operate JAVV. For each
+setting, it gives:</p>
+<ul>
+<li>The default.</li>
+<li>What the setting does.</li>
+<li>Where you set it.</li>
+</ul>
+<h2 id="where-the-settings-are">Where the settings are<a class="headerlink" href="#where-the-settings-are" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Where you set it</th>
+<th>When a change applies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backend, frontend server and scanner settings</td>
+<td>Environment variables: <code>.env</code> for compose, the chart values for Helm</td>
+<td>When the container starts again. A scanner reads its settings at the start of each cycle.</td>
+</tr>
+<tr>
+<td><a href="#runtime-settings">Runtime settings</a>: retention, staleness, SLA, scan scope, retirement</td>
+<td>The <strong>Settings</strong> pages of the web app, or the API</td>
+<td>JAVV keeps them in OpenSearch. Each reader uses the new value at its next read.</td>
+</tr>
+<tr>
+<td>Scanner and OpenSearch versions</td>
+<td>The image tag</td>
+<td>When you change the tag. The web app has no control to select a version.</td>
+</tr>
+<tr>
+<td><a href="#frontend-build-settings">Frontend build settings</a></td>
+<td>The build of the frontend image</td>
+<td>Only when you build a new image. A published image has the default values.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Credentials:</strong></p>
+<ul>
+<li>Credentials go only in a secret store: <code>.env</code>, a Kubernetes Secret or the OpenSearch keystore.</li>
+<li>JAVV never keeps a credential in an image or in its runtime settings.</li>
+<li>In the tables below, a <strong>Secret</strong> row holds a credential.</li>
+</ul>
+<p><strong>Checks at start:</strong> the backend checks its settings when it starts. A value that is not valid
+stops the start, and the error names the setting. Thus a bad value does not let the backend pass
+<code>/readyz</code> and then fail each request. Examples of bad values:</p>
+<ul>
+<li>a limit of zero or less</li>
+<li>a keep-alive that is not a duration</li>
+<li>a compressed limit larger than the decompressed limit</li>
+<li>a bulk inline limit larger than the bulk maximum.</li>
+</ul>
+<h2 id="change-a-setting">Change a setting<a class="headerlink" href="#change-a-setting" title="Permanent link">&para;</a></h2>
+<h3 id="with-docker-compose">With docker compose<a class="headerlink" href="#with-docker-compose" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add <code>NAME=value</code> to the <code>.env</code> file next to <code>compose.yaml</code>.</li>
+<li>Run <code>docker compose up -d</code>. Compose starts again each container whose settings changed.</li>
+</ol>
+<p><a href="../../deploy/compose/compose.yaml"><code>compose.yaml</code></a> lists each setting, with its default and a short
+description.</p>
+<h3 id="with-helm">With Helm<a class="headerlink" href="#with-helm" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Set the value in your values file, or with <code>--set</code>:<ul>
+<li>a backend setting: <code>backend.config.&lt;NAME&gt;</code> in the <code>javv</code> chart</li>
+<li>a frontend server setting: <code>frontend.config.&lt;NAME&gt;</code> in the <code>javv</code> chart</li>
+<li>a scanner setting: <code>trivy.config.&lt;NAME&gt;</code> or <code>grype.config.&lt;NAME&gt;</code> in the <code>javv-scanner</code> chart.</li>
+</ul>
+</li>
+<li>Run <code>helm upgrade</code> with your values. Kubernetes starts new pods with the new value.</li>
+</ol>
+<h3 id="in-the-web-app">In the web app<a class="headerlink" href="#in-the-web-app" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Sign in as a user with the permission that the setting needs (<a href="#runtime-settings">Runtime settings</a>).</li>
+<li>Open <strong>Settings</strong>, then the page that holds the setting.</li>
+<li>Change the value, then save it.</li>
+</ol>
+<h2 id="backend-settings">Backend settings<a class="headerlink" href="#backend-settings" title="Permanent link">&para;</a></h2>
+<p>The backend reads these environment variables.</p>
+<ul>
+<li>It ignores a <code>JAVV_</code> name that it does not know.</li>
+<li><a href="../../deploy/compose/compose.yaml"><code>compose.yaml</code></a> lists each one with its default.</li>
+<li>The <code>javv</code> chart sets each one under <code>backend.config</code>.</li>
+<li><code>backend/tests/test_compose_settings.py</code> keeps both equal to the code.</li>
+</ul>
+<h3 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_ENV</code></td>
+<td><code>dev</code></td>
+<td>The deployment profile. <code>prod</code> or <code>production</code> changes dev conveniences into start failures. At this time, the start stops when <code>JAVV_SECRET_KEY</code> has its dev value. Set <code>prod</code> on each real deployment.</td>
+</tr>
+<tr>
+<td><code>JAVV_LOG_LEVEL</code></td>
+<td><code>info</code></td>
+<td>The log level: <code>debug</code>, <code>info</code>, <code>warning</code> or <code>error</code>. A different value stops the start. At <code>debug</code>, the log also shows one line for each OpenSearch request, with its method, path, status and time. The log never shows the body of a request or a reply. All lines go to one JSON stream, with the same redaction.</td>
+</tr>
+<tr>
+<td><code>JAVV_SECRET_KEY</code></td>
+<td><code>dev-only-secret-key</code></td>
+<td><strong>Secret.</strong> The secret key of the backend. The backend hashes each ingest token and session id with it before it stores them. It also signs the download links of reports with it. <strong>Set it to a long random string on each deployment, and keep it</strong>. If you change it, each scanner gets 401, each user must sign in again, and each open download link stops working. The stored data cannot restore them: each scanner needs a new token. With <code>JAVV_ENV=production</code>, the dev default <strong>stops the start</strong>. Before 0.7.0, the name was <code>JAVV_TOKEN_PEPPER</code>. A backend that finds that name stops at start (<a href="../UPGRADING/#version-notes">Upgrading</a>).</td>
+</tr>
+<tr>
+<td><code>JAVV_BOOTSTRAP_ADMIN_USERNAME</code></td>
+<td><code>admin</code></td>
+<td>The username of the first admin. It has the same rule as each other username: 3 to 64 lower-case letters, digits, dots, underscores or hyphens, and not <code>system</code> or <code>fleet</code>. A different value stops the backend at start (<a href="../UPGRADING/#version-notes">Upgrading</a>).</td>
+</tr>
+<tr>
+<td><code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code></td>
+<td>empty: no first admin</td>
+<td><strong>Secret.</strong> The password of the first admin. The backend uses it only when that admin does not exist. A later change of this value has no effect: change the password in the web app. The first admin must change the password at the first sign-in. At most 256 characters: a longer value stops the backend at start. The backend accepts fewer than 12 characters, because the first sign-in changes the password.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="connection-to-opensearch">Connection to OpenSearch<a class="headerlink" href="#connection-to-opensearch" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_OPENSEARCH_URL</code></td>
+<td><code>http://localhost:9200</code></td>
+<td>The address of OpenSearch. A URL that holds a user or a password stops the start. Examples are <code>https://user:pass@host</code>, and <code>user:pass@host</code> with no scheme, which the client reads as plain <code>http</code>. Put the credentials in the two settings below.</td>
+</tr>
+<tr>
+<td><code>JAVV_OPENSEARCH_USERNAME</code></td>
+<td>empty: no sign-in</td>
+<td>The OpenSearch user that JAVV signs in as. Set it together with the password. Leave both empty only for an OpenSearch without its security plugin. The user needs the <code>javv</code> role (<a href="../DEPLOYING/#an-opensearch-of-your-own">An OpenSearch of your own</a>). Compose makes the user <code>javv</code> and sets it here.</td>
+</tr>
+<tr>
+<td><code>JAVV_OPENSEARCH_PASSWORD</code></td>
+<td>empty</td>
+<td><strong>Secret.</strong> The password of that user. The backend never writes it: not in a log line, a settings error or a start error. If OpenSearch replies 401 or 403 at start, the backend stops with "OpenSearch refused the credentials…". With an <code>http://</code> URL, the credentials go in clear text. Then the backend starts with a warning and <code>javv_config_warnings_total{setting="JAVV_OPENSEARCH_URL"}</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_OPENSEARCH_CA_BUNDLE</code></td>
+<td>empty: the CAs of the system and of certifi</td>
+<td>The path to a PEM file of CA certificates, for an OpenSearch certificate from a private CA. A path with no readable file stops the start. An empty value means no file.</td>
+</tr>
+<tr>
+<td><code>JAVV_OPENSEARCH_VERIFY_CERTS</code></td>
+<td><code>true</code></td>
+<td>Check the certificate and the host name of OpenSearch on an <code>https</code> URL. Set <code>false</code> only for an OpenSearch that you trust for other reasons. An example is the demo certificates of OpenSearch on a network that nothing else can reach. With <code>false</code>, the backend starts with one warning and <code>javv_config_warnings_total{setting="JAVV_OPENSEARCH_VERIFY_CERTS"}</code>. <code>false</code> together with a CA bundle stops the start, because the backend would not use the bundle.</td>
+</tr>
+<tr>
+<td><code>JAVV_REQUEST_TIMEOUT</code></td>
+<td><code>30.0</code></td>
+<td>Seconds that the backend waits for OpenSearch to reply to a request.</td>
+</tr>
+<tr>
+<td><code>JAVV_BOOTSTRAP_ON_STARTUP</code></td>
+<td><code>true</code></td>
+<td>Before it serves, the backend checks OpenSearch and creates or updates its indices. If the check fails, the backend stops. Keep <code>true</code> on a deployment. With <code>false</code>, the backend checks nothing at start. Then a wrong OpenSearch password shows only later: <code>/readyz</code> replies 503, and each request to OpenSearch fails. opensearch-py logs each failure at <code>warning</code>, with the 401.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sign-in">Sign-in<a class="headerlink" href="#sign-in" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_SESSION_TTL_HOURS</code></td>
+<td><code>24.0</code></td>
+<td>Hours that a sign-in lasts. The session record on the server decides. The lifetime of the cookie is only advice to the browser.</td>
+</tr>
+<tr>
+<td><code>JAVV_SESSION_COOKIE_SECURE</code></td>
+<td><code>true</code></td>
+<td>The <code>Secure</code> flag of the session cookie. A browser keeps a <code>Secure</code> cookie only from <code>https</code> or <code>localhost</code>. If users open JAVV over plain <code>http</code>, set <code>false</code>. Else the sign-in fails, and the sign-in page says that the browser refused the session cookie. An example is a machine on a LAN with no TLS in front. Keep <code>true</code> behind each proxy that ends TLS. JAVV cannot see that proxy, so it never sets the flag itself. Sign-out clears the cookie with the same flag.</td>
+</tr>
+<tr>
+<td><code>JAVV_SESSION_SWEEP_GRACE_HOURS</code></td>
+<td><code>24.0</code></td>
+<td>Hours that the record of an expired session stays before the session sweep deletes it. A revoked session goes the same way after this time. An expired record cannot sign in, and it holds only a hash of the cookie. Thus a longer time costs only disk space. <code>0</code> deletes the record when it expires. Each run writes one <code>session_sweep_run</code> entry to the audit log, with its counts.</td>
+</tr>
+<tr>
+<td><code>JAVV_LOGIN_MAX_ATTEMPTS</code></td>
+<td><code>5</code></td>
+<td>Failed sign-ins for one username in the window, in all cases of the name together (<code>Alice</code> and <code>alice</code> are one count). After this number, the backend replies 429.</td>
+</tr>
+<tr>
+<td><code>JAVV_LOGIN_LOCKOUT_MINUTES</code></td>
+<td><code>15.0</code></td>
+<td>The window of the sign-in lock, in minutes. The backend keeps the count in its memory.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scanner-pushes">Scanner pushes<a class="headerlink" href="#scanner-pushes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_INGEST_MAX_COMPRESSED_BYTES</code></td>
+<td><code>10485760</code> (10 MiB)</td>
+<td>The largest push as it arrives, still compressed. The backend counts the bytes while it reads them.</td>
+</tr>
+<tr>
+<td><code>JAVV_INGEST_MAX_BODY_BYTES</code></td>
+<td><code>62914560</code> (60 MiB)</td>
+<td>The largest push after decompression. This limit stops a zip bomb.</td>
+</tr>
+<tr>
+<td><code>JAVV_INGEST_RATE_LIMIT_PER_MINUTE</code></td>
+<td><code>120</code></td>
+<td>Pushes for each token in one minute.</td>
+</tr>
+<tr>
+<td><code>JAVV_INGEST_FUTURE_TOLERANCE_MINUTES</code></td>
+<td><code>15</code></td>
+<td>How far ahead of the backend's clock a scan time (<code>last_seen_at</code>) can be. A push with a later time gets 422 (<code>clock_skew</code>): with it, the finding would stay open until that date. A scan time older than the cluster's staleness period also gets 422, so a wrong clock cannot make findings stale either.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="triage-search-and-exports">Triage, search and exports<a class="headerlink" href="#triage-search-and-exports" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_BULK_INLINE_LIMIT</code></td>
+<td><code>5000</code></td>
+<td>A bulk triage action on this number of findings or fewer applies at once. The reply is 200 with the result, and the audit log gets one entry. Above this number, the backend replies 413. Then make the selection smaller, or use a scheduled bulk action.</td>
+</tr>
+<tr>
+<td><code>JAVV_BULK_MAX_TARGETS</code></td>
+<td><code>10000</code></td>
+<td>The most findings that a bulk selection can hold. A selection that matches more gets 413 ("selector too broad"). This limit bounds the memory that a bulk action uses.</td>
+</tr>
+<tr>
+<td><code>JAVV_SEARCH_PIT_KEEP_ALIVE</code></td>
+<td><code>2m</code></td>
+<td>How long a findings search (a point in time, PIT) stays open between two pages. Each page starts this time again. A search that the client stops using closes itself after this time. A longer time lets a client wait longer between pages. A shorter time keeps fewer searches open.</td>
+</tr>
+<tr>
+<td><code>JAVV_EXPORT_MAX_ROWS</code></td>
+<td><code>50000</code></td>
+<td>The most rows of an immediate ("run now") export: findings CSV and VEX, audit CSV, contributors CSV and approvals CSV. Before it reads the rows, the backend counts them. Above the limit, it replies 413. Then make the filters smaller, or use a scheduled export. The contributors CSV counts its rows only after the query. Its list holds 100 people at most, so it does not get to this limit. Scheduled exports do not use this limit.</td>
+</tr>
+<tr>
+<td><code>JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL</code></td>
+<td><code>10</code></td>
+<td>The most searches and exports that one user or token can keep open at one time. Above this number, the backend replies 429 with <code>Retry-After</code>. The backend keeps the count in its memory. The web app closes each search that it stops using (<code>POST /api/v1/cursors/close</code>). A search that the client does not close frees its slot 30 seconds after its keep-alive ends.</td>
+</tr>
+<tr>
+<td><code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code></td>
+<td><code>60</code></td>
+<td>Batches of browser warnings and errors that one user can send in one minute. A batch holds 20 events at most. The browser never sends a batch again, so a 429 here loses those events without a sign. Thus the default is well above the rate of a normal session. This limit controls only the volume of the log. The shape limits of a batch are part of the API (<a href="#fixed-values">Fixed values</a>).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scheduled-exports">Scheduled exports<a class="headerlink" href="#scheduled-exports" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_EXPORT_TTL_HOURS</code></td>
+<td><code>24</code></td>
+<td>Hours that JAVV keeps a finished export. After this time, the report sweep deletes the export, and a download gets 410. <strong>Settings › Data &amp; OpenSearch</strong> can change it. This value applies until you save a value there.</td>
+</tr>
+<tr>
+<td><code>JAVV_EXPORT_MAX_BYTES</code></td>
+<td><code>524288000</code> (500 MiB)</td>
+<td>The largest single export. The report drain marks a larger export as failed. Thus one export cannot fill OpenSearch.</td>
+</tr>
+<tr>
+<td><code>JAVV_REPORT_DRAIN_SLEEP_MS</code></td>
+<td><code>200</code></td>
+<td>The pause between two pages of an export, in milliseconds. Thus a large export does not slow the scanner pushes.</td>
+</tr>
+<tr>
+<td><code>JAVV_REPORT_LEASE_TTL_SECONDS</code></td>
+<td><code>300</code></td>
+<td>Seconds that a running export or background job holds its lease. The worker writes a heartbeat. After this time with no heartbeat, the next run takes the work and counts one retry. Make this time fit <code>JAVV_JOB_REPORT_DRAIN_CRON</code>. A background job with no heartbeat for this time shows as <code>stale</code>, and a new start can take it.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-inspector">Data inspector<a class="headerlink" href="#data-inspector" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_INSPECT_MAX_HITS</code></td>
+<td><code>500</code></td>
+<td>The largest <code>size</code> of one search in the Data inspector. A larger request gets 422, with the reason.</td>
+</tr>
+<tr>
+<td><code>JAVV_INSPECT_MAX_RESPONSE_BYTES</code></td>
+<td><code>2097152</code> (2 MiB)</td>
+<td>The largest reply of the Data inspector. A larger reply gets 413 ("narrow the query"). The backend also logs a warning and adds one to <code>javv_limit_rejections_total{limit="inspect_bytes"}</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_INSPECT_TIMEOUT_SECONDS</code></td>
+<td><code>10.0</code></td>
+<td>Seconds that a query of the Data inspector can run in OpenSearch. This time is shorter than <code>JAVV_REQUEST_TIMEOUT</code>. Thus a query in the inspector cannot hold OpenSearch for long.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cluster-retirement">Cluster retirement<a class="headerlink" href="#cluster-retirement" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_CLUSTER_RETIRE_AFTER_DAYS</code></td>
+<td><code>45</code></td>
+<td>Days with no accepted scan before the daily sweep retires a cluster. A retired cluster is not on the cluster list, and JAVV keeps its data. <code>0</code> means never. This value must be larger than <code>JAVV_CLUSTER_RETIREMENT_WARN_DAYS</code>. The backend checks this at start. <strong>Settings › Cluster</strong> can change it. This value applies until you save a value there.</td>
+</tr>
+<tr>
+<td><code>JAVV_CLUSTER_RETIREMENT_WARN_DAYS</code></td>
+<td><code>7</code></td>
+<td>Days before the retirement when the warning banner starts and each user with <code>can_manage_settings</code> gets a notification. <strong>Settings › Cluster</strong> can change it. This value applies until you save a value there.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="background-jobs">Background jobs<a class="headerlink" href="#background-jobs" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_SCHEDULER_ENABLED</code></td>
+<td><code>true</code></td>
+<td>The backend runs its background jobs itself. Thus a deployment is one backend container and one frontend container, with no CronJob for a job. <code>false</code> stops all the schedules and keeps the values below. You can still run a job by hand (<code>python -m backend.jobs.&lt;name&gt;</code>), or from the Data inspector.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_REPORT_DRAIN_CRON</code></td>
+<td><code>*/5 * * * *</code></td>
+<td>When the report drain runs. It builds the queued exports and bulk actions. When several jobs are due, this job starts first.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_REPORT_SWEEP_CRON</code></td>
+<td><code>15 * * * *</code></td>
+<td>When the report sweep runs. It deletes expired exports, old failures and their remaining chunks.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_STALENESS_SWEEP_CRON</code></td>
+<td><code>0 2 * * *</code></td>
+<td>When the staleness sweep runs. It marks findings stale on the two <a href="#staleness">staleness</a> timers. It also opens findings again when their risk acceptance expires.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_LIFECYCLE_SWEEP_CRON</code></td>
+<td><code>0 3 * * *</code></td>
+<td>When the lifecycle sweep runs. It starts new history indices (rollover), and it deletes the indices that are older than the <a href="#retention-and-rollover">retention</a> of each cluster.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_FINDINGS_CLEANUP_CRON</code></td>
+<td><code>0 4 * * *</code></td>
+<td>When the findings cleanup runs. It deletes rows of the <code>findings</code> cache that no scan found for longer than the <a href="#findings-cleanup">cleanup window</a>.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_CLUSTER_RETIREMENT_CRON</code></td>
+<td><code>15 4 * * *</code></td>
+<td>When the retirement sweep runs. It retires the clusters that sent no scan for longer than their <a href="#cluster-retirement-window">window</a>. It returns the clusters that scan again. It also deletes the rows that arrived after the deletion of their cluster, and first writes an audit row with their counts.</td>
+</tr>
+<tr>
+<td><code>JAVV_JOB_SESSION_SWEEP_CRON</code></td>
+<td><code>30 4 * * *</code></td>
+<td>When the session sweep runs. It deletes the sessions that expired longer ago than <code>JAVV_SESSION_SWEEP_GRACE_HOURS</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="job-schedules-and-the-time-zone">Job schedules and the time zone<a class="headerlink" href="#job-schedules-and-the-time-zone" title="Permanent link">&para;</a></h3>
+<p>Each <code>JAVV_JOB_&lt;KIND&gt;_CRON</code> is a cron expression with five fields: minute, hour, day of month,
+month and day of week.</p>
+<ul>
+<li>The backend does not accept shortcuts such as <code>@daily</code>.</li>
+<li>An empty value means that the job never runs on a schedule.</li>
+<li>
+<p>An expression that is not valid stops the start, and the error names the setting.</p>
+</li>
+<li>
+<p>One job runs at a time. When several jobs are due, the report drain starts first.</p>
+</li>
+<li>A job does not run because the backend started. Each job waits for its next scheduled time.</li>
+<li>A restart can stop a job before it ends. That job runs again when its lease becomes stale
+  (<code>JAVV_REPORT_LEASE_TTL_SECONDS</code>).</li>
+<li><code>rebuild_state</code> has no schedule. You run it only by hand.</li>
+</ul>
+<p>The backend reads the expressions in its local time zone. It finds the zone in this sequence:</p>
+<ol>
+<li>the <code>TZ</code> environment variable, for example <code>TZ=Europe/Bucharest</code></li>
+<li>the zone that <code>/etc/localtime</code> links to</li>
+<li>
+<p>UTC.</p>
+</li>
+<li>
+<p>A <code>TZ</code> name that the zone database does not know also gives UTC, and the backend still starts.</p>
+</li>
+<li>The log line <code>scheduler started</code> shows the zone that the backend uses, in <code>zone</code> and
+  <code>zone_source</code> (<code>TZ</code>, <code>system</code> or <code>default</code>). Examine that line after you change <code>TZ</code>.</li>
+<li>A container has no zone of its own. Thus set <code>TZ</code> if <code>0 3 * * *</code> must mean 03:00 local time.</li>
+<li>Backends that use the same OpenSearch must use the same zone.</li>
+<li>When the clock goes back one hour, a local time that occurs two times runs one time. When the
+  clock goes forward, a local time that does not exist runs at the first time after the gap. Thus
+  a daily job runs on each day.</li>
+</ol>
+<h3 id="the-javv-chart">The javv chart<a class="headerlink" href="#the-javv-chart" title="Permanent link">&para;</a></h3>
+<p>The <code>javv</code> chart sets each backend setting under <code>backend.config</code>, by its environment name and at
+its default.</p>
+<ul>
+<li>To change one, use <code>--set backend.config.&lt;NAME&gt;=&lt;value&gt;</code> or your values file.</li>
+<li>The secrets are not in <code>backend.config</code>.</li>
+</ul>
+<p>These values are not settings of the backend:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>secrets.existingSecret</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> A Secret with the keys <code>secret-key</code> (<code>JAVV_SECRET_KEY</code>) and <code>bootstrap-admin-password</code> (<code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>). Or set <code>secrets.secretKey</code> and <code>secrets.bootstrapAdminPassword</code>, and the chart puts them in a Secret. Without them, the install fails. The chart never makes a secret key.</td>
+</tr>
+<tr>
+<td><code>opensearch.passwordSecret.name</code> / <code>.key</code></td>
+<td><code>""</code> / <code>password</code></td>
+<td><strong>Secret.</strong> The Secret with the password of <code>javv</code> (<code>JAVV_OPENSEARCH_PASSWORD</code>). Use the backend Secret of the <code>javv-opensearch</code> chart, never the admin password. Without it, the install fails.</td>
+</tr>
+<tr>
+<td><code>opensearch.caSecret.name</code> / <code>.key</code></td>
+<td><code>""</code> / <code>ca.crt</code></td>
+<td>A Secret with the CA of the OpenSearch certificate. When you set it, the chart mounts it at <code>/etc/javv/opensearch-ca/</code>. The chart then sets <code>JAVV_OPENSEARCH_CA_BUNDLE</code> to it and <code>JAVV_OPENSEARCH_VERIFY_CERTS</code> to <code>true</code>. These are the only settings that the chart calculates.</td>
+</tr>
+<tr>
+<td><code>backend.startupProbe</code></td>
+<td><code>GET /healthz</code>, each 10 s, 30 tries</td>
+<td>300 s for the first start, which is ten <code>JAVV_REQUEST_TIMEOUT</code> periods. The backend creates or updates the indices before it opens its port.</td>
+</tr>
+<tr>
+<td><code>backend.readinessProbe</code> / <code>livenessProbe</code></td>
+<td><code>GET /readyz</code> each 10 s / <code>GET /healthz</code> each 20 s, 3 failures each</td>
+<td>While OpenSearch is unreachable, the Service sends no requests to the backend. It restarts the backend only when the backend itself does not reply.</td>
+</tr>
+<tr>
+<td><code>frontend.config</code></td>
+<td><code>JAVV_BACKEND_URL</code> empty (the backend Service of the chart), <code>JAVV_BACKEND_CONNECT_TIMEOUT</code> <code>5</code>, <code>JAVV_LOG_LEVEL</code> <code>info</code></td>
+<td>The <a href="#frontend-server-settings">frontend server settings</a>.</td>
+</tr>
+<tr>
+<td><code>frontend.replicas</code> / <code>frontend.service.type</code> / <code>.port</code></td>
+<td><code>1</code> / <code>ClusterIP</code> / <code>8080</code></td>
+<td>The Service that browsers and scanners use. The chart makes no Ingress.</td>
+</tr>
+</tbody>
+</table>
+<p>The backend runs as one replica with <code>strategy: Recreate</code>. No value changes this.</p>
+<h2 id="scanner-settings">Scanner settings<a class="headerlink" href="#scanner-settings" title="Permanent link">&para;</a></h2>
+<p>Each scanner runs as a CronJob in a cluster that you scan. It keeps no state from one cycle to the
+next.</p>
+<ul>
+<li>The scanner checks each value that you set when it starts.</li>
+<li>A value that is not valid stops the scanner with exit code 2, and the error names the setting.
+  Examples are an unknown scanner name, a URL with no scheme, a cluster id with a bad shape and an
+  unknown flag.</li>
+<li>A setting that you do not set always has the default in the table.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_SCANNER</code></td>
+<td><code>trivy</code></td>
+<td>The scanner that this pod runs: <code>trivy</code> or <code>grype</code>. Each image sets it in its <code>ENV</code>. A different value stops the scanner with exit code 2.</td>
+</tr>
+<tr>
+<td><code>JAVV_LOG_LEVEL</code></td>
+<td><code>info</code></td>
+<td>The log level, as for the backend. At <code>info</code>, the log shows the progress of each image (<code>scanning image</code>, then <code>scan done</code> with the findings and the time) and a summary of the cycle. At <code>warning</code>, it shows the skipped images and the dead-letter entries. The line for a skipped image has <code>reason</code>: <code>scanner_exit</code>, <code>timeout</code> or <code>error</code>. With <code>scanner_exit</code>, it also has <code>exit_code</code> and <code>scanner_stderr</code>. <code>scanner_stderr</code> holds the last 5 lines of the error output of the scanner, 1000 characters at most. With <code>timeout</code>, it also has <code>timeout_s</code>. The <code>scope applied</code> line gives the pods that the scan scope skipped: <code>pods_running</code>, <code>skipped_namespace</code>, <code>skipped_kind</code> and <code>skipped_image</code>. <code>skipped_kind</code> gives a count for each listed kind. A listed kind with 0 skipped no pod. The <code>cycle complete</code> line gives <code>discovered</code>, <code>scanned</code> and <code>scan_failed</code>. Each line has <code>scanner</code>, <code>cluster_id</code> and <code>scan_run_id</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_BACKEND_URL</code></td>
+<td><code>http://localhost:8000</code></td>
+<td>The JAVV address that the scanner pushes to.</td>
+</tr>
+<tr>
+<td><code>JAVV_TOKEN</code></td>
+<td>not set</td>
+<td><strong>Secret.</strong> The ingest token, with the <code>push:findings</code> scope. You must set it. At the start of a cycle, the scanner gets its scan scope from JAVV. Without a token, that request gets 401, and the scanner skips the cycle.</td>
+</tr>
+<tr>
+<td><code>JAVV_CLUSTER_ID</code></td>
+<td>the UID of <code>kube-system</code></td>
+<td>The id of the cluster in JAVV: the UID of the <code>kube-system</code> namespace, which never changes. JAVV never uses the cluster name for this. When you set it, the scanner compares it with the UID of the cluster that it connected to. If the two are different, the scanner stops the cycle with exit code 2.</td>
+</tr>
+<tr>
+<td><code>JAVV_KUBE_CONTEXT</code></td>
+<td>the current context</td>
+<td>Only outside a cluster: the kubeconfig context to scan. Inside a cluster, the scanner ignores it. When you do not set it, the scanner uses the current context. For this reason, <code>JAVV_CLUSTER_ID</code> can check the cluster.</td>
+</tr>
+<tr>
+<td><code>JAVV_DEAD_LETTER</code></td>
+<td><code>&lt;scanner&gt;.dead-letter.jsonl</code>. The images set <code>/var/lib/javv/&lt;scanner&gt;.dead-letter.jsonl</code>.</td>
+<td>The file for the pushes that JAVV did not accept. The scanner adds each of these pushes to the file as one JSON line, logs <code>envelope dead-lettered</code>, and continues with the next image. A refusal with a 4xx that is not 429 goes there immediately. A 429, a 5xx or no answer goes there when the retry budget is spent. The scanner does not send the file again. An image whose scan failed is not in this file: the log has it (<code>scan failed, image skipped</code>).</td>
+</tr>
+<tr>
+<td><code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code></td>
+<td><code>360</code></td>
+<td>How long one cycle can try again, in total, when JAVV does not accept a push or the inventory commit. Examples are a 429, a 5xx or no answer. The scanner waits longer each time, at most 30 seconds. The time counts from the first failure of a push to its end. When the cycle used all of it, a push that fails goes to the dead-letter file with no wait. The log then shows <code>push retry budget spent</code> one time. The default is longer than the 300 seconds that a <code>helm upgrade</code> of JAVV gives the backend to start. A value that is not a whole number above 0 stops the scanner with exit code 2.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="files-that-the-scanner-writes">Files that the scanner writes<a class="headerlink" href="#files-that-the-scanner-writes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The published scanner images run as a user that is not root, <code>65532:65532</code>.</li>
+<li>The entrypoint is <code>python -m scanner</code>, from the virtual environment of the project.</li>
+<li>The process writes to three places only. Thus the root file system can be read-only.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Set by</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/var/cache/javv/&lt;scanner&gt;</code></td>
+<td><code>TRIVY_CACHE_DIR</code> or <code>GRYPE_DB_CACHE_DIR</code>, in the <code>ENV</code> of the image</td>
+<td>The cache of the vulnerability database. The <code>javv-scanner</code> chart mounts a volume for each scanner at <code>/var/cache/javv</code>.</td>
+</tr>
+<tr>
+<td><code>/var/lib/javv</code></td>
+<td><code>JAVV_DEAD_LETTER</code>, in the <code>ENV</code> of the image</td>
+<td>The dead-letter file.</td>
+</tr>
+<tr>
+<td><code>/tmp</code></td>
+<td>the scanners</td>
+<td>The image layers that a scan pulls.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>You can change each path for each CronJob.</li>
+<li>User 65532 must be able to write to each path that you mount.</li>
+<li>Outside a cluster, user 65532 must also be able to read the kubeconfig that you mount.</li>
+</ul>
+<h3 id="scan-scope-scan-settings-and-versions">Scan scope, scan settings and versions<a class="headerlink" href="#scan-scope-scan-settings-and-versions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Scan scope</strong> (the namespaces, images and kinds to scan) is a
+  <a href="#scan-scope">runtime setting</a>. At the start of each cycle, the scanner gets the scope from JAVV
+  (<code>GET /api/v1/scan-scope</code>). The scanner never reads OpenSearch. If JAVV does not reply, the
+  scanner skips the cycle. An empty scope means: scan all.</li>
+<li><strong>What the scanner scans:</strong> the containers of the pods that run. It does not scan init
+  containers or ephemeral containers. It pulls each image by the digest that the pod runs
+  (<code>repo@sha256:…</code>), so a tag that moved since the pod started does not change the scan. If the
+  registry no longer has that digest, the scanner skips the image and logs a warning.</li>
+<li><strong>Image entries of the scope</strong> (<code>exclude_images</code>) are globs on the name of the image that JAVV
+  shows. For a pod started by a tag, the name is the tag, for example <code>registry.io/app:1.2</code>. For a
+  pod started by a digest, the name is <code>registry.io/app@sha256:…</code>. Thus, to skip a repository with
+  any tag or digest, add two entries: <code>registry.io/app:*</code> and <code>registry.io/app@*</code>.</li>
+<li><strong>Scan settings</strong> (the <a href="#trivy-settings">Trivy</a> and <a href="#grype-settings">Grype</a> tables) are
+  environment variables only. The web app shows them on the card of each scanner, but it cannot
+  change them. Each push holds the scan settings and the scope of its cycle, and JAVV keeps them
+  with the scan.</li>
+<li><strong>Versions</strong> of the scanners and of their databases come from the image. To change a version,
+  change the image tag. The web app shows the version and has no control to select one.</li>
+</ul>
+<h3 id="the-javv-scanner-chart">The javv-scanner chart<a class="headerlink" href="#the-javv-scanner-chart" title="Permanent link">&para;</a></h3>
+<p>The <code>javv-scanner</code> chart runs one CronJob for each scanner in a cluster that you scan.</p>
+<ul>
+<li>Each scanner block (<code>trivy</code>, <code>grype</code>) has its own image, token, schedule, database source and
+  cache.</li>
+<li>Each block also has <code>config</code>: its settings from the <a href="#trivy-settings">Trivy</a> or
+  <a href="#grype-settings">Grype</a> table, <code>JAVV_LOG_LEVEL</code> and <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code>, by
+  environment name, at their defaults. An empty value means not set.</li>
+<li><code>scanner/tests/test_helm_config.py</code> keeps them equal to the code.</li>
+</ul>
+<p>The other values:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>backendUrl</code></td>
+<td><code>""</code></td>
+<td><code>JAVV_BACKEND_URL</code>: the frontend Service of JAVV, at the address that this cluster uses for it. Without it, the install fails.</td>
+</tr>
+<tr>
+<td><code>clusterId</code></td>
+<td><code>""</code></td>
+<td><code>JAVV_CLUSTER_ID</code>. When it is empty, the scanners read the UID of <code>kube-system</code>.</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.token.existingSecret</code> / <code>.key</code> / <code>.value</code></td>
+<td><code>""</code> / <code>token</code> / <code>""</code></td>
+<td><strong>Secret.</strong> <code>JAVV_TOKEN</code>: the Secret of that scanner, or a value that the chart puts in a Secret. Without it, the install fails.</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.registryAuth.existingSecret</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> A login for private registries: the name of a <code>kubernetes.io/dockerconfigjson</code> Secret in the namespace of the chart. Kubernetes puts its <code>.dockerconfigjson</code> key into the scan container as <code>/etc/javv/registry/config.json</code>, and the chart sets <code>DOCKER_CONFIG</code> to <code>/etc/javv/registry</code>. The refresh container does not get the login. When the value is empty, the scanner pulls each image with no login.</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.schedule</code></td>
+<td><code>0 */6 * * *</code> (Trivy), <code>30 */6 * * *</code> (Grype)</td>
+<td>When a cycle starts. <code>timeZone</code> sets the zone.</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.activeDeadlineSeconds</code></td>
+<td><code>19800</code></td>
+<td>Kubernetes stops a cycle that runs for longer than 5 h 30 min. The CronJob does not start a cycle while one of its own cycles runs (<code>Forbid</code>). It does not count a Job that you make by hand: the <code>NOTES</code> of the chart give the safe sequence. A stopped cycle does not run again before the next schedule.</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.image.tag</code> / <code>.digest</code> / <code>.pullPolicy</code></td>
+<td><code>scanners.&lt;s&gt;.current</code> in <code>versions.yaml</code> / <code>""</code> / <code>Always</code></td>
+<td>The scanner version. <code>check-versions.sh</code> keeps the tag equal to <code>versions.yaml</code>. JAVV publishes the tag again when it changes the image for that version, thus <code>Always</code>. A digest runs one exact build. The chart of a release sets each digest to the build that its tag named at the release, with a verified signature. The chart in the repository has no digest.</td>
+</tr>
+<tr>
+<td><code>trivy.vulnDb.repository</code> / <code>.javaRepository</code></td>
+<td><code>""</code></td>
+<td><code>TRIVY_DB_REPOSITORY</code> / <code>TRIVY_JAVA_DB_REPOSITORY</code> for the refresh. Empty means the source of Trivy: <code>mirror.gcr.io/aquasec/trivy-db:2</code>, then <code>ghcr.io/aquasecurity/trivy-db:2</code>. The Java database works the same way.</td>
+</tr>
+<tr>
+<td><code>grype.vulnDb.updateUrl</code></td>
+<td><code>""</code></td>
+<td><code>GRYPE_DB_UPDATE_URL</code> for the refresh. Empty means the source of Grype (<code>https://grype.anchore.io/databases</code>).</td>
+</tr>
+<tr>
+<td><code>&lt;scanner&gt;.vulnDb.size</code> / <code>.storageClass</code> / <code>.existingClaim</code></td>
+<td><code>10Gi</code> / <code>""</code> / <code>""</code></td>
+<td>The cache volume of the scanner, <code>ReadWriteOnce</code>. In October 2026, the two Trivy databases used 2.9 GB, and the Grype database used 3.0 GB.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-database-refresh">The database refresh<a class="headerlink" href="#the-database-refresh" title="Permanent link">&para;</a></h3>
+<p>Each cycle starts with an init container on the image of the scanner:</p>
+<ol>
+<li>This container refreshes the database in the cache volume.</li>
+<li>Then the scan runs with the update switches of the vendor off: <code>TRIVY_SKIP_DB_UPDATE</code>,
+    <code>TRIVY_SKIP_JAVA_DB_UPDATE</code>, <code>TRIVY_SKIP_CHECK_UPDATE</code> and <code>GRYPE_DB_AUTO_UPDATE=false</code>. The
+    chart sets them.</li>
+</ol>
+<p>Thus a cycle reads one database and does not connect to the vendor during the scan.</p>
+<ul>
+<li>If the refresh fails, the scan uses the database in the cache. With no database in the cache,
+  the cycle fails.</li>
+<li>The refresh checks the database with a lookup. If the scanner cannot read the database, the
+  refresh deletes it and downloads it one more time. If that also fails, the cycle fails.</li>
+<li>Trivy gets two lookups, because a damaged Java database does not fail a scan. Trivy skips each
+  jar that it cannot look up, and exits with 0. Thus its lookup must find a known CVE in a jar
+  that only the Java database can name.</li>
+<li>Grype refuses a database older than 5 days. To change this, set
+  <code>GRYPE_DB_MAX_ALLOWED_BUILT_AGE</code> in <code>extraEnv</code>.</li>
+<li>Misconfiguration scans (<code>JAVV_TRIVY_SCANNERS</code> with <code>misconfig</code>) use the checks in the Trivy
+  binary. Thus they also do not connect to the vendor during the scan.</li>
+<li>The install runs the same refresh one time, as a Job. This Job also binds the volume. An upgrade
+  runs it again when the refresh container changes: the image, the database source, <code>extraEnv</code>,
+  <code>resources</code> or <code>pullPolicy</code>.</li>
+</ul>
+<h2 id="trivy-settings">Trivy settings<a class="headerlink" href="#trivy-settings" title="Permanent link">&para;</a></h2>
+<p>The scanner reads these environment variables.</p>
+<ul>
+<li>Set them on the CronJob of the scanner, or in <code>trivy.config</code> of the <code>javv-scanner</code> chart.</li>
+<li>A setting that you do not set has the default in the table.</li>
+<li>The output format stays <code>json</code>, because the parser of JAVV needs it.</li>
+</ul>
+<p>The scanner checks each value against the values that the pinned Trivy binary accepts:</p>
+<ul>
+<li>scanners: <code>vuln</code>, <code>misconfig</code>, <code>secret</code>, <code>license</code></li>
+<li>severities: <code>UNKNOWN</code>, <code>LOW</code>, <code>MEDIUM</code>, <code>HIGH</code>, <code>CRITICAL</code></li>
+<li>package types: <code>os</code>, <code>library</code></li>
+<li>timeout: a Go duration.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_TRIVY_SCANNERS</code></td>
+<td><code>vuln</code></td>
+<td><code>--scanners</code>, for example <code>vuln,secret,misconfig</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_TRIVY_IGNORE_UNFIXED</code></td>
+<td><code>false</code></td>
+<td>Adds <code>--ignore-unfixed</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_TRIVY_SEVERITIES</code></td>
+<td>not set: all</td>
+<td><code>--severity</code>, for example <code>CRITICAL,HIGH</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_TRIVY_PKG_TYPES</code></td>
+<td>not set</td>
+<td><code>--pkg-types</code>, for example <code>os,library</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_TRIVY_TIMEOUT</code></td>
+<td>not set: the Trivy default</td>
+<td><code>--timeout</code>, for example <code>5m0s</code>.</td>
+</tr>
+<tr>
+<td><strong>Trivy version</strong></td>
+<td><code>0.76.1</code></td>
+<td><code>scanners.trivy.current</code> in <code>versions.yaml</code>, and the <code>ARG</code> in the Dockerfile. To change it, use a different image tag.</td>
+</tr>
+<tr>
+<td><strong>Vulnerability database</strong></td>
+<td>schema 2</td>
+<td><code>versions.yaml</code> holds the schema. A database with a different schema fails with a clear error. The <code>javv-scanner</code> chart refreshes the database at the start of each cycle. Without the chart, Trivy refreshes it at scan time. Each push holds the database version, from <code>trivy version --format json</code> in each cycle.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="grype-settings">Grype settings<a class="headerlink" href="#grype-settings" title="Permanent link">&para;</a></h2>
+<p>The scanner reads these environment variables.</p>
+<ul>
+<li>Set them on the CronJob of the scanner, or in <code>grype.config</code> of the <code>javv-scanner</code> chart.</li>
+<li>A setting that you do not set has the default in the table.</li>
+<li>The output format stays <code>json</code>, because the parser of JAVV needs it.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_GRYPE_ONLY_FIXED</code></td>
+<td><code>false</code></td>
+<td>Adds <code>--only-fixed</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_GRYPE_SCOPE</code></td>
+<td>not set: the Grype default</td>
+<td><code>--scope</code>: <code>squashed</code>, <code>all-layers</code> or <code>deep-squashed</code>. The scanner checks the value.</td>
+</tr>
+<tr>
+<td><code>JAVV_GRYPE_SCAN_TIMEOUT</code></td>
+<td><code>600</code></td>
+<td>Seconds before the scanner stops one Grype scan. Grype has no flag for a scan time limit. A value that is not a whole number stops the scanner with a clear error.</td>
+</tr>
+<tr>
+<td><strong>Grype version</strong></td>
+<td><code>0.120.1</code></td>
+<td><code>scanners.grype.current</code> in <code>versions.yaml</code>, and the <code>ARG</code> in the Dockerfile. To change it, use a different image tag.</td>
+</tr>
+<tr>
+<td><strong>Vulnerability database</strong></td>
+<td>schema 6, from Grype 0.88.0</td>
+<td><code>versions.yaml</code> holds the schema. The <code>javv-scanner</code> chart refreshes the database at the start of each cycle. Without the chart, Grype refreshes it at scan time.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="frontend-settings">Frontend settings<a class="headerlink" href="#frontend-settings" title="Permanent link">&para;</a></h2>
+<h3 id="frontend-server-settings">Frontend server settings<a class="headerlink" href="#frontend-server-settings" title="Permanent link">&para;</a></h3>
+<p>The frontend image runs a small Node server.</p>
+<ul>
+<li>The server sends the web app to the browser, and sends the requests to <code>/api</code>, <code>/auth</code> and
+  <code>/readyz</code> on to the backend. Thus the browser uses one address.</li>
+<li>The server reads these settings when its container starts. A restart applies a change, with no
+  new build.</li>
+</ul>
+<p>The server sends these headers on each reply, so that JAVV needs no proxy to add them:</p>
+<ul>
+<li><code>Content-Security-Policy</code>: the browser loads scripts, styles, fonts and data only from the JAVV
+  address. Each page gets a new nonce for the styles of the web app. No inline script runs.</li>
+<li><code>X-Frame-Options: DENY</code> and <code>frame-ancestors 'none'</code>: no other site can show JAVV in a frame.</li>
+<li>
+<p><code>X-Content-Type-Options: nosniff</code> and <code>Referrer-Policy: same-origin</code>.</p>
+</li>
+<li>
+<p>The server does not send on the <code>Server</code> header of the backend.</p>
+</li>
+<li>If a proxy in front of JAVV sets its own security headers, make sure that they do not replace
+  these headers with weaker ones.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_BACKEND_URL</code></td>
+<td><code>http://backend:8000</code></td>
+<td>The address of the backend, as the frontend container sees it: a compose service name, a Kubernetes Service or an IP address. <code>http</code> or <code>https</code>. When nothing replies there, the server replies 502 with the error envelope. The web app shows this as "backend down".</td>
+</tr>
+<tr>
+<td><code>JAVV_BACKEND_CONNECT_TIMEOUT</code></td>
+<td><code>5</code></td>
+<td>Seconds that a connection to the backend can take to open. For an <code>https</code> backend, this time includes the TLS handshake. After this time, the reply is the same 502, and the warning line gives <code>reason: connect timeout</code>. The server measures only the opening. It never stops a slow reply, for example an export. Kubernetes refuses a connection at once when a Service has no ready pod. But an address whose pod stopped, and that is still in the Service, does not reply. Without this time, the request would wait with no end. A value that is not a number of seconds above 0 stops the server at start.</td>
+</tr>
+<tr>
+<td><code>JAVV_FRONTEND_PORT</code></td>
+<td><code>8080</code></td>
+<td>The port that the server listens on in its container.</td>
+</tr>
+<tr>
+<td><code>JAVV_LOG_LEVEL</code></td>
+<td><code>info</code></td>
+<td>The log level of the server: <code>debug</code>, <code>info</code>, <code>warning</code> or <code>error</code>. An unknown name stops the server at start, as in the backend.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frontend-build-settings">Frontend build settings<a class="headerlink" href="#frontend-build-settings" title="Permanent link">&para;</a></h3>
+<p>These settings apply only when you build the frontend image yourself.</p>
+<ul>
+<li>Vite writes them into the web app at build time.</li>
+<li>To change one, build the image again.</li>
+<li>A published image has the defaults.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VITE_LOG_LEVEL</code></td>
+<td><code>debug</code> in a dev build, <code>warn</code> in a production build</td>
+<td>The level of the logger in the browser console: <code>debug</code>, <code>info</code>, <code>warn</code> or <code>error</code>. An unknown value gives the default.</td>
+</tr>
+<tr>
+<td><code>VITE_DB_AGE_WARN_DAYS</code></td>
+<td><code>7</code></td>
+<td>Days after which the scanner card shows the vulnerability database as old: amber <code>· N days old</code> next to <strong>DB built</strong>. A scanner with an old database finds fewer vulnerabilities. To fix it, use a newer scanner image. A value that is not a number above 0 gives the default.</td>
+</tr>
+<tr>
+<td><code>VITE_EXPIRY_WARN_DAYS</code></td>
+<td><code>7</code></td>
+<td>Days before a risk acceptance expires when its chip in the Approvals queue turns amber: <code>expires in Nd</code>. At the expiry, the chip turns red, and the findings of the acceptance open again. A value that is not a number above 0 gives the default.</td>
+</tr>
+<tr>
+<td><code>VITE_CLIENT_EVENTS</code></td>
+<td>not set: on in a production build, off in a dev build</td>
+<td>When it is on, the browser also sends each <code>logger.warn</code> and <code>logger.error</code> to <code>POST /api/v1/client-events</code>. Thus an error stays in the log after the user closes the tab. <code>false</code> or <code>0</code> turns it off. Each other value turns it on. See the <a href="#browser-warnings-and-errors">browser warnings</a> below.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="browser-warnings-and-errors">Browser warnings and errors<a class="headerlink" href="#browser-warnings-and-errors" title="Permanent link">&para;</a></h4>
+<p>The browser sends its warnings and errors in batches, and it accepts some loss:</p>
+<ul>
+<li>The browser never sends a batch again.</li>
+<li>The queue holds one batch of 20 events. The browser sends it each 5 seconds, and also when the
+  tab closes or goes to the background. Thus a flood of errors loses events, but it does not go
+  above <code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code>. A 429 would also lose the events.</li>
+<li>When a window loses events, its next batch starts with a <code>beacon events dropped</code> entry, with the
+  count. Thus a gap in the log shows as a flood, not as a quiet session.</li>
+<li>That count includes only the events lost in a flood. The browser drops an event that it cannot
+  send, for example an event with a bad name, without a count. Otherwise a fault in one call
+  would report a new flood each time that screen opens.</li>
+<li>The browser cuts each field value to 512 characters, the limit of the endpoint. Thus one long
+  value cannot cause a 422 for its batch. A cut value ends in <code>…</code>. A value of 512 characters or
+  fewer arrives with no change.</li>
+</ul>
+<h2 id="opensearch-settings">OpenSearch settings<a class="headerlink" href="#opensearch-settings" title="Permanent link">&para;</a></h2>
+<p>These settings belong to OpenSearch.</p>
+<ul>
+<li>The compose file and the <code>javv-opensearch</code> chart set them.</li>
+<li>When you operate your own OpenSearch, you set them.</li>
+<li><code>datastore.opensearch</code> in <a href="../../versions.yaml"><code>versions.yaml</code></a> gives the version that JAVV
+  supports.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Compose value</th>
+<th>What it does</th>
+<th>With your own OpenSearch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>image</td>
+<td><code>opensearchproject/opensearch:3.9.0</code></td>
+<td>The OpenSearch version, from <code>versions.yaml</code>.</td>
+<td>Use the same version. CI tests JAVV with it.</td>
+</tr>
+<tr>
+<td><code>discovery.type</code></td>
+<td><code>single-node</code></td>
+<td>One node.</td>
+<td>Your choice. CI tests JAVV with one node.</td>
+</tr>
+<tr>
+<td>Security plugin</td>
+<td>on, with the demo certificates of OpenSearch</td>
+<td>Sign-in and TLS for OpenSearch.</td>
+<td>On, with your own certificates. Set <code>JAVV_OPENSEARCH_USERNAME</code>, <code>JAVV_OPENSEARCH_PASSWORD</code> and <code>JAVV_OPENSEARCH_CA_BUNDLE</code> (<a href="#connection-to-opensearch">Connection to OpenSearch</a>).</td>
+</tr>
+<tr>
+<td><code>plugins.security.audit.type</code></td>
+<td><code>noop</code></td>
+<td>The audit log of OpenSearch. With the demo security setup, it writes a new <code>security-auditlog-&lt;date&gt;</code> index each day. JAVV turns off index state management, so nothing deletes these indices. JAVV keeps its own audit log in <code>system-audit-log</code>.</td>
+<td>Your choice. JAVV does not read it.</td>
+</tr>
+<tr>
+<td><code>OPENSEARCH_INITIAL_ADMIN_PASSWORD</code></td>
+<td>from <code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code> in <code>.env</code></td>
+<td><strong>Secret.</strong> The password of <code>admin</code>, which the demo security setup makes at the first start with security on. The backend never gets it: it signs in as <code>javv</code>. OpenSearch ignores later changes of this value (<a href="../UPGRADING/#change-an-opensearch-password">Change an OpenSearch password</a>). A weak password stops the container.</td>
+<td>Not used.</td>
+</tr>
+<tr>
+<td><code>OPENSEARCH_JAVV_PASSWORD</code></td>
+<td>from <code>JAVV_OPENSEARCH_PASSWORD</code> in <code>.env</code></td>
+<td><strong>Secret.</strong> The password of <code>javv</code>, the user that the backend signs in as. The <code>opensearch</code> entrypoint of compose hashes it into the users file with <code>hash.sh</code> of OpenSearch. An empty password stops the container. OpenSearch reads it at its first start with security on, as for <code>admin</code>.</td>
+<td>Not used.</td>
+</tr>
+<tr>
+<td>Users</td>
+<td><code>admin</code> and <code>javv</code></td>
+<td>Who can sign in to OpenSearch. The demo security setup loads each user in <code>config/opensearch-security/internal_users.yml</code> of the image. Six of these users have their own name as password, and no setting turns them off. The <code>opensearch</code> entrypoint of compose keeps only <code>_meta</code> and <code>admin</code> in that file, and adds <code>javv</code>. OpenSearch reads the file at its first start with security on. The demo admin certificate in the image (<code>kirk.pem</code>) also has full access, with no password.</td>
+<td>Your users. JAVV signs in as <code>JAVV_OPENSEARCH_USERNAME</code>.</td>
+</tr>
+<tr>
+<td>Roles and role mapping</td>
+<td>the <code>javv</code> role, <code>admin</code> on <code>all_access</code>, <code>javv</code> on <code>javv</code></td>
+<td>What each user can do. Compose mounts its own <code>roles.yml</code> and <code>roles_mapping.yml</code> in place of the demo files. OpenSearch reads them at its first start with security on. <a href="../UPGRADING/">Upgrading</a> tells you how to load them into an older OpenSearch.</td>
+<td>Make the <code>javv</code> role from <a href="../DEPLOYING/#an-opensearch-of-your-own">An OpenSearch of your own</a>.</td>
+</tr>
+<tr>
+<td><code>OPENSEARCH_JAVA_OPTS</code></td>
+<td><code>-Xms1g -Xmx1g</code></td>
+<td>The JVM heap.</td>
+<td>Size it for each node (<a href="../runbooks/opensearch-sizing/">Sizing OpenSearch</a>).</td>
+</tr>
+<tr>
+<td><code>path.repo</code></td>
+<td><code>/usr/share/opensearch/data/snapshots</code></td>
+<td>The root of the file system snapshot repository. <strong>Settings › Data &amp; OpenSearch</strong> makes its snapshots there.</td>
+<td>An S3 or MinIO repository. Its credentials go in the keystore.</td>
+</tr>
+<tr>
+<td>Snapshot repository credentials</td>
+<td>none</td>
+<td><strong>Secret.</strong> The access key and the secret key of an S3 repository.</td>
+<td>Only in the OpenSearch keystore, never in a JAVV setting.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-javv-opensearch-chart">The javv-opensearch chart<a class="headerlink" href="#the-javv-opensearch-chart" title="Permanent link">&para;</a></h3>
+<p>The <code>javv-opensearch</code> chart runs the same OpenSearch settings as compose, as values of the
+official chart under <code>opensearch:</code>.</p>
+<ul>
+<li>The keys of JAVV are under <code>opensearch.javv</code>. A wrapper chart cannot calculate the values of its
+  subchart, so these keys are at a place that both charts can read.</li>
+<li>The <a href="../../deploy/helm/javv-opensearch/">chart README</a> gives the full list, with the keys
+  of the official chart that this chart sets.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>opensearch.javv.auth.existingSecret</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> A Secret with the admin password under <code>password</code>. Set this value or <code>password</code>. With neither or both, the install fails.</td>
+</tr>
+<tr>
+<td><code>opensearch.javv.auth.password</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> The admin password. The chart puts it in the Secret <code>&lt;release&gt;-javv-opensearch-admin</code>. OpenSearch reads it at its first start only.</td>
+</tr>
+<tr>
+<td><code>opensearch.javv.backend.existingSecret</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> A Secret with the password of <code>javv</code> under <code>password</code>. <code>javv</code> is the user that the backend of JAVV signs in as, and it holds only the <code>javv</code> role. Set this value or <code>password</code>. With neither or both, the install fails.</td>
+</tr>
+<tr>
+<td><code>opensearch.javv.backend.password</code></td>
+<td><code>""</code></td>
+<td><strong>Secret.</strong> The password of <code>javv</code>. The chart puts it in the Secret <code>&lt;release&gt;-javv-opensearch-backend</code>, which <code>opensearch.passwordSecret</code> of the <code>javv</code> chart names. OpenSearch reads it at its first start only.</td>
+</tr>
+<tr>
+<td><code>opensearch.javv.tls.existingSecret</code></td>
+<td><code>""</code></td>
+<td>A Secret with <code>tls.crt</code>, <code>tls.key</code> (PKCS#8) and <code>ca.crt</code>. It turns off the demo certificates.</td>
+</tr>
+<tr>
+<td><code>opensearch.javv.tls.certManager.enabled</code> / <code>.issuerRef</code></td>
+<td><code>false</code> / <code>{}</code></td>
+<td>A cert-manager <code>Certificate</code> for the Service, in <code>&lt;release&gt;-javv-opensearch-tls</code>. It turns off the demo certificates.</td>
+</tr>
+<tr>
+<td><code>opensearch.javv.tls.adminDn</code></td>
+<td><code>[]</code></td>
+<td>The DNs of the client certificates that can run <code>securityadmin.sh</code> with your own certificates.</td>
+</tr>
+<tr>
+<td><code>opensearch.singleNode</code></td>
+<td><code>true</code></td>
+<td>One node. With <code>false</code>, the install fails.</td>
+</tr>
+<tr>
+<td><code>opensearch.image.tag</code></td>
+<td><code>datastore.opensearch</code> in <code>versions.yaml</code></td>
+<td>The tag of the OpenSearch image. <code>check-versions.sh</code> keeps it equal to <code>versions.yaml</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="runtime-settings">Runtime settings<a class="headerlink" href="#runtime-settings" title="Permanent link">&para;</a></h2>
+<p>JAVV keeps these settings as data in OpenSearch, in the <code>system-config</code> index.</p>
+<ul>
+<li>You change them in the web app or with the API, while JAVV runs. You do not need a new build or
+  a restart.</li>
+<li>Each change writes an entry to the audit log.</li>
+<li>A per-cluster value replaces the fleet value for that cluster.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Scope</th>
+<th>Where in the web app</th>
+<th>Permission to change it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#snapshots">Snapshots</a></td>
+<td>no repository</td>
+<td>fleet</td>
+<td><strong>Settings › Data &amp; OpenSearch</strong></td>
+<td><code>can_manage_retention</code>. A restore needs <code>can_restore_snapshot</code>.</td>
+</tr>
+<tr>
+<td><a href="#retention-and-rollover">Retention and rollover</a></td>
+<td>90 days. Rollover at 30 days, 5,000,000 documents or 50 GB.</td>
+<td>fleet and per cluster</td>
+<td><strong>Settings › Data &amp; OpenSearch</strong></td>
+<td><code>can_manage_retention</code></td>
+</tr>
+<tr>
+<td><a href="#export-lifetime">Export lifetime</a></td>
+<td><code>JAVV_EXPORT_TTL_HOURS</code> (24 hours)</td>
+<td>fleet</td>
+<td><strong>Settings › Data &amp; OpenSearch</strong></td>
+<td><code>can_manage_retention</code></td>
+</tr>
+<tr>
+<td><a href="#findings-cleanup">Findings cleanup</a></td>
+<td>180 days</td>
+<td>fleet and per cluster</td>
+<td><strong>Settings › Data &amp; OpenSearch</strong></td>
+<td><code>can_manage_retention</code></td>
+</tr>
+<tr>
+<td><a href="#staleness">Staleness</a></td>
+<td>3 days and 7 days</td>
+<td>fleet and per cluster</td>
+<td><strong>Settings › Scanning</strong></td>
+<td><code>can_manage_settings</code></td>
+</tr>
+<tr>
+<td><a href="#cluster-retirement-window">Cluster retirement window</a></td>
+<td><code>JAVV_CLUSTER_RETIRE_AFTER_DAYS</code> (45 days), warning <code>JAVV_CLUSTER_RETIREMENT_WARN_DAYS</code> (7 days)</td>
+<td>fleet and per cluster</td>
+<td><strong>Settings › Cluster</strong></td>
+<td><code>can_manage_settings</code></td>
+</tr>
+<tr>
+<td><a href="#sla-policy">SLA policy</a></td>
+<td>critical 2, high 7, medium 30, low 90 days. KEV 1 day.</td>
+<td>fleet</td>
+<td><strong>Settings › SLA policy</strong></td>
+<td><code>can_manage_settings</code></td>
+</tr>
+<tr>
+<td><a href="#scan-scope">Scan scope</a></td>
+<td>empty: scan all</td>
+<td>per cluster</td>
+<td><strong>Settings › Scan scope</strong></td>
+<td><code>can_manage_settings</code></td>
+</tr>
+<tr>
+<td><a href="#ingest-tokens">Ingest tokens</a></td>
+<td>none</td>
+<td>per cluster and scanner</td>
+<td><strong>Settings › Access &amp; tokens</strong></td>
+<td><code>can_manage_tokens</code></td>
+</tr>
+<tr>
+<td><a href="#users-and-roles">Users and roles</a></td>
+<td>the first admin, four roles</td>
+<td>fleet</td>
+<td><strong>Settings › Users &amp; roles</strong></td>
+<td><code>can_manage_users</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="snapshots">Snapshots<a class="headerlink" href="#snapshots" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>GET /api/v1/admin/snapshots</code> lists the snapshots, and <code>POST /api/v1/admin/snapshots</code> makes one.</li>
+<li><code>POST /api/v1/admin/snapshots/{name}/restore</code> restores a snapshot into <code>restored-*</code> copies. It
+  never writes over the live indices.</li>
+<li>You register the snapshot repository when you deploy, with its credentials in the keystore of
+  OpenSearch. The <code>system-config</code> document <code>snapshot_repo</code> holds its name, with no credentials.</li>
+<li>A snapshot holds <code>findings</code>, <code>javv-images-*</code> and <code>system-*</code>, except <code>system-sessions</code>: the
+  current state, the triage, the decisions, the users, the settings and the audit log. A snapshot
+  does not hold the sessions, because a restored copy could make an ended session valid again.</li>
+<li>A snapshot does not hold the scan history (<code>javv-finding-occurrences-*</code>, <code>javv-scan-events-*</code>,
+  <code>javv-inventory-runs-*</code> and <code>javv-ingest-failures-*</code>). Time travel reads this history. A snapshot
+  also does not hold <code>javv-scan-orders</code> and <code>javv-scan-watermarks</code>. Thus a restore from a snapshot
+  does not bring back the history.</li>
+<li>JAVV does not make scheduled snapshots yet.</li>
+</ul>
+<h3 id="retention-and-rollover">Retention and rollover<a class="headerlink" href="#retention-and-rollover" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Retention</strong> (<code>retention_days</code>) is the number of days that JAVV keeps history. The daily
+  lifecycle sweep deletes each history index that is older than the retention of its cluster. It
+  deletes complete indices only, never single documents.</li>
+<li><strong>Rollover</strong> starts a new history index when the current index gets to one limit:
+  <code>max_age_days</code>, <code>max_docs</code> or <code>max_size_gb</code>.</li>
+<li>The history indices are <code>javv-scan-events</code>, <code>javv-images</code>, <code>javv-finding-occurrences</code>,
+  <code>javv-inventory-runs</code> and <code>javv-ingest-failures</code>. The records of failed pushes thus have the same
+  retention.</li>
+<li>The fleet value is the <code>lifecycle</code> document. A <code>lifecycle:&lt;cluster_id&gt;</code> document replaces it for
+  one cluster. The sweep reads them at each run.</li>
+<li>API: <code>PUT /api/v1/settings/retention</code> and <code>PUT /api/v1/settings/rollover</code>.</li>
+<li>Command line:
+  <code>python -m backend.jobs.lifecycle --set-max-age-days N --set-max-docs N --set-max-size-gb N --set-retention-days N [--cluster &lt;id&gt;]</code>.</li>
+</ul>
+<h3 id="export-lifetime">Export lifetime<a class="headerlink" href="#export-lifetime" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The hours that JAVV keeps a finished export: the <code>report_ttl</code> document. Until you save a value,
+  JAVV uses <code>JAVV_EXPORT_TTL_HOURS</code>.</li>
+<li>The report drain writes the expiry time on each export. The report sweep deletes the failed
+  exports that are older than this time.</li>
+<li>API: <code>PUT /api/v1/settings/report-ttl</code>.</li>
+</ul>
+<h3 id="findings-cleanup">Findings cleanup<a class="headerlink" href="#findings-cleanup" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>cleanup_days</code>: the cleanup deletes each row of the <code>findings</code> cache that is not present
+  (<code>present=false</code>) and whose <code>resolved_at</code> is older than this window. It also deletes the scan
+  watermarks of an image with no rows left.</li>
+<li>The fleet value is the <code>findings_cleanup</code> document. A <code>findings_cleanup:&lt;cluster_id&gt;</code> document
+  replaces it for one cluster. The cleanup runs for each cluster with its own window, and reads
+  the window at each run.</li>
+<li>The cleanup never changes the history indices. Its window is independent of the staleness timers
+  and of the retention, and much longer than both.</li>
+<li>The backend runs it on <code>JAVV_JOB_FINDINGS_CLEANUP_CRON</code>. You can also run it by hand:
+  <code>python -m backend.jobs.findings_cleanup</code>.</li>
+<li>Each run writes its counts to the audit log (<code>findings_cleanup_run</code>).</li>
+<li>API: <code>PUT /api/v1/settings/findings-cleanup</code>.</li>
+</ul>
+<h3 id="staleness">Staleness<a class="headerlink" href="#staleness" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The two timers of the daily staleness sweep: <code>freshness_days</code> (3) and <code>scanner_down_days</code> (7).
+  The sweep reads them at each run.</li>
+<li>The fleet value is the <code>staleness</code> document. A <code>staleness:&lt;cluster_id&gt;</code> document replaces it for
+  one cluster.</li>
+<li>API: <code>PUT /api/v1/settings/staleness</code>.</li>
+<li>Command line:
+  <code>python -m backend.jobs.staleness --set-freshness-days N --set-scanner-down-days M [--cluster &lt;id&gt;]</code>.</li>
+</ul>
+<h3 id="cluster-retirement-window">Cluster retirement window<a class="headerlink" href="#cluster-retirement-window" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>retire_after_days</code>: the days that a cluster can go with no accepted scan. After this time, the
+  retirement sweep retires the cluster. <code>null</code> means never. <code>warn_days</code>: the days of warning before
+  the retirement.</li>
+<li>The fleet value is the <code>retirement</code> document. A <code>retirement:&lt;cluster_id&gt;</code> document replaces it
+  for one cluster. Until you save a fleet value, JAVV uses <code>JAVV_CLUSTER_RETIRE_AFTER_DAYS</code> and
+  <code>JAVV_CLUSTER_RETIREMENT_WARN_DAYS</code>.</li>
+<li>A retired cluster is not on the cluster list. JAVV keeps its data and does not change its
+  tokens. Its next scan returns it.</li>
+<li>A retirement by hand revokes the tokens of the cluster. The cluster returns when it sends a scan
+  with a new token, or when you return it by hand.</li>
+<li>JAVV refuses a window that is not longer than the scanner-down timer of the cluster
+  (<a href="#staleness">Staleness</a>), with 422. The sweep never uses a window shorter than that timer. Thus
+  an outage that is only long enough to make findings stale never retires a cluster.</li>
+<li>The silence starts at the newest accepted scan. For a cluster that never sent a scan, it starts
+  when JAVV made its first token. When a cluster returns from retirement, JAVV writes <code>returned_at</code>
+  on the record, and the silence starts again from that time. Thus the next sweep does not retire
+  the cluster again at once.</li>
+<li>Sometimes clusters are due, but no cluster had a scan accepted within its scanner-down timer.
+  Then the sweep retires nothing and logs a warning (<code>javv_cluster_retirement_held_total</code>). This
+  points at JAVV, not at the clusters.</li>
+<li>When a cluster enters its last <code>warn_days</code>, the sweep sends one notification for each silence to
+  each user with <code>can_manage_settings</code> (<code>cluster_retiring</code>, in the bell). The web app also shows a
+  banner with the count of days. A change of these settings does not send or delete a
+  notification. JAVV deletes the notification when the cluster scans again, or when a return from
+  retirement starts a new silence. A retired cluster keeps its notification.</li>
+<li>The sweep never retires the only cluster on the list. That cluster gets no notification, and
+  the banner says that JAVV does not retire it automatically.</li>
+<li>The backend runs the sweep on <code>JAVV_JOB_CLUSTER_RETIREMENT_CRON</code>. The same run also looks at
+  deleted clusters for rows that arrived after their deletion.</li>
+<li>API: <code>GET /api/v1/settings/retirement</code> (each signed-in user) and
+  <code>PUT /api/v1/settings/retirement</code>. The audit log entry is <code>retirement_window_change</code>.</li>
+</ul>
+<h3 id="sla-policy">SLA policy<a class="headerlink" href="#sla-policy" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The days to fix a finding, for each severity: critical 2, high 7, medium 30, low 90. A finding
+  in the KEV catalog has <code>kev_days</code>, 1 day. <code>negligible</code> and <code>unknown</code> have no SLA.</li>
+<li>The <code>sla</code> document holds the policy, for all clusters.</li>
+<li>JAVV calculates "overdue" when it reads. The clock starts at the earliest <code>first_seen_at</code> for
+  each CVE and image. A new package version does not start the clock again.</li>
+<li>API: <code>GET /api/v1/settings/sla</code> (each signed-in user or token) and <code>PUT /api/v1/settings/sla</code>.
+  The audit log keeps the full old and new policy.</li>
+</ul>
+<h3 id="scan-scope">Scan scope<a class="headerlink" href="#scan-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The namespaces, images and kinds that the scanners of one cluster scan: the
+  <code>scan_scope:&lt;cluster_id&gt;</code> document.</li>
+<li>The scanner gets it at the start of each cycle with <code>GET /api/v1/scan-scope</code>
+  (<a href="#scan-scope-scan-settings-and-versions">Scanner settings</a>).</li>
+</ul>
+<h3 id="ingest-tokens">Ingest tokens<a class="headerlink" href="#ingest-tokens" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>POST /api/v1/admin/tokens</code> makes a token, and <code>GET /api/v1/admin/tokens</code> lists the tokens.
+  <code>/{id}/rotate</code> and <code>/{id}/revoke</code> rotate and revoke one. The lists use pages (<code>size</code>, <code>offset</code>).</li>
+<li>JAVV shows the raw token one time only.</li>
+<li>A new token can have an expiry. A rotation keeps the same expiry: a rotation does not extend a
+  token.</li>
+<li>Command line: <code>python -m backend.core.tokens --cluster &lt;id&gt; --scanner &lt;trivy|grype&gt;</code>.</li>
+</ul>
+<h3 id="users-and-roles">Users and roles<a class="headerlink" href="#users-and-roles" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>POST /api/v1/admin/users</code> makes a user, and <code>GET /api/v1/admin/users</code> lists the users.
+  <code>PATCH /api/v1/admin/users/{u}/role</code>, <code>PATCH /api/v1/admin/users/{u}/disabled</code> and
+  <code>POST /api/v1/admin/users/{u}/password-reset</code> change one.</li>
+<li>A new user, and a user after a password reset, gets a temporary password and must change it.</li>
+<li>A role change sets the role and its capabilities together, and ends the sessions of the user. A
+  user that you disable also loses the sessions.</li>
+<li>You cannot demote or disable the last enabled admin: the reply is 409.</li>
+<li>The roles are documents in <code>system-roles</code>: <code>viewer</code>, <code>triager</code>, <code>security_lead</code> and <code>admin</code>
+  (all capabilities). JAVV makes them at the first start and never writes them again. To change a
+  role, edit its document. The web app shows the four roles, but cannot change them.</li>
+<li>Each user has a role and a copy of the capabilities of that role, in <code>system-users</code>.</li>
+</ul>
+<h2 id="fixed-values">Fixed values<a class="headerlink" href="#fixed-values" title="Permanent link">&para;</a></h2>
+<p>Some values in the code never change. They are not <code>JAVV_*</code> settings and not runtime settings:</p>
+<ul>
+<li>A setting for them would add work for operators.</li>
+<li>A wrong value would hide a bug, not change a workload.</li>
+</ul>
+<p>To decide, ask this question: does an operator have a reason to change the value for their
+workload?</p>
+<ul>
+<li>If yes, the value is a setting.</li>
+<li>If the only reason is "a bug makes us get to the limit", the value stays in the code: fix the
+  bug.</li>
+<li>For example, the bulk limit is a setting (<code>JAVV_BULK_MAX_TARGETS</code>), but the page size of a bulk
+  selection (<code>_FREEZE_PAGE</code>) stays in the code.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Values</th>
+<th>Why they are not settings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Scheduler tick:</strong> how frequently the backend looks for a due job</td>
+<td><code>jobs/scheduler.TICK_SECONDS</code> (30 s)</td>
+<td>A schedule is a minute or longer, so two looks each minute never miss one. A shorter tick gives nothing. A longer tick can start a job late. The schedules themselves are settings (<code>JAVV_JOB_&lt;KIND&gt;_CRON</code>).</td>
+</tr>
+<tr>
+<td><strong>Queue order:</strong> the due job that starts first</td>
+<td><code>jobs/schedule.FIRST_IN_QUEUE</code> (<code>report_drain</code>), then the order of <code>jobs/registry.JOBS</code></td>
+<td>A person waits for an export. Nobody waits for a sweep.</td>
+</tr>
+<tr>
+<td><strong>Scanner error text in the log:</strong> how much of the error output of a failed scan one log line holds</td>
+<td><code>scanner/run.STDERR_TAIL_LINES</code> (5), <code>STDERR_TAIL_CHARS</code> (1000)</td>
+<td>These values bound one log line. The scanner writes its final error last. JAVV does not keep the full output of the scanner.</td>
+</tr>
+<tr>
+<td><strong>Scanner waits between tries:</strong> the first wait and the longest one</td>
+<td><code>scanner/push.FIRST_WAIT_S</code> (0.5 s), <code>WAIT_CAP_S</code> (30 s)</td>
+<td>The setting <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code> decides how long the scanner tries. These values only space the tries: each wait is a random time up to its limit, which doubles from the first.</td>
+</tr>
+<tr>
+<td><strong>Read page size:</strong> the reader reads in pages, so this value is a batch size, not a limit on results</td>
+<td><code>decisions/reproject._PAGE</code> (10k), <code>triage/bulk._FREEZE_PAGE</code> (10k), <code>services/disagreement._SEARCH_PAGE</code> (10k), <code>jobs/rebuild_state._PAGE</code> (1k), <code>export/sweep._PAGE_SIZE</code> (500), <code>routers/findings._GROUP_CLOCK_PAGE</code> (1k), <code>routers/contributors._ROWS_PAGE_SIZE</code> (10k), <code>query/pit._ROW_PAGE</code> (10k), <code>query/human_at._ROW_PAGE</code> (10k), and the row walks of <code>jobs/rebuild_state</code> and <code>jobs/staleness</code> (10k). All <code>search_after</code> walks use <code>query/paging.search_to_exhaustion</code>.</td>
+<td>Each value is at or below the <code>from</code>/<code>size</code> limit of OpenSearch, 10k. A sweep uses a smaller value to keep its memory constant. The caller reads pages until there are no more, so each value gives complete results. A value changes only the number of round trips and the memory.</td>
+</tr>
+<tr>
+<td><strong>Conflict retries:</strong> a guard against a loop, not a dial</td>
+<td><code>decisions/reproject._CONFLICT_RETRIES</code> (8), <code>services/reconcile._CONFLICT_RETRIES</code> (10), <code>services/merge._CONFLICT_RETRIES</code> (10), <code>decisions/lifecycle._CAS_RETRIES</code> (8), <code>triage/service._CAS_RETRIES</code> (8), <code>services/scan_orders._CAS_RETRIES</code> (32), <code>services/watermarks._CAS_RETRIES</code> (32), <code>admin/cluster_delete._RETRIES</code> (5)</td>
+<td>Real contention is about 1: one CronJob for each scanner, with <code>Forbid</code>. A run that gets to the limit shows a fault to examine. A larger limit would hide the fault. A cluster delete refreshes the index before each retry, because a row that changed since the last refresh conflicts with every pass until then. The two values of 10 guard the same commit race from the two sides. They wait longer after each retry with <code>repositories/bulk.race_backoff_delay</code>: from 0.02 s to 2 s, about 8.5 s in total. This total is longer than the <code>_bulk</code> backoff of a racing pass, 7.5 s at most.</td>
+</tr>
+<tr>
+<td><strong>Shape of a client-events request:</strong> the contract of the API, not a dial</td>
+<td><code>routers/client_events._MAX_BATCH</code> (20), <code>_MAX_KEYS_PER_OBJECT</code> (25), <code>_MAX_DEPTH</code> (3), <code>_MAX_KEY_CHARS</code> (64), <code>_MAX_VALUE_CHARS</code> (512), <code>_MAX_LIST_ITEMS</code> (20), <code>_EVENT_NAME</code> (<code>^[a-z0-9][a-z0-9 ._-]{0,63}$</code>)</td>
+<td>These values are the OpenAPI schema. They are in the generated client, so a change is a contract change for the backend and the frontend. As settings, they would make a 422 depend on the deployment. The input comes from the browser and is not trusted, so the check of value types is an allowlist. The name pattern accepts spaces, as in <code>backend degraded</code>. It refuses newlines, tabs, quotes and control characters, which could break the <code>client.&lt;name&gt;</code> name. The rate limit for each user is a setting (<code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code>).</td>
+</tr>
+<tr>
+<td><strong>Idle connections to the backend:</strong> how long the frontend server keeps an idle connection to the backend open</td>
+<td><code>frontend/server/serve.mjs</code>: <code>BACKEND_IDLE_MS</code> (4 s)</td>
+<td>The backend closes an idle connection after 5 s, the default of uvicorn. The frontend server must close the connection first. If not, a request that it sends at the same moment gets a reset, and the browser gets a 502. An operator cannot change the 5 s of the backend, so this value has no reason to change. <code>test_frontend_pool_idle.py</code> fails when the frontend value is not at least 0.5 s shorter.</td>
+</tr>
+<tr>
+<td><strong>Store warning window:</strong> how frequently the backend logs that OpenSearch is not reachable</td>
+<td><code>core/errors.STORE_WARN_WINDOW_S</code> (10 s)</td>
+<td>Any sender can repeat a request while OpenSearch is away, so the warning must not follow the requests. The counter <code>javv_store_unavailable_total</code> counts each one. The frontend server logs its 502 with the same window.</td>
+</tr>
+<tr>
+<td><strong>Password length:</strong> the rule for each local password</td>
+<td><code>auth/passwords.MIN_LENGTH</code> (12), <code>MAX_LENGTH</code> (256). The frontend has a copy in <code>frontend/src/stores/auth.ts</code>: <code>PASSWORD_MIN_LENGTH</code> and <code>PASSWORD_MAX_LENGTH</code>.</td>
+<td>A security minimum, not a dial. The password form shows the minimum and refuses a shorter password before it sends it, so the frontend keeps a copy. <code>password-change.spec.ts</code> reads the backend file and fails when the two are different. The server makes the decision.</td>
+</tr>
+<tr>
+<td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>
+<td><code>query/aggs._FACET_TERMS_SIZE</code> (32: at least each fixed Findings list, and the top values of a list with no fixed values), <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64: more than the Audit log Action list, which has 42 values), <code>query/contributors._BOARD_SIZE</code> (100 people on the leaderboard)</td>
+<td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ci-gate-values">CI gate values<a class="headerlink" href="#ci-gate-values" title="Permanent link">&para;</a></h2>
+<p>These values belong to the CI of JAVV. They look like settings, but they are not.</p>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>Value and place</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backend coverage minimum</td>
+<td><code>--cov-fail-under=90</code>, in the backend job of <code>.github/workflows/ci.yml</code></td>
+<td>On 2026-07-15, the line coverage was 92.4%. The minimum is 2 points below. <strong>Increase the minimum when coverage increases. Never decrease it.</strong> A PR that does not meet the minimum adds tests. It does not move the minimum.</td>
+</tr>
+<tr>
+<td>Frontend coverage minimum</td>
+<td><code>thresholds.lines: 77</code>, in <code>frontend/vitest.config.ts</code></td>
+<td>On 2026-07-15, the line coverage was 79.7%. The count includes the TypeScript logic modules only. The route smoke test covers the views, and the build generates <code>src/api/generated</code>. The same rule applies.</td>
+</tr>
+<tr>
+<td>Smoke search limit</td>
+<td><code>JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL=50</code>, in the env of the CI smoke job</td>
+<td>The <a href="#triage-search-and-exports">backend setting</a>, larger for the smoke test only. The test opens pages faster than a person, and slots become free slower than it opens pages. Do not use this value in production.</td>
+</tr>
+<tr>
+<td>Smoke data</td>
+<td><code>backend/tests/fixtures/envelope-trivy-golden.json</code>, through <code>development/scripts/seed-smoke.sh</code></td>
+<td>The golden fixture of the contract is the seed. Thus there is one source of truth. A change of the ingest contract changes both in the same PR. The script pushes it to two clusters, with the second cluster id changed at seed time. Thus the smoke test can go from one cluster to the other.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","content.code.copy"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
+      
+    
+  </body>
+</html>

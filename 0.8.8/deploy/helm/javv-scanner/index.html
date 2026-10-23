@@ -1,0 +1,1774 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Docs for JAVV, Just Another Vulnerability Viewer">
+      
+      
+      
+        <link rel="canonical" href="https://danube-labs.github.io/javv-poc/0.8.8/deploy/helm/javv-scanner/">
+      
+      
+      
+        <link rel="prev" href="../javv-opensearch/">
+      
+      
+        <link rel="next" href="../../../docs/CONFIGURATION/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.71">
+    
+    
+      
+        <title>Chart: javv-scanner - JAVV</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e442bf79.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/javv.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="JAVV" class="md-header__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            JAVV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chart: javv-scanner
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark theme"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark theme" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light theme"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light theme" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="JAVV" class="md-nav__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    JAVV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Use JAVV
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Use JAVV
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/from-a-scan-to-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  From a scan to a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/set-the-state-of-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set the state of a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/accept-a-risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Accept a risk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/change-many-findings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Change many findings at once
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/when-a-scanner-stops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  When a scanner stops
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/use/who-changed-what/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  See who changed what
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Install
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/DEPLOYING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deploying
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/supported-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supported versions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../javv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../javv-opensearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-opensearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-scanner
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-scanner
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Install
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prerequisites
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Steps
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-the-chart-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the chart comes from
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-chart-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the chart runs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#images" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Images
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Operate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Operate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/runbooks/opensearch-sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sizing OpenSearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/runbooks/multi-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scaling and failures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/runbooks/indices-and-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Indices and data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrade
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Upgrade
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/UPGRADING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Integrate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Integrate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../docs/INGEST-CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Push from your own script
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Install
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prerequisites
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Steps
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-the-chart-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the chart comes from
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-chart-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the chart runs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#images" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Images
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="javv-scanner">javv-scanner<a class="headerlink" href="#javv-scanner" title="Permanent link">&para;</a></h1>
+<p><img alt="Version: 0.8.8" src="https://img.shields.io/badge/Version-0.8.8-informational?style=flat-square" /> <img alt="AppVersion: 0.8.8" src="https://img.shields.io/badge/AppVersion-0.8.8-informational?style=flat-square" /></p>
+<p>This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
+CronJob.</p>
+<ul>
+<li>Each scanner pushes its own results to JAVV. JAVV never merges them.</li>
+<li>Install the chart in each cluster that you scan.</li>
+<li>JAVV itself, the <a href="../javv/"><code>javv</code></a> chart, can run in that cluster or at each place
+  that the scanners can reach over HTTP.
+<a href="../../../docs/DEPLOYING/#connect-the-scanners">Connect the scanners</a> gives the full procedure.</li>
+</ul>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A running JAVV, and an address of JAVV that this cluster can connect to.</li>
+<li>An admin sign-in to JAVV.</li>
+<li><code>kubectl</code> and Helm that can connect to this cluster, and bash.</li>
+</ul>
+<h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Find the id of this cluster:
+    <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>namespace<span class="w"> </span>kube-system<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.metadata.uid}'</span>
+</code></pre></div></li>
+<li>Make one ingest token for each scanner, in JAVV: <strong>Settings › Access &amp; tokens › Mint token</strong>.<ul>
+<li>For the first token, select <strong>New cluster…</strong> and enter the cluster id.</li>
+<li>Select the name of the scanner.</li>
+</ul>
+</li>
+<li>Put each token in its own Secret, and install the chart:
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.8
+kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>javv-scanner
+<span class="c1"># asks for each token, so it is not in your shell history or the process list</span>
+<span class="k">for</span><span class="w"> </span>s<span class="w"> </span><span class="k">in</span><span class="w"> </span>trivy<span class="w"> </span>grype<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s2">"</span><span class="nv">$s</span><span class="s2"> token: "</span><span class="w"> </span>token<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+<span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$token</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span><span class="s2">"javv-</span><span class="nv">$s</span><span class="s2">-token"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--from-file<span class="o">=</span><span class="nv">token</span><span class="o">=</span>/dev/stdin
+<span class="k">done</span><span class="p">;</span><span class="w"> </span><span class="nb">unset</span><span class="w"> </span>token
+helm<span class="w"> </span>install<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">backendUrl</span><span class="o">=</span>http://&lt;JAVV<span class="err">'</span>s<span class="w"> </span>address&gt;:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>trivy.token.existingSecret<span class="o">=</span>javv-trivy-token<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>grype.token.existingSecret<span class="o">=</span>javv-grype-token
+helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>scanner<span class="w"> </span>-n<span class="w"> </span>javv-scanner
+</code></pre></div>
+    <code>helm test</code> verifies that JAVV replies at <code>backendUrl</code> and accepts each token. It does not
+    scan.</li>
+</ol>
+<p>Each scanner then runs on its <code>schedule</code>. To start a cycle now, follow the safe sequence in
+<code>NOTES</code>:</p>
+<ol>
+<li>Pause the CronJob.</li>
+<li>Wait until no Job of that scanner runs.</li>
+<li>Make a Job from the CronJob.</li>
+<li>Start the CronJob again.</li>
+</ol>
+<h3 id="where-the-chart-comes-from">Where the chart comes from<a class="headerlink" href="#where-the-chart-comes-from" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Each JAVV release publishes this chart at <code>oci://ghcr.io/danube-labs/charts</code>, and signs it
+  (<a href="../../../docs/DEPLOYING/#verify-the-images-and-charts">Verify the images and charts</a>).</li>
+<li>From a checkout, use the folder of the chart in <code>deploy/helm/</code>.</li>
+</ul>
+<h2 id="what-the-chart-runs">What the chart runs<a class="headerlink" href="#what-the-chart-runs" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>One CronJob for each scanner,</strong> with <code>concurrencyPolicy: Forbid</code>. The CronJob never starts a
+  cycle while one of its own cycles runs. It does not count a Job that you make by hand, so use
+  the sequence in <code>NOTES</code>. Kubernetes stops a cycle after <code>activeDeadlineSeconds</code>. The stopped
+  cycle does not run again before the next schedule.</li>
+<li><strong>A cache of the vulnerability database for each scanner:</strong> a <code>ReadWriteOnce</code>
+  PersistentVolumeClaim at <code>/var/cache/javv</code>. Each run first refreshes the database there with the
+  binary of the scanner, from the source of the vendor or from the source in <code>vulnDb</code>. Then it
+  scans with updates off. Thus each image in a cycle gets the same database, and the scan does not
+  connect to the vendor. Trivy uses the misconfiguration rules in its binary.<ul>
+<li>If the refresh fails, the run uses the database in the cache.</li>
+<li>If the scanner cannot read the database, the refresh deletes it and downloads it one more
+  time.</li>
+<li>With no database that it can read, the run fails, and its log tells you why.</li>
+<li>The refresh also verifies the Java database of Trivy. A damaged Java database fails no scan:
+  Trivy only skips the jars that it cannot name.</li>
+<li>Grype refuses a database older than 5 days.</li>
+</ul>
+</li>
+<li><strong>Mirrors:</strong> <code>trivy.vulnDb.repository</code> and <code>trivy.vulnDb.javaRepository</code> take OCI repositories.
+  <code>grype.vulnDb.updateUrl</code> takes the address of a list of database builds. Put each other setting
+  that the vendors read in <code>extraEnv</code>, for example <code>GRYPE_DB_CA_CERT</code> or the registry login for a
+  private mirror.</li>
+<li><strong>Kubernetes access:</strong> one ClusterRole. It can <code>list</code> pods, to find the running images. It can
+  <code>get</code> the <code>kube-system</code> namespace, because its UID is the id of the cluster. It cannot read
+  Secrets.</li>
+<li><strong>Private registries:</strong> <code>&lt;scanner&gt;.registryAuth.existingSecret</code> names a
+  <code>kubernetes.io/dockerconfigjson</code> Secret. Kubernetes puts its <code>.dockerconfigjson</code> key into the scan
+  container as <code>/etc/javv/registry/config.json</code>, and <code>DOCKER_CONFIG</code> points the scanner at it. The
+  refresh does not get the login. With no login, the scanner pulls each image with no sign-in, and
+  it skips an image that it cannot pull.</li>
+<li>Both scanners run as the user of their images, <code>65532</code>, with a read-only root file system. They
+  have the cache volume, an <code>emptyDir</code> on <code>/var/lib/javv</code> for the dead-letter file, and an
+  <code>emptyDir</code> on <code>/tmp</code>.</li>
+</ul>
+<h2 id="images">Images<a class="headerlink" href="#images" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>image.tag</code> is the scanner version from <code>versions.yaml</code> in the repository. JAVV publishes that
+  tag again when it changes the scanner image. Thus the default <code>pullPolicy</code> is <code>Always</code>.</li>
+<li>To run one exact build, set <code>image.digest</code>.</li>
+<li><strong>The chart of a release sets the digest.</strong> For each scanner, it is the digest that the tag named
+  when JAVV made the release, after cosign verified the signature of <code>scanner-images.yml</code>.</li>
+<li>A checkout of the repository has the tag only.</li>
+</ul>
+<h2 id="values">Values<a class="headerlink" href="#values" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>backendUrl</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The address of JAVV, as the scanners reach it: the frontend Service of the javv chart, or what you put in front of it. Examples: <code>http://javv.javv.svc:8080</code> in the same cluster, and <code>https://javv.example.com</code> from a different cluster. You must set it.</td>
+</tr>
+<tr>
+<td>clusterId</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The id of this cluster in JAVV. When it is empty, the scanners read the UID of the <code>kube-system</code> namespace. When you set it, the scanners verify it: a cycle that reaches a different cluster stops, and does not scan.</td>
+</tr>
+<tr>
+<td>grype.activeDeadlineSeconds</td>
+<td>int</td>
+<td><code>19800</code></td>
+<td>Kubernetes stops a cycle that runs for longer than this number of seconds.</td>
+</tr>
+<tr>
+<td>grype.config</td>
+<td>object</td>
+<td>every setting at its code default. values.yaml has the list.</td>
+<td>The scan settings of Grype (docs/CONFIGURATION.md, "Grype settings"), at their defaults. An empty value means not set.</td>
+</tr>
+<tr>
+<td>grype.enabled</td>
+<td>bool</td>
+<td><code>true</code></td>
+<td>Run the Grype CronJob.</td>
+</tr>
+<tr>
+<td>grype.extraEnv</td>
+<td>list</td>
+<td><code>[]</code></td>
+<td>More environment variables for the refresh and the scan, in the form of Kubernetes.</td>
+</tr>
+<tr>
+<td>grype.image.digest</td>
+<td>string</td>
+<td><code>""</code></td>
+<td><code>sha256:...</code>: run exactly that image. It replaces <code>tag</code>. It is empty in the repository. The chart of a release sets it to the digest that the tag named at the release.</td>
+</tr>
+<tr>
+<td>grype.image.tag</td>
+<td>string</td>
+<td><code>"0.120.1"</code></td>
+<td>The Grype version, from versions.yaml (<code>scanners.grype.current</code>). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image.</td>
+</tr>
+<tr>
+<td>grype.registryAuth</td>
+<td>object</td>
+<td><code>{"existingSecret":""}</code></td>
+<td>A registry login for the images from private registries, as for Trivy. It can be the same Secret.</td>
+</tr>
+<tr>
+<td>grype.schedule</td>
+<td>string</td>
+<td><code>"30 */6 * * *"</code></td>
+<td>When a cycle starts, in the time zone of the CronJob.</td>
+</tr>
+<tr>
+<td>grype.timeZone</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The time zone of <code>schedule</code>. When it is empty, the zone of the cluster applies, which is UTC on most clusters.</td>
+</tr>
+<tr>
+<td>grype.token</td>
+<td>object</td>
+<td><code>{"existingSecret":"","key":"token","value":""}</code></td>
+<td>The ingest token that JAVV made for this cluster and Grype. Give a Secret that holds it under <code>key</code>. Or give <code>value</code>, and the chart puts it in a Secret.</td>
+</tr>
+<tr>
+<td>grype.vulnDb.existingClaim</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>Your own PersistentVolumeClaim. The chart then makes no claim.</td>
+</tr>
+<tr>
+<td>grype.vulnDb.size</td>
+<td>string</td>
+<td><code>"10Gi"</code></td>
+<td>The cache volume. In October 2026, the Grype database used 3.0 GB. This size gives it space to grow.</td>
+</tr>
+<tr>
+<td>grype.vulnDb.storageClass</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>When it is empty, the default StorageClass of the cluster applies.</td>
+</tr>
+<tr>
+<td>grype.vulnDb.updateUrl</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The source of the vulnerability database (<code>GRYPE_DB_UPDATE_URL</code>, the list of database builds). When it is empty, Grype uses <code>https://grype.anchore.io/databases</code>.</td>
+</tr>
+<tr>
+<td>podSecurityContext</td>
+<td>object</td>
+<td><code>{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}</code></td>
+<td>Both scanners run as the user of their images, with a read-only root. They write only to the database cache, the dead-letter file and /tmp.</td>
+</tr>
+<tr>
+<td>trivy.activeDeadlineSeconds</td>
+<td>int</td>
+<td><code>19800</code></td>
+<td>Kubernetes stops a cycle that runs for longer than this number of seconds. Only one cycle runs at a time, so a cycle that does not end would stop each later cycle.</td>
+</tr>
+<tr>
+<td>trivy.config</td>
+<td>object</td>
+<td>every setting at its code default. values.yaml has the list.</td>
+<td>The scan settings of Trivy (docs/CONFIGURATION.md, "Trivy settings"), at their defaults. An empty value means not set.</td>
+</tr>
+<tr>
+<td>trivy.enabled</td>
+<td>bool</td>
+<td><code>true</code></td>
+<td>Run the Trivy CronJob.</td>
+</tr>
+<tr>
+<td>trivy.extraEnv</td>
+<td>list</td>
+<td><code>[]</code></td>
+<td>More environment variables for the refresh and the scan, in the form of Kubernetes.</td>
+</tr>
+<tr>
+<td>trivy.image.digest</td>
+<td>string</td>
+<td><code>""</code></td>
+<td><code>sha256:...</code>: run exactly that image. It replaces <code>tag</code>. It is empty in the repository. The chart of a release sets it to the digest that the tag named at the release.</td>
+</tr>
+<tr>
+<td>trivy.image.tag</td>
+<td>string</td>
+<td><code>"0.76.1"</code></td>
+<td>The Trivy version, from versions.yaml (<code>scanners.trivy.current</code>). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image.</td>
+</tr>
+<tr>
+<td>trivy.registryAuth</td>
+<td>object</td>
+<td><code>{"existingSecret":""}</code></td>
+<td>A registry login for the images from private registries: the name of a <code>kubernetes.io/dockerconfigjson</code> Secret in the namespace of the chart. The scan container mounts it, and <code>DOCKER_CONFIG</code> tells Trivy where it is. When it is empty, Trivy pulls each image with no login.</td>
+</tr>
+<tr>
+<td>trivy.schedule</td>
+<td>string</td>
+<td><code>"0 */6 * * *"</code></td>
+<td>When a cycle starts, in the time zone of the CronJob. A cycle each 6 hours keeps each finding well inside the 3-day staleness window of JAVV. Grype runs half an hour later, so the two downloads do not occur at the same time.</td>
+</tr>
+<tr>
+<td>trivy.timeZone</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The time zone of <code>schedule</code>, for example <code>Europe/Bucharest</code>. When it is empty, the zone of the cluster applies, which is UTC on most clusters.</td>
+</tr>
+<tr>
+<td>trivy.token</td>
+<td>object</td>
+<td><code>{"existingSecret":"","key":"token","value":""}</code></td>
+<td>The ingest token that JAVV made for this cluster and Trivy (Settings › Access &amp; tokens). Give a Secret that holds it under <code>key</code>. Or give <code>value</code>, and the chart puts it in a Secret.</td>
+</tr>
+<tr>
+<td>trivy.vulnDb.existingClaim</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>Your own PersistentVolumeClaim. The chart then makes no claim.</td>
+</tr>
+<tr>
+<td>trivy.vulnDb.javaRepository</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The source of the Java index database (<code>--java-db-repository</code>). When it is empty, Trivy uses <code>mirror.gcr.io/aquasec/trivy-java-db:1</code>, then <code>ghcr.io/aquasecurity/trivy-java-db:1</code>.</td>
+</tr>
+<tr>
+<td>trivy.vulnDb.repository</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>The source of the vulnerability database (<code>--db-repository</code>, OCI repositories in sequence). When it is empty, Trivy uses <code>mirror.gcr.io/aquasec/trivy-db:2</code>, then <code>ghcr.io/aquasecurity/trivy-db:2</code>.</td>
+</tr>
+<tr>
+<td>trivy.vulnDb.size</td>
+<td>string</td>
+<td><code>"10Gi"</code></td>
+<td>The cache volume. In October 2026, the two Trivy databases used 2.9 GB. This size gives them space to grow.</td>
+</tr>
+<tr>
+<td>trivy.vulnDb.storageClass</td>
+<td>string</td>
+<td><code>""</code></td>
+<td>When it is empty, the default StorageClass of the cluster applies.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["navigation.sections","content.code.copy"],"redirect":"../../../redirect.json","search":"../../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a2388154.min.js"></script>
+      
+    
+  </body>
+</html>
