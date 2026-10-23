@@ -258,6 +258,14 @@ it. A pick from a table cell adds the value, and the same pick again removes it.
 commas adds each value. A filter takes at most 32 values (the API limit), and the edit box says so
 when the list is full.
 
+**Assignee with Unassigned** (operator ruling 2026-10-23 on a built specimen, issue 975, option
+B): Findings refuses the two filters together, so the last pick wins. A click on Unassigned clears
+the Assignee values. A pick of an Assignee value, or a change of Assignee from "is not" to "is",
+turns Unassigned off. A message tells the user what changed, for example "Assignee cleared.
+Assignee and Unassigned can't be used together." Assignee "is not" with Unassigned stays, because
+the API accepts it. A link or an old saved view with both filters keeps both, and the grid then
+shows the 422 text (see States).
+
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in
 the list with their counts. An excluded value also stays in the list, with a line through it and

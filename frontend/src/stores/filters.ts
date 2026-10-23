@@ -17,19 +17,25 @@ import type { LocationQuery } from 'vue-router'
 import {
   emptySelections,
   isNegatable,
+  valueLabel,
+  type ExclusivePair,
   type FilterField,
   type Selections,
 } from '@/filters/fields.config'
+import { useToastStore } from '@/stores/toast'
 
 export type FilterMode = 'is' | 'not'
 export type Modes = Record<string, FilterMode>
 
 /** `maxValues` caps a multi field where the API does (Findings: 32, issue 949); a screen that
- * filters in the browser leaves it unset. */
+ * filters in the browser leaves it unset. `exclusive` lists the picks the API refuses together:
+ * the last pick wins, clears the other side, and a message names what it cleared (operator
+ * ruling on a built specimen, issue 975). */
 export function makeFiltersStore(
   storeId: string,
   fields: readonly FilterField[],
   maxValues = Number.POSITIVE_INFINITY,
+  exclusive: readonly ExclusivePair[] = [],
 ) {
   return defineStore(storeId, {
     state: () => ({ selections: emptySelections(fields) as Selections, modes: {} as Modes }),
@@ -39,6 +45,30 @@ export function makeFiltersStore(
       modeOf: (s) => (fieldKey: string) => s.modes[fieldKey] ?? 'is',
     },
     actions: {
+      /** After a change to `fieldKey`, clear the other side of every pair it now completes. */
+      keepPairsApart(fieldKey: string) {
+        for (const pair of exclusive) {
+          if (fieldKey !== pair.flagField && fieldKey !== pair.field) continue
+          const flagOn = (this.selections[pair.flagField] ?? []).includes(pair.flag)
+          const fieldIs =
+            (this.selections[pair.field] ?? []).length > 0 && (this.modes[pair.field] ?? 'is') === 'is'
+          if (!flagOn || !fieldIs) continue
+          const fieldLabel = fields.find((f) => f.key === pair.field)?.label ?? pair.field
+          const flagField = fields.find((f) => f.key === pair.flagField)
+          const flagLabel = flagField ? valueLabel(flagField, pair.flag) : pair.flag
+          let cleared: string
+          if (fieldKey === pair.flagField) {
+            this.clearField(pair.field)
+            cleared = fieldLabel
+          } else {
+            this.selections[pair.flagField] = (this.selections[pair.flagField] ?? []).filter(
+              (v) => v !== pair.flag,
+            )
+            cleared = flagLabel
+          }
+          useToastStore().info(`${cleared} cleared. ${fieldLabel} and ${flagLabel} can't be used together.`)
+        }
+      },
       toggle(fieldKey: string, value: string) {
         const field = fields.find((f) => f.key === fieldKey)
         if (!field) return
@@ -52,6 +82,7 @@ export function makeFiltersStore(
         } else {
           this.selections[fieldKey] = [...current, value]
         }
+        this.keepPairsApart(fieldKey)
       },
       setText(fieldKey: string, value: string) {
         this.selections[fieldKey] = value.trim() ? [value.trim()] : []
@@ -100,6 +131,7 @@ export function makeFiltersStore(
         if (!field || !isNegatable(field)) return
         if (mode === 'is') delete this.modes[fieldKey]
         else this.modes[fieldKey] = mode
+        this.keepPairsApart(fieldKey)
       },
       toggleMode(fieldKey: string) {
         this.setMode(fieldKey, (this.modes[fieldKey] ?? 'is') === 'is' ? 'not' : 'is')

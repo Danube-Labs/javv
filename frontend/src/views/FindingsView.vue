@@ -29,7 +29,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import { useApi } from '@/composables/useApi'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import type { FacetsResponse } from '@/filters/facets'
-import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
+import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
@@ -45,7 +45,12 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import { foreignQuery, ownQuery } from '@/system/globalUrl'
 
-const useFindingsFilters = makeFiltersStore('findings-filters', FINDINGS_FIELDS, MAX_FILTER_VALUES)
+const useFindingsFilters = makeFiltersStore(
+  'findings-filters',
+  FINDINGS_FIELDS,
+  MAX_FILTER_VALUES,
+  FINDINGS_EXCLUSIVE_PAIRS,
+)
 const filters = useFindingsFilters()
 const auth = useAuthStore()
 const clusterStore = useClusterStore()
