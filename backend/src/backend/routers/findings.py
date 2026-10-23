@@ -50,6 +50,7 @@ from backend.query.search import (
     FilterValue256,
     FilterValue512,
     SearchFilters,
+    conflicting_filter_pair,
     cursor_pit_id,
     run_search,
 )
@@ -130,26 +131,7 @@ def _filters(
     exclude_cve_id: _Values128 = None,
     exclude_package_name: _Values512 = None,
 ) -> SearchFilters:
-    # include+exclude on one field is ambiguous — 422 here so the builder's ValueError
-    # (kept as defense for direct constructors like report_drain) never costs a 500
-    for name, inc, exc in (
-        ("severity", severity, exclude_severity),
-        ("state", state, exclude_state),
-        ("scanner", scanner, exclude_scanner),
-        ("assignee", assignee, exclude_assignee),
-        ("image_repo", image_repo, exclude_image_repo),
-        ("namespace", namespace, exclude_namespace),
-        ("ptype", ptype, exclude_ptype),
-        ("cve_id", cve_id, exclude_cve_id),
-        ("package_name", package_name, exclude_package_name),
-    ):
-        if inc is not None and exc is not None:
-            raise HTTPException(422, f"{name} and exclude_{name} are mutually exclusive")
-    # absence and a named owner cannot both hold — 422 here so the builder's ValueError
-    # (defense for direct constructors) never costs a 500
-    if unassigned is not None and assignee is not None:
-        raise HTTPException(422, "assignee and unassigned are mutually exclusive")
-    return SearchFilters(
+    filters = SearchFilters(
         severity=severity,
         state=state,
         scanner=scanner,
@@ -178,6 +160,11 @@ def _filters(
         exclude_cve_id=exclude_cve_id,
         exclude_package_name=exclude_package_name,
     )
+    # a refused pair is a 422 here, so the builder's ValueError (kept as defense for direct
+    # constructors like report_drain) never costs a 500
+    if (message := conflicting_filter_pair(vars(filters))) is not None:
+        raise HTTPException(422, message)
+    return filters
 
 
 Filters = Annotated[SearchFilters, Depends(_filters)]

@@ -443,7 +443,8 @@ the same filters:
 - In a saved view (`preset`) and in a report (`params`), the filters that take more than one value
   (`namespace`, `ptype`, `assignee`, `image_repo`, `cve_id`, `package_name` and their `exclude_`
   forms) also take one string. JAVV keeps it as a list with that one value.
-- One field takes the filter or its `exclude_` form, not both. Both get 422.
+- One field takes the filter or its `exclude_` form, not both. `assignee` and `unassigned` also
+  do not go together. Each of these pairs gets 422, also in a saved view and in a report.
 
 #### A past time: `as_of`
 
@@ -595,8 +596,8 @@ in the audit log. Snapshots from before keep the data.
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/v1/views` | session | Lists the saved views. Each user can see each view. |
-| POST | `/api/v1/views` | session | Saves a view. You are its `owner`. `preset` takes the [filters](#filters). A value that is not valid gets 422. `workbench` keeps the table setup: `columns`, `dense`, `sort`, `order` and `window_days`. |
-| PATCH | `/api/v1/views/{view_id}` | session, the owner or `can_manage_settings` | Changes the name, the description, `preset` or `workbench`. A different user gets 403. A change by a different request first gets 409. |
+| POST | `/api/v1/views` | session | Saves a view. You are its `owner`. `preset` takes the [filters](#filters). A value that is not valid gets 422, and so does a pair that Findings refuses. `workbench` keeps the table setup: `columns`, `dense`, `sort`, `order` and `window_days`. |
+| PATCH | `/api/v1/views/{view_id}` | session, the owner or `can_manage_settings` | Changes the name, the description, `preset` or `workbench`. A `preset` gets the same checks as on `POST`. A different user gets 403. A change by a different request first gets 409. |
 | DELETE | `/api/v1/views/{view_id}` | session, the owner or `can_manage_settings` | Deletes a view (204). The audit log keeps a copy of it. |
 
 ### Exports and reports
