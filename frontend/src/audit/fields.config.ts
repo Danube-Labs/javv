@@ -66,9 +66,14 @@ export const AUDIT_ACTIONS = [
   'job_trigger',
 ] as const
 
+/** The most buckets the server gives for Entity and Action: backend `query/audit._AUDIT_LIST_TERMS_SIZE`,
+ * a fixed size in docs/CONFIGURATION.md ("Fixed aggregation sizes"). It is larger than the
+ * Action list, so each action gets a count (issue 983). */
+export const AUDIT_LIST_CAP = 64
+
 export const AUDIT_FIELDS: readonly FilterField[] = [
-  { key: 'entity', label: 'Entity', type: 'terms', param: 'entity_type', multi: true, facetKey: 'entity_type', values: AUDIT_ENTITY_TYPES, negatable: true },
-  { key: 'action', label: 'Action', type: 'terms', param: 'action', multi: true, facetKey: 'action', values: AUDIT_ACTIONS, negatable: true, valueLabel: actionLabel },
+  { key: 'entity', label: 'Entity', type: 'terms', param: 'entity_type', multi: true, facetKey: 'entity_type', facetCap: AUDIT_LIST_CAP, values: AUDIT_ENTITY_TYPES, negatable: true },
+  { key: 'action', label: 'Action', type: 'terms', param: 'action', multi: true, facetKey: 'action', facetCap: AUDIT_LIST_CAP, values: AUDIT_ACTIONS, negatable: true, valueLabel: actionLabel },
   // data-driven from the facet buckets; the backend counts users without the user filter, so a
   // picked user does not hide the others (issue 952)
   { key: 'actor', label: 'User', type: 'terms', param: 'actor', multi: true, facetKey: 'actor', negatable: true },

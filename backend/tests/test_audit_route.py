@@ -259,14 +259,16 @@ def test_the_user_count_leaves_out_the_user_filter_and_nothing_else_does() -> No
     for field in ("entity_type", "action"):
         assert body["aggs"][field] == {
             "filter": full,
-            "aggs": {"values": {"terms": {"field": field, "size": 32}}},
+            "aggs": {"values": {"terms": {"field": field, "size": 64}}},
         }
     window = {"range": {"@timestamp": {"gte": "2026-07-08T00:00:00+00:00", "lte": now.isoformat()}}}
     assert body["aggs"]["activity"]["filter"] == {"bool": {"filter": [full, window]}}
     assert "date_histogram" in body["aggs"]["activity"]["aggs"]["buckets"]
     # without a user filter nothing is wrapped: the body is the one it always was
     plain = build_audit_facets_body(AuditFilters(action=["login"]))
-    assert plain["aggs"]["action"] == {"terms": {"field": "action", "size": 32}}
+    assert plain["aggs"]["action"] == {"terms": {"field": "action", "size": 64}}
+    assert plain["aggs"]["entity_type"] == {"terms": {"field": "entity_type", "size": 64}}
+    assert plain["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}
     assert plain["query"] == {"bool": {"filter": [{"terms": {"action": ["login"]}}]}}
 
 
@@ -323,6 +325,34 @@ async def test_facets_count_the_rail_dims_tenant_scoped(env) -> None:
     # tenant guard: the other cluster's actor is invisible under cid
     r = await http.get("/api/v1/audit/facets", params={"cluster_id": cid, "actor": theirs})
     assert r.json()["facets"]["action"] == []
+
+
+async def test_each_of_40_actions_gets_a_count(env) -> None:
+    """issue 983: the Action list has 42 values. With 40 actions in the log, the count gives a
+    bucket to each of them, not only to the top 32, so no action is left with no count."""
+    http, client = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    actor = f"u-many-{uuid.uuid4().hex[:8]}"
+    actions = [f"action-{i:02d}" for i in range(40)]
+    for i, action in enumerate(actions):
+        await append_field_change(
+            client,
+            actor=actor,
+            action=action,
+            entity_type="finding",
+            entity_id=f"fk-{cid}-{i}",
+            field="assignee",
+            old_value=None,
+            new_value=actor,
+            revision=1,
+            cluster_id=cid,
+            finding_key=f"fk-{cid}-{i}",
+        )
+    await client.indices.refresh(index="system-audit-log-*")
+
+    r = await http.get("/api/v1/audit/facets", params={"cluster_id": cid, "actor": actor})
+    assert r.status_code == 200
+    assert sorted(b["key"] for b in r.json()["facets"]["action"]) == actions
 
 
 async def test_several_values_match_any_of_them_at_every_door(env) -> None:

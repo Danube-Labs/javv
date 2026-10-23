@@ -3,9 +3,19 @@
  * `user` and `token`) out for a user without can_manage_users, so the rail does not offer those
  * values, nor their actions, which could only ever count 0 there.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-import { ACCOUNT_ACTIONS, AUDIT_FIELDS, auditFields } from '@/audit/fields.config'
+import {
+  ACCOUNT_ACTIONS,
+  AUDIT_ACTIONS,
+  AUDIT_ENTITY_TYPES,
+  AUDIT_FIELDS,
+  AUDIT_LIST_CAP,
+  auditFields,
+} from '@/audit/fields.config'
 
 const values = (fields: ReturnType<typeof auditFields>, key: string): readonly string[] => {
   const field = fields.find((f) => f.key === key)!
@@ -43,5 +53,25 @@ describe('AUDIT_FIELDS (issue 952)', () => {
         ['action', true],
         ['actor', true],
       ])
+  })
+})
+
+describe('AUDIT_LIST_CAP (issue 983)', () => {
+  it('equals the size of the backend Entity and Action counts', () => {
+    const audit = readFileSync(resolve(process.cwd(), '../backend/src/backend/query/audit.py'), 'utf8')
+    expect(audit.match(/^_AUDIT_LIST_TERMS_SIZE = (\d+)$/m)?.[1]).toBe(String(AUDIT_LIST_CAP))
+  })
+
+  it('is larger than the Entity and Action lists, so each value of them gets a count', () => {
+    expect(AUDIT_LIST_CAP).toBeGreaterThan(AUDIT_ACTIONS.length)
+    expect(AUDIT_LIST_CAP).toBeGreaterThan(AUDIT_ENTITY_TYPES.length)
+  })
+
+  it('Entity and Action carry it; User keeps the shared cap of a list with no fixed values', () => {
+    expect(AUDIT_FIELDS.map((f) => [f.key, f.type === 'terms' ? f.facetCap : undefined])).toEqual([
+      ['entity', AUDIT_LIST_CAP],
+      ['action', AUDIT_LIST_CAP],
+      ['actor', undefined],
+    ])
   })
 })
