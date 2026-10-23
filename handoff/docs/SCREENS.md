@@ -369,6 +369,11 @@ right).
   `can_triage`. A `risk_accepted` or `ignore_rule` decision is made, changed and revoked by
   `can_accept_audit_final` only (the server answers 403). An `ignore_rule` decision wears the
   "Risk accepted" tag, the state it gives the finding.
+  **Expiry (operator ruling 2026-10-23, issue 984):** the first date in the risk-accept dialog
+  is tomorrow in UTC. A date stops at 00:00 UTC on that day. The date field
+  has that `min`. For an earlier date, "Create decision" stays disabled, and the hint says *Pick
+  an expiry date after today.* The server refuses the same dates with the `expiry-passed`
+  problem type, and the dialog then shows that text.
 
 **Header/meta — renders what exists (B-2/B-3):** CVE mono h1, severity tag (verbatim word), KEV
 tag, meta line = CVSS float · raw EPSS (Grype rows only) · first seen (`first_seen_at`) · last
@@ -567,6 +572,11 @@ one value, as on Findings. The Approver counts leave out the Approver filter, so
 does not hide the others. The Status counts follow the pick, as Severity does on Findings. A
 filter stops at 32 values, the API cap, and the rail and the edit box show "A filter takes at most
 32 values." The queue table is `components/approvals/ApprovalsTable.vue`.
+
+**Edit dialog and the expiry (issue 984):** an edit keeps the current expiry unless it sets a
+new one. The date field takes tomorrow in UTC or later. A decision whose expiry is in the past
+needs a new date. Until the user sets one, "Revoke + re-issue" stays disabled, and the hint says
+*Pick an expiry date after today.* That text also shows when the server refuses the date.
 
 **Changed vs SCREENS.md:** decisions shape replaces approval fields (V4-DELTA-2); capability
 gate + nav hiding (A-4); revoke+new editing (D40).

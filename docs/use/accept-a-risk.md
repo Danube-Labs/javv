@@ -16,7 +16,8 @@ the scope.
 2. Select Risk-accept this CVE.
 3. Select a namespace. The acceptance covers this CVE in that namespace. A line in the dialog
    shows the scope.
-4. Set an expiry date. When this date passes, the findings become Open again.
+4. Set an expiry date. The first date that you can select is tomorrow in UTC. When this date
+   passes, the findings become Open again.
 5. Write the reason. Other users read it on the Approval list.
 6. Select Create decision. The risk acceptance is in effect. It shows in Decisions on this CVE.
 7. The Approval list shows all the risk acceptances in effect. Open it from the side menu. Each

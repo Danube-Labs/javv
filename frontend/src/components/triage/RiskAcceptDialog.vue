@@ -9,6 +9,8 @@
 import { computed, ref } from 'vue'
 
 import { createApiV1DecisionsPost } from '@/api/generated'
+import { EXPIRY_PASSED_TYPE } from '@/api/problem'
+import { EXPIRY_REFUSED, firstExpiryDate } from '@/approvals/viewModel'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -45,7 +47,10 @@ function toggle(set: Set<string>, v: string) {
   else set.add(v)
 }
 const clusterWide = computed(() => nsSel.value.size === 0 && imgSel.value.size === 0)
-const valid = computed(() => justification.value.trim().length > 0)
+// a date before it is refused by the server; the field's `min` alone does not stop a typed one
+const minExpiry = firstExpiryDate(Date.now())
+const expiryOk = computed(() => expiry.value === '' || expiry.value >= minExpiry)
+const valid = computed(() => justification.value.trim().length > 0 && expiryOk.value)
 
 async function submit() {
   if (!valid.value || submitting.value) return
@@ -72,11 +77,14 @@ async function submit() {
     emit('created')
     emit('close')
   } else {
+    const status = response.response?.status
     error.value =
-      response.response?.status === 403
+      status === 403
         ? 'Only a Security Lead or an admin can accept a risk.'
-        : 'Could not create the decision. Check the backend connection.'
-    logger.warn('decision_create_failed', { status: response.response?.status })
+        : (response.error as { type?: unknown } | undefined)?.type === EXPIRY_PASSED_TYPE
+          ? EXPIRY_REFUSED
+          : 'Could not create the decision. Check the backend connection.'
+    logger.warn('decision_create_failed', { status })
   }
 }
 
@@ -131,8 +139,8 @@ async function submit() {
         </div>
 
         <div class="fld-2">
-          <UiField label="Expiry" hint="immutable: change = revoke + new" for="ra-expiry">
-            <input id="ra-expiry" v-model="expiry" class="fld" type="date" />
+          <UiField label="Expiry" :hint="expiryOk ? 'immutable: change = revoke + new' : EXPIRY_REFUSED" for="ra-expiry">
+            <input id="ra-expiry" v-model="expiry" class="fld" type="date" :min="minExpiry" :aria-invalid="!expiryOk" />
           </UiField>
           <UiField label="Apply to">
             <UiSegControl v-model="applyTo" :options="APPLY_OPTS" />

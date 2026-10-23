@@ -10,6 +10,7 @@ import {
   EXPIRY_WARN_DAYS,
   daysUntil,
   expiryStatus,
+  firstExpiryDate,
   findingsRoute,
   scannerLabel,
   scopeLabel,
@@ -91,5 +92,24 @@ describe('APPROVAL_FIELDS (issue 952)', () => {
   it('Status and Approver take several values; Scanner and the CVE search take one', () => {
     const multi = Object.fromEntries(APPROVAL_FIELDS.map((f) => [f.key, 'multi' in f && f.multi === true]))
     expect(multi).toEqual({ q: false, status: true, scanner: false, approver: true })
+  })
+})
+
+describe('firstExpiryDate (issue 984)', () => {
+  it('is tomorrow in UTC: a date stops at 00:00 UTC, so today is already over', () => {
+    expect(firstExpiryDate(NOW)).toBe('2026-07-14')
+  })
+
+  it('reads the UTC calendar, not the local one, near midnight', () => {
+    // 23:30 UTC on 13 July is already 14 July east of UTC; the server still counts the 13th
+    expect(firstExpiryDate(new Date('2026-07-13T23:30:00Z').getTime())).toBe('2026-07-14')
+    // 00:30 UTC on 14 July is still 13 July west of UTC; the 14th is over for the server
+    expect(firstExpiryDate(new Date('2026-07-14T00:30:00Z').getTime())).toBe('2026-07-15')
+  })
+
+  it('agrees with expiryStatus: the date before it is expired at that moment', () => {
+    const at = new Date('2026-07-14T00:30:00Z').getTime()
+    expect(expiryStatus('2026-07-14', at)).toBe('expired')
+    expect(expiryStatus(firstExpiryDate(at), at)).not.toBe('expired')
   })
 })
