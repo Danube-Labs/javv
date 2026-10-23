@@ -32,6 +32,7 @@ import type { FacetsResponse } from '@/filters/facets'
 import { FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
+import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
 import { captureLens } from '@/findings/savedViews'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
@@ -116,6 +117,8 @@ const rowsQuery = computed(() =>
 )
 
 let rowsSeq = 0
+// the refused query held the pair, so its 422 is about the pair even at a past time
+const failedWithPair = ref(false)
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
   const mine = ++rowsSeq
@@ -142,6 +145,7 @@ async function loadRows(q: typeof rowsQuery.value) {
     grid.failedStatus = null
   } else {
     // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
+    failedWithPair.value = hasAssigneeWithUnassigned(q)
     grid.setFailed(response.response?.status ?? null)
     logger.warn('findings_search_failed', { status: response.response?.status, page: grid.page })
   }
@@ -149,7 +153,7 @@ async function loadRows(q: typeof rowsQuery.value) {
 // the rows' failure names the whole grid; the counts alone failing leaves the rows standing (F9)
 const failureMessage = computed(() =>
   grid.failed
-    ? FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null)]
+    ? FAILURE_COPY[failureKind(grid.failedStatus, timeTravel.t !== null, failedWithPair.value)]
     : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 watch(

@@ -45,6 +45,12 @@ export const PAST_TIME_UNRECORDED_KEYS = [
   'kev', 'disagree', 'image_repo', 'exclude_image_repo', 'q', 'new_within_days',
 ] as const
 
+/** Assignee with Unassigned: the one pair a Findings query can hold (`FINDINGS_EXCLUSIVE_PAIRS`
+ * in filters/fields.config.ts), and the backend refuses it with 422. */
+export function hasAssigneeWithUnassigned(query: Record<string, unknown>): boolean {
+  return query.assignee !== undefined && query.unassigned !== undefined
+}
+
 /** What the user picked in the export dialog. */
 export interface ExportChoice {
   /** The Schedule tab; false is Run now. */
@@ -72,7 +78,7 @@ export function exportBlockMessage(
     if (unrecorded.length)
       return `At a past time, a schedule cannot use these filters: ${filterNames(fields, unrecorded).join(', ')}. Clear them.`
   }
-  if (query.assignee !== undefined && query.unassigned !== undefined)
+  if (hasAssigneeWithUnassigned(query))
     return `An export cannot use ${filterNames(fields, ['assignee', 'unassigned']).join(' and ')} together. Clear one of them.`
   if (choice.format === 'vex') {
     if (query.exclude_scanner !== undefined)

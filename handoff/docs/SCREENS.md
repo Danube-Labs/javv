@@ -304,6 +304,10 @@ the user's open searches until the grid closes it.
   query (issue 833 F1). On all four screens an answer to an older request is dropped, so it never
   replaces a newer one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
   current filters answers.
+- **A refused filter, 422** (operator rulings 2026-10-23, issue 975): the alert says "These
+  filters can't be used together, or a value isn't valid. Check the filters." A 1-character search
+  never gets to the server, so no 422 is about a short search. At a past time, a 422 for Assignee
+  with Unassigned gets the same text. Any other 422 at a past time keeps the past-time text.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
   the alert says "Filter counts could not be loaded." with the reason, and the rail and the
   add-filter menu keep their values with "-" for each count.

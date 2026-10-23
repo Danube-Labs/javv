@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { clusterFromQuery, foreignQuery, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
 
@@ -27,6 +28,35 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
   it('every kind has copy that never blames the backend for user input', () => {
     expect(FAILURE_COPY.bad_filter).not.toMatch(/backend/i)
     expect(FAILURE_COPY.past_t).toMatch(/past point in time/)
+  })
+
+  // issue 975: a short search never gets to the server, so the 422 text names the causes that do
+  it('a 422 names refused filters, never a short search', () => {
+    expect(FAILURE_COPY.bad_filter).toBe(
+      "These filters can't be used together, or a value isn't valid. Check the filters.",
+    )
+    expect(FAILURE_COPY.bad_filter).not.toMatch(/characters/)
+  })
+
+  it('a refused pair gets the same text at a past time as now', () => {
+    expect(failureKind(422, false, true)).toBe('bad_filter')
+    expect(failureKind(422, true, true)).toBe('bad_filter')
+    expect(failureKind(422, true, false)).toBe('past_t') // an unrecorded filter at a past time
+    expect(failureKind(501, true, true)).toBe('past_t')
+  })
+
+  it('finds Assignee with Unassigned in a built query, and only the include side', () => {
+    const globals = { cluster_id: 'c-1' }
+    const both = buildFilterQuery(FINDINGS_FIELDS, { assignee: ['bob'], attr: ['unassigned'] }, globals)
+    expect(hasAssigneeWithUnassigned(both)).toBe(true)
+    const notSide = buildFilterQuery(
+      FINDINGS_FIELDS,
+      { assignee: ['bob'], attr: ['unassigned'] },
+      globals,
+      { assignee: 'not' },
+    )
+    expect(hasAssigneeWithUnassigned(notSide)).toBe(false)
+    expect(hasAssigneeWithUnassigned(buildFilterQuery(FINDINGS_FIELDS, { attr: ['unassigned'] }, globals))).toBe(false)
   })
 })
 
