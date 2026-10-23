@@ -30,6 +30,11 @@ _SORT_KEY = "@timestamp"  # fixed — the cursor's `s` field must round-trip exa
 # The account events: sign-ins and sign-outs, password, user and role changes (`user`), and the
 # ingest tokens (`token`). Only `can_manage_users` reads them (issue 892 ruling 3).
 ACCOUNT_ENTITY_TYPES = ("token", "user")
+# The Entity and Action lists are fixed lists, and the Action list has 42 values. Each value gets
+# a count only when the size is larger than the list (issue 983). The frontend mirrors this size
+# (`AUDIT_LIST_CAP` in `audit/fields.config.ts`), and a spec keeps them equal. The User list has no
+# fixed values and keeps the top `_FACET_TERMS_SIZE`.
+_AUDIT_LIST_TERMS_SIZE = 64
 # Fleet-wide settings rows written before issue 559 carry this literal instead of no cluster_id.
 # The log is append-only, so they keep it; no real cluster can match, since ids are 8-64 chars.
 _LEGACY_FLEET_CLUSTER_ID = "fleet"
@@ -300,8 +305,9 @@ def build_audit_facets_body(
     body.pop("sort")
     body.pop("track_total_hits")
     body["aggs"] = {
-        field: {"terms": {"field": field, "size": _FACET_TERMS_SIZE}}  # the findings rail cap
-        for field in ("entity_type", "action", "actor")
+        "entity_type": {"terms": {"field": "entity_type", "size": _AUDIT_LIST_TERMS_SIZE}},
+        "action": {"terms": {"field": "action", "size": _AUDIT_LIST_TERMS_SIZE}},
+        "actor": {"terms": {"field": "actor", "size": _FACET_TERMS_SIZE}},  # the findings rail cap
     }
     window: dict[str, Any] | None = None
     if interval is not None:
