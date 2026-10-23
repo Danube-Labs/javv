@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.8](https://github.com/Danube-Labs/javv-poc/compare/v0.8.7...v0.8.8) (2026-10-23)
+
+
+### Bug Fixes
+
+* a value of a fixed filter list with no rows shows 0 ([#982](https://github.com/Danube-Labs/javv-poc/issues/982)) ([da320d3](https://github.com/Danube-Labs/javv-poc/commit/da320d390066d0551e7d4350966773c48711efee))
+* findings names refused filters and keeps assignee and unassigned apart ([#977](https://github.com/Danube-Labs/javv-poc/issues/977)) ([5c75987](https://github.com/Danube-Labs/javv-poc/commit/5c759870769c3dc50a67669420b5bb4c177a6ee5)), closes [#975](https://github.com/Danube-Labs/javv-poc/issues/975)
+* the audit log counts each of its actions ([#985](https://github.com/Danube-Labs/javv-poc/issues/985)) ([7d580bd](https://github.com/Danube-Labs/javv-poc/commit/7d580bd6c1b9ea327d69b62bc7020216f20ede64)), closes [#983](https://github.com/Danube-Labs/javv-poc/issues/983)
+* the backend refuses a decision expiry that has passed, and a rotation of a dead token ([#986](https://github.com/Danube-Labs/javv-poc/issues/986)) ([c95c371](https://github.com/Danube-Labs/javv-poc/commit/c95c3719849622898a06fe823a1d53a10a201a44)), closes [#984](https://github.com/Danube-Labs/javv-poc/issues/984)
+* the screens take no expiry that has passed, rotate only live tokens, and end a range today ([#987](https://github.com/Danube-Labs/javv-poc/issues/987)) ([1e94051](https://github.com/Danube-Labs/javv-poc/commit/1e9405109b2ea57ec1408fa8eb3e162fe246f285))
+* the unassigned count leaves out the assignee values that its click clears ([#981](https://github.com/Danube-Labs/javv-poc/issues/981)) ([69165ca](https://github.com/Danube-Labs/javv-poc/commit/69165ca78dec3d3e514e7fc752cad12b5fa0db48))
+
 ## [0.8.7](https://github.com/Danube-Labs/javv-poc/compare/v0.8.6...v0.8.7) (2026-10-23)
 
 
