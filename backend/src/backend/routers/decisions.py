@@ -31,6 +31,7 @@ from backend.decisions.lifecycle import (
     DecisionPayload,
     create_decision,
     edit_decision,
+    expiry_has_passed,
     revoke_decision,
 )
 from backend.export.approvals_csv import count_approvals_lens, stream_approvals_csv
@@ -60,6 +61,13 @@ def _require_accept_final(principal: Principal, reason: str) -> None:
         raise accept_final_refusal(f"{reason} requires can_accept_audit_final")
 
 
+def _require_future_expiry(expiry: str | None) -> None:
+    # a decision that expires before it is made has no effect, while the screens list it (issue
+    # 984); the library writer keeps taking past dates, which the replay tests need
+    if expiry_has_passed(expiry, datetime.now(UTC)):
+        raise HTTPException(422, "expiry must be after today (UTC), or a time after now")
+
+
 class DecisionEditRequest(BaseModel):
     """The editable payload fields — anything set becomes the revoke+create pair's change set."""
 
@@ -81,6 +89,7 @@ async def create(
 ) -> dict[str, Any]:
     if payload.type in ACCEPT_TYPES:
         _require_accept_final(principal, f"a {payload.type} decision")  # SEC-2
+    _require_future_expiry(payload.expiry)
     client = cast(Any, request.app.state.opensearch)
     doc = await create_decision(client, actor=principal.user_id, payload=payload)
     return {"decision": doc}
@@ -121,6 +130,9 @@ async def edit(
     new_type = changes.get("type", old["type"])
     if new_type in ACCEPT_TYPES:  # an edit can't smuggle one in
         _require_accept_final(principal, f"a {new_type} decision")
+    if old.get("revoked_at") is None:  # a revoked one keeps its 409 below
+        # the new decision takes the old expiry unless the edit sets one
+        _require_future_expiry(changes["expiry"] if "expiry" in changes else old.get("expiry"))
     try:
         revoked, new = await edit_decision(
             client, actor=principal.user_id, decision_id=decision_id, changes=changes

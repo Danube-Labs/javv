@@ -7,12 +7,14 @@ double-revoke → 409; empty edit → 422; the list read REQUIRES `cluster_id` (
 discipline) and paginates. Real OpenSearch — same fixture family as test_admin_users."""
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
 from opensearchpy import AsyncOpenSearch
 
 from backend.auth.passwords import hash_password
+from backend.decisions.lifecycle import DECISIONS_INDEX
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
 
@@ -58,6 +60,14 @@ async def env():
     for http in jars:
         await http.aclose()
     await client.close()
+
+
+def _from_now(**delta: float) -> str:
+    return (datetime.now(UTC).replace(microsecond=0) + timedelta(**delta)).isoformat()
+
+
+def _utc_day(days: int) -> str:
+    return (datetime.now(UTC) + timedelta(days=days)).date().isoformat()
 
 
 def _body(**over) -> dict:
@@ -223,6 +233,88 @@ async def test_approvals_include_and_exclude_of_the_same_field_422(env) -> None:
     assert r.status_code == 200
 
 
+async def test_create_refuses_an_expiry_that_has_passed(env) -> None:
+    """issue 984: a decision that expires before it is made has no effect, while the screens
+    list it. A date passes at 00:00 UTC on that day, so today is refused too."""
+    login_with, _ = env
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    for expiry in (_utc_day(-21), _utc_day(0), _from_now(minutes=-1)):
+        r = await lead.post(
+            "/api/v1/decisions",
+            json=_body(type="risk_accepted", vex_justification=None, expiry=expiry),
+        )
+        assert r.status_code == 422, expiry
+        assert expiry not in r.text  # a refusal does not echo the value (issue 842)
+    for expiry in (_utc_day(1), _from_now(minutes=5), None):
+        r = await lead.post(
+            "/api/v1/decisions",
+            json=_body(type="risk_accepted", vex_justification=None, expiry=expiry),
+        )
+        assert r.status_code == 201, expiry
+
+
+async def test_the_expiry_check_comes_after_the_capability_check(env) -> None:
+    login_with, _ = env
+    triager = await login_with(["can_triage"])
+    r = await triager.post(
+        "/api/v1/decisions",
+        json=_body(type="risk_accepted", vex_justification=None, expiry=_utc_day(-1)),
+    )
+    assert r.status_code == 403
+
+
+async def test_edit_refuses_a_result_whose_expiry_has_passed(env) -> None:
+    """issue 984: an edit is revoke + create, and the new decision takes the old expiry unless
+    the edit sets one. An edit to a past date, or an edit that keeps a date that has passed,
+    would make a dead decision and revoke the live one."""
+    login_with, client = env
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    created = await lead.post(
+        "/api/v1/decisions",
+        json=_body(type="risk_accepted", vex_justification=None, expiry=_utc_day(30)),
+    )
+    decision_id = created.json()["decision"]["decision_id"]
+
+    r = await lead.patch(f"/api/v1/decisions/{decision_id}", json={"expiry": _utc_day(-1)})
+    assert r.status_code == 422
+
+    # the decision expires while it stands: an edit of its reason alone keeps the past date
+    await client.update(
+        index=DECISIONS_INDEX,
+        id=decision_id,
+        body={"doc": {"expiry": _utc_day(-2)}},
+        params={"refresh": "true"},
+    )
+    r = await lead.patch(f"/api/v1/decisions/{decision_id}", json={"justification": "still"})
+    assert r.status_code == 422
+    doc = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
+    assert doc["revoked_at"] is None  # refused before anything was written
+
+    # a new date renews it
+    r = await lead.patch(f"/api/v1/decisions/{decision_id}", json={"expiry": _utc_day(14)})
+    assert r.status_code == 200
+    assert r.json()["decision"]["expiry"] == _utc_day(14)
+
+
+async def test_an_edit_of_a_revoked_decision_stays_a_409(env) -> None:
+    login_with, client = env
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    created = await lead.post(
+        "/api/v1/decisions",
+        json=_body(type="risk_accepted", vex_justification=None, expiry=_utc_day(30)),
+    )
+    decision_id = created.json()["decision"]["decision_id"]
+    await lead.post(f"/api/v1/decisions/{decision_id}/revoke")
+    await client.update(
+        index=DECISIONS_INDEX,
+        id=decision_id,
+        body={"doc": {"expiry": _utc_day(-2)}},
+        params={"refresh": "true"},
+    )
+    r = await lead.patch(f"/api/v1/decisions/{decision_id}", json={"justification": "again"})
+    assert r.status_code == 409
+
+
 async def test_approval_list_is_accept_final_only_and_sorted_by_expiry(env) -> None:
     """M5d ruling (#30): the approval list = review queue over ACTIVE risk-accepts (creation is
     already SEC-2-gated — there is no pending state), soonest-expiring first."""
@@ -233,12 +325,9 @@ async def test_approval_list_is_accept_final_only_and_sorted_by_expiry(env) -> N
     # shared module CID the decisions other tests leave behind (this index is not prefix-isolated)
     # accumulate and page this test's own rows out. A fresh cluster scopes the query to just ours.
     cid = f"c-appr-{uuid.uuid4().hex[:8]}"
-    late = _body(
-        type="risk_accepted", cve_id=cve, cluster_id=cid, expiry="2028-01-01T00:00:00+00:00"
-    )
-    soon = _body(
-        type="risk_accepted", cve_id=cve, cluster_id=cid, expiry="2026-12-01T00:00:00+00:00"
-    )
+    # relative to now: the create route refuses an expiry that has passed (issue 984)
+    late = _body(type="risk_accepted", cve_id=cve, cluster_id=cid, expiry=_from_now(days=800))
+    soon = _body(type="risk_accepted", cve_id=cve, cluster_id=cid, expiry=_from_now(days=40))
     for body in (late, soon):
         assert (await lead.post("/api/v1/decisions", json=body)).status_code == 201
     revoked = (

@@ -27,6 +27,24 @@ DECISION_SCHEMA_VERSION = 1  # the decision DOC contract — this module owns bu
 _CAS_RETRIES = 8
 
 
+def expiry_has_passed(expiry: str | None, now: datetime) -> bool:
+    """True when a decision with this `expiry` is no longer active at `now`. A bare date stops at
+    00:00 UTC on that day, because `is_active_at` compares it as text against UTC stamps, so a
+    date of today has passed too (issue 984). A value the format check refuses is left to it."""
+    if expiry is None:
+        return False
+    if len(expiry) == 10:  # bare date shape
+        try:
+            return date.fromisoformat(expiry) <= now.astimezone(UTC).date()
+        except ValueError:
+            return False
+    try:
+        parsed = datetime.fromisoformat(expiry)
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None and parsed <= now
+
+
 class DecisionScope(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
