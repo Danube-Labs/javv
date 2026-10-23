@@ -21,7 +21,7 @@ from backend.auth.capabilities import require_capability
 from backend.auth.principal import Principal
 from backend.core.errors import delete_unfinished
 from backend.core.identifiers import ClusterId
-from backend.core.security import hash_token, mint_token
+from backend.core.security import hash_token, mint_token, token_expired
 from backend.core.settings import get_settings
 
 router = APIRouter(prefix="/api/v1/admin/tokens", tags=["token-admin"])
@@ -184,6 +184,12 @@ async def rotate(request: Request, token_id: str, principal: ManageTokens) -> di
     The sibling inherits the old token's expiry (rotation is not extension, task E m-7)."""
     client = _os(request)
     old = await _load(client, token_id)
+    # the sibling takes the old expiry and is active: rotating a revoked or expired token would
+    # make a secret that ingest refuses, or bring a revoked one back (issue 984)
+    if old.get("disabled"):
+        raise HTTPException(409, "the token is revoked: mint a new token")
+    if token_expired(old):
+        raise HTTPException(409, "the token has expired: mint a new token")
     new_id = uuid4().hex
     # journal-first (D17, audit #188): both events land before any mutation, strict — an audit
     # failure leaves neither the new token nor the disable, and a retry re-drives cleanly.

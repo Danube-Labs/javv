@@ -77,6 +77,10 @@ STORE_READ_ONLY_TYPE = "store-read-only"
 # and the web app matches this type, never the title, so a reworded title cannot break it
 DELETE_UNFINISHED_TYPE = "cluster-delete-unfinished"
 
+# a decision whose expiry is not after now (issue 984): the dialogs match this type to name the
+# date, since a 422 from a field check has other causes
+EXPIRY_PASSED_TYPE = "expiry-passed"
+
 # the same wait JAVV's own 429s ask for (the per-user search cap, `Retry-After: 5`); the UI never
 # retries by itself, so this only guides a script
 STORE_BUSY_RETRY_AFTER_S = 5

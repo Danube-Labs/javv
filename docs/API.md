@@ -221,6 +221,8 @@ Each answer that is not a success has the same body, with the type `application/
     - `cluster-delete-unfinished` on a 409 for a cluster whose delete did not finish: a bring
       back (`POST /api/v1/clusters/{cluster_id}/unretire`) or a new token
       (`POST /api/v1/admin/tokens`). Delete the cluster again to finish it.
+    - `expiry-passed` on a 422 for a decision whose `expiry` is not after today in UTC, or not
+      after now (`POST /api/v1/decisions`, `PATCH /api/v1/decisions/{decision_id}`).
 - `title`: a short text that names the error.
 - `detail`: on a 422 from a field check, the list of the fields that are not valid, with the
   reason for each. It does not hold the value that you sent. Else it is `null`.
@@ -318,7 +320,7 @@ in a scan cycle.
 |---|---|---|---|
 | GET/POST | `/api/v1/admin/tokens` | `can_manage_tokens` | GET lists the scanner tokens, newest first, with `size` (1 to 1000, default 100), `offset` (0 to 9000) and an optional `cluster_id`. POST makes a token for `{cluster_id, scanner, expiry}`. The answer shows the token one time only. A cluster with a delete that did not finish gets 409. A token for a deleted cluster's ID onboards that cluster again: JAVV then keeps its new data. |
 | POST | `/api/v1/admin/tokens/{token_id}/revoke` | `can_manage_tokens` | Disables a token |
-| POST | `/api/v1/admin/tokens/{token_id}/rotate` | `can_manage_tokens` | Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. |
+| POST | `/api/v1/admin/tokens/{token_id}/rotate` | `can_manage_tokens` | Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. A revoked token and an expired token get 409, and nothing changes. Make a new token for them. |
 | GET/POST | `/api/v1/admin/users` | `can_manage_users` | GET lists the users, with `size` (1 to 1000, default 100) and `offset` (0 to 9000). POST makes a user with `{username, temp_password, role}`. A username has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. A username with a capital letter gets 422, and so do `system` and `fleet`. A username that exists gets 409. |
 | PATCH | `/api/v1/admin/users/{username}/role` | `can_manage_users` | Changes the role of a user, and signs that user out of each session |
 | PATCH | `/api/v1/admin/users/{username}/disabled` | `can_manage_users` | Disables or enables a user. A disabled user loses each session. The last enabled admin gets 409. |
@@ -503,9 +505,9 @@ that fails during your read can show on a later page.
 |---|---|---|---|
 | PATCH | `/api/v1/findings/{finding_key}/triage` | `can_triage` | Changes the state of one finding: `open`, `acknowledged`, `not_affected`, `risk_accepted` or `resolved`. `not_affected` needs a `vex_justification`. `risk_accepted` also needs `can_accept_audit_final`. A change of state of a risk-accepted finding also needs `can_accept_audit_final`. This includes a `stale` finding that goes back to `risk_accepted` when the scanner reports it again. A change of `notes` or `assignee` only does not need it. |
 | POST | `/api/v1/findings/bulk-triage` | `can_triage` | Changes the state of all the findings that a selector finds, now. More than `JAVV_BULK_INLINE_LIMIT` (5000) findings get 413. Use a report for more. A selector that finds more than `JAVV_BULK_MAX_TARGETS` (10000) gets 413. An empty selector gets 422. A change of state of a set that holds risk-accepted findings needs `can_accept_audit_final`. Without it, the request gets 403 with the count, and JAVV changes no finding. |
-| POST | `/api/v1/decisions` | `can_triage` | Makes a decision. A `risk_accepted` or `ignore_rule` decision also needs `can_accept_audit_final`. `expiry` is a date (`YYYY-MM-DD`), or a date and time with a time zone. JAVV keeps a date and time in UTC. |
+| POST | `/api/v1/decisions` | `can_triage` | Makes a decision. A `risk_accepted` or `ignore_rule` decision also needs `can_accept_audit_final`. `expiry` is a date (`YYYY-MM-DD`), or a date and time with a time zone. JAVV keeps a date and time in UTC. A date stops at 00:00 UTC on that day. Thus the date must be after today in UTC, and a date and time must be after now. Else the answer is 422. |
 | GET | `/api/v1/decisions` | session | Lists the decisions of the cluster, with `cve_id`, `include_revoked` (default `false`), `size` (1 to 500, default 50) and `offset` (0 to 10000) |
-| PATCH | `/api/v1/decisions/{decision_id}` | `can_triage` | Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. A change from or to `risk_accepted` or `ignore_rule` also needs `can_accept_audit_final`. |
+| PATCH | `/api/v1/decisions/{decision_id}` | `can_triage` | Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. A change from or to `risk_accepted` or `ignore_rule` also needs `can_accept_audit_final`. The new decision keeps the old `expiry` when the change does not set one. When that expiry is not in the future, the answer is 422, as for `POST`. |
 | POST | `/api/v1/decisions/{decision_id}/revoke` | `can_triage` | Revokes a decision. Its effect on the findings stops. A `risk_accepted` or `ignore_rule` decision also needs `can_accept_audit_final`. |
 | GET | `/api/v1/decisions/approvals` | `can_accept_audit_final` | The approvals queue: the active risk acceptances, the nearest expiry first ([The approvals queue](#the-approvals-queue)) |
 | GET | `/api/v1/decisions/approvals/export.csv` | `can_accept_audit_final` | The approvals queue as CSV, with the same filters ([The approvals queue](#the-approvals-queue)) |

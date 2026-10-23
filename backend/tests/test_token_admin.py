@@ -199,6 +199,50 @@ async def test_mint_with_expiry_stores_it_and_rotate_inherits_it(admin_client) -
     assert new["expiry"] == expiry
 
 
+async def test_rotate_refuses_an_expired_token(admin_client) -> None:
+    """issue 984: the sibling takes the old expiry, so a rotation of an expired token made a new
+    secret that ingest refuses, and disabled the old token. Nothing is written now."""
+    http, client, _ = admin_client
+    cluster = _cluster()
+    expiry = (datetime.now(UTC) + timedelta(days=1)).isoformat()
+    mint = await http.post(
+        "/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "trivy", "expiry": expiry}
+    )
+    token_id = mint.json()["id"]
+    past = (datetime.now(UTC) - timedelta(days=3)).isoformat()
+    await client.update(
+        index="system-tokens",
+        id=token_id,
+        body={"doc": {"expiry": past}},
+        params={"refresh": "true"},
+    )
+
+    r = await http.post(f"/api/v1/admin/tokens/{token_id}/rotate")
+
+    assert r.status_code == 409
+    assert "token" not in r.json()  # no new secret
+    listed = await http.get("/api/v1/admin/tokens", params={"cluster_id": cluster})
+    assert [t["id"] for t in listed.json()["tokens"]] == [token_id]  # no sibling
+    assert (await client.get(index="system-tokens", id=token_id))["_source"]["disabled"] is False
+    assert await _audit_rows(client, action="token_revoke", entity_id=token_id) == []
+
+
+async def test_rotate_refuses_a_revoked_token(admin_client) -> None:
+    """issue 984: a rotation of a revoked token made an active sibling, which went around the
+    revoke. The screen offers no Rotate there, and the API now refuses it too."""
+    http, client, _ = admin_client
+    cluster = _cluster()
+    mint = await http.post("/api/v1/admin/tokens", json={"cluster_id": cluster, "scanner": "grype"})
+    token_id = mint.json()["id"]
+    await http.post(f"/api/v1/admin/tokens/{token_id}/revoke")
+
+    r = await http.post(f"/api/v1/admin/tokens/{token_id}/rotate")
+
+    assert r.status_code == 409
+    listed = await http.get("/api/v1/admin/tokens", params={"cluster_id": cluster})
+    assert [t["id"] for t in listed.json()["tokens"]] == [token_id]
+
+
 async def test_mint_with_a_past_expiry_is_422(admin_client) -> None:
     http, _, _ = admin_client
     r = await http.post(
