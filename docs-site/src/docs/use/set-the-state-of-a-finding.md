@@ -1,1 +1,0 @@
-../../../../docs/use/set-the-state-of-a-finding.md

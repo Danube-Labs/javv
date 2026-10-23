@@ -1,1 +1,0 @@
-../../../docs/INGEST-CONTRACT.md

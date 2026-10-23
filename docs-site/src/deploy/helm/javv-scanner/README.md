@@ -1,1 +1,0 @@
-../../../../../deploy/helm/javv-scanner/README.md

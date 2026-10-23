@@ -1,1 +1,0 @@
-../../../../docs/use/accept-a-risk.md
