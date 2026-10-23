@@ -82,6 +82,19 @@ def without_own_filter(filters: SearchFilters, facet: str) -> SearchFilters:
     return replace(filters, **{field: None, f"exclude_{field}": None})
 
 
+def counting_filters(filters: SearchFilters, facet: str) -> SearchFilters:
+    """The filters one facet counts under. A list facet leaves out its own field (issue 949).
+    The Unassigned count leaves out the Assignee "is" values (issue 979): a click on Unassigned
+    clears them (issue 975), so the count is what the click shows. Assignee "is not" stays,
+    because the click keeps it."""
+    own = OWN_FILTER_FREE_FACETS.get(facet)
+    if own is not None and (getattr(filters, own) or getattr(filters, f"exclude_{own}")):
+        return without_own_filter(filters, facet)
+    if facet == "unassigned" and filters.assignee:
+        return replace(filters, assignee=None)
+    return filters
+
+
 def facet_aggregation(agg: dict[str, Any]) -> dict[str, Any]:
     """One facet's aggregation from the response, whether or not the body wrapped it in its
     own filter context (see build_facets_body)."""
@@ -122,29 +135,21 @@ def build_facets_body(
         # the rail flag's count: absence is an expression, so the facet reuses the grid's own
         # clause — count ≡ filtered rows by construction, same contract as overdue
         body["aggs"]["unassigned"] = {"filter": unassigned_clause(), "aggs": dict(_BY_SCANNER)}
-    freed = [
-        f
-        for f in chosen
-        if f in OWN_FILTER_FREE_FACETS
-        and (
-            getattr(filters, OWN_FILTER_FREE_FACETS[f])
-            or getattr(filters, f"exclude_{OWN_FILTER_FREE_FACETS[f]}")
-        )
-    ]
+    freed = [f for f in chosen if counting_filters(filters, f) != filters]
     if not freed:
         return body
-    # disjunctive facets: the top-level query drops the freed fields' filters, and each facet
-    # counts inside a `filter` agg that puts back every filter except its own field's. Other
-    # facets get the full query back, so their counts do not change.
+    # disjunctive facets: the top-level query drops the filters that the freed facets leave
+    # out, and each facet counts inside a `filter` agg that puts back every filter it counts
+    # under. Other facets get the full query back, so their counts do not change.
     top = filters
     for f in freed:
-        top = without_own_filter(top, f)
+        top = counting_filters(top, f)
     full = body["query"]
     wrapped = _base(top, sla_cutoffs)
     wrapped["aggs"] = {
         name: {
             "filter": (
-                _base(without_own_filter(filters, name), sla_cutoffs)["query"]
+                _base(counting_filters(filters, name), sla_cutoffs)["query"]
                 if name in freed
                 else full
             ),
