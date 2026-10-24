@@ -42,15 +42,15 @@ const timeTravel = useTimeTravelStore()
 
 const images = ref<ImageRow[]>([])
 const failed = ref(false)
-// no claim before evidence: "No image findings" only once an answer has landed
+// no claim before evidence: "No image findings" only once an answer has come
 const settled = ref(false)
 
 let seq = 0
 watch(
   () => [clusterStore.selectedId, timeTravel.t] as const,
   async ([id, t], old) => {
+    const mine = ++seq // also when no read starts: an older read in flight must not land
     if (!id) return
-    const mine = ++seq
     if (old && old[0] !== id) {
       settled.value = false // another tenant's images would be a lie
       images.value = []

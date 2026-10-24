@@ -23,7 +23,11 @@ const open = new Map<string, Promise<Read>>()
 
 async function readFacets(query: FacetsQuery): Promise<Read> {
   const { data, response } = await facetFindingsApiV1FindingsFacetsGet({ client, query: query as never })
-  if (!response?.ok || !data) return { failed: response?.status ?? null }
+  if (!response?.ok || !data) {
+    // once per read, however many panels share it
+    logger.warn('findings_facets_failed', { status: response?.status })
+    return { failed: response?.status ?? null }
+  }
   return { facets: (data as { facets?: Facets }).facets ?? {} }
 }
 
@@ -46,24 +50,31 @@ export function useFindingsFacets(
   const ownSettled = ref(false)
   const failed = ref(false)
 
+  /** the cluster the counts on screen belong to: another tenant's counts would be a lie */
+  let ownFor: string | null = null
   let seq = 0
   watch(
-    () => (given() === undefined ? query() : null),
-    async (q, old) => {
-      if (!q) return
-      const mine = ++seq
-      if (old && old.cluster_id !== q.cluster_id) {
-        ownSettled.value = false // another tenant's counts would be a lie
+    () => {
+      const q = given() === undefined ? query() : null
+      // a value key: a host that rebuilds an equal query object starts no new read
+      return q ? JSON.stringify([q.cluster_id, q.as_of ?? null]) : null
+    },
+    async (key) => {
+      const mine = ++seq // also when no read starts: an older read in flight must not land
+      if (!key) return
+      const [clusterId, asOf] = JSON.parse(key) as [string, string | null]
+      if (clusterId !== ownFor) {
+        ownSettled.value = false
         own.value = {}
+        ownFor = clusterId
       }
-      const read = await sharedRead(q)
+      const read = await sharedRead({ cluster_id: clusterId, ...(asOf ? { as_of: asOf } : {}) })
       if (mine !== seq) return // a newer read owns the panel now
       failed.value = 'failed' in read
-      if ('failed' in read) logger.warn('findings_facets_failed', { status: read.failed })
-      else own.value = read.facets
+      if (!('failed' in read)) own.value = read.facets
       ownSettled.value = true
     },
-    { immediate: true, deep: true },
+    { immediate: true },
   )
 
   return {

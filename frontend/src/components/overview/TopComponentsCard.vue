@@ -43,21 +43,27 @@ const timeTravel = useTimeTravelStore()
 
 const rows = ref<ComponentRow[]>([])
 const failed = ref(false)
-// no claim before evidence: "No component data yet" only once an answer has landed
+// no claim before evidence: "No component data yet" only once an answer has come
 const settled = ref(false)
+/** the cluster the rows on screen belong to: another tenant's board would be a lie */
+let rowsFor: string | null = null
 
+let seq = 0
 watch(
   () => [clusterStore.selectedId, timeTravel.t] as const,
-  async ([id, t], old) => {
-    if (!id || t !== null) return // now-only read — the template shows the rewound note
-    if (old && old[0] !== id) {
-      settled.value = false // another tenant's board would be a lie
+  async ([id, t]) => {
+    const mine = ++seq // also when no read starts: an older read in flight must not land
+    if (id !== rowsFor) {
+      settled.value = false
       rows.value = []
+      rowsFor = id
     }
+    if (!id || t !== null) return // now-only read — the template shows the rewound note
     const { data, response } = await topComponentsFindingsApiV1FindingsTopComponentsGet({
       client,
       query: { cluster_id: id } as never,
     })
+    if (mine !== seq) return // a newer read owns the board now
     failed.value = !response?.ok || !data
     if (!failed.value) {
       rows.value = (data as { components: ComponentRow[] }).components ?? []

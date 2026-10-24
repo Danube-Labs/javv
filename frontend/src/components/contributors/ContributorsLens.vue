@@ -5,7 +5,7 @@
  * resolve / not affected / risk accept / acknowledge), so the strip and the board below can
  * never disagree — one response, no second fetch. Props-fed there; the view owns the settled
  * contract (lens ruling, issue 355: no claim before evidence). On a dashboard there is no
- * board, so the lens gets only `query` and reads the same route itself. Clicking a bucket
+ * board, so the strip gets only `query` and reads the same route itself. Clicking a bucket
  * rewinds the whole app to that bucket's end (D28), same as every lens.
  */
 import { computed, ref, watch } from 'vue'
@@ -21,11 +21,11 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import { lastDataAt } from '@/system/freshness'
 
 const props = defineProps<{
-  /** the Contributors read's own series; without it the lens reads `query` itself */
+  /** the Contributors read's own series; without it the strip reads `query` itself */
   series?: ActivityPoint[]
   settled?: boolean
   failed?: boolean
-  /** the contributors query (cluster_id, as_of, days) of a lens with no board under it */
+  /** the contributors query (cluster_id, as_of, days) of a strip with no board under it */
   query?: Record<string, unknown> | null
 }>()
 const timeTravel = useTimeTravelStore()
@@ -35,15 +35,20 @@ const ownSeries = ref<ActivityPoint[]>([])
 const ownFailed = ref(false)
 const ownSettled = ref(false)
 
+/** the cluster the chart on screen belongs to: another tenant's chart would be a lie */
+let ownFor: unknown = null
 let seq = 0
 watch(
-  () => (fed.value ? null : props.query),
-  async (q, old) => {
-    if (!q) return
-    const mine = ++seq
-    if (old && old.cluster_id !== q.cluster_id) {
-      ownSettled.value = false // another tenant's chart would be a lie
+  // a value key: a host that rebuilds an equal query object starts no new read
+  () => (fed.value || !props.query ? null : JSON.stringify(props.query)),
+  async (key) => {
+    const mine = ++seq // also when no read starts: an older read in flight must not land
+    if (!key) return
+    const q = JSON.parse(key) as Record<string, unknown>
+    if (q.cluster_id !== ownFor) {
+      ownSettled.value = false
       ownSeries.value = []
+      ownFor = q.cluster_id
     }
     const { data, response } = await contributorsApiV1ContributorsGet({
       query: q as ContributorsApiV1ContributorsGetData['query'],
@@ -54,7 +59,7 @@ watch(
     else ownSeries.value = (data as { handled_over_time?: ActivityPoint[] }).handled_over_time ?? []
     ownSettled.value = true
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 )
 
 const shown = computed(() => (fed.value ? props.series! : ownSeries.value))

@@ -26,7 +26,7 @@ const props = withDefaults(
      * decision activity) rename it so the copy stays accurate about what is counted */
     title?: string
     sub?: string
-    /** the quiet-range copy; a host with no table under the lens says so without the table */
+    /** the quiet-range copy; a host with no table under the strip says so without the table */
     emptyNote?: string
   }>(),
   {

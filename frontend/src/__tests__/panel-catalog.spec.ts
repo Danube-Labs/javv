@@ -299,7 +299,7 @@ describe('the panel frame', () => {
   it('does not clip: the card draws its own shadow outside its box', () => {
     const source = readFileSync(resolve(process.cwd(), 'src/components/dashboards/PanelFrame.vue'), 'utf8')
     const style = source.slice(source.indexOf('<style'))
-    expect(style).not.toMatch(/overflow\s*:/)
+    expect(style).not.toMatch(/overflow(-[xy])?\s*:|contain\s*:|clip-path\s*:/)
     expect(style).not.toMatch(/height\s*:\s*100%/)
   })
 
@@ -344,7 +344,7 @@ describe('a panel that its screen can feed', () => {
     expect(facetsMock()).toHaveBeenCalledTimes(1)
   })
 
-  it('a second ask after the read landed reads again', async () => {
+  it('a second ask after the read came back reads again', async () => {
     facetsMock().mockResolvedValue(ok({ facets: FACETS }))
     mountPanel(panelById('findings-summary')!)
     await flushPromises()
@@ -450,5 +450,173 @@ describe('Overview, after its panels moved into the catalog', () => {
     expect(w.findAll('.stat-band')).toHaveLength(2)
     expect(w.text()).toContain('Package type')
     expect(w.text()).toContain('ns-00')
+  })
+})
+
+/** a reply the test lets in by hand, in any order */
+function deferred() {
+  let resolve!: (v: unknown) => void
+  const promise = new Promise((r) => (resolve = r))
+  return { promise, resolve }
+}
+
+describe('a newer read wins: a slow answer for the old cluster never shows under the new one', () => {
+  it('Top components', async () => {
+    const a = deferred()
+    const b = deferred()
+    fn('topComponentsFindingsApiV1FindingsTopComponentsGet').mockReturnValueOnce(a.promise).mockReturnValueOnce(b.promise)
+    const w = mountPanel(panelById('top-components')!)
+    await flushPromises()
+    useClusterStore().selectedId = 'c-other'
+    await flushPromises()
+    b.resolve(ok({ components: [{ package_name: 'pkg-of-b', count: 1, unique_cves_by_scanner: { trivy: 1 } }] }))
+    await flushPromises()
+    a.resolve(ok({ components: [{ package_name: 'pkg-of-a', count: 1, unique_cves_by_scanner: { trivy: 1 } }] }))
+    await flushPromises()
+    expect(w.text()).toContain('pkg-of-b')
+    expect(w.text()).not.toContain('pkg-of-a')
+  })
+
+  it('Top components, after a switch made at a past time and a return to now', async () => {
+    const timeTravel = (await import('@/stores/timeTravel')).useTimeTravelStore()
+    const b = deferred()
+    fn('topComponentsFindingsApiV1FindingsTopComponentsGet')
+      .mockResolvedValueOnce(ok({ components: [{ package_name: 'pkg-of-a', count: 1, unique_cves_by_scanner: { trivy: 1 } }] }))
+      .mockReturnValueOnce(b.promise)
+    const w = mountPanel(panelById('top-components')!)
+    await flushPromises()
+    expect(w.text()).toContain('pkg-of-a')
+    timeTravel.rewindTo('2026-10-01T00:00:00.000Z')
+    await flushPromises()
+    useClusterStore().selectedId = 'c-other'
+    await flushPromises()
+    timeTravel.backToNow()
+    await flushPromises()
+    // B's read is open: A's rows must already be gone
+    expect(w.text()).not.toContain('pkg-of-a')
+    expect(w.find('[aria-label="Loading top components"]').exists()).toBe(true)
+  })
+
+  it('Riskiest images', async () => {
+    const a = deferred()
+    const b = deferred()
+    fn('listRunningImagesApiV1ImagesGet').mockReturnValueOnce(a.promise).mockReturnValueOnce(b.promise)
+    const image = (repo: string) => ({
+      image_digest: `sha256:${repo}`,
+      image_repo: repo,
+      tag: 'v1',
+      severity_by_scanner: { trivy: { crit: 1, high: 0, med: 0, low: 0, negligible: 0, unknown: 0, total: 1, fixable: 0 } },
+    })
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    useClusterStore().selectedId = 'c-other'
+    await flushPromises()
+    b.resolve(ok({ inventory: null, images: [image('repo-of-b')] }))
+    await flushPromises()
+    a.resolve(ok({ inventory: null, images: [image('repo-of-a')] }))
+    await flushPromises()
+    expect(w.text()).toContain('repo-of-b')
+    expect(w.text()).not.toContain('repo-of-a')
+  })
+
+  it('Handled findings', async () => {
+    const a = deferred()
+    const b = deferred()
+    fn('contributorsApiV1ContributorsGet').mockReturnValueOnce(a.promise).mockReturnValueOnce(b.promise)
+    const panel = panelById('handled-findings')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    await w.setProps(panel.props(ctx({ clusterId: 'c-other' })))
+    b.resolve(ok({ handled_over_time: [] }))
+    await flushPromises()
+    a.resolve(ok({ handled_over_time: [{ date: '2026-10-01T00:00:00.000Z', count: 5 }] }))
+    await flushPromises()
+    expect(w.text()).toContain('No findings were handled in this window.')
+  })
+
+  it('a facets panel', async () => {
+    const a = deferred()
+    const b = deferred()
+    facetsMock().mockReturnValueOnce(a.promise).mockReturnValueOnce(b.promise)
+    const panel = panelById('findings-summary')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    await w.setProps(panel.props(ctx({ clusterId: 'c-other' })))
+    b.resolve(ok({ facets: {} }))
+    await flushPromises()
+    a.resolve(ok({ facets: FACETS }))
+    await flushPromises()
+    expect(w.text()).toContain('No findings at this time.')
+    expect(w.findAll('.stat-band')).toHaveLength(0)
+  })
+
+  it('a facets panel drops the old cluster\'s counts while the new read is open', async () => {
+    const b = deferred()
+    facetsMock().mockResolvedValueOnce(ok({ facets: FACETS })).mockReturnValueOnce(b.promise)
+    const panel = panelById('findings-summary')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    expect(w.findAll('.stat-band')).toHaveLength(2)
+    await w.setProps(panel.props(ctx({ clusterId: 'c-other' })))
+    expect(w.findAll('.stat-band')).toHaveLength(0)
+    expect(w.find('[aria-label="Loading findings summary"]').exists()).toBe(true)
+  })
+})
+
+describe('an equal query rebuilt by the dashboard starts no new read', () => {
+  it('a scanner toggle on a facets panel re-reads nothing', async () => {
+    facetsMock().mockResolvedValue(ok({ facets: FACETS }))
+    const panel = panelById('findings-summary')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    await w.setProps(panel.props(ctx({ scanner: 'trivy' })))
+    await w.setProps(panel.props(ctx({ scanner: 'grype' })))
+    await flushPromises()
+    expect(facetsMock()).toHaveBeenCalledTimes(1)
+  })
+
+  it('Handled findings re-reads nothing when the dashboard rebuilds its props', async () => {
+    fn('contributorsApiV1ContributorsGet').mockResolvedValue(ok({ handled_over_time: [] }))
+    const panel = panelById('handled-findings')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    await w.setProps(panel.props(ctx({ scanner: 'trivy' })))
+    await flushPromises()
+    expect(fn('contributorsApiV1ContributorsGet')).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('each scanner value reaches the other scanner panels', () => {
+  it.each([
+    ['all', '42'],
+    ['trivy', '30'],
+    ['grype', '12'],
+  ] as const)('Package type, Per namespace and Riskiest images count under %s', async (scanner, debianNs) => {
+    facetsMock().mockResolvedValue(
+      ok({ facets: { ...FACETS, ptype: [bucket('debian', 30, 12)], namespaces: [bucket('team-a', 30, 12)] } }),
+    )
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(
+      ok({
+        inventory: null,
+        images: [
+          {
+            image_digest: 'sha256:1',
+            image_repo: 'repo',
+            tag: 'v1',
+            severity_by_scanner: {
+              trivy: { crit: 30, high: 0, med: 0, low: 0, negligible: 0, unknown: 0, total: 30, fixable: 0 },
+              grype: { crit: 12, high: 0, med: 0, low: 0, negligible: 0, unknown: 0, total: 12, fixable: 0 },
+            },
+          },
+        ],
+      }),
+    )
+    const pt = mountPanel(panelById('package-type')!, ctx({ scanner }))
+    const ns = mountPanel(panelById('findings-by-namespace')!, ctx({ scanner }))
+    const ri = mountPanel(panelById('riskiest-images')!, ctx({ scanner }))
+    await flushPromises()
+    expect(pt.find('.donut-row b').text()).toBe(debianNs)
+    expect(ns.find('tbody tr td:last-child').text()).toBe(debianNs)
+    expect(ri.find('tbody tr td:nth-child(2)').text()).toBe(debianNs)
   })
 })
