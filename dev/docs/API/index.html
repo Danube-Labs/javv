@@ -2317,11 +2317,11 @@ its controls. The backend checks the permission again on each request.</p>
 </tr>
 <tr>
 <td><code>triager</code></td>
-<td><code>can_triage</code></td>
+<td><code>can_triage</code>, <code>can_export</code></td>
 </tr>
 <tr>
 <td><code>security_lead</code></td>
-<td><code>can_triage</code>, <code>can_accept_audit_final</code></td>
+<td><code>can_triage</code>, <code>can_accept_audit_final</code>, <code>can_export</code></td>
 </tr>
 <tr>
 <td><code>admin</code></td>
@@ -2344,6 +2344,10 @@ its controls. The backend checks the permission again on each request.</p>
 <tr>
 <td><code>can_accept_audit_final</code></td>
 <td>Accept a risk, in a decision or in triage. Make, change and revoke <code>risk_accepted</code> and <code>ignore_rule</code> decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue.</td>
+</tr>
+<tr>
+<td><code>can_export</code></td>
+<td>Download the export files: the findings CSV and VEX, the audit log CSV, the contributors CSV and the approvals CSV. Make an export report and download it.</td>
 </tr>
 <tr>
 <td><code>can_manage_tokens</code></td>
@@ -2381,6 +2385,8 @@ its controls. The backend checks the permission again on each request.</p>
 </table>
 <p>The Roles card in the web app shows a name and a short text for each permission. It gets them from
 <code>GET /api/v1/admin/roles</code>. The backend keeps one list of the permissions, in this order.</p>
+<p><code>can_export</code> controls the export files, not the reads. A user without it can still read each
+finding through <code>GET /api/v1/findings</code>, 500 rows a page.</p>
 <p>Each read and export applies the cluster that the request names. Each user can read each
 cluster. A <code>cluster_id</code> has 8 to 64 lowercase letters, digits or hyphens, and does not start with
 a hyphen.</p>
@@ -2858,7 +2864,7 @@ cron expressions.</p>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/contributors/export.csv</code></td>
-<td>session</td>
+<td><code>can_export</code></td>
 <td>The data of <code>/contributors</code> as CSV. It has one <code>action_&lt;name&gt;</code> column for each triage action. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.</td>
 </tr>
 <tr>
@@ -2900,7 +2906,7 @@ cron expressions.</p>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/audit/export.csv</code></td>
-<td>session</td>
+<td><code>can_export</code></td>
 <td>The audit log as CSV, with the same filters. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.</td>
 </tr>
 <tr>
@@ -3092,7 +3098,7 @@ that fails during your read can show on a later page.</p>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/decisions/approvals/export.csv</code></td>
-<td><code>can_accept_audit_final</code></td>
+<td><code>can_accept_audit_final</code> and <code>can_export</code></td>
 <td>The approvals queue as CSV, with the same filters (<a href="#the-approvals-queue">The approvals queue</a>)</td>
 </tr>
 </tbody>
@@ -3329,20 +3335,20 @@ in the audit log. Snapshots from before keep the data.</p>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/findings/export.csv</code></td>
-<td>session</td>
+<td><code>can_export</code></td>
 <td>The findings of the <a href="#filters">filters</a> as CSV. More than <code>JAVV_EXPORT_MAX_ROWS</code> (50000) rows get 413. Make the filter narrower, or use a report.</td>
 </tr>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/findings/export.vex</code></td>
-<td>session</td>
+<td><code>can_export</code></td>
 <td>The findings as an OpenVEX or CycloneDX document, for one scanner. <code>scanner</code> is necessary. The row limit is the same.</td>
 </tr>
 <tr>
 <td>POST</td>
 <td><code>/api/v1/reports</code></td>
-<td>session, and <code>can_triage</code> for <code>bulk_triage</code></td>
-<td>Puts a job in the queue and answers 201. <code>kind: export</code> needs only a session. Its <code>params</code> take the filters of <code>GET /api/v1/findings</code> and refuse the same pairs with 422: a filter with its <code>exclude_</code> side, and <code>assignee</code> with <code>unassigned</code>. <code>kind: bulk_triage</code> needs <code>can_triage</code>, and <code>can_accept_audit_final</code> for a risk acceptance or for a change of state of a set that holds risk-accepted findings. A bulk triage keeps the list of findings at this time. If the user does not have <code>can_accept_audit_final</code>, the job checks the set again before it changes a finding. When a finding became risk-accepted after the request, the job fails and changes no finding. Only the <code>JAVV_BULK_MAX_TARGETS</code> limit applies. Its <code>patch</code> takes the fields of <code>POST /api/v1/findings/bulk-triage</code> (<code>state</code>, <code>vex_justification</code>, <code>assignee</code> and <code>notes</code>), with the same limits. A different field gets 422. JAVV does not change a field whose value is <code>null</code>.</td>
+<td><code>can_export</code> for <code>export</code>, <code>can_triage</code> for <code>bulk_triage</code></td>
+<td>Puts a job in the queue and answers 201. Its <code>params</code> take the filters of <code>GET /api/v1/findings</code> and refuse the same pairs with 422: a filter with its <code>exclude_</code> side, and <code>assignee</code> with <code>unassigned</code>. <code>kind: bulk_triage</code> needs <code>can_triage</code>, and <code>can_accept_audit_final</code> for a risk acceptance or for a change of state of a set that holds risk-accepted findings. A bulk triage keeps the list of findings at this time. If the user does not have <code>can_accept_audit_final</code>, the job checks the set again before it changes a finding. When a finding became risk-accepted after the request, the job fails and changes no finding. Only the <code>JAVV_BULK_MAX_TARGETS</code> limit applies. Its <code>patch</code> takes the fields of <code>POST /api/v1/findings/bulk-triage</code> (<code>state</code>, <code>vex_justification</code>, <code>assignee</code> and <code>notes</code>), with the same limits. A different field gets 422. JAVV does not change a field whose value is <code>null</code>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3353,7 +3359,7 @@ in the audit log. Snapshots from before keep the data.</p>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/reports/{report_id}/download</code></td>
-<td>session, the owner, and <code>token</code></td>
+<td><code>can_export</code>, the owner, and <code>token</code></td>
 <td>Downloads the result. After <code>expires_at</code>, the request gets 410. With no result yet, it gets 404. A wrong or expired token gets 403.</td>
 </tr>
 </tbody>
