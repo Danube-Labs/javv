@@ -6,11 +6,17 @@
  */
 import type { Component } from 'vue'
 
+import ContributorsLens from '@/components/contributors/ContributorsLens.vue'
 import ProgressPanel from '@/components/contributors/ProgressPanel.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
+import OverviewNamespacesCard from '@/components/overview/OverviewNamespacesCard.vue'
+import OverviewStatBands from '@/components/overview/OverviewStatBands.vue'
+import PackageTypeCard from '@/components/overview/PackageTypeCard.vue'
+import RiskiestImagesCard from '@/components/overview/RiskiestImagesCard.vue'
 import TopComponentsCard from '@/components/overview/TopComponentsCard.vue'
+import { daysFromWindow } from '@/contributors/viewModel'
 import type { ScannerLens } from '@/lib/scannerLens'
 
 export type PanelGroup = 'Findings' | 'Scanners' | 'People'
@@ -54,6 +60,54 @@ export function globalQuery(ctx: PanelContext): { cluster_id: string; as_of?: st
 }
 
 export const PANELS: readonly CatalogPanel[] = [
+  {
+    id: 'findings-summary',
+    name: 'Findings summary',
+    group: 'Findings',
+    line: 'Findings in each severity, the share with a fix, KEV, scanner disagreement and triage progress.',
+    component: OverviewStatBands,
+    defaultWidth: 2,
+    heights: { short: 7 },
+    usesScanner: true,
+    framed: false,
+    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
+  },
+  {
+    id: 'package-type',
+    name: 'Package type',
+    group: 'Findings',
+    line: 'The share of findings in each package type: OS packages and each language.',
+    component: PackageTypeCard,
+    defaultWidth: 1,
+    heights: { short: 10 },
+    usesScanner: true,
+    framed: false,
+    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
+  },
+  {
+    id: 'findings-by-namespace',
+    name: 'Findings by namespace',
+    group: 'Findings',
+    line: 'The namespaces with the most findings.',
+    component: OverviewNamespacesCard,
+    defaultWidth: 1,
+    heights: { short: 13, tall: 28 },
+    usesScanner: true,
+    framed: false,
+    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), limit: TABLE_ROWS[ctx.height] }),
+  },
+  {
+    id: 'riskiest-images',
+    name: 'Riskiest images',
+    group: 'Findings',
+    line: 'Running images ranked by their critical and high findings: what to rebuild first.',
+    component: RiskiestImagesCard,
+    defaultWidth: 1,
+    heights: { short: 13, tall: 28 },
+    usesScanner: true,
+    framed: false,
+    props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
+  },
   {
     id: 'top-components',
     name: 'Top components',
@@ -107,6 +161,18 @@ export const PANELS: readonly CatalogPanel[] = [
       sub: 'finding states and decisions that people changed',
       emptyNote: 'Nobody changed a finding in this range.',
     }),
+  },
+  {
+    id: 'handled-findings',
+    name: 'Handled findings',
+    group: 'People',
+    line: 'Findings that people resolved, marked not affected, accepted or acknowledged, per day.',
+    component: ContributorsLens,
+    defaultWidth: 2,
+    heights: { short: 4 },
+    usesScanner: false,
+    framed: false,
+    props: (ctx) => ({ query: { ...globalQuery(ctx), days: daysFromWindow(ctx.windowDays) } }),
   },
   {
     id: 'triage-progress',

@@ -504,7 +504,13 @@ component, a default width (half or all of the two columns), the heights it can 
 dashboard's scanner switch applies. Its `props(ctx)` turns what a dashboard knows (cluster, T,
 window, scanner, height) into that component's own props, so a lens keeps the props its screens
 already pass. A table panel takes its rows a page from its height (`TABLE_ROWS`, sizes the shared
-GridPager offers). A lens with no card of its own sets `framed`, and the dashboard puts it in
+GridPager offers). A lens that a screen feeds today keeps that feed and gains a second way in: it takes the screen's
+data when it is passed, and reads its own when it is not (Overview passes one findings facets
+read to the stat bands, Package type and Per namespace; Contributors passes the Handled findings
+strip its series). The screen sends the same requests as before and its panels still agree, and
+on a dashboard the panel stands alone. `composables/useFindingsFacets.ts` is that second way for
+the facets panels: panels that ask for the same cluster and T while a read is open share it.
+A lens with no card of its own sets `framed`, and the dashboard puts it in
 `components/dashboards/PanelFrame.vue`, which never clips: each card draws its own `--shadow`
 outside its box. `panel-catalog.spec.ts` mounts every entry alone, with only a cluster and its
 settings, and fails one that does not send its own request or lacks a loading, empty or error state.

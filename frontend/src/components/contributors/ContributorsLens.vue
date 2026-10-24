@@ -3,32 +3,70 @@
  * The contributors lens — the shared strip grammar pointed at HANDLED findings (M9d slice 3):
  * the `/contributors` read's own `handled_over_time` daily histogram (settling actions:
  * resolve / not affected / risk accept / acknowledge), so the strip and the board below can
- * never disagree — one response, no second fetch. Props-fed; the view owns the settled
- * contract (lens ruling, issue 355: no claim before evidence). Clicking a bucket rewinds the whole app to that
- * bucket's end (D28), same as every lens.
+ * never disagree — one response, no second fetch. Props-fed there; the view owns the settled
+ * contract (lens ruling, issue 355: no claim before evidence). On a dashboard there is no
+ * board, so the lens gets only `query` and reads the same route itself. Clicking a bucket
+ * rewinds the whole app to that bucket's end (D28), same as every lens.
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import { contributorsApiV1ContributorsGet } from '@/api/generated'
+import type { ContributorsApiV1ContributorsGetData } from '@/api/generated'
 import { buildAuditLensOption, type ActivityPoint } from '@/charts/buildAuditLensOption'
 import { bucketEndT } from '@/charts/buildIngestLensOption'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { logger } from '@/lib/logger'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { lastDataAt } from '@/system/freshness'
 
 const props = defineProps<{
-  series: ActivityPoint[]
-  settled: boolean
-  failed: boolean
+  /** the Contributors read's own series; without it the lens reads `query` itself */
+  series?: ActivityPoint[]
+  settled?: boolean
+  failed?: boolean
+  /** the contributors query (cluster_id, as_of, days) of a lens with no board under it */
+  query?: Record<string, unknown> | null
 }>()
 const timeTravel = useTimeTravelStore()
 
-const totalHandled = computed(() => props.series.reduce((n, p) => n + p.count, 0))
-const option = computed(() => buildAuditLensOption(props.series, 'day', 'handled'))
-const quiet = computed(() => props.settled && !props.failed && totalHandled.value === 0)
+const fed = computed(() => props.series !== undefined)
+const ownSeries = ref<ActivityPoint[]>([])
+const ownFailed = ref(false)
+const ownSettled = ref(false)
+
+let seq = 0
+watch(
+  () => (fed.value ? null : props.query),
+  async (q, old) => {
+    if (!q) return
+    const mine = ++seq
+    if (old && old.cluster_id !== q.cluster_id) {
+      ownSettled.value = false // another tenant's chart would be a lie
+      ownSeries.value = []
+    }
+    const { data, response } = await contributorsApiV1ContributorsGet({
+      query: q as ContributorsApiV1ContributorsGetData['query'],
+    })
+    if (mine !== seq) return // a newer read owns the chart now
+    ownFailed.value = !response?.ok || !data
+    if (ownFailed.value) logger.warn('handled_lens_failed', { status: response?.status })
+    else ownSeries.value = (data as { handled_over_time?: ActivityPoint[] }).handled_over_time ?? []
+    ownSettled.value = true
+  },
+  { immediate: true, deep: true },
+)
+
+const shown = computed(() => (fed.value ? props.series! : ownSeries.value))
+const isSettled = computed(() => (fed.value ? props.settled : ownSettled.value))
+const isFailed = computed(() => (fed.value ? props.failed : ownFailed.value))
+
+const totalHandled = computed(() => shown.value.reduce((n, p) => n + p.count, 0))
+const option = computed(() => buildAuditLensOption(shown.value, 'day', 'handled'))
+const quiet = computed(() => isSettled.value && !isFailed.value && totalHandled.value === 0)
 
 function onPointClick(params: { dataIndex: number }) {
-  const bucket = props.series[params.dataIndex]?.date
+  const bucket = shown.value[params.dataIndex]?.date
   if (!bucket) return
   const t = bucketEndT(bucket, Date.now(), 'day')
   if (t === null) {
@@ -50,10 +88,10 @@ function onPointClick(params: { dataIndex: number }) {
       >
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (issue 355) -->
-    <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading handled findings" class="skel-gap" />
-    <p v-else-if="failed" class="il-empty">Handled-findings activity unavailable.</p>
+    <UiSkeleton v-if="!isSettled" :height="84" radius="sm" label="Loading handled findings" class="skel-gap" />
+    <p v-else-if="isFailed" class="il-empty">Handled-findings activity unavailable.</p>
     <p v-else-if="totalHandled === 0" class="il-empty">
-      No findings were handled in this window. The board below is empty too.
+      No findings were handled in this window.<template v-if="fed"> The board below is empty too.</template>
     </p>
     <div v-else title="Click a bucket to view the whole app as of its end">
       <EChart :option="option" :height="84" @point-click="onPointClick" />

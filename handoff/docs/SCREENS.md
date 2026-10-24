@@ -220,6 +220,14 @@ so its title is the page's one h1 in the page-title style (issue 829; operator r
 scanner-silent banner; `T<now` history banner (single-cluster rewind is fully supported once M8b
 lands; 501-state before that, C-1).
 
+**Dashboard panels (issue 440).** The stat bands, Package type, Per namespace, Top components and
+Riskiest images cards are panels of the dashboard catalog (`src/dashboards/catalog.ts`, DESIGN.md
+§10). Overview reads the findings facets once and passes them to the stat bands, Package type and
+Per namespace, so their numbers agree, as before. Top components and Riskiest images get their own
+data: each shows the loading shimmer until its answer comes, and its own error text if the read
+fails ("Component ranking unavailable.", "Riskiest images unavailable."). Before, both showed their
+"no data" text while the read was open, and Riskiest images also showed it when the read failed.
+
 **Changed vs SCREENS.md:** A-1 (lowercase + negligible), B-1 (donut kept, fed by M8d ptype),
 B-2/B-6 (widget cuts), A-m9 (trend semantics label), C-1 (time-travel states). Scanner-type
 filter stays (it maps to the `scanner` filter param).
@@ -679,6 +687,11 @@ days`, not `SLA policy → updated` (issue 933).
 
 **States:** loading; empty (no triage activity in window); degraded; `T<now` fine (audit-log ≤T
 is supported, C-1).
+
+**Dashboard panels (issue 440).** The Handled findings strip and Triage progress are panels of the
+dashboard catalog. Here the strip takes its series from the same `/contributors` response as the
+board, so the two cannot disagree; on a dashboard, where there is no board, the strip reads that
+route itself and its empty text does not mention a board.
 
 **Changed vs SCREENS.md:** A-m9 (resolution semantics label); activity feed blocked on the audit
 read; severity colors stay firewalled from brand coral (unchanged rule).

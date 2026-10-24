@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * The Overview "Per namespace" card (issue 384 split — extracted from OverviewView): top-10
+ * The Overview "Per namespace" card (issue 384 split — extracted from OverviewView): the top
  * namespaces by findings under the scanner lens, each row a click-through to the
  * namespace-filtered grid. Per-namespace counts overlap by design (D30 — the all-namespaces
  * total is the only deduped number). Skinned by the shared base.css table (no scoped re-own).
+ * Overview passes its facets read; on a dashboard the card reads its own (useFindingsFacets).
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -11,19 +12,33 @@ import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import { useOverviewStore } from '@/stores/overview'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { useFindingsFacets, type Facets, type FacetsQuery } from '@/composables/useFindingsFacets'
 import { countOf, fmt, type ScannerLens } from '@/lib/scannerLens'
 
-const props = defineProps<{ scanner: ScannerLens }>()
+const props = withDefaults(
+  defineProps<{
+    scanner: ScannerLens
+    /** the screen's facets read; without it the card reads its own for `query` */
+    facets?: Facets
+    query?: FacetsQuery | null
+    /** how many namespaces it lists; a dashboard panel sets it from its height */
+    limit?: number
+  }>(),
+  { facets: undefined, query: undefined, limit: 10 },
+)
 
 const router = useRouter()
-const overview = useOverviewStore()
+const { facets, settled, failed } = useFindingsFacets(
+  () => props.facets,
+  () => props.query,
+)
 
 const namespaces = computed(() =>
-  (overview.facets.namespaces ?? [])
+  (facets.value.namespaces ?? [])
     .map((b) => ({ key: b.key, count: countOf(b, props.scanner) }))
     .filter((b) => b.count > 0)
-    .slice(0, 10),
+    .slice(0, props.limit),
 )
 
 const findingsRoute = (query: Record<string, string>) => ({ path: '/findings', query })
@@ -37,11 +52,19 @@ function goFindings(query: Record<string, string>) {
     <div class="card-head">
       <div>
         <h2>Per namespace</h2>
-        <p class="card-sub">top 10 by findings</p>
+        <p class="card-sub">top {{ limit }} by findings</p>
       </div>
       <UiButton variant="mini" @click="router.push('/images')">View inventory</UiButton>
     </div>
-    <p v-if="namespaces.length === 0" class="empty-row">No namespace data in range.</p>
+    <UiSkeleton
+      v-if="!settled"
+      class="skel-pad"
+      :height="220"
+      radius="sm"
+      label="Loading namespaces"
+    />
+    <p v-else-if="failed" class="empty-row" role="alert">Namespace counts unavailable.</p>
+    <p v-else-if="namespaces.length === 0" class="empty-row">No namespace data in range.</p>
     <div v-else class="tbl-wrap">
       <table class="tbl tbl-dense tbl-hover">
         <thead>
@@ -91,6 +114,9 @@ function goFindings(query: Record<string, string>) {
 .strong {
   font-weight: 700;
   color: var(--ink);
+}
+.skel-pad {
+  margin: 0 16px 14px;
 }
 /* the affordance carrier — same convention as the grid's cve-link */
 .ns-link {

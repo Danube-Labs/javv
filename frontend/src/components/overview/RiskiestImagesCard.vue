@@ -6,33 +6,64 @@
  * shared GridPager. Every number is the images read's server-decorated `severity_by_scanner`;
  * the lens picks a scanner's buckets, `all` adds the per-scanner counts (additive, same
  * grammar as the fleet strip — never a cross-scanner dedupe). Rows open the image detail.
+ * It reads the images itself, apart from the Running images screen's store, so it renders
+ * alone on a dashboard with its own loading and error states.
  */
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { client } from '@/api/client'
+import { listRunningImagesApiV1ImagesGet } from '@/api/generated'
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { logger } from '@/lib/logger'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
 import { useClusterStore } from '@/stores/cluster'
-import { useImagesStore, type ImageRow } from '@/stores/images'
+import type { ImageRow } from '@/stores/images'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 
 const RANK_KEYS = ['crit', 'high', 'med', 'low'] as const
 
-const props = defineProps<{ scanner: ScannerLens }>()
+const props = withDefaults(
+  defineProps<{
+    scanner: ScannerLens
+    /** rows a page; a dashboard panel sets it from its height */
+    pageSize?: number
+  }>(),
+  { pageSize: 10 },
+)
 
 const router = useRouter()
 const clusterStore = useClusterStore()
 const timeTravel = useTimeTravelStore()
-const images = useImagesStore()
 
+const images = ref<ImageRow[]>([])
+const failed = ref(false)
+// no claim before evidence: "No image findings" only once an answer has landed
+const settled = ref(false)
+
+let seq = 0
 watch(
   () => [clusterStore.selectedId, timeTravel.t] as const,
-  ([id, t]) => {
+  async ([id, t], old) => {
     if (!id) return
-    void images.load({ cluster_id: id, ...(t ? { as_of: t } : {}) })
+    const mine = ++seq
+    if (old && old[0] !== id) {
+      settled.value = false // another tenant's images would be a lie
+      images.value = []
+    }
+    const { data, response } = await listRunningImagesApiV1ImagesGet({
+      client,
+      query: { cluster_id: id, ...(t ? { as_of: t } : {}) } as never,
+    })
+    if (mine !== seq) return // a newer read owns the card now
+    failed.value = !response?.ok || !data
+    if (failed.value) logger.warn('riskiest_images_failed', { status: response?.status })
+    else images.value = (data as { images?: ImageRow[] }).images ?? []
+    settled.value = true
   },
   { immediate: true },
 )
@@ -45,7 +76,7 @@ function sev(row: ImageRow, key: (typeof RANK_KEYS)[number]): number {
 }
 
 const ordered = computed(() =>
-  images.images
+  images.value
     .map((r) => ({ row: r, rank: RANK_KEYS.map((k) => sev(r, k)) }))
     .filter((x) => x.rank.some((n) => n > 0))
     .sort((a, b) => {
@@ -57,10 +88,14 @@ const ordered = computed(() =>
 )
 
 const page = ref(0)
-const size = ref(10)
+const size = ref(props.pageSize)
 watch([ordered], () => {
   page.value = 0
 })
+watch(
+  () => props.pageSize,
+  (next) => setSize(next),
+)
 const shown = computed(() =>
   ordered.value.slice(page.value * size.value, (page.value + 1) * size.value),
 )
@@ -88,7 +123,15 @@ function open(row: ImageRow) {
       </div>
       <UiButton variant="mini" @click="router.push('/images')">View inventory</UiButton>
     </div>
-    <p v-if="ordered.length === 0" class="empty-row">
+    <UiSkeleton
+      v-if="!settled"
+      class="skel-pad"
+      :height="220"
+      radius="sm"
+      label="Loading riskiest images"
+    />
+    <p v-else-if="failed" class="empty-row" role="alert">Riskiest images unavailable.</p>
+    <p v-else-if="ordered.length === 0" class="empty-row">
       No image findings in the running inventory.
     </p>
     <template v-else>
@@ -158,6 +201,9 @@ function open(row: ImageRow) {
 .strong {
   font-weight: 700;
   color: var(--ink);
+}
+.skel-pad {
+  margin: 0 16px 14px;
 }
 .crit-alarm {
   color: var(--sev-critical-fg);

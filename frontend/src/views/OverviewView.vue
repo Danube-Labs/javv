@@ -7,7 +7,8 @@
  * server already returned. Cut vs prototype (recorded in the bolt README): KPI sparklines +
  * "+new 30d" chips (no per-severity trend agg), namespace severity MixBar (no per-ns severity
  * agg), Top components / Language binaries / Newly published (B-6/B-2).
- * Issue-384 split: the stat bands and the namespaces card live in components/overview/;
+ * Issue-384 split: the stat bands, the package types and the namespaces card live in
+ * components/overview/;
  * the scanner-lens count math is the shared pure helper lib/scannerLens.ts.
  * The Scan-activity card is gone (it duplicated IngestLens — same trends/scans read); its slot
  * runs the A/B specimens (TopComponentsCard vs RiskiestImagesCard) pending the §8.5 ruling.
@@ -16,13 +17,13 @@ import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { buildFindingsTrendOption, emptyTrendNote } from '@/charts/buildFindingsTrendOption'
-import { buildPtypeDonutOption } from '@/charts/buildPtypeDonutOption'
 import { buildSeverityTrendOption, type SeverityTrendData } from '@/charts/buildSeverityTrendOption'
 import { isSubDayWindow } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
 import OverviewNamespacesCard from '@/components/overview/OverviewNamespacesCard.vue'
 import OverviewStatBands from '@/components/overview/OverviewStatBands.vue'
+import PackageTypeCard from '@/components/overview/PackageTypeCard.vue'
 import RiskiestImagesCard from '@/components/overview/RiskiestImagesCard.vue'
 import TopComponentsCard from '@/components/overview/TopComponentsCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -32,11 +33,10 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
 import { useStretchWidth } from '@/composables/useStretchWidth'
-import { CHART_PTYPE_RAMP } from '@/styles/tokens'
 import { useClusterStore } from '@/stores/cluster'
 import { useOverviewStore } from '@/stores/overview'
 import { useTimeTravelStore } from '@/stores/timeTravel'
-import { countOf, fmt, type ScannerLens } from '@/lib/scannerLens'
+import type { ScannerLens } from '@/lib/scannerLens'
 import { ref } from 'vue'
 
 const SCANNER_OPTS = [
@@ -96,17 +96,6 @@ const trendNote = computed(() =>
     : emptyTrendNote(trendOption.value, trendLens.value),
 )
 
-/** ptype buckets minus a lone `unknown` (pre-M8d rows heal on the next sweep, D30). */
-const ptypeBuckets = computed(() => {
-  const all = (overview.facets.ptype ?? []).map((b) => ({
-    key: b.key,
-    count: countOf(b, scanner.value),
-  }))
-  const real = all.filter((b) => b.key !== 'unknown' && b.count > 0)
-  return real
-})
-const donutOption = computed(() => buildPtypeDonutOption(ptypeBuckets.value))
-
 const lastSweep = computed(() => {
   if (!overview.lastIngestAt) return null
   return new Date(overview.lastIngestAt).toLocaleString('en-GB', {
@@ -122,9 +111,6 @@ const subDayNote = computed(() => isSubDayWindow(timeTravel.windowDays))
 
 function goFindings(query: Record<string, string>) {
   void router.push({ path: '/findings', query })
-}
-function onDonutClick(e: { name?: string }) {
-  if (e?.name) goFindings({ ptype: e.name })
 }
 </script>
 
@@ -170,7 +156,9 @@ function onDonutClick(e: { name?: string }) {
     />
 
     <template v-else>
-      <OverviewStatBands :scanner="scanner" />
+      <!-- one facets read feeds the bands, the package types and the namespaces, so their
+           numbers cannot disagree (DESIGN.md §10); on a dashboard each reads its own -->
+      <OverviewStatBands :scanner="scanner" :facets="overview.facets" />
 
       <div class="grid grid-2-1">
         <section class="card">
@@ -198,34 +186,7 @@ function onDonutClick(e: { name?: string }) {
             </p>
           </div>
         </section>
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>Package type</h2>
-              <p class="card-sub">share of findings</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <template v-if="ptypeBuckets.length">
-              <EChart :option="donutOption" :height="188" @click="onDonutClick" />
-              <div class="donut-legend">
-                <button
-                  v-for="(b, i) in ptypeBuckets.slice(0, 6)"
-                  :key="b.key"
-                  class="donut-row"
-                  :title="`Open ${b.key} findings`"
-                  @click="goFindings({ ptype: b.key })"
-                >
-                  <i :style="{ background: CHART_PTYPE_RAMP[i % CHART_PTYPE_RAMP.length] }" />
-                  {{ b.key }}<AppIcon class="cell-go" name="chevron" :size="11" /> <b>{{ fmt(b.count) }}</b>
-                </button>
-              </div>
-            </template>
-            <p v-else class="empty-row">
-              Awaiting package-type data. Populates as the next scan cycles re-observe images.
-            </p>
-          </div>
-        </section>
+        <PackageTypeCard :scanner="scanner" :facets="overview.facets" />
       </div>
 
       <div class="grid grid-1-1">
@@ -236,7 +197,7 @@ function onDonutClick(e: { name?: string }) {
       </div>
 
       <div class="grid">
-        <OverviewNamespacesCard :scanner="scanner" />
+        <OverviewNamespacesCard :scanner="scanner" :facets="overview.facets" />
       </div>
     </template>
   </div>
@@ -326,53 +287,6 @@ function onDonutClick(e: { name?: string }) {
   margin: 6px 0 0;
   font-size: var(--text-sm);
   color: var(--soft);
-}
-
-.donut-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-}
-.donut-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--text-sweep-strong);
-  color: var(--soft);
-  border: none;
-  background: none;
-  padding: 2px 4px;
-  border-radius: 5px;
-  cursor: default;
-  text-align: left;
-  transition: background var(--dur-quick);
-}
-.donut-row:hover {
-  background: var(--control-hover-bg);
-  color: var(--ink);
-}
-.donut-row:active {
-  background: var(--control-active-bg);
-}
-.donut-row:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
-.donut-row:hover .cell-go {
-  color: var(--coral-text);
-}
-.donut-row i {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  flex: none;
-}
-.donut-row b {
-  margin-left: auto;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
 }
 
 .load-error {
