@@ -16,6 +16,7 @@ import { topComponentsFindingsApiV1FindingsTopComponentsGet } from '@/api/genera
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -27,7 +28,14 @@ interface ComponentRow {
   unique_cves_by_scanner: Record<string, number>
 }
 
-const props = defineProps<{ scanner: ScannerLens }>()
+const props = withDefaults(
+  defineProps<{
+    scanner: ScannerLens
+    /** rows a page; a dashboard panel sets it from its height */
+    pageSize?: number
+  }>(),
+  { pageSize: 10 },
+)
 
 const router = useRouter()
 const clusterStore = useClusterStore()
@@ -35,11 +43,17 @@ const timeTravel = useTimeTravelStore()
 
 const rows = ref<ComponentRow[]>([])
 const failed = ref(false)
+// no claim before evidence: "No component data yet" only once an answer has landed
+const settled = ref(false)
 
 watch(
   () => [clusterStore.selectedId, timeTravel.t] as const,
-  async ([id, t]) => {
+  async ([id, t], old) => {
     if (!id || t !== null) return // now-only read — the template shows the rewound note
+    if (old && old[0] !== id) {
+      settled.value = false // another tenant's board would be a lie
+      rows.value = []
+    }
     const { data, response } = await topComponentsFindingsApiV1FindingsTopComponentsGet({
       client,
       query: { cluster_id: id } as never,
@@ -50,6 +64,7 @@ watch(
     } else {
       logger.warn('top_components_load_failed', { status: response?.status })
     }
+    settled.value = true
   },
   { immediate: true },
 )
@@ -71,10 +86,14 @@ const ordered = computed(() =>
 )
 
 const page = ref(0)
-const size = ref(10)
+const size = ref(props.pageSize)
 watch([ordered], () => {
   page.value = 0
 })
+watch(
+  () => props.pageSize,
+  (next) => setSize(next),
+)
 const shown = computed(() =>
   ordered.value.slice(page.value * size.value, (page.value + 1) * size.value),
 )
@@ -101,6 +120,13 @@ function goFindings(pkg: string) {
     <p v-if="!timeTravel.isNow" class="empty-row">
       Component ranking is a current-state read, unavailable at a rewound T.
     </p>
+    <UiSkeleton
+      v-else-if="!settled"
+      class="skel-pad"
+      :height="220"
+      radius="sm"
+      label="Loading top components"
+    />
     <p v-else-if="failed" class="empty-row" role="alert">Component ranking unavailable.</p>
     <p v-else-if="ordered.length === 0" class="empty-row">No component data yet.</p>
     <template v-else>
@@ -165,6 +191,9 @@ function goFindings(pkg: string) {
 .strong {
   font-weight: 700;
   color: var(--ink);
+}
+.skel-pad {
+  margin: 0 16px 14px;
 }
 /* the affordance carrier — same convention as the grid's cve-link */
 .pkg-link {
