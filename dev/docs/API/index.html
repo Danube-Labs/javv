@@ -2379,6 +2379,8 @@ its controls. The backend checks the permission again on each request.</p>
 </tr>
 </tbody>
 </table>
+<p>The Roles card in the web app shows a name and a short text for each permission. It gets them from
+<code>GET /api/v1/admin/roles</code>. The backend keeps one list of the permissions, in this order.</p>
 <p>Each read and export applies the cluster that the request names. Each user can read each
 cluster. A <code>cluster_id</code> has 8 to 64 lowercase letters, digits or hyphens, and does not start with
 a hyphen.</p>
@@ -2681,7 +2683,7 @@ in a scan cycle.</p>
 <td>GET</td>
 <td><code>/api/v1/admin/roles</code></td>
 <td><code>can_manage_users</code></td>
-<td>The roles and their permissions</td>
+<td>The roles and their permissions in <code>roles</code>. Also <code>permissions</code>: each permission with its <code>id</code>, a <code>name</code> and a <code>description</code> of what it allows, in the order of the table in <a href="#roles-and-permissions">Roles and permissions</a>.</td>
 </tr>
 <tr>
 <td>GET</td>
