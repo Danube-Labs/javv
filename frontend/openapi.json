@@ -4261,7 +4261,7 @@
     },
     "/api/v1/decisions/approvals/export.csv": {
       "get": {
-        "description": "The queue's Export CSV (issue 359, absorbing #373): the CURRENT lens, streamed.\n\nCapability-gated like the queue it exports \u2014 standing risk-acceptances name who accepted\nwhat, so the file is exactly as sensitive as the screen and inherits its\n`can_accept_audit_final` gate rather than settling for session auth.\n\n`now` is read ONCE and passed to both the count and the sweep, so the derived `status`\ncolumn and the `status` filter cannot straddle a tick and disagree.",
+        "description": "The queue's Export CSV (issue 359, absorbing #373): the CURRENT lens, streamed.\n\nCapability-gated like the queue it exports \u2014 standing risk-acceptances name who accepted\nwhat, so the file is exactly as sensitive as the screen and inherits its\n`can_accept_audit_final` gate rather than settling for session auth. Like every export file\nit also needs `can_export` (issue 243).\n\n`now` is read ONCE and passed to both the count and the sweep, so the derived `status`\ncolumn and the `status` filter cannot straddle a tick and disagree.",
         "operationId": "export_approvals_csv_api_v1_decisions_approvals_export_csv_get",
         "parameters": [
           {

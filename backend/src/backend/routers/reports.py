@@ -3,8 +3,8 @@
 `POST` writes a `pending` `system-reports` doc; the off-peak drain (`jobs/report_drain`, a later
 slice) claims it via OCC, streams the export through M6's engine, stores the result chunked in
 OpenSearch, and rings the bell. Status/download are OWNER-scoped (`requested_by` must match the
-principal; a foreign report_id 404s exactly like a missing one) — beyond that a scheduled export
-is a read, gated like the M6 inline export (`get_current_principal`, no extra capability).
+principal; a foreign report_id 404s exactly like a missing one). A scheduled export and its
+download need `can_export`, as the M6 inline export does (issue 243); the status read does not.
 `cluster_id` is a required field, applied on the export query at drain time and re-checked on
 download.
 
@@ -25,9 +25,14 @@ from fastapi.responses import StreamingResponse
 from opensearchpy import NotFoundError
 from pydantic import ValidationError
 
-from backend.auth.capabilities import accept_final_refusal, holds_accept_final
+from backend.auth.capabilities import (
+    accept_final_refusal,
+    holds,
+    holds_accept_final,
+    require_capability,
+)
 from backend.auth.principal import Principal, get_current_principal
-from backend.core.metrics import LIMIT_REJECTIONS
+from backend.core.metrics import AUTH_FAILURES, LIMIT_REJECTIONS
 from backend.core.settings import get_settings
 from backend.reports import download_token
 from backend.reports.models import (
@@ -53,6 +58,7 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
+CanExport = Annotated[Principal, Depends(require_capability("can_export"))]
 
 
 def _bulk_part_errors(exc: ValidationError, part: str) -> RequestValidationError:
@@ -69,6 +75,9 @@ def _bulk_part_errors(exc: ValidationError, part: str) -> RequestValidationError
 async def enqueue_report(
     request: Request, body: EnqueueReport, principal: Authenticated
 ) -> dict[str, Any]:
+    if body.kind == "export" and not holds(principal, "can_export"):
+        AUTH_FAILURES.labels("missing_capability").inc()  # counted like the gate's own 403
+        raise HTTPException(403, "missing capability")
     client = cast(Any, request.app.state.opensearch)
     report_id, doc = new_report_doc(body, requested_by=principal.user_id)
 
@@ -162,7 +171,7 @@ async def get_report(request: Request, report_id: str, principal: Authenticated)
 
 @router.get("/{report_id}/download")
 async def download_report(
-    request: Request, report_id: str, token: str, principal: Authenticated
+    request: Request, report_id: str, token: str, principal: CanExport
 ) -> StreamingResponse:
     client = cast(Any, request.app.state.opensearch)
     try:

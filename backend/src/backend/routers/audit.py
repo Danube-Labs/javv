@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse
 from opensearchpy.exceptions import ConnectionError as OSConnectionError
 from opensearchpy.exceptions import ConnectionTimeout
 
-from backend.auth.capabilities import holds
+from backend.auth.capabilities import holds, require_capability
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS, OS_REQUEST_ERRORS
@@ -46,6 +46,7 @@ router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 log = structlog.get_logger()
 
 Authenticated = Annotated[Principal, Depends(get_current_principal)]
+CanExport = Annotated[Principal, Depends(require_capability("can_export"))]
 # several values per filter (issue 952), each with the length cap it had as one string
 _Values64 = Annotated[list[FilterValue64] | None, Query(max_length=MAX_FILTER_VALUES)]
 _Values128 = Annotated[list[FilterValue128] | None, Query(max_length=MAX_FILTER_VALUES)]
@@ -201,7 +202,7 @@ async def audit_facets(
 @router.get("/export.csv")
 async def export_audit_csv(
     request: Request,
-    principal: Authenticated,
+    principal: CanExport,
     cluster_id: ClusterId,
     params: AuditFilterParams,
     as_of: Annotated[str | None, Query(max_length=64)] = None,

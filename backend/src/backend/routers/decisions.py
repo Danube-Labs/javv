@@ -240,7 +240,7 @@ async def approval_list(
     }
 
 
-@router.get("/approvals/export.csv")
+@router.get("/approvals/export.csv", dependencies=[Depends(require_capability("can_export"))])
 async def export_approvals_csv(
     request: Request,
     principal: AcceptFinal,
@@ -252,7 +252,8 @@ async def export_approvals_csv(
 
     Capability-gated like the queue it exports — standing risk-acceptances name who accepted
     what, so the file is exactly as sensitive as the screen and inherits its
-    `can_accept_audit_final` gate rather than settling for session auth.
+    `can_accept_audit_final` gate rather than settling for session auth. Like every export file
+    it also needs `can_export` (issue 243).
 
     `now` is read ONCE and passed to both the count and the sweep, so the derived `status`
     column and the `status` filter cannot straddle a tick and disagree.

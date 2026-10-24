@@ -48,8 +48,8 @@ async def env():
         body={
             "username": username,
             "password_hash": hash_password(PASSWORD),
-            "role": "viewer",
-            "capabilities": [],
+            "role": "custom",
+            "capabilities": ["can_export"],  # the export routes need it (issue 243)
             "must_change": False,
             "disabled": False,
             "auth_source": "local",
@@ -726,7 +726,7 @@ async def test_account_events_need_can_manage_users(env) -> None:
         )
 
     assert await seen(viewer) == (["job_trigger"], {"job"}, 1)
-    manager = await _session_with(client, ["can_manage_users"])
+    manager = await _session_with(client, ["can_manage_users", "can_export"])
     try:
         assert await seen(manager) == (
             ["job_trigger", "login", "token_mint"],

@@ -25,7 +25,7 @@ from backend.main import create_app
 from os_env import OS_URL, clear_pits, requires_opensearch
 
 PASSWORD = "approvals-export-password"
-LEAD = ["can_triage", "can_accept_audit_final"]
+LEAD = ["can_triage", "can_accept_audit_final", "can_export"]
 
 pytestmark = requires_opensearch
 
@@ -135,7 +135,7 @@ async def test_the_export_inherits_the_queue_s_capability_gate(env) -> None:
     cid = f"c-aexp-{uuid.uuid4().hex[:8]}"
     await _accept(client, cid, cve="CVE-2024-0001")
 
-    viewer = await login_with(["can_triage"])  # triager, but NOT accept-final
+    viewer = await login_with(["can_triage", "can_export"])  # may export, but NOT accept-final
     r = await viewer.get("/api/v1/decisions/approvals/export.csv", params={"cluster_id": cid})
     assert r.status_code == 403
 
