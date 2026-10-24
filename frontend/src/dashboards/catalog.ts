@@ -42,7 +42,9 @@ export interface CatalogPanel {
   line: string
   component: Component
   defaultWidth: PanelWidth
-  /** grid rows of 40 px for each height the panel can take; the first one is its default */
+  /** grid rows of 40 px for each height the panel can take, the first one its default. A slot
+   * of n rows holds n × 40 px less the grid's 2 × 15 px margin; each value fits the panel as
+   * measured on its own screen, with a table panel at TABLE_ROWS rows. */
   heights: Partial<Record<PanelHeight, number>>
   /** the panel splits its numbers by scanner, so the dashboard's scanner switch applies */
   usesScanner: boolean
@@ -79,7 +81,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'The share of findings in each package type: OS packages and each language.',
     component: PackageTypeCard,
     defaultWidth: 1,
-    heights: { short: 10 },
+    heights: { short: 12 },
     usesScanner: true,
     framed: false,
     props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
@@ -91,7 +93,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'The namespaces with the most findings.',
     component: OverviewNamespacesCard,
     defaultWidth: 1,
-    heights: { short: 13, tall: 28 },
+    heights: { short: 11, tall: 24 },
     usesScanner: true,
     framed: false,
     props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), limit: TABLE_ROWS[ctx.height] }),
@@ -103,7 +105,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'Running images ranked by their critical and high findings: what to rebuild first.',
     component: RiskiestImagesCard,
     defaultWidth: 1,
-    heights: { short: 13, tall: 28 },
+    heights: { short: 13, tall: 26 },
     usesScanner: true,
     framed: false,
     props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
@@ -115,7 +117,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'The packages with the most vulnerabilities: what to upgrade first.',
     component: TopComponentsCard,
     defaultWidth: 1,
-    heights: { short: 13, tall: 28 },
+    heights: { short: 13, tall: 26 },
     usesScanner: true,
     framed: false,
     props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
@@ -151,7 +153,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'Triage changes that people made in the time range: finding states and decisions.',
     component: AuditLens,
     defaultWidth: 2,
-    heights: { short: 4 },
+    heights: { short: 5 },
     usesScanner: false,
     framed: false,
     props: (ctx) => ({
@@ -169,7 +171,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'Findings that people resolved, marked not affected, accepted or acknowledged, per day.',
     component: ContributorsLens,
     defaultWidth: 2,
-    heights: { short: 4 },
+    heights: { short: 5 },
     usesScanner: false,
     framed: false,
     props: (ctx) => ({ query: { ...globalQuery(ctx), days: daysFromWindow(ctx.windowDays) } }),
@@ -181,7 +183,7 @@ export const PANELS: readonly CatalogPanel[] = [
     line: 'For each severity, how many findings people have triaged.',
     component: ProgressPanel,
     defaultWidth: 1,
-    heights: { short: 9 },
+    heights: { short: 10 },
     usesScanner: false,
     framed: true,
     props: (ctx) => ({ query: globalQuery(ctx) }),
