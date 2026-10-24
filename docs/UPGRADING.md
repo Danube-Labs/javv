@@ -344,6 +344,7 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
+| 0.8.9 | 18 | 3 and 4 | The note **A new permission for the export files** below |
 | 0.8.7 | 18 | 3 and 4 | The note **JAVV refuses a username with a capital letter** below |
 | 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |
 | 0.7.0 | 18 | 3 and 4 | The note **`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`** below |
@@ -356,6 +357,54 @@ backend accepts (3 and 4).
 No release up to and including 0.8.0 changed the OpenSearch chart in a way that needs the `store`
 upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
 of the comments in `values.yaml`, and no value.
+
+### 0.8.9: a new permission for the export files
+
+A user now needs the permission `can_export` to download a file of the data:
+
+- the CSV and VEX files of the findings
+- the CSV files of the audit log, the contributors and the approvals queue
+- an export report
+
+Without the permission, these requests get 403. The `viewer` role does not get it. A viewer can
+still read the data on the screens and through the API.
+
+A new store gives the permission to the `triager`, `security_lead` and `admin` roles. But JAVV
+writes the roles only on the first start of a store. Thus on a store that you have, only `admin`
+gets the permission, because `*` holds each permission. Also, each user keeps a copy of the
+permissions of its role.
+
+After the upgrade, give the permission to the `triager` and `security_lead` roles and to their
+users:
+
+1. Save this script as `can-export.sh`, in the folder of your installation:
+    ```sh
+    # Adds can_export to the triager and security_lead roles, and to their users.
+    login=$(printf %s "$OPENSEARCH_INITIAL_ADMIN_PASSWORD" | sed 's/[\\"]/\\&/g')
+    curl -sSk -K - -X POST 'https://localhost:9200/system-roles,system-users/_update_by_query?refresh=true' \
+      -H 'content-type: application/json' -d '{
+      "query": {"terms": {"role": ["triager", "security_lead"]}},
+      "script": {"lang": "painless", "source": "def c = ctx._source.capabilities; if (c == null || c.contains(\"can_export\")) { ctx.op = \"noop\" } else { c.add(\"can_export\") }"}
+    }' <<EOF
+    user = "admin:$login"
+    EOF
+    echo
+    ```
+2. Run the script in the OpenSearch container:
+    ```bash
+    docker compose exec -T opensearch sh < can-export.sh
+    ```
+    The answer has `"failures":[]`. `updated` is the number of roles and users that the script
+    changed. If you run the script again, it changes nothing.
+
+The script reads the admin password in the container, as the health check of the compose file
+does. Thus the password is not in your shell history or in the arguments of a process. The users
+do not sign in again: JAVV reads the permissions of a user on each request.
+
+On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
+its admin.
+
+We did these steps on the compose files of 0.8.8, with a triager and a security lead.
 
 ### 0.8.7: JAVV refuses a username with a capital letter
 
