@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ExportDialog from '@/components/findings/ExportDialog.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 
 vi.mock('@/api/generated', async (importOriginal) =>
@@ -47,6 +48,8 @@ describe('ExportDialog blocks what the backend refuses', () => {
     document.body.innerHTML = ''
     useClusterStore().clusters = [{ cluster_id: 'c-1', cluster_name: 'c-1' }] as never
     useClusterStore().selectedId = 'c-1'
+    // the trigger needs can_export (issue 243; export-capability.spec.ts pins the refusal)
+    useAuthStore().user = { username: 'u', role: 'triager', capabilities: ['can_export'], must_change: false } as never
   })
 
   it('Assignee with Unassigned: both tabs say why and turn their button off', async () => {
