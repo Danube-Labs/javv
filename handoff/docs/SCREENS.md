@@ -818,6 +818,13 @@ dots, underscores or hyphens. You cannot use system or fleet." Any other refusal
 **Roles panel (A-4):** renders the 4 roles as **capability bundles** (viewer — none · triager —
 can_triage · security_lead — + can_accept_audit_final · admin — *), from `system-roles` content.
 The v4 5-role permission matrix is gone.
+**Roles table (issue 990, option A, ruled 2026-10-24):** one table on the shared table skin. A row
+for each permission that `GET /api/v1/admin/roles` lists in `permissions`, with its name and what it
+allows under it, and no id. A column for each role, fewest permissions first, so admin is last. A
+cell has a check mark or a dash. Admin (`*`) has a mark in each row. A permission that a role holds
+but the server does not list gets a row named by its id. The note under the table says that admin
+also gets the permissions of later releases, and that a disabled user stays in the Audit log. The
+Users table shows Source (`local`) in the UI font, because it is a word, not an id.
 > **RULED (A-4, 2026-07-07): keep 4 roles.** A 5th can be seeded later as a `system-roles` data
 > change, no migration.
 

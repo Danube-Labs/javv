@@ -22,7 +22,7 @@ import { client } from '@/api/client'
 import { detailOr } from '@/api/problem'
 import DotWord from '@/components/chips/DotWord.vue'
 import GridPager from '@/components/findings/GridPager.vue'
-import RolesCard, { type RoleRow } from '@/components/settings/RolesCard.vue'
+import RolesCard, { type PermissionRow, type RoleRow } from '@/components/settings/RolesCard.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsInput from '@/components/settings/SettingsInput.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -56,6 +56,7 @@ function goSignIns() {
 
 const users = ref<UserRow[]>([])
 const roles = ref<RoleRow[]>([])
+const permissions = ref<PermissionRow[]>([])
 const loading = ref(true)
 const failed = ref(false)
 const busy = ref(false)
@@ -73,7 +74,9 @@ async function load() {
     return
   }
   users.value = (u.data as { users: UserRow[] }).users
-  roles.value = (r.data as { roles: RoleRow[] }).roles
+  const body = r.data as { roles: RoleRow[]; permissions?: PermissionRow[] }
+  roles.value = body.roles
+  permissions.value = body.permissions ?? []
 }
 void load()
 
@@ -267,7 +270,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
                     <option v-for="r in roles" :key="r.role" :value="r.role">{{ r.role }}</option>
                   </select>
                 </td>
-                <td class="fit mono-cell sm">{{ user.auth_source }}</td>
+                <td class="fit">{{ user.auth_source }}</td>
                 <td class="fit">
                   <DotWord v-if="user.disabled" tone="muted" label="disabled" />
                   <DotWord v-else-if="user.must_change" tone="warn" label="must change password" />
@@ -306,7 +309,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
       </div>
     </SettingsCard>
 
-    <RolesCard :roles="roles" :ready="!loading && !failed" />
+    <RolesCard :roles="roles" :permissions="permissions" :ready="!loading && !failed" />
 
     <!-- invite -->
     <ModalShell v-if="inviteOpen" title="Invite a user" subtitle="they log in with the temp password and must change it" @close="inviteOpen = false">
