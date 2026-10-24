@@ -25,6 +25,7 @@ import FilterBar from '@/components/filters/FilterBar.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
@@ -33,7 +34,7 @@ import { readFailureCopy } from '@/findings/failureCopy'
 import type { FacetsResponse } from '@/filters/facets'
 import { logger } from '@/lib/logger'
 import { useAuditStore, type AuditEvent } from '@/stores/audit'
-import { useAuthStore } from '@/stores/auth'
+import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -43,6 +44,7 @@ import { foreignQuery, ownQuery } from '@/system/globalUrl'
 const useAuditFilters = makeFiltersStore('audit-filters', AUDIT_FIELDS, MAX_FILTER_VALUES)
 // the values this user can find rows for: no account events without can_manage_users
 const auth = useAuthStore()
+const canExport = computed(() => auth.hasCapability('can_export'))
 const railFields = computed(() => auditFields(auth.hasCapability('can_manage_users')))
 const filters = useAuditFilters()
 const grid = useAuditStore()
@@ -265,9 +267,10 @@ async function exportCsv() {
             @clear-field="filters.clearField"
             @clear-all="filters.clearAll"
           />
-          <UiButton variant="control" :disabled="exporting" @click="exportCsv">
+          <UiButton variant="control" :disabled="exporting || !canExport" :aria-describedby="canExport ? undefined : 'no-export-note'" @click="exportCsv">
             <AppIcon name="download" :size="13" />{{ exporting ? 'Exporting…' : 'Export CSV' }}
           </UiButton>
+          <UiRoleNote v-if="!canExport" id="no-export-note">{{ NO_EXPORT_NOTE }}</UiRoleNote>
         </div>
 
         <p v-if="grid.failed || facetsFailed" class="load-error" role="alert">

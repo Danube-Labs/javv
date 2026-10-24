@@ -25,6 +25,7 @@ import LeaderboardTable from '@/components/contributors/LeaderboardTable.vue'
 import PodiumCard from '@/components/contributors/PodiumCard.vue'
 import ProgressPanel from '@/components/contributors/ProgressPanel.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
 import {
@@ -36,6 +37,7 @@ import {
 } from '@/contributors/viewModel'
 import { logger } from '@/lib/logger'
 import { readFailureCopy } from '@/findings/failureCopy'
+import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
@@ -116,6 +118,7 @@ const podium = computed(() => {
  * request carries `query` itself — the exact object the screen fetched with — so the file is
  * this window's leaderboard and not some other one ---- */
 const toast = useToastStore()
+const canExport = computed(() => useAuthStore().hasCapability('can_export'))
 const { exporting, run: runExport } = useCsvExport({
   path: '/api/v1/contributors/export.csv',
   filename: (stamp) => `javv-contributors-${stamp}.csv`,
@@ -224,13 +227,15 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
               <UiButton
                 class="card-action"
                 variant="control"
-                :disabled="exporting || board.length === 0"
+                :disabled="exporting || board.length === 0 || !canExport"
+                :aria-describedby="canExport ? undefined : 'no-export-note'"
                 @click="exportCsv"
               >
                 <AppIcon name="download" :size="13" />{{
                   exporting ? 'Exporting…' : 'Export leaderboard (CSV)'
                 }}
               </UiButton>
+              <UiRoleNote v-if="!canExport" id="no-export-note">{{ NO_EXPORT_NOTE }}</UiRoleNote>
             </div>
             <LeaderboardTable :rows="board" :cap="BOARD_CAP" />
           </section>

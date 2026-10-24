@@ -69,6 +69,9 @@ export function loginFailure(status: number | undefined): string | null {
   return status! >= 200 && status! < 300 ? null : 'Invalid username or password.'
 }
 
+/** The note next to an export control that the role cannot use (issue 243). */
+export const NO_EXPORT_NOTE = 'Your role does not allow export.'
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({ user: null as SessionUser | null, checked: false, unreachable: false }),
   getters: {

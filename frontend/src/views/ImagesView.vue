@@ -22,12 +22,14 @@ import GridPager from '@/components/findings/GridPager.vue'
 import ImagesTable, { type ImagesSortField } from '@/components/images/ImagesTable.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
 import { IMAGES_COLUMNS, IMAGES_FIELDS } from '@/images/fields.config'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { filterImages, imagesCsv, imagesFacets } from '@/images/imageFilters'
 import { logger } from '@/lib/logger'
+import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { makeFiltersStore } from '@/stores/filters'
 import { useClusterStore } from '@/stores/cluster'
 import { useImagesStore, type ImageRow } from '@/stores/images'
@@ -42,6 +44,7 @@ const clusterStore = useClusterStore()
 const timeTravel = useTimeTravelStore()
 const toast = useToastStore()
 const images = useImagesStore()
+const canExport = computed(() => useAuthStore().hasCapability('can_export'))
 const filters = makeFiltersStore('imageFilters', IMAGES_FIELDS)()
 const { withGlobals } = useApi()
 
@@ -234,11 +237,13 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           />
           <UiButton
             variant="control"
-            :disabled="filtered.length === 0"
+            :disabled="filtered.length === 0 || !canExport"
+            :aria-describedby="canExport ? undefined : 'no-export-note'"
             @click="exportCsv"
           >
             <AppIcon name="download" :size="14" /> Export CSV
           </UiButton>
+          <UiRoleNote v-if="!canExport" id="no-export-note">{{ NO_EXPORT_NOTE }}</UiRoleNote>
           <ColumnsMenu
             :cols="orderedCols"
             :hidden="hiddenCols"
