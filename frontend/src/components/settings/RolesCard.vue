@@ -1,78 +1,97 @@
 <script setup lang="ts">
 /**
- * The Roles card (issue 384 split — extracted from UsersRolesView, no behavior change):
- * renders the capability BUNDLES from `system-roles` content (A-4 — not the v4 5-role
- * matrix), so a seeded 5th role appears without a client change. Display-only.
+ * The Roles card: one table, a row for each permission and a column for each role (issue 990,
+ * option A). Roles and permissions both come from GET /api/v1/admin/roles, so a role or a
+ * permission seeded later shows without a client change. Display-only.
  */
+import { computed } from 'vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 export interface RoleRow {
   role: string
   capabilities: string[]
 }
 
-defineProps<{ roles: RoleRow[]; ready: boolean }>()
+export interface PermissionRow {
+  id: string
+  name: string
+  description: string
+}
+
+const props = defineProps<{ roles: RoleRow[]; permissions: PermissionRow[]; ready: boolean }>()
+
+const ALL = '*'
+const holdsAll = (r: RoleRow) => r.capabilities.includes(ALL)
+
+// fewest permissions first, so the columns read from viewer to admin
+const columns = computed(() =>
+  [...props.roles].sort((a, b) => (holdsAll(a) ? Infinity : a.capabilities.length) - (holdsAll(b) ? Infinity : b.capabilities.length)),
+)
+
+// a permission a role holds but the server does not list still gets a row, named by its id
+const rows = computed<PermissionRow[]>(() => {
+  const known = new Set(props.permissions.map((p) => p.id))
+  const unknown = [...new Set(props.roles.flatMap((r) => r.capabilities))].filter((c) => c !== ALL && !known.has(c))
+  return [...props.permissions, ...unknown.map((id) => ({ id, name: id, description: '' }))]
+})
+
+const has = (r: RoleRow, id: string) => holdsAll(r) || r.capabilities.includes(id)
 </script>
 
 <template>
-  <SettingsCard title="Roles" subtitle="a role is a bundle of capabilities: endpoints check the capability, never the role name">
-    <div v-if="ready" class="roles-list">
-      <div v-for="r in roles" :key="r.role" class="role-row">
-        <span class="role-name mono-cell sm">{{ r.role }}</span>
-        <span v-if="r.capabilities.length === 0" class="role-caps-none">read-only dashboards</span>
-        <span v-else-if="r.capabilities.includes('*')" class="role-caps-all">every capability, present and future</span>
-        <span v-else class="role-caps">
-          <code v-for="cap in r.capabilities" :key="cap" class="cap-chip mono-cell sm">{{ cap }}</code>
-        </span>
-      </div>
+  <SettingsCard title="Roles" subtitle="What each role can do. Every role can read the findings, images and dashboards.">
+    <div v-if="ready" class="tbl-wrap roles-wrap">
+      <table class="tbl tbl-dense tbl-hover">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th v-for="r in columns" :key="r.role" class="c">{{ r.role }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in rows" :key="p.id">
+            <td>
+              <div class="perm-name">{{ p.name }}</div>
+              <div v-if="p.description" class="perm-does">{{ p.description }}</div>
+            </td>
+            <td v-for="r in columns" :key="r.role" class="c">
+              <span v-if="has(r, p.id)" role="img" class="perm-yes" :aria-label="`${r.role}: yes`">
+                <AppIcon name="check" :size="15" />
+              </span>
+              <span v-else role="img" class="perm-no" :aria-label="`${r.role}: no`">–</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <p class="evidence-note">
-      Disable, never delete: a departed user's rows stay attributable in the audit trail.
-      New bundles are seeded as <span class="mono-cell sm">system-roles</span> data; they appear here without a release.
+    <p class="roles-note">
+      The admin role has every permission, also the permissions of later releases. To remove a person's access,
+      disable the user. JAVV keeps the user, so the Audit log still shows who did each change.
     </p>
   </SettingsCard>
 </template>
 
 <style scoped>
-.roles-list {
+.roles-wrap {
   margin-top: 10px;
-  display: flex;
-  flex-direction: column;
 }
-.role-row {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line2);
-}
-.role-row:last-child {
-  border-bottom: 0;
-}
-.role-name {
-  flex: none;
-  width: 120px;
-  font-weight: 700;
+.perm-name {
+  font-weight: 600;
   color: var(--ink);
 }
-.role-caps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.cap-chip {
-  padding: 2px 7px;
-  background: var(--panel);
-  border: 1px solid var(--line2);
-  border-radius: 5px;
-  color: var(--ink);
-}
-.role-caps-none,
-.role-caps-all {
+.perm-does {
+  margin-top: 2px;
   font-size: var(--text-sm);
   color: var(--soft);
 }
-.evidence-note {
+.perm-yes {
+  color: var(--teal);
+}
+.perm-no {
+  color: var(--soft);
+}
+.roles-note {
   margin: 12px 0 0;
   font-size: var(--text-sm);
   color: var(--soft);
