@@ -24,12 +24,14 @@ import FilterBar from '@/components/filters/FilterBar.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 import type { FacetsResponse } from '@/filters/facets'
 import { logger } from '@/lib/logger'
+import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { makeFiltersStore } from '@/stores/filters'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -41,6 +43,7 @@ import { readFailureCopy } from '@/findings/failureCopy'
 const clusterStore = useClusterStore()
 const timeTravel = useTimeTravelStore()
 const toast = useToastStore()
+const canExport = computed(() => useAuthStore().hasCapability('can_export'))
 const route = useRoute()
 const router = useRouter()
 
@@ -275,13 +278,15 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           />
           <UiButton
             variant="control"
-            :disabled="exporting || rows.length === 0"
+            :disabled="exporting || rows.length === 0 || !canExport"
+            :aria-describedby="canExport ? undefined : 'no-export-note'"
             @click="exportCsv"
           >
             <AppIcon name="download" :size="13" />{{
               exporting ? 'Exporting…' : 'Export approvals (CSV)'
             }}
           </UiButton>
+          <UiRoleNote v-if="!canExport" id="no-export-note">{{ NO_EXPORT_NOTE }}</UiRoleNote>
         </div>
 
       <UiSkeleton v-if="!settled" :height="220" label="Loading approvals" class="skel-gap" />

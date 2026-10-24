@@ -314,6 +314,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `AppIcon` | the stroke icon set | every icon |
 | `RowLink` | the identifier of a row that opens something, as a real `<a>`: focusable, the focus ring, Enter and plain click hand off to the row's own open handler, modified clicks left to the browser | the identifier cell of every clickable row (the grids take a `rowTo` prop; hand-built rows wrap the cell) |
 | `ToastStack` + `useToastStore` | the confirmation channel: `success/error/info` from ANY component/store, auto-dismiss, capped stack, t-toast motion, ink text + hue on the icon | every action outcome the user would otherwise hunt for; inline contextual errors stay inline |
+| `UiRoleNote` | the reason next to a control that the user's role cannot use: a key icon (`--hist-fg`) and one short sentence in `--soft`, with an `id` that the disabled control names in `aria-describedby` (a browser shows no tooltip on a disabled button) | every control that a role cannot use and that stays on the screen; the five export controls (issue 243, option A on built pictures) |
 | `SectionNav` | a screen's left section menu: the sticky card, icon + label rows, hover wash + border, the coral active row, `aria-current`; a `trail` slot for a row's extra mark | Settings' sub-pages and the Guide's in-page sections; any future screen with a section list |
 
 One layout lives outside the kit folder and is owned once the same way:

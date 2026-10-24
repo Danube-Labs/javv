@@ -441,7 +441,7 @@ Reachable from Findings/Overview/Images "Export".
 - Run now: `GET /api/v1/findings/export.csv?<current lens params>` (streaming, CSV-injection
   sanitized). VEX: `GET /api/v1/findings/export.vex?scanner=<one>&…` — **`scanner` required**,
   one scanner per file (per-scanner sacred).
-- Schedule: `POST /api/v1/reports` (`kind: export`, session-only by design — A-6). Status:
+- Schedule: `POST /api/v1/reports` (`kind: export`, needs `can_export`, issue 243). Status:
   `GET /api/v1/reports/{report_id}`. Download: `GET /api/v1/reports/{id}/download`. The
   schedule carries every filter on the screen; `EXPORT_PARAM_KEYS` must equal `ExportParams` in
   openapi.json (`export-params.spec.ts`, issue 962).
@@ -466,10 +466,13 @@ the dialog says why:
     findings only. Pick trivy for the VEX file." The VEX scanner starts on the screen's Scanner
     when the screen has one.
 
-**Changed vs SCREENS.md:** C-2 (TTL/expiry affordances + 410 state — new), A-6 **RULED
-(2026-07-07): export stays session-only** — available to every authenticated user; the v4
-"Viewer cannot export" matrix row is dropped. A `can_export` capability is parked as a tracked
-idea (issue), deliberately not scheduled.
+**Changed vs SCREENS.md:** C-2 (TTL/expiry affordances + 410 state — new). A-6 (2026-07-07,
+export stays session-only) is **replaced by issue 243 (2026-10-24)**: every export file needs
+`can_export`, which `triager`, `security_lead` and `admin` hold and `viewer` does not. Ruled on
+built A/B pictures (option A): a role without it still sees each export control (Findings, Audit
+log, Contributors, Approval list, Running images), disabled, with `UiRoleNote` next to it: a key
+and "Your role does not allow export." The control points at the note (`aria-describedby`).
+`export-capability.spec.ts` pins the five screens.
 
 ---
 
@@ -1061,7 +1064,7 @@ lists are drawn elsewhere.
 |---|---|---|
 | A-1 | Findings rail, Overview KPIs | **Show** `negligible` as its own muted bucket |
 | A-4 | Settings → Users & roles | **Keep 4** seeded roles (5th = later data change) |
-| A-6 | Export dialog | **Session-only stays**; `can_export` parked as a tracked idea (issue, unscheduled) |
+| A-6 | Export dialog | ~~Session-only stays~~ replaced by issue 243 (2026-10-24): `can_export`; without it the control is disabled with a key and the reason (option A on built pictures) |
 | B-1 | Overview donut, Findings facet/column | **KEEP the donut** per v4 design — envelope `ptype` ships in **M8d** |
 | C-6 | Saved views | **Server-side** — `system-views` index + CRUD in **M8e**; owner column returns |
 | D-5/C-5 | All clusters, Settings → Cluster | **Build** the `system-config` cluster registry — **M8c** |

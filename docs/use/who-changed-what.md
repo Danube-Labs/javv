@@ -11,7 +11,8 @@
 3. To see one type of change, filter by action, for example Bulk triage. One bulk change is one
    entry in the Audit log. You can select more than one action, for example Acknowledged and
    Resolved.
-4. To save the entries as a file, select Export CSV.
+4. To save the entries as a file, select Export CSV. Your role must allow export. If it does not,
+   the button is not available, and the text next to it tells you why.
 
 ## The history of one finding
 

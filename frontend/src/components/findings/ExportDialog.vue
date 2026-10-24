@@ -16,6 +16,7 @@ import { enqueueReportApiV1ReportsPost, getReportApiV1ReportsReportIdGet } from 
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { useApi } from '@/composables/useApi'
@@ -24,6 +25,7 @@ import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { exportBlockMessage, scheduleParams } from '@/findings/exportParams'
 import type { FilterField } from '@/filters/fields.config'
 import { logger } from '@/lib/logger'
+import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
@@ -198,6 +200,7 @@ async function checkReport() {
   }
   if (body.status === 'done' || body.status === 'failed') stopPolling()
 }
+const canExport = computed(() => useAuthStore().hasCapability('can_export'))
 const downloadHref = computed(() =>
   report.value?.token
     ? `/api/v1/reports/${report.value.id}/download?token=${encodeURIComponent(report.value.token)}`
@@ -207,9 +210,10 @@ const downloadHref = computed(() =>
 
 <template>
   <div class="export-wrap">
-    <UiButton variant="control" @click="openDialog">
+    <UiButton variant="control" :disabled="!canExport" :aria-describedby="canExport ? undefined : 'no-export-note'" @click="openDialog">
       <AppIcon name="download" :size="13" />Export CSV
     </UiButton>
+    <UiRoleNote v-if="!canExport" id="no-export-note">{{ NO_EXPORT_NOTE }}</UiRoleNote>
 
     <ModalShell
       v-if="open"
@@ -284,6 +288,8 @@ const downloadHref = computed(() =>
 <style scoped>
 .export-wrap {
   display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 .tabs {
   margin-bottom: 4px;
