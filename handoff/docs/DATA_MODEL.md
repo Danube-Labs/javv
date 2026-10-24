@@ -58,7 +58,7 @@ ptype      (returns per B-1 ruling, after M8d): package type from the scanner
             vocabulary pinned in the M8d bolt). Pre-M8d findings carry no ptype
             and aggregate as "unknown" until re-observed by a scan.
 
-capability "can_triage" | "can_accept_audit_final" | "can_manage_tokens"
+capability "can_triage" | "can_accept_audit_final" | "can_export" | "can_manage_tokens"
            | "can_manage_users" | "can_manage_settings" | admin = "*"
            — M9e adds (planned, with its endpoints): "can_manage_retention",
              "can_restore_snapshot", "can_drop_index".

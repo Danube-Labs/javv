@@ -187,14 +187,15 @@ At its first start, JAVV creates four roles:
 | Role | Permissions |
 |---|---|
 | `viewer` | None. The user can read data only. |
-| `triager` | `can_triage` |
-| `security_lead` | `can_triage`, `can_accept_audit_final` |
+| `triager` | `can_triage`, `can_export` |
+| `security_lead` | `can_triage`, `can_accept_audit_final`, `can_export` |
 | `admin` | All the permissions, also the permissions of later releases |
 
 | Permission | What it allows |
 |---|---|
 | `can_triage` | Triage findings. Make, change and revoke `not_affected` decisions. |
 | `can_accept_audit_final` | Accept a risk, in a decision or in triage. Make, change and revoke `risk_accepted` and `ignore_rule` decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue. |
+| `can_export` | Download the export files: the findings CSV and VEX, the audit log CSV, the contributors CSV and the approvals CSV. Make an export report and download it. |
 | `can_manage_tokens` | Make, revoke and rotate scanner tokens |
 | `can_manage_users` | Make users. Change their role, their status and their password. Read the account events in the audit log. |
 | `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. |
@@ -206,6 +207,9 @@ At its first start, JAVV creates four roles:
 
 The Roles card in the web app shows a name and a short text for each permission. It gets them from
 `GET /api/v1/admin/roles`. The backend keeps one list of the permissions, in this order.
+
+`can_export` controls the export files, not the reads. A user without it can still read each
+finding through `GET /api/v1/findings`, 500 rows a page.
 
 Each read and export applies the cluster that the request names. Each user can read each
 cluster. A `cluster_id` has 8 to 64 lowercase letters, digits or hyphens, and does not start with

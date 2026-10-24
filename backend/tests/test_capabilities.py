@@ -126,3 +126,20 @@ async def test_default_role_bundles_seed_once_and_match_d33(auth_client) -> None
     assert "can_accept_audit_final" in doc["capabilities"]  # SEC-2: gates risk-accept
     admin = (await client.get(index="system-roles", id="admin"))["_source"]
     assert admin["capabilities"] == ["*"]
+
+
+async def test_a_new_store_gives_can_export_to_every_role_but_viewer(real_os) -> None:
+    # issue 243 ruling 1: the viewer reads, the other default roles also export
+    client, prefix = real_os
+    assert await seed_default_roles(client, prefix=prefix) == len(ROLE_BUNDLES)
+
+    bundles = {
+        role: (await client.get(index=f"{prefix}system-roles", id=role))["_source"]["capabilities"]
+        for role in ROLE_BUNDLES
+    }
+    assert bundles == {
+        "viewer": [],
+        "triager": ["can_triage", "can_export"],
+        "security_lead": ["can_triage", "can_accept_audit_final", "can_export"],
+        "admin": ["*"],
+    }
