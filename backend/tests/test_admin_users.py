@@ -14,6 +14,7 @@ import httpx
 import pytest
 from opensearchpy import AsyncOpenSearch
 
+from backend.auth.capabilities import PERMISSIONS
 from backend.auth.passwords import hash_password
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
@@ -477,6 +478,10 @@ async def test_roles_list_serves_the_seeded_bundles_and_is_gated(admin_env) -> N
     assert bundles["triager"] == ["can_triage"]
     assert set(bundles["security_lead"]) == {"can_triage", "can_accept_audit_final"}
     assert bundles["admin"] == ["*"]
+    # issue 990: the Roles card names each permission and what it allows, in this order
+    assert r.json()["permissions"] == [
+        {"id": p.id, "name": p.name, "description": p.description} for p in PERMISSIONS
+    ]
 
     viewer = make_http()
     await _seed_and_login(viewer, client, capabilities=[])

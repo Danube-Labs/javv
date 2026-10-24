@@ -204,6 +204,9 @@ At its first start, JAVV creates four roles:
 | `can_rebuild_state` | Start the job that builds the current state again |
 | `can_drop_index` | Start the lifecycle sweep, which deletes old indices |
 
+The Roles card in the web app shows a name and a short text for each permission. It gets them from
+`GET /api/v1/admin/roles`. The backend keeps one list of the permissions, in this order.
+
 Each read and export applies the cluster that the request names. Each user can read each
 cluster. A `cluster_id` has 8 to 64 lowercase letters, digits or hyphens, and does not start with
 a hyphen.
@@ -325,7 +328,7 @@ in a scan cycle.
 | PATCH | `/api/v1/admin/users/{username}/role` | `can_manage_users` | Changes the role of a user, and signs that user out of each session |
 | PATCH | `/api/v1/admin/users/{username}/disabled` | `can_manage_users` | Disables or enables a user. A disabled user loses each session. The last enabled admin gets 409. |
 | POST | `/api/v1/admin/users/{username}/password-reset` | `can_manage_users` | Sets a temporary password, which the user must change. It signs that user out of each session. |
-| GET | `/api/v1/admin/roles` | `can_manage_users` | The roles and their permissions |
+| GET | `/api/v1/admin/roles` | `can_manage_users` | The roles and their permissions in `roles`. Also `permissions`: each permission with its `id`, a `name` and a `description` of what it allows, in the order of the table in [Roles and permissions](#roles-and-permissions). |
 | GET | `/api/v1/admin/snapshots` | `can_manage_retention` | The snapshots in the configured repository, newest first. With no repository, `configured` is `false`. |
 | POST | `/api/v1/admin/snapshots` | `can_manage_retention` | Starts a snapshot of `findings`, `javv-images-*` and `system-*` except `system-sessions`, and answers 202 at once. The scan history is not in the snapshot ([Snapshots](CONFIGURATION.md#snapshots)). With no repository, it answers 409. |
 | POST | `/api/v1/admin/snapshots/{snapshot_name}/restore` | `can_restore_snapshot` | Restores a snapshot into copies with the prefix `restored-`. It never writes to the live indices. To use a copy, move it in by hand. |

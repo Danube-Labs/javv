@@ -9,6 +9,7 @@ Role bundles live in `system-roles` (doc `_id` = role); the defaults below seed 
 (`can_manage_*`, `can_restore_snapshot`, `can_drop_index`, `can_rebuild_state`) are Admin-only by
 default and stay journaled (D17)."""
 
+from dataclasses import dataclass
 from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
@@ -27,6 +28,69 @@ ROLE_BUNDLES: dict[str, list[str]] = {
     "security_lead": ["can_triage", "can_accept_audit_final"],  # SEC-2: gates risk-accept
     "admin": ["*"],
 }
+
+
+@dataclass(frozen=True)
+class Permission:
+    id: str
+    name: str
+    description: str
+
+
+# Every permission a route checks, in the order of the table in docs/API.md, with the words the
+# Roles card shows (issue 990). test_capability_catalog.py fails when a check is missing here.
+PERMISSIONS: tuple[Permission, ...] = (
+    Permission(
+        "can_triage",
+        "Triage findings",
+        "Change the state, assignee and notes of a finding. Make, change and revoke "
+        "not-affected decisions.",
+    ),
+    Permission(
+        "can_accept_audit_final",
+        "Accept a risk",
+        "Accept a risk, and change or undo an acceptance. Change the state of a finding with "
+        "an accepted risk. Read and export the Approval list.",
+    ),
+    Permission(
+        "can_manage_tokens", "Manage scanner tokens", "Make, revoke and rotate scanner tokens."
+    ),
+    Permission(
+        "can_manage_users",
+        "Manage users",
+        "Make users. Change their role, status and password. Read the account events in the "
+        "Audit log.",
+    ),
+    Permission(
+        "can_manage_settings",
+        "Manage settings",
+        "Change the SLA, staleness, retirement and scan scope settings, and the cluster names. "
+        "Retire a cluster and bring it back. Start the staleness sweep. Change or delete the "
+        "saved views of other users.",
+    ),
+    Permission(
+        "can_manage_retention",
+        "Manage data and retention",
+        "Change the retention, rollover, export lifetime and findings cleanup settings. Read and "
+        "take snapshots. Delete a retired cluster.",
+    ),
+    Permission("can_restore_snapshot", "Restore a snapshot", "Restore the data from a snapshot."),
+    Permission(
+        "can_inspect_store",
+        "Use the data inspector",
+        "Read the store with the data inspector. Read the status of the background jobs.",
+    ),
+    Permission(
+        "can_rebuild_state",
+        "Rebuild the current state",
+        "Start the job that builds the current state again.",
+    ),
+    Permission(
+        "can_drop_index",
+        "Delete old indices",
+        "Start the lifecycle sweep, which deletes old indices.",
+    ),
+)
 
 
 def holds(principal: Principal, capability: str) -> bool:
