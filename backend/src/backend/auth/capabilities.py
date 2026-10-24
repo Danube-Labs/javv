@@ -24,8 +24,8 @@ ROLES_INDEX = "system-roles"
 # the D33 defaults — Admin's "*" means every capability, present and future
 ROLE_BUNDLES: dict[str, list[str]] = {
     "viewer": [],
-    "triager": ["can_triage"],
-    "security_lead": ["can_triage", "can_accept_audit_final"],  # SEC-2: gates risk-accept
+    "triager": ["can_triage", "can_export"],
+    "security_lead": ["can_triage", "can_accept_audit_final", "can_export"],  # SEC-2: risk-accept
     "admin": ["*"],
 }
 
@@ -51,6 +51,12 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Accept a risk",
         "Accept a risk, and change or undo an acceptance. Change the state of a finding with "
         "an accepted risk. Read and export the Approval list.",
+    ),
+    Permission(
+        "can_export",
+        "Export data",
+        "Download the CSV and VEX files of the findings, and the CSV files of the Audit log, the "
+        "Contributors and the Approval list. Make an export report and download it.",
     ),
     Permission(
         "can_manage_tokens", "Manage scanner tokens", "Make, revoke and rotate scanner tokens."

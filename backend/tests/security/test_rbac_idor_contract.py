@@ -262,8 +262,8 @@ REGISTRY: tuple[MutatingEndpoint, ...] = (
         body={"method": "GET", "path": "_cluster/health"},
     ),
     MutatingEndpoint(  # M7 slice 5 — the bulk_triage report kind (A-Mc): a scheduled bulk is a
-        # WRITE, gated like the inline bulk. The export kind on the same route stays session-only
-        # (still exempt-listed below) — the gate is per-kind, checked before any store work.
+        # WRITE, gated like the inline bulk. The gate is per-kind, checked before any store work;
+        # the export kind on the same route is the next entry.
         method="POST",
         path="/api/v1/reports",
         route_path="/api/v1/reports",
@@ -276,6 +276,14 @@ REGISTRY: tuple[MutatingEndpoint, ...] = (
                 "patch": {"state": "acknowledged"},
             },
         },
+    ),
+    MutatingEndpoint(  # issue 243 — the export kind of the same route needs can_export, as the
+        # inline export files do (their read-side gate: tests/security/test_export_capability.py)
+        method="POST",
+        path="/api/v1/reports",
+        route_path="/api/v1/reports",
+        capability="can_export",
+        body={"kind": "export", "cluster_id": "c-rbac-sample"},
     ),
 )
 
@@ -290,11 +298,6 @@ EXEMPT_ROUTE_PATHS: frozenset[tuple[str, str]] = frozenset(
         # M8a slice 2 — machine token + SEC-3 binding: the manifest is always for the token's own
         # cluster; written_count is counted server-side, never client-reported (test_inventory_runs)
         ("POST", "/api/v1/inventory-runs"),
-        # M7/#32 — the EXPORT kind is a READ (any authenticated user can already read findings),
-        # so that kind stays authenticated-only (auth asserted in test_reports_route). The
-        # bulk_triage kind on this same route IS capability-gated — registered above with a
-        # bulk_triage body (slice 5); the gate is per-kind inside the handler.
-        ("POST", "/api/v1/reports"),
         # M7 slice 3 — mark-read is strictly OWN-notification (user_id filter server-side; someone
         # else's id 404s, IDOR-tested in test_report_download). No capability: your own bell.
         ("PATCH", "/api/v1/notifications/{notification_id}/read"),

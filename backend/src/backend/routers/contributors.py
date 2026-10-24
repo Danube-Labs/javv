@@ -12,9 +12,11 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, cast
 
 import structlog
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
+from backend.auth.capabilities import require_capability
+from backend.auth.principal import Principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS
 from backend.core.settings import get_settings
@@ -32,6 +34,8 @@ from backend.tenancy.read_path import tenant_query, tenant_search
 
 router = APIRouter(prefix="/api/v1/contributors", tags=["contributors"])
 log = structlog.get_logger()
+
+CanExport = Annotated[Principal, Depends(require_capability("can_export"))]
 
 _AUDIT_PATTERN = "system-audit-log-*"
 _ROWS_PAGE_SIZE = 10_000  # PIT page size for the handling-row walk (NOT a truncation ceiling)
@@ -201,7 +205,7 @@ async def contributors(
 @router.get("/export.csv")
 async def export_contributors_csv(
     request: Request,
-    principal: Authenticated,
+    principal: CanExport,
     cluster_id: ClusterId,
     as_of_t: AsOf,
     days: Annotated[int, Query(ge=1, le=365)] = 30,

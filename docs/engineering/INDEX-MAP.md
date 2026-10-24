@@ -359,7 +359,7 @@ external_id       keyword       IdP subject/DN; NULL for local users
 created_at        date
 # system-roles  (capability bundles - SEC-9)
 role              keyword       e.g. viewer|triager|security_lead|admin
-capabilities      keyword[]     e.g. can_triage, can_accept_audit_final, can_manage_users,
+capabilities      keyword[]     e.g. can_triage, can_accept_audit_final, can_export, can_manage_users,
                                 can_manage_retention, can_restore_snapshot, can_drop_index, can_rebuild_state
 ```
 *(Capability `can_accept_audit_final` gates risk-accept - SEC-2. Admin always holds all. Destructive caps

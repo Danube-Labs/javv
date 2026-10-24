@@ -6,7 +6,8 @@
   the `system-reports` queue are M7.
 - `GET /api/v1/findings/export.vex` — OpenVEX / CycloneDX VEX document (slice 6).
 
-Read = any authenticated principal (MVP tenant model); `cluster_id` is REQUIRED and forced
+Both need `can_export` (issue 243: the viewer reads but does not export); each cluster is
+readable by every such principal (MVP tenant model). `cluster_id` is REQUIRED and forced
 into the sweep by the tenant read path — entitlement is re-checked on the export exactly
 like any fetch (IDOR, api-design tenant rule). `as_of`: exports describe current state;
 a past T is 501 until the M8b reconstruction can feed an export (D28).
@@ -20,7 +21,8 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from backend.auth.principal import Principal, get_current_principal
+from backend.auth.capabilities import require_capability
+from backend.auth.principal import Principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS
 from backend.core.settings import get_settings
@@ -33,7 +35,7 @@ from backend.routers.findings import AsOf, Filters
 router = APIRouter(prefix="/api/v1/findings", tags=["exports"])
 log = structlog.get_logger()
 
-Authenticated = Annotated[Principal, Depends(get_current_principal)]
+CanExport = Annotated[Principal, Depends(require_capability("can_export"))]
 
 
 async def _enforce_export_bounds(
@@ -62,7 +64,7 @@ async def _enforce_export_bounds(
 @router.get("/export.csv")
 async def export_csv(
     request: Request,
-    principal: Authenticated,
+    principal: CanExport,
     cluster_id: ClusterId,
     filters: Filters,
     as_of_t: AsOf,
@@ -106,7 +108,7 @@ async def export_csv(
 @router.get("/export.vex")
 async def export_vex(
     request: Request,
-    principal: Authenticated,
+    principal: CanExport,
     cluster_id: ClusterId,
     filters: Filters,
     as_of_t: AsOf,

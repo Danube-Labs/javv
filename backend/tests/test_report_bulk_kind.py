@@ -122,9 +122,9 @@ async def test_capability_gate_mirrors_inline_bulk(env) -> None:
 
     viewer = await login([])
     assert (await viewer.post("/api/v1/reports", json=_body(cluster_id))).status_code == 403
-    # ...but the export kind stays session-only for the same viewer (regression)
+    # the export kind needs can_export (issue 243), which this user lacks too
     r = await viewer.post("/api/v1/reports", json={"cluster_id": cluster_id})
-    assert r.status_code == 201
+    assert r.status_code == 403
 
     triager = await login(["can_triage"])
     assert (await triager.post("/api/v1/reports", json=_body(cluster_id))).status_code == 201

@@ -47,8 +47,8 @@ async def env():
             body={
                 "username": username,
                 "password_hash": hash_password(PASSWORD),
-                "role": "viewer",
-                "capabilities": [],
+                "role": "custom",
+                "capabilities": ["can_export"],  # the export routes need it (issue 243)
                 "must_change": False,
                 "disabled": False,
                 "auth_source": "local",

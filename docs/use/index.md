@@ -22,6 +22,8 @@ Your role sets what you can change:
   `triager`, `security_lead` and `admin` roles allow it.
 - To accept a risk, or to revoke a risk acceptance, your role must allow risk acceptance. The
   `security_lead` and `admin` roles allow it.
+- To download a file of the data, for example a CSV or VEX file, your role must allow export. The
+  `triager`, `security_lead` and `admin` roles allow it. The `viewer` role does not.
 
 An administrator sets the role of each user.
 
