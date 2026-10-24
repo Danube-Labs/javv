@@ -57,7 +57,8 @@ export const inspectStoreApiV1AdminOpensearchInspectPost = <ThrowOnError extends
  * List Roles
  *
  * The seeded `system-roles` bundles (A-4/§13.6) — the UI renders whatever is seeded, so a
- * later 5th role appears without a client change. Read-only; bundle EDITING stays out of scope.
+ * later 5th role appears without a client change, plus the permission list the Roles card names
+ * (issue 990). Read-only; bundle EDITING stays out of scope.
  */
 export const listRolesApiV1AdminRolesGet = <ThrowOnError extends boolean = false>(options?: Options<ListRolesApiV1AdminRolesGetData, ThrowOnError>): RequestResult<ListRolesApiV1AdminRolesGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListRolesApiV1AdminRolesGetResponses, unknown, ThrowOnError>({ url: '/api/v1/admin/roles', ...options });
 

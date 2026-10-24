@@ -2222,7 +2222,7 @@
     },
     "/api/v1/admin/roles": {
       "get": {
-        "description": "The seeded `system-roles` bundles (A-4/\u00a713.6) \u2014 the UI renders whatever is seeded, so a\nlater 5th role appears without a client change. Read-only; bundle EDITING stays out of scope.",
+        "description": "The seeded `system-roles` bundles (A-4/\u00a713.6) \u2014 the UI renders whatever is seeded, so a\nlater 5th role appears without a client change, plus the permission list the Roles card names\n(issue 990). Read-only; bundle EDITING stays out of scope.",
         "operationId": "list_roles_api_v1_admin_roles_get",
         "responses": {
           "200": {

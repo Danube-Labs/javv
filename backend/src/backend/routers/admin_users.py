@@ -21,7 +21,7 @@ from opensearchpy.exceptions import ConflictError
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.audit.writer import append_auth_event
-from backend.auth.capabilities import ROLES_INDEX, require_capability
+from backend.auth.capabilities import PERMISSIONS, ROLES_INDEX, require_capability
 from backend.auth.passwords import check_policy, hash_password
 from backend.auth.principal import Principal
 from backend.auth.sessions import revoke_all_for_user
@@ -163,7 +163,8 @@ async def list_users(
 @roles_router.get("")
 async def list_roles(request: Request, principal: ManageUsers) -> dict[str, Any]:
     """The seeded `system-roles` bundles (A-4/§13.6) — the UI renders whatever is seeded, so a
-    later 5th role appears without a client change. Read-only; bundle EDITING stays out of scope."""
+    later 5th role appears without a client change, plus the permission list the Roles card names
+    (issue 990). Read-only; bundle EDITING stays out of scope."""
     hits = await _os(request).search(
         index=ROLES_INDEX,
         body={"size": 100, "sort": [{"_id": "asc"}], "query": {"match_all": {}}},
@@ -172,7 +173,10 @@ async def list_roles(request: Request, principal: ManageUsers) -> dict[str, Any]
         "roles": [
             {"role": h["_id"], "capabilities": list(h["_source"].get("capabilities", []))}
             for h in hits["hits"]["hits"]
-        ]
+        ],
+        "permissions": [
+            {"id": p.id, "name": p.name, "description": p.description} for p in PERMISSIONS
+        ],
     }
 
 
