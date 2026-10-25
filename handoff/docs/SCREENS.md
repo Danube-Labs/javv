@@ -227,6 +227,11 @@ Per namespace, so their numbers agree, as before. Top components and Riskiest im
 data: each shows the loading shimmer until its answer comes, and its own error text if the read
 fails ("Component ranking unavailable.", "Riskiest images unavailable."). Before, both showed their
 "no data" text while the read was open, and Riskiest images also showed it when the read failed.
+When the cluster has no committed inventory yet (`inventory: null`), Riskiest images says "No
+inventory committed yet. Images show once a scanner cycle completes." (at a past time: "No
+inventory committed at this point in time."), not "No image findings in the running inventory.":
+JAVV does not know what runs there, which is not a clean cluster. Operator ruling 2026-10-25 on the
+A/B picture `visual-assets/440/440-riskiest-unknown-ab.png`.
 
 **Changed vs SCREENS.md:** A-1 (lowercase + negligible), B-1 (donut kept, fed by M8d ptype),
 B-2/B-6 (widget cuts), A-m9 (trend semantics label), C-1 (time-travel states). Scanner-type

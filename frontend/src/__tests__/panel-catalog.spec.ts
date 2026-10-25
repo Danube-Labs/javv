@@ -55,6 +55,13 @@ const ctx = (over: Partial<PanelContext> = {}): PanelContext => ({
 })
 const ok = (data: unknown) => ({ data, response: { ok: true, status: 200 } }) as never
 const refused = () => ({ data: null, response: { ok: false, status: 500 } }) as never
+/** a committed inventory; `inventory: null` is the other answer, that none is committed yet */
+const INVENTORY = {
+  inventory_run_id: 'run-1',
+  inventory_order: 1,
+  started_at: '2026-10-20T10:00:00.000Z',
+  completed_at: '2026-10-20T10:05:00.000Z',
+}
 
 type SdkName = keyof typeof sdk
 /** For each panel: the reads it sends, an empty answer for each, and the copy of each state. */
@@ -85,7 +92,7 @@ const READS: Record<
   },
   'riskiest-images': {
     calls: ['listRunningImagesApiV1ImagesGet'],
-    empty: [{ inventory: null, images: [] }],
+    empty: [{ inventory: INVENTORY, images: [] }],
     loading: 'Loading riskiest images',
     emptyCopy: 'No image findings in the running inventory.',
     errorCopy: 'Riskiest images unavailable.',
@@ -479,10 +486,9 @@ describe('a newer read wins: a slow answer for the old cluster never shows under
 
   it('Top components, after a switch made at a past time and a return to now', async () => {
     const timeTravel = (await import('@/stores/timeTravel')).useTimeTravelStore()
-    const b = deferred()
     fn('topComponentsFindingsApiV1FindingsTopComponentsGet')
       .mockResolvedValueOnce(ok({ components: [{ package_name: 'pkg-of-a', count: 1, unique_cves_by_scanner: { trivy: 1 } }] }))
-      .mockReturnValueOnce(b.promise)
+      .mockReturnValueOnce(later())
     const w = mountPanel(panelById('top-components')!)
     await flushPromises()
     expect(w.text()).toContain('pkg-of-a')
@@ -511,9 +517,9 @@ describe('a newer read wins: a slow answer for the old cluster never shows under
     await flushPromises()
     useClusterStore().selectedId = 'c-other'
     await flushPromises()
-    b.resolve(ok({ inventory: null, images: [image('repo-of-b')] }))
+    b.resolve(ok({ inventory: INVENTORY, images: [image('repo-of-b')] }))
     await flushPromises()
-    a.resolve(ok({ inventory: null, images: [image('repo-of-a')] }))
+    a.resolve(ok({ inventory: INVENTORY, images: [image('repo-of-a')] }))
     await flushPromises()
     expect(w.text()).toContain('repo-of-b')
     expect(w.text()).not.toContain('repo-of-a')
@@ -551,8 +557,7 @@ describe('a newer read wins: a slow answer for the old cluster never shows under
   })
 
   it('a facets panel drops the old cluster\'s counts while the new read is open', async () => {
-    const b = deferred()
-    facetsMock().mockResolvedValueOnce(ok({ facets: FACETS })).mockReturnValueOnce(b.promise)
+    facetsMock().mockResolvedValueOnce(ok({ facets: FACETS })).mockReturnValueOnce(later())
     const panel = panelById('findings-summary')!
     const w = mountPanel(panel)
     await flushPromises()
@@ -560,6 +565,90 @@ describe('a newer read wins: a slow answer for the old cluster never shows under
     await w.setProps(panel.props(ctx({ clusterId: 'c-other' })))
     expect(w.findAll('.stat-band')).toHaveLength(0)
     expect(w.find('[aria-label="Loading findings summary"]').exists()).toBe(true)
+  })
+})
+
+describe('a read still open when no read is due never lands later', () => {
+  it('Top components: A stays open across a rewind and a switch to B at a past time', async () => {
+    const timeTravel = (await import('@/stores/timeTravel')).useTimeTravelStore()
+    const a = deferred()
+    fn('topComponentsFindingsApiV1FindingsTopComponentsGet').mockReturnValueOnce(a.promise).mockReturnValueOnce(later())
+    const w = mountPanel(panelById('top-components')!)
+    await flushPromises()
+    timeTravel.rewindTo('2026-10-01T00:00:00.000Z')
+    await flushPromises()
+    useClusterStore().selectedId = 'c-other'
+    await flushPromises()
+    a.resolve(ok({ components: [{ package_name: 'pkg-of-a', count: 1, unique_cves_by_scanner: { trivy: 1 } }] }))
+    await flushPromises()
+    timeTravel.backToNow()
+    await flushPromises()
+    // B's read is open under c-other: A's rows must not show
+    expect(w.text()).not.toContain('pkg-of-a')
+    expect(w.find('[aria-label="Loading top components"]').exists()).toBe(true)
+  })
+
+  it('Riskiest images: the selected cluster goes away while its read is open', async () => {
+    const a = deferred()
+    fn('listRunningImagesApiV1ImagesGet').mockReturnValueOnce(a.promise)
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    useClusterStore().selectedId = null
+    await flushPromises()
+    a.resolve(ok({ inventory: INVENTORY, images: [{ image_digest: 'sha256:a', image_repo: 'repo-of-a', tag: 'v1' }] }))
+    await flushPromises()
+    expect(w.text()).not.toContain('repo-of-a')
+    expect(w.find('[aria-label="Loading riskiest images"]').exists()).toBe(true)
+  })
+
+  it('a facets panel: the query goes away and comes back while the first read is open', async () => {
+    const a = deferred()
+    facetsMock().mockReturnValueOnce(a.promise).mockReturnValueOnce(later())
+    const panel = panelById('findings-summary')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    await w.setProps({ query: null })
+    a.resolve(ok({ facets: FACETS }))
+    await flushPromises()
+    await w.setProps(panel.props(ctx()))
+    await flushPromises()
+    // the second read is open: the answer to the first one must not show as if it were its own
+    expect(w.findAll('.stat-band')).toHaveLength(0)
+    expect(w.find('[aria-label="Loading findings summary"]').exists()).toBe(true)
+  })
+
+  it('Handled findings: the query goes away and comes back while the first read is open', async () => {
+    const a = deferred()
+    fn('contributorsApiV1ContributorsGet').mockReturnValueOnce(a.promise).mockReturnValueOnce(later())
+    const panel = panelById('handled-findings')!
+    const w = mountPanel(panel)
+    await flushPromises()
+    await w.setProps({ query: null })
+    a.resolve(ok({ handled_over_time: [] }))
+    await flushPromises()
+    await w.setProps(panel.props(ctx()))
+    await flushPromises()
+    expect(w.text()).not.toContain('No findings were handled in this window.')
+    expect(w.find('[aria-label="Loading handled findings"]').exists()).toBe(true)
+  })
+})
+
+describe('Riskiest images with no committed inventory', () => {
+  it('says that no inventory is committed yet, not that the cluster has no findings', async () => {
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(ok({ inventory: null, images: [] }))
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    expect(w.text()).toContain('No inventory committed yet. Images show once a scanner cycle completes.')
+    expect(w.text()).not.toContain('No image findings')
+  })
+
+  it('at a past time before the first inventory, says so for that time', async () => {
+    const timeTravel = (await import('@/stores/timeTravel')).useTimeTravelStore()
+    timeTravel.rewindTo('2026-10-01T00:00:00.000Z')
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(ok({ inventory: null, images: [] }))
+    const w = mountPanel(panelById('riskiest-images')!, ctx({ t: '2026-10-01T00:00:00.000Z' }))
+    await flushPromises()
+    expect(w.text()).toContain('No inventory committed at this point in time.')
   })
 })
 
@@ -597,7 +686,7 @@ describe('each scanner value reaches the other scanner panels', () => {
     )
     fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(
       ok({
-        inventory: null,
+        inventory: INVENTORY,
         images: [
           {
             image_digest: 'sha256:1',

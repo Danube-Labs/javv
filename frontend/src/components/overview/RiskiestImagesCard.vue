@@ -41,20 +41,26 @@ const clusterStore = useClusterStore()
 const timeTravel = useTimeTravelStore()
 
 const images = ref<ImageRow[]>([])
+/** no committed inventory yet: JAVV does not know what runs, which is not an empty cluster */
+const unknown = ref(false)
 const failed = ref(false)
 // no claim before evidence: "No image findings" only once an answer has come
 const settled = ref(false)
 
+/** the cluster the images on screen belong to: another tenant's images would be a lie */
+let imagesFor: string | null = null
+
 let seq = 0
 watch(
   () => [clusterStore.selectedId, timeTravel.t] as const,
-  async ([id, t], old) => {
+  async ([id, t]) => {
     const mine = ++seq // also when no read starts: an older read in flight must not land
-    if (!id) return
-    if (old && old[0] !== id) {
-      settled.value = false // another tenant's images would be a lie
+    if (id !== imagesFor) {
+      settled.value = false
       images.value = []
+      imagesFor = id
     }
+    if (!id) return
     const { data, response } = await listRunningImagesApiV1ImagesGet({
       client,
       query: { cluster_id: id, ...(t ? { as_of: t } : {}) } as never,
@@ -62,7 +68,11 @@ watch(
     if (mine !== seq) return // a newer read owns the card now
     failed.value = !response?.ok || !data
     if (failed.value) logger.warn('riskiest_images_failed', { status: response?.status })
-    else images.value = (data as { images?: ImageRow[] }).images ?? []
+    else {
+      const body = data as { inventory?: unknown; images?: ImageRow[] }
+      unknown.value = body.inventory === null
+      images.value = body.images ?? []
+    }
     settled.value = true
   },
   { immediate: true },
@@ -131,6 +141,13 @@ function open(row: ImageRow) {
       label="Loading riskiest images"
     />
     <p v-else-if="failed" class="empty-row" role="alert">Riskiest images unavailable.</p>
+    <p v-else-if="ordered.length === 0 && unknown" class="empty-row">
+      {{
+        timeTravel.isNow
+          ? 'No inventory committed yet. Images show once a scanner cycle completes.'
+          : 'No inventory committed at this point in time.'
+      }}
+    </p>
     <p v-else-if="ordered.length === 0" class="empty-row">
       No image findings in the running inventory.
     </p>
