@@ -133,6 +133,12 @@ The backend reads these environment variables.
 | `JAVV_INSPECT_MAX_RESPONSE_BYTES` | `2097152` (2 MiB) | The largest reply of the Data inspector. A larger reply gets 413 ("narrow the query"). The backend also logs a warning and adds one to `javv_limit_rejections_total{limit="inspect_bytes"}`. |
 | `JAVV_INSPECT_TIMEOUT_SECONDS` | `10.0` | Seconds that a query of the Data inspector can run in OpenSearch. This time is shorter than `JAVV_REQUEST_TIMEOUT`. Thus a query in the inspector cannot hold OpenSearch for long. |
 
+### Dashboards
+
+| Setting | Default | What it does |
+|---|---|---|
+| `JAVV_DASHBOARD_IMPORT_MAX_BYTES` | `4194304` (4 MiB) | The largest dashboard file that an import reads. A larger file gets 413, and the import makes no dashboard. The backend also logs a warning and adds one to `javv_limit_rejections_total{limit="dashboard_import"}`. A dashboard with 24 panels is approximately 3.3 KB, so the default holds 1,000 dashboards. |
+
 ### Cluster retirement
 
 | Setting | Default | What it does |

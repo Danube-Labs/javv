@@ -18,6 +18,7 @@ from backend.routers import (
     contributors,
     cursors,
     dashboards,
+    dashboards_io,
     data_settings,
     decisions,
     exports,
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(images.router)
     app.include_router(clusters.router)
     app.include_router(views.router)
+    app.include_router(dashboards_io.router)  # first: export.ndjson is not a dashboard id
     app.include_router(dashboards.router)
     app.include_router(client_events.router)
     app.include_router(cursors.router)

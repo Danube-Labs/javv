@@ -42,7 +42,7 @@ CanEdit = Annotated[Principal, Depends(require_capability("can_edit_dashboards")
 DASHBOARDS_INDEX = "system-dashboards"
 DASHBOARD_SCHEMA_VERSION = 1
 MAX_PANELS = 24  # ruling Q2: a full dashboard measured 590 ms for its 24 panel reads
-_MAX_DASHBOARDS = 1_000  # ruling D9: the list ceiling, as for the saved views
+MAX_DASHBOARDS = 1_000  # ruling D9: the list ceiling, as for the saved views
 _MAX_Y = 1_000  # 24 panels of at most 26 rows each fit with room to spare
 
 _RoleName = Annotated[str, StringConstraints(min_length=1, max_length=64)]
@@ -163,7 +163,7 @@ def _check_write(principal: Principal, doc: dict[str, Any], revision: int) -> No
         raise HTTPException(409, "the dashboard changed since you read it — reload and retry")
 
 
-def _visibility_query(principal: Principal) -> dict[str, Any]:
+def visibility_query(principal: Principal) -> dict[str, Any]:
     if _sees_all(principal):
         return {"match_all": {}}
     should: list[dict[str, Any]] = [
@@ -187,8 +187,8 @@ async def list_dashboards(request: Request, principal: Authenticated) -> dict[st
     resp = await client.search(
         index=DASHBOARDS_INDEX,
         body={
-            "query": _visibility_query(principal),
-            "size": _MAX_DASHBOARDS,
+            "query": visibility_query(principal),
+            "size": MAX_DASHBOARDS,
             "sort": [{"name": "asc"}, {"dashboard_id": "asc"}],
         },
         params={"ignore_unavailable": "true"},
@@ -207,16 +207,15 @@ async def get_dashboard(
     return doc
 
 
-@router.post("", status_code=201)
-async def create_dashboard(
-    request: Request, body: DashboardFields, principal: CanEdit
+async def create_doc(
+    client: Any, principal: Principal, fields: DashboardFields, dashboard_id: str
 ) -> dict[str, Any]:
-    client = cast(Any, request.app.state.opensearch)
-    dashboard_id = uuid4().hex
+    """A new dashboard of `principal`, journaled first. An existing `dashboard_id` is a
+    ConflictError from the store, after its audit row."""
     now = datetime.now(UTC).isoformat()
     doc = {
         "dashboard_id": dashboard_id,
-        **body.stored(),
+        **fields.stored(),
         "owner": principal.user_id,  # immutable: no change route takes it
         "created_by": principal.username,
         "created_at": now,
@@ -234,7 +233,7 @@ async def create_dashboard(
         entity_id=dashboard_id,
         field="dashboard",
         old_value=None,
-        new_value=body.name,
+        new_value=fields.name,
         new_value_json=doc,
         revision=1,
         cluster_id=None,
@@ -246,6 +245,13 @@ async def create_dashboard(
         params={"op_type": "create", "refresh": "true"},
     )
     return doc
+
+
+@router.post("", status_code=201)
+async def create_dashboard(
+    request: Request, body: DashboardFields, principal: CanEdit
+) -> dict[str, Any]:
+    return await create_doc(cast(Any, request.app.state.opensearch), principal, body, uuid4().hex)
 
 
 @router.patch("/{dashboard_id}")

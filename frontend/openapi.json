@@ -4211,6 +4211,112 @@
         ]
       }
     },
+    "/api/v1/dashboards/export.ndjson": {
+      "get": {
+        "operationId": "export_dashboards_api_v1_dashboards_export_ndjson_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dashboard_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 1000,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dashboard Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Dashboards",
+        "tags": [
+          "dashboards"
+        ]
+      }
+    },
+    "/api/v1/dashboards/import": {
+      "post": {
+        "operationId": "import_dashboards_api_v1_dashboards_import_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "copy",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Copy",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-ndjson": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Import Dashboards Api V1 Dashboards Import Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Dashboards",
+        "tags": [
+          "dashboards"
+        ]
+      }
+    },
     "/api/v1/dashboards/{dashboard_id}": {
       "delete": {
         "operationId": "delete_dashboard_api_v1_dashboards__dashboard_id__delete",
