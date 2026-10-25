@@ -588,6 +588,18 @@ describe('a read still open when no read is due never lands later', () => {
     expect(w.find('[aria-label="Loading top components"]').exists()).toBe(true)
   })
 
+  it('Riskiest images: the images of a cluster leave with it', async () => {
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValueOnce(
+      ok({ inventory: INVENTORY, images: [{ image_digest: 'sha256:a', image_repo: 'repo-of-a', tag: 'v1', severity_by_scanner: { trivy: { crit: 1, high: 0, med: 0, low: 0, negligible: 0, unknown: 0, total: 1, fixable: 0 } } }] }),
+    )
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    expect(w.text()).toContain('repo-of-a')
+    useClusterStore().selectedId = null
+    await flushPromises()
+    expect(w.text()).not.toContain('repo-of-a')
+  })
+
   it('Riskiest images: the selected cluster goes away while its read is open', async () => {
     const a = deferred()
     fn('listRunningImagesApiV1ImagesGet').mockReturnValueOnce(a.promise)
@@ -640,6 +652,40 @@ describe('Riskiest images with no committed inventory', () => {
     await flushPromises()
     expect(w.text()).toContain('No inventory committed yet. Images show once a scanner cycle completes.')
     expect(w.text()).not.toContain('No image findings')
+  })
+
+  it('names the time of its answer, not a time whose read is still open', async () => {
+    const timeTravel = (await import('@/stores/timeTravel')).useTimeTravelStore()
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValueOnce(ok({ inventory: null, images: [] })).mockReturnValueOnce(later())
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    timeTravel.rewindTo('2026-10-01T00:00:00.000Z')
+    await flushPromises()
+    expect(w.text()).toContain('No inventory committed yet.')
+    expect(w.text()).not.toContain('at this point in time')
+  })
+
+  it('a committed inventory of the next cluster ends the no-inventory text', async () => {
+    fn('listRunningImagesApiV1ImagesGet')
+      .mockResolvedValueOnce(ok({ inventory: null, images: [] }))
+      .mockResolvedValueOnce(ok({ inventory: INVENTORY, images: [] }))
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    expect(w.text()).toContain('No inventory committed yet.')
+    useClusterStore().selectedId = 'c-other'
+    await flushPromises()
+    expect(w.text()).toContain('No image findings in the running inventory.')
+    expect(w.text()).not.toContain('No inventory committed')
+  })
+
+  it('a failed read after a no-inventory answer shows the error', async () => {
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValueOnce(ok({ inventory: null, images: [] })).mockResolvedValueOnce(refused())
+    const w = mountPanel(panelById('riskiest-images')!)
+    await flushPromises()
+    useClusterStore().selectedId = 'c-other'
+    await flushPromises()
+    expect(w.text()).toContain('Riskiest images unavailable.')
+    expect(w.text()).not.toContain('No inventory committed')
   })
 
   it('at a past time before the first inventory, says so for that time', async () => {

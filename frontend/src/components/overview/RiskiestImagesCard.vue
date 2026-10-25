@@ -43,6 +43,8 @@ const timeTravel = useTimeTravelStore()
 const images = ref<ImageRow[]>([])
 /** no committed inventory yet: JAVV does not know what runs, which is not an empty cluster */
 const unknown = ref(false)
+/** the time that answer is for: the text names that time, not one whose read is still open */
+const unknownAt = ref<string | null>(null)
 const failed = ref(false)
 // no claim before evidence: "No image findings" only once an answer has come
 const settled = ref(false)
@@ -71,6 +73,7 @@ watch(
     else {
       const body = data as { inventory?: unknown; images?: ImageRow[] }
       unknown.value = body.inventory === null
+      unknownAt.value = t
       images.value = body.images ?? []
     }
     settled.value = true
@@ -143,7 +146,7 @@ function open(row: ImageRow) {
     <p v-else-if="failed" class="empty-row" role="alert">Riskiest images unavailable.</p>
     <p v-else-if="ordered.length === 0 && unknown" class="empty-row">
       {{
-        timeTravel.isNow
+        unknownAt === null
           ? 'No inventory committed yet. Images show once a scanner cycle completes.'
           : 'No inventory committed at this point in time.'
       }}
