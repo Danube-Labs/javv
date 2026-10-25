@@ -26,7 +26,7 @@ const values = (fields: ReturnType<typeof auditFields>, key: string): readonly s
 
 describe('auditFields', () => {
   it('without can_manage_users: no user or token entity, and no account action', () => {
-    const fields = auditFields(false)
+    const fields = auditFields(false, true)
     expect(values(fields, 'entity')).not.toContain('user')
     expect(values(fields, 'entity')).not.toContain('token')
     for (const action of ACCOUNT_ACTIONS) expect(values(fields, 'action')).not.toContain(action)
@@ -36,7 +36,7 @@ describe('auditFields', () => {
   })
 
   it('with can_manage_users: every value, the same fields as AUDIT_FIELDS', () => {
-    expect(auditFields(true)).toEqual(AUDIT_FIELDS)
+    expect(auditFields(true, true)).toEqual(AUDIT_FIELDS)
   })
 
   it('without can_manage_settings: no dashboard entity and no dashboard action (issue 440)', () => {
@@ -66,7 +66,7 @@ describe('auditFields', () => {
 
 describe('AUDIT_FIELDS (issue 952)', () => {
   it('Entity, Action and User take several values, for every role', () => {
-    for (const fields of [auditFields(true), auditFields(false)])
+    for (const fields of [auditFields(true, true), auditFields(false, false)])
       expect(fields.map((f) => [f.key, 'multi' in f && f.multi === true])).toEqual([
         ['entity', true],
         ['action', true],

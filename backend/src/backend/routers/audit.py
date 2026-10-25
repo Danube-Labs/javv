@@ -1,7 +1,8 @@
 """GET /api/v1/audit (M8c slice 1, #240) — the journaled history, read plain-session (ruled
 2026-07-07, #237): every triage action is already attributed in-row (D17/D32), so any
 authenticated user may read the log. The account events (sign-ins, password, user, role and
-token rows) reach only `can_manage_users` (issue 892 ruling 3). Feeds the M9d Audit screen +
+token rows) reach only `can_manage_users` (issue 892 ruling 3), and the dashboard rows only
+`can_manage_settings` (issue 440). Feeds the M9d Audit screen +
 Contributors activity feed.
 
 Cursor-paged with the A-m1 machinery (`query/audit.py`): opaque cursor, 410 on an expired PIT,

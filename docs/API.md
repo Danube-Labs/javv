@@ -281,7 +281,7 @@ endpoint needs:
 - a permission name: a signed-in user with that permission ([Roles and permissions](#roles-and-permissions)).
 
 The audit log keeps each sign-in and sign-out, and each change to triage, decisions, settings,
-the scan scope, users, tokens, saved views, clusters, snapshots and jobs. It also keeps each query
+the scan scope, users, tokens, saved views, dashboards, clusters, snapshots and jobs. It also keeps each query
 of the data inspector.
 
 Each signed-in user reads the audit log. Only a user with `can_manage_users` reads the account

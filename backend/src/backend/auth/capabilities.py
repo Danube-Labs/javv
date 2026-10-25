@@ -83,7 +83,7 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Change the SLA, staleness, retirement and scan scope settings, and the cluster names. "
         "Retire a cluster and bring it back. Start the staleness sweep. Change or delete the "
         "saved views of other users. See, change and delete the dashboards of other users, with "
-        "the permission to make dashboards.",
+        "the permission to make dashboards. Read the dashboard rows in the Audit log.",
     ),
     Permission(
         "can_manage_retention",

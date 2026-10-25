@@ -118,7 +118,7 @@ export const DASHBOARD_ACTIONS = ['dashboard_create', 'dashboard_update', 'dashb
  * entity values and actions would only ever count 0. The keys stay those of AUDIT_FIELDS, so
  * selections, the URL and saved views do not change.
  */
-export function auditFields(canManageUsers: boolean, canManageSettings = true): readonly FilterField[] {
+export function auditFields(canManageUsers: boolean, canManageSettings: boolean): readonly FilterField[] {
   if (canManageUsers && canManageSettings) return AUDIT_FIELDS
   const hidden = new Set<string>([
     ...(canManageUsers ? [] : [...ACCOUNT_ENTITY_TYPES, ...ACCOUNT_ACTIONS]),

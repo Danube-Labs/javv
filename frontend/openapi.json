@@ -327,7 +327,7 @@
       },
       "DashboardFields": {
         "additionalProperties": false,
-        "description": "Everything an owner sets. A create is this model; a change is merged onto the stored\ndashboard and checked again by this model, so a change can never store what a create can't.",
+        "description": "Everything an owner sets. A create is this model; a change is merged onto the stored\ndashboard and checked again by this model, so a change can never store what a create can't.\nThe one exception: a change that sends no panels keeps the stored ones unchecked.",
         "properties": {
           "description": {
             "default": "",

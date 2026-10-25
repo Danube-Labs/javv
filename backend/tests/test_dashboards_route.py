@@ -302,8 +302,8 @@ async def test_a_change_of_panels_goes_through_the_same_checks(env) -> None:
 
 async def test_a_new_height_does_not_stop_a_change_that_sends_no_panels(env, monkeypatch) -> None:
     """A panel stores its height name, so a new measurement of the rows changes no saved dashboard
-    (ruling Q2). A change of the name keeps the stored panels; a change of the panels is checked
-    with the new rows."""
+    (ruling of 2026-10-25). A change of the name keeps the stored panels; a change of the panels
+    is checked with the new rows."""
     user, _ = env
     owner = await user(EDIT)
     panels = [_panel(), _panel("scan-ingest", y=7)]  # flush: findings-summary is 7 rows
@@ -333,17 +333,22 @@ async def test_only_a_settings_admin_reads_the_audit_rows_of_dashboards(env) -> 
     }
 
     async def seen(http: httpx.AsyncClient) -> tuple[list[str], set[str], int]:
-        rows = (await http.get("/api/v1/audit", params=params)).json()["data"]
-        facets = (await http.get("/api/v1/audit/facets", params=params)).json()["facets"]
-        csv = (await http.get("/api/v1/audit/export.csv", params=params)).text
+        responses = [
+            await http.get(f"/api/v1/audit{path}", params=params)
+            for path in ("", "/facets", "/export.csv")
+        ]
+        assert [r.status_code for r in responses] == [200, 200, 200]
+        rows, facets, csv = responses
         return (
-            [r["entity_id"] for r in rows],
-            {b["key"] for b in facets["entity_type"]},
-            len(csv.strip().splitlines()) - 1,  # minus the header
+            [r["entity_id"] for r in rows.json()["data"]],
+            {b["key"] for b in facets.json()["facets"]["entity_type"]},
+            len(csv.text.strip().splitlines()) - 1,  # minus the header
         )
 
     nobody: tuple[list[str], set[str], int] = ([], set(), 0)
     assert await seen(await user(["can_export"], role="viewer")) == nobody
     assert await seen(owner) == nobody
+    # the account rule is a different one: managing users does not open the dashboard rows
+    assert await seen(await user(["can_manage_users", "can_export"])) == nobody
     admin = await user([*ADMIN, "can_export"])
     assert await seen(admin) == ([made["dashboard_id"]], {"dashboard"}, 1)

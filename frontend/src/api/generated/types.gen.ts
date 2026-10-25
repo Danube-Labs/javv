@@ -187,6 +187,7 @@ export type CreateView = {
  *
  * Everything an owner sets. A create is this model; a change is merged onto the stored
  * dashboard and checked again by this model, so a change can never store what a create can't.
+ * The one exception: a change that sends no panels keeps the stored ones unchecked.
  */
 export type DashboardFields = {
     /**

@@ -261,7 +261,8 @@ async def update_dashboard(
     current = {k: doc[k] for k in DashboardFields.model_fields}
     change = body.model_dump(exclude_unset=True, exclude={"revision"}, exclude_none=True)
     # The stored panels are checked only when the change sends panels: a new measurement of the
-    # heights must not refuse a change of the name to a dashboard it made overlap (ruling Q2).
+    # heights must not refuse a change of the name to a dashboard it made overlap (ruling of
+    # 2026-10-25).
     keep_panels = "panels" not in change
     try:
         fields = DashboardFields.model_validate(
