@@ -164,7 +164,8 @@ change the password on first login - FR-18.)
   for risk-accept, `can_manage_*`; destructive caps Admin-only + journaled). `can_accept_audit_final` also
   gates an *undo* of a risk-accept (a revoke or edit of a `risk_accepted` or `ignore_rule` decision, a state
   change of a risk-accepted finding, a bulk over one). The audit log's account events (sign-ins, users,
-  roles, tokens) need `can_manage_users` (issue 892). `get_current_principal()`
+  roles, tokens) need `can_manage_users` (issue 892), and its dashboard rows need `can_manage_settings`
+  (issue 440). `get_current_principal()`
   resolves the session (OIDC-swappable later); **ingest-token auth separate**, with **token↔payload binding**
   (SEC-3). Per-request entitlement on every fetch **and export** (IDOR); **tenant `cluster_id` filter via one
   tenant read path** + negative test (SEC-4), never UI-only. **MVP tenant model (D38/H9):** all clusters are

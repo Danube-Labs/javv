@@ -120,6 +120,7 @@ async def read_audit_log(
             cursor=cursor,
             keep_open=keep_open,
             account_events=holds(principal, "can_manage_users"),
+            dashboard_events=holds(principal, "can_manage_settings"),
         )
     except CursorExpired as exc:  # A-m1: idled past keep_alive → 410 Gone, restart the walk
         pit_guard.release(principal.user_id, slot)
@@ -173,7 +174,10 @@ async def audit_facets(
         resp = await client.search(
             index="system-audit-log-*",
             body=audit_tenant_query(
-                cluster_id, body, account_events=holds(principal, "can_manage_users")
+                cluster_id,
+                body,
+                account_events=holds(principal, "can_manage_users"),
+                dashboard_events=holds(principal, "can_manage_settings"),
             ),
         )
     except (OSConnectionError, ConnectionTimeout) as exc:
@@ -219,8 +223,13 @@ async def export_audit_csv(
     filters = replace(params, until=until)
     max_rows = get_settings().export_max_rows
     account_events = holds(principal, "can_manage_users")
+    dashboard_events = holds(principal, "can_manage_settings")
     n = await count_audit_lens(
-        client, cluster_id=cluster_id, filters=filters, account_events=account_events
+        client,
+        cluster_id=cluster_id,
+        filters=filters,
+        account_events=account_events,
+        dashboard_events=dashboard_events,
     )
     if n > max_rows:
         log.warning("inline export capped", cluster_id=cluster_id, cap=max_rows, format="audit")
@@ -241,7 +250,11 @@ async def export_audit_csv(
         rows, size = 0, 0
         try:
             async for line in stream_audit_csv(
-                client, cluster_id=cluster_id, filters=filters, account_events=account_events
+                client,
+                cluster_id=cluster_id,
+                filters=filters,
+                account_events=account_events,
+                dashboard_events=dashboard_events,
             ):
                 rows += 1
                 size += len(line)

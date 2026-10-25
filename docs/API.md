@@ -199,7 +199,7 @@ At its first start, JAVV creates four roles:
 | `can_edit_dashboards` | Make dashboards. Change, share and delete your own dashboards. |
 | `can_manage_tokens` | Make, revoke and rotate scanner tokens |
 | `can_manage_users` | Make users. Change their role, their status and their password. Read the account events in the audit log. |
-| `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. See, change and delete the dashboards of other users, with `can_edit_dashboards`. |
+| `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. See, change and delete the dashboards of other users, with `can_edit_dashboards`. Read the dashboard rows in the audit log. |
 | `can_manage_retention` | Read and change the data settings: retention, rollover, export lifetime and findings cleanup. Read and take snapshots. Delete a retired cluster. |
 | `can_restore_snapshot` | Restore a snapshot |
 | `can_inspect_store` | Use the data inspector. Read the status of the background jobs. |
@@ -288,6 +288,10 @@ Each signed-in user reads the audit log. Only a user with `can_manage_users` rea
 events: the rows with `entity_type` `user` (sign-ins and sign-outs, password, user and role
 changes) and `token` (the scanner tokens). For the other users, the three audit endpoints leave
 these rows out of the list, the counts and the CSV.
+
+Only a user with `can_manage_settings` reads the rows with `entity_type` `dashboard`. A dashboard
+row holds the whole dashboard, also a private one, and these users can see each dashboard. For
+the other users, the three audit endpoints leave these rows out in the same way.
 
 ### System
 

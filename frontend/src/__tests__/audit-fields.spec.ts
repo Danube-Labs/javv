@@ -11,6 +11,8 @@ import { describe, expect, it } from 'vitest'
 import {
   ACCOUNT_ACTIONS,
   AUDIT_ACTIONS,
+  DASHBOARD_ACTIONS,
+  DASHBOARD_ENTITY_TYPES,
   AUDIT_ENTITY_TYPES,
   AUDIT_FIELDS,
   AUDIT_LIST_CAP,
@@ -35,6 +37,23 @@ describe('auditFields', () => {
 
   it('with can_manage_users: every value, the same fields as AUDIT_FIELDS', () => {
     expect(auditFields(true)).toEqual(AUDIT_FIELDS)
+  })
+
+  it('without can_manage_settings: no dashboard entity and no dashboard action (issue 440)', () => {
+    const fields = auditFields(true, false)
+    expect(values(fields, 'entity')).not.toContain('dashboard')
+    for (const action of DASHBOARD_ACTIONS) expect(values(fields, 'action')).not.toContain(action)
+    expect(values(fields, 'entity')).toContain('user') // the account rows stay for this user
+    expect(values(fields, 'action')).toContain('view_create')
+    expect(values(auditFields(false, false), 'entity')).not.toContain('user')
+    expect(values(auditFields(false, true), 'entity')).toContain('dashboard')
+  })
+
+  it('the dashboard rows are those the backend holds back, with every dashboard action', () => {
+    const audit = readFileSync(resolve(process.cwd(), '../backend/src/backend/query/audit.py'), 'utf8')
+    expect(audit.match(/^DASHBOARD_ENTITY_TYPES = \("(\w+)",\)$/m)?.[1]).toBe(DASHBOARD_ENTITY_TYPES[0])
+    expect(DASHBOARD_ENTITY_TYPES).toHaveLength(1)
+    expect(AUDIT_ACTIONS.filter((a) => a.startsWith('dashboard_'))).toEqual([...DASHBOARD_ACTIONS])
   })
 
   it('the account actions are exactly the actions of the user and token rows', () => {

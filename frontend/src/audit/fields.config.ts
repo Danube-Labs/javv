@@ -108,14 +108,22 @@ export const ACCOUNT_ACTIONS = [
 ] as const
 const ACCOUNT_ENTITY_TYPES: readonly string[] = ['user', 'token']
 
+/** The rows of the saved dashboards (entity_type `dashboard`) and their actions. */
+export const DASHBOARD_ENTITY_TYPES = ['dashboard'] as const
+export const DASHBOARD_ACTIONS = ['dashboard_create', 'dashboard_update', 'dashboard_delete'] as const
+
 /**
  * The rail for this user (issue 892, ruling 8): the server leaves the account rows out without
- * can_manage_users, so their entity values and actions would only ever count 0. The keys stay
- * those of AUDIT_FIELDS, so selections, the URL and saved views do not change.
+ * can_manage_users, and the dashboard rows without can_manage_settings (issue 440), so their
+ * entity values and actions would only ever count 0. The keys stay those of AUDIT_FIELDS, so
+ * selections, the URL and saved views do not change.
  */
-export function auditFields(canManageUsers: boolean): readonly FilterField[] {
-  if (canManageUsers) return AUDIT_FIELDS
-  const hidden = new Set<string>([...ACCOUNT_ENTITY_TYPES, ...ACCOUNT_ACTIONS])
+export function auditFields(canManageUsers: boolean, canManageSettings = true): readonly FilterField[] {
+  if (canManageUsers && canManageSettings) return AUDIT_FIELDS
+  const hidden = new Set<string>([
+    ...(canManageUsers ? [] : [...ACCOUNT_ENTITY_TYPES, ...ACCOUNT_ACTIONS]),
+    ...(canManageSettings ? [] : [...DASHBOARD_ENTITY_TYPES, ...DASHBOARD_ACTIONS]),
+  ])
   return AUDIT_FIELDS.map((f) =>
     f.type === 'terms' && f.values ? { ...f, values: f.values.filter((v) => !hidden.has(v)) } : f,
   )

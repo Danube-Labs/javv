@@ -317,3 +317,33 @@ async def test_a_new_height_does_not_stop_a_change_that_sends_no_panels(env, mon
 
     r = await owner.patch(path, json={"revision": 2, "panels": panels})
     assert r.status_code == 422
+
+
+async def test_only_a_settings_admin_reads_the_audit_rows_of_dashboards(env) -> None:
+    """An audit row carries the whole dashboard, a private one too. Only `can_manage_settings`,
+    who sees every dashboard, reads those rows: in the list, the facets and the CSV alike
+    (ruling of 2026-10-25). Without the rule, a viewer reads a private dashboard here."""
+    user, _ = env
+    owner = await user([*EDIT, "can_export"], role="triager")
+    made = await _create(owner)
+    params = {
+        "cluster_id": f"c-dash-{uuid.uuid4().hex[:8]}",
+        "actor": owner.username,
+        "entity_type": "dashboard",
+    }
+
+    async def seen(http: httpx.AsyncClient) -> tuple[list[str], set[str], int]:
+        rows = (await http.get("/api/v1/audit", params=params)).json()["data"]
+        facets = (await http.get("/api/v1/audit/facets", params=params)).json()["facets"]
+        csv = (await http.get("/api/v1/audit/export.csv", params=params)).text
+        return (
+            [r["entity_id"] for r in rows],
+            {b["key"] for b in facets["entity_type"]},
+            len(csv.strip().splitlines()) - 1,  # minus the header
+        )
+
+    nobody: tuple[list[str], set[str], int] = ([], set(), 0)
+    assert await seen(await user(["can_export"], role="viewer")) == nobody
+    assert await seen(owner) == nobody
+    admin = await user([*ADMIN, "can_export"])
+    assert await seen(admin) == ([made["dashboard_id"]], {"dashboard"}, 1)
