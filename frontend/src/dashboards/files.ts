@@ -46,14 +46,19 @@ export function importFailureCopy(status: number, copy: boolean): string {
     return 'The file is too large: over the size limit of JAVV (4 MiB unless your operator changed it), or over 1,000 dashboards.'
   if (status === 403) return NO_IMPORT_NOTE
   if (status === 0) return 'The import did not reach JAVV. Check the connection, then try again.'
+  // in each case below some or all lines can have made their dashboards, so the words say what a
+  // second import of the same file does
+  const again = copy
+    ? 'If you import the file again with Make copies, JAVV makes those dashboards a second time.'
+    : 'If you import the file again with Keep the IDs, JAVV does not make those dashboards again.'
   if (status >= 200 && status < 300)
-    return 'JAVV did the import, but its answer could not be read. The list shows the dashboards that it made.'
+    return `JAVV did the import, but its answer could not be read. The list shows the dashboards that it made. ${again}`
+  // a gateway in front of JAVV gave up waiting: the backend can still be at work on the file
+  if (status === 504)
+    return `The answer took too long, but JAVV can still be at work on the file. Read the list again in a minute. ${again}`
   // a store failure stops the import, and the lines before it keep their dashboards (docs/API.md)
   if (status === 429 || status >= 500) {
     const why = status === 429 ? 'The search backend was busy, so the import stopped.' : 'The import stopped.'
-    const again = copy
-      ? 'If you import the file again with Make copies, JAVV makes those dashboards a second time.'
-      : 'If you import the file again with Keep the IDs, JAVV does not make those dashboards again.'
     return `${why} The lines before the failure made their dashboards. ${again}`
   }
   return 'JAVV did not import the file. No dashboard was made.'

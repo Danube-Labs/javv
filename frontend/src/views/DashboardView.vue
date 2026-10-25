@@ -21,7 +21,7 @@ import { useStretchWidth } from '@/composables/useStretchWidth'
 import { EXPORT_PATH } from '@/dashboards/files'
 import { changedLine, parseScanner, sharingLine } from '@/dashboards/layout'
 import { readFailureCopy } from '@/findings/failureCopy'
-import { SCANNER_LENS_OPTS, type ScannerLens } from '@/lib/scannerLens'
+import { SCANNER_SWITCH_OPTS, type ScannerLens } from '@/lib/scannerLens'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
@@ -117,7 +117,7 @@ const exporter = useCsvExport({
         </template>
       </div>
       <div v-if="dash" class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_LENS_OPTS" />
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
         <UiButton
           variant="control"
           :disabled="exporter.exporting.value"

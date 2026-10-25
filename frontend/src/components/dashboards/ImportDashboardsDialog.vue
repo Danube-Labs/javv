@@ -35,6 +35,7 @@ const failure = ref<string | null>(null)
 const outcome = ref<ImportOutcome | null>(null)
 
 function sizeWords(bytes: number): string {
+  if (bytes === 1) return '1 byte'
   return bytes < 1024 ? `${bytes} bytes` : `${Math.round(bytes / 1024).toLocaleString('en-US')} KB`
 }
 

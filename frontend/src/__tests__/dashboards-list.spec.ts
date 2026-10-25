@@ -222,6 +222,12 @@ describe('import', () => {
     expect(w.emitted('imported')).toEqual([[1]])
   })
 
+  it('a file of one byte says "1 byte"', async () => {
+    vi.mocked(importDashboardsApiV1DashboardsImportPost).mockResolvedValue(refused(422))
+    const { w } = await importFile(['x'], false)
+    expect(w.find('.imp-name').text()).toBe('board.ndjson · 1 byte')
+  })
+
   it('an empty file is not sent, and says so', async () => {
     const { w } = await importFile([], false)
     expect(importDashboardsApiV1DashboardsImportPost).not.toHaveBeenCalled()
@@ -281,8 +287,14 @@ describe('the words of a result', () => {
 
   it('a check of the backend names no value of the file: each one has its own words', () => {
     const source = readFileSync(resolve(process.cwd(), '..', 'backend/src/backend/routers/dashboards.py'), 'utf8')
-    const messages = [...source.matchAll(/raise ValueError\(f?"([^"]+)"\)/g)].map((m) => m[1]!.replace(/\{[^}]+\}/g, 'VALUE-FROM-FILE'))
-    expect(messages).toHaveLength(5)
+    // a check the pattern cannot read (wrapped by the formatter, a variable, other quotes) makes
+    // the two counts differ, so a new check cannot pass without words of its own
+    const raises = source.match(/raise ValueError\(/g) ?? []
+    const messages = [...source.matchAll(/raise ValueError\(\s*f?"([^"]+)"\s*\)/g)].map((m) =>
+      m[1]!.replace(/\{[^}]+\}/g, 'VALUE-FROM-FILE'),
+    )
+    expect(messages).toHaveLength(raises.length)
+    expect(messages.length).toBeGreaterThanOrEqual(5)
     for (const msg of messages) {
       expect({ msg, hasWords: VALUE_ERROR_WORDS.some(([re]) => re.test(msg)) }).toEqual({ msg, hasWords: true })
       const words = lineResultCopy({ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: `Value error, ${msg}`, type: 'value_error' }] })
@@ -295,7 +307,15 @@ describe('the words of a result', () => {
     expect(importFailureCopy(413, false)).toContain('1,000 dashboards')
     expect(importFailureCopy(403, false)).toBe(NO_IMPORT_NOTE)
     expect(importFailureCopy(0, false)).toContain('did not reach JAVV')
-    expect(importFailureCopy(200, false)).toContain('its answer could not be read')
+    expect(importFailureCopy(200, true)).toBe(
+      'JAVV did the import, but its answer could not be read. The list shows the dashboards that it made. ' +
+        'If you import the file again with Make copies, JAVV makes those dashboards a second time.',
+    )
+    // a gateway timeout is not a stop: the backend can still be at work on the file
+    expect(importFailureCopy(504, false)).toBe(
+      'The answer took too long, but JAVV can still be at work on the file. Read the list again in a minute. ' +
+        'If you import the file again with Keep the IDs, JAVV does not make those dashboards again.',
+    )
     expect(importFailureCopy(415, false)).toBe('JAVV did not import the file. No dashboard was made.')
   })
 

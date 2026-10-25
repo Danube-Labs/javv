@@ -21,7 +21,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useStretchWidth } from '@/composables/useStretchWidth'
 import { CHART_SEV, type Severity } from '@/styles/tokens'
 import { freshnessStatus } from '@/system/freshness'
-import { facetCount, fmt, SCANNER_LENS_OPTS, type ScannerLens } from '@/lib/scannerLens'
+import { facetCount, fmt, SCANNER_SWITCH_OPTS, type ScannerLens } from '@/lib/scannerLens'
 
 const KPI_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'negligible']
 const timeTravel = useTimeTravelStore()
@@ -77,7 +77,7 @@ const needAttention = computed(
         </p>
       </div>
       <div v-if="!fleet.limited" class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_LENS_OPTS" />
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
       </div>
     </div>
 

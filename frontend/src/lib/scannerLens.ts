@@ -7,7 +7,7 @@
 export type ScannerLens = 'all' | 'trivy' | 'grype'
 
 /** The scanner switch of a page that shows both scanners (Overview, All clusters, a dashboard). */
-export const SCANNER_LENS_OPTS = [
+export const SCANNER_SWITCH_OPTS = [
   { value: 'all', label: 'All scanners' },
   { value: 'trivy', label: 'trivy', accent: 'var(--scanner-trivy-fg)' },
   { value: 'grype', label: 'grype', accent: 'var(--scanner-grype-fg)' },
