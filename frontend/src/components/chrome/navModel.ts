@@ -28,6 +28,7 @@ export const NAV: NavGroup[] = [
       { label: 'Overview', to: '/overview', icon: 'grid' },
       { label: 'Findings', to: '/findings', icon: 'list' },
       { label: 'Saved views', to: '/views', icon: 'bookmark' },
+      { label: 'Dashboards', to: '/dashboards', icon: 'columns' },
       { label: 'Scanner status', to: '/scanner-status', icon: 'pulse' },
     ],
   },

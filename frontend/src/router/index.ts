@@ -32,6 +32,18 @@ const router = createRouter({
           meta: { section: 'monitor', wide: true },
         },
         {
+          path: 'dashboards',
+          name: 'dashboards',
+          component: () => import('@/views/DashboardsView.vue'),
+          meta: { section: 'monitor', wide: true },
+        },
+        {
+          path: 'dashboards/:id',
+          name: 'dashboard',
+          component: () => import('@/views/DashboardView.vue'),
+          meta: { section: 'monitor', wide: true },
+        },
+        {
           path: 'scanner-status',
           name: 'scanner-status',
           component: () => import('@/views/ScannerStatusView.vue'),

@@ -14,6 +14,7 @@ const PATHS = {
   search: 'M21 21l-4.3-4.3M11 18a7 7 0 100-14 7 7 0 000 14z',
   chevron: 'M9 6l6 6-6 6',
   download: 'M12 3v12m0 0l-4-4m4 4l4-4M4 21h16',
+  upload: 'M12 21V9m0 0l-4 4m4-4l4 4M4 3h16',
   filter: 'M3 5h18l-7 8v6l-4-2v-4z',
   external: 'M14 4h6v6M20 4l-9 9M19 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1h6',
   bell: 'M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0',

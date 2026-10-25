@@ -34,6 +34,7 @@ import { useClusterStore } from '@/stores/cluster'
 import { useToastStore } from '@/stores/toast'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import ContributorsView from '@/views/ContributorsView.vue'
+import DashboardsView from '@/views/DashboardsView.vue'
 import SavedViewsView from '@/views/SavedViewsView.vue'
 import ScannerStatusView from '@/views/ScannerStatusView.vue'
 import ScanningView from '@/views/settings/ScanningView.vue'
@@ -87,6 +88,7 @@ describe('a component whose OK reply has a body that could not be read shows its
     ['IngestFailuresTable', IngestFailuresTable, { clusterId: CLUSTER, scanner: 'trivy', t: null }, 'Failed ingests unavailable.'],
     ['ScannerStatusView', ScannerStatusView, {}, 'Scanner status unavailable.'],
     ['SavedViewsView', SavedViewsView, {}, 'Saved views unavailable.'],
+    ['DashboardsView', DashboardsView, {}, 'Dashboards unavailable.'],
     ['ScanScopeView', ScanScopeView, {}, 'Scan scope unavailable.'],
     ['ScanningView', ScanningView, {}, 'Staleness timers unavailable.'],
     ['SlaPolicyView', SlaPolicyView, {}, 'SLA policy unavailable.'],

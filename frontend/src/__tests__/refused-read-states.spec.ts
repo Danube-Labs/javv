@@ -27,6 +27,7 @@ import {
   approvalListApiV1DecisionsApprovalsGet,
   auditFacetsApiV1AuditFacetsGet,
   contributorsApiV1ContributorsGet,
+  listDashboardsApiV1DashboardsGet,
   listViewsApiV1ViewsGet,
   scannerProvenanceApiV1ScannersProvenanceGet,
   facetFindingsApiV1FindingsFacetsGet,
@@ -51,6 +52,7 @@ import { useToastStore } from '@/stores/toast'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
 import ContributorsView from '@/views/ContributorsView.vue'
+import DashboardsView from '@/views/DashboardsView.vue'
 import SavedViewsView from '@/views/SavedViewsView.vue'
 import ScannerStatusView from '@/views/ScannerStatusView.vue'
 import FindingDetailView from '@/views/FindingDetailView.vue'
@@ -534,10 +536,11 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
   })
 })
 
-describe('Scanner status and Saved views: a count that was not read is "-" (issue 833, F5)', () => {
+describe('Scanner status, Saved views and Dashboards: a count that was not read is "-" (issue 833, F5)', () => {
   it.each([
     ['Scanner status', ScannerStatusView, '- scanners', 'The search backend is busy. Try again in a few seconds.'],
     ['Saved views', SavedViewsView, '- views', 'The search backend is busy. Try again in a few seconds.'],
+    ['Dashboards', DashboardsView, '- dashboards', 'The search backend is busy. Try again in a few seconds.'],
   ])('%s, refused with a 429', async (_name, view, count, copy) => {
     const w = await mountRouted(view as Component)
     await flushPromises()
@@ -548,6 +551,7 @@ describe('Scanner status and Saved views: a count that was not read is "-" (issu
   it.each([
     ['Scanner status', ScannerStatusView, scannerProvenanceApiV1ScannersProvenanceGet, '- scanners'],
     ['Saved views', SavedViewsView, listViewsApiV1ViewsGet, '- views'],
+    ['Dashboards', DashboardsView, listDashboardsApiV1DashboardsGet, '- dashboards'],
   ])('%s, before its first read answers', async (_name, view, sdk, count) => {
     vi.mocked(sdk).mockImplementationOnce(() => new Promise(() => {}) as never)
     const w = await mountRouted(view as Component)
