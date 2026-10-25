@@ -344,7 +344,7 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
-| 0.8.9 | 18 | 3 and 4 | The note **A new permission for the export files** below |
+| 0.8.9 | 18 | 3 and 4 | The notes **A new permission for the export files** and **A new permission for dashboards** below |
 | 0.8.7 | 18 | 3 and 4 | The note **JAVV refuses a username with a capital letter** below |
 | 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |
 | 0.7.0 | 18 | 3 and 4 | The note **`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`** below |
@@ -405,6 +405,46 @@ On Kubernetes, or with an OpenSearch of your own, send the same request to your 
 its admin.
 
 We did these steps on the compose files of 0.8.8, with a triager and a security lead.
+
+### 0.8.9: a new permission for dashboards
+
+A user needs the permission `can_edit_dashboards` to make a dashboard. The `viewer` role does not
+get it.
+
+A new store gives the permission to the `triager`, `security_lead` and `admin` roles. On a store
+that you have, only `admin` gets it, because JAVV writes the roles only on the first start of a
+store. Also, each user keeps a copy of the permissions of its role.
+
+After the upgrade, give the permission to the `triager` and `security_lead` roles and to their
+users:
+
+1. Save this script as `can-edit-dashboards.sh`, in the folder of your installation:
+    ```sh
+    # Adds can_edit_dashboards to the triager and security_lead roles, and to their users.
+    login=$(printf %s "$OPENSEARCH_INITIAL_ADMIN_PASSWORD" | sed 's/[\\"]/\\&/g')
+    curl -sSk -K - -X POST 'https://localhost:9200/system-roles,system-users/_update_by_query?refresh=true' \
+      -H 'content-type: application/json' -d '{
+      "query": {"terms": {"role": ["triager", "security_lead"]}},
+      "script": {"lang": "painless", "source": "def c = ctx._source.capabilities; if (c == null || c.contains(\"can_edit_dashboards\")) { ctx.op = \"noop\" } else { c.add(\"can_edit_dashboards\") }"}
+    }' <<EOF
+    user = "admin:$login"
+    EOF
+    echo
+    ```
+2. Run the script in the OpenSearch container:
+    ```bash
+    docker compose exec -T opensearch sh < can-edit-dashboards.sh
+    ```
+    The answer has `"failures":[]`. `updated` is the number of roles and users that the script
+    changed. If you run the script again, it changes nothing.
+
+The users do not sign in again: JAVV reads the permissions of a user on each request.
+
+On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
+its admin.
+
+We sent the request of the script two times to OpenSearch 3.9.0, with the roles and users of
+0.8.8. The first time changed the two roles and their users. The second time changed nothing.
 
 ### 0.8.7: JAVV refuses a username with a capital letter
 

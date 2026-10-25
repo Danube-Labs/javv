@@ -18,8 +18,8 @@ and rigid triage tools (no flexible reporting).
 
 ## Actors
 - **Viewer** - reads findings, images, trends and the audit log (without the account events).
-- **Triager** - also exports (`can_export`), triages (state, assignee, notes, bulk) and makes,
-  changes and revokes `not_affected` decisions.
+- **Triager** - also exports (`can_export`), makes dashboards (`can_edit_dashboards`), triages (state,
+  assignee, notes, bulk) and makes, changes and revokes `not_affected` decisions.
 - **Security Lead** - also makes, changes and revokes risk-accepts and ignore rules, changes the state of a
   risk-accepted finding, and reviews the approvals queue.
 - **Admin** - every capability: users/roles, per-(cluster,scanner) tokens, settings,
@@ -27,7 +27,8 @@ and rigid triage tools (no flexible reporting).
 - **Scanner module** - automated client: discover → scan → push.
 
 (RBAC: four seeded roles, each a bundle of capabilities (D33): `viewer` (none), `triager` (`can_triage`,
-`can_export`), `security_lead` (`can_triage`, `can_accept_audit_final`, `can_export`), `admin` (`*`).
+`can_export`, `can_edit_dashboards`), `security_lead` (`can_triage`, `can_accept_audit_final`,
+`can_export`, `can_edit_dashboards`), `admin` (`*`).
 The Auditor role of SEC-9 is gone (D33). `docs/API.md` "Roles and permissions" is the reference for
 what each capability allows. A **bootstrap admin** is seeded on first boot from an env/secret and must
 change the password on first login - FR-18.)

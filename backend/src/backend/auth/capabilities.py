@@ -24,8 +24,13 @@ ROLES_INDEX = "system-roles"
 # the D33 defaults — Admin's "*" means every capability, present and future
 ROLE_BUNDLES: dict[str, list[str]] = {
     "viewer": [],
-    "triager": ["can_triage", "can_export"],
-    "security_lead": ["can_triage", "can_accept_audit_final", "can_export"],  # SEC-2: risk-accept
+    "triager": ["can_triage", "can_export", "can_edit_dashboards"],
+    "security_lead": [  # SEC-2: risk-accept
+        "can_triage",
+        "can_accept_audit_final",
+        "can_export",
+        "can_edit_dashboards",
+    ],
     "admin": ["*"],
 }
 
@@ -57,6 +62,11 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Export data",
         "Download the CSV and VEX files of the findings, and the CSV files of the Audit log, the "
         "Contributors and the Approval list. Make an export report and download it.",
+    ),
+    Permission(
+        "can_edit_dashboards",
+        "Make dashboards",
+        "Make dashboards. Change, share and remove your own dashboards.",
     ),
     Permission(
         "can_manage_tokens", "Manage scanner tokens", "Make, revoke and rotate scanner tokens."
