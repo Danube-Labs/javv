@@ -159,7 +159,8 @@ motion - DESIGN.md §5; re-rolling any of it is a review failure). Other shared 
 `components/chips/` (every same-hue status/severity pair lives here - enforced by the style rules test),
 `components/filters/` (FacetRail/FilterBar over `filters/fields.config.ts`),
 `components/time-travel/` (the global range picker, D28), `charts/` (pure ECharts option
-builders), and the per-screen dirs (`findings/`, `audit/`, `contributors/`, `scanners/`, …).
+builders), `dashboards/catalog.ts` (the panels a user can put on a dashboard, issue 440;
+DESIGN.md §10), and the per-screen dirs (`findings/`, `audit/`, `contributors/`, `scanners/`, …).
 `src/lib/logger.ts` is the only logging pipeline (raw `console.*` is ESLint-banned).
 `server/` is the frontend container's Node server (issue 452): it serves the built app and forwards
 `/api`, `/auth`, `/readyz` to the backend, with no runtime dependencies; `server/log.mjs` is its

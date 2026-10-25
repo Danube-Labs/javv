@@ -497,8 +497,25 @@ this contract as its first slice, deliberately and with its own tests. Convertin
 inside an unrelated PR, is a review failure for the same reason any drive-by refactor is. This
 section governs what you *add*.
 
-Until #440 lands there is no registry to register with — a new lens just conforms to the contract
-and lives where it is used. That is the whole ask: stop growing the pile that bolt has to move.
+**The catalog is the registry (#440).** `src/dashboards/catalog.ts` lists every panel a user can
+put on a dashboard: an id that never changes once shipped (saved dashboards and the backend name
+it), a name, a group (Findings, Scanners, People), one line that says what it shows, the
+component, a default width (half or all of the two columns), the heights it can take, and if the
+dashboard's scanner switch applies. Its `props(ctx)` turns what a dashboard knows (cluster, T,
+window, scanner, height) into that component's own props, so a lens keeps the props its screens
+already pass. A table panel takes its rows a page from its height (`TABLE_ROWS`, sizes the shared
+GridPager offers). A lens that a screen feeds today keeps that feed and gains a second way in: it takes the screen's
+data when it is passed, and reads its own when it is not (Overview passes one findings facets
+read to the stat bands, Package type and Per namespace; Contributors passes the Handled findings
+strip its series). The screen sends the same requests as before and its panels still agree, and
+on a dashboard the panel stands alone. `composables/useFindingsFacets.ts` is that second way for
+the facets panels: panels that ask for the same cluster and T while a read is open share it.
+A lens with no card of its own sets `framed`, and the dashboard puts it in
+`components/dashboards/PanelFrame.vue`, which never clips: each card draws its own `--shadow`
+outside its box. `panel-catalog.spec.ts` mounts every entry alone, with only a cluster and its
+settings, and fails one that does not send its own request or lacks a loading, empty or error state.
+A new lens conforms to the contract, lives where it is used, and joins the catalog when a user
+should be able to put it on a dashboard.
 
 ## 11. Keeping this file accurate
 

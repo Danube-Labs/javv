@@ -3,26 +3,38 @@
  * The Overview KPI + signal bands (issue 384 split — extracted from OverviewView, no behavior
  * change). Joined hairline-divided stat grammar (base.css owns the skin, issue 368); every
  * number is a server aggregation read through the scanner lens; every cell click-throughs to
- * the findings grid.
+ * the findings grid. Overview passes the facets it read for all its panels; on a dashboard the
+ * bands read their own (useFindingsFacets).
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppIcon from '@/components/ui/AppIcon.vue'
-import { useOverviewStore } from '@/stores/overview'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { useFindingsFacets, type Facets, type FacetsQuery } from '@/composables/useFindingsFacets'
 import { CHART_SEV, type Severity } from '@/styles/tokens'
-import { countOf, fmt, type ScannerLens } from '@/lib/scannerLens'
+import { facetCount, fmt, type ScannerLens } from '@/lib/scannerLens'
 
 const KPI_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low']
 
-const props = defineProps<{ scanner: ScannerLens }>()
+const props = defineProps<{
+  scanner: ScannerLens
+  /** the screen's facets read; without it the bands read their own for `query` */
+  facets?: Facets
+  query?: FacetsQuery | null
+}>()
 
 const router = useRouter()
-const overview = useOverviewStore()
+const { facets, settled, failed } = useFindingsFacets(
+  () => props.facets,
+  () => props.query,
+)
 
-const count = (facet: string, key: string) => countOf(overview.bucket(facet, key), props.scanner)
+const count = (facet: string, key: string) => facetCount(facets.value, facet, key, props.scanner)
 const sevCount = (s: Severity) => count('severity', s)
 const totalPresent = computed(() => count('present', 'true'))
+/** empty is judged across both scanners: one scanner's zero is a number to show, not "no data" */
+const hasData = computed(() => facetCount(facets.value, 'present', 'true', 'all') > 0)
 const fixableCount = computed(() => count('fixable', 'true'))
 const fixPct = computed(() =>
   totalPresent.value === 0 ? 0 : Math.round((fixableCount.value / totalPresent.value) * 100),
@@ -51,8 +63,11 @@ function goFindings(query: Record<string, string>) {
 </script>
 
 <template>
+  <UiSkeleton v-if="!settled" :height="242" label="Loading findings summary" />
+  <p v-else-if="failed" class="empty-row" role="alert">Findings summary unavailable.</p>
+  <p v-else-if="!hasData" class="empty-row">No findings at this time.</p>
   <!-- KPI band: joined, hairline-divided (Nuxt stat grammar on our tokens) -->
-  <div class="stat-band">
+  <div v-if="settled && !failed && hasData" class="stat-band">
     <button
       v-for="s in KPI_SEVERITIES"
       :key="s"
@@ -71,7 +86,7 @@ function goFindings(query: Record<string, string>) {
   </div>
 
   <!-- signal band (1b): urgency + quality quick views, same joined grammar -->
-  <div class="stat-band signal-band">
+  <div v-if="settled && !failed && hasData" class="stat-band signal-band">
     <button class="stat-cell" title="Open known-exploited findings" @click="goFindings({ attr: 'kev' })">
       <span class="stat-label"><i class="stat-dot" style="background: var(--kev-bg)" />KEV · known-exploited<AppIcon class="cell-go" name="chevron" :size="11" /></span>
       <span class="stat-num" :class="{ 'stat-num--alarm': kevCount > 0 }">{{ fmt(kevCount) }}</span>

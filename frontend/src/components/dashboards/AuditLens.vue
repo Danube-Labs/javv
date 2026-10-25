@@ -26,8 +26,14 @@ const props = withDefaults(
      * decision activity) rename it so the copy stays accurate about what is counted */
     title?: string
     sub?: string
+    /** the quiet-range copy; a host with no table under the strip says so without the table */
+    emptyNote?: string
   }>(),
-  { title: 'Audit activity', sub: '' },
+  {
+    title: 'Audit activity',
+    sub: '',
+    emptyNote: 'No journaled activity in this range. Older events are still in the table below.',
+  },
 )
 const timeTravel = useTimeTravelStore()
 
@@ -99,9 +105,7 @@ function onPointClick(params: { dataIndex: number }) {
          ANSWER; before the response lands there is none) -->
     <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading audit activity" class="skel-gap" />
     <p v-else-if="failed" class="il-empty">Audit activity unavailable.</p>
-    <p v-else-if="totalEvents === 0" class="il-empty">
-      No journaled activity in this range. Older events are still in the table below.
-    </p>
+    <p v-else-if="totalEvents === 0" class="il-empty">{{ props.emptyNote }}</p>
     <div v-else title="Click a bucket to view the whole app as of its end">
       <EChart :option="option" :height="84" @point-click="onPointClick" />
     </div>
