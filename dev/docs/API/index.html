@@ -1451,6 +1451,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#exports-and-reports" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2010,6 +2021,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#exports-and-reports" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2317,11 +2339,11 @@ its controls. The backend checks the permission again on each request.</p>
 </tr>
 <tr>
 <td><code>triager</code></td>
-<td><code>can_triage</code>, <code>can_export</code></td>
+<td><code>can_triage</code>, <code>can_export</code>, <code>can_edit_dashboards</code></td>
 </tr>
 <tr>
 <td><code>security_lead</code></td>
-<td><code>can_triage</code>, <code>can_accept_audit_final</code>, <code>can_export</code></td>
+<td><code>can_triage</code>, <code>can_accept_audit_final</code>, <code>can_export</code>, <code>can_edit_dashboards</code></td>
 </tr>
 <tr>
 <td><code>admin</code></td>
@@ -2350,6 +2372,10 @@ its controls. The backend checks the permission again on each request.</p>
 <td>Download the export files: the findings CSV and VEX, the audit log CSV, the contributors CSV and the approvals CSV. Make an export report and download it.</td>
 </tr>
 <tr>
+<td><code>can_edit_dashboards</code></td>
+<td>Make dashboards. Change, share and delete your own dashboards.</td>
+</tr>
+<tr>
 <td><code>can_manage_tokens</code></td>
 <td>Make, revoke and rotate scanner tokens</td>
 </tr>
@@ -2359,7 +2385,7 @@ its controls. The backend checks the permission again on each request.</p>
 </tr>
 <tr>
 <td><code>can_manage_settings</code></td>
-<td>Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users.</td>
+<td>Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. See, change and delete the dashboards of other users, with <code>can_edit_dashboards</code>. Read the dashboard rows in the audit log.</td>
 </tr>
 <tr>
 <td><code>can_manage_retention</code></td>
@@ -2511,12 +2537,15 @@ endpoint needs:</p>
 <li>a permission name: a signed-in user with that permission (<a href="#roles-and-permissions">Roles and permissions</a>).</li>
 </ul>
 <p>The audit log keeps each sign-in and sign-out, and each change to triage, decisions, settings,
-the scan scope, users, tokens, saved views, clusters, snapshots and jobs. It also keeps each query
+the scan scope, users, tokens, saved views, dashboards, clusters, snapshots and jobs. It also keeps each query
 of the data inspector.</p>
 <p>Each signed-in user reads the audit log. Only a user with <code>can_manage_users</code> reads the account
 events: the rows with <code>entity_type</code> <code>user</code> (sign-ins and sign-outs, password, user and role
 changes) and <code>token</code> (the scanner tokens). For the other users, the three audit endpoints leave
 these rows out of the list, the counts and the CSV.</p>
+<p>Only a user with <code>can_manage_settings</code> reads the rows with <code>entity_type</code> <code>dashboard</code>. A dashboard
+row holds the whole dashboard, also a private one, and these users can see each dashboard. For
+the other users, the three audit endpoints leave these rows out in the same way.</p>
 <h3 id="system">System<a class="headerlink" href="#system" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3321,6 +3350,138 @@ in the audit log. Snapshots from before keep the data.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="dashboards">Dashboards<a class="headerlink" href="#dashboards" title="Permanent link">&para;</a></h3>
+<p>A dashboard is a layout of panels. It holds no data: each panel gets its data with the
+permissions of the user who opens the dashboard.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards</code></td>
+<td>session</td>
+<td>Lists the dashboards that you can see, at most 1,000, by name</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards/{dashboard_id}</code></td>
+<td>session</td>
+<td>One dashboard. A dashboard that you cannot see gets 404, as a dashboard that does not exist.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/dashboards</code></td>
+<td><code>can_edit_dashboards</code></td>
+<td>Saves a new dashboard (201). You are its <code>owner</code>. It is <code>private</code> if the body does not set <code>sharing</code>.</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/dashboards/{dashboard_id}</code></td>
+<td><code>can_edit_dashboards</code>, the owner or <code>can_manage_settings</code></td>
+<td>Changes the fields in the body. The body must have the <code>revision</code> that you read. A different <code>revision</code> gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new <code>sharing</code> and <code>"roles": []</code> together. A change that sends no <code>panels</code> keeps the stored panels.</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/dashboards/{dashboard_id}</code></td>
+<td><code>can_edit_dashboards</code>, the owner or <code>can_manage_settings</code></td>
+<td>Deletes the dashboard (204). The query parameter <code>revision</code> is the revision that you read. A different <code>revision</code> gets 409. The audit log keeps a copy of it.</td>
+</tr>
+</tbody>
+</table>
+<p>Who can see a dashboard:</p>
+<ul>
+<li><code>sharing: private</code>: the owner only</li>
+<li><code>sharing: everyone</code>: each user</li>
+<li><code>sharing: roles</code>: the users with one of the roles in <code>roles</code></li>
+<li>a user with <code>can_manage_settings</code>: each dashboard</li>
+</ul>
+<p>The fields that you set:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>1 to 128 characters</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>At most 1,024 characters</td>
+</tr>
+<tr>
+<td><code>scanner</code></td>
+<td><code>all</code> (default), <code>trivy</code> or <code>grype</code>: the scanner that the dashboard opens with</td>
+</tr>
+<tr>
+<td><code>sharing</code></td>
+<td><code>private</code> (default), <code>everyone</code> or <code>roles</code></td>
+</tr>
+<tr>
+<td><code>roles</code></td>
+<td>The roles that can see the dashboard, with <code>sharing: roles</code> only. At least one.</td>
+</tr>
+<tr>
+<td><code>panels</code></td>
+<td>At most 24 panels</td>
+</tr>
+</tbody>
+</table>
+<p>Each panel:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>panel</code></td>
+<td>The panel ID, for example <code>findings-summary</code>. <code>openapi.json</code> lists the IDs.</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>The column: 0 (left) or 1 (right)</td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td>The row of the top of the panel: 0 to 1,000</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td>The width: 1 (one column) or 2 (both columns). <code>x + w</code> is at most 2.</td>
+</tr>
+<tr>
+<td><code>h</code></td>
+<td>The height: <code>short</code> or <code>tall</code>. Each panel has the heights that its catalog entry gives.</td>
+</tr>
+<tr>
+<td><code>scanner</code></td>
+<td><code>dashboard</code> (default), <code>trivy</code> or <code>grype</code>, only on a panel with scanner data. <code>dashboard</code> follows the scanner switch of the dashboard.</td>
+</tr>
+</tbody>
+</table>
+<p>The backend refuses with 422:</p>
+<ul>
+<li>a field that is not in these lists, or a panel ID that it does not know</li>
+<li>a height that the panel does not have, or a <code>scanner</code> on a panel with no scanner data</li>
+<li>a panel outside the two columns, or two panels on the same cell</li>
+<li><code>roles</code> without <code>sharing: roles</code>, or <code>sharing: roles</code> without a role</li>
+</ul>
+<p>JAVV writes <code>owner</code>, <code>created_by</code>, <code>created_at</code>, <code>updated_by</code>, <code>updated_at</code> and <code>revision</code>. Each
+change adds 1 to <code>revision</code>. The audit log has a row for each change (<code>dashboard_create</code>,
+<code>dashboard_update</code> and <code>dashboard_delete</code>).</p>
 <h3 id="exports-and-reports">Exports and reports<a class="headerlink" href="#exports-and-reports" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

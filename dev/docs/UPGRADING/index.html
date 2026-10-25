@@ -1133,6 +1133,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#089-a-new-permission-for-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.9: a new permission for dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#087-javv-refuses-a-username-with-a-capital-letter" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1554,6 +1565,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         0.8.9: a new permission for the export files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#089-a-new-permission-for-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.9: a new permission for dashboards
       </span>
     </span>
   </a>
@@ -2022,9 +2044,9 @@ applied it automatically on the first start.</p>
 <tbody>
 <tr>
 <td>0.8.9</td>
-<td>18</td>
+<td>19</td>
 <td>3 and 4</td>
-<td>The note <strong>A new permission for the export files</strong> below</td>
+<td>The notes <strong>A new permission for the export files</strong> and <strong>A new permission for dashboards</strong> below</td>
 </tr>
 <tr>
 <td>0.8.7</td>
@@ -2103,6 +2125,41 @@ do not sign in again: JAVV reads the permissions of a user on each request.</p>
 <p>On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
 its admin.</p>
 <p>We did these steps on the compose files of 0.8.8, with a triager and a security lead.</p>
+<h3 id="089-a-new-permission-for-dashboards">0.8.9: a new permission for dashboards<a class="headerlink" href="#089-a-new-permission-for-dashboards" title="Permanent link">&para;</a></h3>
+<p>A user needs the permission <code>can_edit_dashboards</code> to make a dashboard. The <code>viewer</code> role does not
+get it.</p>
+<p>The store schema is now 19. At its first start, the backend makes the new index
+<code>system-dashboards</code>. You do not do a step for it. The <code>javv</code> role of an OpenSearch of your own
+already has access to it, because its name starts with <code>system-</code>.</p>
+<p>A new store gives the permission to the <code>triager</code>, <code>security_lead</code> and <code>admin</code> roles. On a store
+that you have, only <code>admin</code> gets it, because JAVV writes the roles only on the first start of a
+store. Also, each user keeps a copy of the permissions of its role.</p>
+<p>After the upgrade, give the permission to the <code>triager</code> and <code>security_lead</code> roles and to their
+users:</p>
+<ol>
+<li>Save this script as <code>can-edit-dashboards.sh</code>, in the folder of your installation:
+    <div class="highlight"><pre><span></span><code><span class="c1"># Adds can_edit_dashboards to the triager and security_lead roles, and to their users.</span>
+<span class="nv">login</span><span class="o">=</span><span class="k">$(</span><span class="nb">printf</span><span class="w"> </span>%s<span class="w"> </span><span class="s2">"</span><span class="nv">$OPENSEARCH_INITIAL_ADMIN_PASSWORD</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">'s/[\\"]/\\&amp;/g'</span><span class="k">)</span>
+curl<span class="w"> </span>-sSk<span class="w"> </span>-K<span class="w"> </span>-<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s1">'https://localhost:9200/system-roles,system-users/_update_by_query?refresh=true'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{</span>
+<span class="s1">  "query": {"terms": {"role": ["triager", "security_lead"]}},</span>
+<span class="s1">  "script": {"lang": "painless", "source": "def c = ctx._source.capabilities; if (c == null || c.contains(\"can_edit_dashboards\")) { ctx.op = \"noop\" } else { c.add(\"can_edit_dashboards\") }"}</span>
+<span class="s1">}'</span><span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">user = "admin:$login"</span>
+<span class="s">EOF</span>
+<span class="nb">echo</span>
+</code></pre></div></li>
+<li>Run the script in the OpenSearch container:
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>opensearch<span class="w"> </span>sh<span class="w"> </span>&lt;<span class="w"> </span>can-edit-dashboards.sh
+</code></pre></div>
+    The answer has <code>"failures":[]</code>. <code>updated</code> is the number of roles and users that the script
+    changed. If you run the script again, it changes nothing.</li>
+</ol>
+<p>The users do not sign in again: JAVV reads the permissions of a user on each request.</p>
+<p>On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
+its admin.</p>
+<p>We sent the request of the script two times to OpenSearch 3.9.0, with the roles and users of
+0.8.8. The first time changed the two roles and their users. The second time changed nothing.</p>
 <h3 id="087-javv-refuses-a-username-with-a-capital-letter">0.8.7: JAVV refuses a username with a capital letter<a class="headerlink" href="#087-javv-refuses-a-username-with-a-capital-letter" title="Permanent link">&para;</a></h3>
 <p>A new username must be in lower case. Before 0.8.7, <code>Alice</code> and <code>alice</code> could be two different
 users. Users that exist keep their names.</p>

@@ -1546,6 +1546,11 @@ data needs, see <a href="../opensearch-sizing/">Sizing OpenSearch</a>.</p>
 <td>Until the owner or a user with <code>can_manage_settings</code> deletes them</td>
 </tr>
 <tr>
+<td><code>system-dashboards</code></td>
+<td>The saved dashboards: their panels and who can see them</td>
+<td>Until the owner or a user with <code>can_manage_settings</code> deletes them. Both also need <code>can_edit_dashboards</code>.</td>
+</tr>
+<tr>
 <td><code>system-notifications</code></td>
 <td>The notifications of the bell</td>
 <td>Until the user deletes them. The retirement sweep deletes a retirement notice when the cluster scans again.</td>
