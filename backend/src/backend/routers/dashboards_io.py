@@ -55,6 +55,17 @@ class ImportLine(DashboardFields):
 _MAX_KEYS = len(ImportLine.model_fields) + len(_SET_BY_SESSION)
 
 
+class _TooWide(ValueError):
+    pass
+
+
+def _narrow(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    # each unknown key is its own error: 320,000 of them in one panel cost 5 s and 370 MB
+    if len(pairs) > _MAX_KEYS:
+        raise _TooWide
+    return dict(pairs)
+
+
 def _export_line(doc: dict[str, Any]) -> dict[str, Any]:
     return {
         "dashboard_id": doc["dashboard_id"],
@@ -133,9 +144,12 @@ def _error(msg: str, type_: str) -> list[dict[str, Any]]:
 def _parse_line(text: bytes) -> ImportLine | list[dict[str, Any]] | None:
     """The checked line, its errors, or None for the summary line of an export."""
     try:
-        obj = json.loads(text.decode("utf-8-sig"))  # -sig: an editor may save a BOM
+        # -sig: an editor may save a BOM
+        obj = json.loads(text.decode("utf-8-sig"), object_pairs_hook=_narrow)
     except UnicodeDecodeError:
         return _error("not valid UTF-8", "unicode_decode")
+    except _TooWide:
+        return _error(f"an object has more than {_MAX_KEYS} fields", "too_many_fields")
     except (json.JSONDecodeError, RecursionError):
         return _error("not valid JSON", "json_invalid")
     if not isinstance(obj, dict):
@@ -143,9 +157,6 @@ def _parse_line(text: bytes) -> ImportLine | list[dict[str, Any]] | None:
     obj = cast(dict[str, Any], obj)
     if "exported_count" in obj and set(obj) <= _SUMMARY_KEYS:
         return None
-    # each unknown key is its own error: 400,000 of them cost seconds and hundreds of MB
-    if len(obj) > _MAX_KEYS:
-        return _error(f"more than {_MAX_KEYS} fields", "too_many_fields")
     try:
         return ImportLine.model_validate({k: v for k, v in obj.items() if k not in _SET_BY_SESSION})
     except ValidationError as exc:

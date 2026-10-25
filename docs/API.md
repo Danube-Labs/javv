@@ -690,8 +690,8 @@ A different type gets 415.
 - The import ignores `owner`, `created_by`, `created_at`, `updated_by`, `updated_at` and
   `revision` in a line. JAVV sets them.
 - Each line gets the checks of `POST /api/v1/dashboards`. A `dashboard_id` has 32 lower-case
-  hexadecimal characters. A line must be UTF-8. A byte order mark at the start of the file is
-  ignored.
+  hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
+  of a line. An object in a line has at most 14 fields.
 - A line ends at a line feed (`\n`). The import ignores a `\r` before it. It skips empty lines
   and the summary line of an export.
 - The result of a line is `201` (made), `409` (the ID exists) or `422` (the line is not
@@ -700,11 +700,13 @@ A different type gets 415.
 - A file larger than `JAVV_DASHBOARD_IMPORT_MAX_BYTES` gets 413. A file with more than 1,000
   lines that are not empty also gets 413, also when some of those lines are not correct. The
   summary line of an export is not in this count. After a 413, the import makes no dashboard.
-- Each line is 3 requests to OpenSearch. 100 lines take approximately 5 seconds.
+- A line that makes a dashboard is 3 requests to OpenSearch. 100 such lines take approximately
+  5 seconds.
 - If OpenSearch refuses a write, the import stops and the answer is the error (for example 429
-  or 503), without the results. The lines before that line have their dashboards. To complete the
-  import, send the same file again without `copy`: the dashboards that exist get `409`. Do not
-  send it again with `copy=true`, because that makes a second copy of those dashboards.
+  or 503), without the results. The lines before that line have their dashboards. To complete an
+  import without `copy`, send the same file again: the dashboards that exist get `409`. To
+  complete an import with `copy=true`, find the new dashboards in the list, remove their lines
+  from the file, and send the other lines with `copy=true`.
 
 The answer has `results` and the counts `created`, `conflicts` and `invalid`. Each result has
 `line` and `status`. A `201` or `409` result also has `dashboard_id`, and a `422` result has

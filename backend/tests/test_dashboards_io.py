@@ -277,6 +277,8 @@ async def test_too_many_lines_are_refused_before_any_line_is_parsed(env, monkeyp
     # 2 dashboards and the summary line pass the count; a 4th line does not
     assert (await _import(importer, "{}\n" * 4)).status_code == 413
     assert parsed == []
+    summary = {"exported_count": 2, "missing_ids": []}
+    assert (await _import(importer, _file(_line(), _line(), summary))).json()["created"] == 2
 
 
 async def test_the_import_takes_only_ndjson(env) -> None:
@@ -288,8 +290,9 @@ async def test_the_import_takes_only_ndjson(env) -> None:
         r = await _import(importer, _file(line), headers={"content-type": kind})
         assert r.status_code == 415, kind
     assert (await importer.get(f"/api/v1/dashboards/{line['dashboard_id']}")).status_code == 404
-    charset = {"content-type": "application/x-ndjson; charset=utf-8"}
-    assert (await _import(importer, _file(line), headers=charset)).json()["created"] == 1
+    assert (await _import(importer, _file(line), headers={})).status_code == 415
+    upper = {"content-type": "Application/X-NDJSON; charset=utf-8"}
+    assert (await _import(importer, _file(line), headers=upper)).json()["created"] == 1
 
 
 async def test_lines_end_only_at_a_line_feed(env) -> None:
@@ -310,8 +313,24 @@ async def test_a_line_that_is_not_utf8_or_has_too_many_fields_gets_422(env) -> N
     importer = await user(EDIT)
     bad_bytes = json.dumps(_line(name="a")).encode().replace(b'"a"', b'"a\xff"')
     wide = _line(**{f"k{i}": 1 for i in range(50)})
-    out = (await _import(importer, bad_bytes + b"\n" + _file(wide).encode())).json()
-    assert [x["errors"][0]["type"] for x in out["results"]] == ["unicode_decode", "too_many_fields"]
+    wide_panel = _line(panels=[{**_panel(), **{f"k{i}": 1 for i in range(50)}}])
+    out = (await _import(importer, bad_bytes + b"\n" + _file(wide, wide_panel).encode())).json()
+    assert [x["errors"][0]["type"] for x in out["results"]] == [
+        "unicode_decode",
+        "too_many_fields",
+        "too_many_fields",
+    ]
+
+
+async def test_a_dashboard_as_get_gives_it_imports(env) -> None:
+    """The widest line that is correct: each field of a GET, with the ones the session sets."""
+    user, _ = env
+    importer = await user(EDIT)
+    made = await _create(importer)
+    body = (await importer.get(f"/api/v1/dashboards/{made['dashboard_id']}")).text
+    assert len(json.loads(body)) == dashboards_io._MAX_KEYS
+    out = (await _import(importer, body + "\n", copy="true")).json()
+    assert [x["status"] for x in out["results"]] == [201]
 
 
 async def test_the_same_id_twice_in_one_file_makes_one_dashboard(env) -> None:
