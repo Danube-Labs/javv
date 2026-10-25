@@ -25,6 +25,7 @@
     "@fontsource/spline-sans-mono": "^5.3.0",
     "@primeuix/themes": "^2.0.3",
     "echarts": "^6.1.0",
+    "gridstack": "14.0.0",
     "pinia": "^3.0.4",
     "primevue": "^4.5.5",
     "vue": "^3.5.38",

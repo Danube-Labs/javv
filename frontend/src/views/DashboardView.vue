@@ -5,28 +5,66 @@
  * Every panel reads the selected cluster and time range (D8). The scanner switch starts on the
  * scanner the owner saved and keeps the viewer's choice in the URL, so a link opens the same
  * view; a panel pinned to one scanner does not follow it (Q7).
+ *
+ * Edit mode (`?edit=1`, S8) is for the owner or an admin (D3). The page keeps a draft of the
+ * panels; gridstack moves them, and the save bar saves the draft. A save sends the panels only
+ * when the layout changed, so a stored layout is not checked again for nothing (PR B), and it
+ * sends the revision it read: a dashboard that somebody changed since is refused (409, D4).
  */
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, defineComponent, h, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { getDashboardApiV1DashboardsDashboardIdGet, type DashboardPanel } from '@/api/generated'
+import { STORE_READ_ONLY_TYPE } from '@/api/problem'
+import {
+  getDashboardApiV1DashboardsDashboardIdGet,
+  updateDashboardApiV1DashboardsDashboardIdPatch,
+  type DashboardPanel,
+  type UpdateDashboard,
+} from '@/api/generated'
 import DashboardGrid from '@/components/dashboards/DashboardGrid.vue'
+import PanelSettings from '@/components/dashboards/PanelSettings.vue'
+import SaveBar from '@/components/settings/SaveBar.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { useStretchWidth } from '@/composables/useStretchWidth'
+import {
+  editRefusal,
+  fromDraft,
+  sameLayout,
+  saveFailureCopy,
+  toDraft,
+  withPlaces,
+  withSettings,
+  type DraftPanel,
+  type PanelPlace,
+  type PanelSettings as Settings,
+} from '@/dashboards/edit'
 import { EXPORT_PATH } from '@/dashboards/files'
 import { changedLine, parseScanner, sharingLine } from '@/dashboards/layout'
 import { readFailureCopy } from '@/findings/failureCopy'
+import { logger } from '@/lib/logger'
 import { SCANNER_SWITCH_OPTS, type ScannerLens } from '@/lib/scannerLens'
+import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import { lastDataAt } from '@/system/freshness'
 import NotFoundView from '@/views/NotFoundView.vue'
+
+/** gridstack is in the edit grid's own chunk, which only edit mode loads (decision Q5) */
+const DashboardEditGrid = defineAsyncComponent({
+  loader: () => import('@/components/dashboards/DashboardEditGrid.vue'),
+  loadingComponent: defineComponent(() => () => h(UiSkeleton, { height: 220, label: 'Loading edit mode' })),
+  errorComponent: defineComponent(
+    () => () => h('p', { class: 'load-error', role: 'alert' }, 'Edit mode did not load. Reload the page.'),
+  ),
+  delay: 200,
+})
 
 interface DashboardDoc {
   dashboard_id: string
@@ -39,10 +77,12 @@ interface DashboardDoc {
   roles: string[]
   updated_at: string
   updated_by: string
+  revision: number
 }
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const clusterStore = useClusterStore()
 const timeTravel = useTimeTravelStore()
 const toast = useToastStore()
@@ -91,6 +131,80 @@ const exporter = useCsvExport({
   onFailed: (status) => toast.error(readFailureCopy(status, 'The export failed. Check the backend, then try again.')),
   onDone: (name) => toast.success(`Saved ${name}`),
 })
+
+/** why this user cannot change the dashboard, or null */
+const refusal = computed(() => (dash.value ? editRefusal(auth.user?.username, auth.hasCapability, dash.value.owner) : null))
+const editing = computed(() => route.query.edit === '1' && dash.value !== null && refusal.value === null)
+
+function setEditing(on: boolean) {
+  const query = { ...route.query }
+  if (on) query.edit = '1'
+  else delete query.edit
+  void router.replace({ query })
+}
+
+const draft = ref<DraftPanel[]>([])
+/** the panels as edit mode first shows them: a save sends panels only when they differ */
+const baseline = ref<DashboardPanel[]>([])
+/** a new key makes a new edit grid, so a discard starts gridstack again from the saved panels */
+const gridKey = ref(0)
+const busy = ref(false)
+/** a refused save stays next to the save bar until the next save or discard */
+const saveError = ref<string | null>(null)
+const settingsKey = ref<string | null>(null)
+
+function startDraft() {
+  if (!dash.value) return
+  draft.value = toDraft(dash.value.panels)
+  baseline.value = fromDraft(draft.value)
+  settingsKey.value = null
+  saveError.value = null
+  gridKey.value++
+}
+watch(editing, (on) => {
+  if (on) startDraft()
+})
+
+const dirty = computed(() => editing.value && !sameLayout(fromDraft(draft.value), baseline.value))
+const settingsPanel = computed(() => draft.value.find((p) => p.key === settingsKey.value) ?? null)
+
+function onReady(places: PanelPlace[]) {
+  draft.value = withPlaces(draft.value, places)
+  baseline.value = fromDraft(draft.value)
+}
+function onMoved(places: PanelPlace[]) {
+  draft.value = withPlaces(draft.value, places)
+}
+function applySettings(settings: Settings) {
+  draft.value = draft.value.map((p) => (p.key === settingsKey.value ? withSettings(p, settings) : p))
+  settingsKey.value = null
+}
+function removePanel(key: string) {
+  draft.value = draft.value.filter((p) => p.key !== key)
+}
+
+async function save() {
+  if (!dash.value) return
+  const panels = fromDraft(draft.value)
+  const body: UpdateDashboard = { revision: dash.value.revision }
+  if (!sameLayout(panels, baseline.value)) body.panels = panels
+  busy.value = true
+  saveError.value = null
+  const { response, data, error } = await updateDashboardApiV1DashboardsDashboardIdPatch({
+    path: { dashboard_id: dash.value.dashboard_id },
+    body,
+  })
+  busy.value = false
+  if (!response?.ok || !data) {
+    logger.warn('dashboard_save_failed', { status: response?.status ?? 0 })
+    const readOnly = (error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE
+    saveError.value = saveFailureCopy(response?.status ?? 0, readOnly)
+    return
+  }
+  dash.value = data as unknown as DashboardDoc
+  baseline.value = panels
+  toast.success('Dashboard saved.')
+}
 </script>
 
 <template>
@@ -99,7 +213,7 @@ const exporter = useCsvExport({
   <div v-else class="screen">
     <div class="screen-head">
       <div ref="headCard" class="head-card head-card-fluid">
-        <h1>{{ dash?.name ?? 'Dashboard' }}</h1>
+        <h1>{{ editing ? `Editing ${dash?.name}` : (dash?.name ?? 'Dashboard') }}</h1>
         <template v-if="dash">
           <p v-if="dash.description" class="head-note dash-desc">{{ dash.description }}</p>
           <p class="head-note dash-meta">
@@ -118,14 +232,32 @@ const exporter = useCsvExport({
       </div>
       <div v-if="dash" class="head-actions">
         <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
-        <UiButton
-          variant="control"
-          :disabled="exporter.exporting.value"
-          @click="exporter.run({ dashboard_id: dash.dashboard_id })"
-        >
-          <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export' }}
-        </UiButton>
+        <!-- the save bar holds the only ways out of unsaved changes: Discard and Save changes -->
+        <UiButton v-if="editing" variant="ghost" :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
+        <template v-else>
+          <UiButton
+            variant="control"
+            :disabled="exporter.exporting.value"
+            @click="exporter.run({ dashboard_id: dash.dashboard_id })"
+          >
+            <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export' }}
+          </UiButton>
+          <UiButton
+            variant="control"
+            :disabled="refusal !== null"
+            :aria-describedby="refusal ? 'no-edit-note' : undefined"
+            @click="setEditing(true)"
+          >
+            <AppIcon name="gear" :size="13" />Edit dashboard
+          </UiButton>
+          <UiRoleNote v-if="refusal" id="no-edit-note">{{ refusal }}</UiRoleNote>
+        </template>
       </div>
+    </div>
+
+    <div v-if="editing" class="dash-save">
+      <SaveBar :dirty="dirty" :busy="busy" @discard="startDraft" @save="save" />
+      <p v-if="saveError" class="load-error dash-save-error" role="alert">{{ saveError }}</p>
     </div>
 
     <UiSkeleton v-if="!dash && failedStatus === null" :height="220" label="Loading the dashboard" />
@@ -142,6 +274,25 @@ const exporter = useCsvExport({
         hint="Each panel shows the data of the cluster that you select at the top of the page."
       />
       <EmptyState
+        v-else-if="editing && draft.length === 0"
+        icon="columns"
+        title="This dashboard has no panels"
+        hint="Add panels from the catalog. You can move each panel, and set its scanner, width and height."
+      />
+      <DashboardEditGrid
+        v-else-if="editing"
+        :key="gridKey"
+        :panels="draft"
+        :cluster-id="clusterStore.selectedId"
+        :t="timeTravel.t"
+        :window-days="timeTravel.windowDays"
+        :scanner="scanner"
+        @ready="onReady"
+        @moved="onMoved"
+        @settings="settingsKey = $event"
+        @remove="removePanel"
+      />
+      <EmptyState
         v-else-if="dash.panels.length === 0"
         icon="columns"
         title="This dashboard has no panels"
@@ -156,6 +307,15 @@ const exporter = useCsvExport({
         :scanner="scanner"
       />
     </template>
+
+    <PanelSettings
+      v-if="settingsPanel"
+      :key="settingsPanel.key"
+      :panel="settingsPanel"
+      :dashboard-scanner="scanner"
+      @close="settingsKey = null"
+      @apply="applySettings"
+    />
   </div>
 </template>
 
@@ -176,5 +336,18 @@ const exporter = useCsvExport({
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+/* the save bar stays in view while the user moves panels further down the page */
+.dash-save {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  margin: 0 0 18px;
+}
+.dash-save :deep(.save-bar) {
+  margin-top: 0;
+}
+.dash-save-error {
+  margin: 8px 0 0;
 }
 </style>

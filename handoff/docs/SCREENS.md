@@ -1120,6 +1120,33 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
   does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
 
+**Edit mode (`/dashboards/:id?edit=1`, D2):** for the owner, or a user with
+`can_manage_settings`, and only with `can_edit_dashboards` (D3). For any other user **Edit
+dashboard** stays, off, with the reason in `UiRoleNote`, and `?edit=1` in a link opens the read
+page.
+- **Head:** `Editing <name>`. The scanner switch stays, so the panels show what they will show.
+  **Exit edit** replaces Export and Edit dashboard. It is off while the page has changes to save:
+  the save bar under the head card, Discard or Save changes, is the way out.
+- **Panels:** gridstack (`components/dashboards/DashboardEditGrid.vue`, its own chunk that only
+  edit mode loads) in `top` mode, on the cells of the read page: two columns, rows of 40 px, a
+  15 px margin, no resize (R10). Each panel shows, at rest, a **Move** tab over its top left
+  corner and **Settings** and remove over its top right corner, with the scanner tag of a pinned
+  panel. The Move tab is the one drag handle, with the `grab` cursor (§5). During a drag the drop
+  place is a dashed coral box, and the panels under it move down when the user drops. They jump to
+  their places: there is no layout animation (DESIGN.md §9). No key moves a panel (R11).
+- **Panel settings (`SlideoverShell`):** the line of the panel, then the scanner (Follow the
+  dashboard, trivy or grype) for a panel with scanner data, the width (Half or Full) and the
+  height (Short or Tall) for a panel with two heights. Apply changes the draft. A Full panel goes
+  to the left column.
+- **Save:** the settings `SaveBar`. A save sends the revision that the page read, and the panels
+  only when they changed. The places that `top` mode gives as the grid starts are not a change.
+  A refused save keeps the changes and shows the reason under the save bar: no permission (403),
+  the dashboard is gone (404), somebody changed it (409, reload the page), a value JAVV cannot use
+  (422), the store is busy (429) or read-only, or no answer, which does not say that nothing was
+  saved. A save that works shows a toast. **Discard** starts the grid again from the saved panels.
+- **States:** the edit grid loads with a skeleton. If its chunk does not load, an alert says to
+  reload the page. A dashboard with no panels shows `EmptyState`.
+
 ## Cross-cutting (unchanged rules, restated)
 
 - Deep-links pass presets into `useFilters` — presets now serialize **lowercase** severities and

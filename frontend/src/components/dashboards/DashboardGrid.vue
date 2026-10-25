@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import type { DashboardPanel } from '@/api/generated'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
 import PanelFrame from '@/components/dashboards/PanelFrame.vue'
-import { cellStyle, isPinned, panelScanner, placePanels } from '@/dashboards/layout'
+import { cellStyle, isPinned, panelPropsCache, placePanels } from '@/dashboards/layout'
 import type { ScannerLens } from '@/lib/scannerLens'
 
 const props = defineProps<{
@@ -25,28 +25,8 @@ const props = defineProps<{
 
 const placed = computed(() => placePanels(props.panels))
 
-/** The props of each panel, by its cell. A panel that watches its query deeply fetches again on
- * a new query object, even an equal one, so a panel keeps its props object while the inputs it
- * reads stay the same: the scanner switch reaches only the panels that follow it. */
-const cache = new Map<string, { key: string; props: Record<string, unknown> }>()
-const panelProps = computed(() =>
-  placed.value.map((p) => {
-    const ctx = {
-      clusterId: props.clusterId,
-      t: props.t,
-      windowDays: props.windowDays,
-      scanner: p.panel.usesScanner ? panelScanner(p.stored, props.scanner) : ('all' as const),
-      height: p.stored.h,
-    }
-    const cell = `${p.stored.x}-${p.stored.y}`
-    const key = `${p.panel.id}|${JSON.stringify(ctx)}`
-    const kept = cache.get(cell)
-    if (kept?.key === key) return kept.props
-    const fresh = p.panel.props(ctx)
-    cache.set(cell, { key, props: fresh })
-    return fresh
-  }),
-)
+const propsFor = panelPropsCache()
+const panelProps = computed(() => placed.value.map((p) => propsFor(`${p.stored.x}-${p.stored.y}`, p, props)))
 </script>
 
 <template>
