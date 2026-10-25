@@ -150,7 +150,8 @@ def _parse_line(text: bytes) -> ImportLine | list[dict[str, Any]] | None:
         return _error("not valid UTF-8", "unicode_decode")
     except _TooWide:
         return _error(f"an object has more than {_MAX_KEYS} fields", "too_many_fields")
-    except (json.JSONDecodeError, RecursionError):
+    # ValueError, not only JSONDecodeError: an integer past 4,300 digits raises a plain one
+    except (ValueError, RecursionError):
         return _error("not valid JSON", "json_invalid")
     if not isinstance(obj, dict):
         return _error("not an object", "dict_type")

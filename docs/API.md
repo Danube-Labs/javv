@@ -691,7 +691,8 @@ A different type gets 415.
   `revision` in a line. JAVV sets them.
 - Each line gets the checks of `POST /api/v1/dashboards`. A `dashboard_id` has 32 lower-case
   hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
-  of a line. An object in a line has at most 14 fields.
+  of a line. An object in a line has at most 14 fields. A field that is in an object two times
+  counts two times.
 - A line ends at a line feed (`\n`). The import ignores a `\r` before it. It skips empty lines
   and the summary line of an export.
 - The result of a line is `201` (made), `409` (the ID exists) or `422` (the line is not
@@ -705,8 +706,10 @@ A different type gets 415.
 - If OpenSearch refuses a write, the import stops and the answer is the error (for example 429
   or 503), without the results. The lines before that line have their dashboards. To complete an
   import without `copy`, send the same file again: the dashboards that exist get `409`. To
-  complete an import with `copy=true`, find the new dashboards in the list, remove their lines
-  from the file, and send the other lines with `copy=true`.
+  complete an import with `copy=true`, count the dashboards that the import made: you are the
+  owner, and their `created_at` is after the start of the import. The import writes the lines in
+  the order of the file. Thus, remove that number of correct lines from the start of the file, and
+  send the other lines with `copy=true`.
 
 The answer has `results` and the counts `created`, `conflicts` and `invalid`. Each result has
 `line` and `status`. A `201` or `409` result also has `dashboard_id`, and a `422` result has

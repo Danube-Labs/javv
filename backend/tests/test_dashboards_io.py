@@ -322,6 +322,16 @@ async def test_a_line_that_is_not_utf8_or_has_too_many_fields_gets_422(env) -> N
     ]
 
 
+async def test_a_number_too_long_for_python_is_a_line_error_not_a_500(env) -> None:
+    user, _ = env
+    importer = await user(EDIT)
+    long_number = '{"x": ' + "1" * 5000 + "}\n"
+    r = await _import(importer, long_number + _file(_line()))
+    assert r.status_code == 200
+    assert [x["status"] for x in r.json()["results"]] == [422, 201]
+    assert r.json()["results"][0]["errors"][0]["type"] == "json_invalid"
+
+
 async def test_a_dashboard_as_get_gives_it_imports(env) -> None:
     """The widest line that is correct: each field of a GET, with the ones the session sets."""
     user, _ = env
