@@ -620,8 +620,8 @@ permissions of the user who opens the dashboard.
 | GET | `/api/v1/dashboards` | session | Lists the dashboards that you can see, at most 1,000, by name |
 | GET | `/api/v1/dashboards/{dashboard_id}` | session | One dashboard. A dashboard that you cannot see gets 404, as a dashboard that does not exist. |
 | POST | `/api/v1/dashboards` | `can_edit_dashboards` | Saves a new dashboard (201). You are its `owner`. It is `private` if the body does not set `sharing`. |
-| PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. |
-| DELETE | `/api/v1/dashboards/{dashboard_id}?revision=N` | `can_edit_dashboards`, the owner or `can_manage_settings` | Deletes the dashboard (204). A different `revision` gets 409. The audit log keeps a copy of it. |
+| PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new `sharing` and `"roles": []` together. A change that sends no `panels` keeps the stored panels. |
+| DELETE | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Deletes the dashboard (204). The query parameter `revision` is the revision that you read. A different `revision` gets 409. The audit log keeps a copy of it. |
 
 Who can see a dashboard:
 

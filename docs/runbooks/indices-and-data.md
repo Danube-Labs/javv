@@ -86,7 +86,7 @@ Each of these is one index. JAVV makes it at the first start of the backend.
 | `system-sessions` | The sign-in sessions | The session sweep deletes a session 24 hours after it ends (`JAVV_SESSION_SWEEP_GRACE_HOURS`). |
 | `system-config` | The runtime settings, the cluster names and the retirement records | Until you change them |
 | `system-views` | The saved views | Until the owner or a user with `can_manage_settings` deletes them |
-| `system-dashboards` | The saved dashboards: their panels and who can see them | Until the owner or a user with `can_manage_settings` deletes them |
+| `system-dashboards` | The saved dashboards: their panels and who can see them | Until the owner or a user with `can_manage_settings` deletes them. Both also need `can_edit_dashboards`. |
 | `system-notifications` | The notifications of the bell | Until the user deletes them. The retirement sweep deletes a retirement notice when the cluster scans again. |
 | `system-reports` and `system-report-chunks` | The queued exports and bulk actions, and the results of the exports | The report sweep deletes a finished export after the export lifetime (24 hours by default), and a failed job after the same time. |
 | `system-jobs` | The last run of each background job | One document for each job, which JAVV writes again at each run |

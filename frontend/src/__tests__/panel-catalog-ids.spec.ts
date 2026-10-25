@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { PANELS } from '@/dashboards/catalog'
+import { PANELS, panelById } from '@/dashboards/catalog'
 
 const CATALOG_PY = resolve(process.cwd(), '..', 'backend/src/backend/dashboards/catalog.py')
 
@@ -51,11 +51,18 @@ describe('the backend copy of the panel catalog', () => {
     expect([...backend.keys()]).toEqual(PANELS.map((p) => p.id))
   })
 
+  /** one value per panel id, so a failure names the panel */
+  function byId<T>(pick: (id: string) => T): Record<string, T> {
+    return Object.fromEntries(PANELS.map((p) => [p.id, pick(p.id)]))
+  }
+
   it('each panel has the same heights and rows on both sides', () => {
-    for (const p of PANELS) expect(backend.get(p.id)?.heights, p.id).toEqual(p.heights)
+    expect(byId((id) => backend.get(id)?.heights)).toEqual(byId((id) => panelById(id)?.heights))
   })
 
   it('each panel has scanner data on both sides or on neither', () => {
-    for (const p of PANELS) expect(backend.get(p.id)?.usesScanner, p.id).toBe(p.usesScanner)
+    expect(byId((id) => backend.get(id)?.usesScanner)).toEqual(
+      byId((id) => panelById(id)?.usesScanner),
+    )
   })
 })

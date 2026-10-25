@@ -83,7 +83,8 @@ class DashboardPanel(BaseModel):
 
 class DashboardFields(BaseModel):
     """Everything an owner sets. A create is this model; a change is merged onto the stored
-    dashboard and checked again by this model, so a change can never store what a create can't."""
+    dashboard and checked again by this model, so a change can never store what a create can't.
+    The one exception: a change that sends no panels keeps the stored ones unchecked."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -259,16 +260,24 @@ async def update_dashboard(
     _check_write(principal, doc, body.revision)
     current = {k: doc[k] for k in DashboardFields.model_fields}
     change = body.model_dump(exclude_unset=True, exclude={"revision"}, exclude_none=True)
+    # The stored panels are checked only when the change sends panels: a new measurement of the
+    # heights must not refuse a change of the name to a dashboard it made overlap (ruling Q2).
+    keep_panels = "panels" not in change
     try:
-        fields = DashboardFields.model_validate({**current, **change})
+        fields = DashboardFields.model_validate(
+            {**current, **change, **({"panels": []} if keep_panels else {})}
+        )
     except ValidationError as exc:
         # the same 422 as a field check of the body itself, so the value is not sent back
         raise RequestValidationError(
             [{**e, "loc": ("body", *e["loc"])} for e in exc.errors(include_url=False)]
         ) from exc
+    stored = fields.stored()
+    if keep_panels:
+        stored["panels"] = doc["panels"]
     updated = {
         **doc,
-        **fields.stored(),
+        **stored,
         "updated_by": principal.username,
         "updated_at": datetime.now(UTC).isoformat(),
         "revision": doc["revision"] + 1,

@@ -30,7 +30,7 @@ _SORT_KEY = "@timestamp"  # fixed — the cursor's `s` field must round-trip exa
 # The account events: sign-ins and sign-outs, password, user and role changes (`user`), and the
 # ingest tokens (`token`). Only `can_manage_users` reads them (issue 892 ruling 3).
 ACCOUNT_ENTITY_TYPES = ("token", "user")
-# The Entity and Action lists are fixed lists, and the Action list has 42 values. Each value gets
+# The Entity and Action lists are fixed lists, and the Action list has 45 values. Each value gets
 # a count only when the size is larger than the list (issue 983). The frontend mirrors this size
 # (`AUDIT_LIST_CAP` in `audit/fields.config.ts`), and a spec keeps them equal. The User list has no
 # fixed values and keeps the top `_FACET_TERMS_SIZE`.

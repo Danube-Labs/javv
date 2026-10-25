@@ -30,7 +30,7 @@
 | `system-config` | mutable | none | **no** | none, except a deleted cluster's per-cluster docs (issue 765) |
 | `system-tags` | mutable *(planned — not yet created by bootstrap; the tags feature is post-MVP)* | none | **no** | none |
 | `system-views` | mutable | none | **no** | none |
-| `system-dashboards` | mutable | none | **no** | none: the owner or a holder of `can_manage_settings` deletes one |
+| `system-dashboards` | mutable | none | **no** | none: the owner or a holder of `can_manage_settings` deletes one, with `can_edit_dashboards` |
 | `system-notifications` | mutable | none | **no** | No job deletes them by age or by read state. The user deletes one (`DELETE /api/v1/notifications/{id}`). The retirement sweep deletes a `cluster_retiring` notice when the cluster scans again or returns. A cluster delete deletes the notices of that cluster (issue 765). |
 | `system-reports` | mutable | none | **no** | TTL sweep (`JAVV_EXPORT_TTL_HOURS`, default 24h); a deleted cluster's go with it, chunks included (issue 765) |
 | `system-report-chunks` | mutable | none | **no** | TTL sweep with its parent report |

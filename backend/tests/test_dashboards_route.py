@@ -18,6 +18,7 @@ from opensearchpy import AsyncOpenSearch
 
 from backend.auth.passwords import hash_password
 from backend.core.bootstrap import bootstrap
+from backend.dashboards.catalog import PANELS, CatalogPanel
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
 
@@ -122,6 +123,8 @@ async def test_a_new_dashboard_is_private_with_its_owner_and_revision(env) -> No
     # a panel with scanner data follows the dashboard switch unless its owner pins one (Q7)
     assert made["panels"][0]["scanner"] == "dashboard"
     assert (await owner.get(f"/api/v1/dashboards/{made['dashboard_id']}")).status_code == 200
+    listed = (await owner.get("/api/v1/dashboards")).json()["dashboards"]
+    assert made["dashboard_id"] in {d["dashboard_id"] for d in listed}
 
     rows = await _audit_rows(client, made["dashboard_id"])
     assert [r["action"] for r in rows] == ["dashboard_create"]
@@ -294,4 +297,23 @@ async def test_a_change_of_panels_goes_through_the_same_checks(env) -> None:
         f"/api/v1/dashboards/{made['dashboard_id']}",
         json={"revision": 1, "panels": [_panel(), _panel("package-type", w=1, y=3)]},
     )
+    assert r.status_code == 422
+
+
+async def test_a_new_height_does_not_stop_a_change_that_sends_no_panels(env, monkeypatch) -> None:
+    """A panel stores its height name, so a new measurement of the rows changes no saved dashboard
+    (ruling Q2). A change of the name keeps the stored panels; a change of the panels is checked
+    with the new rows."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [_panel(), _panel("scan-ingest", y=7)]  # flush: findings-summary is 7 rows
+    made = await _create(owner, panels=panels)
+    path = f"/api/v1/dashboards/{made['dashboard_id']}"
+    monkeypatch.setitem(PANELS, "findings-summary", CatalogPanel({"short": 8}, uses_scanner=True))
+
+    r = await owner.patch(path, json={"revision": 1, "name": "renamed"})
+    assert r.status_code == 200, r.text
+    assert r.json()["panels"] == made["panels"]
+
+    r = await owner.patch(path, json={"revision": 2, "panels": panels})
     assert r.status_code == 422
