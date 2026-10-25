@@ -48,7 +48,9 @@ vi.mock('@/dashboards/catalog', () => ({
       },
     })[id],
 }))
-vi.mock('@/api/generated', () => ({ getDashboardApiV1DashboardsDashboardIdGet: vi.fn() }))
+vi.mock('@/api/generated', () => ({
+  getDashboardApiV1DashboardsDashboardIdGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+}))
 vi.mock('@/api/client', () => ({ client: {} }))
 
 import type { DashboardPanel } from '@/api/generated'

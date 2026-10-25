@@ -11,8 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 vi.mock('@/api/generated', () => ({
-  listDashboardsApiV1DashboardsGet: vi.fn(),
-  importDashboardsApiV1DashboardsImportPost: vi.fn(),
+  listDashboardsApiV1DashboardsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  importDashboardsApiV1DashboardsImportPost: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 }))
 vi.mock('@/api/client', () => ({ client: {} }))
 
@@ -126,7 +126,7 @@ describe('the list', () => {
 
 describe('export', () => {
   function stubDownload() {
-    const fetch = vi.fn(async () => new Response('{}\n', { status: 200 }))
+    const fetch = vi.fn<(url: string) => Promise<Response>>(async () => new Response('{}\n', { status: 200 }))
     vi.stubGlobal('fetch', fetch)
     vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:x', revokeObjectURL: () => {} })
     return fetch
