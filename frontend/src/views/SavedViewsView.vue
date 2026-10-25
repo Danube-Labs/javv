@@ -16,6 +16,8 @@ import {
   listViewsApiV1ViewsGet,
 } from '@/api/generated'
 import GridPager from '@/components/findings/GridPager.vue'
+import SavedCard from '@/components/saved/SavedCard.vue'
+import SavedGrid from '@/components/saved/SavedGrid.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -180,137 +182,41 @@ function summary(v: ViewDoc): string {
       <UiButton variant="primary" @click="router.push('/findings')">Go to Findings</UiButton>
     </EmptyState>
 
-    <div v-else class="views-grid">
-      <article v-for="v in pager.shown.value" :key="v.view_id" class="view-card">
-        <div class="vc-head">
-          <h2>{{ v.name }}</h2>
-          <button
-            v-if="mayDelete(v)"
-            type="button"
-            class="vc-x"
-            :aria-label="`Delete ${v.name}`"
-            @click="remove(v)"
-          >
-            ×
-          </button>
-        </div>
-        <p v-if="v.description" class="vc-desc">{{ v.description }}</p>
-        <p class="vc-summary">{{ summary(v) }}</p>
-        <div class="vc-foot">
-          <span class="vc-count">
-            <template v-if="counts[v.view_id] === undefined">…</template>
-            <span v-else-if="counts[v.view_id] === null" class="muted-dash">-</span>
-            <template v-else>{{ counts[v.view_id]!.toLocaleString('en-US') }} findings</template>
-          </span>
-          <span class="vc-owner mono">{{ v.owner }}</span>
+    <SavedGrid v-else>
+      <SavedCard
+        v-for="v in pager.shown.value"
+        :key="v.view_id"
+        :title="v.name"
+        :description="v.description"
+        :summary="summary(v)"
+        :owner="v.owner"
+        :remove-label="mayDelete(v) ? `Delete ${v.name}` : undefined"
+        @remove="remove(v)"
+      >
+        <template #stat>
+          <template v-if="counts[v.view_id] === undefined">…</template>
+          <span v-else-if="counts[v.view_id] === null" class="muted-dash">-</span>
+          <template v-else>{{ counts[v.view_id]!.toLocaleString('en-US') }} findings</template>
+        </template>
+        <template #actions>
           <UiButton variant="mini" @click="apply(v)">
             <AppIcon name="chevron" :size="12" />Open in Findings
           </UiButton>
-        </div>
-      </article>
-    </div>
-
-    <!-- the pager lives in a card like every other GridPager (the 2026-07-13 in-card rule) —
-         here the "card" is a slim footer bar under the grid, since cards ARE the rows -->
-    <div v-if="loaded && !failed && views.length > 0" class="views-pager">
-      <GridPager
-        :total="views.length"
-        :page="pager.page.value"
-        :size="pager.size.value"
-        :shown="pager.shown.value.length"
-        :has-prev="pager.page.value > 0"
-        :has-next="pager.hasNext.value"
-        @prev="pager.page.value -= 1"
-        @next="pager.page.value += 1"
-        @update:size="pager.setSize"
-      />
-    </div>
+        </template>
+      </SavedCard>
+      <template v-if="loaded && views.length > 0" #pager>
+        <GridPager
+          :total="views.length"
+          :page="pager.page.value"
+          :size="pager.size.value"
+          :shown="pager.shown.value.length"
+          :has-prev="pager.page.value > 0"
+          :has-next="pager.hasNext.value"
+          @prev="pager.page.value -= 1"
+          @next="pager.page.value += 1"
+          @update:size="pager.setSize"
+        />
+      </template>
+    </SavedGrid>
   </div>
 </template>
-
-<style scoped>
-.views-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
-.views-pager {
-  margin-top: 14px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-/* the card IS the container — the pager's own in-table top rule would double the border */
-.views-pager :deep(.pager) {
-  border-top: 0;
-}
-.view-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.view-card:hover {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
-}
-.vc-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.vc-head h2 {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: 600;
-}
-.vc-x {
-  border: 0;
-  background: transparent;
-  color: var(--soft);
-  font-size: var(--text-body);
-  line-height: 1;
-  padding: 2px 6px;
-  border-radius: var(--r-sm);
-  cursor: default;
-}
-.vc-x:hover {
-  background: var(--fpill-x-hover-bg);
-  color: var(--coral-text);
-}
-.vc-desc {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--ink);
-}
-.vc-summary {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--soft);
-  font-style: italic;
-}
-.vc-foot {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 6px;
-}
-.vc-count {
-  font-weight: 600;
-  font-size: var(--text-sm);
-}
-.vc-owner {
-  flex: 1;
-  font-size: var(--text-facet-label);
-  color: var(--soft);
-}
-</style>

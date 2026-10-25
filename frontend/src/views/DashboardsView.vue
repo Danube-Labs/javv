@@ -1,0 +1,190 @@
+<script setup lang="ts">
+/**
+ * Dashboards (issue 440, S7; SCREENS §20): the dashboards that the user can see, in the Saved
+ * views card grid. The server applies the sharing rule, so the list holds only what this user
+ * may open (ruling Q3). Export downloads them all as one file and needs no `can_export` (D7);
+ * import needs `can_edit_dashboards` and makes the importer the owner (D6).
+ */
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { listDashboardsApiV1DashboardsGet } from '@/api/generated'
+import ImportDashboardsDialog from '@/components/dashboards/ImportDashboardsDialog.vue'
+import GridPager from '@/components/findings/GridPager.vue'
+import SavedCard from '@/components/saved/SavedCard.vue'
+import SavedGrid from '@/components/saved/SavedGrid.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiRoleNote from '@/components/ui/UiRoleNote.vue'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
+import { useCsvExport } from '@/composables/useCsvExport'
+import type { DashboardPanel } from '@/api/generated'
+import { EXPORT_PATH, NO_IMPORT_NOTE } from '@/dashboards/files'
+import { changedLine, sharingLine } from '@/dashboards/layout'
+import { lastDataAt } from '@/system/freshness'
+import { readFailureCopy } from '@/findings/failureCopy'
+import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
+
+interface DashboardDoc {
+  dashboard_id: string
+  name: string
+  description: string
+  owner: string
+  panels: DashboardPanel[]
+  sharing: string
+  roles: string[]
+  updated_at: string
+  updated_by: string
+}
+
+const auth = useAuthStore()
+const toast = useToastStore()
+const router = useRouter()
+
+const dashboards = ref<DashboardDoc[]>([])
+const loaded = ref(false)
+const failed = ref(false)
+const failedStatus = ref<number | null>(null)
+const importing = ref(false)
+const pager = usePagedSlice(() => dashboards.value, 10)
+
+const canEdit = computed(() => auth.hasCapability('can_edit_dashboards'))
+
+async function load() {
+  const { response, data } = await listDashboardsApiV1DashboardsGet()
+  failed.value = !response?.ok || !data
+  failedStatus.value = response?.status ?? null
+  dashboards.value = failed.value ? [] : ((data as { dashboards: DashboardDoc[] }).dashboards ?? [])
+  loaded.value = true
+}
+onMounted(() => void load())
+
+/** null = every dashboard the user can see; else the one dashboard the card exports */
+const exportOne = ref<DashboardDoc | null>(null)
+const exporter = useCsvExport({
+  path: EXPORT_PATH,
+  filename: (stamp) => (exportOne.value ? `dashboard-${exportOne.value.dashboard_id}.ndjson` : `dashboards-${stamp}.ndjson`),
+  event: 'dashboards_export_failed',
+  onCapped: () => toast.error('The export failed. Try again.'),
+  onFailed: (status) => toast.error(readFailureCopy(status, 'The export failed. Check the backend, then try again.')),
+  onDone: (name) => toast.success(`Saved ${name}`),
+})
+
+function onImported(created: number) {
+  toast.success(`${created} dashboard${created === 1 ? '' : 's'} imported`)
+  void load()
+}
+
+function exportAll() {
+  exportOne.value = null
+  void exporter.run({})
+}
+function exportDashboard(d: DashboardDoc) {
+  exportOne.value = d
+  void exporter.run({ dashboard_id: d.dashboard_id })
+}
+</script>
+
+<template>
+  <div class="screen">
+    <div class="screen-head screen-head-band">
+      <div class="head-card">
+        <h1>Dashboards</h1>
+        <p class="head-stat">
+          <!-- a count not yet read, or refused, is unknown, not zero (issue 833, F5) -->
+          <template v-if="loaded && !failed">{{ dashboards.length }}</template
+          ><span v-else class="muted-dash">-</span><span class="head-unit"> dashboards</span>
+        </p>
+        <p class="head-note">the dashboards that you can see · each panel reads the selected cluster</p>
+      </div>
+      <div class="head-actions">
+        <UiButton variant="control" :disabled="exporter.exporting.value" @click="exportAll">
+          <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export all' }}
+        </UiButton>
+        <UiButton
+          variant="control"
+          :disabled="!canEdit"
+          :aria-describedby="canEdit ? undefined : 'no-import-note'"
+          @click="importing = true"
+        >
+          <AppIcon name="download" :size="13" />Import
+        </UiButton>
+        <UiRoleNote v-if="!canEdit" id="no-import-note">{{ NO_IMPORT_NOTE }}</UiRoleNote>
+      </div>
+    </div>
+
+    <UiSkeleton v-if="!loaded" :height="160" label="Loading dashboards" class="skel-gap" />
+
+    <p v-else-if="failed" class="load-error" role="alert">
+      {{ readFailureCopy(failedStatus, 'Dashboards unavailable. Check the backend, then reload.') }}
+    </p>
+
+    <EmptyState
+      v-else-if="dashboards.length === 0"
+      icon="columns"
+      title="No dashboards yet"
+      hint="A dashboard puts panels of Overview, Contributors and Scanner status on one page. Import a dashboard file to add one."
+    >
+      <UiButton v-if="canEdit" variant="primary" @click="importing = true">Import</UiButton>
+    </EmptyState>
+
+    <SavedGrid v-else>
+      <SavedCard
+        v-for="d in pager.shown.value"
+        :key="d.dashboard_id"
+        :title="d.name"
+        :description="d.description"
+        :owner="`owner ${d.owner}`"
+      >
+        <template #badge>
+          <AppIcon :name="d.sharing === 'private' ? 'key' : 'users'" :size="12" />{{ sharingLine(d.sharing, d.roles) }}
+        </template>
+        <template #summary>
+          <span class="dash-sum">
+            <span class="mono">{{ d.panels.length }} panel{{ d.panels.length === 1 ? '' : 's' }}</span>
+            <span :title="lastDataAt(d.updated_at)"> · {{ changedLine(d.updated_at, d.updated_by) }}</span>
+          </span>
+        </template>
+        <template #actions>
+          <UiButton variant="mini" :disabled="exporter.exporting.value" @click="exportDashboard(d)">
+            <AppIcon name="download" :size="12" />Export
+          </UiButton>
+          <UiButton variant="mini" @click="router.push(`/dashboards/${d.dashboard_id}`)">
+            <AppIcon name="chevron" :size="12" />Open
+          </UiButton>
+        </template>
+      </SavedCard>
+      <template #pager>
+        <GridPager
+          :total="dashboards.length"
+          :page="pager.page.value"
+          :size="pager.size.value"
+          :shown="pager.shown.value.length"
+          :has-prev="pager.page.value > 0"
+          :has-next="pager.hasNext.value"
+          @prev="pager.page.value -= 1"
+          @next="pager.page.value += 1"
+          @update:size="pager.setSize"
+        />
+      </template>
+    </SavedGrid>
+
+    <ImportDashboardsDialog v-if="importing" @close="importing = false" @imported="onImported" />
+  </div>
+</template>
+
+<style scoped>
+.head-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+/* the Saved views summary is an italic lens line; here it is a count and a time */
+.dash-sum {
+  font-style: normal;
+}
+</style>
