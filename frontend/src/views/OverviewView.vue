@@ -36,14 +36,8 @@ import { useStretchWidth } from '@/composables/useStretchWidth'
 import { useClusterStore } from '@/stores/cluster'
 import { useOverviewStore } from '@/stores/overview'
 import { useTimeTravelStore } from '@/stores/timeTravel'
-import type { ScannerLens } from '@/lib/scannerLens'
+import { SCANNER_LENS_OPTS, type ScannerLens } from '@/lib/scannerLens'
 import { ref } from 'vue'
-
-const SCANNER_OPTS = [
-  { value: 'all', label: 'All scanners' },
-  { value: 'trivy', label: 'trivy', accent: 'var(--scanner-trivy-fg)' },
-  { value: 'grype', label: 'grype', accent: 'var(--scanner-grype-fg)' },
-] as const
 
 const router = useRouter()
 const clusterStore = useClusterStore()
@@ -125,7 +119,7 @@ function goFindings(query: Record<string, string>) {
         </p>
       </div>
       <div class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_OPTS" />
+        <UiSegControl v-model="scanner" :options="SCANNER_LENS_OPTS" />
         <UiButton variant="primary" @click="goFindings({ severity: 'critical' })">
           Triage critical <AppIcon name="chevron" :size="13" />
         </UiButton>

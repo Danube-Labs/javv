@@ -1071,15 +1071,16 @@ lists are drawn elsewhere.
 ## 20. Dashboards (issue 440)
 
 No prototype screen: the prototype put a dashboard builder out of scope. The grammar is the
-proof of concept on the issue (comment 6385665039), built on the real kit. The built pages need
-the operator's ruling on built pictures before they merge (DESIGN.md §8.5). Pull request D1 has
-the list and the read page. D2 adds new dashboard and edit mode.
+proof of concept on the issue (comment 6385665039), built on the real kit. The operator accepted
+the built pictures of pull request D1 on 2026-10-25 (DESIGN.md §8.5): the list and the read page.
+D2 adds new dashboard and edit mode. Issue 1004 records the colors and the clicks of the cards for
+a later pass.
 
 **List (`/dashboards`, Monitor group under Saved views):** the Saved views card grid. The card
 and the grid are one component pair, `components/saved/SavedCard.vue` and `SavedGrid.vue`, that
 both screens use. A card shows the name, a badge with who can see it (`Everyone`, the role list,
 or `Only the owner`), the description, the number of panels and when it changed, the owner, and
-**Export** and **Open**.
+**Export** and **Open**. A long role list ends in "…", and the title of the badge has the full list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
   **Export all** downloads every dashboard that the user can see as one NDJSON file. It needs no
@@ -1089,14 +1090,19 @@ or `Only the owner`), the description, the number of panels and when it changed,
   a user who can import).
 
 **Import dialog (`ModalShell`):** a kit button picks the file. Then **Keep the IDs** or **Make
-copies** (`UiSegControl`), and a note that the importer owns each new dashboard. The result: the counts (made,
-ID exists, not correct) and a table with a row for each line, in a viewport that scrolls (at most
-1,000 lines). A line error names the field and the reason in plain words, never a value of the
-file. A refused import (413, 403, 429, a store failure) shows one alert and no table.
+copies** (`UiSegControl`), and a note that the importer owns each new dashboard. The file goes to
+the backend as it is: the browser does not read it as text. An empty file is not sent. The
+result: the counts (made, ID exists, not correct) and a table with a row for each line, in a
+viewport that scrolls (at most 1,000 lines). A line error names the place and the reason in plain
+words, never a value of the file. Only the name of a field that a dashboard does not have is
+shown. A refused import (413, 403, a store failure) shows one alert and no table. A store failure
+(429 or 5xx) stops the import after the lines before it made their dashboards, so the alert says
+what a second import does in each mode. The list reads again after each answer.
 
-**Read page (`/dashboards/:id`):** the head card (stretches, issue 902) with the name, the
-description, who can see it, the owner, when it changed and the selected cluster. On the right,
-the scanner switch (`UiSegControl`, the Overview options) and **Export**.
+**Read page (`/dashboards/:id`):** the head card with the name, the description, who can see it, the owner, when it changed and the selected cluster. On the right,
+the scanner switch (`UiSegControl`, the Overview options) and **Export**. While the dashboard
+loads, the head card shows `Dashboard` and no actions. It stretches when the name arrives (issue
+902). The page ignores a late answer for a dashboard that the user left.
 - **Panels:** a CSS grid of two columns and rows of 40 px, from each panel's `x`, `y`, `w` and
   the rows of its height name (`components/dashboards/DashboardGrid.vue`). Each cell keeps a
   15 px margin, the edit grid's margin, so a layout reads the same in both modes. A panel with no
@@ -1104,11 +1110,12 @@ the scanner switch (`UiSegControl`, the Overview options) and **Export**.
   each panel as tall as its content.
 - **Scanner switch (Q7):** starts on the scanner the owner saved. The URL keeps the viewer's
   choice (`?scanner=`), and the dashboard does not change. A panel pinned to one scanner shows
-  the scanner tag and `pinned` over its top right corner and does not follow the switch.
+  the scanner tag and `pinned` over its top right corner and does not follow the switch. A switch
+  renders again only the panels that follow it, so the other panels do not read their data again.
 - **Data:** each panel reads its own data at the selected cluster, T and window (D8,
   DESIGN.md §10).
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
-  does not exist or that the user cannot see is the "not found" page (§18, ruling Q3).
+  does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
 
 ## Cross-cutting (unchanged rules, restated)
 

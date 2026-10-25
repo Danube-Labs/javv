@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * One dashboard (issue 440, S7; SCREENS §20). The server answers 404 for a dashboard that does
- * not exist and for one this user cannot see, so both get the "not found" page (ruling Q3).
+ * not exist and for one this user cannot see, so both get the "not found" page (decision Q3).
  * Every panel reads the selected cluster and time range (D8). The scanner switch starts on the
  * scanner the owner saved and keeps the viewer's choice in the URL, so a link opens the same
  * view; a panel pinned to one scanner does not follow it (Q7).
@@ -21,7 +21,7 @@ import { useStretchWidth } from '@/composables/useStretchWidth'
 import { EXPORT_PATH } from '@/dashboards/files'
 import { changedLine, parseScanner, sharingLine } from '@/dashboards/layout'
 import { readFailureCopy } from '@/findings/failureCopy'
-import type { ScannerLens } from '@/lib/scannerLens'
+import { SCANNER_LENS_OPTS, type ScannerLens } from '@/lib/scannerLens'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
@@ -41,12 +41,6 @@ interface DashboardDoc {
   updated_by: string
 }
 
-const SCANNER_OPTS = [
-  { value: 'all', label: 'All scanners' },
-  { value: 'trivy', label: 'trivy', accent: 'var(--scanner-trivy-fg)' },
-  { value: 'grype', label: 'grype', accent: 'var(--scanner-grype-fg)' },
-] as const
-
 const route = useRoute()
 const router = useRouter()
 const clusterStore = useClusterStore()
@@ -54,7 +48,8 @@ const timeTravel = useTimeTravelStore()
 const toast = useToastStore()
 
 const dash = ref<DashboardDoc | null>(null)
-/** the header card stretches when the dashboard's name arrives (issue 902) */
+/** the header card stays on the page while the dashboard loads, so it stretches when the
+ * name and the line under it arrive (issue 902) */
 const headCard = ref<HTMLElement | null>(null)
 useStretchWidth(headCard)
 const notFound = ref(false)
@@ -66,11 +61,13 @@ async function load(id: string) {
   failedStatus.value = null
   try {
     const { response, data } = await getDashboardApiV1DashboardsDashboardIdGet({ path: { dashboard_id: id } })
+    // the page is reused across dashboards: a late answer for one the user left is dropped
+    if (route.params.id !== id) return
     if (response?.status === 404) notFound.value = true
     else if (response?.ok && data) dash.value = data as unknown as DashboardDoc
     else failedStatus.value = response?.status ?? 0
   } catch {
-    failedStatus.value = 0
+    if (route.params.id === id) failedStatus.value = 0
   }
 }
 watch(
@@ -100,16 +97,10 @@ const exporter = useCsvExport({
   <NotFoundView v-if="notFound" />
 
   <div v-else class="screen">
-    <UiSkeleton v-if="!dash && failedStatus === null" :height="220" label="Loading the dashboard" />
-
-    <p v-else-if="!dash" class="load-error" role="alert">
-      {{ readFailureCopy(failedStatus, 'The dashboard is unavailable. Check the backend, then reload.') }}
-    </p>
-
-    <template v-else>
-      <div class="screen-head">
-        <div ref="headCard" class="head-card head-card-fluid">
-          <h1>{{ dash.name }}</h1>
+    <div class="screen-head">
+      <div ref="headCard" class="head-card head-card-fluid">
+        <h1>{{ dash?.name ?? 'Dashboard' }}</h1>
+        <template v-if="dash">
           <p v-if="dash.description" class="head-note dash-desc">{{ dash.description }}</p>
           <p class="head-note dash-meta">
             <span class="dash-share"
@@ -123,19 +114,27 @@ const exporter = useCsvExport({
               · <b class="mono-cell">{{ clusterStore.selected.cluster_name }}</b>
             </template>
           </p>
-        </div>
-        <div class="head-actions">
-          <UiSegControl v-model="scanner" :options="SCANNER_OPTS" />
-          <UiButton
-            variant="control"
-            :disabled="exporter.exporting.value"
-            @click="exporter.run({ dashboard_id: dash.dashboard_id })"
-          >
-            <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export' }}
-          </UiButton>
-        </div>
+        </template>
       </div>
+      <div v-if="dash" class="head-actions">
+        <UiSegControl v-model="scanner" :options="SCANNER_LENS_OPTS" />
+        <UiButton
+          variant="control"
+          :disabled="exporter.exporting.value"
+          @click="exporter.run({ dashboard_id: dash.dashboard_id })"
+        >
+          <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export' }}
+        </UiButton>
+      </div>
+    </div>
 
+    <UiSkeleton v-if="!dash && failedStatus === null" :height="220" label="Loading the dashboard" />
+
+    <p v-else-if="!dash" class="load-error" role="alert">
+      {{ readFailureCopy(failedStatus, 'The dashboard is unavailable. Check the backend, then reload.') }}
+    </p>
+
+    <template v-else>
       <EmptyState
         v-if="!clusterStore.selectedId"
         icon="layers"

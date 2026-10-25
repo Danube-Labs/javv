@@ -12,7 +12,7 @@ export interface PlacedPanel {
   stored: DashboardPanel
   panel: CatalogPanel
   /** grid rows: the catalog's rows for the stored height name, so a new measurement moves no
-   * saved dashboard (ruling of 2026-10-25 on pull request B) */
+   * saved dashboard (decision of 2026-10-25, issue 440) */
   rows: number
 }
 

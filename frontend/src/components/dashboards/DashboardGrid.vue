@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A saved dashboard's panels on a CSS grid (issue 440, ruling Q5): two columns and rows of
+ * A saved dashboard's panels on a CSS grid (issue 440, decision Q5): two columns and rows of
  * 40 px, the cells of the edit grid, with no layout library on the read page. Each cell keeps
  * a 15 px margin inside it, the gridstack margin, so a layout reads the same in both modes; the
  * cell scrolls a panel taller than its slot, and its margin leaves room for the card's shadow.
@@ -25,21 +25,34 @@ const props = defineProps<{
 
 const placed = computed(() => placePanels(props.panels))
 
-function panelProps(p: (typeof placed.value)[number]): Record<string, unknown> {
-  return p.panel.props({
-    clusterId: props.clusterId,
-    t: props.t,
-    windowDays: props.windowDays,
-    scanner: panelScanner(p.stored, props.scanner),
-    height: p.stored.h,
-  })
-}
+/** The props of each panel, by its cell. A panel that watches its query deeply fetches again on
+ * a new query object, even an equal one, so a panel keeps its props object while the inputs it
+ * reads stay the same: the scanner switch reaches only the panels that follow it. */
+const cache = new Map<string, { key: string; props: Record<string, unknown> }>()
+const panelProps = computed(() =>
+  placed.value.map((p) => {
+    const ctx = {
+      clusterId: props.clusterId,
+      t: props.t,
+      windowDays: props.windowDays,
+      scanner: p.panel.usesScanner ? panelScanner(p.stored, props.scanner) : ('all' as const),
+      height: p.stored.h,
+    }
+    const cell = `${p.stored.x}-${p.stored.y}`
+    const key = `${p.panel.id}|${JSON.stringify(ctx)}`
+    const kept = cache.get(cell)
+    if (kept?.key === key) return kept.props
+    const fresh = p.panel.props(ctx)
+    cache.set(cell, { key, props: fresh })
+    return fresh
+  }),
+)
 </script>
 
 <template>
   <div class="dash-grid">
     <div
-      v-for="p in placed"
+      v-for="(p, i) in placed"
       :key="`${p.stored.x}-${p.stored.y}`"
       class="dash-cell"
       :style="cellStyle(p)"
@@ -49,9 +62,9 @@ function panelProps(p: (typeof placed.value)[number]): Record<string, unknown> {
         <ScannerTag :name="String(p.stored.scanner)" /> pinned
       </span>
       <PanelFrame v-if="p.panel.framed" :title="p.panel.name" :line="p.panel.line">
-        <component :is="p.panel.component" v-bind="panelProps(p)" />
+        <component :is="p.panel.component" v-bind="panelProps[i]" />
       </PanelFrame>
-      <component :is="p.panel.component" v-else v-bind="panelProps(p)" />
+      <component :is="p.panel.component" v-else v-bind="panelProps[i]" />
     </div>
   </div>
 </template>

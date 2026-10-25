@@ -53,16 +53,26 @@ defineEmits<{ remove: [] }>()
   font-size: var(--text-body);
   font-weight: 600;
 }
+/* a long role list must not push the badge out of the card: it gives way, and its text ends
+   in "…" (the full text is its title) */
 .vc-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 60%;
   padding: 2px 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-chip);
   font-size: var(--text-sm);
   color: var(--soft);
+}
+.vc-badge :slotted(.vc-badge-text) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .vc-x {
   border: 0;

@@ -2,7 +2,7 @@
 /**
  * Dashboards (issue 440, S7; SCREENS §20): the dashboards that the user can see, in the Saved
  * views card grid. The server applies the sharing rule, so the list holds only what this user
- * may open (ruling Q3). Export downloads them all as one file and needs no `can_export` (D7);
+ * may open (decision Q3). Export downloads them all as one file and needs no `can_export` (D7);
  * import needs `can_edit_dashboards` and makes the importer the owner (D6).
  */
 import { computed, onMounted, ref } from 'vue'
@@ -74,7 +74,7 @@ const exporter = useCsvExport({
 })
 
 function onImported(created: number) {
-  toast.success(`${created} dashboard${created === 1 ? '' : 's'} imported`)
+  if (created > 0) toast.success(`${created} dashboard${created === 1 ? '' : 's'} imported`)
   void load()
 }
 
@@ -110,7 +110,7 @@ function exportDashboard(d: DashboardDoc) {
           :aria-describedby="canEdit ? undefined : 'no-import-note'"
           @click="importing = true"
         >
-          <AppIcon name="download" :size="13" />Import
+          <AppIcon name="upload" :size="13" />Import
         </UiButton>
         <UiRoleNote v-if="!canEdit" id="no-import-note">{{ NO_IMPORT_NOTE }}</UiRoleNote>
       </div>
@@ -140,7 +140,11 @@ function exportDashboard(d: DashboardDoc) {
         :owner="`owner ${d.owner}`"
       >
         <template #badge>
-          <AppIcon :name="d.sharing === 'private' ? 'key' : 'users'" :size="12" />{{ sharingLine(d.sharing, d.roles) }}
+          <AppIcon :name="d.sharing === 'private' ? 'key' : 'users'" :size="12" /><span
+            class="vc-badge-text"
+            :title="sharingLine(d.sharing, d.roles)"
+            >{{ sharingLine(d.sharing, d.roles) }}</span
+          >
         </template>
         <template #summary>
           <span class="dash-sum">
@@ -183,7 +187,7 @@ function exportDashboard(d: DashboardDoc) {
   align-items: center;
   gap: 10px;
 }
-/* the Saved views summary is an italic lens line; here it is a count and a time */
+/* the Saved views summary is an italic line; here it is a count and a time */
 .dash-sum {
   font-style: normal;
 }

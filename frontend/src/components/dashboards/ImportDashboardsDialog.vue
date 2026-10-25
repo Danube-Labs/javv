@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Import a dashboard file (issue 440, S7): pick an NDJSON file, keep its IDs or make copies with
- * new ones, then read a result for each line. The file is read in the browser and sent as text;
- * the backend checks every line. A line that gets "ID exists" made nothing.
+ * new ones, then read a result for each line. The file goes to the backend as it is, and the
+ * backend checks every line. A line that gets "ID exists" made nothing. A failure can stop the
+ * import after some lines made their dashboards, so the list reloads after every answer.
  */
 import { computed, ref } from 'vue'
 
@@ -11,6 +12,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import {
+  EMPTY_FILE_NOTE,
   importDashboards,
   importFailureCopy,
   lineResultCopy,
@@ -32,9 +34,11 @@ const busy = ref(false)
 const failure = ref<string | null>(null)
 const outcome = ref<ImportOutcome | null>(null)
 
-const fileLine = computed(() =>
-  file.value ? `${file.value.name} · ${Math.max(1, Math.round(file.value.size / 1024))} KB` : 'No file chosen',
-)
+function sizeWords(bytes: number): string {
+  return bytes < 1024 ? `${bytes} bytes` : `${Math.round(bytes / 1024).toLocaleString('en-US')} KB`
+}
+
+const fileLine = computed(() => (file.value ? `${file.value.name} · ${sizeWords(file.value.size)}` : 'No file chosen'))
 
 function pick(e: Event) {
   file.value = (e.target as HTMLInputElement).files?.[0] ?? null
@@ -44,10 +48,15 @@ function pick(e: Event) {
 
 async function run() {
   if (!file.value || busy.value) return
+  if (file.value.size === 0) {
+    failure.value = EMPTY_FILE_NOTE
+    return
+  }
   busy.value = true
   failure.value = null
+  const copy = mode.value === 'copy'
   try {
-    const answer = await importDashboards(await file.value.text(), mode.value === 'copy')
+    const answer = await importDashboards(file.value, copy)
     if (answer.ok) {
       outcome.value = answer.outcome
       logger.info('dashboards_imported', {
@@ -55,11 +64,11 @@ async function run() {
         conflicts: answer.outcome.conflicts,
         invalid: answer.outcome.invalid,
       })
-      if (answer.outcome.created > 0) emit('imported', answer.outcome.created)
     } else {
       logger.warn('dashboards_import_failed', { status: answer.status })
-      failure.value = importFailureCopy(answer.status)
+      failure.value = importFailureCopy(answer.status, copy)
     }
+    emit('imported', answer.ok ? answer.outcome.created : 0)
   } finally {
     busy.value = false
   }
