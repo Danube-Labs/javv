@@ -42,6 +42,7 @@ _SET_BY_SESSION = frozenset(
     {"owner", "created_by", "created_at", "updated_by", "updated_at", "revision"}
 )
 _SUMMARY_KEYS = frozenset({"exported_count", "missing_ids"})
+NDJSON = "application/x-ndjson"
 
 
 class ImportLine(DashboardFields):
@@ -49,6 +50,9 @@ class ImportLine(DashboardFields):
 
     dashboard_id: str = Field(pattern=_ID_PATTERN)
     schema_version: Literal[1] = DASHBOARD_SCHEMA_VERSION
+
+
+_MAX_KEYS = len(ImportLine.model_fields) + len(_SET_BY_SESSION)
 
 
 def _export_line(doc: dict[str, Any]) -> dict[str, Any]:
@@ -87,7 +91,7 @@ async def export_dashboards(
     lines.append(json.dumps(summary, separators=(",", ":")))
     return Response(
         content="\n".join(lines) + "\n",
-        media_type="application/x-ndjson",
+        media_type=NDJSON,
         headers={"Content-Disposition": 'attachment; filename="dashboards.ndjson"'},
     )
 
@@ -112,35 +116,46 @@ def _field_errors(exc: ValidationError) -> list[dict[str, Any]]:
     ]
 
 
-def _parse(raw: bytes) -> list[tuple[int, ImportLine | list[dict[str, Any]]]]:
-    """(line number, the checked line or its errors) for each dashboard line of the file."""
-    out: list[tuple[int, ImportLine | list[dict[str, Any]]]] = []
-    for number, text in enumerate(raw.decode("utf-8", errors="replace").splitlines(), start=1):
-        if not text.strip():
-            continue
-        try:
-            obj = json.loads(text)
-        except (json.JSONDecodeError, RecursionError):
-            out.append((number, [{"loc": [], "msg": "not valid JSON", "type": "json_invalid"}]))
-            continue
-        if not isinstance(obj, dict):
-            out.append((number, [{"loc": [], "msg": "not an object", "type": "dict_type"}]))
-            continue
-        obj = cast(dict[str, Any], obj)
-        if "exported_count" in obj and set(obj) <= _SUMMARY_KEYS:
-            continue  # the summary line of an export
-        try:
-            out.append(
-                (
-                    number,
-                    ImportLine.model_validate(
-                        {k: v for k, v in obj.items() if k not in _SET_BY_SESSION}
-                    ),
-                )
-            )
-        except ValidationError as exc:
-            out.append((number, _field_errors(exc)))
-    return out
+def _split(raw: bytes) -> list[tuple[int, bytes]]:
+    """(line number, text) of each line that is not empty. NDJSON ends a line only at `\\n`:
+    `splitlines` also ends one at U+2028, which a JSON string may hold."""
+    return [
+        (number, line.rstrip(b"\r"))
+        for number, line in enumerate(raw.split(b"\n"), start=1)
+        if line.strip()
+    ]
+
+
+def _error(msg: str, type_: str) -> list[dict[str, Any]]:
+    return [{"loc": [], "msg": msg, "type": type_}]
+
+
+def _parse_line(text: bytes) -> ImportLine | list[dict[str, Any]] | None:
+    """The checked line, its errors, or None for the summary line of an export."""
+    try:
+        obj = json.loads(text.decode("utf-8-sig"))  # -sig: an editor may save a BOM
+    except UnicodeDecodeError:
+        return _error("not valid UTF-8", "unicode_decode")
+    except (json.JSONDecodeError, RecursionError):
+        return _error("not valid JSON", "json_invalid")
+    if not isinstance(obj, dict):
+        return _error("not an object", "dict_type")
+    obj = cast(dict[str, Any], obj)
+    if "exported_count" in obj and set(obj) <= _SUMMARY_KEYS:
+        return None
+    # each unknown key is its own error: 400,000 of them cost seconds and hundreds of MB
+    if len(obj) > _MAX_KEYS:
+        return _error(f"more than {_MAX_KEYS} fields", "too_many_fields")
+    try:
+        return ImportLine.model_validate({k: v for k, v in obj.items() if k not in _SET_BY_SESSION})
+    except ValidationError as exc:
+        return _field_errors(exc)
+
+
+def _too_many(lines: int) -> HTTPException:
+    log.warning("dashboard import too many lines", lines=lines, limit=MAX_DASHBOARDS)
+    LIMIT_REJECTIONS.labels("dashboard_import").inc()
+    return HTTPException(413, f"the file has more than {MAX_DASHBOARDS} dashboards")
 
 
 @router.post(
@@ -148,7 +163,7 @@ def _parse(raw: bytes) -> list[tuple[int, ImportLine | list[dict[str, Any]]]]:
     openapi_extra={
         "requestBody": {
             "required": True,
-            "content": {"application/x-ndjson": {"schema": {"type": "string"}}},
+            "content": {NDJSON: {"schema": {"type": "string"}}},
         }
     },
 )
@@ -157,13 +172,18 @@ async def import_dashboards(
     principal: CanEdit,
     copy: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
+    # a form can post text/plain with the session cookie; it cannot post this type
+    content_type = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if content_type != NDJSON:
+        raise HTTPException(415, f"the import takes {NDJSON}")
     client = cast(Any, request.app.state.opensearch)
-    cap = get_settings().dashboard_import_max_bytes
-    lines = _parse(await _read_capped(request, cap))
+    raw = _split(await _read_capped(request, get_settings().dashboard_import_max_bytes))
+    # counted before any line is parsed: parsing 4 MiB of short lines blocks the loop for seconds
+    if len(raw) > MAX_DASHBOARDS + 1:  # + the summary line of an export
+        raise _too_many(len(raw))
+    lines = [(n, line) for n, text in raw if (line := _parse_line(text)) is not None]
     if len(lines) > MAX_DASHBOARDS:
-        log.warning("dashboard import too many lines", lines=len(lines), limit=MAX_DASHBOARDS)
-        LIMIT_REJECTIONS.labels("dashboard_import").inc()
-        raise HTTPException(413, f"the file has more than {MAX_DASHBOARDS} dashboards")
+        raise _too_many(len(lines))
 
     results: list[dict[str, Any]] = []
     for number, line in lines:

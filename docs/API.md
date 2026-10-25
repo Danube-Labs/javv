@@ -247,7 +247,7 @@ Each answer that is not a success has the same body, with the type `application/
 | 409 | A different request changed the item first, or the item is not in the necessary state. |
 | 410 | The cursor or the export expired. Do the request again from the start. |
 | 413 | The request asks for too many rows, or its body is too large. Make the request smaller. |
-| 415 | The sign-in body has a JSON type that is not `application/json`. |
+| 415 | The sign-in body has a JSON type that is not `application/json`, or a dashboard import body is not `application/x-ndjson`. |
 | 422 | A field is not valid. `detail` names the field. |
 | 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has `Retry-After: 5`. |
 | 503 | OpenSearch is not available. Do the request again later. The type `store-read-only`, with the title `The store is read-only: its disk is full`, tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
@@ -677,23 +677,38 @@ A dashboard file is NDJSON: one dashboard on each line, then one summary line. A
 `{"exported_count": N, "missing_ids": [...]}`. A missing ID is an ID that does not exist or a
 dashboard that you cannot see. The export does not need `can_export`.
 
-The import reads the file as the body of the request:
+The export sorts the dashboards by name. Without `dashboard_id`, it gives the first 1,000, and
+the summary line does not tell if there are more. The IDs are in the URL: each ID adds
+approximately 45 characters. A URL longer than 16 KB (approximately 350 IDs) gets 431 from the
+frontend server.
+
+The import reads the file as the body of the request, with `Content-Type: application/x-ndjson`.
+A different type gets 415.
 
 - You are the owner of each dashboard that the import makes. The audit log gets a
   `dashboard_create` row for each one.
 - The import ignores `owner`, `created_by`, `created_at`, `updated_by`, `updated_at` and
   `revision` in a line. JAVV sets them.
 - Each line gets the checks of `POST /api/v1/dashboards`. A `dashboard_id` has 32 lower-case
-  hexadecimal characters.
-- The import skips empty lines and the summary line of an export.
+  hexadecimal characters. A line must be UTF-8. A byte order mark at the start of the file is
+  ignored.
+- A line ends at a line feed (`\n`). The import ignores a `\r` before it. It skips empty lines
+  and the summary line of an export.
 - The result of a line is `201` (made), `409` (the ID exists) or `422` (the line is not
   correct). A `422` gives the place and the reason of each error, not the value of the file.
 - With `copy=true`, each line gets a new ID, so no line gets `409`.
-- A file larger than `JAVV_DASHBOARD_IMPORT_MAX_BYTES`, or with more than 1,000 dashboards,
-  gets 413. Then the import makes no dashboard.
+- A file larger than `JAVV_DASHBOARD_IMPORT_MAX_BYTES` gets 413. A file with more than 1,000
+  lines that are not empty also gets 413, also when some of those lines are not correct. The
+  summary line of an export is not in this count. After a 413, the import makes no dashboard.
+- Each line is 3 requests to OpenSearch. 100 lines take approximately 5 seconds.
+- If OpenSearch refuses a write, the import stops and the answer is the error (for example 429
+  or 503), without the results. The lines before that line have their dashboards. To complete the
+  import, send the same file again without `copy`: the dashboards that exist get `409`. Do not
+  send it again with `copy=true`, because that makes a second copy of those dashboards.
 
-The answer has `results` (`line`, `dashboard_id` and `status` for each line, and `errors` for
-a `422`) and the counts `created`, `conflicts` and `invalid`.
+The answer has `results` and the counts `created`, `conflicts` and `invalid`. Each result has
+`line` and `status`. A `201` or `409` result also has `dashboard_id`, and a `422` result has
+`errors`.
 
 ### Exports and reports
 

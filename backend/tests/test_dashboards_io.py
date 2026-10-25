@@ -12,8 +12,10 @@ from typing import Any
 
 import httpx
 import pytest
+import structlog
 
 import test_dashboards_route
+from backend.core.metrics import LIMIT_REJECTIONS
 from backend.core.settings import Settings
 from backend.routers import dashboards_io
 from test_dashboards_route import ADMIN, EDIT, _audit_rows, _create, _panel
@@ -41,8 +43,24 @@ def _line(**over: Any) -> dict[str, Any]:
     }
 
 
-async def _import(http: httpx.AsyncClient, body: str, **params: Any) -> httpx.Response:
-    return await http.post("/api/v1/dashboards/import", content=body, headers=NDJSON, params=params)
+async def _import(
+    http: httpx.AsyncClient, body: str | bytes, headers: dict[str, str] = NDJSON, **params: Any
+) -> httpx.Response:
+    url = "/api/v1/dashboards/import"
+    return await http.post(url, content=body, headers=headers, params=params)
+
+
+def _rejections() -> float:
+    return LIMIT_REJECTIONS.labels("dashboard_import")._value.get()
+
+
+@pytest.fixture
+def captured(monkeypatch):
+    """The router's logger, wired straight to a capture (`capture_logs` is undone by
+    `create_app()`, see test_bulk_triage.py)."""
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(dashboards_io, "log", structlog.wrap_logger(None, processors=[capture]))
+    return capture.entries
 
 
 # --- export -------------------------------------------------------------------------------
@@ -215,27 +233,93 @@ async def test_the_import_needs_the_permission(env) -> None:
     assert (await _import(viewer, _file(_line()))).status_code == 403
 
 
-async def test_a_file_over_the_byte_limit_gets_413_and_writes_nothing(env, monkeypatch) -> None:
+async def test_a_file_over_the_byte_limit_gets_413_and_writes_nothing(
+    env, monkeypatch, captured
+) -> None:
     user, _ = env
     importer = await user(EDIT)
     line = _line()
     body = _file(line)
     small = Settings(dashboard_import_max_bytes=len(body.encode()) - 1)
     monkeypatch.setattr(dashboards_io, "get_settings", lambda: small)
+    before = _rejections()
     r = await _import(importer, body)
     assert r.status_code == 413
     assert (await importer.get(f"/api/v1/dashboards/{line['dashboard_id']}")).status_code == 404
+    # a limit logs a warning and adds to its metric (logging.md)
+    assert _rejections() == before + 1
+    assert [e["log_level"] for e in captured] == ["warning"]
 
 
-async def test_a_file_over_the_line_limit_gets_413_and_writes_nothing(env, monkeypatch) -> None:
+async def test_a_file_over_the_line_limit_gets_413_and_writes_nothing(
+    env, monkeypatch, captured
+) -> None:
     user, _ = env
     importer = await user(EDIT)
     monkeypatch.setattr(dashboards_io, "MAX_DASHBOARDS", 2)
     lines = [_line() for _ in range(3)]
+    before = _rejections()
     r = await _import(importer, _file(*lines))
     assert r.status_code == 413
     for line in lines:
         assert (await importer.get(f"/api/v1/dashboards/{line['dashboard_id']}")).status_code == 404
+    assert _rejections() == before + 1
+    assert [e["log_level"] for e in captured] == ["warning"]
+
+
+async def test_too_many_lines_are_refused_before_any_line_is_parsed(env, monkeypatch) -> None:
+    user, _ = env
+    importer = await user(EDIT)
+    monkeypatch.setattr(dashboards_io, "MAX_DASHBOARDS", 2)
+    parsed: list[bytes] = []
+    real = dashboards_io._parse_line
+    monkeypatch.setattr(dashboards_io, "_parse_line", lambda t: parsed.append(t) or real(t))
+    # 2 dashboards and the summary line pass the count; a 4th line does not
+    assert (await _import(importer, "{}\n" * 4)).status_code == 413
+    assert parsed == []
+
+
+async def test_the_import_takes_only_ndjson(env) -> None:
+    """An HTML form can post text/plain with the session cookie, never this type."""
+    user, _ = env
+    importer = await user(EDIT)
+    line = _line()
+    for kind in ("text/plain", "application/x-www-form-urlencoded", "application/json"):
+        r = await _import(importer, _file(line), headers={"content-type": kind})
+        assert r.status_code == 415, kind
+    assert (await importer.get(f"/api/v1/dashboards/{line['dashboard_id']}")).status_code == 404
+    charset = {"content-type": "application/x-ndjson; charset=utf-8"}
+    assert (await _import(importer, _file(line), headers=charset)).json()["created"] == 1
+
+
+async def test_lines_end_only_at_a_line_feed(env) -> None:
+    """A Windows editor saves a BOM and CRLF; a JSON string may hold U+2028 or U+0085."""
+    user, _ = env
+    importer = await user(EDIT)
+    first = _line(description="one\u2028two\u0085three")
+    second = _line()
+    body = "\ufeff" + json.dumps(first, ensure_ascii=False) + "\r\n" + json.dumps(second) + "\r\n"
+    out = (await _import(importer, body.encode())).json()
+    assert [(x["line"], x["status"]) for x in out["results"]] == [(1, 201), (2, 201)]
+    stored = (await importer.get(f"/api/v1/dashboards/{first['dashboard_id']}")).json()
+    assert stored["description"] == first["description"]
+
+
+async def test_a_line_that_is_not_utf8_or_has_too_many_fields_gets_422(env) -> None:
+    user, _ = env
+    importer = await user(EDIT)
+    bad_bytes = json.dumps(_line(name="a")).encode().replace(b'"a"', b'"a\xff"')
+    wide = _line(**{f"k{i}": 1 for i in range(50)})
+    out = (await _import(importer, bad_bytes + b"\n" + _file(wide).encode())).json()
+    assert [x["errors"][0]["type"] for x in out["results"]] == ["unicode_decode", "too_many_fields"]
+
+
+async def test_the_same_id_twice_in_one_file_makes_one_dashboard(env) -> None:
+    user, _ = env
+    importer = await user(EDIT)
+    line = _line()
+    out = (await _import(importer, _file(line, line))).json()
+    assert [x["status"] for x in out["results"]] == [201, 409]
 
 
 @pytest.mark.parametrize("over", [{"sharing": "roles"}, {"panels": [_panel(h="tall")]}])
