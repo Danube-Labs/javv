@@ -306,6 +306,12 @@ REGISTRY: tuple[MutatingEndpoint, ...] = (
         route_path="/api/v1/dashboards/{dashboard_id}",
         capability="can_edit_dashboards",
     ),
+    MutatingEndpoint(  # issue 440 S6: the owner of each line is the caller (test_dashboards_io)
+        method="POST",
+        path="/api/v1/dashboards/import",
+        route_path="/api/v1/dashboards/import",
+        capability="can_edit_dashboards",
+    ),
 )
 
 # mutating routes with their own (tested) auth regime — NOT capability-gated

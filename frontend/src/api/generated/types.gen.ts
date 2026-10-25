@@ -2076,6 +2076,68 @@ export type CreateDashboardApiV1DashboardsPostResponses = {
 
 export type CreateDashboardApiV1DashboardsPostResponse = CreateDashboardApiV1DashboardsPostResponses[keyof CreateDashboardApiV1DashboardsPostResponses];
 
+export type ExportDashboardsApiV1DashboardsExportNdjsonGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Dashboard Id
+         */
+        dashboard_id?: Array<string> | null;
+    };
+    url: '/api/v1/dashboards/export.ndjson';
+};
+
+export type ExportDashboardsApiV1DashboardsExportNdjsonGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportDashboardsApiV1DashboardsExportNdjsonGetError = ExportDashboardsApiV1DashboardsExportNdjsonGetErrors[keyof ExportDashboardsApiV1DashboardsExportNdjsonGetErrors];
+
+export type ExportDashboardsApiV1DashboardsExportNdjsonGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ImportDashboardsApiV1DashboardsImportPostData = {
+    body: string;
+    path?: never;
+    query?: {
+        /**
+         * Copy
+         */
+        copy?: boolean;
+    };
+    url: '/api/v1/dashboards/import';
+};
+
+export type ImportDashboardsApiV1DashboardsImportPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportDashboardsApiV1DashboardsImportPostError = ImportDashboardsApiV1DashboardsImportPostErrors[keyof ImportDashboardsApiV1DashboardsImportPostErrors];
+
+export type ImportDashboardsApiV1DashboardsImportPostResponses = {
+    /**
+     * Response Import Dashboards Api V1 Dashboards Import Post
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ImportDashboardsApiV1DashboardsImportPostResponse = ImportDashboardsApiV1DashboardsImportPostResponses[keyof ImportDashboardsApiV1DashboardsImportPostResponses];
+
 export type DeleteDashboardApiV1DashboardsDashboardIdDeleteData = {
     body?: never;
     path: {

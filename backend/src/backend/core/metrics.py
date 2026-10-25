@@ -95,7 +95,8 @@ CAS_CONFLICTS = Counter(
 LIMIT_REJECTIONS = Counter(
     "javv_limit_rejections_total",
     "Requests rejected by a configured bound",
-    # pit_cap | export_rows | bulk_targets | bulk_inline | client_events — one counter, one label
+    # pit_cap | export_rows | bulk_targets | bulk_inline | client_events | inspect_bytes |
+    # dashboard_import — one counter, one label
     ["limit"],
 )
 PITS_OPEN = Gauge(

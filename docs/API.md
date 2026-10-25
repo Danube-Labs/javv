@@ -247,7 +247,7 @@ Each answer that is not a success has the same body, with the type `application/
 | 409 | A different request changed the item first, or the item is not in the necessary state. |
 | 410 | The cursor or the export expired. Do the request again from the start. |
 | 413 | The request asks for too many rows, or its body is too large. Make the request smaller. |
-| 415 | The sign-in body has a JSON type that is not `application/json`. |
+| 415 | The sign-in body has a JSON type that is not `application/json`, or a dashboard import body is not `application/x-ndjson`. |
 | 422 | A field is not valid. `detail` names the field. |
 | 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has `Retry-After: 5`. |
 | 503 | OpenSearch is not available. Do the request again later. The type `store-read-only`, with the title `The store is read-only: its disk is full`, tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
@@ -626,6 +626,8 @@ permissions of the user who opens the dashboard.
 | POST | `/api/v1/dashboards` | `can_edit_dashboards` | Saves a new dashboard (201). You are its `owner`. It is `private` if the body does not set `sharing`. |
 | PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new `sharing` and `"roles": []` together. A change that sends no `panels` keeps the stored panels. |
 | DELETE | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Deletes the dashboard (204). The query parameter `revision` is the revision that you read. A different `revision` gets 409. The audit log keeps a copy of it. |
+| GET | `/api/v1/dashboards/export.ndjson` | session | A file of the dashboards that you can see, with the IDs in `dashboard_id` (the parameter can be there more than one time), or all of them, at most 1,000. See "Dashboard files". |
+| POST | `/api/v1/dashboards/import` | `can_edit_dashboards` | Makes a dashboard from each line of a file (200, with a result for each line). With `copy=true`, each line gets a new ID. See "Dashboard files". |
 
 Who can see a dashboard:
 
@@ -666,6 +668,52 @@ The backend refuses with 422:
 JAVV writes `owner`, `created_by`, `created_at`, `updated_by`, `updated_at` and `revision`. Each
 change adds 1 to `revision`. The audit log has a row for each change (`dashboard_create`,
 `dashboard_update` and `dashboard_delete`).
+
+#### Dashboard files
+
+A dashboard file is NDJSON: one dashboard on each line, then one summary line. A line has
+`dashboard_id`, `schema_version`, `name`, `description`, `scanner`, `panels`, `sharing` and
+`roles`. A line has no owner, user names or times. The summary line is
+`{"exported_count": N, "missing_ids": [...]}`. A missing ID is an ID that does not exist or a
+dashboard that you cannot see. The export does not need `can_export`.
+
+The export sorts the dashboards by name. Without `dashboard_id`, it gives the first 1,000, and
+the summary line does not tell if there are more. The IDs are in the URL: each ID adds
+approximately 45 characters. A URL longer than 16 KB (approximately 350 IDs) gets 431 from the
+frontend server.
+
+The import reads the file as the body of the request, with `Content-Type: application/x-ndjson`.
+A different type gets 415.
+
+- You are the owner of each dashboard that the import makes. The audit log gets a
+  `dashboard_create` row for each one.
+- The import ignores `owner`, `created_by`, `created_at`, `updated_by`, `updated_at` and
+  `revision` in a line. JAVV sets them.
+- Each line gets the checks of `POST /api/v1/dashboards`. A `dashboard_id` has 32 lower-case
+  hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
+  of a line. An object in a line has at most 14 fields. A field that is in an object two times
+  counts two times.
+- A line ends at a line feed (`\n`). The import ignores a `\r` before it. It skips empty lines
+  and the summary line of an export.
+- The result of a line is `201` (made), `409` (the ID exists) or `422` (the line is not
+  correct). A `422` gives the place and the reason of each error, not the value of the file.
+- With `copy=true`, each line gets a new ID, so no line gets `409`.
+- A file larger than `JAVV_DASHBOARD_IMPORT_MAX_BYTES` gets 413. A file with more than 1,000
+  lines that are not empty also gets 413, also when some of those lines are not correct. The
+  summary line of an export is not in this count. After a 413, the import makes no dashboard.
+- A line that makes a dashboard is 3 requests to OpenSearch. 100 such lines take approximately
+  5 seconds.
+- If OpenSearch refuses a write, the import stops and the answer is the error (for example 429
+  or 503), without the results. The lines before that line have their dashboards. To complete an
+  import without `copy`, send the same file again: the dashboards that exist get `409`. To
+  complete an import with `copy=true`, count the dashboards that the import made: you are the
+  owner, and their `created_at` is after the start of the import. The import writes the lines in
+  the order of the file. Thus, remove that number of correct lines from the start of the file, and
+  send the other lines with `copy=true`.
+
+The answer has `results` and the counts `created`, `conflicts` and `invalid`. Each result has
+`line` and `status`. A `201` or `409` result also has `dashboard_id`, and a `422` result has
+`errors`.
 
 ### Exports and reports
 
@@ -791,7 +839,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_opensearch_backoff_retries_total` | counter | none | Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy. |
 | `javv_sla_clock_missing_total` | counter | none | Pages of findings with a row that has no `sla_clock_at`. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the `rebuild_state` job. |
 | `javv_cas_conflicts_total` | counter | `site` | Writes that lost a race to a different writer: `watermarks`, `scan_orders`, `inventory_orders`, `reconcile`, `reproject`, `merge`, `report_claim` and `retirement`. A high rate means many writers on the same data. |
-| `javv_limit_rejections_total` | counter | `limit` | Requests that a limit refused: `pit_cap`, `export_rows`, `bulk_targets`, `bulk_inline`, `client_events` and `inspect_bytes` |
+| `javv_limit_rejections_total` | counter | `limit` | Requests that a limit refused: `pit_cap`, `export_rows`, `bulk_targets`, `bulk_inline`, `client_events`, `inspect_bytes` and `dashboard_import` |
 | `javv_pits_open` | gauge | none | The cursors and exports that are open now. A cursor that a client stopped using counts until `JAVV_SEARCH_PIT_KEEP_ALIVE` plus 30 seconds after the last page that the client read, and then stops counting. |
 | `javv_export_rows_total` / `javv_export_bytes_total` | counter | `format` | The rows and bytes that the exports sent. If a client stops the download, the count shows what it received. |
 | `javv_auth_failures_total` | counter | `reason` | `bad_credentials`, `locked_out`, `expired_session`, `missing_capability`, `must_change` (a session with a temporary password) or `session_not_minted` (a password change with no new session). The labels never show a username. |

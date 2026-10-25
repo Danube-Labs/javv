@@ -113,6 +113,9 @@ class Settings(BaseSettings):
     inspect_max_hits: int = Field(default=500, ge=1)
     inspect_max_response_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
     inspect_timeout_seconds: float = Field(default=10.0, gt=0)
+    # dashboards (issue 440): the largest NDJSON file one import reads (past it → 413). A dashboard
+    # with 24 panels measured 3.3 KB, so the default holds the 1,000 a list can show.
+    dashboard_import_max_bytes: int = Field(default=4 * 1024 * 1024, ge=1)
     # cluster retirement (issue 765): the seeds for the fleet-wide retirement window, used until
     # someone saves one in Settings. A cluster with no accepted scan for this many days is retired
     # by the daily sweep (0 = never); the warning banner and the admins' bell start this many

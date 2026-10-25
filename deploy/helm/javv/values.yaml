@@ -98,6 +98,8 @@ backend:
     JAVV_INSPECT_MAX_RESPONSE_BYTES: "2097152"
     # seconds before an inspector query gives up
     JAVV_INSPECT_TIMEOUT_SECONDS: "10.0"
+    # largest dashboard file that an import reads, in bytes (4 MiB)
+    JAVV_DASHBOARD_IMPORT_MAX_BYTES: "4194304"
     # cluster retirement: the fleet defaults until a value is saved at runtime
     # days without an accepted scan before JAVV retires a cluster (0 means never)
     JAVV_CLUSTER_RETIRE_AFTER_DAYS: "45"
