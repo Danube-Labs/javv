@@ -1459,6 +1459,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboard files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2029,6 +2046,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboard files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2475,7 +2509,7 @@ a hyphen.</p>
 </tr>
 <tr>
 <td>415</td>
-<td>The sign-in body has a JSON type that is not <code>application/json</code>.</td>
+<td>The sign-in body has a JSON type that is not <code>application/json</code>, or a dashboard import body is not <code>application/x-ndjson</code>.</td>
 </tr>
 <tr>
 <td>422</td>
@@ -3393,6 +3427,18 @@ permissions of the user who opens the dashboard.</p>
 <td><code>can_edit_dashboards</code>, the owner or <code>can_manage_settings</code></td>
 <td>Deletes the dashboard (204). The query parameter <code>revision</code> is the revision that you read. A different <code>revision</code> gets 409. The audit log keeps a copy of it.</td>
 </tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards/export.ndjson</code></td>
+<td>session</td>
+<td>A file of the dashboards that you can see, with the IDs in <code>dashboard_id</code> (the parameter can be there more than one time), or all of them, at most 1,000. See "Dashboard files".</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/dashboards/import</code></td>
+<td><code>can_edit_dashboards</code></td>
+<td>Makes a dashboard from each line of a file (200, with a result for each line). With <code>copy=true</code>, each line gets a new ID. See "Dashboard files".</td>
+</tr>
 </tbody>
 </table>
 <p>Who can see a dashboard:</p>
@@ -3482,6 +3528,48 @@ permissions of the user who opens the dashboard.</p>
 <p>JAVV writes <code>owner</code>, <code>created_by</code>, <code>created_at</code>, <code>updated_by</code>, <code>updated_at</code> and <code>revision</code>. Each
 change adds 1 to <code>revision</code>. The audit log has a row for each change (<code>dashboard_create</code>,
 <code>dashboard_update</code> and <code>dashboard_delete</code>).</p>
+<h4 id="dashboard-files">Dashboard files<a class="headerlink" href="#dashboard-files" title="Permanent link">&para;</a></h4>
+<p>A dashboard file is NDJSON: one dashboard on each line, then one summary line. A line has
+<code>dashboard_id</code>, <code>schema_version</code>, <code>name</code>, <code>description</code>, <code>scanner</code>, <code>panels</code>, <code>sharing</code> and
+<code>roles</code>. A line has no owner, user names or times. The summary line is
+<code>{"exported_count": N, "missing_ids": [...]}</code>. A missing ID is an ID that does not exist or a
+dashboard that you cannot see. The export does not need <code>can_export</code>.</p>
+<p>The export sorts the dashboards by name. Without <code>dashboard_id</code>, it gives the first 1,000, and
+the summary line does not tell if there are more. The IDs are in the URL: each ID adds
+approximately 45 characters. A URL longer than 16 KB (approximately 350 IDs) gets 431 from the
+frontend server.</p>
+<p>The import reads the file as the body of the request, with <code>Content-Type: application/x-ndjson</code>.
+A different type gets 415.</p>
+<ul>
+<li>You are the owner of each dashboard that the import makes. The audit log gets a
+  <code>dashboard_create</code> row for each one.</li>
+<li>The import ignores <code>owner</code>, <code>created_by</code>, <code>created_at</code>, <code>updated_by</code>, <code>updated_at</code> and
+  <code>revision</code> in a line. JAVV sets them.</li>
+<li>Each line gets the checks of <code>POST /api/v1/dashboards</code>. A <code>dashboard_id</code> has 32 lower-case
+  hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
+  of a line. An object in a line has at most 14 fields. A field that is in an object two times
+  counts two times.</li>
+<li>A line ends at a line feed (<code>\n</code>). The import ignores a <code>\r</code> before it. It skips empty lines
+  and the summary line of an export.</li>
+<li>The result of a line is <code>201</code> (made), <code>409</code> (the ID exists) or <code>422</code> (the line is not
+  correct). A <code>422</code> gives the place and the reason of each error, not the value of the file.</li>
+<li>With <code>copy=true</code>, each line gets a new ID, so no line gets <code>409</code>.</li>
+<li>A file larger than <code>JAVV_DASHBOARD_IMPORT_MAX_BYTES</code> gets 413. A file with more than 1,000
+  lines that are not empty also gets 413, also when some of those lines are not correct. The
+  summary line of an export is not in this count. After a 413, the import makes no dashboard.</li>
+<li>A line that makes a dashboard is 3 requests to OpenSearch. 100 such lines take approximately
+  5 seconds.</li>
+<li>If OpenSearch refuses a write, the import stops and the answer is the error (for example 429
+  or 503), without the results. The lines before that line have their dashboards. To complete an
+  import without <code>copy</code>, send the same file again: the dashboards that exist get <code>409</code>. To
+  complete an import with <code>copy=true</code>, count the dashboards that the import made: you are the
+  owner, and their <code>created_at</code> is after the start of the import. The import writes the lines in
+  the order of the file. Thus, remove that number of correct lines from the start of the file, and
+  send the other lines with <code>copy=true</code>.</li>
+</ul>
+<p>The answer has <code>results</code> and the counts <code>created</code>, <code>conflicts</code> and <code>invalid</code>. Each result has
+<code>line</code> and <code>status</code>. A <code>201</code> or <code>409</code> result also has <code>dashboard_id</code>, and a <code>422</code> result has
+<code>errors</code>.</p>
 <h3 id="exports-and-reports">Exports and reports<a class="headerlink" href="#exports-and-reports" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3737,7 +3825,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_limit_rejections_total</code></td>
 <td>counter</td>
 <td><code>limit</code></td>
-<td>Requests that a limit refused: <code>pit_cap</code>, <code>export_rows</code>, <code>bulk_targets</code>, <code>bulk_inline</code>, <code>client_events</code> and <code>inspect_bytes</code></td>
+<td>Requests that a limit refused: <code>pit_cap</code>, <code>export_rows</code>, <code>bulk_targets</code>, <code>bulk_inline</code>, <code>client_events</code>, <code>inspect_bytes</code> and <code>dashboard_import</code></td>
 </tr>
 <tr>
 <td><code>javv_pits_open</code></td>

@@ -919,6 +919,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cluster-retirement" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1874,6 +1885,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cluster-retirement" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2596,6 +2618,23 @@ description.</p>
 <td><code>JAVV_INSPECT_TIMEOUT_SECONDS</code></td>
 <td><code>10.0</code></td>
 <td>Seconds that a query of the Data inspector can run in OpenSearch. This time is shorter than <code>JAVV_REQUEST_TIMEOUT</code>. Thus a query in the inspector cannot hold OpenSearch for long.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dashboards">Dashboards<a class="headerlink" href="#dashboards" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_DASHBOARD_IMPORT_MAX_BYTES</code></td>
+<td><code>4194304</code> (4 MiB)</td>
+<td>The largest dashboard file that an import reads. A larger file gets 413, and the import makes no dashboard. The backend also logs a warning and adds one to <code>javv_limit_rejections_total{limit="dashboard_import"}</code>. A dashboard with 24 panels is approximately 3.3 KB, so the default holds 1,000 dashboards.</td>
 </tr>
 </tbody>
 </table>
