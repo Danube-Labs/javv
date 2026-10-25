@@ -285,6 +285,27 @@ REGISTRY: tuple[MutatingEndpoint, ...] = (
         capability="can_export",
         body={"kind": "export", "cluster_id": "c-rbac-sample"},
     ),
+    MutatingEndpoint(  # issue 440 — dashboards: a write needs can_edit_dashboards; who sees one
+        # (404) and the owner-or-admin rule (403) are asserted in test_dashboards_route
+        method="POST",
+        path="/api/v1/dashboards",
+        route_path="/api/v1/dashboards",
+        capability="can_edit_dashboards",
+        body={"name": "rbac sample"},
+    ),
+    MutatingEndpoint(
+        method="PATCH",
+        path="/api/v1/dashboards/d-rbac-sample",
+        route_path="/api/v1/dashboards/{dashboard_id}",
+        capability="can_edit_dashboards",
+        body={"revision": 1},
+    ),
+    MutatingEndpoint(
+        method="DELETE",
+        path="/api/v1/dashboards/d-rbac-sample?revision=1",
+        route_path="/api/v1/dashboards/{dashboard_id}",
+        capability="can_edit_dashboards",
+    ),
 )
 
 # mutating routes with their own (tested) auth regime — NOT capability-gated

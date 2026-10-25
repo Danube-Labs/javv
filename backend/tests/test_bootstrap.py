@@ -129,6 +129,7 @@ def test_bootstrap_scope() -> None:
         "system-notifications",  # M7/#32 — the bell feed
         "system-views",  # M8e/#242 — server-side saved filter views
         "system-jobs",  # issue 406 repair actions — one lease/status doc per job kind
+        "system-dashboards",  # issue 440 — saved dashboards
     }
     # + system-audit-log (M5a appender; M5b owns writer/replay) + occurrences + inventory-runs
     # (M8a slices 1–2)

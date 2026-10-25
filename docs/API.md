@@ -196,10 +196,10 @@ At its first start, JAVV creates four roles:
 | `can_triage` | Triage findings. Make, change and revoke `not_affected` decisions. |
 | `can_accept_audit_final` | Accept a risk, in a decision or in triage. Make, change and revoke `risk_accepted` and `ignore_rule` decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue. |
 | `can_export` | Download the export files: the findings CSV and VEX, the audit log CSV, the contributors CSV and the approvals CSV. Make an export report and download it. |
-| `can_edit_dashboards` | Make dashboards. Change, share and remove your own dashboards. |
+| `can_edit_dashboards` | Make dashboards. Change, share and delete your own dashboards. |
 | `can_manage_tokens` | Make, revoke and rotate scanner tokens |
 | `can_manage_users` | Make users. Change their role, their status and their password. Read the account events in the audit log. |
-| `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. |
+| `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. See, change and delete the dashboards of other users, with `can_edit_dashboards`. |
 | `can_manage_retention` | Read and change the data settings: retention, rollover, export lifetime and findings cleanup. Read and take snapshots. Delete a retired cluster. |
 | `can_restore_snapshot` | Restore a snapshot |
 | `can_inspect_store` | Use the data inspector. Read the status of the background jobs. |
@@ -609,6 +609,59 @@ in the audit log. Snapshots from before keep the data.
 | POST | `/api/v1/views` | session | Saves a view. You are its `owner`. `preset` takes the [filters](#filters). A value that is not valid gets 422, and so does a pair that Findings refuses. `workbench` keeps the table setup: `columns`, `dense`, `sort`, `order` and `window_days`. |
 | PATCH | `/api/v1/views/{view_id}` | session, the owner or `can_manage_settings` | Changes the name, the description, `preset` or `workbench`. A `preset` gets the same checks as on `POST`. A different user gets 403. A change by a different request first gets 409. |
 | DELETE | `/api/v1/views/{view_id}` | session, the owner or `can_manage_settings` | Deletes a view (204). The audit log keeps a copy of it. |
+
+### Dashboards
+
+A dashboard is a layout of panels. It holds no data: each panel gets its data with the
+permissions of the user who opens the dashboard.
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/v1/dashboards` | session | Lists the dashboards that you can see, at most 1,000, by name |
+| GET | `/api/v1/dashboards/{dashboard_id}` | session | One dashboard. A dashboard that you cannot see gets 404, as a dashboard that does not exist. |
+| POST | `/api/v1/dashboards` | `can_edit_dashboards` | Saves a new dashboard (201). You are its `owner`. It is `private` if the body does not set `sharing`. |
+| PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. |
+| DELETE | `/api/v1/dashboards/{dashboard_id}?revision=N` | `can_edit_dashboards`, the owner or `can_manage_settings` | Deletes the dashboard (204). A different `revision` gets 409. The audit log keeps a copy of it. |
+
+Who can see a dashboard:
+
+- `sharing: private`: the owner only
+- `sharing: everyone`: each user
+- `sharing: roles`: the users with one of the roles in `roles`
+- a user with `can_manage_settings`: each dashboard
+
+The fields that you set:
+
+| Field | Values |
+|---|---|
+| `name` | 1 to 128 characters |
+| `description` | At most 1,024 characters |
+| `scanner` | `all` (default), `trivy` or `grype`: the scanner that the dashboard opens with |
+| `sharing` | `private` (default), `everyone` or `roles` |
+| `roles` | The roles that can see the dashboard, with `sharing: roles` only. At least one. |
+| `panels` | At most 24 panels |
+
+Each panel:
+
+| Field | Values |
+|---|---|
+| `panel` | The panel ID, for example `findings-summary`. `openapi.json` lists the IDs. |
+| `x` | The column: 0 (left) or 1 (right) |
+| `y` | The row of the top of the panel: 0 to 1,000 |
+| `w` | The width: 1 (one column) or 2 (both columns). `x + w` is at most 2. |
+| `h` | The height: `short` or `tall`. Each panel has the heights that its catalog entry gives. |
+| `scanner` | `dashboard` (default), `trivy` or `grype`, only on a panel with scanner data. `dashboard` follows the scanner switch of the dashboard. |
+
+The backend refuses with 422:
+
+- a field that is not in these lists, or a panel ID that it does not know
+- a height that the panel does not have, or a `scanner` on a panel with no scanner data
+- a panel outside the two columns, or two panels on the same cell
+- `roles` without `sharing: roles`, or `sharing: roles` without a role
+
+JAVV writes `owner`, `created_by`, `created_at`, `updated_by`, `updated_at` and `revision`. Each
+change adds 1 to `revision`. The audit log has a row for each change (`dashboard_create`,
+`dashboard_update` and `dashboard_delete`).
 
 ### Exports and reports
 

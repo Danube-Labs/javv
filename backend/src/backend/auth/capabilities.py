@@ -66,7 +66,7 @@ PERMISSIONS: tuple[Permission, ...] = (
     Permission(
         "can_edit_dashboards",
         "Make dashboards",
-        "Make dashboards. Change, share and remove your own dashboards.",
+        "Make dashboards. Change, share and delete your own dashboards.",
     ),
     Permission(
         "can_manage_tokens", "Manage scanner tokens", "Make, revoke and rotate scanner tokens."
@@ -82,7 +82,8 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Manage settings",
         "Change the SLA, staleness, retirement and scan scope settings, and the cluster names. "
         "Retire a cluster and bring it back. Start the staleness sweep. Change or delete the "
-        "saved views of other users.",
+        "saved views of other users. See, change and delete the dashboards of other users, with "
+        "the permission to make dashboards.",
     ),
     Permission(
         "can_manage_retention",

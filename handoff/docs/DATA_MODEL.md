@@ -328,6 +328,24 @@ owner-or-admin), backed by the new `system-views` index:
 Views are visible to all authenticated users; live card counts come from
 `GET /api/v1/findings/facets` with the view's params (server agg — never a client count).
 
+## Dashboards (issue 440, PR B)
+
+`GET/POST /api/v1/dashboards` · `GET/PATCH/DELETE /api/v1/dashboards/{dashboard_id}`, backed by
+the `system-dashboards` index (mapping v19). Reads need a session; writes need
+`can_edit_dashboards`, and another user's dashboard also needs `can_manage_settings`.
+
+```ts
+{ dashboard_id: string, name, description,
+  scanner: 'all' | 'trivy' | 'grype',          // the switch the dashboard opens with (Q7)
+  panels: { panel: PanelId, x: 0 | 1, y: number, w: 1 | 2, h: 'short' | 'tall',
+            scanner?: 'dashboard' | 'trivy' | 'grype' }[],   // at most 24 (Q2)
+  sharing: 'private' | 'everyone' | 'roles', roles: string[], // D2; not visible → 404 (Q3)
+  owner, created_by, created_at, updated_by, updated_at,
+  revision: number }                           // D4: PATCH/DELETE send it; a stale one → 409
+```
+A dashboard stores a layout, never a number: each panel reads its own data with the permissions
+of the user who opens it. `h` is the name of a height; the rows come from the panel catalog.
+
 ---
 
 ## Notifications (D-3, planned)

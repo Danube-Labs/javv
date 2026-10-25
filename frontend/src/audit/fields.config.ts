@@ -10,7 +10,17 @@ import { actionLabel } from '@/audit/actionLabels'
 import type { FilterField } from '@/filters/fields.config'
 
 /** entity_type vocabulary (D32): what kind of record the event touched. */
-export const AUDIT_ENTITY_TYPES = ['finding', 'decision', 'view', 'config', 'token', 'user', 'store', 'job'] as const
+export const AUDIT_ENTITY_TYPES = [
+  'finding',
+  'decision',
+  'view',
+  'dashboard',
+  'config',
+  'token',
+  'user',
+  'store',
+  'job',
+] as const
 
 /** action vocabulary (FR-7 verbs + auth/admin/config events), grouped triage-first. */
 export const AUDIT_ACTIONS = [
@@ -30,6 +40,10 @@ export const AUDIT_ACTIONS = [
   'view_create',
   'view_update',
   'view_delete',
+  // dashboards
+  'dashboard_create',
+  'dashboard_update',
+  'dashboard_delete',
   // config
   'sla_policy_change',
   'cluster_rename',

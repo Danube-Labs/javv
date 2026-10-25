@@ -344,7 +344,7 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
-| 0.8.9 | 18 | 3 and 4 | The notes **A new permission for the export files** and **A new permission for dashboards** below |
+| 0.8.9 | 19 | 3 and 4 | The notes **A new permission for the export files** and **A new permission for dashboards** below |
 | 0.8.7 | 18 | 3 and 4 | The note **JAVV refuses a username with a capital letter** below |
 | 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |
 | 0.7.0 | 18 | 3 and 4 | The note **`JAVV_TOKEN_PEPPER` is now `JAVV_SECRET_KEY`** below |
@@ -410,6 +410,10 @@ We did these steps on the compose files of 0.8.8, with a triager and a security 
 
 A user needs the permission `can_edit_dashboards` to make a dashboard. The `viewer` role does not
 get it.
+
+The store schema is now 19. At its first start, the backend makes the new index
+`system-dashboards`. You do not do a step for it. The `javv` role of an OpenSearch of your own
+already has access to it, because its name starts with `system-`.
 
 A new store gives the permission to the `triager`, `security_lead` and `admin` roles. On a store
 that you have, only `admin` gets it, because JAVV writes the roles only on the first start of a
