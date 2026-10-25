@@ -112,6 +112,11 @@ def _sweep_residue() -> None:
             params={"refresh": "true", "conflicts": "proceed", "ignore_unavailable": "true"},
             json={"query": {"prefix": {"username": _RESIDUE_USER_PREFIX}}},
         )
+        c.post(  # a dashboard holds no cluster, so its test owner marks it (issue 440)
+            "/system-dashboards/_delete_by_query",
+            params={"refresh": "true", "conflicts": "proceed", "ignore_unavailable": "true"},
+            json={"query": {"prefix": {"owner": _RESIDUE_USER_PREFIX}}},
+        )
         # per-cluster test indices (occurrences / images / scan-events / inventory-runs …)
         for pattern in (
             f"javv-*-{_RESIDUE_CLUSTER_PREFIX}*",

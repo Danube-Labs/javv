@@ -620,8 +620,11 @@ Contributors already exposes derived views of it), cursor-paged, ordered `(@time
 2026-10-17, issue 892):** the rows with `entity_type` `user` or `token` reach only
 `can_manage_users`, in the list, the facets and the CSV. For the other users the rail does not offer
 the `user` and `token` values nor their actions (sign-in, password, user, role and token actions),
-which could only count 0 there (`auditFields()` in `audit/fields.config.ts`).
-The Action list has 42 values. The server counts Entity and Action with 64 buckets, so each
+which could only count 0 there (`auditFields()` in `audit/fields.config.ts`). In the same way, the
+rows with `entity_type` `dashboard` reach only `can_manage_settings` (issue 440, ruling of
+2026-10-25), and for the other users the rail does not offer `dashboard` nor the three dashboard
+actions.
+The Action list has 45 values. The server counts Entity and Action with 64 buckets, so each
 action has a count. An action with no events shows 0 (issues 980 and 983). The User list keeps
 the top 32.
 

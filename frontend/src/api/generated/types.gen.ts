@@ -183,6 +183,72 @@ export type CreateView = {
 };
 
 /**
+ * DashboardFields
+ *
+ * Everything an owner sets. A create is this model; a change is merged onto the stored
+ * dashboard and checked again by this model, so a change can never store what a create can't.
+ * The one exception: a change that sends no panels keeps the stored ones unchecked.
+ */
+export type DashboardFields = {
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Panels
+     */
+    panels?: Array<DashboardPanel>;
+    /**
+     * Roles
+     */
+    roles?: Array<string>;
+    /**
+     * Scanner
+     */
+    scanner?: 'all' | 'trivy' | 'grype';
+    /**
+     * Sharing
+     */
+    sharing?: 'private' | 'everyone' | 'roles';
+};
+
+/**
+ * DashboardPanel
+ *
+ * One panel: a catalog ID, its cell, its width in columns and the NAME of its height.
+ */
+export type DashboardPanel = {
+    /**
+     * H
+     */
+    h: 'short' | 'tall';
+    /**
+     * Panel
+     */
+    panel: 'findings-summary' | 'package-type' | 'findings-by-namespace' | 'riskiest-images' | 'top-components' | 'scan-ingest' | 'failed-ingests' | 'triage-activity' | 'handled-findings' | 'triage-progress';
+    /**
+     * Scanner
+     */
+    scanner?: 'dashboard' | 'trivy' | 'grype' | null;
+    /**
+     * W
+     */
+    w: 1 | 2;
+    /**
+     * X
+     */
+    x: number;
+    /**
+     * Y
+     */
+    y: number;
+};
+
+/**
  * DecisionEditRequest
  *
  * The editable payload fields — anything set becomes the revoke+create pair's change set.
@@ -716,6 +782,43 @@ export type TriagePatch = {
      * Vex Justification
      */
     vex_justification?: string | null;
+};
+
+/**
+ * UpdateDashboard
+ *
+ * A change: the revision the user read, and the fields to change. `owner` and the audit
+ * fields are not fields here, so a write of them is unrepresentable (extra=forbid).
+ */
+export type UpdateDashboard = {
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Panels
+     */
+    panels?: Array<DashboardPanel> | null;
+    /**
+     * Revision
+     */
+    revision: number;
+    /**
+     * Roles
+     */
+    roles?: Array<string> | null;
+    /**
+     * Scanner
+     */
+    scanner?: 'all' | 'trivy' | 'grype' | null;
+    /**
+     * Sharing
+     */
+    sharing?: 'private' | 'everyone' | 'roles' | null;
 };
 
 /**
@@ -1923,6 +2026,158 @@ export type CloseCursorApiV1CursorsClosePostResponses = {
 };
 
 export type CloseCursorApiV1CursorsClosePostResponse = CloseCursorApiV1CursorsClosePostResponses[keyof CloseCursorApiV1CursorsClosePostResponses];
+
+export type ListDashboardsApiV1DashboardsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/dashboards';
+};
+
+export type ListDashboardsApiV1DashboardsGetResponses = {
+    /**
+     * Response List Dashboards Api V1 Dashboards Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ListDashboardsApiV1DashboardsGetResponse = ListDashboardsApiV1DashboardsGetResponses[keyof ListDashboardsApiV1DashboardsGetResponses];
+
+export type CreateDashboardApiV1DashboardsPostData = {
+    body: DashboardFields;
+    path?: never;
+    query?: never;
+    url: '/api/v1/dashboards';
+};
+
+export type CreateDashboardApiV1DashboardsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateDashboardApiV1DashboardsPostError = CreateDashboardApiV1DashboardsPostErrors[keyof CreateDashboardApiV1DashboardsPostErrors];
+
+export type CreateDashboardApiV1DashboardsPostResponses = {
+    /**
+     * Response Create Dashboard Api V1 Dashboards Post
+     *
+     * Successful Response
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type CreateDashboardApiV1DashboardsPostResponse = CreateDashboardApiV1DashboardsPostResponses[keyof CreateDashboardApiV1DashboardsPostResponses];
+
+export type DeleteDashboardApiV1DashboardsDashboardIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Dashboard Id
+         */
+        dashboard_id: string;
+    };
+    query: {
+        /**
+         * Revision
+         */
+        revision: number;
+    };
+    url: '/api/v1/dashboards/{dashboard_id}';
+};
+
+export type DeleteDashboardApiV1DashboardsDashboardIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteDashboardApiV1DashboardsDashboardIdDeleteError = DeleteDashboardApiV1DashboardsDashboardIdDeleteErrors[keyof DeleteDashboardApiV1DashboardsDashboardIdDeleteErrors];
+
+export type DeleteDashboardApiV1DashboardsDashboardIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDashboardApiV1DashboardsDashboardIdDeleteResponse = DeleteDashboardApiV1DashboardsDashboardIdDeleteResponses[keyof DeleteDashboardApiV1DashboardsDashboardIdDeleteResponses];
+
+export type GetDashboardApiV1DashboardsDashboardIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Dashboard Id
+         */
+        dashboard_id: string;
+    };
+    query?: never;
+    url: '/api/v1/dashboards/{dashboard_id}';
+};
+
+export type GetDashboardApiV1DashboardsDashboardIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDashboardApiV1DashboardsDashboardIdGetError = GetDashboardApiV1DashboardsDashboardIdGetErrors[keyof GetDashboardApiV1DashboardsDashboardIdGetErrors];
+
+export type GetDashboardApiV1DashboardsDashboardIdGetResponses = {
+    /**
+     * Response Get Dashboard Api V1 Dashboards  Dashboard Id  Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetDashboardApiV1DashboardsDashboardIdGetResponse = GetDashboardApiV1DashboardsDashboardIdGetResponses[keyof GetDashboardApiV1DashboardsDashboardIdGetResponses];
+
+export type UpdateDashboardApiV1DashboardsDashboardIdPatchData = {
+    body: UpdateDashboard;
+    path: {
+        /**
+         * Dashboard Id
+         */
+        dashboard_id: string;
+    };
+    query?: never;
+    url: '/api/v1/dashboards/{dashboard_id}';
+};
+
+export type UpdateDashboardApiV1DashboardsDashboardIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateDashboardApiV1DashboardsDashboardIdPatchError = UpdateDashboardApiV1DashboardsDashboardIdPatchErrors[keyof UpdateDashboardApiV1DashboardsDashboardIdPatchErrors];
+
+export type UpdateDashboardApiV1DashboardsDashboardIdPatchResponses = {
+    /**
+     * Response Update Dashboard Api V1 Dashboards  Dashboard Id  Patch
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type UpdateDashboardApiV1DashboardsDashboardIdPatchResponse = UpdateDashboardApiV1DashboardsDashboardIdPatchResponses[keyof UpdateDashboardApiV1DashboardsDashboardIdPatchResponses];
 
 export type ListDecisionsApiV1DecisionsGetData = {
     body?: never;

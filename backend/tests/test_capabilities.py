@@ -139,7 +139,26 @@ async def test_a_new_store_gives_can_export_to_every_role_but_viewer(real_os) ->
     }
     assert bundles == {
         "viewer": [],
-        "triager": ["can_triage", "can_export"],
-        "security_lead": ["can_triage", "can_accept_audit_final", "can_export"],
+        "triager": ["can_triage", "can_export", "can_edit_dashboards"],
+        "security_lead": [
+            "can_triage",
+            "can_accept_audit_final",
+            "can_export",
+            "can_edit_dashboards",
+        ],
         "admin": ["*"],
     }
+
+
+async def test_a_new_store_lets_every_role_but_viewer_make_dashboards(real_os) -> None:
+    # issue 440 D1: a viewer only opens the dashboards that an owner shares with it
+    client, prefix = real_os
+    await seed_default_roles(client, prefix=prefix)
+
+    makers = {
+        role
+        for role in ROLE_BUNDLES
+        if {"*", "can_edit_dashboards"}
+        & set((await client.get(index=f"{prefix}system-roles", id=role))["_source"]["capabilities"])
+    }
+    assert makers == {"triager", "security_lead", "admin"}

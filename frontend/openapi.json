@@ -325,6 +325,142 @@
         "title": "CreateView",
         "type": "object"
       },
+      "DashboardFields": {
+        "additionalProperties": false,
+        "description": "Everything an owner sets. A create is this model; a change is merged onto the stored\ndashboard and checked again by this model, so a change can never store what a create can't.\nThe one exception: a change that sends no panels keeps the stored ones unchecked.",
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 1024,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "panels": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardPanel"
+            },
+            "maxItems": 24,
+            "title": "Panels",
+            "type": "array"
+          },
+          "roles": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 32,
+            "title": "Roles",
+            "type": "array"
+          },
+          "scanner": {
+            "default": "all",
+            "enum": [
+              "all",
+              "trivy",
+              "grype"
+            ],
+            "title": "Scanner",
+            "type": "string"
+          },
+          "sharing": {
+            "default": "private",
+            "enum": [
+              "private",
+              "everyone",
+              "roles"
+            ],
+            "title": "Sharing",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "DashboardFields",
+        "type": "object"
+      },
+      "DashboardPanel": {
+        "additionalProperties": false,
+        "description": "One panel: a catalog ID, its cell, its width in columns and the NAME of its height.",
+        "properties": {
+          "h": {
+            "enum": [
+              "short",
+              "tall"
+            ],
+            "title": "H",
+            "type": "string"
+          },
+          "panel": {
+            "enum": [
+              "findings-summary",
+              "package-type",
+              "findings-by-namespace",
+              "riskiest-images",
+              "top-components",
+              "scan-ingest",
+              "failed-ingests",
+              "triage-activity",
+              "handled-findings",
+              "triage-progress"
+            ],
+            "title": "Panel",
+            "type": "string"
+          },
+          "scanner": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dashboard",
+                  "trivy",
+                  "grype"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scanner"
+          },
+          "w": {
+            "enum": [
+              1,
+              2
+            ],
+            "title": "W",
+            "type": "integer"
+          },
+          "x": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "panel",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "DashboardPanel",
+        "type": "object"
+      },
       "DecisionEditRequest": {
         "additionalProperties": false,
         "description": "The editable payload fields \u2014 anything set becomes the revoke+create pair's change set.",
@@ -1504,6 +1640,111 @@
           }
         },
         "title": "TriagePatch",
+        "type": "object"
+      },
+      "UpdateDashboard": {
+        "additionalProperties": false,
+        "description": "A change: the revision the user read, and the fields to change. `owner` and the audit\nfields are not fields here, so a write of them is unrepresentable (extra=forbid).",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "panels": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DashboardPanel"
+                },
+                "maxItems": 24,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Panels"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "scanner": {
+            "anyOf": [
+              {
+                "enum": [
+                  "all",
+                  "trivy",
+                  "grype"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scanner"
+          },
+          "sharing": {
+            "anyOf": [
+              {
+                "enum": [
+                  "private",
+                  "everyone",
+                  "roles"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharing"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "title": "UpdateDashboard",
         "type": "object"
       },
       "UpdateView": {
@@ -3903,6 +4144,212 @@
         "summary": "Close Cursor",
         "tags": [
           "cursors"
+        ]
+      }
+    },
+    "/api/v1/dashboards": {
+      "get": {
+        "operationId": "list_dashboards_api_v1_dashboards_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Dashboards Api V1 Dashboards Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Dashboards",
+        "tags": [
+          "dashboards"
+        ]
+      },
+      "post": {
+        "operationId": "create_dashboard_api_v1_dashboards_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardFields"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Dashboard Api V1 Dashboards Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Dashboard",
+        "tags": [
+          "dashboards"
+        ]
+      }
+    },
+    "/api/v1/dashboards/{dashboard_id}": {
+      "delete": {
+        "operationId": "delete_dashboard_api_v1_dashboards__dashboard_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dashboard_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "title": "Dashboard Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Dashboard",
+        "tags": [
+          "dashboards"
+        ]
+      },
+      "get": {
+        "operationId": "get_dashboard_api_v1_dashboards__dashboard_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dashboard_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "title": "Dashboard Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Dashboard Api V1 Dashboards  Dashboard Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dashboard",
+        "tags": [
+          "dashboards"
+        ]
+      },
+      "patch": {
+        "operationId": "update_dashboard_api_v1_dashboards__dashboard_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dashboard_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "title": "Dashboard Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDashboard"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Dashboard Api V1 Dashboards  Dashboard Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Dashboard",
+        "tags": [
+          "dashboards"
         ]
       }
     },

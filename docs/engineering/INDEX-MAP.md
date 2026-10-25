@@ -30,6 +30,7 @@
 | `system-config` | mutable | none | **no** | none, except a deleted cluster's per-cluster docs (issue 765) |
 | `system-tags` | mutable *(planned — not yet created by bootstrap; the tags feature is post-MVP)* | none | **no** | none |
 | `system-views` | mutable | none | **no** | none |
+| `system-dashboards` | mutable | none | **no** | none: the owner or a holder of `can_manage_settings` deletes one, with `can_edit_dashboards` |
 | `system-notifications` | mutable | none | **no** | No job deletes them by age or by read state. The user deletes one (`DELETE /api/v1/notifications/{id}`). The retirement sweep deletes a `cluster_retiring` notice when the cluster scans again or returns. A cluster delete deletes the notices of that cluster (issue 765). |
 | `system-reports` | mutable | none | **no** | TTL sweep (`JAVV_EXPORT_TTL_HOURS`, default 24h); a deleted cluster's go with it, chunks included (issue 765) |
 | `system-report-chunks` | mutable | none | **no** | TTL sweep with its parent report |
@@ -359,8 +360,9 @@ external_id       keyword       IdP subject/DN; NULL for local users
 created_at        date
 # system-roles  (capability bundles - SEC-9)
 role              keyword       e.g. viewer|triager|security_lead|admin
-capabilities      keyword[]     e.g. can_triage, can_accept_audit_final, can_export, can_manage_users,
-                                can_manage_retention, can_restore_snapshot, can_drop_index, can_rebuild_state
+capabilities      keyword[]     e.g. can_triage, can_accept_audit_final, can_export, can_edit_dashboards,
+                                can_manage_users, can_manage_retention, can_restore_snapshot,
+                                can_drop_index, can_rebuild_state
 ```
 *(Capability `can_accept_audit_final` gates risk-accept - SEC-2. Admin always holds all. Destructive caps
 Admin-only + journaled.)*
@@ -387,7 +389,7 @@ expires_at        date          TTL
 revoked           boolean       revoke-on-role-change / logout-all
 ```
 
-### `system-config` · `system-tags` (planned) · `system-views` · `system-notifications` · `system-reports` · `system-report-chunks` · `system-jobs`
+### `system-config` · `system-tags` (planned) · `system-views` · `system-dashboards` · `system-notifications` · `system-reports` · `system-report-chunks` · `system-jobs`
 ```
 # system-config        : SLA policy, rollover/retention/staleness settings, snapshot-repo ref (creds in OS keystore, not here), scan_scope:<cluster_id> (D43), cluster-registry (D-5/M8c),
 #                        cluster-retirement:<cluster_id> (issue 765: one per cluster ever retired, {retired_at, by, mode: manual|auto, returned_at}; un-retire stamps returned_at and keeps the doc, so the sweep counts silence from the return)
@@ -406,6 +408,13 @@ revoked           boolean       revoke-on-role-change / logout-all
 #                          owner-or-admin. `preset` = the SearchFilters mirror, {enabled:false} in _source
 #                          — presets are fetched by _id/list, never queried by their innards; card counts
 #                          come from /findings/facets at render time, never stored.)
+# system-dashboards    : { dashboard_id, name, description, scanner: all|trivy|grype, panels,
+#                          sharing: private|everyone|roles, roles[], owner, created_by, created_at,
+#                          updated_by, updated_at, revision, schema_version }   (issue 440, mapping v19)
+#                          `panels` is opaque in _source (enabled:false, like a view's `preset`):
+#                          [{ panel, x: 0|1, y, w: 1|2, h: short|tall, scanner?: dashboard|trivy|grype }].
+#                          A dashboard holds no cluster and no numbers: each panel reads at view time.
+#                          Listed by who may see it (owner / sharing / roles terms), fetched by _id.
 # system-notifications : { notification_id, user_id, type: sla_breach|assignment|report_ready|cluster_retiring, ref, cluster_id, created_at, read }
 #                        cluster_retiring (issue 765): one per settings admin when a cluster enters its retirement warning window; ref = its retires_at; id derived from (cluster, user, silent_since)
 # system-reports       : { report_id, kind: export|bulk_triage, status: pending|running|done|failed,

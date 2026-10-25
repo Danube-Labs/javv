@@ -15,6 +15,7 @@ export const FIELD_LABELS: Record<string, string> = {
   bulk_patch: 'Bulk change',
   lifecycle: 'Decision',
   view: 'Saved view',
+  dashboard: 'Dashboard',
   sla_policy: 'SLA policy',
   scan_scope: 'Scan scope',
   staleness_timers: 'Staleness timers',

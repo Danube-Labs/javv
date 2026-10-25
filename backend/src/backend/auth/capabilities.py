@@ -24,8 +24,13 @@ ROLES_INDEX = "system-roles"
 # the D33 defaults — Admin's "*" means every capability, present and future
 ROLE_BUNDLES: dict[str, list[str]] = {
     "viewer": [],
-    "triager": ["can_triage", "can_export"],
-    "security_lead": ["can_triage", "can_accept_audit_final", "can_export"],  # SEC-2: risk-accept
+    "triager": ["can_triage", "can_export", "can_edit_dashboards"],
+    "security_lead": [  # SEC-2: risk-accept
+        "can_triage",
+        "can_accept_audit_final",
+        "can_export",
+        "can_edit_dashboards",
+    ],
     "admin": ["*"],
 }
 
@@ -59,6 +64,11 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Contributors and the Approval list. Make an export report and download it.",
     ),
     Permission(
+        "can_edit_dashboards",
+        "Make dashboards",
+        "Make dashboards. Change, share and delete your own dashboards.",
+    ),
+    Permission(
         "can_manage_tokens", "Manage scanner tokens", "Make, revoke and rotate scanner tokens."
     ),
     Permission(
@@ -72,7 +82,8 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Manage settings",
         "Change the SLA, staleness, retirement and scan scope settings, and the cluster names. "
         "Retire a cluster and bring it back. Start the staleness sweep. Change or delete the "
-        "saved views of other users.",
+        "saved views of other users. See, change and delete the dashboards of other users, with "
+        "the permission to make dashboards. Read the dashboard rows in the Audit log.",
     ),
     Permission(
         "can_manage_retention",

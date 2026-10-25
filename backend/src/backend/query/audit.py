@@ -30,7 +30,10 @@ _SORT_KEY = "@timestamp"  # fixed — the cursor's `s` field must round-trip exa
 # The account events: sign-ins and sign-outs, password, user and role changes (`user`), and the
 # ingest tokens (`token`). Only `can_manage_users` reads them (issue 892 ruling 3).
 ACCOUNT_ENTITY_TYPES = ("token", "user")
-# The Entity and Action lists are fixed lists, and the Action list has 42 values. Each value gets
+# A dashboard row carries the whole dashboard, a private one too. Only `can_manage_settings`, who
+# sees every dashboard, reads them (issue 440, ruling of 2026-10-25).
+DASHBOARD_ENTITY_TYPES = ("dashboard",)
+# The Entity and Action lists are fixed lists, and the Action list has 45 values. Each value gets
 # a count only when the size is larger than the list (issue 983). The frontend mirrors this size
 # (`AUDIT_LIST_CAP` in `audit/fields.config.ts`), and a spec keeps them equal. The User list has no
 # fixed values and keeps the top `_FACET_TERMS_SIZE`.
@@ -64,7 +67,7 @@ class AuditFilters:
 
 
 def audit_tenant_query(
-    cluster_id: str, body: dict[str, Any], *, account_events: bool
+    cluster_id: str, body: dict[str, Any], *, account_events: bool, dashboard_events: bool
 ) -> dict[str, Any]:
     """SEC-4 for the JOURNAL specifically (operator catch, 2026-07-18): the log holds two row
     classes — cluster-scoped (triage, decisions) and FLEET-scoped (auth, user admin, store
@@ -73,7 +76,8 @@ def audit_tenant_query(
     visible iff it is the selected tenant's, carries no cluster_id at all, or carries the legacy
     fleet literal (MVP tenancy is all-clusters-visible, D38 — nothing here a session holder
     can't already see). Without `account_events` the account rows (`ACCOUNT_ENTITY_TYPES`) are
-    left out; the argument has no default, so every reader of the log decides."""
+    left out, and without `dashboard_events` the dashboard rows (`DASHBOARD_ENTITY_TYPES`). The
+    arguments have no default, so every reader of the log decides."""
     guarded = tenant_query(cluster_id, body)
     term = guarded["query"]["bool"]["filter"][0]
     guarded["query"]["bool"]["filter"][0] = {
@@ -89,6 +93,10 @@ def audit_tenant_query(
     if not account_events:
         guarded["query"]["bool"].setdefault("must_not", []).append(
             {"terms": {"entity_type": list(ACCOUNT_ENTITY_TYPES)}}
+        )
+    if not dashboard_events:
+        guarded["query"]["bool"].setdefault("must_not", []).append(
+            {"terms": {"entity_type": list(DASHBOARD_ENTITY_TYPES)}}
         )
     return guarded
 
@@ -164,6 +172,7 @@ async def run_audit_search(
     order: str = "desc",
     cursor: str | None = None,
     account_events: bool,
+    dashboard_events: bool,
     prefix: str = "",
     keep_open: bool = False,
 ) -> dict[str, Any]:
@@ -190,7 +199,9 @@ async def run_audit_search(
     opened_here = cursor is None
     body = build_audit_body(filters, size=size, order=order, search_after=search_after)
     # SEC-4 + the fleet-row seam (see the builder)
-    body = audit_tenant_query(cluster_id, body, account_events=account_events)
+    body = audit_tenant_query(
+        cluster_id, body, account_events=account_events, dashboard_events=dashboard_events
+    )
     body["pit"] = {"id": pit_id, "keep_alive": keep_alive}
     try:
         resp = await client.search(body=body)

@@ -61,7 +61,9 @@ from opensearchpy import AsyncOpenSearch, RequestError
 #             job kind; bounded at #kinds docs, OCC claim + fencing attempt_id like reports)
 #          v18 + javv-ingest-failures template (issue 357 — one doc per push rejected past the
 #             token check; per-cluster series under the lifecycle's drop-whole-index retention)
-MAPPING_VERSION = 18
+#          v19 + system-dashboards (issue 440 — saved dashboards: a layout of catalog panels,
+#             shared with the owner, everyone or roles; panels enabled:false like a view preset)
+MAPPING_VERSION = 19
 
 _KW = {"type": "keyword"}
 _DATE = {"type": "date"}
@@ -310,6 +312,26 @@ _VIEWS_PROPERTIES: dict[str, Any] = {
     "schema_version": {"type": "short"},
 }
 
+# system-dashboards (issue 440): saved dashboards. `panels` is opaque like a view's preset: a
+# dashboard is fetched by _id or listed by who may see it (owner, sharing, roles), never queried
+# by its panels.
+_DASHBOARDS_PROPERTIES: dict[str, Any] = {
+    "dashboard_id": _KW,
+    "name": _KW,
+    "description": {"type": "text"},
+    "scanner": _KW,  # all|trivy|grype: the switch the dashboard opens with
+    "panels": {"type": "object", "enabled": False},
+    "sharing": _KW,  # private|everyone|roles
+    "roles": _KW,
+    "owner": _KW,  # user id; immutable after create
+    "created_by": _KW,
+    "created_at": _DATE,
+    "updated_by": _KW,
+    "updated_at": _DATE,
+    "revision": _INT,
+    "schema_version": {"type": "short"},
+}
+
 MUTABLE_INDEXES: dict[str, dict[str, Any]] = {
     "findings": {
         "settings": {"index": {**_BASE_SETTINGS, "analysis": _LC_ANALYSIS}},
@@ -366,6 +388,10 @@ MUTABLE_INDEXES: dict[str, dict[str, Any]] = {
     "system-jobs": {  # issue 406 repair actions — one lease/status doc per maintenance job kind
         "settings": {"index": _BASE_SETTINGS},
         "mappings": _mappings(_JOBS_PROPERTIES),
+    },
+    "system-dashboards": {  # issue 440 — saved dashboards
+        "settings": {"index": _BASE_SETTINGS},
+        "mappings": _mappings(_DASHBOARDS_PROPERTIES),
     },
 }
 

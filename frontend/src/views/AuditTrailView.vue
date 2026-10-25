@@ -45,7 +45,9 @@ const useAuditFilters = makeFiltersStore('audit-filters', AUDIT_FIELDS, MAX_FILT
 // the values this user can find rows for: no account events without can_manage_users
 const auth = useAuthStore()
 const canExport = computed(() => auth.hasCapability('can_export'))
-const railFields = computed(() => auditFields(auth.hasCapability('can_manage_users')))
+const railFields = computed(() =>
+  auditFields(auth.hasCapability('can_manage_users'), auth.hasCapability('can_manage_settings')),
+)
 const filters = useAuditFilters()
 const grid = useAuditStore()
 const clusterStore = useClusterStore()

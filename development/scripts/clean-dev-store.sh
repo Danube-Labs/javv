@@ -74,6 +74,7 @@ delete_matching() { # index, query-json, label
 }
 delete_matching "system-views"        '{"query":{"prefix":{"view_id":"rt-"}}}'                "rt-* saved views"
 delete_matching "system-views"        '{"query":{"prefix":{"owner":"u-"}}}'                   "u-*-owned saved views"
+delete_matching "system-dashboards"   '{"query":{"prefix":{"owner":"u-"}}}'                   "u-*-owned dashboards"
 delete_matching "system-notifications" '{"query":{"prefix":{"user_id":"u-"}}}'                "u-* notification docs"
 delete_matching "system-config"       '{"query":{"wildcard":{"key":{"value":"*:c-*"}}}}'      "c-* cluster config docs"
 delete_matching "findings"            '{"query":{"prefix":{"cluster_id":"c-"}}}'              "c-* findings rows"

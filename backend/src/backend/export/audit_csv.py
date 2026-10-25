@@ -76,13 +76,16 @@ async def count_audit_lens(
     cluster_id: str,
     filters: AuditFilters,
     account_events: bool,
+    dashboard_events: bool,
     prefix: str = "",
 ) -> int:
     """Cheap pre-count so the export can 413 BEFORE opening a PIT (audit A-M6 pattern)."""
     body = build_audit_body(filters, size=0)
     del body["track_total_hits"]
     del body["sort"]
-    body = audit_tenant_query(cluster_id, body, account_events=account_events)
+    body = audit_tenant_query(
+        cluster_id, body, account_events=account_events, dashboard_events=dashboard_events
+    )
     resp = await client.count(index=f"{prefix}{_PATTERN}", body={"query": body["query"]})
     return int(resp["count"])
 
@@ -93,6 +96,7 @@ async def stream_audit_csv(
     cluster_id: str,
     filters: AuditFilters,
     account_events: bool,
+    dashboard_events: bool,
     prefix: str = "",
 ) -> AsyncIterator[str]:
     """Header, then one decorated, sanitized line per event — newest first, never buffered."""
@@ -109,7 +113,9 @@ async def stream_audit_csv(
         search_after: list[Any] | None = None
         while True:
             body = build_audit_body(filters, size=_PAGE_SIZE, search_after=search_after)
-            body = audit_tenant_query(cluster_id, body, account_events=account_events)
+            body = audit_tenant_query(
+                cluster_id, body, account_events=account_events, dashboard_events=dashboard_events
+            )
             body["pit"] = {"id": pit_id, "keep_alive": keep_alive}
             resp = await client.search(body=body)
             hits = resp["hits"]["hits"]

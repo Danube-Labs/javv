@@ -201,6 +201,13 @@ REGISTRY: tuple[ListEndpoint, ...] = (
         total=ABSENT,
     ),
     ListEndpoint(
+        path="/api/v1/dashboards",
+        route_path="/api/v1/dashboards",
+        family=UNPAGED,
+        list_key="dashboards",
+        total=ABSENT,
+    ),
+    ListEndpoint(
         path="/api/v1/notifications",
         route_path="/api/v1/notifications",
         family=UNPAGED,
@@ -236,6 +243,7 @@ EXEMPT_GET_ROUTES: dict[str, str] = {
     "/api/v1/decisions/approvals/export.csv": "CSV stream",
     "/api/v1/findings/export.vex": "OpenVEX/CycloneDX document",
     "/api/v1/reports/{report_id}": "one job status",
+    "/api/v1/dashboards/{dashboard_id}": "one dashboard",
     "/api/v1/reports/{report_id}/download": "result chunk stream",
     "/api/v1/admin/opensearch-runtime": (
         "runtime-facts object; its `nodes` array is one field among version/health/heap/etc, "

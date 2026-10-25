@@ -280,18 +280,22 @@ def test_the_freed_user_count_keeps_the_time_limit_the_tenant_and_the_account_ru
 
     t = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
     body = build_audit_facets_body(AuditFilters(actor=["alice"], until=t))
-    guarded = audit_tenant_query("c-1", body, account_events=False)
+    guarded = audit_tenant_query("c-1", body, account_events=False, dashboard_events=False)
     top = guarded["query"]["bool"]
     # the guard wraps the builder's query in its own bool, as a `must`
     assert top["must"] == [
         {"bool": {"filter": [{"range": {"@timestamp": {"lte": t.isoformat()}}}]}}
     ]
     assert {"terms": {"entity_type": ["token", "user"]}} in top["must_not"]
+    assert {"terms": {"entity_type": ["dashboard"]}} in top["must_not"]
     assert {"term": {"cluster_id": "c-1"}} in top["filter"][0]["bool"]["should"]
     assert guarded["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}
     # a manager's count has no account rule; the rest stays
     manager = audit_tenant_query(
-        "c-1", build_audit_facets_body(AuditFilters(actor=["alice"])), account_events=True
+        "c-1",
+        build_audit_facets_body(AuditFilters(actor=["alice"])),
+        account_events=True,
+        dashboard_events=True,
     )
     assert "must_not" not in manager["query"]["bool"]
 
@@ -667,6 +671,7 @@ async def test_failed_decorate_on_a_nonfinal_page_reclaims_the_opened_pit(monkey
             filters=AuditFilters(),
             size=2,
             account_events=False,
+            dashboard_events=False,
         )
     assert stub.deleted == ["pit-1"]
 

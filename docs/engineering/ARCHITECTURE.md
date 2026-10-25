@@ -232,7 +232,7 @@ the `findings` cache - the heart of D17.
 | **Logs - inventory catalog** | `javv-inventory-runs-*` | append-only | ingest only (1 manifest/run, written last) | certifies a run complete (`status=committed`) - read gate for "running images" |
 | **Logs - ingest failures** | `javv-ingest-failures-*` | append-only | ingest only (1 doc per push rejected after the token check, token's scope) | scanner-status failed-ingests table (issue 357) + its per-day strip (issue 575) |
 | **Human decisions (source of truth)** | `system-decisions`, `system-audit-log` | append/mutable | triage only; **every** action journaled | scoped decisions + audit + Contributors |
-| **Ops** | `system-reports`, `system-notifications`, `system-views` | mutable | API/jobs | export queue · bell · views |
+| **Ops** | `system-reports`, `system-notifications`, `system-views`, `system-dashboards` | mutable | API/jobs | export queue · bell · views · dashboards |
 
 The human-owned fields on `findings` are a **rebuildable cache** of the decision layer (D17): a **partial-doc
 merge** keeps them correct on every ingest (scanner fields only - human fields untouched, no preserve script);

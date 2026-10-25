@@ -111,7 +111,8 @@ async def test_create_user_starts_must_change_and_can_log_in(admin_env) -> None:
     doc = await _doc(client, username)
     assert doc["must_change"] is True  # SEC-6 discipline applies to admin-created users too
     assert doc["role"] == "triager"
-    assert doc["capabilities"] == ["can_triage", "can_export"]  # denormalized from the bundle
+    # denormalized from the bundle
+    assert doc["capabilities"] == ["can_triage", "can_export", "can_edit_dashboards"]
     # the temp password works — and the session is the restricted must_change one
     fresh = make_http()
     login = await fresh.post("/auth/login", json={"username": username, "password": TEMP_PASSWORD})
@@ -475,8 +476,13 @@ async def test_roles_list_serves_the_seeded_bundles_and_is_gated(admin_env) -> N
     bundles = {row["role"]: row["capabilities"] for row in r.json()["roles"]}
     # the D33 defaults are present (a customized/extra role may also exist — content-driven UI)
     assert bundles["viewer"] == []
-    assert bundles["triager"] == ["can_triage", "can_export"]
-    assert set(bundles["security_lead"]) == {"can_triage", "can_accept_audit_final", "can_export"}
+    assert bundles["triager"] == ["can_triage", "can_export", "can_edit_dashboards"]
+    assert set(bundles["security_lead"]) == {
+        "can_triage",
+        "can_accept_audit_final",
+        "can_export",
+        "can_edit_dashboards",
+    }
     assert bundles["admin"] == ["*"]
     # issue 990: the Roles card names each permission and what it allows, in this order
     assert r.json()["permissions"] == [
