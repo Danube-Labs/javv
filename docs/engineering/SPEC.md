@@ -1,6 +1,6 @@
 # JAVV - Spec (v4)
 
-> **Living doc** (formerly `SPEC_v4.md` in `docs/engineering/V4/` — suffixes dropped 2026-07-16, #410).
+> **Living doc** (formerly `SPEC_v4.md` in the old `V4/` folder — suffixes dropped 2026-07-16, #410).
 > The v1–v3 evolution trail is frozen in `.deprecated/`; version markers are reserved for frozen generations.
 
 > **Revision 4 (2026-06-21).** Supersedes `.deprecated/docs/engineering/deprecated/V3/SPEC_v3.md` (frozen). Reflects the post-v3 audit
@@ -301,8 +301,9 @@ FR-6/FR-8.
 - **MVP:** per-finding occurrences + point-in-time (FR-5b/FR-14, built M8 after read); VEX **export**
   (FR-22); Contributors **expanded** (FR-15); SLA bell (FR-16); scheduled export (FR-13); snapshot/restore
   (NFR-6); Data & OpenSearch admin panel (FR-19); local auth + bootstrap admin (FR-18).
-- **v1.1 fast-follow:** **VEX import**; Jira ticket push; dashboard **builder** (saved views stay default);
-  `javv-metrics-*` downsample tier.
+- **v1.1 fast-follow:** **VEX import**, Jira ticket push and the `javv-metrics-*` downsample tier. The
+  dashboard **builder** of this list shipped in 0.8.9 (issue 440): users save dashboards of catalog
+  panels, next to the saved views.
 - **Deferred:** CEL/expression policies; LDAP/OIDC.
 - **HA:** OpenSearch-native (multi-node + replicas) + stateless app replicas - not JAVV-built; multi-pod
   concurrency caveats per NFR-9/D23.

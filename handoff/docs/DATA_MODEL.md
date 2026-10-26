@@ -1,6 +1,6 @@
 # Data Model — javv (v5, UI-facing shapes against the shipped backend)
 
-> **Living UI contract** (formerly `DATA_MODEL-v5.md` in `handoff/v5/docs/` — suffixes dropped 2026-07-16, #410).
+> **Living UI contract** (formerly `DATA_MODEL-v5.md` in the old `v5/docs/` folder — suffixes dropped 2026-07-16, #410).
 > Layered over the frozen `handoff/v4/` prototype (the DESIGN.md §8 fidelity source).
 
 Replaces `handoff/v4/docs/DATA_MODEL.md`. Every shape below is an **API response the UI consumes**

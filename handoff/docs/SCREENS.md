@@ -1,6 +1,6 @@
 # Screens — javv (v5, refreshed against the shipped backend)
 
-> **Living UI contract** (formerly `SCREENS-v5.md` in `handoff/v5/docs/` — suffixes dropped 2026-07-16, #410).
+> **Living UI contract** (formerly `SCREENS-v5.md` in the old `v5/docs/` folder — suffixes dropped 2026-07-16, #410).
 > Layered over the frozen `handoff/v4/` prototype (the DESIGN.md §8 fidelity source).
 
 Refresh of `handoff/v4/docs/SCREENS.md` against the **shipped** contract (`docs/API.md`, through
@@ -1228,7 +1228,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 | 13.4 | Ignore rules → Decisions redirect stub | **No nav entry at all** — decisions live on `/approvals` + finding detail | 2026-07-15, M9e README (supersedes the #237 row-20 stub ruling) |
 | — | (v4 prototype) per-CVE audit panel | **Struck** — no screen; the content ships on finding detail + Approvals + Audit | 2026-07-15, M9e README row 24 |
 | 13.2 | (v4 prototype) scanner version select, tuning writes, enable toggles, Schedule section | **Read-only** provenance + `effective_config` cards; version = image-tag swap (D41), tuning = env/GitOps (C-4), no enable concept (D30), schedule = manifest | 2026-07-07 + 2026-07-15, M9e README §C |
-| 13.2 | — | Namespace scope lists are **exact matches**; globs only on `exclude_images` | 2026-07-15, M9e README (verified in `scanner/scope.py`) |
+| 13.2 | — | Namespace scope lists are **exact matches**; globs only on `exclude_images` | 2026-07-15, M9e README (verified in `scanner/src/scanner/scope.py`) |
 | 13.3 | "Security Lead can edit" SLA | Edit gate is **`can_manage_settings`** (admin bundle) | M9e README row 5 |
 | 13.6 | 5-role matrix, user delete | **4 capability bundles** (A-4), **disable-never-delete**, invite = temp password + `must_change` | M9e README row 8 |
 | 13.7 | (v4 prototype) 4 editable per-purpose retention windows | **One** editable window over the 4 append families; protected families render read-only with the why written in the panel | 2026-07-15 ruling, M9e README row 23 |

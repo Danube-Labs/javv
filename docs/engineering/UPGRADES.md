@@ -173,7 +173,7 @@ step.
 - **Safe to run again.** A run can stop at any step. The next run must find what is there and
   continue: the block, the clone, and a copy with the same document count as the source. Kibana
   does the same, and its documentation says not to remove indices to fix a failed migration.
-- **A job, not bootstrap.** The copy is a kind in `backend/jobs` under the `system-jobs` lease, which
+- **A job, not bootstrap.** The copy is a kind in `backend/src/backend/jobs/` under the `system-jobs` lease, which
   records each step. Bootstrap does not run the copy, because a copy of a large index takes longer
   than the start-up probe of the Helm chart allows (300 s). The pull request with the first breaking
   change adds the job.

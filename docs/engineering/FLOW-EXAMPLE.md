@@ -1,6 +1,6 @@
 # JAVV - End-to-end worked example (v4 snapshot model)
 
-> **Living doc** (formerly `FLOW-EXAMPLE_v4.md` in `docs/engineering/V4/` — suffixes dropped 2026-07-16, #410).
+> **Living doc** (formerly `FLOW-EXAMPLE_v4.md` in the old `V4/` folder — suffixes dropped 2026-07-16, #410).
 > The v1–v3 evolution trail is frozen in `.deprecated/`; version markers are reserved for frozen generations.
 
 > A concrete scan→push→store→query walkthrough of the v4 point-in-time model, with real-ish data, to make
