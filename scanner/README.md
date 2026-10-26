@@ -139,8 +139,9 @@ either way the backend never sees a partial commit, and the next cycle re-scans 
 the scanner holds no state.
 
 ## Provenance (D41)
-Each envelope stamps the scanner's self-reported **`scanner_version`** (+ vuln-DB version/built where the
-scanner provides it — Grype yes, Trivy's standalone JSON no). It's ingested for the read-only scanner-status
+Each envelope stamps the scanner's self-reported **`scanner_version`**, and the version and the build
+time of the vuln DB: Grype gives them in its scan output, and Trivy in `trivy version --format json`,
+which the scanner runs once in each cycle. It's ingested for the read-only scanner-status
 version view + audit version matrix; the binary is the source of truth for "what actually ran."
 
 ## Dev
