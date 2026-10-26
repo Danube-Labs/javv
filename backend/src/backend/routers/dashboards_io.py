@@ -30,6 +30,7 @@ from backend.routers.dashboards import (
     CanEdit,
     DashboardFields,
     create_doc,
+    unknown_role_errors,
     visibility_query,
 )
 
@@ -210,6 +211,9 @@ async def import_dashboards(
         fields = DashboardFields.model_validate(
             line.model_dump(include=set(DashboardFields.model_fields))
         )
+        if errors := await unknown_role_errors(client, fields.roles, ("roles",)):
+            results.append({"line": number, "status": 422, "errors": errors})
+            continue
         try:
             await create_doc(client, principal, fields, dashboard_id)
         except ConflictError:  # made between the check and the write

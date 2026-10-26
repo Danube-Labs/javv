@@ -129,6 +129,23 @@ class UpdateDashboard(BaseModel):
     roles: list[_RoleName] | None = Field(default=None, max_length=32)
 
 
+async def unknown_role_errors(
+    client: Any, roles: list[str], loc: tuple[str, ...]
+) -> list[dict[str, Any]]:
+    """A field error for each name in `roles` that no `system-roles` bundle has: sharing with it
+    would share with nobody (ruling of 2026-10-26, issue 440). The place and the reason, never the
+    name (issue 842)."""
+    if not roles:
+        return []
+    resp = await client.mget(index=ROLES_INDEX, body={"ids": sorted(set(roles))})
+    known = {d["_id"] for d in resp["docs"] if d.get("found")}
+    return [
+        {"loc": (*loc, i), "msg": "no role has this name", "type": "unknown_role"}
+        for i, role in enumerate(roles)
+        if role not in known
+    ]
+
+
 def _sees_all(principal: Principal) -> bool:
     return holds(principal, "can_manage_settings")
 
@@ -266,7 +283,10 @@ async def create_doc(
 async def create_dashboard(
     request: Request, body: DashboardFields, principal: CanEdit
 ) -> dict[str, Any]:
-    return await create_doc(cast(Any, request.app.state.opensearch), principal, body, uuid4().hex)
+    client = cast(Any, request.app.state.opensearch)
+    if errors := await unknown_role_errors(client, body.roles, ("body", "roles")):
+        raise RequestValidationError(errors)
+    return await create_doc(client, principal, body, uuid4().hex)
 
 
 @router.patch("/{dashboard_id}")
@@ -294,6 +314,9 @@ async def update_dashboard(
         raise RequestValidationError(
             [{**e, "loc": ("body", *e["loc"])} for e in exc.errors(include_url=False)]
         ) from exc
+    # only the roles the change sends: as with the panels, a change of the name keeps what is stored
+    if errors := await unknown_role_errors(client, change.get("roles", []), ("body", "roles")):
+        raise RequestValidationError(errors)
     stored = fields.stored()
     if keep_panels:
         stored["panels"] = doc["panels"]
