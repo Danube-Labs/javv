@@ -213,17 +213,13 @@ describe('edit mode', () => {
     useClusterStore().selectedId = 'c1'
     signIn('lead', ['can_edit_dashboards'])
     resetGridstack()
-    document.head.insertAdjacentHTML('beforeend', '<meta name="csp-nonce" content="n0nce">')
     vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc()))
     vi.mocked(updateDashboardApiV1DashboardsDashboardIdPatch).mockImplementation(async (opts) => {
       const body = (opts as { body: { panels?: DashboardPanel[] } }).body
       return answer(200, doc({ revision: 5, ...(body.panels ? { panels: body.panels } : {}) }))
     })
   })
-  afterEach(() => {
-    vi.clearAllMocks()
-    document.head.querySelector('meta[name="csp-nonce"]')?.remove()
-  })
+  afterEach(() => vi.clearAllMocks())
 
   it('the read page loads no gridstack; Edit dashboard opens edit mode with the settings of Q5', async () => {
     const { w, router } = await mountView()
@@ -243,7 +239,6 @@ describe('edit mode', () => {
         disableResize: true,
         animate: false,
         draggable: { handle: '.dash-move', cancel: 'input,textarea,select,option' },
-        nonce: 'n0nce',
       }),
     ])
     // each panel has its Move tab, its settings and its remove button at rest
@@ -300,6 +295,57 @@ describe('edit mode', () => {
     await button(w, 'Save changes').trigger('click')
     await flushPromises()
     expect(patchBody().body.revision).toBe(5)
+  })
+
+  it('a move made while a save runs stays unsaved, and the next save sends it', async () => {
+    let answerSave!: () => void
+    vi.mocked(updateDashboardApiV1DashboardsDashboardIdPatch).mockImplementationOnce(
+      (opts) =>
+        new Promise((done) => {
+          const body = (opts as { body: { panels: DashboardPanel[] } }).body
+          answerSave = () => done(answer(200, doc({ revision: 5, panels: body.panels })))
+        }) as never,
+    )
+    const { w } = await mountView('?edit=1')
+    await drop({ 'triage-progress': { x: 0, y: 20 } })
+    await button(w, 'Save changes').trigger('click')
+    await drop({ 'top-components': { x: 1, y: 27 } })
+    answerSave()
+    await flushPromises()
+    expect(w.find('.save-msg').text()).toBe('You have unsaved changes')
+    expect(button(w, 'Exit edit').attributes('disabled')).toBeDefined()
+
+    await button(w, 'Save changes').trigger('click')
+    await flushPromises()
+    expect(patchBody().body.revision).toBe(5)
+    expect(patchBody().body.panels).toContainEqual({
+      panel: 'top-components',
+      x: 1,
+      y: 27,
+      w: 1,
+      h: 'short',
+      scanner: 'dashboard',
+    })
+  })
+
+  it('a save that answers after the user went to another dashboard changes nothing on the page', async () => {
+    const other = 'c'.repeat(32)
+    let answerSave!: () => void
+    vi.mocked(updateDashboardApiV1DashboardsDashboardIdPatch).mockImplementationOnce(
+      () => new Promise((done) => (answerSave = () => done(answer(200, doc({ revision: 5 }))))) as never,
+    )
+    const { w, router } = await mountView('?edit=1')
+    await drop({ 'triage-progress': { x: 0, y: 20 } })
+    await button(w, 'Save changes').trigger('click')
+    vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+      answer(200, doc({ dashboard_id: other, name: 'Another board' })),
+    )
+    await router.push(`/dashboards/${other}`)
+    await settle()
+    answerSave()
+    await flushPromises()
+    expect(w.find('h1').text()).toBe('Another board')
+    expect(useToastStore().toasts).toEqual([])
   })
 
   it('the places top mode gives as the grid starts are not a change', async () => {

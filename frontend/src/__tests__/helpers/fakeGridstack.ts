@@ -23,11 +23,14 @@ export const gs = {
   destroyed: 0,
   /** what `top` mode does to the stored places as the grid starts */
   compact: (nodes: FakeNode[]) => nodes,
+  /** what `top` mode does to a panel that the page adds: no change event follows */
+  pack: (node: FakeNode) => node,
 }
 
 export function resetGridstack() {
   Object.assign(gs, { inits: [], nodes: [], onChange: null, updates: [], made: [], removed: [], destroyed: 0 })
   gs.compact = (nodes) => nodes
+  gs.pack = (node) => node
 }
 
 const nodeOf = (el: HTMLElement): FakeNode => ({
@@ -55,7 +58,7 @@ export const GridStack = {
       batchUpdate: () => undefined,
       makeWidget: (item: HTMLElement) => {
         gs.made.push(item.getAttribute('gs-id')!)
-        gs.nodes.push(nodeOf(item))
+        gs.nodes.push(gs.pack(nodeOf(item)))
       },
       removeWidget: (item: HTMLElement) => {
         const node = gs.nodes.find((n) => n.el === item)!

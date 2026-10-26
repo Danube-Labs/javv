@@ -223,17 +223,23 @@ function onRemoved() {
 
 async function save() {
   if (!dash.value) return
-  const panels = fromDraft(draft.value)
+  const id = dash.value.dashboard_id
+  // the user can go on editing while the save runs: what was sent becomes the saved state, and a
+  // change made since stays unsaved
+  const sentDraft = draft.value
+  const sentDetails = details.value
+  const panels = fromDraft(sentDraft)
   const body: UpdateDashboard = { revision: dash.value.revision }
-  if (details.value && detailsBase.value) Object.assign(body, detailsChange(detailsBase.value, details.value))
+  if (sentDetails && detailsBase.value) Object.assign(body, detailsChange(detailsBase.value, sentDetails))
   if (!sameLayout(panels, fromDraft(baseline.value))) body.panels = panels
   busy.value = true
   saveError.value = null
   const { response, data, error } = await updateDashboardApiV1DashboardsDashboardIdPatch({
-    path: { dashboard_id: dash.value.dashboard_id },
+    path: { dashboard_id: id },
     body,
   })
   busy.value = false
+  if (route.params.id !== id) return
   if (!response?.ok || !data) {
     logger.warn('dashboard_save_failed', { status: response?.status ?? 0 })
     const readOnly = (error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE
@@ -241,9 +247,9 @@ async function save() {
     return
   }
   dash.value = data as unknown as DashboardDoc
-  baseline.value = draft.value
-  details.value = detailsOf(dash.value)
-  detailsBase.value = details.value
+  baseline.value = sentDraft
+  detailsBase.value = detailsOf(dash.value)
+  if (details.value === sentDetails) details.value = detailsBase.value
   toast.success('Dashboard saved.')
 }
 </script>

@@ -91,3 +91,43 @@ test('a dashboard is made, moved, shared and removed; the viewer cannot change i
     }
   }
 })
+
+test('a panel added next to a taller one is saved where edit mode shows it', async ({ page }) => {
+  await login(page)
+  const made = await page.request.post(`${BASE}/api/v1/dashboards`, {
+    data: {
+      name: `e2e packed panel ${Date.now()}`,
+      description: '',
+      scanner: 'all',
+      sharing: 'private',
+      roles: [],
+      panels: [
+        { panel: 'findings-summary', x: 0, y: 0, w: 2, h: 'short' },
+        { panel: 'top-components', x: 1, y: 7, w: 1, h: 'short' },
+      ],
+    },
+  })
+  expect(made.status()).toBe(201)
+  const { dashboard_id: id } = await made.json()
+  try {
+    await page.goto(`${BASE}/dashboards/${id}?edit=1`)
+    await expect(page.getByRole('button', { name: 'Move Top components', exact: true })).toBeVisible({ timeout: 20_000 })
+    // the left column under Findings summary is empty, so top mode packs the new half panel up into it
+    await addPanel(page, 'triage-progress', 'Triage progress')
+    const item = page.locator('.grid-stack-item[data-panel="triage-progress"]')
+    await expect(item).toHaveAttribute('gs-y', '7')
+
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(id))
+    await page.getByRole('button', { name: 'Save changes' }).click()
+    expect((await saved).status()).toBe(200)
+    const stored = await (await page.request.get(`${BASE}/api/v1/dashboards/${id}`)).json()
+    const triage = stored.panels.find((p: { panel: string }) => p.panel === 'triage-progress')
+    expect([triage.x, triage.y]).toEqual([0, 7])
+  } finally {
+    const left = await page.request.get(`${BASE}/api/v1/dashboards/${id}`)
+    if (left.ok()) {
+      const { revision } = await left.json()
+      await page.request.delete(`${BASE}/api/v1/dashboards/${id}?revision=${revision}`)
+    }
+  }
+})

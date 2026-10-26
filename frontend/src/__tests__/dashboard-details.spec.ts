@@ -314,6 +314,31 @@ describe('the details in edit mode, and the remove', () => {
     expect(w.find('.save-msg').text()).toBe('All changes saved')
   })
 
+  it('details applied while a save runs stay on the page and unsaved', async () => {
+    let answerSave!: () => void
+    vi.mocked(updateDashboardApiV1DashboardsDashboardIdPatch).mockImplementationOnce(
+      () => new Promise((done) => (answerSave = () => done(answer(200, doc({ name: 'Monday review', revision: 5 }))))) as never,
+    )
+    const { w } = await mountAt(`/dashboards/${ID}?edit=1`)
+    await button(w, 'Name and sharing').trigger('click')
+    await flushPromises()
+    await w.find('input#dash-name').setValue('Monday review')
+    await dialogButton(w, 'Apply').trigger('click')
+    await button(w, 'Save changes').trigger('click')
+    await button(w, 'Name and sharing').trigger('click')
+    await flushPromises()
+    await w.find('input#dash-name').setValue('Tuesday review')
+    await dialogButton(w, 'Apply').trigger('click')
+    answerSave()
+    await flushPromises()
+    expect(w.find('h1').text()).toBe('Editing Tuesday review')
+    expect(w.find('.save-msg').text()).toBe('You have unsaved changes')
+
+    await button(w, 'Save changes').trigger('click')
+    await flushPromises()
+    expect(patchBody()).toEqual({ revision: 5, name: 'Tuesday review' })
+  })
+
   it('Discard puts back the saved details', async () => {
     const { w } = await mountAt(`/dashboards/${ID}?edit=1`)
     await button(w, 'Name and sharing').trigger('click')

@@ -274,6 +274,24 @@ describe('Add panel in edit mode', () => {
     expect(patchedPanels()).toHaveLength(3)
   })
 
+  it('a new panel is saved where top mode puts it, not where it was added', async () => {
+    // a half panel under a short half panel: gridstack packs it up next to the taller one
+    gs.pack = (node) => ({ ...node, y: 7 })
+    const w = await mountView(PANELS)
+    await button(w, 'Add panel').trigger('click')
+    await flushPromises()
+    const dialog = w.find('[role="dialog"]')
+    await dialog.find('[data-panel="top-components"]').trigger('click')
+    await button(dialog, 'Add panel').trigger('click')
+    await flushPromises()
+    await button(w, 'Save changes').trigger('click')
+    await flushPromises()
+    expect(patchedPanels().filter((p) => p.panel === 'top-components').map((p) => [p.x, p.y])).toEqual([
+      [0, 7],
+      [0, 7],
+    ])
+  })
+
   it(`at ${MAX_PANELS} panels Add panel is off, with the reason next to it`, async () => {
     const full = Array.from({ length: MAX_PANELS }, (_, i) => ({
       panel: 'scan-ingest' as const,

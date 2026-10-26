@@ -1150,7 +1150,7 @@ page.
   15 px margin, no resize (R10). Each panel shows, at rest, a **Move** tab over its top left
   corner and **Settings** and remove over its top right corner, with the scanner tag of a pinned
   panel. The Move tab is the one drag handle, with the `grab` cursor (§5). During a drag the drop
-  place is a dashed coral box, and the panels under it move down when the user drops. They jump to
+  place is a dashed coral box, and the panels under it move down while the user drags. They jump to
   their places: there is no layout animation (DESIGN.md §9). No key moves a panel (R11).
 - **Add panel (`ModalShell`, `components/dashboards/AddPanelDialog.vue`, ruling Q1):** on the
   left, the catalog by group (Findings, Scanners, People), one row for each panel with its name

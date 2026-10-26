@@ -59,7 +59,6 @@ onMounted(() => {
       animate: false,
       // the handle is a button, which gridstack refuses by default (gridstack issue 2703)
       draggable: { handle: '.dash-move', cancel: 'input,textarea,select,option' },
-      nonce: document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content') ?? undefined,
     },
     gridEl.value,
   )
@@ -90,6 +89,9 @@ watch(
       }
     }
     grid.batchUpdate(false)
+    // `top` mode packs a new panel upward, and gridstack sends no change event for a node it has
+    // just added, so the page takes every place from here
+    emit('moved', placesOf(grid.engine.nodes))
   },
   { flush: 'post' },
 )

@@ -71,7 +71,7 @@ function apply() {
 <template>
   <ModalShell
     :title="mode === 'create' ? 'New dashboard' : 'Name and sharing'"
-    subtitle="Who can open this dashboard. Only you and an admin can change it."
+    subtitle="Its name, who can see it and the scanner it opens on. The owner and an admin can change it."
     :width="560"
     @close="close"
   >
