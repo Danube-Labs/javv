@@ -54,7 +54,9 @@ def test_each_release_has_a_line_in_the_timeline():
     released = re.findall(r"^##? \[?(\d+\.\d+\.\d+)", (ROOT / "CHANGELOG.md").read_text(), re.M)
     rows = set(re.findall(r"^\| (\d+\.\d+\.\d+) \|", (BANK / "timeline.md").read_text(), re.M))
     assert released, "no release found in CHANGELOG.md"
-    missing = [v for v in released if v not in rows]
+    # The newest release may have no row yet: the docs PR after a release adds it, and the release
+    # PR itself puts the version in CHANGELOG.md before that PR exists.
+    missing = [v for v in released[1:] if v not in rows]
     assert not missing, f"releases with no row in timeline.md: {missing}"
 
 
