@@ -234,8 +234,9 @@ async def test_at_t_just_now_each_row_has_the_live_sla_deadline(
 
     assert set(past) == set(live)
     assert live[kev_fk].overdue  # the case under test: overdue only because of KEV
-    assert live[kev_fk].due_at is not None
-    assert datetime.fromisoformat(live[kev_fk].due_at) == seen + timedelta(days=1)
+    kev_due = live[kev_fk].due_at
+    assert kev_due is not None
+    assert datetime.fromisoformat(kev_due) == seen + timedelta(days=1)
     for fk, verdict in live.items():
         row = past[fk]
         assert row["overdue"] == verdict.overdue, fk
