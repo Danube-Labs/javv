@@ -5,8 +5,8 @@ description: >-
   for the store and the javv-scanner chart in each monitored cluster.
 type: application
 # the JAVV release this chart ships with (issue 725 ruling 4); release-please moves both lines
-version: 0.8.8  # x-release-please-version
-appVersion: "0.8.8"  # x-release-please-version
+version: 0.8.9  # x-release-please-version
+appVersion: "0.8.9"  # x-release-please-version
 home: https://github.com/Danube-Labs/javv-poc
 sources:
   - https://github.com/Danube-Labs/javv-poc/tree/main/deploy/helm/javv

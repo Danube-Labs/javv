@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.8.9](https://github.com/Danube-Labs/javv-poc/compare/v0.8.8...v0.8.9) (2026-10-26)
+
+
+### Features
+
+* a catalog of dashboard panels, and each panel can get its own data ([#996](https://github.com/Danube-Labs/javv-poc/issues/996)) ([0553f29](https://github.com/Danube-Labs/javv-poc/commit/0553f2938b6ad878f6a495a6056405fc92e07240))
+* dashboard files, an NDJSON export and an import with a result for each line ([#1002](https://github.com/Danube-Labs/javv-poc/issues/1002)) ([7c9f896](https://github.com/Danube-Labs/javv-poc/commit/7c9f896cae870f01801fae267445ccd6ef531d3f))
+* edit a dashboard, add panels from the catalog, and share or remove it ([#1010](https://github.com/Danube-Labs/javv-poc/issues/1010)) ([4c4625d](https://github.com/Danube-Labs/javv-poc/commit/4c4625d5a4370df04fe846c3785ca76d6fc2512c))
+* export controls stay visible but disabled, with the reason, for a role without can_export ([#995](https://github.com/Danube-Labs/javv-poc/issues/995)) ([230ac3b](https://github.com/Danube-Labs/javv-poc/commit/230ac3b782d4491457fb904b0d36a7aaa1375c4f))
+* owners read the role names they can share a dashboard with ([#1007](https://github.com/Danube-Labs/javv-poc/issues/1007)) ([e8f6267](https://github.com/Danube-Labs/javv-poc/commit/e8f62672561a65a0ecad233ddb82463ec7a6256a))
+* saved dashboards with sharing, revisions and the can_edit_dashboards permission ([#1001](https://github.com/Danube-Labs/javv-poc/issues/1001)) ([7a2489e](https://github.com/Danube-Labs/javv-poc/commit/7a2489e7403e703203b86fbd5c9886f8b842379a))
+* the dashboards list and read page, with export and import of dashboard files ([#1003](https://github.com/Danube-Labs/javv-poc/issues/1003)) ([78eb979](https://github.com/Danube-Labs/javv-poc/commit/78eb9796e2cb0411471ba2f1a6ff915e8ce2d4ab))
+* the export files need the can_export permission ([#994](https://github.com/Danube-Labs/javv-poc/issues/994)) ([268e778](https://github.com/Danube-Labs/javv-poc/commit/268e77854c7b514a9a1079d683763f9470725897))
+* the roles card is a table of each permission and the roles that have it ([#993](https://github.com/Danube-Labs/javv-poc/issues/993)) ([9713f1a](https://github.com/Danube-Labs/javv-poc/commit/9713f1af1ea5bb57172f0bc8e4d3637d0722bac0)), closes [#990](https://github.com/Danube-Labs/javv-poc/issues/990)
+* the roles route lists each permission with a name and what it allows ([#991](https://github.com/Danube-Labs/javv-poc/issues/991)) ([651ba95](https://github.com/Danube-Labs/javv-poc/commit/651ba95a75b31570df8c6eff20cbb7631acd0f20)), closes [#990](https://github.com/Danube-Labs/javv-poc/issues/990)
+
+
+### Bug Fixes
+
+* dashboard sharing refuses a role name that no role has ([#1008](https://github.com/Danube-Labs/javv-poc/issues/1008)) ([3f98e68](https://github.com/Danube-Labs/javv-poc/commit/3f98e68f407a00ca61b7a411634b6389510e23ba))
+
 ## [0.8.8](https://github.com/Danube-Labs/javv-poc/compare/v0.8.7...v0.8.8) (2026-10-23)
 
 
