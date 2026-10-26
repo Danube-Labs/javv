@@ -1,9 +1,9 @@
-"""The contributor and agent guides, and the READMEs of the components, name files of the
-repository, and a reader opens them on trust. A path that no longer exists sends the reader
-nowhere, so each path that a guide names must exist: each relative link, and each code span that
-starts with a top-level folder or file of the repository. The test reads the git tree, not the
-disk: a file that a guide names is in the tree, or git ignores it on purpose (a log, a cookie jar or
-the test results that a command writes). Pure file checks, no store."""
+"""The contributor and agent guides, the READMEs of the components, and the design and handoff
+docs name files of the repository, and a reader opens them on trust. A path that no longer exists
+sends the reader nowhere, so each path that a guide names must exist: each relative link, and each
+code span that starts with a top-level folder or file of the repository. The test reads the git
+tree, not the disk: a file that a guide names is in the tree, or git ignores it on purpose (a log,
+a cookie jar or the test results that a command writes). Pure file checks, no store."""
 
 import os
 import re
@@ -48,6 +48,11 @@ GUIDES = sorted(
         ROOT / "development" / "video" / "README.md",
         ROOT / "design" / "README.md",
         ROOT / "design" / "brand" / "BRAND.md",
+        ROOT / "docs" / "audits" / "remaining_audit_items.md",
+        ROOT / "development" / "e2e" / "results.md",
+        ROOT / "handoff" / "README.md",
+        *(ROOT / "docs" / "engineering").glob("*.md"),
+        *(ROOT / "handoff" / "docs").glob("*.md"),
         *(ROOT / ".claude" / "rules").glob("*.md"),
         *(ROOT / ".claude" / "commands").glob("*.md"),
         # the bolt README template links from a bolt folder, and the bolts are history
