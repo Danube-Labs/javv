@@ -21,6 +21,7 @@ src/backend/
   snapshots/    per-scan occurrences + inventory-run certification (point-in-time reads)
   query/        OpenSearch query builders: search, aggs, paging (PIT + search_after), trends, as_of
   tenancy/      the tenant read path (every read carries an explicit cluster_id)
+  dashboards/   the catalog of the dashboard panels that a saved dashboard can hold
   triage/       the state machine, single and bulk triage
   decisions/    scoped decisions, projection onto findings, reproject
   sla/          SLA policy and overdue

@@ -16,8 +16,9 @@ npm install
 npm run dev        # :5173; proxies /api, /auth, /readyz and /metrics to localhost:8000
 ```
 
-The proxy uses the same paths the k8s ingress routes, so the app never needs a backend URL.
-`vite preview` (the built app) carries the same proxy.
+The frontend server of the image (`server/serve.mjs`) sends `/api`, `/auth` and `/readyz` to the
+backend in the same way, so the app never needs a backend URL. `vite preview` (the built app) has
+the same proxy, without `/metrics`.
 
 ## The API contract
 
