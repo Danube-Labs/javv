@@ -21,6 +21,7 @@ import {
   type DashboardPanel,
   type UpdateDashboard,
 } from '@/api/generated'
+import AddPanelDialog from '@/components/dashboards/AddPanelDialog.vue'
 import DashboardGrid from '@/components/dashboards/DashboardGrid.vue'
 import PanelSettings from '@/components/dashboards/PanelSettings.vue'
 import SaveBar from '@/components/settings/SaveBar.vue'
@@ -33,7 +34,10 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { useStretchWidth } from '@/composables/useStretchWidth'
 import {
+  addedPanel,
   editRefusal,
+  MAX_PANELS,
+  PANEL_CAP_NOTE,
   fromDraft,
   sameLayout,
   saveFailureCopy,
@@ -144,20 +148,24 @@ function setEditing(on: boolean) {
 }
 
 const draft = ref<DraftPanel[]>([])
-/** the panels as edit mode first shows them: a save sends panels only when they differ */
-const baseline = ref<DashboardPanel[]>([])
+/** the saved panels as edit mode shows them: a save sends panels only when they differ. Its
+ * keys are the draft's, so the first places gridstack gives move only the saved panels. */
+const baseline = ref<DraftPanel[]>([])
 /** a new key makes a new edit grid, so a discard starts gridstack again from the saved panels */
 const gridKey = ref(0)
 const busy = ref(false)
 /** a refused save stays next to the save bar until the next save or discard */
 const saveError = ref<string | null>(null)
 const settingsKey = ref<string | null>(null)
+const adding = ref(false)
+const full = computed(() => draft.value.length >= MAX_PANELS)
 
 function startDraft() {
   if (!dash.value) return
   draft.value = toDraft(dash.value.panels)
-  baseline.value = fromDraft(draft.value)
+  baseline.value = draft.value
   settingsKey.value = null
+  adding.value = false
   saveError.value = null
   gridKey.value++
 }
@@ -165,12 +173,12 @@ watch(editing, (on) => {
   if (on) startDraft()
 })
 
-const dirty = computed(() => editing.value && !sameLayout(fromDraft(draft.value), baseline.value))
+const dirty = computed(() => editing.value && !sameLayout(fromDraft(draft.value), fromDraft(baseline.value)))
 const settingsPanel = computed(() => draft.value.find((p) => p.key === settingsKey.value) ?? null)
 
 function onReady(places: PanelPlace[]) {
   draft.value = withPlaces(draft.value, places)
-  baseline.value = fromDraft(draft.value)
+  baseline.value = withPlaces(baseline.value, places)
 }
 function onMoved(places: PanelPlace[]) {
   draft.value = withPlaces(draft.value, places)
@@ -178,6 +186,10 @@ function onMoved(places: PanelPlace[]) {
 function applySettings(settings: Settings) {
   draft.value = draft.value.map((p) => (p.key === settingsKey.value ? withSettings(p, settings) : p))
   settingsKey.value = null
+}
+function addPanel(choice: Parameters<typeof addedPanel>[1]) {
+  draft.value = [...draft.value, addedPanel(draft.value, choice)]
+  adding.value = false
 }
 function removePanel(key: string) {
   draft.value = draft.value.filter((p) => p.key !== key)
@@ -187,7 +199,7 @@ async function save() {
   if (!dash.value) return
   const panels = fromDraft(draft.value)
   const body: UpdateDashboard = { revision: dash.value.revision }
-  if (!sameLayout(panels, baseline.value)) body.panels = panels
+  if (!sameLayout(panels, fromDraft(baseline.value))) body.panels = panels
   busy.value = true
   saveError.value = null
   const { response, data, error } = await updateDashboardApiV1DashboardsDashboardIdPatch({
@@ -202,7 +214,7 @@ async function save() {
     return
   }
   dash.value = data as unknown as DashboardDoc
-  baseline.value = panels
+  baseline.value = draft.value
   toast.success('Dashboard saved.')
 }
 </script>
@@ -233,7 +245,18 @@ async function save() {
       <div v-if="dash" class="head-actions">
         <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
         <!-- the save bar holds the only ways out of unsaved changes: Discard and Save changes -->
-        <UiButton v-if="editing" variant="ghost" :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
+        <template v-if="editing">
+          <UiButton
+            variant="control"
+            :disabled="full"
+            :aria-describedby="full ? 'panel-cap-note' : undefined"
+            @click="adding = true"
+          >
+            <AppIcon name="plus" :size="13" />Add panel
+          </UiButton>
+          <UiRoleNote v-if="full" id="panel-cap-note" icon="info">{{ PANEL_CAP_NOTE }}</UiRoleNote>
+          <UiButton variant="ghost" :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
+        </template>
         <template v-else>
           <UiButton
             variant="control"
@@ -278,7 +301,9 @@ async function save() {
         icon="columns"
         title="This dashboard has no panels"
         hint="Add panels from the catalog. You can move each panel, and set its scanner, width and height."
-      />
+      >
+        <UiButton variant="primary" @click="adding = true"><AppIcon name="plus" :size="13" />Add panel</UiButton>
+      </EmptyState>
       <DashboardEditGrid
         v-else-if="editing"
         :key="gridKey"
@@ -308,6 +333,16 @@ async function save() {
       />
     </template>
 
+    <AddPanelDialog
+      v-if="adding && editing"
+      :count="draft.length"
+      :cluster-id="clusterStore.selectedId"
+      :t="timeTravel.t"
+      :window-days="timeTravel.windowDays"
+      :dashboard-scanner="scanner"
+      @close="adding = false"
+      @add="addPanel"
+    />
     <PanelSettings
       v-if="settingsPanel"
       :key="settingsPanel.key"

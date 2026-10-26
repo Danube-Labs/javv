@@ -5,6 +5,11 @@
  */
 import type { DashboardPanel } from '@/api/generated'
 import type { PanelHeight, PanelWidth } from '@/dashboards/catalog'
+import { placeOne } from '@/dashboards/layout'
+
+/** The backend's cap on the panels of one dashboard (MAX_PANELS, ruling Q2, docs/API.md). */
+export const MAX_PANELS = 24
+export const PANEL_CAP_NOTE = `A dashboard holds at most ${MAX_PANELS} panels.`
 
 /** A panel in edit mode: the stored panel and a key that stays the same while it moves. */
 export interface DraftPanel extends DashboardPanel {
@@ -84,6 +89,23 @@ export function sameLayout(a: readonly DashboardPanel[], b: readonly DashboardPa
     .map(panelSig)
     .sort()
     .every((s, i) => s === sigs[i])
+}
+
+/** A panel from the catalog window, at the left edge under all the others (the kickoff of S8b). */
+export function addedPanel(
+  draft: readonly DraftPanel[],
+  choice: { panel: DashboardPanel['panel'] } & PanelSettings,
+): DraftPanel {
+  const bottom = Math.max(0, ...draft.map((p) => p.y + (placeOne(p)?.rows ?? 0)))
+  return {
+    key: draftKey(),
+    panel: choice.panel,
+    x: 0,
+    y: bottom,
+    w: choice.w,
+    h: choice.h,
+    ...(choice.scanner ? { scanner: choice.scanner } : {}),
+  }
 }
 
 /** A full-width panel starts at the left edge; a half-width one keeps its column. */

@@ -1,10 +1,9 @@
 /**
  * Edit mode of a dashboard (issue 440, S8a). The rules in `dashboards/edit.ts` are pure, so they
  * are tested as units: who may change a dashboard (D3), when two layouts are the same, what a
- * panel's settings do to its place, and what a refused save says. The view is mounted with a
- * fake gridstack that keeps the nodes it was given and records each call, so a test can move a
- * panel the way a drop does (the `change` event) and read what the page then asks gridstack and
- * the backend to do. A real drag with the mouse is the end-to-end test's job.
+ * panel's settings do to its place, and what a refused save says. The view is mounted with the
+ * fake gridstack of `helpers/fakeGridstack.ts`, so a test can move a panel the way a drop does
+ * and read what the page then asks gridstack and the backend to do.
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -15,71 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-interface FakeNode {
-  id: string
-  x: number
-  y: number
-  w: number
-  h: number
-  el: HTMLElement
-}
-const gs = vi.hoisted(() => ({
-  inits: [] as Record<string, unknown>[],
-  nodes: [] as FakeNode[],
-  onChange: null as null | ((event: unknown, nodes: FakeNode[]) => void),
-  updates: [] as { id: string; opts: Record<string, number> }[],
-  made: [] as string[],
-  removed: [] as string[],
-  destroyed: 0,
-  /** what `top` mode does to the stored places as the grid starts */
-  compact: (nodes: FakeNode[]) => nodes,
-}))
-vi.mock('gridstack', () => {
-  const nodeOf = (el: HTMLElement): FakeNode => ({
-    id: el.getAttribute('gs-id')!,
-    x: Number(el.getAttribute('gs-x')),
-    y: Number(el.getAttribute('gs-y')),
-    w: Number(el.getAttribute('gs-w')),
-    h: Number(el.getAttribute('gs-h')),
-    el,
-  })
-  return {
-    GridStack: {
-      init(opts: Record<string, unknown>, el: HTMLElement) {
-        gs.inits.push(opts)
-        gs.nodes = gs.compact([...el.querySelectorAll<HTMLElement>('.grid-stack-item')].map(nodeOf))
-        return {
-          engine: {
-            get nodes() {
-              return gs.nodes
-            },
-          },
-          on: (_event: string, cb: (event: unknown, nodes: FakeNode[]) => void) => {
-            gs.onChange = cb
-          },
-          batchUpdate: () => undefined,
-          makeWidget: (item: HTMLElement) => {
-            gs.made.push(item.getAttribute('gs-id')!)
-            gs.nodes.push(nodeOf(item))
-          },
-          removeWidget: (item: HTMLElement) => {
-            const node = gs.nodes.find((n) => n.el === item)!
-            gs.removed.push(node.id)
-            gs.nodes = gs.nodes.filter((n) => n !== node)
-          },
-          update: (item: HTMLElement, opts: Record<string, number>) => {
-            const node = gs.nodes.find((n) => n.el === item)!
-            gs.updates.push({ id: node.id, opts })
-            Object.assign(node, opts)
-          },
-          destroy: () => {
-            gs.destroyed++
-          },
-        }
-      },
-    },
-  }
-})
+vi.mock('gridstack', () => import('./helpers/fakeGridstack'))
 
 const Probe = defineComponent({
   props: ['scanner', 'pageSize'],
@@ -152,6 +87,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { useToastStore } from '@/stores/toast'
 import DashboardView from '@/views/DashboardView.vue'
+
+import { gs, resetGridstack } from './helpers/fakeGridstack'
 
 const ID = 'b'.repeat(32)
 const PANELS: DashboardPanel[] = [
@@ -275,8 +212,7 @@ describe('edit mode', () => {
     setActivePinia(createPinia())
     useClusterStore().selectedId = 'c1'
     signIn('lead', ['can_edit_dashboards'])
-    Object.assign(gs, { inits: [], nodes: [], onChange: null, updates: [], made: [], removed: [], destroyed: 0 })
-    gs.compact = (nodes) => nodes
+    resetGridstack()
     document.head.insertAdjacentHTML('beforeend', '<meta name="csp-nonce" content="n0nce">')
     vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc()))
     vi.mocked(updateDashboardApiV1DashboardsDashboardIdPatch).mockImplementation(async (opts) => {
