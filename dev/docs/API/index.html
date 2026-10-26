@@ -3429,6 +3429,12 @@ permissions of the user who opens the dashboard.</p>
 </tr>
 <tr>
 <td>GET</td>
+<td><code>/api/v1/dashboards/roles</code></td>
+<td><code>can_edit_dashboards</code></td>
+<td>The names of the roles that you can share a dashboard with, by name: <code>{"roles": ["admin", ...]}</code>. It gives no capabilities. <code>/api/v1/admin/roles</code> gives them and needs <code>can_manage_users</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
 <td><code>/api/v1/dashboards/export.ndjson</code></td>
 <td>session</td>
 <td>A file of the dashboards that you can see, with the IDs in <code>dashboard_id</code> (the parameter can be there more than one time), or all of them, at most 1,000. See "Dashboard files".</td>
