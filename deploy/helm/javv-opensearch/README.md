@@ -1,6 +1,6 @@
 # javv-opensearch
 
-![Version: 0.8.8](https://img.shields.io/badge/Version-0.8.8-informational?style=flat-square) ![AppVersion: 3.9.0](https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square)
+![Version: 0.8.9](https://img.shields.io/badge/Version-0.8.9-informational?style=flat-square) ![AppVersion: 3.9.0](https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square)
 
 This chart installs OpenSearch for JAVV: one node, with its security plugin on and two users with
 a password.
@@ -46,7 +46,7 @@ cluster ([An OpenSearch of your own](../../../docs/DEPLOYING.md#an-opensearch-of
 
 1. Make the Secrets and install the chart:
     ```bash
-    VERSION=0.8.8
+    VERSION=0.8.9
     read -rs -p 'OpenSearch admin password: ' pw && echo
     printf '%s' "$pw" | kubectl create secret generic javv-opensearch-admin --from-file=password=/dev/stdin
     unset pw
