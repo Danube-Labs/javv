@@ -42,7 +42,7 @@ datastore:
 # dev-deps (what CI runs via `uv run`) and drift-checked here.
 toolchain:
   # renovate: datasource=github-releases depName=astral-sh/uv
-  uv: "0.13.1"
+  uv: "0.13.5"
   # renovate: datasource=pypi depName=ruff
   ruff: "0.17.1"
   # renovate: datasource=npm depName=pyright
