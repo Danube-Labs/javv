@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/Danube-Labs/javv-poc/compare/v0.8.9...v0.9.0) (2026-10-26)
+
+
+### Documentation
+
+* the memory bank after release 0.8.9, and release 0.9.0 marks its changes ([#1014](https://github.com/Danube-Labs/javv-poc/issues/1014)) ([425982a](https://github.com/Danube-Labs/javv-poc/commit/425982adcab3fc5791b9845b233e850bea046704)), closes [#1012](https://github.com/Danube-Labs/javv-poc/issues/1012)
+
 ## [0.8.9](https://github.com/Danube-Labs/javv-poc/compare/v0.8.8...v0.8.9) (2026-10-26)
 
 
