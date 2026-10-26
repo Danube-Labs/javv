@@ -266,6 +266,12 @@ The backend runs its background jobs on its own schedules:
 - 02:00: staleness.
 - 03:00: lifecycle.
 - 04:00: findings cleanup.
+- 04:15: cluster retirement.
+- 04:30: session sweep.
+- Each 5 minutes: the report drain, which makes the exports and the bulk actions in the queue.
+- Each hour, at 15 minutes past the hour: the report sweep, which deletes the expired exports.
+
+[Background jobs](CONFIGURATION.md#background-jobs) gives each schedule and its setting.
 
 If the installation already holds data, read
 [The first run of the background jobs](UPGRADING.md#the-first-run-of-the-background-jobs) before the
@@ -360,7 +366,7 @@ The answers are for the default values of the three charts.
         seccompProfile:
           type: RuntimeDefault
     ```
-    We checked the pod that `helm template` makes with these values. The CI does not start
+    We examined the pod that `helm template` makes with these values. The CI does not start
     OpenSearch with them.
 - The `helm test` Pod of `javv-opensearch` meets `restricted` with the default values.
 
@@ -374,7 +380,7 @@ to the backend.
 - `/docs` and `/openapi.json`: the description of the API. The same description is in the
   repository (`frontend/openapi.json`). An API call from `/docs` needs the same sign-in or token as
   any other API call.
-- `/healthz` and `/readyz`: the health checks.
+- `/healthz` and `/readyz`: the health probes.
 
 ### Steps
 

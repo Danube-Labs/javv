@@ -29,5 +29,5 @@ same address: `http://<this machine>:8080`.
 | Upgrade | the new release's `compose.yaml` in place of this one, then `docker compose pull` and `docker compose up -d` |
 | Run a checkout that is not a release | `development/scripts/build-app-images.sh`, then `docker compose up -d` |
 
-Every setting is listed in [`compose.yaml`](compose.yaml) with its default and a comment. Needs
+[`compose.yaml`](compose.yaml) lists every setting, with its default and a comment. Needs
 Docker Compose 2.23.1 or later: the file carries OpenSearch's role for JAVV inline, as `configs`.
