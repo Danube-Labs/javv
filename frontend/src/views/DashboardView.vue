@@ -239,9 +239,11 @@ async function save() {
     body,
   })
   busy.value = false
+  if (!response?.ok || !data) logger.warn('dashboard_save_failed', { status: response?.status ?? 0 })
+  else toast.success('Dashboard saved.')
+  // the page is reused across dashboards: the answer for one that the user left changes nothing here
   if (route.params.id !== id) return
   if (!response?.ok || !data) {
-    logger.warn('dashboard_save_failed', { status: response?.status ?? 0 })
     const readOnly = (error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE
     saveError.value = saveFailureCopy(response?.status ?? 0, readOnly)
     return
@@ -250,7 +252,6 @@ async function save() {
   baseline.value = sentDraft
   detailsBase.value = detailsOf(dash.value)
   if (details.value === sentDetails) details.value = detailsBase.value
-  toast.success('Dashboard saved.')
 }
 </script>
 

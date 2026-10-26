@@ -83,6 +83,7 @@ import {
   withSettings,
   type DraftPanel,
 } from '@/dashboards/edit'
+import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import { useToastStore } from '@/stores/toast'
@@ -345,7 +346,30 @@ describe('edit mode', () => {
     answerSave()
     await flushPromises()
     expect(w.find('h1').text()).toBe('Another board')
-    expect(useToastStore().toasts).toEqual([])
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    // the toast store is the app's, so the saved message is still true on the next page
+    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['Dashboard saved.'])
+  })
+
+  it('a save refused after the user went to another dashboard is still logged', async () => {
+    const warned = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    let answerSave!: () => void
+    vi.mocked(updateDashboardApiV1DashboardsDashboardIdPatch).mockImplementationOnce(
+      () => new Promise((done) => (answerSave = () => done(answer(409)))) as never,
+    )
+    const { w, router } = await mountView('?edit=1')
+    await drop({ 'triage-progress': { x: 0, y: 20 } })
+    await button(w, 'Save changes').trigger('click')
+    vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+      answer(200, doc({ dashboard_id: 'c'.repeat(32), name: 'Another board' })),
+    )
+    await router.push(`/dashboards/${'c'.repeat(32)}`)
+    await settle()
+    answerSave()
+    await flushPromises()
+    expect(warned).toHaveBeenCalledWith('dashboard_save_failed', { status: 409 })
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    warned.mockRestore()
   })
 
   it('the places top mode gives as the grid starts are not a change', async () => {

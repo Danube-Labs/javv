@@ -275,9 +275,9 @@ describe('Add panel in edit mode', () => {
   })
 
   it('a new panel is saved where top mode puts it, not where it was added', async () => {
-    // a half panel under a short half panel: gridstack packs it up next to the taller one
+    // the left column under Findings summary is empty, so gridstack packs the new half panel up into it
     gs.pack = (node) => ({ ...node, y: 7 })
-    const w = await mountView(PANELS)
+    const w = await mountView([PANELS[0]!, { ...PANELS[1]!, x: 1 }])
     await button(w, 'Add panel').trigger('click')
     await flushPromises()
     const dialog = w.find('[role="dialog"]')
@@ -287,7 +287,7 @@ describe('Add panel in edit mode', () => {
     await button(w, 'Save changes').trigger('click')
     await flushPromises()
     expect(patchedPanels().filter((p) => p.panel === 'top-components').map((p) => [p.x, p.y])).toEqual([
-      [0, 7],
+      [1, 7],
       [0, 7],
     ])
   })

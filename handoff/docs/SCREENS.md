@@ -1158,7 +1158,7 @@ page.
   line and the settings of the chosen panel, then a preview with live data in the slot that the
   panel gets on the dashboard: rows × 40 px less the margin, and half of the column for a Half
   panel. A new choice starts from the default width and the first height. **Add panel** puts the
-  panel at the left edge, under the lowest panel. At 24 panels (Q2) **Add panel** in the head is
+  panel at the left edge, in the first free place from the top: `top` mode moves it up. At 24 panels (Q2) **Add panel** in the head is
   off, and the reason shows next to it in `UiRoleNote` with an info icon, because a limit is not
   a permission. A dashboard with no panels shows **Add panel** in its `EmptyState`.
 - **Panel settings (`SlideoverShell`):** the line of the panel, then the scanner (Follow the
