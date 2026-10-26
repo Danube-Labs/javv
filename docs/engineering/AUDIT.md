@@ -1,6 +1,6 @@
 # JAVV v4 - Design audit (consistency · overengineering · soundness · security)
 
-> **Living doc** (formerly `AUDIT_v4.md` in `docs/engineering/V4/` — suffixes dropped 2026-07-16, #410).
+> **Living doc** (formerly `AUDIT_v4.md` in the old `V4/` folder — suffixes dropped 2026-07-16, #410).
 > The v1–v3 evolution trail is frozen in `.deprecated/`; version markers are reserved for frozen generations.
 
 > Second-round audit of the v4 set, run as **4 independent agents** (consistency, overengineering,

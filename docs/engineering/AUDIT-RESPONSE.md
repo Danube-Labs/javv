@@ -1,6 +1,6 @@
 # JAVV v4 - Response to external (ChatGPT) design audit
 
-> **Living doc** (formerly `AUDIT-RESPONSE_v4.md` in `docs/engineering/V4/` — suffixes dropped 2026-07-16, #410).
+> **Living doc** (formerly `AUDIT-RESPONSE_v4.md` in the old `V4/` folder — suffixes dropped 2026-07-16, #410).
 > The v1–v3 evolution trail is frozen in `.deprecated/`; version markers are reserved for frozen generations.
 
 > **Status:** settled. Every round's rulings are applied: they live in `PLAN.md` as D37-D40 and in

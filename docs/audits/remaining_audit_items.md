@@ -6,9 +6,9 @@
 > are: `docs/engineering/AUDIT.md` + `AUDIT-RESPONSE.md` (rulings folded into V4) and
 > `docs/research/INDEPENDENT-AUDIT-v3.md` (v3→v4 evolution trail).
 >
-> Sources merged: `development/AUDIT.md` (2026-06-24 dev-process review) · `audit-2026-07-03-m3.md`
+> Sources merged: `2026-06-24-development-review-AUDIT.md` (2026-06-24 dev-process review, once development/AUDIT.md) · `audit-2026-07-03-m3.md`
 > · `audit-2026-07-04-m4-m5a-m5b.md` (Fable) · `audit_codex.md` (Codex) · `AUDIT-TASKS.md`
-> (remediation tracker) · `.codex/audit_from_claude.md` · `docs/research/PROJECT-AUDIT-2026-07-02.md`.
+> (remediation tracker) · `audit_from_claude.md` (once in .codex/) · `PROJECT-AUDIT-2026-07-02.md` (once in docs/research/).
 
 ## What's already closed (verified 2026-07-06, not just claimed)
 

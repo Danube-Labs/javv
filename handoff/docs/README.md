@@ -1,6 +1,6 @@
 # Handoff docs — the current UI contract (refreshed against the shipped backend)
 
-> **Living UI contract** (formerly `handoff/v5/` — the version suffix dropped 2026-07-16, #410).
+> **Living UI contract** (formerly the `v5/` folder — the version suffix dropped 2026-07-16, #410).
 > Layered over the frozen `handoff/v4/` prototype; when sources disagree, `docs/engineering/` wins.
 
 Produced 2026-07-07 via Claude design (claude.ai/design) from the major-audit inputs

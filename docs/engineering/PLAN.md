@@ -1,6 +1,6 @@
 # JAVV - Just Another Vulnerability Viewer · MVP Plan (v4)
 
-> **Living doc** (formerly `PLAN_v4.md` in `docs/engineering/V4/` — suffixes dropped 2026-07-16, #410).
+> **Living doc** (formerly `PLAN_v4.md` in the old `V4/` folder — suffixes dropped 2026-07-16, #410).
 > The v1–v3 evolution trail is frozen in `.deprecated/`; version markers are reserved for frozen generations.
 
 > **Status: revision 4 (2026-06-21).** Supersedes `.deprecated/docs/engineering/deprecated/V3/PLAN_v3.md` (kept frozen for the evolution
