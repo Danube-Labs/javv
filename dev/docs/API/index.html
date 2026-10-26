@@ -3413,13 +3413,13 @@ permissions of the user who opens the dashboard.</p>
 <td>POST</td>
 <td><code>/api/v1/dashboards</code></td>
 <td><code>can_edit_dashboards</code></td>
-<td>Saves a new dashboard (201). You are its <code>owner</code>. It is <code>private</code> if the body does not set <code>sharing</code>.</td>
+<td>Saves a new dashboard (201). You are its <code>owner</code>. It is <code>private</code> if the body does not set <code>sharing</code>. A name in <code>roles</code> that is not the name of a role gets 422 (<code>unknown_role</code>).</td>
 </tr>
 <tr>
 <td>PATCH</td>
 <td><code>/api/v1/dashboards/{dashboard_id}</code></td>
 <td><code>can_edit_dashboards</code>, the owner or <code>can_manage_settings</code></td>
-<td>Changes the fields in the body. The body must have the <code>revision</code> that you read. A different <code>revision</code> gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new <code>sharing</code> and <code>"roles": []</code> together. A change that sends no <code>panels</code> keeps the stored panels.</td>
+<td>Changes the fields in the body. The body must have the <code>revision</code> that you read. A different <code>revision</code> gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new <code>sharing</code> and <code>"roles": []</code> together. A change that sends no <code>panels</code> keeps the stored panels. A name in <code>roles</code> that is not the name of a role gets 422 (<code>unknown_role</code>). A change that sends no <code>roles</code> keeps the stored roles, and does not examine them.</td>
 </tr>
 <tr>
 <td>DELETE</td>
@@ -3431,7 +3431,7 @@ permissions of the user who opens the dashboard.</p>
 <td>GET</td>
 <td><code>/api/v1/dashboards/roles</code></td>
 <td><code>can_edit_dashboards</code></td>
-<td>The names of the roles that you can share a dashboard with, by name: <code>{"roles": ["admin", ...]}</code>. It gives no capabilities. <code>/api/v1/admin/roles</code> gives them and needs <code>can_manage_users</code>.</td>
+<td>The names of the roles that you can share a dashboard with, sorted: <code>{"roles": ["admin", ...]}</code>. It gives no capabilities. <code>/api/v1/admin/roles</code> gives them and needs <code>can_manage_users</code>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3555,6 +3555,8 @@ A different type gets 415.</p>
   hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
   of a line. An object in a line has at most 14 fields. A field that is in an object two times
   counts two times.</li>
+<li>A line can have a role from a different JAVV. If this JAVV has no role with that name, the
+  line gets 422 (<code>unknown_role</code>), and the line does not make a dashboard.</li>
 <li>A line ends at a line feed (<code>\n</code>). The import ignores a <code>\r</code> before it. It skips empty lines
   and the summary line of an export.</li>
 <li>The result of a line is <code>201</code> (made), <code>409</code> (the ID exists) or <code>422</code> (the line is not
