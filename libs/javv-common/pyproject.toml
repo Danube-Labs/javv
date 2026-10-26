@@ -13,7 +13,7 @@ dev = [
     # drift-checked by development/scripts/check-versions.sh. Bump there, then --fix.
     "pyright==1.1.414",
     "pytest>=8",
-    "ruff==0.17.1",
+    "ruff==0.17.2",
 ]
 
 [build-system]
