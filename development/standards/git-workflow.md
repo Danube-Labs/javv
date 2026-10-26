@@ -3,16 +3,17 @@
 Lightweight rules for a small team. Full rationale in the `git-workflow-and-versioning` skill.
 
 ## Branches
-- Cut from `main`. Naming: `feat/M<n>-<slug>`, `fix/<slug>`, `chore/<slug>`, `docs/<slug>`.
-  - e.g. `feat/M0-scanners`, `feat/M3-watermark-guard`, `fix/mermaid-seq-parse`.
-- One **bolt** → one branch, landed as a PR. If a bolt is large (M3, M5*), split into thin vertical slices
-  (`incremental-implementation` skill). **No stacked PRs, ever** — every slice bases on `main`; hold
+- Cut from `main`. Naming: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`, `chore/<slug>`, `docs/<slug>`.
+  - e.g. `feat/440-dashboard-edit`, `feat/243-can-export`, `docs/1012-memory-bank`.
+- One **issue** → one or more PRs, each with one or more slices of the issue's plan, in thin vertical
+  slices (`incremental-implementation` skill). **No stacked PRs, ever** — every slice bases on `main`. Hold
   finished work rather than stacking (a merged stacked base has closed its child PR before).
 
 ## Commits
 - **Conventional commits:** `type: subject` - `feat`, `fix`, `chore`, `docs`, `test`, `refactor`.
 - Imperative, present tense, lower-case subject. Body explains *why* when non-obvious.
-- Reference the bolt where useful: `feat(M1): hardened POST /ingest/scan`.
+- Name the issue in the body (`issue 440`). Put `Refs #<n>` or `Closes #<n>` only in the PR body:
+  release-please copies a `Refs #<n>` from a commit into the release notes as `closes`.
 - No attribution footers (`Co-Authored-By` lines for tools) and no session links in commits or PRs.
 - **Never** `--no-verify` / skip hooks. If a hook fails, fix the cause. Hooks are installed by
   [`.pre-commit-config.yaml`](../../.pre-commit-config.yaml) (ruff + the conventional-commit check,
@@ -29,9 +30,7 @@ Lightweight rules for a small team. Full rationale in the `git-workflow-and-vers
 ## Pull requests
 - Target `main`; keep them reviewable (small > big).
 - **PR description = the Definition of Done checklist** ([definition-of-done.md](definition-of-done.md)) ticked off,
-  plus a line linking the bolt: `Implements development/bolts/M<n>-<slug>/`.
-- **`Closes #<bolt-issue>`** in the PR body so merging auto-closes the bolt's tracking issue and moves its
-  card to Done on the board (live status = the GitHub issue/board; see [bolts/README.md](../bolts/README.md)).
+  plus the issue: **`Closes #<n>`** in the PR that finishes it, `Refs #<n>` in the PRs before it.
 - CI must be green (ruff + pyright + pytest, ESLint + Vitest) before merge.
 - `code-review-and-quality` pass on the diff.
 
@@ -77,28 +76,32 @@ Review findings land as PR comments; fixes go on the same branch (no fixup PRs).
 re-greps factual claims in docs/comments against the code — prose written *about* the system instead
 of checked against it is this repo's most repeated defect (see PR #480's history).
 
-## Tracking a bolt (GitHub issues)
-Each bolt has a GitHub issue (label `bolt`) on the
-[project board](https://github.com/orgs/Danube-Labs/projects/1) — that's the **live status**; the bolt
-README is the spec. While working a bolt, comment its issue at these checkpoints:
-- **Kickoff** — "starting M<n>" (and move the card to In Progress). First **verify dev tooling is connected**:
-  the bolt's relevant MCPs (`claude mcp list` → serena / opensearch / context7 per
-  [`docs/research/TOOLING-AND-MCP.md`](../../docs/research/TOOLING-AND-MCP.md)) and the static floor
-  (ruff/pyright). If any are missing, wire them at kickoff (they load on the next session) — don't skip and
-  press on.
-- **Blocker** — what's blocking and on what.
-- **Scope / decision change** — and mirror anything spec-level into the bolt README's `## Updates` log; the
-  issue comment can just link it (don't double-maintain — issue = running commentary, README = durable spec).
-- **Done** — a short wrap-up; the PR's `Closes #<n>` then closes the issue + moves the card to Done.
-  Note which **MCPs/skills you actually used** (one line — self-attestation; keeps the tooling record accurate,
-  since tool-use can't be CI-enforced).
+## Tracking work (GitHub issues)
+The bolts M0 to M10 are history (issue 1012): their READMEs do not change any more. Each feature
+or fix has one GitHub issue, and that issue is the live status and the spec. While you work an
+issue:
+- **Plan first** — before any code, post the plan as a comment on the issue, with a spec file (the
+  test file) for each slice. The operator rules on the open decisions there.
+- **Kickoff** — "starting slice <n>". First **check the dev tooling**: the relevant MCPs
+  (`claude mcp list` → serena / opensearch / context7 per
+  [`docs/research/TOOLING-AND-MCP.md`](../../docs/research/TOOLING-AND-MCP.md)) and the static
+  floor (ruff/pyright). If any are missing, wire them at kickoff (they load on the next session).
+  Do not skip this step.
+- **Blocker** — what blocks the work, and on what.
+- **Scope or decision change** — the change and the operator's ruling, on the issue. A ruling that
+  stays in force also goes in [`rulings.md`](../memory-bank/rulings.md) of the memory bank, and a
+  changed design decision in [`system-patterns.md`](../memory-bank/system-patterns.md).
+- **Done** — a short wrap-up. The PR that finishes the issue has `Closes #<n>` in its body. Note
+  which **MCPs/skills you actually used** (one line).
 
-Mechanical activity (commits/PRs that mention `#<n>`) shows up in the issue timeline automatically — no comment
-needed for that. Agent included: when an AI agent works a bolt, it follows these same checkpoints.
+Mechanical activity (commits and PRs that mention `#<n>`) shows in the issue timeline
+automatically, with no comment. An AI agent that works an issue follows the same checkpoints. The
+timeline of the project, the rulings that still apply and the open work are in
+[`development/memory-bank/`](../memory-bank/README.md).
 
-## Housekeeping (non-bolt chores)
+## Housekeeping (chores outside a feature issue)
 Maintenance work — CI/tooling bumps, dependency hygiene, version pins, doc/branch cleanup — stays off the
-bolt board. There is no shared tracker issue (the old one, #66, was closed 2026-07-07). For every such PR:
+feature issues. There is no shared tracker issue (we closed the old one, #66, on 2026-07-07). For every such PR:
 - Add the **`housekeeping`** label; `is:pr label:housekeeping` lists them all.
 - Put **`Refs #<n>`** in the body for the issue the work came from, so the PR shows up in that issue's
   timeline. Use `Closes #<n>` only when the PR finishes that issue. If no issue exists, say where the
@@ -109,6 +112,6 @@ Hand-authored chore PRs follow the convention; the agent included.
 
 ## main
 - Protected. No direct pushes; PR + green CI + review to merge.
-- First tag (`v0.1.0`) is cut at **M0/M1** (first runnable code). The MVP release (`0.6`/`0.7`) closes
-  the deploy bolt (M10); `1.0.0` follows a hardening phase (see [releases.md](releases.md)).
+- First tag (`v0.1.0`) is cut at **M0/M1** (first runnable code). The MVP release (`0.6.1`) came from
+  the deploy bolt (M10), which closed with `0.7.0`. `1.0.0` follows a hardening phase (see [releases.md](releases.md)).
 - Versioning + release/dependency automation (release-please, Renovate): see [releases.md](releases.md).

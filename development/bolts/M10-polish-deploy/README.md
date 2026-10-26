@@ -280,3 +280,10 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   CronJobs (deferred from M7). Report results are stored **in OpenSearch** (chunked), so M10 provisions
   **no object store for reports** — S3/MinIO stays snapshot-only (M2). The download is a backend endpoint
   (`GET /api/v1/reports/{id}/download`), not a presigned object URL; no report-storage secrets/creds.
+
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).

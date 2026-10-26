@@ -82,3 +82,12 @@ See [`standards/testing.md`](../../standards/testing.md). This bolt needs:
 > `libs/javv-common` pipeline — redaction, JSON, `timestamp→level→event` order and
 > `JAVV_LOG_LEVEL` come free ([observability.md §1](../../standards/observability.md)).
 > **Never `print()`, never `logging.getLogger()`, never a private logging setup.**
+
+## Updates
+
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).

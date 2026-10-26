@@ -173,6 +173,13 @@ as pure units** (Vitest).
   in the edit box, and in the rail for a facet field; a pasted comma list adds each value. A
   refused cell pick at the cap shows nothing yet (known gap on the PR).
 
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).
+
 ## Config tracking
 
 > **When this bolt introduces config**, add each new knob (a `JAVV_*` / OpenSearch env var, a

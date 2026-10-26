@@ -163,6 +163,13 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   read. Scanner-status provenance cards (D41 read-only version/DB lines + last-N runs) read the
   **M8c provenance endpoint** (latest *committed* scan-event, catalog-first). Depends-on grows: M8c.
 
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).
+
 ## Config tracking
 
 > **When this bolt introduces config**, add each new knob (a `JAVV_*` / OpenSearch env var, a

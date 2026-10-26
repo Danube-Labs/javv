@@ -82,3 +82,10 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
 - **export-at-past-T is M7's**, not this bolt's (D28): the inline export routes 501 for a past
   `as_of_t`; a reconstructed-at-T export lands in M7's scheduled queue once this reader can feed the
   sweep. See the M7 README Updates.
+
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).

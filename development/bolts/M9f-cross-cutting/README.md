@@ -153,6 +153,13 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   (app-loads/login, core triage round-trip, degraded banner, server-side paging) remain M9f
   deliverables. The command exists so visual verification doesn't wait for M9f.
 
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).
+
 ## Design & fidelity (standing rule)
 > Before touching any screen: read **`frontend/DESIGN.md`** — the binding agent contract
 > (tokens-only styling, **Hanken Grotesk** UI face, the **AA contrast floor** (`--soft` minimum

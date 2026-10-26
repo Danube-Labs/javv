@@ -137,6 +137,13 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   7. Baseline: 312 backend tests; `tests/test_decisions.py` already pins the lifecycle incl. the
      revoke/edit race contracts — extend it, don't duplicate it.
 
+### 2026-10-26 — Frozen as history
+
+The bolts M0 to M10 ended on 2026-10-09. This file is history now, not the spec of record. New work
+follows one GitHub issue for each feature, with the plan and a spec file for each slice on the
+issue. The timeline, the rulings that still apply and the open work are in the
+[memory bank](../../memory-bank/README.md) (issue 1012).
+
 ## Logging (standing rule)
 > All app-code logging goes through the shared library: `structlog.get_logger()` on the
 > `libs/javv-common` pipeline — redaction, JSON, `timestamp→level→event` order and

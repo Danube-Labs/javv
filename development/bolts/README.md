@@ -1,5 +1,11 @@
 # Bolts - the build, milestone by milestone
 
+> **Frozen as history (2026-10-26, issue 1012).** The bolts M0 to M10 ended on 2026-10-09, when
+> M10 shipped. These folders do not change any more. New work follows one GitHub issue for each
+> feature, with the plan and a spec file for each slice on the issue
+> ([git-workflow.md](../standards/git-workflow.md)). The timeline, the rulings that still apply
+> and the open work are in the [memory bank](../memory-bank/README.md).
+
 One folder per **FIRE bolt** from [`PLAN.md` §8](../../docs/engineering/PLAN.md). Each holds a
 **README only** - the execution brief (goal, deliverables, definition of done, tests). The shared rules live
 in [`../standards/`](../standards/).
@@ -8,8 +14,8 @@ in [`../standards/`](../standards/).
 > (M3 edits the same `services/` M1 created). Code lands in the layered tree: `backend/` · `frontend/` ·
 > `scanner/` · `deploy/`. A bolt folder just says *what done looks like* and links to the code it produces.
 
-**Authoring policy:** every bolt now carries a full brief (goal · deliverables · DoD · tests). Start any
-future bolt from [`../standards/bolt-readme-template.md`](../standards/bolt-readme-template.md).
+**Authoring policy:** every bolt carries a full brief (goal · deliverables · DoD · tests), from
+[`../standards/bolt-readme-template.md`](../standards/bolt-readme-template.md). There are no new bolts.
 
 **Don't rewrite a bolt's brief once it's written** — treat the Goal/Deliverables/DoD/Tests sections as the
 **spec of record**. Record progress, scope changes, and corrections as **dated entries appended under the
