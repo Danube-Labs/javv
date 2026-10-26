@@ -343,6 +343,22 @@ async def test_a_dashboard_as_get_gives_it_imports(env) -> None:
     assert [x["status"] for x in out["results"]] == [201]
 
 
+async def test_a_line_shared_with_a_role_that_no_bundle_has_gets_422(env) -> None:
+    user, _ = env
+    importer = await user(EDIT)
+    ghost = "ghost-role-do-not-echo"
+    good = _line(sharing="roles", roles=["triager"])
+    bad = _line(sharing="roles", roles=[ghost])
+    r = await _import(importer, _file(good, bad))
+    out = r.json()
+    assert [x["status"] for x in out["results"]] == [201, 422]
+    assert out["results"][1]["errors"] == [
+        {"loc": ["roles", 0], "msg": "no role has this name", "type": "unknown_role"}
+    ]
+    assert ghost not in r.text
+    assert (await importer.get(f"/api/v1/dashboards/{bad['dashboard_id']}")).status_code == 404
+
+
 async def test_the_same_id_twice_in_one_file_makes_one_dashboard(env) -> None:
     user, _ = env
     importer = await user(EDIT)
