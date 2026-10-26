@@ -1,7 +1,7 @@
-"""The contributor and agent guides name files of the repository, and a reader opens them on
-trust. A path that no longer exists sends the reader nowhere, so each path that a guide names must
-exist: each relative link, and each code span that starts with a top-level folder or file of the
-repository. Pure file checks, no store."""
+"""The contributor and agent guides, and the READMEs of the components, name files of the
+repository, and a reader opens them on trust. A path that no longer exists sends the reader
+nowhere, so each path that a guide names must exist: each relative link, and each code span that
+starts with a top-level folder or file of the repository. Pure file checks, no store."""
 
 import re
 from pathlib import Path
@@ -27,6 +27,15 @@ GUIDES = sorted(
         ROOT / "development" / "e2e" / "README.md",
         ROOT / ".claude" / "sessions" / "README.md",
         ROOT / ".claude" / "sessions" / "TEMPLATE.md",
+        ROOT / "README.md",
+        ROOT / "backend" / "README.md",
+        ROOT / "frontend" / "README.md",
+        ROOT / "frontend" / "DESIGN.md",
+        ROOT / "scanner" / "README.md",
+        ROOT / "scanner" / "tests" / "fixtures" / "README.md",
+        ROOT / "development" / "video" / "README.md",
+        ROOT / "design" / "README.md",
+        ROOT / "design" / "brand" / "BRAND.md",
         *(ROOT / ".claude" / "rules").glob("*.md"),
         *(ROOT / ".claude" / "commands").glob("*.md"),
         # the bolt README template links from a bolt folder, and the bolts are history
