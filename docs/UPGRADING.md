@@ -73,7 +73,7 @@ This is safe, because each schema change until now only added fields:
     release. `VERSION` is the release that you upgrade to:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.8.8
+    VERSION=0.8.9
     cp compose.yaml compose.yaml.old
     curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv-poc/v$VERSION/deploy/compose/compose.yaml"
     ```
@@ -195,7 +195,7 @@ with the version of the release.
     upgrade to:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.8.8
+    VERSION=0.8.9
     helm upgrade store oci://ghcr.io/danube-labs/charts/javv-opensearch --version "$VERSION" \
       -f my-store-values.yaml
     helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" -f my-javv-values.yaml
@@ -210,7 +210,7 @@ with the version of the release.
     your values file (`backendUrl` and the token Secrets):
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.8.8
+    VERSION=0.8.9
     helm upgrade scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version "$VERSION" \
       -n javv-scanner -f my-scanner-values.yaml
     ```

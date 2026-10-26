@@ -9,7 +9,7 @@ backend:
   image:
     repository: ghcr.io/danube-labs/javv-backend
     # -- The release of this chart. release-please changes it.
-    tag: "0.8.8"  # x-release-please-version
+    tag: "0.8.9"  # x-release-please-version
     pullPolicy: IfNotPresent
 
   # -- Each backend setting, at its default, by the name that the backend reads
@@ -161,7 +161,7 @@ frontend:
   image:
     repository: ghcr.io/danube-labs/javv-frontend
     # -- The release of this chart. release-please changes it.
-    tag: "0.8.8"  # x-release-please-version
+    tag: "0.8.9"  # x-release-please-version
     pullPolicy: IfNotPresent
 
   # -- The frontend holds no state. Thus you can run more than one.

@@ -1,6 +1,6 @@
 # javv
 
-![Version: 0.8.8](https://img.shields.io/badge/Version-0.8.8-informational?style=flat-square) ![AppVersion: 0.8.8](https://img.shields.io/badge/AppVersion-0.8.8-informational?style=flat-square)
+![Version: 0.8.9](https://img.shields.io/badge/Version-0.8.9-informational?style=flat-square) ![AppVersion: 0.8.9](https://img.shields.io/badge/AppVersion-0.8.9-informational?style=flat-square)
 
 This chart installs the backend and the frontend of JAVV on Kubernetes.
 
@@ -31,7 +31,7 @@ Other charts:
 
 1. Install OpenSearch, with the password of `admin` and the password of `javv` in Secrets:
     ```bash
-    VERSION=0.8.8
+    VERSION=0.8.9
     read -rs -p 'OpenSearch admin password: ' pw && echo
     printf '%s' "$pw" | kubectl create secret generic javv-opensearch-admin --from-file=password=/dev/stdin
     unset pw
@@ -51,7 +51,7 @@ Other charts:
     ```
 3. Install JAVV. The backend signs in to OpenSearch as `javv`, with the Secret of `javv`:
     ```bash
-    VERSION=0.8.8
+    VERSION=0.8.9
     helm install javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" \
       --set secrets.existingSecret=javv-secrets \
       --set opensearch.passwordSecret.name=javv-opensearch-backend
@@ -97,12 +97,12 @@ Other charts:
 |-----|------|---------|-------------|
 | backend.config | object | every setting at its code default. values.yaml has the list. | Each backend setting, at its default, by the name that the backend reads (docs/CONFIGURATION.md, "Backend settings"). Set one with `--set backend.config.TZ=Europe/Bucharest`, or in your values file. The secrets are not here: see `secrets` and `opensearch`. |
 | backend.extraEnv | list | `[]` | More environment variables, in the form of Kubernetes (`name`, `value` or `valueFrom`). |
-| backend.image.tag | string | `"0.8.8"` | The release of this chart. release-please changes it. |
+| backend.image.tag | string | `"0.8.9"` | The release of this chart. release-please changes it. |
 | backend.livenessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/healthz","port":"http"},"periodSeconds":20}` | Restarts a backend that does not reply. /healthz does not need OpenSearch. Thus when OpenSearch stops, the app works with less, and Kubernetes does not restart it. |
 | backend.readinessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/readyz","port":"http"},"periodSeconds":10}` | While OpenSearch is unreachable, /readyz replies 503, and the Service sends no requests to the backend. |
 | backend.startupProbe | object | `{"failureThreshold":30,"httpGet":{"path":"/healthz","port":"http"},"periodSeconds":10}` | Stops the liveness probe while the backend starts. The backend verifies that OpenSearch replies, and creates or updates the indices before it opens its port. 30 tries, 10 s apart: ten JAVV_REQUEST_TIMEOUT periods. |
 | frontend.config | object | `{"JAVV_BACKEND_CONNECT_TIMEOUT":"5","JAVV_BACKEND_URL":"","JAVV_LOG_LEVEL":"info"}` | The settings of the frontend server (docs/CONFIGURATION.md, "Frontend server settings"). |
-| frontend.image.tag | string | `"0.8.8"` | The release of this chart. release-please changes it. |
+| frontend.image.tag | string | `"0.8.9"` | The release of this chart. release-please changes it. |
 | frontend.readinessProbe | object | `{"httpGet":{"path":"/","port":"http"},"periodSeconds":10}` | The frontend serves the app without the backend. Thus it stays ready while the backend is down. It then replies 502 for /api, /auth and /readyz, and the app shows "backend down". |
 | frontend.replicas | int | `1` | The frontend holds no state. Thus you can run more than one. |
 | frontend.service | object | `{"port":8080,"type":"ClusterIP"}` | Browsers and scanners both use this Service. The scanners push to /api/v1/ingest/scan through it. You need nothing in front of it. Your own Ingress or gateway can point at it. |
