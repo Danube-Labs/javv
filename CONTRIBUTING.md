@@ -8,9 +8,10 @@ without guessing at house conventions.
 
 ## Before you start
 
-- **Open an issue first** for anything beyond a small fix. JAVV follows a milestone plan with
-  settled architectural decisions, and a change that cuts against one is painful to unwind after
-  it is written. A quick issue saves you that.
+- **Open an issue first** for anything beyond a small fix. JAVV keeps a set of architectural
+  decisions. A change against one is hard to undo after you write it, and a quick issue prevents
+  that. The rulings that still apply are in
+  [`development/memory-bank/rulings.md`](development/memory-bank/rulings.md).
 - **Lost in the tree?** [REPO-MAP.md](REPO-MAP.md) maps every folder and suggests a reading order.
 - Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Bug reports and feature
   requests use the issue forms; security reports go through [SECURITY.md](SECURITY.md) instead.

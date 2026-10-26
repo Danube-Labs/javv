@@ -62,7 +62,8 @@ The backend reads these environment variables.
 - It ignores a `JAVV_` name that it does not know.
 - [`compose.yaml`](../deploy/compose/compose.yaml) lists each one with its default.
 - The `javv` chart sets each one under `backend.config`.
-- `backend/tests/test_compose_settings.py` keeps both equal to the code.
+- `backend/tests/test_compose_settings.py` keeps both equal to the code, except the values that
+  they set on purpose ([The javv chart](#the-javv-chart)).
 
 ### Deployment
 
@@ -191,11 +192,18 @@ The backend reads the expressions in its local time zone. It finds the zone in t
 
 ### The javv chart
 
-The `javv` chart sets each backend setting under `backend.config`, by its environment name and at
-its default.
+The `javv` chart sets each backend setting under `backend.config`, by its environment name.
 
 - To change one, use `--set backend.config.<NAME>=<value>` or your values file.
 - The secrets are not in `backend.config`.
+- Each value is the default of the backend, except four values. The chart sets them as compose
+  does:
+    - `JAVV_ENV`: `prod`.
+    - `JAVV_OPENSEARCH_URL`: `https://javv-opensearch:9200`, the Service of the `javv-opensearch`
+      chart.
+    - `JAVV_OPENSEARCH_USERNAME`: `javv`.
+    - `JAVV_OPENSEARCH_VERIFY_CERTS`: `false`, for the demo certificates. With
+      `opensearch.caSecret`, the chart sets it to `true`.
 
 These values are not settings of the backend:
 
@@ -289,7 +297,7 @@ The other values:
 | `clusterId` | `""` | `JAVV_CLUSTER_ID`. When it is empty, the scanners read the UID of `kube-system`. |
 | `<scanner>.token.existingSecret` / `.key` / `.value` | `""` / `token` / `""` | **Secret.** `JAVV_TOKEN`: the Secret of that scanner, or a value that the chart puts in a Secret. Without it, the install fails. |
 | `<scanner>.registryAuth.existingSecret` | `""` | **Secret.** A login for private registries: the name of a `kubernetes.io/dockerconfigjson` Secret in the namespace of the chart. Kubernetes puts its `.dockerconfigjson` key into the scan container as `/etc/javv/registry/config.json`, and the chart sets `DOCKER_CONFIG` to `/etc/javv/registry`. The refresh container does not get the login. When the value is empty, the scanner pulls each image with no login. |
-| `<scanner>.schedule` | `0 */6 * * *` (Trivy), `30 */6 * * *` (Grype) | When a cycle starts. `timeZone` sets the zone. |
+| `<scanner>.schedule` | `0 */6 * * *` (Trivy), `30 */6 * * *` (Grype) | When a cycle starts. `<scanner>.timeZone` sets the zone. When it is empty, the zone of the cluster applies. |
 | `<scanner>.activeDeadlineSeconds` | `19800` | Kubernetes stops a cycle that runs for longer than 5 h 30 min. The CronJob does not start a cycle while one of its own cycles runs (`Forbid`). It does not count a Job that you make by hand: the `NOTES` of the chart give the safe sequence. A stopped cycle does not run again before the next schedule. |
 | `<scanner>.image.tag` / `.digest` / `.pullPolicy` | `scanners.<s>.current` in `versions.yaml` / `""` / `Always` | The scanner version. `check-versions.sh` keeps the tag equal to `versions.yaml`. JAVV publishes the tag again when it changes the image for that version, thus `Always`. A digest runs one exact build. The chart of a release sets each digest to the build that its tag named at the release, with a verified signature. The chart in the repository has no digest. |
 | `trivy.vulnDb.repository` / `.javaRepository` | `""` | `TRIVY_DB_REPOSITORY` / `TRIVY_JAVA_DB_REPOSITORY` for the refresh. Empty means the source of Trivy: `mirror.gcr.io/aquasec/trivy-db:2`, then `ghcr.io/aquasecurity/trivy-db:2`. The Java database works the same way. |
@@ -359,7 +367,7 @@ The scanner reads these environment variables.
 |---|---|---|
 | `JAVV_GRYPE_ONLY_FIXED` | `false` | Adds `--only-fixed`. |
 | `JAVV_GRYPE_SCOPE` | not set: the Grype default | `--scope`: `squashed`, `all-layers` or `deep-squashed`. The scanner checks the value. |
-| `JAVV_GRYPE_SCAN_TIMEOUT` | `600` | Seconds before the scanner stops one Grype scan. Grype has no flag for a scan time limit. A value that is not a whole number stops the scanner with a clear error. |
+| `JAVV_GRYPE_SCAN_TIMEOUT` | `600` | Seconds before the scanner stops one Grype scan. Grype has no flag for a scan time limit. A value that is not a whole number above 0 stops the scanner with a clear error. |
 | **Grype version** | `0.120.1` | `scanners.grype.current` in `versions.yaml`, and the `ARG` in the Dockerfile. To change it, use a different image tag. |
 | **Vulnerability database** | schema 6, from Grype 0.88.0 | `versions.yaml` holds the schema. The `javv-scanner` chart refreshes the database at the start of each cycle. Without the chart, Grype refreshes it at scan time. |
 
@@ -658,7 +666,7 @@ workload?
 | **Idle connections to the backend:** how long the frontend server keeps an idle connection to the backend open | `frontend/server/serve.mjs`: `BACKEND_IDLE_MS` (4 s) | The backend closes an idle connection after 5 s, the default of uvicorn. The frontend server must close the connection first. If not, a request that it sends at the same moment gets a reset, and the browser gets a 502. An operator cannot change the 5 s of the backend, so this value has no reason to change. `test_frontend_pool_idle.py` fails when the frontend value is not at least 0.5 s shorter. |
 | **Store warning window:** how frequently the backend logs that OpenSearch is not reachable | `core/errors.STORE_WARN_WINDOW_S` (10 s) | Any sender can repeat a request while OpenSearch is away, so the warning must not follow the requests. The counter `javv_store_unavailable_total` counts each one. The frontend server logs its 502 with the same window. |
 | **Password length:** the rule for each local password | `auth/passwords.MIN_LENGTH` (12), `MAX_LENGTH` (256). The frontend has a copy in `frontend/src/stores/auth.ts`: `PASSWORD_MIN_LENGTH` and `PASSWORD_MAX_LENGTH`. | A security minimum, not a dial. The password form shows the minimum and refuses a shorter password before it sends it, so the frontend keeps a copy. `password-change.spec.ts` reads the backend file and fails when the two are different. The server makes the decision. |
-| **Fixed aggregation sizes:** sized to a domain with a known limit | `query/aggs._FACET_TERMS_SIZE` (32: at least each fixed Findings list, and the top values of a list with no fixed values), `query/audit._AUDIT_LIST_TERMS_SIZE` (64: more than the Audit log Action list, which has 45 values), `query/contributors._BOARD_SIZE` (100 people on the leaderboard) | The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist. |
+| **Fixed aggregation sizes:** sized to a domain with a known limit | `query/aggs._FACET_TERMS_SIZE` (32): at least each fixed Findings list, and the top values of a list with no fixed values. `query/audit._AUDIT_LIST_TERMS_SIZE` (64): more than the Audit log Action list, which has 45 values. `query/contributors._BOARD_SIZE` (100): the people on the leaderboard. | The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist. |
 
 ## CI gate values
 

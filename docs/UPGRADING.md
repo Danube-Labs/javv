@@ -354,9 +354,14 @@ applied it automatically on the first start.
 No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
 backend accepts (3 and 4).
 
-No release up to and including 0.8.0 changed the OpenSearch chart in a way that needs the `store`
-upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
-of the comments in `values.yaml`, and no value.
+No release up to and including 0.9.0 changed the OpenSearch chart in a way that needs the `store`
+upgrade. Each release changed its version number. Some releases also changed other parts of the
+chart, but not OpenSearch:
+
+- 0.7.1 and 0.8.6 changed the text of its README and of the comments in `values.yaml`, and no
+  value. 0.8.1 changed the text of its README.
+- 0.8.7 changed the test pod of the chart (`helm test store`). The pod can now run in a namespace
+  with the `restricted` level of the pod security standards.
 
 ### 0.8.9: a new permission for the export files
 
@@ -460,7 +465,7 @@ users. Users that exist keep their names.
 - **The first admin.** A `JAVV_BOOTSTRAP_ADMIN_USERNAME` with a capital letter stops the backend at
   each start, also when the first admin exists. The backend shows
   `invalid settings: JAVV_BOOTSTRAP_ADMIN_USERNAME: Value error, a username must be in lower case`.
-  To fix it, set the name in lower case. If no user has that name, and you set
+  Then set the name in lower case. If no user has that name, and you set
   `JAVV_BOOTSTRAP_ADMIN_PASSWORD`, the backend makes a new first admin. The old admin stays.
 - **Sign-in.** A user can type a lower-case username in any case: `ALICE` signs in as `alice`. A
   user whose name has a capital letter, for example `Alice`, must type the name exactly. The

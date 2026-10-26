@@ -1,6 +1,6 @@
 # Testing
 
-Test taxonomy + conventions, referenced by every bolt. A bolt README lists *which* cases it needs; the *how*
+Test taxonomy + conventions. The plan of an issue names the spec file of each slice. The *how*
 lives here.
 
 ## Test layers
