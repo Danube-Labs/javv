@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.0](https://github.com/Danube-Labs/javv-poc/compare/v0.8.9...v0.9.0) (2026-10-26)
+
+This release has no code changes after 0.8.9. It marks the changes of [0.8.9](https://github.com/Danube-Labs/javv-poc/releases/tag/v0.8.9) as a minor release: composable dashboards, the Roles card and the `can_export` permission. The notes of 0.8.9 list each change.
+
+
+### Documentation
+
+* the memory bank after release 0.8.9, and release 0.9.0 marks its changes ([#1014](https://github.com/Danube-Labs/javv-poc/issues/1014)) ([425982a](https://github.com/Danube-Labs/javv-poc/commit/425982adcab3fc5791b9845b233e850bea046704))
+
 ## [0.8.9](https://github.com/Danube-Labs/javv-poc/compare/v0.8.8...v0.8.9) (2026-10-26)
 
 
