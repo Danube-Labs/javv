@@ -4,7 +4,7 @@
  * count grid rows of 40 px, the rows of the edit grid, so a layout reads the same in both.
  */
 import type { DashboardPanel } from '@/api/generated'
-import { panelById, type CatalogPanel, type PanelHeight } from '@/dashboards/catalog'
+import { panelById, type CatalogPanel, type PanelContext, type PanelHeight } from '@/dashboards/catalog'
 import type { ScannerLens } from '@/lib/scannerLens'
 import { silentFor } from '@/system/freshness'
 
@@ -19,14 +19,15 @@ export interface PlacedPanel {
 /** The panels in reading order, `y` then `x`: the order of a narrow screen's one column and of
  * the page for a screen reader. A panel the catalog no longer lists is left out. */
 export function placePanels(stored: readonly DashboardPanel[]): PlacedPanel[] {
-  const placed: PlacedPanel[] = []
-  for (const s of stored) {
-    const panel = panelById(s.panel)
-    if (!panel) continue
-    const height: PanelHeight = s.h in panel.heights ? s.h : (Object.keys(panel.heights)[0] as PanelHeight)
-    placed.push({ stored: s, panel, rows: panel.heights[height] ?? 1 })
-  }
+  const placed = stored.map(placeOne).filter((p): p is PlacedPanel => p !== null)
   return placed.sort((a, b) => a.stored.y - b.stored.y || a.stored.x - b.stored.x)
+}
+
+export function placeOne<T extends DashboardPanel>(s: T): (PlacedPanel & { stored: T }) | null {
+  const panel = panelById(s.panel)
+  if (!panel) return null
+  const height: PanelHeight = s.h in panel.heights ? s.h : (Object.keys(panel.heights)[0] as PanelHeight)
+  return { stored: s, panel, rows: panel.heights[height] ?? 1 }
 }
 
 /** CSS custom properties for one grid cell; the read page's stylesheet places it with them,
@@ -47,6 +48,32 @@ export function panelScanner(stored: DashboardPanel, switched: ScannerLens): Sca
 
 export function isPinned(stored: DashboardPanel): boolean {
   return stored.scanner === 'trivy' || stored.scanner === 'grype'
+}
+
+/** What a dashboard draws its panels with, before each panel's own scanner and height. */
+export type DashboardContext = Omit<PanelContext, 'scanner' | 'height'> & { scanner: ScannerLens }
+
+/** The props of each panel, by a key for its place on the page. A panel that watches its query
+ * deeply fetches again on a new query object, even an equal one, so a panel keeps its props
+ * object while the inputs it reads stay the same: the scanner switch reaches only the panels
+ * that follow it. */
+export function panelPropsCache() {
+  const cache = new Map<string, { key: string; props: Record<string, unknown> }>()
+  return (place: string, p: PlacedPanel, dash: DashboardContext): Record<string, unknown> => {
+    const ctx: PanelContext = {
+      clusterId: dash.clusterId,
+      t: dash.t,
+      windowDays: dash.windowDays,
+      scanner: p.panel.usesScanner ? panelScanner(p.stored, dash.scanner) : 'all',
+      height: p.stored.h,
+    }
+    const key = `${p.panel.id}|${JSON.stringify(ctx)}`
+    const kept = cache.get(place)
+    if (kept?.key === key) return kept.props
+    const fresh = p.panel.props(ctx)
+    cache.set(place, { key, props: fresh })
+    return fresh
+  }
 }
 
 export function parseScanner(value: unknown): ScannerLens | null {

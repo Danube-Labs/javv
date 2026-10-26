@@ -7,7 +7,7 @@
 import { importDashboardsApiV1DashboardsImportPost } from '@/api/generated'
 
 export const EXPORT_PATH = '/api/v1/dashboards/export.ndjson'
-export const NO_IMPORT_NOTE = 'Your role cannot import dashboards.'
+export const NO_IMPORT_NOTE = 'Your role cannot make or import dashboards.'
 export const EMPTY_FILE_NOTE = 'The file is empty. Choose a file from Export.'
 
 export interface ImportLineResult {

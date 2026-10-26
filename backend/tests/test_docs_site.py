@@ -62,6 +62,7 @@ PAGES = {
     "docs/use/change-many-findings.md",
     "docs/use/when-a-scanner-stops.md",
     "docs/use/who-changed-what.md",
+    "docs/use/build-a-dashboard.md",
 }
 # Files the pages link to, published as they are.
 FILES = {"docs/ingest-envelope.schema.json", "versions.yaml", "deploy/compose/compose.yaml"}

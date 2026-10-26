@@ -3,12 +3,15 @@
  * Dashboards (issue 440, S7; SCREENS §20): the dashboards that the user can see, in the Saved
  * views card grid. The server applies the sharing rule, so the list holds only what this user
  * may open (decision Q3). Export downloads them all as one file and needs no `can_export` (D7);
- * import needs `can_edit_dashboards` and makes the importer the owner (D6).
+ * import needs `can_edit_dashboards` and makes the importer the owner (D6). New dashboard needs
+ * it too: it asks for the details, makes the dashboard, and opens it in edit mode (S8c).
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { listDashboardsApiV1DashboardsGet } from '@/api/generated'
+import { STORE_READ_ONLY_TYPE } from '@/api/problem'
+import { createDashboardApiV1DashboardsPost, listDashboardsApiV1DashboardsGet } from '@/api/generated'
+import DashboardDetailsDialog from '@/components/dashboards/DashboardDetailsDialog.vue'
 import ImportDashboardsDialog from '@/components/dashboards/ImportDashboardsDialog.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import SavedCard from '@/components/saved/SavedCard.vue'
@@ -21,10 +24,12 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { usePagedSlice } from '@/composables/usePagedSlice'
 import { useCsvExport } from '@/composables/useCsvExport'
 import type { DashboardPanel } from '@/api/generated'
+import { NEW_DETAILS, createFailureCopy, newDashboardBody, type DashboardDetails } from '@/dashboards/details'
 import { EXPORT_PATH, NO_IMPORT_NOTE } from '@/dashboards/files'
 import { changedLine, sharingLine } from '@/dashboards/layout'
 import { lastDataAt } from '@/system/freshness'
 import { readFailureCopy } from '@/findings/failureCopy'
+import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 
@@ -49,6 +54,9 @@ const loaded = ref(false)
 const failed = ref(false)
 const failedStatus = ref<number | null>(null)
 const importing = ref(false)
+const creating = ref(false)
+const createBusy = ref(false)
+const createError = ref<string | null>(null)
 const pager = usePagedSlice(() => dashboards.value, 10)
 
 const canEdit = computed(() => auth.hasCapability('can_edit_dashboards'))
@@ -78,6 +86,26 @@ function onImported(created: number) {
   void load()
 }
 
+function startCreate() {
+  createError.value = null
+  creating.value = true
+}
+async function create(details: DashboardDetails) {
+  createBusy.value = true
+  createError.value = null
+  const { response, data, error } = await createDashboardApiV1DashboardsPost({ body: newDashboardBody(details) })
+  createBusy.value = false
+  const id = (data as { dashboard_id?: string } | undefined)?.dashboard_id
+  if (!response?.ok || !id) {
+    logger.warn('dashboard_create_failed', { status: response?.status ?? 0 })
+    const readOnly = (error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE
+    createError.value = createFailureCopy(response?.status ?? 0, readOnly)
+    return
+  }
+  creating.value = false
+  void router.push({ path: `/dashboards/${id}`, query: { edit: '1' } })
+}
+
 function exportAll() {
   exportOne.value = null
   void exporter.run({})
@@ -101,6 +129,14 @@ function exportDashboard(d: DashboardDoc) {
         <p class="head-note">the dashboards that you can see · each panel reads the selected cluster</p>
       </div>
       <div class="head-actions">
+        <UiButton
+          variant="primary"
+          :disabled="!canEdit"
+          :aria-describedby="canEdit ? undefined : 'no-import-note'"
+          @click="startCreate"
+        >
+          <AppIcon name="plus" :size="13" />New dashboard
+        </UiButton>
         <UiButton variant="control" :disabled="exporter.exporting.value" @click="exportAll">
           <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export all' }}
         </UiButton>
@@ -126,9 +162,10 @@ function exportDashboard(d: DashboardDoc) {
       v-else-if="dashboards.length === 0"
       icon="columns"
       title="No dashboards yet"
-      hint="A dashboard puts panels of Overview, Contributors and Scanner status on one page. Import a dashboard file to add one."
+      hint="A dashboard puts panels of Overview, Contributors and Scanner status on one page. Make a new one, or import a dashboard file."
     >
-      <UiButton v-if="canEdit" variant="primary" @click="importing = true">Import</UiButton>
+      <UiButton v-if="canEdit" variant="primary" @click="startCreate"><AppIcon name="plus" :size="13" />New dashboard</UiButton>
+      <UiButton v-if="canEdit" variant="control" @click="importing = true">Import</UiButton>
     </EmptyState>
 
     <SavedGrid v-else>
@@ -177,6 +214,15 @@ function exportDashboard(d: DashboardDoc) {
     </SavedGrid>
 
     <ImportDashboardsDialog v-if="importing" @close="importing = false" @imported="onImported" />
+    <DashboardDetailsDialog
+      v-if="creating"
+      :details="NEW_DETAILS"
+      mode="create"
+      :busy="createBusy"
+      :error="createError"
+      @close="creating = false"
+      @apply="create"
+    />
   </div>
 </template>
 

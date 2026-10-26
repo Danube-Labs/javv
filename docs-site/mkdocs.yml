@@ -77,6 +77,7 @@ nav:
       - Change many findings at once: docs/use/change-many-findings.md
       - When a scanner stops: docs/use/when-a-scanner-stops.md
       - See who changed what: docs/use/who-changed-what.md
+      - Build a dashboard: docs/use/build-a-dashboard.md
   - Install:
       - Deploying: docs/DEPLOYING.md
       - Supported versions: docs/supported-versions.md

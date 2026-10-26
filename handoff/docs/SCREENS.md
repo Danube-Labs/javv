@@ -1084,11 +1084,13 @@ or `Only the owner`), the description, the number of panels and when it changed,
 list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
-  **Export all** downloads every dashboard that the user can see as one NDJSON file. It needs no
-  `can_export` (D7). **Import** needs `can_edit_dashboards`. For a user without it, the button
-  stays, off, with the reason in `UiRoleNote` (issue 243).
-- **States:** loading (`UiSkeleton`), refused (the G2 alert), empty (`EmptyState`, with Import for
-  a user who can import).
+  **New dashboard** opens the details window (below) in its create mode. **Create** makes the
+  dashboard with no panels and opens it in edit mode. A refused create stays in the window with
+  the reason. **Export all** downloads every dashboard that the user can see as one NDJSON file.
+  It needs no `can_export` (D7). **New dashboard** and **Import** need `can_edit_dashboards`. For
+  a user without it, both buttons stay, off, with one reason in `UiRoleNote` (issue 243).
+- **States:** loading (`UiSkeleton`), refused (the G2 alert), empty (`EmptyState`, with New
+  dashboard and Import for a user who can make dashboards).
 
 **Import dialog (`ModalShell`):** a kit button picks the file. Then **Keep the IDs** or **Make
 copies** (`UiSegControl`), and a note that the importer owns each new dashboard. The file goes to
@@ -1119,6 +1121,61 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   DESIGN.md §10).
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
   does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
+
+**Edit mode (`/dashboards/:id?edit=1`, D2):** for the owner, or a user with
+`can_manage_settings`, and only with `can_edit_dashboards` (D3). For any other user **Edit
+dashboard** stays, off, with the reason in `UiRoleNote`, and `?edit=1` in a link opens the read
+page.
+- **Head:** `Editing <name>`. The scanner switch stays, so the panels show what they will show.
+  **Add panel**, **Name and sharing**, **Remove** and **Exit edit** replace Export and Edit
+  dashboard. Exit edit is off while the page has changes to save: the save bar under the head
+  card, Discard or Save changes, is the way out. Next to a long name, the controls go to a second row, on the
+  right.
+- **Name and sharing (`ModalShell`, `components/dashboards/DashboardDetailsDialog.vue`):** the
+  name and the description (`SettingsInput` in the UI face, at most 128 and 1,024 characters), who can see it
+  (Only me, Everyone or Some roles, D2), and the scanner that the page opens on. With Some roles,
+  `UiToggleGroup` shows each role that `GET /api/v1/dashboards/roles` gives, admin too (ruling of
+  2026-10-26), and a role of the dashboard that the list does not have. A note says that an admin
+  can see each dashboard. **Apply** is off while the name is empty or Some roles has no role, and
+  the reason shows under the fields. Apply changes the draft, as the panel settings do: the save
+  bar saves the details with the panels. If the list of roles does not load, an alert says so,
+  and the other fields still work.
+- **Remove (`ModalShell`, `components/dashboards/RemoveDashboardDialog.vue`):** asks first. It
+  says that the data of the panels stays and that the audit log keeps a copy. **Remove dashboard**
+  sends the revision that the page read, then goes to the list with a toast. A dashboard that is
+  gone already counts as removed. A refused remove stays in the window with the reason: no
+  permission, somebody changed it (409), the store is busy or read-only, or no answer.
+- **Panels:** gridstack (`components/dashboards/DashboardEditGrid.vue`, its own chunk that only
+  edit mode loads) in `top` mode, on the cells of the read page: two columns, rows of 40 px, a
+  15 px margin, no resize (R10). Each panel shows, at rest, a **Move** tab over its top left
+  corner and **Settings** and remove over its top right corner, with the scanner tag of a pinned
+  panel. The Move tab is the one drag handle, with the `grab` cursor (§5). During a drag the drop
+  place is a dashed coral box, and the panels under it move down while the user drags. They jump to
+  their places: there is no layout animation (DESIGN.md §9). No key moves a panel (R11).
+- **Add panel (`ModalShell`, `components/dashboards/AddPanelDialog.vue`, ruling Q1):** on the
+  left, the catalog by group (Findings, Scanners, People), one row for each panel with its name
+  and its line. The chosen row has the coral selection of an overlay. On the right, the name, the
+  line and the settings of the chosen panel, then a preview with live data in the slot that the
+  panel gets on the dashboard: rows × 40 px less the margin, and half of the column for a Half
+  panel. A new choice starts from the default width and the first height. **Add panel** puts the
+  panel at the left edge, in the first free place from the top: `top` mode moves it up. At 24 panels (Q2) **Add panel** in the head is
+  off, and the reason shows next to it in `UiRoleNote` with an info icon, because a limit is not
+  a permission. A dashboard with no panels shows **Add panel** in its `EmptyState`.
+- **Panel settings (`PopoverShell`, ruling of 2026-10-26, option B):** a popover with an arrow
+  next to the panel, on its right, else on its left, else over its top edge under Settings, else
+  above Settings. The page has no backdrop, and the panel keeps a coral outline while its
+  settings are open. The head names the panel and has a ✕. The scanner (Follow the dashboard, trivy or grype) for a panel with
+  scanner data, the width (Half or Full) and the height (Short or Tall) for a panel with two
+  heights. Apply changes the draft. A Full panel goes to the left column.
+- **Save:** the settings `SaveBar`. A save sends the revision that the page read, the details
+  that changed, and the panels only when they changed. A change of the sharing sends the roles
+  too, so a change to Everyone clears them. The places that `top` mode gives as the grid starts are not a change.
+  A refused save keeps the changes and shows the reason under the save bar: no permission (403),
+  the dashboard is gone (404), somebody changed it (409, reload the page), a value JAVV cannot use
+  (422), the store is busy (429) or read-only, or no answer, which does not say that nothing was
+  saved. A save that works shows a toast. **Discard** starts the grid again from the saved panels.
+- **States:** the edit grid loads with a skeleton. If its chunk does not load, an alert says to
+  reload the page. A dashboard with no panels shows `EmptyState`.
 
 ## Cross-cutting (unchanged rules, restated)
 
@@ -1167,6 +1224,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 
 | § | Contract said | Shipped | Ruling / record |
 |---|---|---|---|
+| 20 | (proof of concept: the panel settings in the kit slide-over, with a backdrop that blurs the panel) | **A popover next to the panel** (`PopoverShell`): no backdrop, an arrow at Settings, a coral outline on the panel; Cancel and Apply stay | 2026-10-26 §8.5 ruling on pictures A/B/C, option B (issue 440) |
 | 13.4 | Ignore rules → Decisions redirect stub | **No nav entry at all** — decisions live on `/approvals` + finding detail | 2026-07-15, M9e README (supersedes the #237 row-20 stub ruling) |
 | — | (v4 prototype) per-CVE audit panel | **Struck** — no screen; the content ships on finding detail + Approvals + Audit | 2026-07-15, M9e README row 24 |
 | 13.2 | (v4 prototype) scanner version select, tuning writes, enable toggles, Schedule section | **Read-only** provenance + `effective_config` cards; version = image-tag swap (D41), tuning = env/GitOps (C-4), no enable concept (D30), schedule = manifest | 2026-07-07 + 2026-07-15, M9e README §C |
