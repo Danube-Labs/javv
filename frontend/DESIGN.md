@@ -347,7 +347,7 @@ that failed while it was drawn). A new "this could not be shown" page uses it; S
   a specific look; PrimeVue chrome is themed through `theme/preset.ts`, don't fight it inline.
 - Don't hand-roll a severity/state/scanner chip — use (or create in M9b) the shared chip components.
 - Don't build the same panel/control twice: **anything that appears on two screens is built ONCE,
-  owned by the earliest bolt that needs it, and imported everywhere else** — the filter module
+  owned by the first change that needs it, and imported everywhere else** — the filter module
   (one `fields` config drives both FacetRail and FilterBar, M9a), the lazy-grid adapter (M9f),
   the chip set (M9b), the banners (M9a). If you're copying a component to a second screen,
   stop and extract it instead.
@@ -431,7 +431,7 @@ copy. Structural fidelity is a process rule:
    DECIDE register.
 5. **Grammar substitutions need a LIVE ruling (operator 2026-07-12, M9d).** Swapping a screen's
    presentation grammar wholesale (the prototype's table → a timeline/cards/feed) is never covered
-   by a written note alone — not even a bolt-README `## Updates` entry: notes are made blind,
+   by a written note alone — not even a note on the issue or a bolt-README `## Updates` entry: people write notes blind,
    before the thing exists, and the audit screen proved they don't survive contact with the built
    result. A substitution requires the operator ruling **against the built specimen (or an A/B)**
    at build time. When a spec note and the prototype disagree on grammar, the prototype is the
@@ -467,7 +467,7 @@ own row here — never silently ignored.
 ## 10. Panels are catalog lenses — build the new ones self-contained (#440)
 
 §6 already says a surface used twice is built ONCE. That rule fires on the *second* screen. This one
-fires on the *first*, because the composable-dashboard bolt (#440) needs panels to be portable, and
+fires on the *first*, because the dashboards (#440) need panels to be portable, and
 a panel is only portable if it can render somewhere its author never saw.
 
 **What counts as a lens.** An agg-backed visual surface that could plausibly sit on a user-composed
@@ -494,8 +494,8 @@ That is the price of composability and #440 accepts it deliberately: the guarant
 per-scanner *never merged*, not per-panel simultaneity. Where a screen genuinely needs two panels to
 agree to the row, keep them host-fed and say why in a comment.
 
-**Do not refactor the existing lenses opportunistically.** #440 moves the ~6–8 current lenses onto
-this contract as its first slice, deliberately and with its own tests. Converting one in passing,
+**Do not refactor the existing lenses opportunistically.** #440 moved the lenses of that time onto
+this contract in its first slice, deliberately and with its own tests. Converting one in passing,
 inside an unrelated PR, is a review failure for the same reason any drive-by refactor is. This
 section governs what you *add*.
 

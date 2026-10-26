@@ -68,7 +68,8 @@ Three things it does differently:
 - **Append-only audit log**: immutable, per-finding and per-user, exportable to CSV.
 - **Multi-tenant + RBAC**: isolated by immutable `cluster_id`; capability-based roles, local auth + bootstrap admin.
 - **Server-side everything**: every count and page comes from an OpenSearch aggregation, never computed on the client.
-- **Dashboards & exports**: overview, running-images inventory, scanner status, contributors, approvals, SLA tracking, one-click CSV.
+- **Screens & exports**: overview, running-images inventory, scanner status, contributors, approvals, SLA tracking, one-click CSV.
+- **Dashboards**: make your own dashboards from a catalog of panels. Share each one with everyone or with some roles, and copy dashboards to a different JAVV as a file.
 - **Data inspector + repair actions**: a read-only OpenSearch console and a small set of sanctioned, journaled maintenance jobs.
 - **No external broker**: coordination is OpenSearch, and the backend runs its own background jobs on cron schedules. No Redis/Kafka/RabbitMQ, and no CronJob per job: one backend container and one frontend container.
 
