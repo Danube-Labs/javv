@@ -7,7 +7,7 @@ ValueError), tombstone parity, and stateless paging."""
 
 import asyncio
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
@@ -19,6 +19,8 @@ from backend.models.envelope import IngestEnvelope, canonical_severity
 from backend.query.as_of_t import AsOfTQuery
 from backend.query.search import SearchFilters, run_search
 from backend.services.ingest import build_docs, ingest_envelope
+from backend.sla.overdue import compute_overdue
+from backend.sla.policy import read_sla_policy
 from backend.triage.bulk import apply_bulk_triage
 from os_env import requires_opensearch
 
@@ -181,6 +183,87 @@ async def test_i11_keystone_replay_to_now_matches_materialized_state(
                 f"I11 divergence on {field} for {fk}: "
                 f"replay={replay_doc[field]!r} cache={cache_doc.get(field)!r}"
             )
+
+
+async def _seed_kev(client: AsyncOpenSearch, prefix: str) -> tuple[str, datetime, datetime]:
+    """One scan 3 days ago whose first finding (severity Low, 90 days) is KEV (1 day): KEV makes
+    it overdue now, its severity alone would not. Returns (its finding_key, seen_at, T)."""
+    seen = (datetime.now(UTC) - timedelta(days=3)).replace(microsecond=0)
+    env = dict(GOLDEN) | {
+        "findings": [dict(f, kev=(i == 0)) for i, f in enumerate(GOLDEN["findings"])],
+        "last_seen_at": seen.isoformat(),
+    }
+    run = IngestEnvelope.model_validate(env)
+    await ingest_envelope(client, run, prefix=prefix)
+    kev_fk = build_docs(run)["findings"][0]["finding_key"]
+    return kev_fk, seen, await _now(client, prefix)
+
+
+async def _past_rows(client: AsyncOpenSearch, prefix: str, t: datetime) -> dict[str, Any]:
+    page = await READER.findings_page(
+        client,
+        cluster_id=CLUSTER,
+        t=t,
+        filters=SearchFilters(present=True),
+        sort="severity_rank",
+        order="desc",
+        size=500,
+        cursor=None,
+        prefix=prefix,
+    )
+    return {d["finding_key"]: d for d in page["data"]}
+
+
+@requires_opensearch
+async def test_at_t_just_now_each_row_has_the_live_sla_deadline(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """Issue 1000: the I11 keystone for the SLA verdict. A read at T just now gives each row the
+    same `overdue` and `due_at` as the live read, also a KEV finding whose severity deadline is
+    not over yet (before the history kept KEV, that row was not overdue at T)."""
+    client, prefix = real_os
+    kev_fk, seen, t = await _seed_kev(client, prefix)
+
+    current = await run_search(
+        client, cluster_id=CLUSTER, filters=SearchFilters(present=True), size=500, prefix=prefix
+    )
+    live = compute_overdue(
+        current["data"], policy=await read_sla_policy(client, prefix=prefix), now=t
+    )
+    past = await _past_rows(client, prefix, t)
+
+    assert set(past) == set(live)
+    assert live[kev_fk].overdue  # the case under test: overdue only because of KEV
+    assert live[kev_fk].due_at is not None
+    assert datetime.fromisoformat(live[kev_fk].due_at) == seen + timedelta(days=1)
+    for fk, verdict in live.items():
+        row = past[fk]
+        assert row["overdue"] == verdict.overdue, fk
+        if verdict.due_at is None:
+            assert row["due_at"] is None, fk
+        else:
+            assert datetime.fromisoformat(row["due_at"]) == datetime.fromisoformat(verdict.due_at)
+
+
+@requires_opensearch
+async def test_a_history_row_without_kev_gets_the_deadline_of_its_severity(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """A history row written before mapping v20 has no `kev`: the past-time read treats the
+    finding as not KEV, so it gets the deadline of its severity (Low: 90 days)."""
+    client, prefix = real_os
+    kev_fk, seen, _ = await _seed_kev(client, prefix)
+    await client.update_by_query(
+        index=f"{prefix}javv-finding-occurrences-*",
+        body={"script": {"source": "ctx._source.remove('kev')"}},
+        params={"refresh": "true", "conflicts": "proceed"},
+    )
+    t = await _now(client, prefix)
+
+    row = (await _past_rows(client, prefix, t))[kev_fk]
+    assert row["overdue"] is False
+    assert datetime.fromisoformat(row["due_at"]) == seen + timedelta(days=90)
+    assert row["kev"] is None  # the row keeps no KEV value at a past time (issue 1000, D2)
 
 
 @requires_opensearch
