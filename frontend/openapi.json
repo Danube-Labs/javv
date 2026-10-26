@@ -4317,6 +4317,35 @@
         ]
       }
     },
+    "/api/v1/dashboards/roles": {
+      "get": {
+        "description": "The roles an owner can share a dashboard with (D2): the names of the `system-roles` bundles,\nso a later 5th role appears without a client change. The capabilities of each bundle stay\nbehind `can_manage_users` (`/api/v1/admin/roles`); an owner who is not an admin needs only the\nnames (ruling of 2026-10-26, issue 440). Declared before `/{dashboard_id}`, which would take\n`roles` as an id.",
+        "operationId": "list_sharing_roles_api_v1_dashboards_roles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Sharing Roles Api V1 Dashboards Roles Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Sharing Roles",
+        "tags": [
+          "dashboards"
+        ]
+      }
+    },
     "/api/v1/dashboards/{dashboard_id}": {
       "delete": {
         "operationId": "delete_dashboard_api_v1_dashboards__dashboard_id__delete",

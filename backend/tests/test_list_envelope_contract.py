@@ -208,6 +208,13 @@ REGISTRY: tuple[ListEndpoint, ...] = (
         total=ABSENT,
     ),
     ListEndpoint(
+        path="/api/v1/dashboards/roles",
+        route_path="/api/v1/dashboards/roles",
+        family=UNPAGED,
+        list_key="roles",
+        total=ABSENT,
+    ),
+    ListEndpoint(
         path="/api/v1/notifications",
         route_path="/api/v1/notifications",
         family=UNPAGED,

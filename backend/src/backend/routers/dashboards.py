@@ -30,7 +30,7 @@ from pydantic import (
 )
 
 from backend.audit.writer import append_field_change
-from backend.auth.capabilities import holds, require_capability
+from backend.auth.capabilities import ROLES_INDEX, holds, require_capability
 from backend.auth.principal import Principal, get_current_principal
 from backend.dashboards.catalog import PANELS, PanelHeight, PanelId
 
@@ -194,6 +194,21 @@ async def list_dashboards(request: Request, principal: Authenticated) -> dict[st
         params={"ignore_unavailable": "true"},
     )
     return {"dashboards": [h["_source"] for h in resp["hits"]["hits"]]}
+
+
+@router.get("/roles")
+async def list_sharing_roles(request: Request, principal: CanEdit) -> dict[str, list[str]]:
+    """The roles an owner can share a dashboard with (D2): the names of the `system-roles` bundles,
+    so a later 5th role appears without a client change. The capabilities of each bundle stay
+    behind `can_manage_users` (`/api/v1/admin/roles`); an owner who is not an admin needs only the
+    names (ruling of 2026-10-26, issue 440). Declared before `/{dashboard_id}`, which would take
+    `roles` as an id."""
+    client = cast(Any, request.app.state.opensearch)
+    hits = await client.search(
+        index=ROLES_INDEX,
+        body={"size": 100, "sort": [{"_id": "asc"}], "_source": False, "query": {"match_all": {}}},
+    )
+    return {"roles": [h["_id"] for h in hits["hits"]["hits"]]}
 
 
 @router.get("/{dashboard_id}")

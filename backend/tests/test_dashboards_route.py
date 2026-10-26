@@ -170,6 +170,29 @@ async def test_the_owner_shares_with_everyone_or_with_roles(env) -> None:
     assert (await lead.get(f"/api/v1/dashboards/{for_leads['dashboard_id']}")).status_code == 200
 
 
+async def test_an_owner_reads_the_role_names_and_no_capabilities(env) -> None:
+    """The sharing dialog lists the seeded roles for an owner who is not an admin (ruling of
+    2026-10-26): the names only, while the bundles stay behind `can_manage_users`."""
+    user, client = env
+    triager = await user(EDIT, role="triager")
+    r = await triager.get("/api/v1/dashboards/roles")
+    assert r.status_code == 200
+    assert set(r.json()) == {"roles"}
+    seeded = await client.search(
+        index="system-roles", body={"size": 100, "_source": False, "query": {"match_all": {}}}
+    )
+    assert r.json()["roles"] == sorted(h["_id"] for h in seeded["hits"]["hits"])
+    assert {"viewer", "triager", "security_lead", "admin"} <= set(r.json()["roles"])
+
+    viewer = await user([], role="viewer")
+    assert (await viewer.get("/api/v1/dashboards/roles")).status_code == 403
+    assert (await viewer.get("/api/v1/admin/roles")).status_code == 403
+    app = create_app()
+    app.state.opensearch = client
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://t") as c:
+        assert (await c.get("/api/v1/dashboards/roles")).status_code == 401
+
+
 # --- change and remove --------------------------------------------------------------------
 
 
