@@ -59,7 +59,7 @@ Both are served by the app (`src/styles/fonts.css`, Fontsource); a font host lin
 
 **Reuse before building — the kit already solves most of it**
 `components/ui/` (UiButton · UiField · UiDropdown · UiSegControl · UiToggleGroup · UiDateTime · ModalShell ·
-SlideoverShell · ToastStack · EmptyState · UiSkeleton · UiLoadingBar · AppIcon · SectionNav · RowLink), plus `components/chips/`, the M9a filter module,
+SlideoverShell · PopoverShell · ToastStack · EmptyState · UiSkeleton · UiLoadingBar · AppIcon · SectionNav · RowLink), plus `components/chips/`, the M9a filter module,
 the shared table skin + GridPager, and the stat-band skin (`.stat-band`/`.stat-cell` in base.css,
 composed by `components/overview/OverviewStatBands.vue` — it is a skin, not a kit component).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`

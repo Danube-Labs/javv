@@ -25,12 +25,14 @@ const props = defineProps<{
   t: string | null
   windowDays: number
   scanner: ScannerLens
+  /** the key of the panel whose settings are open */
+  active?: string | null
 }>()
 const emit = defineEmits<{
   /** the places as gridstack first lays them out: `top` mode moves a panel up into empty space */
   ready: [places: PanelPlace[]]
   moved: [places: PanelPlace[]]
-  settings: [key: string]
+  settings: [key: string, trigger: HTMLElement]
   remove: [key: string]
 }>()
 
@@ -103,6 +105,7 @@ watch(
       v-for="(p, i) in placed"
       :key="p.stored.key"
       class="grid-stack-item"
+      :class="{ 'dash-item-on': p.stored.key === active }"
       :gs-id="p.stored.key"
       :gs-x="p.stored.x"
       :gs-y="p.stored.y"
@@ -118,7 +121,7 @@ watch(
           <span v-if="p.panel.usesScanner && isPinned(p.stored)" class="dash-pinned">
             <ScannerTag :name="String(p.stored.scanner)" /> pinned
           </span>
-          <UiButton variant="mini" :aria-label="`Settings of ${p.panel.name}`" @click="emit('settings', p.stored.key)">
+          <UiButton variant="mini" :aria-label="`Settings of ${p.panel.name}`" @click="emit('settings', p.stored.key, $event.currentTarget as HTMLElement)">
             <AppIcon name="gear" :size="12" />Settings
           </UiButton>
           <UiButton variant="mini" :aria-label="`Remove ${p.panel.name}`" @click="emit('remove', p.stored.key)">
@@ -205,6 +208,12 @@ watch(
   padding: 0 4px;
   font-size: var(--text-sm);
   color: var(--soft);
+}
+/* the panel whose settings are open: the coral selection, next to its popover */
+.dash-item-on > .grid-stack-item-content {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+  border-radius: var(--r);
 }
 /* the drop place: the coral language of a drop target */
 .dash-edit :deep(.grid-stack-placeholder > .placeholder-content) {

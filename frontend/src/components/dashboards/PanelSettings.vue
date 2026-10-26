@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * The settings of one panel in edit mode (issue 440, rulings Q6 and Q7), in the kit slide-over:
- * the scanner for a panel with scanner data, the width, and the height for a panel that has
- * more than one. Apply changes the draft only; the save bar saves it.
+ * The settings of one panel in edit mode (issue 440, rulings Q6 and Q7), in a popover next to the
+ * panel (option B, 2026-10-26), so the panel stays in view: the scanner for a panel with scanner
+ * data, the width, and the height for a panel that has more than one. Apply changes the draft
+ * only; the save bar saves it.
  */
 import { ref } from 'vue'
 
-import SlideoverShell from '@/components/ui/SlideoverShell.vue'
+import PopoverShell from '@/components/ui/PopoverShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
@@ -25,7 +26,12 @@ import {
 } from '@/dashboards/edit'
 import type { ScannerLens } from '@/lib/scannerLens'
 
-const props = defineProps<{ panel: DraftPanel; dashboardScanner: ScannerLens }>()
+const props = defineProps<{
+  panel: DraftPanel
+  dashboardScanner: ScannerLens
+  anchor: HTMLElement
+  trigger?: HTMLElement | null
+}>()
 const emit = defineEmits<{ close: []; apply: [settings: PanelSettings] }>()
 
 const entry = panelById(props.panel.panel)
@@ -40,9 +46,15 @@ function apply() {
 </script>
 
 <template>
-  <SlideoverShell title="Panel settings" :subtitle="entry?.name" :width="420" @close="emit('close')">
-    <div class="ps">
-      <p class="ps-line">{{ entry?.line }}</p>
+  <PopoverShell
+    title="Panel settings"
+    :subtitle="entry?.name"
+    :anchor="anchor"
+    :trigger="trigger"
+    :width="380"
+    @close="emit('close')"
+  >
+    <div>
       <UiField v-if="entry?.usesScanner" label="Scanner" first>
         <UiSegControl v-model="scanner" :options="PANEL_SCANNER_OPTS" />
         <p class="ps-help">{{ scannerHelp(scanner, dashboardScanner) }}</p>
@@ -58,18 +70,10 @@ function apply() {
         <UiButton variant="primary" @click="apply">Apply</UiButton>
       </div>
     </div>
-  </SlideoverShell>
+  </PopoverShell>
 </template>
 
 <style scoped>
-.ps {
-  padding: 16px 18px 18px;
-}
-.ps-line {
-  margin: 0 0 16px;
-  font-size: var(--text-body);
-  color: var(--ink);
-}
 .ps-help {
   margin: 8px 0 0;
   font-size: var(--text-sm);
@@ -79,6 +83,6 @@ function apply() {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 </style>

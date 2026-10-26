@@ -1161,10 +1161,12 @@ page.
   panel at the left edge, in the first free place from the top: `top` mode moves it up. At 24 panels (Q2) **Add panel** in the head is
   off, and the reason shows next to it in `UiRoleNote` with an info icon, because a limit is not
   a permission. A dashboard with no panels shows **Add panel** in its `EmptyState`.
-- **Panel settings (`SlideoverShell`):** the line of the panel, then the scanner (Follow the
-  dashboard, trivy or grype) for a panel with scanner data, the width (Half or Full) and the
-  height (Short or Tall) for a panel with two heights. Apply changes the draft. A Full panel goes
-  to the left column.
+- **Panel settings (`PopoverShell`, ruling of 2026-10-26, option B):** a popover with an arrow
+  next to the panel, on its right, else on its left, else over its top edge under Settings, else
+  above Settings. The page has no backdrop, and the panel keeps a coral outline while its
+  settings are open. The head names the panel and has a ✕. The scanner (Follow the dashboard, trivy or grype) for a panel with
+  scanner data, the width (Half or Full) and the height (Short or Tall) for a panel with two
+  heights. Apply changes the draft. A Full panel goes to the left column.
 - **Save:** the settings `SaveBar`. A save sends the revision that the page read, the details
   that changed, and the panels only when they changed. A change of the sharing sends the roles
   too, so a change to Everyone clears them. The places that `top` mode gives as the grid starts are not a change.
@@ -1222,6 +1224,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 
 | § | Contract said | Shipped | Ruling / record |
 |---|---|---|---|
+| 20 | (proof of concept: the panel settings in the kit slide-over, with a backdrop that blurs the panel) | **A popover next to the panel** (`PopoverShell`): no backdrop, an arrow at Settings, a coral outline on the panel; Cancel and Apply stay | 2026-10-26 §8.5 ruling on pictures A/B/C, option B (issue 440) |
 | 13.4 | Ignore rules → Decisions redirect stub | **No nav entry at all** — decisions live on `/approvals` + finding detail | 2026-07-15, M9e README (supersedes the #237 row-20 stub ruling) |
 | — | (v4 prototype) per-CVE audit panel | **Struck** — no screen; the content ships on finding detail + Approvals + Audit | 2026-07-15, M9e README row 24 |
 | 13.2 | (v4 prototype) scanner version select, tuning writes, enable toggles, Schedule section | **Read-only** provenance + `effective_config` cards; version = image-tag swap (D41), tuning = env/GitOps (C-4), no enable concept (D30), schedule = manifest | 2026-07-07 + 2026-07-15, M9e README §C |

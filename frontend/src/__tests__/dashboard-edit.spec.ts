@@ -391,7 +391,10 @@ describe('edit mode', () => {
     await w.find('[aria-label="Settings of Top components"]').trigger('click')
     await flushPromises()
     const panel = w.find('[role="dialog"]')
-    expect(panel.text()).toContain('The packages with the most vulnerabilities.')
+    expect(panel.attributes('aria-label')).toBe('Panel settings: Top components')
+    // the popover sits next to the panel, which keeps the coral selection while it is open
+    expect(w.find('[data-panel="top-components"]').classes()).toContain('dash-item-on')
+    expect(w.findAll('.dash-item-on')).toHaveLength(1)
     const pick = (text: string) => panel.findAll('button').find((b) => b.text() === text)!.trigger('click')
     await pick('Tall')
     await pick('Full')
@@ -400,6 +403,7 @@ describe('edit mode', () => {
     await button(w, 'Apply').trigger('click')
     await flushPromises()
     expect(w.find('[role="dialog"]').exists()).toBe(false)
+    expect(w.findAll('.dash-item-on')).toHaveLength(0)
     const id = w.find('[data-panel="top-components"]').attributes('gs-id')
     expect(gs.updates).toEqual([{ id, opts: { x: 0, w: 2, h: 26 } }])
     // the panel reads its new rows and its pinned scanner at once

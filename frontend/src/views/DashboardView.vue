@@ -162,6 +162,9 @@ const busy = ref(false)
 /** a refused save stays next to the save bar until the next save or discard */
 const saveError = ref<string | null>(null)
 const settingsKey = ref<string | null>(null)
+/** the Settings button that opened the panel settings, and the panel it belongs to */
+const settingsTrigger = ref<HTMLElement | null>(null)
+const settingsAnchor = computed(() => settingsTrigger.value?.closest<HTMLElement>('.grid-stack-item-content') ?? null)
 const adding = ref(false)
 /** the name, sharing and opening scanner in the draft, and as saved */
 const details = ref<DashboardDetails | null>(null)
@@ -200,6 +203,10 @@ function onReady(places: PanelPlace[]) {
 }
 function onMoved(places: PanelPlace[]) {
   draft.value = withPlaces(draft.value, places)
+}
+function openSettings(key: string, trigger: HTMLElement) {
+  settingsKey.value = key
+  settingsTrigger.value = trigger
 }
 function applySettings(settings: Settings) {
   draft.value = draft.value.map((p) => (p.key === settingsKey.value ? withSettings(p, settings) : p))
@@ -354,7 +361,8 @@ async function save() {
         :scanner="scanner"
         @ready="onReady"
         @moved="onMoved"
-        @settings="settingsKey = $event"
+        :active="settingsKey"
+        @settings="openSettings"
         @remove="removePanel"
       />
       <EmptyState
@@ -399,9 +407,11 @@ async function save() {
       @removed="onRemoved"
     />
     <PanelSettings
-      v-if="settingsPanel"
+      v-if="settingsPanel && settingsAnchor"
       :key="settingsPanel.key"
       :panel="settingsPanel"
+      :anchor="settingsAnchor"
+      :trigger="settingsTrigger"
       :dashboard-scanner="scanner"
       @close="settingsKey = null"
       @apply="applySettings"
