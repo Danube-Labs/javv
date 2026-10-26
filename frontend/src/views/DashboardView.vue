@@ -10,6 +10,8 @@
  * panels; gridstack moves them, and the save bar saves the draft. A save sends the panels only
  * when the layout changed, so a stored layout is not checked again for nothing (PR B), and it
  * sends the revision it read: a dashboard that somebody changed since is refused (409, D4).
+ * The name, description, sharing and opening scanner join the same draft and the same save; the
+ * save sends only the fields that changed (S8c).
  */
 import { computed, defineAsyncComponent, defineComponent, h, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -22,8 +24,10 @@ import {
   type UpdateDashboard,
 } from '@/api/generated'
 import AddPanelDialog from '@/components/dashboards/AddPanelDialog.vue'
+import DashboardDetailsDialog from '@/components/dashboards/DashboardDetailsDialog.vue'
 import DashboardGrid from '@/components/dashboards/DashboardGrid.vue'
 import PanelSettings from '@/components/dashboards/PanelSettings.vue'
+import RemoveDashboardDialog from '@/components/dashboards/RemoveDashboardDialog.vue'
 import SaveBar from '@/components/settings/SaveBar.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -33,6 +37,7 @@ import UiSegControl from '@/components/ui/UiSegControl.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { useStretchWidth } from '@/composables/useStretchWidth'
+import { detailsChange, detailsOf, sameDetails, type DashboardDetails, type Sharing } from '@/dashboards/details'
 import {
   addedPanel,
   editRefusal,
@@ -77,7 +82,7 @@ interface DashboardDoc {
   owner: string
   scanner: ScannerLens
   panels: DashboardPanel[]
-  sharing: string
+  sharing: Sharing
   roles: string[]
   updated_at: string
   updated_by: string
@@ -158,14 +163,22 @@ const busy = ref(false)
 const saveError = ref<string | null>(null)
 const settingsKey = ref<string | null>(null)
 const adding = ref(false)
+/** the name, sharing and opening scanner in the draft, and as saved */
+const details = ref<DashboardDetails | null>(null)
+const detailsBase = ref<DashboardDetails | null>(null)
+const detailsOpen = ref(false)
+const removing = ref(false)
 const full = computed(() => draft.value.length >= MAX_PANELS)
 
 function startDraft() {
   if (!dash.value) return
   draft.value = toDraft(dash.value.panels)
   baseline.value = draft.value
+  details.value = detailsOf(dash.value)
+  detailsBase.value = details.value
   settingsKey.value = null
   adding.value = false
+  detailsOpen.value = false
   saveError.value = null
   gridKey.value++
 }
@@ -173,7 +186,12 @@ watch(editing, (on) => {
   if (on) startDraft()
 })
 
-const dirty = computed(() => editing.value && !sameLayout(fromDraft(draft.value), fromDraft(baseline.value)))
+const detailsChanged = computed(
+  () => details.value !== null && detailsBase.value !== null && !sameDetails(detailsBase.value, details.value),
+)
+const dirty = computed(
+  () => editing.value && (detailsChanged.value || !sameLayout(fromDraft(draft.value), fromDraft(baseline.value))),
+)
 const settingsPanel = computed(() => draft.value.find((p) => p.key === settingsKey.value) ?? null)
 
 function onReady(places: PanelPlace[]) {
@@ -194,11 +212,20 @@ function addPanel(choice: Parameters<typeof addedPanel>[1]) {
 function removePanel(key: string) {
   draft.value = draft.value.filter((p) => p.key !== key)
 }
+function applyDetails(next: DashboardDetails) {
+  details.value = next
+  detailsOpen.value = false
+}
+function onRemoved() {
+  toast.success(`Dashboard “${dash.value?.name ?? ''}” removed`)
+  void router.push('/dashboards')
+}
 
 async function save() {
   if (!dash.value) return
   const panels = fromDraft(draft.value)
   const body: UpdateDashboard = { revision: dash.value.revision }
+  if (details.value && detailsBase.value) Object.assign(body, detailsChange(detailsBase.value, details.value))
   if (!sameLayout(panels, fromDraft(baseline.value))) body.panels = panels
   busy.value = true
   saveError.value = null
@@ -215,6 +242,8 @@ async function save() {
   }
   dash.value = data as unknown as DashboardDoc
   baseline.value = draft.value
+  details.value = detailsOf(dash.value)
+  detailsBase.value = details.value
   toast.success('Dashboard saved.')
 }
 </script>
@@ -225,7 +254,7 @@ async function save() {
   <div v-else class="screen">
     <div class="screen-head">
       <div ref="headCard" class="head-card head-card-fluid">
-        <h1>{{ editing ? `Editing ${dash?.name}` : (dash?.name ?? 'Dashboard') }}</h1>
+        <h1>{{ editing ? `Editing ${details?.name ?? dash?.name}` : (dash?.name ?? 'Dashboard') }}</h1>
         <template v-if="dash">
           <p v-if="dash.description" class="head-note dash-desc">{{ dash.description }}</p>
           <p class="head-note dash-meta">
@@ -255,6 +284,10 @@ async function save() {
             <AppIcon name="plus" :size="13" />Add panel
           </UiButton>
           <UiRoleNote v-if="full" id="panel-cap-note" icon="info">{{ PANEL_CAP_NOTE }}</UiRoleNote>
+          <UiButton variant="control" @click="detailsOpen = true">
+            <AppIcon name="users" :size="13" />Name and sharing
+          </UiButton>
+          <UiButton variant="control" @click="removing = true"><AppIcon name="trash" :size="13" />Remove</UiButton>
           <UiButton variant="ghost" :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
         </template>
         <template v-else>
@@ -342,6 +375,21 @@ async function save() {
       :dashboard-scanner="scanner"
       @close="adding = false"
       @add="addPanel"
+    />
+    <DashboardDetailsDialog
+      v-if="detailsOpen && editing && details"
+      :details="details"
+      mode="edit"
+      @close="detailsOpen = false"
+      @apply="applyDetails"
+    />
+    <RemoveDashboardDialog
+      v-if="removing && editing && dash"
+      :dashboard-id="dash.dashboard_id"
+      :name="dash.name"
+      :revision="dash.revision"
+      @close="removing = false"
+      @removed="onRemoved"
     />
     <PanelSettings
       v-if="settingsPanel"

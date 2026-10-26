@@ -1084,11 +1084,13 @@ or `Only the owner`), the description, the number of panels and when it changed,
 list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
-  **Export all** downloads every dashboard that the user can see as one NDJSON file. It needs no
-  `can_export` (D7). **Import** needs `can_edit_dashboards`. For a user without it, the button
-  stays, off, with the reason in `UiRoleNote` (issue 243).
-- **States:** loading (`UiSkeleton`), refused (the G2 alert), empty (`EmptyState`, with Import for
-  a user who can import).
+  **New dashboard** opens the details window (below) in its create mode. **Create** makes the
+  dashboard with no panels and opens it in edit mode. A refused create stays in the window with
+  the reason. **Export all** downloads every dashboard that the user can see as one NDJSON file.
+  It needs no `can_export` (D7). **New dashboard** and **Import** need `can_edit_dashboards`. For
+  a user without it, both buttons stay, off, with one reason in `UiRoleNote` (issue 243).
+- **States:** loading (`UiSkeleton`), refused (the G2 alert), empty (`EmptyState`, with New
+  dashboard and Import for a user who can make dashboards).
 
 **Import dialog (`ModalShell`):** a kit button picks the file. Then **Keep the IDs** or **Make
 copies** (`UiSegControl`), and a note that the importer owns each new dashboard. The file goes to
@@ -1125,8 +1127,23 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
 dashboard** stays, off, with the reason in `UiRoleNote`, and `?edit=1` in a link opens the read
 page.
 - **Head:** `Editing <name>`. The scanner switch stays, so the panels show what they will show.
-  **Exit edit** replaces Export and Edit dashboard. It is off while the page has changes to save:
-  the save bar under the head card, Discard or Save changes, is the way out.
+  **Add panel**, **Name and sharing**, **Remove** and **Exit edit** replace Export and Edit
+  dashboard. Exit edit is off while the page has changes to save: the save bar under the head
+  card, Discard or Save changes, is the way out.
+- **Name and sharing (`ModalShell`, `components/dashboards/DashboardDetailsDialog.vue`):** the
+  name and the description (`SettingsInput`, at most 128 and 1,024 characters), who can see it
+  (Only me, Everyone or Some roles, D2), and the scanner that the page opens on. With Some roles,
+  `UiToggleGroup` shows each role that `GET /api/v1/dashboards/roles` gives, admin too (ruling of
+  2026-10-26), and a role of the dashboard that the list does not have. A note says that an admin
+  can see each dashboard. **Apply** is off while the name is empty or Some roles has no role, and
+  the reason shows under the fields. Apply changes the draft, as the panel settings do: the save
+  bar saves the details with the panels. If the list of roles does not load, an alert says so,
+  and the other fields still work.
+- **Remove (`ModalShell`, `components/dashboards/RemoveDashboardDialog.vue`):** asks first. It
+  says that the data of the panels stays and that the audit log keeps a copy. **Remove dashboard**
+  sends the revision that the page read, then goes to the list with a toast. A dashboard that is
+  gone already counts as removed. A refused remove stays in the window with the reason: no
+  permission, somebody changed it (409), the store is busy or read-only, or no answer.
 - **Panels:** gridstack (`components/dashboards/DashboardEditGrid.vue`, its own chunk that only
   edit mode loads) in `top` mode, on the cells of the read page: two columns, rows of 40 px, a
   15 px margin, no resize (R10). Each panel shows, at rest, a **Move** tab over its top left
@@ -1147,8 +1164,9 @@ page.
   dashboard, trivy or grype) for a panel with scanner data, the width (Half or Full) and the
   height (Short or Tall) for a panel with two heights. Apply changes the draft. A Full panel goes
   to the left column.
-- **Save:** the settings `SaveBar`. A save sends the revision that the page read, and the panels
-  only when they changed. The places that `top` mode gives as the grid starts are not a change.
+- **Save:** the settings `SaveBar`. A save sends the revision that the page read, the details
+  that changed, and the panels only when they changed. A change of the sharing sends the roles
+  too, so a change to Everyone clears them. The places that `top` mode gives as the grid starts are not a change.
   A refused save keeps the changes and shows the reason under the save bar: no permission (403),
   the dashboard is gone (404), somebody changed it (409, reload the page), a value JAVV cannot use
   (422), the store is busy (429) or read-only, or no answer, which does not say that nothing was

@@ -17,6 +17,7 @@ withDefaults(
     invalid?: boolean
     id?: string
     disabled?: boolean
+    maxlength?: number
   }>(),
   { num: false, invalid: false },
 )
@@ -37,7 +38,8 @@ const row = inject(SETTINGS_ROW_LABEL, null)
       :aria-describedby="row?.hintId()"
       :aria-invalid="invalid || undefined"
       :disabled="disabled"
-      inputmode="decimal"
+      :maxlength="maxlength"
+      :inputmode="num ? 'decimal' : undefined"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
     <span v-if="unit" class="set-input-unit">{{ unit }}</span>

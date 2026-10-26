@@ -1,7 +1,7 @@
 # Use JAVV
 
 These pages show how to triage the findings in JAVV, from the first scan to a finding with a
-decision. Each page has a short video. The same steps are in text below each video.
+decision. Each page in the table has a short video. The same steps are in text below each video.
 
 | Video | What it shows |
 |---|---|
@@ -14,6 +14,8 @@ decision. Each page has a short video. The same steps are in text below each vid
 
 The videos use made-up clusters and data.
 
+[Build a dashboard](build-a-dashboard.md) shows how to put panels on one page and share them.
+
 ## What your role lets you do
 
 Your role sets what you can change:
@@ -25,6 +27,9 @@ Your role sets what you can change:
 - To download a file of the data, for example a CSV or VEX file, your role must allow export. The
   `triager`, `security_lead` and `admin` roles allow it. The `viewer` role does not. For a viewer,
   each export button is not available, and the text next to it tells you why.
+- To make a dashboard, or to import one, your role must allow dashboards. The `triager`,
+  `security_lead` and `admin` roles allow it. Only the owner of a dashboard or an admin can
+  change it or remove it.
 
 An administrator sets the role of each user.
 
