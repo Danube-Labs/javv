@@ -1,11 +1,11 @@
 # Observability & error handling
 
-How JAVV logs, surfaces health, and reports errors. Referenced by every backend bolt (FR-20, NFR-5/8).
+How JAVV logs, surfaces health, and reports errors. Each backend change follows it (FR-20, NFR-5/8).
 The bar is **near-perfect error visibility**: every failure is structured, correlatable, and never silent -
 and the app **degrades loudly, not blindly** when its datastore is unavailable.
 
 > Implemented first in **M1** (the skeleton owns `/healthz`, `/readyz`, `/metrics`, structlog, and the error
-> envelope); the frontend degraded banner is **M9a**. Later bolts reuse this contract, never reinvent it.
+> envelope). The frontend degraded banner is **M9a**. Later work reuses this contract and never reinvents it.
 
 ## 1. Structured logging (structlog via `libs/javv-common`)
 - **The shared library is the ONLY pipeline** (#156/#159): `structlog.get_logger()` + key-value

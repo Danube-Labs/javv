@@ -1,4 +1,8 @@
 <!--
+History: the bolts M0 to M10 are frozen (issue 1012), and there are no new bolts. New work follows
+one GitHub issue for each feature, with a spec file for each slice (git-workflow.md, "Tracking work").
+The links below are relative to a bolt folder, development/bolts/M<n>-<slug>/.
+
 Copy this file to development/bolts/M<n>-<slug>/README.md and fill it in.
 Keep it THIN: link to the canonical design for the "what/why"; this file is the EXECUTION layer only.
 Do NOT restate index mappings, requirements, or decisions - link to them. Restating = drift.

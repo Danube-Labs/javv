@@ -21,4 +21,4 @@
 - <traps to avoid — e.g. don't auto-merge; squash uses the commit msg not the PR title; …>
 
 ## Pointers
-- [`REPO-MAP.md`](../../REPO-MAP.md) · active bolt issue #<nn> · <other key docs>
+- [`REPO-MAP.md`](../../REPO-MAP.md) · active issue #<nn> · <other key docs>
