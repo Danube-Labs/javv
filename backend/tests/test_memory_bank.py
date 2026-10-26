@@ -72,3 +72,26 @@ def test_active_context_says_its_date():
     assert re.search(r"^As of: \d{4}-\d\d-\d\d$", text, re.M), (
         "active-context.md has no 'As of' date"
     )
+
+
+BOLT_READMES = sorted((ROOT / "development" / "bolts").glob("*/README.md"))
+_HEADING = re.compile(r"^### .*$", re.M)
+_FROZEN = "### 2026-10-26 — Frozen as history"
+
+
+def test_the_bolts_are_there():
+    assert len(BOLT_READMES) == 24, [p.parent.name for p in BOLT_READMES]
+
+
+@pytest.mark.parametrize("readme", BOLT_READMES, ids=lambda p: p.parent.name)
+def test_each_bolt_ends_its_updates_frozen(readme: Path):
+    """The bolts are history (issue 1012): the last entry of each Updates log says so and points to
+    the bank, so a reader who opens a bolt does not take it for the spec of today."""
+    text = readme.read_text()
+    start = re.search(r"^## Updates\b.*$", text, re.M)
+    assert start, f"{readme.parent.name} has no Updates log"
+    end = re.search(r"^## ", text[start.end() :], re.M)
+    updates = text[start.end() : start.end() + end.start()] if end else text[start.end() :]
+    headings = _HEADING.findall(updates)
+    assert headings and headings[-1] == _FROZEN, f"last Updates entry: {headings[-1:]}"
+    assert "](../../memory-bank/README.md)" in updates.split(_FROZEN)[1]

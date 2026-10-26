@@ -24,10 +24,10 @@ optional reading you can skip, they are this file's other half:
 |---|---|
 | Touching **any index / mapping / rollover / retention** | `docs/engineering/INDEX-MAP.md` |
 | Adding/changing **HTTP endpoints** or their contracts | `docs/API.md` (+ the router in `backend/src/backend/routers/`) |
-| Working a **bolt** (any milestone slice) | that bolt's `development/bolts/<bolt>/README.md` — the spec of record, incl. its `## Updates` |
+| Working an **issue** (any feature or fix) | the issue and its plan comment: a spec file for each slice. The bolts in `development/bolts/` are frozen history (issue 1012) |
 | Writing/modifying **frontend UI / styling** | `.claude/rules/ui-design.md` (auto-loads on frontend source) → `frontend/DESIGN.md` (binding: tokens, Hanken Grotesk, AA floor, §8 fidelity protocol — **a screen's grammar is the prototype's; substituting it needs a live operator ruling on a built specimen, §8.5** — §9 ruled exceptions) → `development/standards/ui-foundations.md` · `handoff/docs/SCREENS.md` |
 | Adding/changing **any config setting, env var, or threshold** | `docs/CONFIGURATION.md` — document the setting there the **same PR**; hardcoding a tunable is a review-fail. Constants only when they mirror an already-documented cap (say so in a comment). |
-| **Committing / branching / PRs** | `development/standards/git-workflow.md` (bolt tracking, housekeeping, the pre-commit trap) |
+| **Committing / branching / PRs** | `development/standards/git-workflow.md` (issue tracking, housekeeping, the pre-commit trap) |
 | **Starting/stopping/operating** the dev stack | § *Running the stack* below → `development/RUNNING-THE-STACK.md` (paths A/B/F) |
 | Adding **any log line** (either stack) | `.claude/rules/logging.md` (auto-loads on source) — shared library only; `console.*`/`print` are banned |
 | Running/extending the **e2e rigs** | `development/e2e/README.md` |
@@ -211,10 +211,11 @@ Invoke the matching skill before starting that kind of work:
   construction. Mandatory for M1 ingest and M3 auth.
 - **performance-optimization** - OpenSearch query/agg/shard tuning, large-table FE render. Measure first.
 - **code-review-and-quality** - before merging any change.
-- **git-workflow-and-versioning** - commits/branches throughout. **Track each bolt on its GitHub issue**
-  (label `bolt`, on the project board): comment at kickoff / blocker / scope-change / done, and put
-  `Closes #<n>` in the bolt PR. Spec-level changes also go in the bolt README's `## Updates` log. Full
-  convention: `development/standards/git-workflow.md` § "Tracking a bolt".
+- **git-workflow-and-versioning** - commits/branches throughout. **Track each feature on its GitHub
+  issue**: the plan with a spec file per slice first, then comments at kickoff / blocker / scope-change /
+  done, and `Closes #<n>` in the PR that finishes it. A ruling that stays in force also goes in
+  `development/memory-bank/rulings.md`. Full convention: `development/standards/git-workflow.md`
+  § "Tracking work".
 - **ci-cd-and-automation** - the Helm→k3s pipeline + ruff/pyright/pytest CI gates.
 
 ## Tooling to lean on (see `docs/research/TOOLING-AND-MCP.md` for install)

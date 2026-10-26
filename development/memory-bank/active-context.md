@@ -7,16 +7,15 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 ## Where the project is
 
-- The last release is 0.8.9 (2026-10-26). It holds composable dashboards (issue 440), the Roles
-  card (issue 990) and the `can_export` permission (issue 243).
-- Release 0.9.0 comes next. It has no code changes after 0.8.9: it marks the 0.8.9 changes as a
-  minor release (operator, 2026-10-26).
+- The last release is 0.9.0 (2026-10-26). It has no code changes after 0.8.9 (2026-10-26), and it
+  marks as a minor release what 0.8.9 holds: composable dashboards (issue 440), the Roles card
+  (issue 990) and the `can_export` permission (issue 243).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
 
-- **Issue 1012:** the memory bank is in (PR 1013). Next: the bolts frozen as history, then a docs
-  pass over each live Markdown file against the code.
+- **Issue 1012:** the memory bank (PR 1013) and the bolts frozen as history. Next: a separate issue
+  for a docs pass over each live Markdown file against the code.
 
 ## Open, in the 1.0.0 milestone
 

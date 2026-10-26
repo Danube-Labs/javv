@@ -10,8 +10,9 @@ readers; releases via release-please). Frontend shipped through **M9f** (finding
 all-clusters, images, audit log, scanner status, contributors, approvals, the full Settings area,
 then search, the bell, saved views, RBAC and empty states - 0.4.0, #449), plus the post-M9f polish
 wave (#450). M10 (polish + deploy, #41) shipped the compose stack and the three Helm charts, and the
-MVP releases followed. **0.8.0** (2026-10-14) holds the bug hunt (#790). **Now:** the 1.0.0 hardening
-milestone. #555 has the roadmap and its burn order.
+MVP releases followed. **0.8.0** (2026-10-14) holds the bug hunt (#790), **0.8.9** (2026-10-26) the
+composable dashboards (#440), marked as the minor release 0.9.0. The bolts are frozen as history (#1012): work after M10 follows one
+issue per feature. **Now:** the 1.0.0 hardening milestone. #555 has the roadmap and its burn order.
 
 ## Start here (reading order)
 1. [`README.md`](README.md) - what JAVV is, stack, toolchain table, license.
@@ -19,7 +20,7 @@ milestone. #555 has the roadmap and its burn order.
 3. [`docs/engineering/PLAN.md`](docs/engineering/PLAN.md) - decisions D1-D47, data model, milestones M0-M10.
 4. [`docs/engineering/INDEX-MAP.md`](docs/engineering/INDEX-MAP.md) - **source of truth** for every OpenSearch index + mapping.
 5. [`docs/API.md`](docs/API.md) - the shipped HTTP surface (auth regimes + capabilities) · [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) - every setting.
-6. [`development/bolts/`](development/bolts/) - the milestone you're actually building.
+6. [`development/memory-bank/`](development/memory-bank/README.md) - the timeline, the rulings that still apply and the open work. The bolts in [`development/bolts/`](development/bolts/) are history.
 
 ## Top-level layout
 
@@ -92,9 +93,9 @@ re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in
 | `development/README.md` | **Dev-environment + local-loop guide**: setup, single k3d cluster, scanning the cluster, quality gates |
 | `development/RUNNING-THE-STACK.md` | Run the whole stack by hand (OpenSearch, backend, scanners) |
 | `development/setup/` | `setup-dev.sh` (idempotent toolchain installer, pinned gate-tool versions) · `preflight.sh` (host readiness) · `opensearch-dev.yml` (dev store) · `seed-vuln-workloads.yaml` + `seed-beta-workloads.yaml` (the second k3d tenant) · `setup-branch-protection.sh` (the required checks on `main`; re-run after changing its list) |
-| **`development/bolts/`** | One folder per milestone unit M0-M10 (the **execution briefs**) - see milestone map below |
+| **`development/bolts/`** | One folder per milestone unit M0-M10 (the **execution briefs**), frozen as history since 2026-10-26 (issue 1012) - see milestone map below |
 | **`development/memory-bank/`** | The project's memory bank (issue 1012): what JAVV is, the stack, the timeline of the bolts and the work after them, the decisions and rulings that still apply, lessons from incidents, and the open work on a date. A summary, not a spec: the canonical docs win |
-| **`development/standards/`** | Process rules: `definition-of-done` · `testing` (suite budget, no per-test bootstrap) · `git-workflow` (bolt tracking on issues) · `releases` · `observability` (**javv-common logging only**) · `api-design` · `ui-foundations` (binding FE tokens) · `security` · `dependency-policy` (fix deadlines, Renovate) · `bolt-readme-template` |
+| **`development/standards/`** | Process rules: `definition-of-done` · `testing` (suite budget, no per-test bootstrap) · `git-workflow` (work tracked on issues) · `releases` · `observability` (**javv-common logging only**) · `api-design` · `ui-foundations` (binding FE tokens) · `security` · `dependency-policy` (fix deadlines, Renovate) · `bolt-readme-template` |
 | **`development/e2e/`** | Operator rigs: `smoke.sh` (full-stack smoke incl. read/report phase) · `smoke-two-cluster.sh` (two-tenant isolation) · `bench_refresh.py` + `bench_read.py` (ingest + read-contention benches) · `loadbreak.py` (synthetic load + break attempts) · `results.md` (run log). Run logs are git-ignored |
 | `development/scripts/` | `check-versions.sh` (versions.yaml ↔ consumers drift gate) · `check-scanner-db-policy.sh` · `check-ingest-roundtrip.sh` (the compat push's summary vs the store, CI) · `check-docs-drift.sh` (API.md + CONFIGURATION.md vs code, and this map's inventory, CI) · `check-docs-site-lists.py` (no list on the built docs site rendered as a paragraph, CI) · `build-app-images.sh` (the app images as a release tags and labels them; CI and the release) · `release-app-images.sh` (the release's app images: build only what is not published, push only what was built, print each digest, so a re-run signs what is published; issue 833) · `helm-ci-fixtures.sh` (the Secrets, certificates and cert-manager Issuer the chart installs in CI use) · `helm-docs.sh` (chart READMEs from their values.yaml, at the pinned helm-docs; `--check` in CI) · `helm-ci-app-checks.sh` (on an installed javv chart: a sign-in, a stopped backend, upgrade and rollback; CI) · `helm-ci-scanner-checks.sh` (the javv-scanner chart in a second cluster pushing to the javv chart: a registry that needs a login and an image only it serves, tokens, then one cycle per scanner landing in JAVV, that image included; CI) · `helm-ci-release.sh` (the one release of a chart in a namespace, the one `ct install --skip-clean-up` kept; CI) · `publish-charts.sh` (a release's charts: package, the scanner images pinned by signature-checked digest, then push; the release run, and CI against a local registry) · `publish-docs-version.sh` (the docs of one release into a folder of its own on the docs site; its tags choose the minor and `latest` aliases; the release run and `docs-backfill.yml`, issue 925) · `clean-dev-store.sh` (test-residue sweep) · `clean-local.sh` (local clutter that git ignores: test and build output, e2e logs, dead-letter files, tool caches; dry run unless `--apply`, never `tmp/`; issue 660) · `dependency-audit.sh` (report-only, CI) · `seed-smoke.sh` (seeds the CI smoke's backend) · `replay_waves.py` (made-up scan data pushed as several scans over time into a new cluster, so first seen and resolved get a spread; issue 883) · `opensearch-role-walk.sh` (every surface that reaches OpenSearch, as the javv user, then what the role refuses; CI's compose job, issue 729) · `compose-ci-cross-release.sh` (the last release, then this change, the last release again and this change again on one store, reading the data back after each start; CI's compose job, issue 261) · `make-demo-gif.sh` (README demo) |
 | `development/hooks/` | `conventional-commit.sh` (local commitlint mirror: types, subject case, 100-char lines) + its case suite `test-conventional-commit.sh` |
@@ -119,7 +120,7 @@ Each bolt README is a self-contained brief (Goal · Canonical refs · Depends on
 | **M9d** ✅ | Audit log · scanner status · contributors · approvals (bolt #38) |
 | **M9e** ✅ | Settings: SLA · tokens · users · cluster · scanning · scan scope · Data & OpenSearch · findings-cleanup sweep (bolt #39) |
 | **M9f** ✅ | Cross-cutting (search, bell, saved views, RBAC, empty states) (bolt #40) |
-| **M10** | Polish + deploy (Helm→k3s, scanner CronJobs, vuln-DB cache) |
+| **M10** ✅ | Polish + deploy (Helm→k3s, scanner CronJobs, vuln-DB cache) (bolt #41, closed 2026-10-09) |
 | AUDIT-M5c-M5d-M6-remediation ✅ | The #185-#192 audit wave (shipped v0.3.0; guides archived in `.deprecated/development/bolts/`) |
 
 ## `handoff/` - UI reference (NOT a contract)
