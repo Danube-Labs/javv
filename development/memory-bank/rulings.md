@@ -17,6 +17,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-09-29 | Renovate major updates are the last step before 1.0. | 555, 597 |
 | 2026-10-10 | Each issue open on 2026-10-10 is in the 1.0.0 milestone, unless the operator moves it out. | 555 |
 | 2026-10-14 | The release after 0.7.2 is 0.8.0, not the planned 0.7.3. | PR 853 |
+| 2026-10-26 | 0.8.9 stays released. Release 0.9.0 follows with `Release-As: 0.9.0` and marks the changes of 0.8.9 as a minor release. | 1012 |
 | 2026-10-14 | Nobody uses an older release of JAVV. A change needs no tool, no data migration and no "check your data" note for what an older release wrote. The same applies to stored shapes such as saved views (2026-10-20). | 854, 949 |
 | standing | A release PR merges only on an explicit word from the operator. | 992 |
 

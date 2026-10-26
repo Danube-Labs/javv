@@ -108,6 +108,7 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   their own data, `system-dashboards` with private, everyone or role sharing, a
   `can_edit_dashboards` permission, list, read, export and import, then edit mode on a gridstack
   grid with a popover for panel settings. PRs 996, 1001, 1002, 1003, 1007, 1008, 1010.
+  These changes shipped in 0.8.9 (2026-10-26). Release 0.9.0 marks them as a minor release.
 
 ## 6. Releases
 
@@ -115,6 +116,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.8.9 | 2026-10-26 | Composable dashboards (issue 440), the Roles card (issue 990) and the `can_export` permission (issue 243). Release 0.9.0 marks these changes. |
 | 0.8.8 | 2026-10-23 | Filter counts and pairs (issues 975, 979, 980, 983) |
 | 0.8.7 | 2026-10-23 | Filters take several values (issues 949, 950, 952) |
 | 0.8.6 | 2026-10-20 | The audit log names each action (issue 933) |
