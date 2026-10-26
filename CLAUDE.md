@@ -7,6 +7,8 @@
 > backing the v4 revision: `docs/research/`. **Lost? Read `REPO-MAP.md` first** - it maps every folder.
 > **Resuming a session?** Read the newest file in `.claude/sessions/` (the last handoff) before acting;
 > save one with `/save-context` before ending or compacting.
+> **New to the project, or need the history?** `development/memory-bank/` has the brief, the timeline,
+> the rulings that still apply and the open work.
 
 ## Read this FIRST (per task area)
 Not everything is in this file — these are the sources of truth per area. Read the matching file
@@ -31,6 +33,7 @@ optional reading you can skip, they are this file's other half:
 | Running/extending the **e2e rigs** | `development/e2e/README.md` |
 | Verifying a change | `/qa` (delta-scoped) · UI deltas: `/visual-test` |
 | Lost in the tree | `REPO-MAP.md` |
+| **Planning work, proposing scope, or new to the project** | `development/memory-bank/` — `rulings.md` (what is already ruled), `active-context.md` (open and held work), `timeline.md` (what shipped, by release) |
 
 ## Code comments
 Default to none; add one only when the WHY is non-obvious (hidden constraint, subtle invariant,
