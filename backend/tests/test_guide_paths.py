@@ -1,15 +1,27 @@
 """The contributor and agent guides, and the READMEs of the components, name files of the
 repository, and a reader opens them on trust. A path that no longer exists sends the reader
 nowhere, so each path that a guide names must exist: each relative link, and each code span that
-starts with a top-level folder or file of the repository. Pure file checks, no store."""
+starts with a top-level folder or file of the repository. The test reads the git tree, not the
+disk: a file that a guide names is in the tree, or git ignores it on purpose (a log, a cookie jar or
+the test results that a command writes). Pure file checks, no store."""
 
+import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).parents[2]
-_TOP_LEVEL = {p.name for p in ROOT.iterdir()}
+_TRACKED = set(
+    subprocess.run(
+        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.splitlines()
+)
+_TRACKED_DIRS = {str(Path(f).parent) for f in _TRACKED} | {
+    str(parent) for f in _TRACKED for parent in Path(f).parents
+}
+_TOP_LEVEL = {f.split("/")[0] for f in _TRACKED}
 _LINK = re.compile(r"\]\(([^)\s]+)\)")
 _CODE = re.compile(r"`([^`\s]+)`")
 # a branch name such as docs/1012-memory-bank starts with a top-level folder, but it is no path
@@ -48,21 +60,29 @@ GUIDES = sorted(
 )
 
 
+def _in_repo(path: str) -> bool:
+    path = os.path.normpath(path)
+    if path in _TRACKED or path in _TRACKED_DIRS:
+        return True
+    ignored = subprocess.run(["git", "check-ignore", "-q", path], cwd=ROOT, check=False)
+    return ignored.returncode == 0
+
+
 def _missing(page: Path) -> list[str]:
     text = page.read_text()
     missing = []
     for target in _LINK.findall(text):
         if target.startswith(("http://", "https://", "#", "mailto:")):
             continue
-        if not (page.parent / target.split("#")[0]).exists():
+        linked = os.path.relpath(page.parent / target.split("#")[0], ROOT)
+        if not _in_repo(linked):
             missing.append(target)
     for token in _CODE.findall(text):
         if "/" not in token or token.split("/")[0] not in _TOP_LEVEL:
             continue
         if _BRANCH.match(token) or _PLACEHOLDER.search(token):
             continue
-        path = token.split("::")[0].split(":")[0].rstrip("/")
-        if not (ROOT / path).exists():
+        if not _in_repo(token.split("::")[0].split(":")[0].rstrip("/")):
             missing.append(token)
     return missing
 
