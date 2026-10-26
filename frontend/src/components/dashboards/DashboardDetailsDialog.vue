@@ -77,10 +77,10 @@ function apply() {
   >
     <div>
       <UiField label="Name" for="dash-name" first>
-        <SettingsInput id="dash-name" v-model="form.name" :maxlength="NAME_MAX" :invalid="!form.name.trim()" />
+        <SettingsInput id="dash-name" v-model="form.name" prose :maxlength="NAME_MAX" :invalid="!form.name.trim()" />
       </UiField>
       <UiField label="Description" hint="optional" for="dash-description">
-        <SettingsInput id="dash-description" v-model="form.description" :maxlength="DESCRIPTION_MAX" />
+        <SettingsInput id="dash-description" v-model="form.description" prose :maxlength="DESCRIPTION_MAX" />
       </UiField>
       <UiField label="Who can see it">
         <UiSegControl v-model="form.sharing" :options="SHARING_OPTS" />

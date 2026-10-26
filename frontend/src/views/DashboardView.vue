@@ -403,9 +403,15 @@ async function save() {
 </template>
 
 <style scoped>
+.screen-head {
+  gap: 16px;
+}
+/* edit mode has five controls: next to a long name they go to a second row, not past the edge */
 .head-actions {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
 }

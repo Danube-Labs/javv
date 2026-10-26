@@ -1129,9 +1129,10 @@ page.
 - **Head:** `Editing <name>`. The scanner switch stays, so the panels show what they will show.
   **Add panel**, **Name and sharing**, **Remove** and **Exit edit** replace Export and Edit
   dashboard. Exit edit is off while the page has changes to save: the save bar under the head
-  card, Discard or Save changes, is the way out.
+  card, Discard or Save changes, is the way out. Next to a long name, the controls go to a second row, on the
+  right.
 - **Name and sharing (`ModalShell`, `components/dashboards/DashboardDetailsDialog.vue`):** the
-  name and the description (`SettingsInput`, at most 128 and 1,024 characters), who can see it
+  name and the description (`SettingsInput` in the UI face, at most 128 and 1,024 characters), who can see it
   (Only me, Everyone or Some roles, D2), and the scanner that the page opens on. With Some roles,
   `UiToggleGroup` shows each role that `GET /api/v1/dashboards/roles` gives, admin too (ruling of
   2026-10-26), and a role of the dashboard that the list does not have. A note says that an admin

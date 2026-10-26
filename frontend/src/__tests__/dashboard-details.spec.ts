@@ -218,6 +218,7 @@ describe('the details window', () => {
     expect(w.find('label[for="dash-name"]').exists()).toBe(true)
     expect(w.find('input#dash-name').attributes('maxlength')).toBe('128')
     expect(w.find('input#dash-description').attributes('maxlength')).toBe('1024')
+    expect(w.find('input#dash-name').classes()).toContain('set-input--prose')
   })
 
   it('Apply sends the trimmed details; it is off with the reason while a rule is not met', async () => {
@@ -265,6 +266,11 @@ describe('a SettingsInput for text', () => {
     expect(text.find('input').attributes('maxlength')).toBe('9')
     const num = mount(SettingsInput, { props: { modelValue: '7', num: true } })
     expect(num.find('input').attributes('inputmode')).toBe('decimal')
+    // a name or a description is set in the UI face; a settings value keeps the mono one
+    expect(mount(SettingsInput, { props: { modelValue: '', prose: true } }).find('input').classes()).toContain(
+      'set-input--prose',
+    )
+    expect(text.find('input').classes()).not.toContain('set-input--prose')
   })
 })
 
