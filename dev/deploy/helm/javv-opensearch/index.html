@@ -1490,7 +1490,7 @@
 
 
 <h1 id="javv-opensearch">javv-opensearch<a class="headerlink" href="#javv-opensearch" title="Permanent link">&para;</a></h1>
-<p><img alt="Version: 0.8.9" src="https://img.shields.io/badge/Version-0.8.9-informational?style=flat-square" /> <img alt="AppVersion: 3.9.0" src="https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square" /></p>
+<p><img alt="Version: 0.9.0" src="https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square" /> <img alt="AppVersion: 3.9.0" src="https://img.shields.io/badge/AppVersion-3.9.0-informational?style=flat-square" /></p>
 <p>This chart installs OpenSearch for JAVV: one node, with its security plugin on and two users with
 a password.</p>
 <ul>
@@ -1533,7 +1533,7 @@ cluster (<a href="../../../docs/DEPLOYING/#an-opensearch-of-your-own">An OpenSea
 <h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Make the Secrets and install the chart:
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.8.9
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.0
 <span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'OpenSearch admin password: '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
 <span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$pw</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>javv-opensearch-admin<span class="w"> </span>--from-file<span class="o">=</span><span class="nv">password</span><span class="o">=</span>/dev/stdin
 <span class="nb">unset</span><span class="w"> </span>pw
