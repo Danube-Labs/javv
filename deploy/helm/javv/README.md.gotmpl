@@ -81,8 +81,10 @@ Other charts:
 
 ## Settings
 
-- Each backend setting is under `backend.config`, at its default, by the name that the backend
-  reads. Each one has the comment that the compose file gives it.
+- Each backend setting is under `backend.config`, by the name that the backend reads. Each one has
+  the comment that the compose file gives it.
+- Each value is the default of the backend, except four values. The chart sets them as compose
+  does ([The javv chart](../../../docs/CONFIGURATION.md#the-javv-chart)).
   [Configuring JAVV](../../../docs/CONFIGURATION.md#backend-settings) describes each setting.
 - The secrets are not settings here. The secret key and the bootstrap password come from
   `secrets`. The password and the CA of OpenSearch come from `opensearch`.

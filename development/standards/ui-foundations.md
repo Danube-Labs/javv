@@ -4,7 +4,7 @@ How JAVV keeps **one** visual system instead of a thousand ad-hoc fonts, sizes, 
 *substance* is already strong (palette, type scale, semantic-color discipline) - this doc makes it
 **binding and enforced**, not just reference.
 
-> Owned by **M9a** (creates the tokens + wires the linter); every later FE bolt (M9b-f) consumes the tokens,
+> Owned by **M9a** (creates the tokens + wires the linter). Each later frontend change consumes the tokens,
 > never raw values.
 
 ## Single source of truth = tokens

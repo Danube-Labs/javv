@@ -22,8 +22,9 @@ without re-deriving where we are. Think "save game before you quit."
 | Where | What | Scope |
 |---|---|---|
 | **here** (`.claude/sessions/`) | latest where-are-we handoff | this repo, this machine |
-| `/end-session` → `~/Claudiu/sessions-history/` | cross-project session journal | global, personal |
-| `/root/.claude/.../memory/` (auto-memory) | durable *facts* (prefs, decisions) | global, persists |
-| bolt READMEs `## Updates` + GitHub issues | per-bolt spec changes + live status | the build |
+| `/end-session` → a personal journal outside the repository | cross-project session journal | global, personal |
+| the auto-memory of Claude Code, outside the repository | durable *facts* (prefs, decisions) | global, persists |
+| GitHub issues (the plan and a spec file for each slice) | live status and spec of each feature | the build |
+| [`development/memory-bank/`](../../development/memory-bank/README.md) | the timeline, the rulings that still apply, the open work | the project |
 
-This one is the **fast-resume** layer; the others are durable facts / per-bolt detail.
+This one is the **fast-resume** layer. The others hold durable facts and the detail of each issue.

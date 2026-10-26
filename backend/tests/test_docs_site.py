@@ -17,7 +17,8 @@ links to other files, nor that the tree publishes only the listed files. These t
 - the pages carry no engineering references (milestones, decisions, audit ids, issue
   numbers), except links to issues that track a limit an operator meets today;
 - every `page.md#heading` link reaches a heading on that page;
-- the publish workflow runs for every published file.
+- the publish workflow runs for every published file;
+- the deploy guide gives the default time of each daily background job.
 """
 
 import fnmatch
@@ -360,3 +361,24 @@ def test_the_publish_workflow_runs_for_every_published_file() -> None:
         assert any(fnmatch.fnmatch(f, p) for p in paths), f"docs.yml does not run for {f}"
     runs = "\n".join(s.get("run", "") for s in workflow["jobs"]["dev"]["steps"])
     assert "mike deploy --config-file docs-site/mkdocs.yml --push dev" in runs
+
+
+def test_the_deploy_guide_gives_the_time_of_each_daily_job() -> None:
+    """The "Scheduled jobs" list in DEPLOYING.md gives the time of each daily job. A new daily
+    job adds its time there."""
+    from backend.core.settings import Settings
+
+    page = (ROOT / "docs" / "DEPLOYING.md").read_text()
+    section = page.split("### Scheduled jobs", 1)[1].split("\n#", 1)[0]
+    daily = [
+        f.default
+        for name, f in Settings.model_fields.items()
+        if name.startswith("job_") and re.fullmatch(r"\d+ \d+ \* \* \*", str(f.default))
+    ]
+    assert daily, "no daily job in the settings"
+    missing = []
+    for cron in daily:
+        minute, hour = cron.split()[:2]
+        if f"{int(hour):02d}:{int(minute):02d}" not in section:
+            missing.append(cron)
+    assert not missing, f"DEPLOYING.md, Scheduled jobs, does not give these times: {missing}"

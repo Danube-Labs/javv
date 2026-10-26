@@ -196,6 +196,17 @@ def test_the_chart_and_compose_agree_on_every_value_but_the_store_address() -> N
             assert value == _parsed(key, frontend[key])["rest"], key
 
 
+def test_the_configuration_page_lists_each_chart_value_that_is_not_the_code_default() -> None:
+    """An operator reads "The javv chart" in docs/CONFIGURATION.md to learn which chart values
+    are not the backend default. Its list names exactly those values, each with its chart value."""
+    page = (ROOT / "docs" / "CONFIGURATION.md").read_text()
+    section = page.split("### The javv chart", 1)[1].split("\n#", 1)[0]
+    listed = dict(re.findall(r"^\s+- `(JAVV_[A-Z0-9_]+)`: `([^`]+)`", section, re.M))
+    chart = _chart("backend")
+    expected = {name: chart[name] for name in NOT_THE_CODE_DEFAULT - SECRETS}
+    assert {k: v.lower() for k, v in listed.items()} == {k: v.lower() for k, v in expected.items()}
+
+
 def test_opensearch_runs_with_its_security_plugin_on() -> None:
     store = _environment("opensearch")
     assert "DISABLE_SECURITY_PLUGIN" not in store, "compose runs OpenSearch with its login on"
