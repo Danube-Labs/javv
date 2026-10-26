@@ -71,10 +71,10 @@ Backend: `query/paging.py` + the bulk helpers.
 
 **Building a NEW agg-backed panel (chart, board, histogram, leaderboard)** — it is a *lens*, and
 lenses are built self-contained: `(cluster_id, T, params)` in, owns its own aggregation fetch, its
-own loading/empty/error states, no reliance on host state. The composable-dashboard bolt (#440)
-has to move every host-fed panel onto that contract, so every new host-fed one grows the bill.
-Full ruling incl. when host-fed is still right: **DESIGN.md §10**. Don't convert existing lenses in
-passing — #440 does that deliberately.
+own loading/empty/error states, no reliance on host state. The dashboards (issue 440) put the
+panels of `src/dashboards/catalog.ts` on that contract, so a host-fed panel cannot go on a dashboard.
+Full ruling incl. when host-fed is still right: **DESIGN.md §10**. Don't convert a host-fed panel
+in passing.
 
 **Non-negotiable behaviours**
 - **Visual feedback is a MUST**: every interactive element ships hover (**wash + border**, never

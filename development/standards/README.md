@@ -4,12 +4,13 @@
 [`docs/engineering/`](../../docs/engineering/). For the **dev environment**, see
 [`development/README.md`](../README.md).
 
-These files exist so the per-bolt READMEs under [`bolts/`](../bolts/) stay *thin* - a bolt names only its
-own goal, deliverables, and bolt-specific gates, and links here for everything shared.
+These files hold the rules that each issue shares, so the plan of an issue names only its own goal,
+slices and spec files, and links here for the rest. The bolts in [`bolts/`](../bolts/) are history
+(issue 1012).
 
 | File | What it covers |
 |------|----------------|
-| [definition-of-done.md](definition-of-done.md) | The uniform gate **every** bolt must pass before it's "done" |
+| [definition-of-done.md](definition-of-done.md) | The uniform gate **every** PR must pass before it's "done" |
 | [testing.md](testing.md) | Test taxonomy (unit / integration / golden fixtures) + conventions |
 | [observability.md](observability.md) | Logging, `/healthz` vs `/readyz`, boot-vs-runtime degrade, the error envelope, metrics |
 | [api-design.md](api-design.md) | HTTP conventions: versioning, naming, the tenant filter, pagination, response/status shape |
@@ -18,7 +19,7 @@ own goal, deliverables, and bolt-specific gates, and links here for everything s
 | [releases.md](releases.md) | Versioning + release automation (release-please) + dependency updates (Renovate) |
 | [dependency-policy.md](dependency-policy.md) | Where each version is pinned, update cadence, the fix deadlines for vulnerable dependencies, adding a dependency |
 | [security.md](security.md) | The engineering threat model (ingest, tenants, secrets) and the security checks that run; reporting lives in the root `SECURITY.md` |
-| [bolt-readme-template.md](bolt-readme-template.md) | Copy this when starting a new bolt README |
+| [bolt-readme-template.md](bolt-readme-template.md) | History: the template of the bolt READMEs. There are no new bolts. |
 
 ## Don't duplicate - point
 These are the existing sources of truth; **link to them, don't re-host them** (re-hosting drifts):

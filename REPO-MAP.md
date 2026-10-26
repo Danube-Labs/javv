@@ -40,7 +40,7 @@ issue per feature. **Now:** the 1.0.0 hardening milestone. #555 has the roadmap 
 | **`scanner/`** | Scanner module + the two **self-built** images (`Dockerfile.trivy` / `Dockerfile.grype`, `docker-bake.hcl`) | code |
 | **`libs/javv-common`** | Shared structlog logging pipeline - **the only logging path** for app code | **Binding** |
 | `docs/` | Design, API/config trackers, audits, research | see below |
-| `development/` | How to build it: bolts, standards, setup, e2e | see below |
+| `development/` | How to build it: standards, setup, e2e, the memory bank, and the bolts as history | see below |
 | `handoff/` | UI/UX reference - **`docs/` current**, `v4/` frozen trail | **reference only**, not a contract |
 | `design/` | Brand source of record (logos, tokens, brand guide) | binding for brand |
 | `.github/` | CI + release automation workflows; `actions/sign-image` (cosign keyless signing, for every image publish); issue forms, PR template, `CODEOWNERS` | — |

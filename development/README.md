@@ -128,12 +128,13 @@ frontend/         Vue 3 app (<script setup lang="ts">) · PrimeVue · vue-echart
 scanner/          the in-cluster scanner package + Dockerfile.{trivy,grype}
 libs/javv-common/ the shared logging pipeline (backend + scanner)
 versions.yaml     pinned external versions (scanners, OpenSearch, toolchain) - single source of truth (D42)
+deploy/           compose/ (one machine) and helm/ (the javv, javv-opensearch and javv-scanner charts)
 docs/             canonical design (engineering/), API.md, CONFIGURATION.md, research/
-development/      this guide; setup/, bolts/, standards/, scripts/, e2e/
+docs-site/        the operator docs site (zensical), built from the docs pages
+development/      this guide, setup/, standards/, scripts/, e2e/, memory-bank/, video/, bolts/ (history)
+design/           the brand source of record
 handoff/          the UI reference (docs/ current, v4/ frozen)
 ```
-
-Helm charts land with **M10**.
 
 ---
 
