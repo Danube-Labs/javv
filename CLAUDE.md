@@ -7,6 +7,8 @@
 > backing the v4 revision: `docs/research/`. **Lost? Read `REPO-MAP.md` first** - it maps every folder.
 > **Resuming a session?** Read the newest file in `.claude/sessions/` (the last handoff) before acting;
 > save one with `/save-context` before ending or compacting.
+> **New to the project, or need the history?** `development/memory-bank/` has the brief, the timeline,
+> the rulings that still apply and the open work.
 
 ## Read this FIRST (per task area)
 Not everything is in this file — these are the sources of truth per area. Read the matching file
