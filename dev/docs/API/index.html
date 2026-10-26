@@ -2543,6 +2543,10 @@ a hyphen.</p>
 <td>A field is not valid. <code>detail</code> names the field.</td>
 </tr>
 <tr>
+<td>501</td>
+<td>The CSV or VEX export of findings got a past <code>as_of</code>. Make a report with <code>as_of_t</code> instead (<a href="#a-past-time-as_of">A past time: <code>as_of</code></a>).</td>
+</tr>
+<tr>
 <td>429</td>
 <td>Too many requests. Some answers have a <code>Retry-After</code> header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has <code>Retry-After: 5</code>.</td>
 </tr>
@@ -2576,7 +2580,7 @@ a hyphen.</p>
 <tr>
 <td>None</td>
 <td><code>{"&lt;name&gt;": [...]}</code></td>
-<td><code>/contributors</code> (<code>leaderboard</code>), <code>/images</code> (<code>images</code>), <code>/images/timeline</code> (<code>events</code>), <code>/findings/top-components</code> (<code>components</code>), <code>/clusters</code> (<code>clusters</code>), <code>/views</code> (<code>views</code>), <code>/notifications</code> (<code>items</code>), <code>/admin/jobs</code> (<code>jobs</code>), <code>/admin/roles</code> (<code>roles</code>), <code>/admin/snapshots</code> (<code>snapshots</code>), <code>/scanners/provenance</code> (<code>scanners</code>), <code>/scanners/freshness</code> (<code>scanners</code>)</td>
+<td><code>/contributors</code> (<code>leaderboard</code>), <code>/images</code> (<code>images</code>), <code>/images/timeline</code> (<code>events</code>), <code>/findings/top-components</code> (<code>components</code>), <code>/clusters</code> (<code>clusters</code>), <code>/views</code> (<code>views</code>), <code>/dashboards</code> (<code>dashboards</code>), <code>/dashboards/roles</code> (<code>roles</code>), <code>/notifications</code> (<code>items</code>), <code>/admin/jobs</code> (<code>jobs</code>), <code>/admin/roles</code> (<code>roles</code>), <code>/admin/snapshots</code> (<code>snapshots</code>), <code>/scanners/provenance</code> (<code>scanners</code>), <code>/scanners/freshness</code> (<code>scanners</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -2919,7 +2923,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/findings/facets</code></td>
 <td>session</td>
-<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not remove the other values from the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters.</td>
+<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3464,7 +3468,7 @@ permissions of the user who opens the dashboard.</p>
 <td>GET</td>
 <td><code>/api/v1/dashboards/export.ndjson</code></td>
 <td>session</td>
-<td>A file of the dashboards that you can see, with the IDs in <code>dashboard_id</code> (the parameter can be there more than one time), or all of them, at most 1,000. See "Dashboard files".</td>
+<td>A file of the dashboards that you can see, at most 1,000. Give one <code>dashboard_id</code> for each dashboard, or no <code>dashboard_id</code> for all of them. See "Dashboard files".</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -3587,10 +3591,10 @@ A different type gets 415.</p>
 <li>A line ends at a line feed (<code>\n</code>). The import ignores a <code>\r</code> before it. It skips empty lines
   and the summary line of an export.</li>
 <li>The result of a line is <code>201</code> (made), <code>409</code> (the ID exists) or <code>422</code> (the line is not
-  correct). A <code>422</code> gives the place and the reason of each error, not the value of the file.</li>
+  valid). A <code>422</code> gives the place and the reason of each error, not the value of the file.</li>
 <li>With <code>copy=true</code>, each line gets a new ID, so no line gets <code>409</code>.</li>
 <li>A file larger than <code>JAVV_DASHBOARD_IMPORT_MAX_BYTES</code> gets 413. A file with more than 1,000
-  lines that are not empty also gets 413, also when some of those lines are not correct. The
+  lines that are not empty also gets 413, also when some of those lines are not valid. The
   summary line of an export is not in this count. After a 413, the import makes no dashboard.</li>
 <li>A line that makes a dashboard is 3 requests to OpenSearch. 100 such lines take approximately
   5 seconds.</li>
@@ -3599,7 +3603,7 @@ A different type gets 415.</p>
   import without <code>copy</code>, send the same file again: the dashboards that exist get <code>409</code>. To
   complete an import with <code>copy=true</code>, count the dashboards that the import made: you are the
   owner, and their <code>created_at</code> is after the start of the import. The import writes the lines in
-  the order of the file. Thus, remove that number of correct lines from the start of the file, and
+  the order of the file. Thus, delete that number of valid lines from the start of the file, and
   send the other lines with <code>copy=true</code>.</li>
 </ul>
 <p>The answer has <code>results</code> and the counts <code>created</code>, <code>conflicts</code> and <code>invalid</code>. Each result has

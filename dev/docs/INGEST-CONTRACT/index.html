@@ -1602,7 +1602,7 @@ Use the <a href="#example">example</a> as the template.</p>
    <strong>Settings › Access &amp; tokens</strong>. For a new environment, select <strong>New cluster…</strong> and type the
    <code>cluster_id</code>. Select the scanner, and then make the token. JAVV shows the token one time only.
    To use the API, send <code>POST /api/v1/admin/tokens</code> with <code>{"cluster_id", "scanner", "expiry"}</code> as
-   an admin. When you make the token for a new <code>cluster_id</code>, JAVV adds the cluster.</li>
+   a user with <code>can_manage_tokens</code>. When you make the token for a new <code>cluster_id</code>, JAVV adds the cluster.</li>
 <li><strong>Choose the <code>cluster_id</code>.</strong> It is the ID of your environment in JAVV, and it <strong>never changes</strong>.
    It has lowercase letters, digits and hyphens, 8 to 64 characters, and not a hyphen first. JAVV
    stores the data under this ID. The name that the web app shows is a different value, and you can

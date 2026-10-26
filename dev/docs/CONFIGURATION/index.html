@@ -2392,7 +2392,8 @@ description.</p>
 <li>It ignores a <code>JAVV_</code> name that it does not know.</li>
 <li><a href="../../deploy/compose/compose.yaml"><code>compose.yaml</code></a> lists each one with its default.</li>
 <li>The <code>javv</code> chart sets each one under <code>backend.config</code>.</li>
-<li><code>backend/tests/test_compose_settings.py</code> keeps both equal to the code.</li>
+<li><code>backend/tests/test_compose_settings.py</code> keeps both equal to the code, except the values that
+  they set on purpose (<a href="#the-javv-chart">The javv chart</a>).</li>
 </ul>
 <h3 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h3>
 <table>
@@ -2775,11 +2776,20 @@ month and day of week.</p>
   a daily job runs on each day.</li>
 </ol>
 <h3 id="the-javv-chart">The javv chart<a class="headerlink" href="#the-javv-chart" title="Permanent link">&para;</a></h3>
-<p>The <code>javv</code> chart sets each backend setting under <code>backend.config</code>, by its environment name and at
-its default.</p>
+<p>The <code>javv</code> chart sets each backend setting under <code>backend.config</code>, by its environment name.</p>
 <ul>
 <li>To change one, use <code>--set backend.config.&lt;NAME&gt;=&lt;value&gt;</code> or your values file.</li>
 <li>The secrets are not in <code>backend.config</code>.</li>
+<li>Each value is the default of the backend, except four values. The chart sets them as compose
+  does:<ul>
+<li><code>JAVV_ENV</code>: <code>prod</code>.</li>
+<li><code>JAVV_OPENSEARCH_URL</code>: <code>https://javv-opensearch:9200</code>, the Service of the <code>javv-opensearch</code>
+  chart.</li>
+<li><code>JAVV_OPENSEARCH_USERNAME</code>: <code>javv</code>.</li>
+<li><code>JAVV_OPENSEARCH_VERIFY_CERTS</code>: <code>false</code>, for the demo certificates. With
+  <code>opensearch.caSecret</code>, the chart sets it to <code>true</code>.</li>
+</ul>
+</li>
 </ul>
 <p>These values are not settings of the backend:</p>
 <table>
@@ -2991,7 +3001,7 @@ next.</p>
 <tr>
 <td><code>&lt;scanner&gt;.schedule</code></td>
 <td><code>0 */6 * * *</code> (Trivy), <code>30 */6 * * *</code> (Grype)</td>
-<td>When a cycle starts. <code>timeZone</code> sets the zone.</td>
+<td>When a cycle starts. <code>&lt;scanner&gt;.timeZone</code> sets the zone. When it is empty, the zone of the cluster applies.</td>
 </tr>
 <tr>
 <td><code>&lt;scanner&gt;.activeDeadlineSeconds</code></td>
@@ -3134,7 +3144,7 @@ next.</p>
 <tr>
 <td><code>JAVV_GRYPE_SCAN_TIMEOUT</code></td>
 <td><code>600</code></td>
-<td>Seconds before the scanner stops one Grype scan. Grype has no flag for a scan time limit. A value that is not a whole number stops the scanner with a clear error.</td>
+<td>Seconds before the scanner stops one Grype scan. Grype has no flag for a scan time limit. A value that is not a whole number above 0 stops the scanner with a clear error.</td>
 </tr>
 <tr>
 <td><strong>Grype version</strong></td>
@@ -3713,7 +3723,7 @@ workload?</p>
 </tr>
 <tr>
 <td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>
-<td><code>query/aggs._FACET_TERMS_SIZE</code> (32: at least each fixed Findings list, and the top values of a list with no fixed values), <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64: more than the Audit log Action list, which has 45 values), <code>query/contributors._BOARD_SIZE</code> (100 people on the leaderboard)</td>
+<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 45 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard.</td>
 <td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
 </tr>
 </tbody>
