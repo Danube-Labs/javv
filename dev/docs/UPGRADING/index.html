@@ -2109,9 +2109,15 @@ applied it automatically on the first start.</p>
 </table>
 <p>No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
 backend accepts (3 and 4).</p>
-<p>No release up to and including 0.8.0 changed the OpenSearch chart in a way that needs the <code>store</code>
-upgrade. Each release changed its version number. 0.7.1 also changed the text of its README and
-of the comments in <code>values.yaml</code>, and no value.</p>
+<p>No release up to and including 0.9.0 changed the OpenSearch chart in a way that needs the <code>store</code>
+upgrade. Each release changed its version number. Some releases also changed other parts of the
+chart, but not OpenSearch:</p>
+<ul>
+<li>0.7.1 and 0.8.6 changed the text of its README and of the comments in <code>values.yaml</code>, and no
+  value. 0.8.1 changed the text of its README.</li>
+<li>0.8.7 changed the test pod of the chart (<code>helm test store</code>). The pod can now run in a namespace
+  with the <code>restricted</code> level of the pod security standards.</li>
+</ul>
 <h3 id="089-a-new-permission-for-the-export-files">0.8.9: a new permission for the export files<a class="headerlink" href="#089-a-new-permission-for-the-export-files" title="Permanent link">&para;</a></h3>
 <p>A user now needs the permission <code>can_export</code> to download a file of the data:</p>
 <ul>
@@ -2196,7 +2202,7 @@ users. Users that exist keep their names.</p>
 <li><strong>The first admin.</strong> A <code>JAVV_BOOTSTRAP_ADMIN_USERNAME</code> with a capital letter stops the backend at
   each start, also when the first admin exists. The backend shows
   <code>invalid settings: JAVV_BOOTSTRAP_ADMIN_USERNAME: Value error, a username must be in lower case</code>.
-  To fix it, set the name in lower case. If no user has that name, and you set
+  Then set the name in lower case. If no user has that name, and you set
   <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>, the backend makes a new first admin. The old admin stays.</li>
 <li><strong>Sign-in.</strong> A user can type a lower-case username in any case: <code>ALICE</code> signs in as <code>alice</code>. A
   user whose name has a capital letter, for example <code>Alice</code>, must type the name exactly. The

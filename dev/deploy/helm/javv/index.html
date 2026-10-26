@@ -1499,8 +1499,10 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 </ul>
 <h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Each backend setting is under <code>backend.config</code>, at its default, by the name that the backend
-  reads. Each one has the comment that the compose file gives it.
+<li>Each backend setting is under <code>backend.config</code>, by the name that the backend reads. Each one has
+  the comment that the compose file gives it.</li>
+<li>Each value is the default of the backend, except four values. The chart sets them as compose
+  does (<a href="../../../docs/CONFIGURATION/#the-javv-chart">The javv chart</a>).
   <a href="../../../docs/CONFIGURATION/#backend-settings">Configuring JAVV</a> describes each setting.</li>
 <li>The secrets are not settings here. The secret key and the bootstrap password come from
   <code>secrets</code>. The password and the CA of OpenSearch come from <code>opensearch</code>.</li>

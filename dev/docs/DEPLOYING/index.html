@@ -2387,7 +2387,12 @@ change most frequently:</p>
 <li>02:00: staleness.</li>
 <li>03:00: lifecycle.</li>
 <li>04:00: findings cleanup.</li>
+<li>04:15: cluster retirement.</li>
+<li>04:30: session sweep.</li>
+<li>Each 5 minutes: the report drain, which makes the exports and the bulk actions in the queue.</li>
+<li>Each hour, at 15 minutes past the hour: the report sweep, which deletes the expired exports.</li>
 </ul>
+<p><a href="../CONFIGURATION/#background-jobs">Background jobs</a> gives each schedule and its setting.</p>
 <p>If the installation already holds data, read
 <a href="../UPGRADING/#the-first-run-of-the-background-jobs">The first run of the background jobs</a> before the
 jobs run for the first time.</p>
@@ -2525,7 +2530,7 @@ of its values.</p>
 <span class="w">    </span><span class="nt">seccompProfile</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RuntimeDefault</span>
 </code></pre></div>
-    We checked the pod that <code>helm template</code> makes with these values. The CI does not start
+    We examined the pod that <code>helm template</code> makes with these values. The CI does not start
     OpenSearch with them.</li>
 <li>The <code>helm test</code> Pod of <code>javv-opensearch</code> meets <code>restricted</code> with the default values.</li>
 </ul>
@@ -2538,7 +2543,7 @@ to the backend.</p>
 <li><code>/docs</code> and <code>/openapi.json</code>: the description of the API. The same description is in the
   repository (<code>frontend/openapi.json</code>). An API call from <code>/docs</code> needs the same sign-in or token as
   any other API call.</li>
-<li><code>/healthz</code> and <code>/readyz</code>: the health checks.</li>
+<li><code>/healthz</code> and <code>/readyz</code>: the health probes.</li>
 </ul>
 <h3 id="steps_1">Steps<a class="headerlink" href="#steps_1" title="Permanent link">&para;</a></h3>
 <p>Install <code>javv-opensearch</code> and <code>javv</code> in the same namespace, in this sequence.</p>
