@@ -2138,6 +2138,26 @@ export type ImportDashboardsApiV1DashboardsImportPostResponses = {
 
 export type ImportDashboardsApiV1DashboardsImportPostResponse = ImportDashboardsApiV1DashboardsImportPostResponses[keyof ImportDashboardsApiV1DashboardsImportPostResponses];
 
+export type ListSharingRolesApiV1DashboardsRolesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/dashboards/roles';
+};
+
+export type ListSharingRolesApiV1DashboardsRolesGetResponses = {
+    /**
+     * Response List Sharing Roles Api V1 Dashboards Roles Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: Array<string>;
+    };
+};
+
+export type ListSharingRolesApiV1DashboardsRolesGetResponse = ListSharingRolesApiV1DashboardsRolesGetResponses[keyof ListSharingRolesApiV1DashboardsRolesGetResponses];
+
 export type DeleteDashboardApiV1DashboardsDashboardIdDeleteData = {
     body?: never;
     path: {
