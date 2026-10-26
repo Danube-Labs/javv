@@ -291,6 +291,47 @@ async def test_the_model_refuses(env, body: dict[str, Any]) -> None:
     assert r.status_code == 422, r.text
 
 
+async def test_a_role_that_no_bundle_has_is_refused_on_create_and_on_change(env) -> None:
+    user, _ = env
+    owner = await user(EDIT)
+    ghost = "ghost-role-do-not-echo"
+    name = f"d-{uuid.uuid4().hex[:8]}"
+    shared = {"sharing": "roles", "roles": ["triager", ghost]}
+    r = await owner.post("/api/v1/dashboards", json={"name": name, "panels": [], **shared})
+    assert r.status_code == 422, r.text
+    assert "unknown_role" in r.text and "('body', 'roles', 1)" in r.text
+    assert ghost not in r.text  # the place and the reason, never the name (issue 842)
+    listed = (await owner.get("/api/v1/dashboards")).json()["dashboards"]
+    assert name not in {d["name"] for d in listed}
+
+    made = await _create(owner)
+    path = f"/api/v1/dashboards/{made['dashboard_id']}"
+    r = await owner.patch(path, json={"revision": 1, **shared})
+    assert r.status_code == 422, r.text
+    assert ghost not in r.text
+    assert (await owner.get(path)).json()["revision"] == 1
+
+    r = await owner.patch(path, json={"revision": 1, "sharing": "roles", "roles": ["triager"]})
+    assert r.status_code == 200, r.text
+
+
+async def test_a_change_without_roles_keeps_the_stored_roles_unchecked(env) -> None:
+    """As with the panels: a change of the name must not be refused for a role it did not send."""
+    user, client = env
+    owner = await user(EDIT)
+    made = await _create(owner, sharing="roles", roles=["triager"])
+    await client.update(
+        index="system-dashboards",
+        id=made["dashboard_id"],
+        body={"doc": {"roles": ["gone-role"]}},
+        params={"refresh": "true"},
+    )
+    path = f"/api/v1/dashboards/{made['dashboard_id']}"
+    r = await owner.patch(path, json={"revision": 1, "name": "renamed"})
+    assert r.status_code == 200, r.text
+    assert r.json()["roles"] == ["gone-role"]
+
+
 async def test_the_model_takes_panels_side_by_side_and_one_under_another(env) -> None:
     user, _ = env
     owner = await user(EDIT)

@@ -623,10 +623,10 @@ permissions of the user who opens the dashboard.
 |---|---|---|---|
 | GET | `/api/v1/dashboards` | session | Lists the dashboards that you can see, at most 1,000, by name |
 | GET | `/api/v1/dashboards/{dashboard_id}` | session | One dashboard. A dashboard that you cannot see gets 404, as a dashboard that does not exist. |
-| POST | `/api/v1/dashboards` | `can_edit_dashboards` | Saves a new dashboard (201). You are its `owner`. It is `private` if the body does not set `sharing`. |
-| PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new `sharing` and `"roles": []` together. A change that sends no `panels` keeps the stored panels. |
+| POST | `/api/v1/dashboards` | `can_edit_dashboards` | Saves a new dashboard (201). You are its `owner`. It is `private` if the body does not set `sharing`. A name in `roles` that is not the name of a role gets 422 (`unknown_role`). |
+| PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new `sharing` and `"roles": []` together. A change that sends no `panels` keeps the stored panels. A name in `roles` that is not the name of a role gets 422 (`unknown_role`). A change that sends no `roles` keeps the stored roles, and does not examine them. |
 | DELETE | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Deletes the dashboard (204). The query parameter `revision` is the revision that you read. A different `revision` gets 409. The audit log keeps a copy of it. |
-| GET | `/api/v1/dashboards/roles` | `can_edit_dashboards` | The names of the roles that you can share a dashboard with, by name: `{"roles": ["admin", ...]}`. It gives no capabilities. `/api/v1/admin/roles` gives them and needs `can_manage_users`. |
+| GET | `/api/v1/dashboards/roles` | `can_edit_dashboards` | The names of the roles that you can share a dashboard with, sorted: `{"roles": ["admin", ...]}`. It gives no capabilities. `/api/v1/admin/roles` gives them and needs `can_manage_users`. |
 | GET | `/api/v1/dashboards/export.ndjson` | session | A file of the dashboards that you can see, with the IDs in `dashboard_id` (the parameter can be there more than one time), or all of them, at most 1,000. See "Dashboard files". |
 | POST | `/api/v1/dashboards/import` | `can_edit_dashboards` | Makes a dashboard from each line of a file (200, with a result for each line). With `copy=true`, each line gets a new ID. See "Dashboard files". |
 
@@ -694,6 +694,8 @@ A different type gets 415.
   hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
   of a line. An object in a line has at most 14 fields. A field that is in an object two times
   counts two times.
+- A line can have a role from a different JAVV. If this JAVV has no role with that name, the
+  line gets 422 (`unknown_role`), and the line does not make a dashboard.
 - A line ends at a line feed (`\n`). The import ignores a `\r` before it. It skips empty lines
   and the summary line of an export.
 - The result of a line is `201` (made), `409` (the ID exists) or `422` (the line is not
