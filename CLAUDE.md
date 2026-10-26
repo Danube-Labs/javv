@@ -33,6 +33,7 @@ optional reading you can skip, they are this file's other half:
 | Running/extending the **e2e rigs** | `development/e2e/README.md` |
 | Verifying a change | `/qa` (delta-scoped) · UI deltas: `/visual-test` |
 | Lost in the tree | `REPO-MAP.md` |
+| **Planning work, proposing scope, or new to the project** | `development/memory-bank/` — `rulings.md` (what is already ruled), `active-context.md` (open and held work), `timeline.md` (what shipped, by release) |
 
 ## Code comments
 Default to none; add one only when the WHY is non-obvious (hidden constraint, subtle invariant,
