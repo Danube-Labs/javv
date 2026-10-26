@@ -249,6 +249,7 @@ Each answer that is not a success has the same body, with the type `application/
 | 413 | The request asks for too many rows, or its body is too large. Make the request smaller. |
 | 415 | The sign-in body has a JSON type that is not `application/json`, or a dashboard import body is not `application/x-ndjson`. |
 | 422 | A field is not valid. `detail` names the field. |
+| 501 | The CSV or VEX export of findings got a past `as_of`. Make a report with `as_of_t` instead ([A past time: `as_of`](#a-past-time-as_of)). |
 | 429 | Too many requests. Some answers have a `Retry-After` header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has `Retry-After: 5`. |
 | 503 | OpenSearch is not available. Do the request again later. The type `store-read-only`, with the title `The store is read-only: its disk is full`, tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead ([Ingest a scan](#ingest-a-scan)). |
 
@@ -260,7 +261,7 @@ A list has one of three forms. The form comes from how the endpoint pages its ro
 |---|---|---|
 | Cursor | `{"data": [...], "next_cursor": "...", "total": {"value": N, "relation": "eq"}}` | `/findings`, `/audit`, `/scanners/ingest-failures` |
 | Offset: `size` and `offset` | `{"<name>": [...], "total": N}` | `/decisions` (`decisions`), `/decisions/approvals` (`approvals`), `/admin/users` (`users`), `/admin/tokens` (`tokens`) |
-| None | `{"<name>": [...]}` | `/contributors` (`leaderboard`), `/images` (`images`), `/images/timeline` (`events`), `/findings/top-components` (`components`), `/clusters` (`clusters`), `/views` (`views`), `/notifications` (`items`), `/admin/jobs` (`jobs`), `/admin/roles` (`roles`), `/admin/snapshots` (`snapshots`), `/scanners/provenance` (`scanners`), `/scanners/freshness` (`scanners`) |
+| None | `{"<name>": [...]}` | `/contributors` (`leaderboard`), `/images` (`images`), `/images/timeline` (`events`), `/findings/top-components` (`components`), `/clusters` (`clusters`), `/views` (`views`), `/dashboards` (`dashboards`), `/dashboards/roles` (`roles`), `/notifications` (`items`), `/admin/jobs` (`jobs`), `/admin/roles` (`roles`), `/admin/snapshots` (`snapshots`), `/scanners/provenance` (`scanners`), `/scanners/freshness` (`scanners`) |
 
 - `/findings/groups` uses a cursor, but it has no `total`.
 - `/notifications` puts its rows in `items`, not in a key with the name of the resource.
@@ -412,7 +413,7 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/v1/findings` | session | One page of findings, with a cursor ([Read a list page by page](#read-a-list-page-by-page)). `size` is 1 to 500, default 50. `sort` is `severity_rank`, `first_seen_at`, `last_scan_at`, `cvss` or `epss`. The last page closes the search of the cursor. With `keep_open=true`, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with `POST /api/v1/cursors/close`. |
-| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not remove the other values from the list. The `unassigned` facet counts without the `assignee` values, and it keeps `exclude_assignee`. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. |
+| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The `unassigned` facet counts without the `assignee` values, and it keeps `exclude_assignee`. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. |
 | GET | `/api/v1/findings/groups` | session | Findings in groups, page by page with a cursor. `by` is `image_repo`, `image_digest`, `namespaces`, `cve_id`, `assignee`, `app` or `ptype`. |
 | GET | `/api/v1/findings/top-components` | session | The packages with the most findings, and the count of different CVEs for each scanner. A past `as_of` gets 422. |
 | GET | `/api/v1/trends/scans` · `/api/v1/trends/findings` | session | Counts for each day over `days` (1 to 365, default 30), for each scanner. [Trends](#trends) gives the details. |
@@ -627,7 +628,7 @@ permissions of the user who opens the dashboard.
 | PATCH | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Changes the fields in the body. The body must have the `revision` that you read. A different `revision` gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new `sharing` and `"roles": []` together. A change that sends no `panels` keeps the stored panels. A name in `roles` that is not the name of a role gets 422 (`unknown_role`). A change that sends no `roles` keeps the stored roles, and does not examine them. |
 | DELETE | `/api/v1/dashboards/{dashboard_id}` | `can_edit_dashboards`, the owner or `can_manage_settings` | Deletes the dashboard (204). The query parameter `revision` is the revision that you read. A different `revision` gets 409. The audit log keeps a copy of it. |
 | GET | `/api/v1/dashboards/roles` | `can_edit_dashboards` | The names of the roles that you can share a dashboard with, sorted: `{"roles": ["admin", ...]}`. It gives no capabilities. `/api/v1/admin/roles` gives them and needs `can_manage_users`. |
-| GET | `/api/v1/dashboards/export.ndjson` | session | A file of the dashboards that you can see, with the IDs in `dashboard_id` (the parameter can be there more than one time), or all of them, at most 1,000. See "Dashboard files". |
+| GET | `/api/v1/dashboards/export.ndjson` | session | A file of the dashboards that you can see, at most 1,000. Give one `dashboard_id` for each dashboard, or no `dashboard_id` for all of them. See "Dashboard files". |
 | POST | `/api/v1/dashboards/import` | `can_edit_dashboards` | Makes a dashboard from each line of a file (200, with a result for each line). With `copy=true`, each line gets a new ID. See "Dashboard files". |
 
 Who can see a dashboard:
@@ -699,10 +700,10 @@ A different type gets 415.
 - A line ends at a line feed (`\n`). The import ignores a `\r` before it. It skips empty lines
   and the summary line of an export.
 - The result of a line is `201` (made), `409` (the ID exists) or `422` (the line is not
-  correct). A `422` gives the place and the reason of each error, not the value of the file.
+  valid). A `422` gives the place and the reason of each error, not the value of the file.
 - With `copy=true`, each line gets a new ID, so no line gets `409`.
 - A file larger than `JAVV_DASHBOARD_IMPORT_MAX_BYTES` gets 413. A file with more than 1,000
-  lines that are not empty also gets 413, also when some of those lines are not correct. The
+  lines that are not empty also gets 413, also when some of those lines are not valid. The
   summary line of an export is not in this count. After a 413, the import makes no dashboard.
 - A line that makes a dashboard is 3 requests to OpenSearch. 100 such lines take approximately
   5 seconds.
@@ -711,7 +712,7 @@ A different type gets 415.
   import without `copy`, send the same file again: the dashboards that exist get `409`. To
   complete an import with `copy=true`, count the dashboards that the import made: you are the
   owner, and their `created_at` is after the start of the import. The import writes the lines in
-  the order of the file. Thus, remove that number of correct lines from the start of the file, and
+  the order of the file. Thus, delete that number of valid lines from the start of the file, and
   send the other lines with `copy=true`.
 
 The answer has `results` and the counts `created`, `conflicts` and `invalid`. Each result has

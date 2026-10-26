@@ -24,7 +24,7 @@ The page gives the sequence of calls, the rules for the script, and a reference 
    **Settings › Access & tokens**. For a new environment, select **New cluster…** and type the
    `cluster_id`. Select the scanner, and then make the token. JAVV shows the token one time only.
    To use the API, send `POST /api/v1/admin/tokens` with `{"cluster_id", "scanner", "expiry"}` as
-   an admin. When you make the token for a new `cluster_id`, JAVV adds the cluster.
+   a user with `can_manage_tokens`. When you make the token for a new `cluster_id`, JAVV adds the cluster.
 2. **Choose the `cluster_id`.** It is the ID of your environment in JAVV, and it **never changes**.
    It has lowercase letters, digits and hyphens, 8 to 64 characters, and not a hyphen first. JAVV
    stores the data under this ID. The name that the web app shows is a different value, and you can
