@@ -1,6 +1,6 @@
 # M8a - Per-scan snapshot append (occurrences + inventory manifest)
 
-**Status:** tracked in [#33](https://github.com/Danube-Labs/javv-poc/issues/33) — live status on the GitHub issue/board
+**Status:** tracked in [#33](https://github.com/Danube-Labs/javv/issues/33) — live status on the GitHub issue/board
 
 ## Goal
 On every **successful** scan, append a full immutable snapshot to
@@ -142,7 +142,7 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   (task F m-4); INDEX-MAP updated in the same change. `MAPPING_VERSION` → 11.
 - **2026-07-07 (kickoff)** — slice plan + the S2 wire note (cycle-end `POST /api/v1/inventory-runs`
   + scanner entrypoint change, `inventory_run_id := scan_run_id`) recorded on
-  [#33](https://github.com/Danube-Labs/javv-poc/issues/33).
+  [#33](https://github.com/Danube-Labs/javv/issues/33).
 
 ### 2026-10-26 — Frozen as history
 

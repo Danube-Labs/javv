@@ -1,6 +1,6 @@
 # M5b - VEX two-field state machine + the audit-log spine
 
-**Status:** tracked in [#28](https://github.com/Danube-Labs/javv-poc/issues/28) — live status on the GitHub issue/board
+**Status:** tracked in [#28](https://github.com/Danube-Labs/javv/issues/28) — live status on the GitHub issue/board
 
 ## Goal
 The triage state machine over the two-field VEX model (`state` + `vex_justification`,

@@ -1,7 +1,8 @@
 # Timeline
 
 How JAVV got to this point. Each part gives its dates and the issues or PRs to read for the details.
-A number in this file is a GitHub issue or PR of `Danube-Labs/javv-poc`.
+A number in this file is a GitHub issue or PR of `Danube-Labs/javv`. Until 2026-10-27, the name of
+the repository was `javv-poc`. The rename kept the numbers.
 
 ## 1. Design (2026-06-13 to 2026-06-29)
 

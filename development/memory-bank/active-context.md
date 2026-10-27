@@ -44,4 +44,3 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 | 308 | Pod and workload mapping for findings |
 | 664 | Scheduled backups, with scan history |
 | 791 | Trivy and Grype apply the VEX export |
-| 926 | Development moves to `Danube-Labs/javv` |

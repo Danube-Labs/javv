@@ -1,6 +1,6 @@
 # M2 - Snapshot/restore (durability early)
 
-**Status:** tracked in [#24](https://github.com/Danube-Labs/javv-poc/issues/24) — live status on the GitHub issue/board
+**Status:** tracked in [#24](https://github.com/Danube-Labs/javv/issues/24) — live status on the GitHub issue/board
 
 ## Goal
 Register a snapshot repository (FS/MinIO `repository-s3`) and automate ISM snapshots of

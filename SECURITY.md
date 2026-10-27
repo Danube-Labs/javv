@@ -10,7 +10,7 @@ helps teams to apply. Thank you for your report.
 **Do not open a public issue for a security vulnerability.**
 
 1. Open the GitHub form
-    [**Report a vulnerability**](https://github.com/Danube-Labs/javv-poc/security/advisories/new)
+    [**Report a vulnerability**](https://github.com/Danube-Labs/javv/security/advisories/new)
     (**Security** tab, then **Advisories**). The form makes a private thread that only the
     maintainers can see. When we publish the fix, we can name you in the advisory.
 2. Include as much of this data as you can:
@@ -41,7 +41,7 @@ A small team maintains JAVV. These times are our targets. They are not a service
 - JAVV is before version 1.0 and changes quickly.
 - Security fixes go into `main` and into the next release.
 - Thus **we support only the latest release**. See
-  [Releases](https://github.com/Danube-Labs/javv-poc/releases) for the current release.
+  [Releases](https://github.com/Danube-Labs/javv/releases) for the current release.
 
 ## Scope
 

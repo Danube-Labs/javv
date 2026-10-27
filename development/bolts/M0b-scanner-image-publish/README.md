@@ -1,6 +1,6 @@
 # M0b - Scanner image publish + compatibility CI
 
-**Status:** tracked in [#60](https://github.com/Danube-Labs/javv-poc/issues/60) — live status on the GitHub issue/board
+**Status:** tracked in [#60](https://github.com/Danube-Labs/javv/issues/60) — live status on the GitHub issue/board
 
 > Sequences **between M0 and M1**. M0 builds the scanner package + Dockerfiles; this bolt makes the
 > self-built images **publishable and compatibility-checked** so operators can pin/swap a known-good tag (D41).
@@ -53,7 +53,7 @@ Everything in [`standards/definition-of-done.md`](../../standards/definition-of-
 - The ingest endpoint that accepts the provenance fields → **M1** (`extra="forbid"` coupling, D41).
 
 ## Updates
-- **2026-07-01** — First GHCR publish dispatched from `main` @ `70a057c` ([run 28480042666](https://github.com/Danube-Labs/javv-poc/actions/runs/28480042666)):
+- **2026-07-01** — First GHCR publish dispatched from `main` @ `70a057c` ([run 28480042666](https://github.com/Danube-Labs/javv/actions/runs/28480042666)):
   8 tags live (`javv-scanner-{trivy,grype}:<ver>` + `:<ver>-<sha>`), full pipeline green. The M0/M0b
   retrospective ([`../M0-scanners/RETROSPECTIVE.md`](../M0-scanners/RETROSPECTIVE.md)) then surfaced
   **deferred DoD items closed silently** — issue **#60 reopened** to track them: SBOM + image-scan

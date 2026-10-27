@@ -1,6 +1,6 @@
 # M5d - SLA/overdue + bulk triage
 
-**Status:** tracked in [#30](https://github.com/Danube-Labs/javv-poc/issues/30) — live status on the GitHub issue/board
+**Status:** tracked in [#30](https://github.com/Danube-Labs/javv/issues/30) — live status on the GitHub issue/board
 
 ## Goal
 Per-severity SLA policy + KEV override, read-time `overdue` computation, and **bulk triage

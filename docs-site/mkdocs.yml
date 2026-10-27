@@ -8,8 +8,8 @@
 # backend/tests/test_docs_site.py holds src/, the nav and the links in step.
 site_name: JAVV
 site_description: Docs for JAVV, Just Another Vulnerability Viewer
-site_url: https://danube-labs.github.io/javv-poc/
-repo_url: https://github.com/Danube-Labs/javv-poc
+site_url: https://danube-labs.github.io/javv/
+repo_url: https://github.com/Danube-Labs/javv
 edit_uri: edit/main/
 docs_dir: src
 site_dir: site

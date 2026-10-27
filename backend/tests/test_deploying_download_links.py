@@ -22,7 +22,7 @@ PAGES = sorted(
     if entry["path"].endswith(".md")
 )
 LINK = re.compile(
-    r"https://raw\.githubusercontent\.com/Danube-Labs/javv-poc/v(?P<version>[^/]+)"
+    r"https://raw\.githubusercontent\.com/Danube-Labs/javv/v(?P<version>[^/]+)"
     r"/deploy/compose/(?P<file>[^\")\s]+)"
 )
 VERSION_LINE = re.compile(r"^\s*VERSION=(?P<version>\S+)\s*$")

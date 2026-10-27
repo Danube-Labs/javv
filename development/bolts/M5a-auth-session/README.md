@@ -1,6 +1,6 @@
 # M5a - Auth & Session (prereq for all mutations)
 
-**Status:** tracked in [#27](https://github.com/Danube-Labs/javv-poc/issues/27) — live status on the GitHub issue/board
+**Status:** tracked in [#27](https://github.com/Danube-Labs/javv/issues/27) — live status on the GitHub issue/board
 
 ## Goal
 Local human auth (argon2id) + server-side sessions and the **capability-based RBAC**

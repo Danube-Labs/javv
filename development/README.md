@@ -28,7 +28,7 @@ The script is **idempotent** - re-run it any time; it skips tools already presen
 | **JS toolchain** | Node.js 22 LTS + `npm`/`npx`, `pyright` (global) | Frontend build; type checker; `npx`-based MCP/codegen tools |
 | **k8s / dev cluster** | `kubectl`, `helm`, `k3d` | Local k3s-in-Docker clusters (per-`cluster_id` testing), Helm deploys |
 | **Scanners** | `trivy`, `grype` | The two scanner adapters JAVV drives (**never merged** - per-scanner) |
-| **Git/CI** | `gh` (GitHub CLI) | PR/issue workflow against `Danube-Labs/javv-poc` |
+| **Git/CI** | `gh` (GitHub CLI) | PR/issue workflow against `Danube-Labs/javv` |
 
 **Not installed by the script** (do these manually when needed):
 

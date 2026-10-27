@@ -75,7 +75,7 @@ This is safe, because each schema change until now only added fields:
     ```bash
     VERSION=0.9.1
     cp compose.yaml compose.yaml.old
-    curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv-poc/v$VERSION/deploy/compose/compose.yaml"
+    curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv/v$VERSION/deploy/compose/compose.yaml"
     ```
     <!-- x-release-please-end -->
 2. Make your changes to `compose.yaml` again, if you had changes.

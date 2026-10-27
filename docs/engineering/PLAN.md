@@ -9,8 +9,8 @@
 > projection-on-new-only, two-timer staleness, vuln-age-at-read, pinned `apply_both` semantics, an explicit
 > HA/multi-pod section, scheduled/throttled export, envelope-versioning policy, an Admin "Data & OpenSearch"
 > panel, and a **re-sequenced, more granular milestone set**. Companions: `SPEC.md`, `ARCHITECTURE.md`.
-> UI reference: `handoff/v4/`. Repo: `javv-poc`
-> (`git@github.com:Danube-Labs/javv-poc.git`). Vendor: **Danube Labs**. License: **BUSL 1.1** (→ Apache-2.0
+> UI reference: `handoff/v4/`. Repo: `javv` (`javv-poc` until 2026-10-27)
+> (`git@github.com:Danube-Labs/javv.git`). Vendor: **Danube Labs**. License: **BUSL 1.1** (→ Apache-2.0
 > on 2030-06-10). Process: **specs.md FIRE flow, autonomy level 1 (Confirm)**. *Milestone = bolt.*
 
 ---

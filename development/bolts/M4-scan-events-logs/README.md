@@ -1,6 +1,6 @@
 # M4 - Logs layer (scan-events) + retention
 
-**Status:** tracked in [#26](https://github.com/Danube-Labs/javv-poc/issues/26) — live status on the GitHub issue/board
+**Status:** tracked in [#26](https://github.com/Danube-Labs/javv/issues/26) — live status on the GitHub issue/board
 
 ## Goal
 Own the `javv-scan-events-<cluster_id>-*` logs layer end-to-end: the immutable per-`(image,

@@ -52,7 +52,7 @@ describe('AboutLinksCard', () => {
       target: a.attributes('target'),
       rel: a.attributes('rel'),
     }))
-    const repo = 'https://github.com/Danube-Labs/javv-poc/blob/main'
+    const repo = 'https://github.com/Danube-Labs/javv/blob/main'
     expect(links.map((l) => l.href)).toEqual([
       `${repo}/docs/UPGRADING.md`,
       `${repo}/scanner/README.md#verify-a-published-image`,

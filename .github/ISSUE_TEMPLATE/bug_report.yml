@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for reporting. **Security vulnerabilities go through the private form** in
-        [SECURITY.md](https://github.com/Danube-Labs/javv-poc/blob/main/SECURITY.md), not here.
+        [SECURITY.md](https://github.com/Danube-Labs/javv/blob/main/SECURITY.md), not here.
         Please remove tokens, passwords and internal hostnames from anything you paste.
   - type: textarea
     id: what-happened

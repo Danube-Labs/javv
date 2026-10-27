@@ -9,14 +9,14 @@
 #   development/scripts/build-app-images.sh [backend|frontend ...]   # both when none is named
 #
 # Env: REGISTRY (default ghcr.io/danube-labs, the registry deploy/compose/compose.yaml names)
-#      SOURCE   (default https://github.com/Danube-Labs/javv-poc)
+#      SOURCE   (default https://github.com/Danube-Labs/javv)
 # Prints the image references in the order asked, backend first by default.
 # Requires: docker, jq, git.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 registry=${REGISTRY:-ghcr.io/danube-labs}
-source_url=${SOURCE:-https://github.com/Danube-Labs/javv-poc}
+source_url=${SOURCE:-https://github.com/Danube-Labs/javv}
 version=$(jq -r '."."' .release-please-manifest.json)
 revision=$(git rev-parse HEAD)
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {

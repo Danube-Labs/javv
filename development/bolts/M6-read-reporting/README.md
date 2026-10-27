@@ -1,6 +1,6 @@
 # M6 - Read/reporting + VEX export + as-of-T
 
-**Status:** tracked in [#31](https://github.com/Danube-Labs/javv-poc/issues/31) — live status on the GitHub issue/board
+**Status:** tracked in [#31](https://github.com/Danube-Labs/javv/issues/31) — live status on the GitHub issue/board
 
 ## Goal
 PIT+search_after search (faceted by scanner, composite aggs); trend endpoints over scan-events; expanded Contributors; streaming sanitized CSV; VEX export (OpenVEX/CycloneDX); the as-of-T read path — T=now short-circuits to materialized current-state. (T<now historical reconstruction is delivered by M8b's `as_of_t` composition; M6 delegates to it, and the full whole-app time-travel UI is gated on M8b.)
@@ -18,7 +18,7 @@ time-travel portion additionally depends on M8b (`as_of_t`) — gated, not a blo
 visible before reconcile decides who's absent). It's harmless while nothing reads `findings` — M6 is the
 first read load that contends with it, so it's the first time it can storm. Marked with an in-code
 `NOTE(#117)` at the refresh site. **Do:** load-test ingest at target `clusters × scanners × digests`, watch
-OpenSearch `refresh` count/time; if flat, close [#117](https://github.com/Danube-Labs/javv-poc/issues/117)
+OpenSearch `refresh` count/time; if flat, close [#117](https://github.com/Danube-Labs/javv/issues/117)
 with the numbers; if it storms, replace the per-envelope refresh with a **bounded reconcile**
 (batch/debounce per `(cluster, scanner)` cycle, or `refresh=wait_for` on the merge writes). Don't fix blind.
 The e2e smoke harness (`development/e2e/smoke.sh`) is the natural measurement rig.

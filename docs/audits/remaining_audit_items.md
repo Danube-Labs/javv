@@ -61,7 +61,7 @@ alerting/SLO owned by M10 (`prometheus-rules.yaml`), CORRECTNESS-CONTRACT.md wri
   **Done (issue 552):** `development/standards/dependency-policy.md` (7 days for critical/high in
   production dependencies; nothing auto-merges).
 
-### Standing process (tracked live on [#134 risk register](https://github.com/Danube-Labs/javv-poc/issues/134) — OPEN)
+### Standing process (tracked live on [#134 risk register](https://github.com/Danube-Labs/javv/issues/134) — OPEN)
 
 - [x] **Next independent audit: the M5c/M5d/M6 group** — DONE 2026-07-06, two-model (Codex + Fable),
   reports in `.deprecated/docs/audits/audit-2026-07-06-m5c-m5d-m6-{codex,fable,UNION}.md`. Findings folded in

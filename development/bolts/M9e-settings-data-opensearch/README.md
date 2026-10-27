@@ -1,6 +1,6 @@
 # M9e - Settings: Data & OpenSearch + Scanning
 
-**Status:** tracked in [#39](https://github.com/Danube-Labs/javv-poc/issues/39) — live status on the GitHub issue/board
+**Status:** tracked in [#39](https://github.com/Danube-Labs/javv/issues/39) — live status on the GitHub issue/board
 
 ## Goal
 The whole **Settings** area per `SCREENS.md` §13: the Admin **Data & OpenSearch** panel
@@ -247,7 +247,7 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   scope UI-configurable and named M9e the UI owner: this bolt now delivers `ScanScopeView.vue` + the
   RBAC-gated `PUT /api/v1/scan-scope` (read path + CLI already shipped). The ScanningView per-scanner
   cards additionally display the read-only effective *tuning* flags from the joint schema-v3
-  `effective_config` stamp (#91). Mirrored on [#39](https://github.com/Danube-Labs/javv-poc/issues/39).
+  `effective_config` stamp (#91). Mirrored on [#39](https://github.com/Danube-Labs/javv/issues/39).
 - **2026-07-03 — the `effective_config` stamp LANDED (D44/FR-25, schema v3).** Scan-events docs now
   carry `{tuning, scope}` in `_source` (`enabled:false` — not aggregatable). The per-scanner cards
   read it from the latest committed scan-event; trivy DB freshness is also populated now (#96).
@@ -256,7 +256,7 @@ See [`standards/testing.md`](../../standards/testing.md) for the *how*. This bol
   `jobs/staleness.py` sweep (per-finding + scanner-down + hold + revert-on-return), and
   `read/write_staleness_timers` + interim CLI. `ScanningView.vue` now only needs the UI + RBAC-gated
   `PUT /settings/staleness`. Depends-on updated M4→M3. Mirrored on
-  [#39](https://github.com/Danube-Labs/javv-poc/issues/39).
+  [#39](https://github.com/Danube-Labs/javv/issues/39).
 
 - **2026-07-07 — v5 design rulings (#237):** contract = `SCREENS.md` §13. Settings→Scanning's
   read-only provenance/`effective_config` display shares the **M8c provenance read** with M9d's
