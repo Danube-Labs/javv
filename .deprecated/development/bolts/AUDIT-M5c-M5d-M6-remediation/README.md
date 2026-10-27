@@ -16,14 +16,14 @@ layer** — one self-contained guide per task, each ≈ one PR, sized for a sing
 
 | # | Issue | Task | Findings | Priority | Guide |
 |---|-------|------|----------|----------|-------|
-| 1 | [#185](https://github.com/Danube-Labs/javv-poc/issues/185) | Input-validation: triage + decision vocabularies | A-M1, A-M2, A-m7, A-m8, A-n(caps) | high | [task-1](task-1-input-validation.md) |
-| 2 | [#186](https://github.com/Danube-Labs/javv-poc/issues/186) | Projection concurrency — `reproject_cve` guarded RMW | A-M3, A-m10 | high | [task-2](task-2-reproject-cas.md) |
-| 3 | [#187](https://github.com/Danube-Labs/javv-poc/issues/187) | SLA D21 group-clock sibling truncation | A-M4 (both passes) | high | [task-3](task-3-d21-group-clock.md) |
-| 4 | [#188](https://github.com/Danube-Labs/javv-poc/issues/188) | Audit-log completeness (D17) + last-admin race | A-M5 (both passes), A-m3 | high | [task-4](task-4-audit-completeness.md) |
-| 5 | [#189](https://github.com/Danube-Labs/javv-poc/issues/189) | Export & read-path DoS bounding | A-M6 (both), A-Mc ⚠️, A-m12 | high | [task-5](task-5-export-dos-bounding.md) |
-| 6 | [#190](https://github.com/Danube-Labs/javv-poc/issues/190) | Contributors correctness | A-m4 (both), A-m5 | medium | [task-6](task-6-contributors.md) |
-| 7 | [#191](https://github.com/Danube-Labs/javv-poc/issues/191) | Read-path robustness — cursor errors + refresh storm | A-m1, A-m2 | medium | [task-7](task-7-read-robustness.md) |
-| 8 | [#192](https://github.com/Danube-Labs/javv-poc/issues/192) | Hardening & hygiene batch | A-m6, A-m9, A-m11, A-m13, A-n | low | [task-8](task-8-hardening-batch.md) |
+| 1 | [#185](https://github.com/Danube-Labs/javv/issues/185) | Input-validation: triage + decision vocabularies | A-M1, A-M2, A-m7, A-m8, A-n(caps) | high | [task-1](task-1-input-validation.md) |
+| 2 | [#186](https://github.com/Danube-Labs/javv/issues/186) | Projection concurrency — `reproject_cve` guarded RMW | A-M3, A-m10 | high | [task-2](task-2-reproject-cas.md) |
+| 3 | [#187](https://github.com/Danube-Labs/javv/issues/187) | SLA D21 group-clock sibling truncation | A-M4 (both passes) | high | [task-3](task-3-d21-group-clock.md) |
+| 4 | [#188](https://github.com/Danube-Labs/javv/issues/188) | Audit-log completeness (D17) + last-admin race | A-M5 (both passes), A-m3 | high | [task-4](task-4-audit-completeness.md) |
+| 5 | [#189](https://github.com/Danube-Labs/javv/issues/189) | Export & read-path DoS bounding | A-M6 (both), A-Mc ⚠️, A-m12 | high | [task-5](task-5-export-dos-bounding.md) |
+| 6 | [#190](https://github.com/Danube-Labs/javv/issues/190) | Contributors correctness | A-m4 (both), A-m5 | medium | [task-6](task-6-contributors.md) |
+| 7 | [#191](https://github.com/Danube-Labs/javv/issues/191) | Read-path robustness — cursor errors + refresh storm | A-m1, A-m2 | medium | [task-7](task-7-read-robustness.md) |
+| 8 | [#192](https://github.com/Danube-Labs/javv/issues/192) | Hardening & hygiene batch | A-m6, A-m9, A-m11, A-m13, A-n | low | [task-8](task-8-hardening-batch.md) |
 
 **Task 5's A-Mc was decided (2026-07-06): bounded-synchronous** — delete the async 202 path, apply
 synchronously up to `JAVV_BULK_INLINE_LIMIT` (5000), 413 above, hard-cap the freeze at

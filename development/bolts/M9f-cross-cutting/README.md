@@ -1,6 +1,6 @@
 # M9f - Cross-cutting FE
 
-**Status:** tracked in [#40](https://github.com/Danube-Labs/javv-poc/issues/40) — live status on the GitHub issue/board
+**Status:** tracked in [#40](https://github.com/Danube-Labs/javv/issues/40) — live status on the GitHub issue/board
 
 ## Goal
 The cross-cutting frontend layer that every screen leans on: global search, bell notifications

@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/Danube-Labs/javv-poc/security/advisories/new
+    url: https://github.com/Danube-Labs/javv/security/advisories/new
     about: Report privately through GitHub, never in a public issue. See SECURITY.md.
   - name: Report a code of conduct concern
-    url: https://github.com/Danube-Labs/javv-poc/blob/main/CODE_OF_CONDUCT.md#reporting-an-issue
+    url: https://github.com/Danube-Labs/javv/blob/main/CODE_OF_CONDUCT.md#reporting-an-issue
     about: Email the maintainers privately. See CODE_OF_CONDUCT.md.

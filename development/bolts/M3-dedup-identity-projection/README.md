@@ -1,6 +1,6 @@
 # M3 - Dedup/identity + staleness + projection
 
-**Status:** tracked in [#25](https://github.com/Danube-Labs/javv-poc/issues/25) — live status on the GitHub issue/board
+**Status:** tracked in [#25](https://github.com/Danube-Labs/javv/issues/25) — live status on the GitHub issue/board
 
 ## Goal
 Highest-risk bolt. Turn idempotent appends into correct current-state: partial-doc merge
@@ -86,7 +86,7 @@ is complete at the staleness slice.**
   catches up"). The six shipped slices (allocation → merge → watermark CAS → commit-then-cache →
   reconcile → staleness) are the whole M3 implementation. Downstream docs updated: PLAN milestone table
   + §D-r3, CORRECTNESS-CONTRACT §9/#6/ladder, M5c + M8a READMEs. Mirrored on
-  [#25](https://github.com/Danube-Labs/javv-poc/issues/25).
+  [#25](https://github.com/Danube-Labs/javv/issues/25).
 
 ### 2026-10-26 — Frozen as history
 

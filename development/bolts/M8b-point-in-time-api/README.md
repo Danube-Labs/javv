@@ -1,6 +1,6 @@
 # M8b - Point-in-time query API
 
-**Status:** tracked in [#34](https://github.com/Danube-Labs/javv-poc/issues/34) — live status on the GitHub issue/board
+**Status:** tracked in [#34](https://github.com/Danube-Labs/javv/issues/34) — live status on the GitHub issue/board
 
 ## Goal
 Forward (digest X at T = R-CATALOG two-step) + the symmetric two-step (catalog → commit_key set →

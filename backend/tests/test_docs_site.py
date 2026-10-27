@@ -242,9 +242,7 @@ _REFERENCE = re.compile(
     r"|\b[A-Z]-[0-9A-Za-z]{1,3}\b|\baudit (?:[A-Z]-|#)|\bslice \d|\bbolt\b",
     re.IGNORECASE,
 )
-_ISSUE_LINK = re.compile(
-    r"\[issue (\d+)\]\(https://github\.com/Danube-Labs/javv-poc/issues/(\d+)\)"
-)
+_ISSUE_LINK = re.compile(r"\[issue (\d+)\]\(https://github\.com/Danube-Labs/javv/issues/(\d+)\)")
 
 
 def _prose(page: str) -> str:

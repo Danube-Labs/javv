@@ -8,6 +8,6 @@ type: application
 # scanner versions are the image tags in values.yaml, from versions.yaml.
 version: 0.9.1  # x-release-please-version
 appVersion: "0.9.1"  # x-release-please-version
-home: https://github.com/Danube-Labs/javv-poc
+home: https://github.com/Danube-Labs/javv
 sources:
-  - https://github.com/Danube-Labs/javv-poc/tree/main/deploy/helm/javv-scanner
+  - https://github.com/Danube-Labs/javv/tree/main/deploy/helm/javv-scanner

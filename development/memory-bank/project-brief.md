@@ -7,8 +7,8 @@ It finds the images that run in the clusters, scans them with Trivy and with Gry
 vulnerability its own triage lifecycle with an audit trail. It also gives dashboards, time travel
 over the whole app, and CSV export.
 
-The repository is `Danube-Labs/javv-poc`. The license is BSL 1.1, and it changes to Apache-2.0 on
-2030-06-10 (see [`LICENSE`](../../LICENSE)).
+The repository is `Danube-Labs/javv`. Until 2026-10-27, its name was `Danube-Labs/javv-poc`.
+The license is BSL 1.1, and it changes to Apache-2.0 on 2030-06-10 (see [`LICENSE`](../../LICENSE)).
 
 ## The problem
 
@@ -82,4 +82,4 @@ The plan of record is issue 555, the roadmap.
    the charts.
 3. Now: hardening for 1.0. Each issue open on 2026-10-10 is in the 1.0.0 milestone, unless the
    operator moved it out.
-4. After 1.0: development moves to `Danube-Labs/javv` with a cleaned history (issue 926).
+4. On 2026-10-27 the repository `javv-poc` got the new name `javv`, with its full history (issue 926).

@@ -1,6 +1,6 @@
 # M5c - Decisions & projection (own gate)
 
-**Status:** tracked in [#29](https://github.com/Danube-Labs/javv-poc/issues/29) — live status on the GitHub issue/board
+**Status:** tracked in [#29](https://github.com/Danube-Labs/javv/issues/29) — live status on the GitHub issue/board
 
 ## Goal
 Make `system-decisions` the source of truth for scoped `risk_accepted` / `ignore_rule` /

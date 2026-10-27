@@ -16,7 +16,7 @@ frontend  npm run lint / npm run test:ci                              →
 
 ## Definition of Done
 
-- [ ] Static floor and tests pass ([definition-of-done.md](https://github.com/Danube-Labs/javv-poc/blob/main/development/standards/definition-of-done.md) §1–2)
+- [ ] Static floor and tests pass ([definition-of-done.md](https://github.com/Danube-Labs/javv/blob/main/development/standards/definition-of-done.md) §1–2)
 - [ ] Hard constraints hold: per-scanner never merged, every read carries `cluster_id`, server-side counts, no broker
 - [ ] Artifacts in this PR: route change → `docs/API.md` + regenerated `openapi.json` and client;
       new mutating route → RBAC/IDOR registry; mapping change → `MAPPING_VERSION` + INDEX-MAP;

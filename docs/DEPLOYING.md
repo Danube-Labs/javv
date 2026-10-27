@@ -34,9 +34,9 @@ There are two installation methods. They use the same images, settings and defau
 - Docker Engine with the compose plugin 2.23.1 or later.
 - A POSIX shell (Linux or macOS).
 - These three files, in one folder:
-    - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.9.1/deploy/compose/compose.yaml) <!-- x-release-please-version -->
-    - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.9.1/deploy/compose/.env.example) <!-- x-release-please-version -->
-    - [`setup.sh`](https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.9.1/deploy/compose/setup.sh) <!-- x-release-please-version -->
+    - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/compose.yaml) <!-- x-release-please-version -->
+    - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/.env.example) <!-- x-release-please-version -->
+    - [`setup.sh`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/setup.sh) <!-- x-release-please-version -->
 
 To get the files, run these commands in an empty folder. `VERSION` is the release that you install.
 
@@ -44,7 +44,7 @@ To get the files, run these commands in an empty folder. `VERSION` is the releas
 ```bash
 VERSION=0.9.1
 for f in compose.yaml .env.example setup.sh; do
-  curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv-poc/v$VERSION/deploy/compose/$f"
+  curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv/v$VERSION/deploy/compose/$f"
 done
 chmod +x setup.sh
 ```
@@ -631,12 +631,11 @@ Each release signs the backend and frontend images that it publishes, with **cos
 
 The identity accepts only the release workflow when it runs on `main` of this repository. Thus an
 image that a different system made fails the verification. Before the release ends, it runs these
-commands without a sign-in. The identity accepts two names of this repository: `javv-poc` and
-`javv`. The repository changes its name to `javv`, and the releases after that change carry the new
-name.
+commands without a sign-in. The identity accepts the two names of this repository. Until
+2026-10-27, its name was `javv-poc`. The releases after that date carry the name `javv`.
 
 A different workflow signs the scanner images in the same way.
-[`scanner/README.md`](https://github.com/Danube-Labs/javv-poc/blob/main/scanner/README.md#verify-a-published-image)
+[`scanner/README.md`](https://github.com/Danube-Labs/javv/blob/main/scanner/README.md#verify-a-published-image)
 gives its identity. Before the release puts the digest of a scanner image into the published
 `javv-scanner` chart, it verifies the signature of that image.
 

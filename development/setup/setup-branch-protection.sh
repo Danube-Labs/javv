@@ -16,7 +16,7 @@
 set -euo pipefail
 
 # --- tunables ---------------------------------------------------------------
-REPO="Danube-Labs/javv-poc"
+REPO="Danube-Labs/javv"
 BRANCH="main"
 REVIEWS=0                       # required approving reviews. 0 while solo/2-dev (CI + PR only;
                                 # you can't approve your own PR) — raise to 1 with a second reviewer.

@@ -53,5 +53,9 @@ jobs:
               exit 1
             fi
             git checkout -q "$tag"
+            # a tag before the rename to javv (issue 926) names javv-poc in its site and repo URLs
+            sed -i -e 's#github\.io/javv-poc/#github.io/javv/#' -e 's#Danube-Labs/javv-poc$#Danube-Labs/javv#' \
+              docs-site/mkdocs.yml
             bash "$script" "${tag#v}"
+            git checkout -q -- docs-site/mkdocs.yml
           done

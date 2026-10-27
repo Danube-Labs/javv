@@ -1,6 +1,6 @@
 # M7 - Scheduled / throttled export
 
-**Status:** tracked in [#32](https://github.com/Danube-Labs/javv-poc/issues/32) — live status on the GitHub issue/board
+**Status:** tracked in [#32](https://github.com/Danube-Labs/javv/issues/32) — live status on the GitHub issue/board
 
 ## Goal
 Turn large exports into durable `system-reports` jobs: "run now" vs "schedule off-peak (throttled)";

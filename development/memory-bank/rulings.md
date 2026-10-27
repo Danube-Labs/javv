@@ -36,7 +36,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-17 | Scheduled backups are after 1.0, out of the 1.0.0 milestone. | 664 |
 | 2026-10-17 | All clusters sends 3 requests for each cluster. The change waits until after 1.0. | 903 |
 | 2026-10-20 | The charts keep the defaults of the official OpenSearch chart. Do not add jobs or policies for a risk that the upstream chart does not address. | 945 |
-| after 1.0 | Development moves to `Danube-Labs/javv` with a cleaned history. | 926 |
+| 2026-10-27 | The repository `javv-poc` has the new name `javv`, with its full history, issues and numbers. This replaces the plan to clean the history and delete `javv-poc`. The placeholder repository is `javv-backup`. The release identity accepts both names. | 926, PR 1030 |
 
 ## Design and architecture
 

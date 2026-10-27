@@ -1,6 +1,6 @@
 # M1 - Backend skeleton + indexes + ingest + observability
 
-**Status:** tracked in [#23](https://github.com/Danube-Labs/javv-poc/issues/23) — live status on the GitHub issue/board
+**Status:** tracked in [#23](https://github.com/Danube-Labs/javv/issues/23) — live status on the GitHub issue/board
 
 ## Goal
 Stand up the FastAPI backend, bootstrap the current-state + `system-*` indices with explicit mappings, and

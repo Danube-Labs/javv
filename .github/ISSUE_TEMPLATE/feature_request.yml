@@ -27,4 +27,4 @@ body:
         Some directions are settled by design and won't change, for example: Trivy and Grype results
         are never merged into one, every read is scoped to one cluster, and there's no external
         message broker. See the hard constraints in
-        [CONTRIBUTING.md](https://github.com/Danube-Labs/javv-poc/blob/main/CONTRIBUTING.md).
+        [CONTRIBUTING.md](https://github.com/Danube-Labs/javv/blob/main/CONTRIBUTING.md).

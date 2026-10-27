@@ -1,6 +1,6 @@
 # M9b - Findings grid + detail/triage (core-loop gate)
 
-**Status:** tracked in [#36](https://github.com/Danube-Labs/javv-poc/issues/36) — live status on the GitHub issue/board
+**Status:** tracked in [#36](https://github.com/Danube-Labs/javv/issues/36) — live status on the GitHub issue/board
 
 ## Goal
 The core triage loop: a **server-side lazy** findings DataTable (every count/page from an OpenSearch

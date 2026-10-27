@@ -1,6 +1,6 @@
 # M9d - Audit / approvals / contributors / scanner-status
 
-**Status:** tracked in [#38](https://github.com/Danube-Labs/javv-poc/issues/38) — live status on the GitHub issue/board
+**Status:** tracked in [#38](https://github.com/Danube-Labs/javv/issues/38) — live status on the GitHub issue/board
 
 ## Goal
 Read-only-of-the-truth FE bolt: the Audit trail (replayable `system-audit-log` timeline), the

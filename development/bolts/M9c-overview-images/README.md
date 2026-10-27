@@ -1,6 +1,6 @@
 # M9c - Overview / all-clusters / images (+ point-in-time image view)
 
-**Status:** tracked in [#37](https://github.com/Danube-Labs/javv-poc/issues/37) — live status on the GitHub issue/board
+**Status:** tracked in [#37](https://github.com/Danube-Labs/javv/issues/37) — live status on the GitHub issue/board
 
 ## Goal
 Dashboards and the image surface: the **Overview** (current-state severity/trend summaries), the

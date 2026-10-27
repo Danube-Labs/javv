@@ -8,9 +8,9 @@ type: application
 version: 0.9.1  # x-release-please-version
 # the OpenSearch inside: versions.yaml datastore.opensearch, held by check-versions.sh
 appVersion: "3.9.0"
-home: https://github.com/Danube-Labs/javv-poc
+home: https://github.com/Danube-Labs/javv
 sources:
-  - https://github.com/Danube-Labs/javv-poc/tree/main/deploy/helm/javv-opensearch
+  - https://github.com/Danube-Labs/javv/tree/main/deploy/helm/javv-opensearch
   - https://github.com/opensearch-project/helm-charts
 dependencies:
   - name: opensearch

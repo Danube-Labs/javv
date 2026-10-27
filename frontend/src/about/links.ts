@@ -4,7 +4,7 @@
  * 639 lands, and the live API reference (`/docs`) joins once issue 452 routes it. The repo moves
  * to `javv` after 1.0: this constant is the one line that changes.
  */
-export const REPO_URL = 'https://github.com/Danube-Labs/javv-poc'
+export const REPO_URL = 'https://github.com/Danube-Labs/javv'
 
 export interface AboutLink {
   title: string

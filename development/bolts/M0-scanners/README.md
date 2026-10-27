@@ -1,6 +1,6 @@
 # M0 - Scanner modules
 
-**Status:** tracked in [#22](https://github.com/Danube-Labs/javv-poc/issues/22) — live status on the GitHub issue/board
+**Status:** tracked in [#22](https://github.com/Danube-Labs/javv/issues/22) — live status on the GitHub issue/board
 
 ## Goal
 The drop-in, in-cluster scanner package: discover running images, scan each with **Trivy** and **Grype**

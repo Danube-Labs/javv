@@ -1,6 +1,6 @@
 # M9a - Shell + tokens + filter module + typed API client
 
-**Status:** tracked in [#35](https://github.com/Danube-Labs/javv-poc/issues/35) — live status on the GitHub issue/board
+**Status:** tracked in [#35](https://github.com/Danube-Labs/javv/issues/35) — live status on the GitHub issue/board
 
 ## Goal
 The frontend foundation: app shell (router, layout, global time-travel picker host), design tokens,

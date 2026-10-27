@@ -19,7 +19,7 @@ variable "GIT_SHA" {
   default = "dev"
 }
 
-SOURCE = "https://github.com/Danube-Labs/javv-poc"
+SOURCE = "https://github.com/Danube-Labs/javv"
 
 group "default" {
   targets = ["trivy", "grype"]

@@ -1,7 +1,8 @@
 # JAVV - working instructions for Claude Code
 
-> Project-scoped guidance for building JAVV (this folder). The repo of record is **`javv-poc`**
-> (`git@github.com:Danube-Labs/javv-poc.git`); this `javv/` folder is the working copy. Canonical design
+> Project-scoped guidance for building JAVV (this folder). The repo of record is **`javv`**
+> (`git@github.com:Danube-Labs/javv.git`; named `javv-poc` until 2026-10-27, the old name redirects);
+> this folder is the working copy. Canonical design
 > lives in **`docs/engineering/`** (PLAN · SPEC · ARCHITECTURE); V3 and earlier are frozen for the
 > evolution trail. UI reference: `handoff/docs/` (current; `v4/` is the frozen trail - a *reference point, not a 1:1 contract*). Research
 > backing the v4 revision: `docs/research/`. **Lost? Read `REPO-MAP.md` first** - it maps every folder.
