@@ -2771,7 +2771,7 @@ the scanner container, and set <code>DOCKER_CONFIG</code> to that directory.</p>
     <!-- x-release-please-start-version -->
     <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.1
 <span class="nv">IMAGE</span><span class="o">=</span>ghcr.io/danube-labs/javv-backend:<span class="nv">$VERSION</span><span class="w">   </span><span class="c1"># or javv-frontend</span>
-<span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
+<span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
 <span class="nv">ISSUER</span><span class="o">=</span>https://token.actions.githubusercontent.com
 
 cosign<span class="w"> </span>verify<span class="w"> </span><span class="s2">"</span><span class="nv">$IMAGE</span><span class="s2">"</span><span class="w"> </span>--certificate-identity-regexp<span class="w"> </span><span class="s2">"</span><span class="nv">$IDENTITY</span><span class="s2">"</span><span class="w"> </span>--certificate-oidc-issuer<span class="w"> </span><span class="s2">"</span><span class="nv">$ISSUER</span><span class="s2">"</span>
@@ -2787,7 +2787,9 @@ cosign<span class="w"> </span>verify-attestation<span class="w"> </span><span cl
 </ol>
 <p>The identity accepts only the release workflow when it runs on <code>main</code> of this repository. Thus an
 image that a different system made fails the verification. Before the release ends, it runs these
-commands without a sign-in.</p>
+commands without a sign-in. The identity accepts two names of this repository: <code>javv-poc</code> and
+<code>javv</code>. The repository changes its name to <code>javv</code>, and the releases after that change carry the new
+name.</p>
 <p>A different workflow signs the scanner images in the same way.
 <a href="https://github.com/Danube-Labs/javv-poc/blob/main/scanner/README.md#verify-a-published-image"><code>scanner/README.md</code></a>
 gives its identity. Before the release puts the digest of a scanner image into the published
