@@ -229,6 +229,8 @@ next.
   Examples are an unknown scanner name, a URL with no scheme, a cluster id with a bad shape and an
   unknown flag.
 - A setting that you do not set always has the default in the table.
+- `backend/tests/test_configuration_page.py` makes sure that each name that the scanner reads has
+  a row in this table, or in the [Trivy](#trivy-settings) or [Grype](#grype-settings) table.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -384,6 +386,8 @@ The frontend image runs a small Node server.
 - [`compose.yaml`](../deploy/compose/compose.yaml) lists each one in the `frontend` service. The
   `javv` chart sets each one under `frontend.config`, except `JAVV_FRONTEND_PORT`: the chart sets
   it to the port of the container. `backend/tests/test_compose_settings.py` makes sure of this.
+- `backend/tests/test_configuration_page.py` makes sure that each name that the server reads has
+  a row in the table below.
 
 The server sends these headers on each reply, so that JAVV needs no proxy to add them:
 
