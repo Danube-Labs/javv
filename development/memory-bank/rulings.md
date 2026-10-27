@@ -51,6 +51,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-24 | Dashboards: one document for each dashboard in `system-dashboards`, and the `can_edit_dashboards` permission. Sharing is private, everyone or a role. NDJSON export and import. At most 24 panels. A dashboard that you cannot see gives 404. | 440 |
 | 2026-10-24 | Dashboard edit: a free grid that you move with the mouse (gridstack, `top` mode). No resize and no keyboard editing. Panels are short or tall. One scanner switch, with an override for each panel. | 440 |
 | 2026-10-26 | Panel settings open in a popover next to the panel, with Cancel and Apply. | 440 |
+| 2026-10-27 | At a past time, the SLA deadline of a finding uses the KEV value that its scan recorded. The KEV value of the row stays empty, the KEV filter gives 422 and the KEV count stays empty. Only the docs tell about the change, not the Findings screen. | 1000 |
 
 ## UI copy and look
 
