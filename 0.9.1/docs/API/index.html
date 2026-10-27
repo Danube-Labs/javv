@@ -1,0 +1,4081 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Docs for JAVV, Just Another Vulnerability Viewer">
+      
+      
+      
+        <link rel="canonical" href="https://danube-labs.github.io/javv-poc/0.9.1/docs/API/">
+      
+      
+      
+        <link rel="prev" href="../../CHANGELOG/">
+      
+      
+        <link rel="next" href="../INGEST-CONTRACT/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.71">
+    
+    
+      
+        <title>API - JAVV</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/javv.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="JAVV" class="md-header__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            JAVV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark theme"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark theme" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light theme"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light theme" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="JAVV" class="md-nav__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    JAVV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Use JAVV
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Use JAVV
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/from-a-scan-to-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  From a scan to a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/set-the-state-of-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set the state of a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/accept-a-risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Accept a risk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/change-many-findings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Change many findings at once
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/when-a-scanner-stops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  When a scanner stops
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/who-changed-what/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  See who changed what
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/build-a-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a dashboard
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Install
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPLOYING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deploying
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supported versions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-opensearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-opensearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-scanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-scanner
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Operate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Operate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/opensearch-sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sizing OpenSearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/multi-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scaling and failures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/indices-and-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Indices and data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrade
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Upgrade
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UPGRADING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Integrate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Integrate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sign-in-from-a-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sign in from a script
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-a-list-page-by-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Read a list page by page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scrape-the-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scrape the metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Authentication
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-temporary-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A temporary password
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-password-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A password change
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#roles-and-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Roles and permissions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#list-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        List responses
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Endpoints
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        System
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scanner-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanner endpoints
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sign-in-and-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sign-in and sessions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Admin
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Admin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-data-inspector" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The data inspector
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-jobs-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The jobs list
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-a-background-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Start a background job
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-read" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: read
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings: read">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Filters
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-past-time-as_of" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A past time: <code>as_of</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trends" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Trends
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failed-pushes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Failed pushes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-clusters-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The clusters list
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-triage-and-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: triage and decisions
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings: triage and decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-approvals-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The approvals queue
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Clusters
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clusters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delete-a-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Delete a cluster
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saved-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saved views
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboards
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboard files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exports-and-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exports and reports
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Notifications
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ingest-a-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ingest a scan
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ingest a scan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#logs-of-a-refused-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs of a refused push
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#records-of-a-refused-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Records of a refused push
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#client-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Client events
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INGEST-CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Push from your own script
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sign-in-from-a-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sign in from a script
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-a-list-page-by-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Read a list page by page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scrape-the-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scrape the metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Authentication
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-temporary-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A temporary password
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-password-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A password change
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#roles-and-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Roles and permissions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#list-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        List responses
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Endpoints
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        System
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scanner-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanner endpoints
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sign-in-and-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sign-in and sessions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Admin
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Admin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-data-inspector" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The data inspector
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-jobs-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The jobs list
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-a-background-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Start a background job
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-read" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: read
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings: read">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Filters
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-past-time-as_of" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A past time: <code>as_of</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trends" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Trends
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failed-pushes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Failed pushes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-clusters-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The clusters list
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findings-triage-and-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Findings: triage and decisions
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings: triage and decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-approvals-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The approvals queue
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Clusters
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clusters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delete-a-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Delete a cluster
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saved-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saved views
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboards
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dashboard files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exports-and-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exports and reports
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Notifications
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ingest-a-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ingest a scan
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ingest a scan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#logs-of-a-refused-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs of a refused push
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#records-of-a-refused-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Records of a refused push
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Metrics
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#client-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Client events
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="javv-api">JAVV API<a class="headerlink" href="#javv-api" title="Permanent link">&para;</a></h1>
+<p>This page describes the HTTP API of JAVV. It is for people who write scripts for JAVV or monitor
+it. The tasks come first. Then the reference tables give each endpoint, error and metric.</p>
+<p>The backend also publishes a description of its API, with each parameter and its limits. It is at
+<code>/docs</code> and <code>/openapi.json</code> on the backend port, 8000. The frontend does not send these two paths
+to the backend.</p>
+<p>To push scan results from your own tools, read <a href="../INGEST-CONTRACT/">Push from your own script</a>. To
+connect the JAVV scanners, read <a href="../DEPLOYING/#connect-the-scanners">Connect the scanners</a>.</p>
+<h2 id="sign-in-from-a-script">Sign in from a script<a class="headerlink" href="#sign-in-from-a-script" title="Permanent link">&para;</a></h2>
+<p>A script uses the same address as a browser. The frontend sends <code>/api</code>, <code>/auth</code> and <code>/readyz</code> to
+the backend.</p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>bash, <code>curl</code> and <code>jq</code>.</li>
+<li>A JAVV username and password.</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Set the address of JAVV:
+    <div class="highlight"><pre><span></span><code><span class="nv">JAVV</span><span class="o">=</span>https://javv.example.com
+</code></pre></div></li>
+<li>Sign in. The command keeps the session cookie in the file <code>jar</code>:
+    <div class="highlight"><pre><span></span><code><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'Password: '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+jq<span class="w"> </span>-n<span class="w"> </span>--arg<span class="w"> </span>u<span class="w"> </span>admin<span class="w"> </span>--arg<span class="w"> </span>p<span class="w"> </span><span class="s2">"</span><span class="nv">$pw</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{username: $u, password: $p}'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-sf<span class="w"> </span>-c<span class="w"> </span>jar<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>--data<span class="w"> </span>@-<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/auth/login"</span>
+</code></pre></div>
+    The reply shows <code>must_change</code>. If it is <code>true</code>, do step 3. If it is <code>false</code>, go to step 4.</li>
+<li>Change the password. The new password must have 12 characters or more:
+    <div class="highlight"><pre><span></span><code><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'New password: '</span><span class="w"> </span>new<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+jq<span class="w"> </span>-n<span class="w"> </span>--arg<span class="w"> </span>c<span class="w"> </span><span class="s2">"</span><span class="nv">$pw</span><span class="s2">"</span><span class="w"> </span>--arg<span class="w"> </span>n<span class="w"> </span><span class="s2">"</span><span class="nv">$new</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{current_password: $c, new_password: $n}'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-sf<span class="w"> </span>-c<span class="w"> </span>jar<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>--data<span class="w"> </span>@-<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/auth/password"</span>
+<span class="nb">unset</span><span class="w"> </span>new
+</code></pre></div>
+    JAVV signs the user out of each session, then writes a new session cookie to <code>jar</code>.</li>
+<li>Delete the password from the shell:
+    <div class="highlight"><pre><span></span><code><span class="nb">unset</span><span class="w"> </span>pw
+</code></pre></div></li>
+<li>Send your requests with the cookie. For example, show your user and permissions:
+    <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-sf<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/auth/me"</span>
+</code></pre></div></li>
+<li>At the end of the script, sign out. JAVV then ends the session:
+    <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-sf<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/auth/logout"</span>
+</code></pre></div></li>
+</ol>
+<p>Keep the file <code>jar</code> private. Until the session ends, the cookie in it gives access as your user.</p>
+<h2 id="read-a-list-page-by-page">Read a list page by page<a class="headerlink" href="#read-a-list-page-by-page" title="Permanent link">&para;</a></h2>
+<p>A list endpoint gives one page of rows. <a href="#list-responses">List responses</a> shows the three forms of
+a list. This procedure reads all the findings of one cluster with the cursor.</p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A session cookie in the file <code>jar</code> (<a href="#sign-in-from-a-script">Sign in from a script</a>).</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Find the id of the cluster:
+    <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-sf<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/api/v1/clusters"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.clusters[] | "\(.cluster_id) \(.cluster_name)"'</span>
+</code></pre></div></li>
+<li>Set the id:
+    <div class="highlight"><pre><span></span><code><span class="nv">cluster</span><span class="o">=</span>&lt;cluster_id&gt;
+</code></pre></div></li>
+<li>Read each page, 500 rows at a time. Send <code>next_cursor</code> back as <code>cursor</code> until it is <code>null</code>:
+    <div class="highlight"><pre><span></span><code><span class="nv">cursor</span><span class="o">=</span>
+<span class="k">while</span><span class="w"> </span>:<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nv">page</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-sfG<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/api/v1/findings"</span><span class="w"> </span>--data-urlencode<span class="w"> </span><span class="s2">"cluster_id=</span><span class="nv">$cluster</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data-urlencode<span class="w"> </span><span class="nv">size</span><span class="o">=</span><span class="m">500</span><span class="w"> </span><span class="si">${</span><span class="nv">cursor</span><span class="p">:+--data-urlencode </span><span class="s2">"cursor=</span><span class="nv">$cursor</span><span class="s2">"</span><span class="si">}</span><span class="k">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">break</span>
+<span class="w">  </span>jq<span class="w"> </span>-c<span class="w"> </span><span class="s1">'.data[] | {cve_id, scanner, severity, state}'</span><span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="s2">"</span><span class="nv">$page</span><span class="s2">"</span>
+<span class="w">  </span><span class="nv">cursor</span><span class="o">=</span><span class="k">$(</span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.next_cursor // empty'</span><span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="s2">"</span><span class="nv">$page</span><span class="s2">"</span><span class="k">)</span>
+<span class="w">  </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$cursor</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">break</span>
+<span class="k">done</span><span class="w"> </span>&gt;<span class="w"> </span>findings.jsonl
+</code></pre></div></li>
+<li>Compare the number of lines in <code>findings.jsonl</code> with <code>total.value</code> of a page. If they are not
+   equal, a page failed. Read the list again.</li>
+</ol>
+<p>A cursor stays valid for a short time only. If a page answers 410, start again at step 3.</p>
+<p>To stop before the last page, close the cursor. Until then, it keeps one of your open-cursor
+slots (<a href="#exports-and-reports">Exports and reports</a>):
+<div class="highlight"><pre><span></span><code>jq<span class="w"> </span>-n<span class="w"> </span>--arg<span class="w"> </span>c<span class="w"> </span><span class="s2">"</span><span class="nv">$cursor</span><span class="s2">"</span><span class="w"> </span><span class="s1">'{cursor: $c}'</span><span class="w"> </span><span class="p">|</span>
+<span class="w">  </span>curl<span class="w"> </span>-sf<span class="w"> </span>-b<span class="w"> </span>jar<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$JAVV</span><span class="s2">/api/v1/cursors/close"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span>@-
+</code></pre></div></p>
+<h2 id="scrape-the-metrics">Scrape the metrics<a class="headerlink" href="#scrape-the-metrics" title="Permanent link">&para;</a></h2>
+<p>The backend gives its metrics at <code>/metrics</code>, in the Prometheus format.</p>
+<ul>
+<li>This path needs no sign-in.</li>
+<li>The frontend does not send it to the backend.</li>
+<li><a href="#metrics">Metrics</a> lists each metric.</li>
+</ul>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>A Prometheus that can connect to the backend port, 8000.</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Let your Prometheus connect to the backend port, 8000:<ul>
+<li>with docker compose: publish the port. Use the <code>ports</code> block in comments under <code>backend</code> in
+  <code>compose.yaml</code> (<a href="../DEPLOYING/#ports-and-access">Ports and access</a>).</li>
+<li>with Helm: use the backend Service. For a release with the name <code>javv</code>, it is <code>javv-backend</code>.</li>
+</ul>
+</li>
+<li>Add a scrape of <code>http://&lt;backend&gt;:8000/metrics</code> to your Prometheus.</li>
+<li>Look at the metrics from a machine that can connect to the port:
+    <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-sf<span class="w"> </span>http://&lt;backend&gt;:8000/metrics<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">'^# TYPE javv_'</span>
+</code></pre></div></li>
+</ol>
+<p>JAVV gives no alert rules. Make alerts from the metrics that apply to your setup.</p>
+<h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
+<p>Each endpoint uses one of three kinds of authentication.</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>What the request sends</th>
+<th>Endpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>Nothing</td>
+<td><code>/healthz</code>, <code>/readyz</code> and <code>/metrics</code>. Control the access to these with your network. Also <code>POST /auth/login</code> and <code>POST /auth/logout</code>.</td>
+</tr>
+<tr>
+<td>Scanner token</td>
+<td><code>Authorization: Bearer &lt;token&gt;</code>. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token.</td>
+<td>The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner.</td>
+</tr>
+<tr>
+<td>Session</td>
+<td>The <code>javv_session</code> cookie from <code>POST /auth/login</code></td>
+<td>All other endpoints</td>
+</tr>
+</tbody>
+</table>
+<p>The session cookie has the <code>HttpOnly</code> and <code>SameSite=Lax</code> flags. It also has the <code>Secure</code> flag,
+unless <code>JAVV_SESSION_COOKIE_SECURE</code> is <code>false</code> (<a href="../DEPLOYING/#http-or-https">http or https</a>).</p>
+<ul>
+<li><strong>Session time:</strong> a session ends <code>JAVV_SESSION_TTL_HOURS</code> after the sign-in (default 24), or at
+  sign-out. The server decides, not the cookie.</li>
+<li><strong>Failed sign-ins:</strong> after <code>JAVV_LOGIN_MAX_ATTEMPTS</code> failures (default 5) for one username in
+  <code>JAVV_LOGIN_LOCKOUT_MINUTES</code> (default 15), the sign-in answers 429. All cases of a name are one
+  count: <code>Alice</code> and <code>alice</code> count together. A successful sign-in sets the count to zero.</li>
+<li><strong>One answer for each failure:</strong> a wrong username, a wrong password, a disabled user and an
+  expired session all get the same 401. Thus the answer does not show if a username exists.</li>
+<li><strong>The login body:</strong> <code>POST /auth/login</code> accepts only <code>Content-Type: application/json</code>. A body
+  that is not JSON gets 422. A different JSON type, for example <code>application/merge-patch+json</code>,
+  gets 415.</li>
+</ul>
+<h3 id="a-temporary-password">A temporary password<a class="headerlink" href="#a-temporary-password" title="Permanent link">&para;</a></h3>
+<p>The first admin, a new user and a user after a password reset have a temporary password. The user
+must change it (<a href="#sign-in-from-a-script">Sign in from a script</a>, step 3). Until then, the session
+can use only <code>/auth/*</code>: show the user, change the password, and sign out. Each other session
+endpoint answers a well-formed request with 403 <code>password change required</code>, reads included. A
+body that is not valid JSON gets 422 first.</p>
+<p>Each refusal logs a <code>password change required</code> warning with the username. It also increments
+<code>javv_auth_failures_total{reason="must_change"}</code>.</p>
+<h3 id="a-password-change">A password change<a class="headerlink" href="#a-password-change" title="Permanent link">&para;</a></h3>
+<p><code>POST /auth/password</code> changes the password of the user of the session.</p>
+<ul>
+<li><strong>The new password</strong> has 12 to 256 characters. Each character counts as one, also a character
+  outside ASCII.</li>
+<li><strong>401:</strong> the current password is wrong, or the session ended. The two get the same answer.</li>
+<li><strong>403:</strong> an identity provider manages the password of the user.</li>
+<li><strong>422:</strong> the new password has fewer than 12 or more than 256 characters, or the body is not
+  valid.</li>
+<li><strong>The audit row comes first.</strong> JAVV writes a <code>pwd_change</code> row to the audit log before it changes
+  the password. If JAVV cannot write the row, the password does not change, and the answer is an
+  error.</li>
+<li><strong>200 with no cookie:</strong> the password changed, but JAVV could not make the new session. Each old
+  session ended, so sign in again with the new password. JAVV logs a <code>password changed, no new
+  session</code> warning and increments <code>javv_auth_failures_total{reason="session_not_minted"}</code>.</li>
+</ul>
+<h2 id="roles-and-permissions">Roles and permissions<a class="headerlink" href="#roles-and-permissions" title="Permanent link">&para;</a></h2>
+<p>Some endpoints need a permission. The tables in <a href="#endpoints">Endpoints</a> name it. A user gets the
+permissions of its role. The web app uses the <code>capabilities</code> from <code>GET /auth/me</code> to show or hide
+its controls. The backend checks the permission again on each request.</p>
+<p>At its first start, JAVV creates four roles:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Permissions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>viewer</code></td>
+<td>None. The user can read data only.</td>
+</tr>
+<tr>
+<td><code>triager</code></td>
+<td><code>can_triage</code>, <code>can_export</code>, <code>can_edit_dashboards</code></td>
+</tr>
+<tr>
+<td><code>security_lead</code></td>
+<td><code>can_triage</code>, <code>can_accept_audit_final</code>, <code>can_export</code>, <code>can_edit_dashboards</code></td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td>All the permissions, also the permissions of later releases</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>What it allows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>can_triage</code></td>
+<td>Triage findings. Make, change and revoke <code>not_affected</code> decisions.</td>
+</tr>
+<tr>
+<td><code>can_accept_audit_final</code></td>
+<td>Accept a risk, in a decision or in triage. Make, change and revoke <code>risk_accepted</code> and <code>ignore_rule</code> decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue.</td>
+</tr>
+<tr>
+<td><code>can_export</code></td>
+<td>Download the export files: the findings CSV and VEX, the audit log CSV, the contributors CSV and the approvals CSV. Make an export report and download it.</td>
+</tr>
+<tr>
+<td><code>can_edit_dashboards</code></td>
+<td>Make dashboards. Change, share and delete your own dashboards.</td>
+</tr>
+<tr>
+<td><code>can_manage_tokens</code></td>
+<td>Make, revoke and rotate scanner tokens</td>
+</tr>
+<tr>
+<td><code>can_manage_users</code></td>
+<td>Make users. Change their role, their status and their password. Read the account events in the audit log.</td>
+</tr>
+<tr>
+<td><code>can_manage_settings</code></td>
+<td>Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. See, change and delete the dashboards of other users, with <code>can_edit_dashboards</code>. Read the dashboard rows in the audit log.</td>
+</tr>
+<tr>
+<td><code>can_manage_retention</code></td>
+<td>Read and change the data settings: retention, rollover, export lifetime and findings cleanup. Read and take snapshots. Delete a retired cluster.</td>
+</tr>
+<tr>
+<td><code>can_restore_snapshot</code></td>
+<td>Restore a snapshot</td>
+</tr>
+<tr>
+<td><code>can_inspect_store</code></td>
+<td>Use the data inspector. Read the status of the background jobs.</td>
+</tr>
+<tr>
+<td><code>can_rebuild_state</code></td>
+<td>Start the job that builds the current state again</td>
+</tr>
+<tr>
+<td><code>can_drop_index</code></td>
+<td>Start the lifecycle sweep, which deletes old indices</td>
+</tr>
+</tbody>
+</table>
+<p>The Roles card in the web app shows a name and a short text for each permission. It gets them from
+<code>GET /api/v1/admin/roles</code>. The backend keeps one list of the permissions, in this order.</p>
+<p><code>can_export</code> controls the export files, not the reads. A user without it can still read each
+finding through <code>GET /api/v1/findings</code>, 500 rows a page.</p>
+<p>Each read and export applies the cluster that the request names. Each user can read each
+cluster. A <code>cluster_id</code> has 8 to 64 lowercase letters, digits or hyphens, and does not start with
+a hyphen.</p>
+<h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h2>
+<p>Each answer that is not a success has the same body, with the type <code>application/problem+json</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"about:blank"</span><span class="p">,</span><span class="w"> </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"invalid credentials"</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">401</span><span class="p">,</span><span class="w"> </span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">"request_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"b169be4a30444fdc"</span><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><code>type</code>: <code>about:blank</code>, or one of these. Match on <code>type</code>, not on <code>title</code>: the title can change.<ul>
+<li><code>store-read-only</code> on a 503 for a write that OpenSearch refused because its disk is full.</li>
+<li><code>cluster-delete-unfinished</code> on a 409 for a cluster whose delete did not finish: a bring
+  back (<code>POST /api/v1/clusters/{cluster_id}/unretire</code>) or a new token
+  (<code>POST /api/v1/admin/tokens</code>). Delete the cluster again to finish it.</li>
+<li><code>expiry-passed</code> on a 422 for a decision whose <code>expiry</code> is not after today in UTC, or not
+  after now (<code>POST /api/v1/decisions</code>, <code>PATCH /api/v1/decisions/{decision_id}</code>).</li>
+</ul>
+</li>
+<li><code>title</code>: a short text that names the error.</li>
+<li><code>detail</code>: on a 422 from a field check, the list of the fields that are not valid, with the
+  reason for each. It does not hold the value that you sent. Else it is <code>null</code>.</li>
+<li><code>request_id</code>: the id of the request in the backend log. The <code>X-Request-ID</code> header of the answer
+  also has it, on each answer. To set the id yourself, send <code>X-Request-ID</code> with 1 to 64 letters,
+  digits or hyphens. If you send no id, or an id that is not valid, the backend makes one.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td>The ingest body is not valid gzip or JSON. On the other endpoints, a body that is not valid JSON gets 422.</td>
+</tr>
+<tr>
+<td>401</td>
+<td>The request has no valid session or token.</td>
+</tr>
+<tr>
+<td>403</td>
+<td>The user does not have the permission, or must change the password first. A scanner token sent data for a different cluster or scanner.</td>
+</tr>
+<tr>
+<td>404</td>
+<td>The item does not exist. For an item of a different user, the answer is also 404.</td>
+</tr>
+<tr>
+<td>409</td>
+<td>A different request changed the item first, or the item is not in the necessary state.</td>
+</tr>
+<tr>
+<td>410</td>
+<td>The cursor or the export expired. Do the request again from the start.</td>
+</tr>
+<tr>
+<td>413</td>
+<td>The request asks for too many rows, or its body is too large. Make the request smaller.</td>
+</tr>
+<tr>
+<td>415</td>
+<td>The sign-in body has a JSON type that is not <code>application/json</code>, or a dashboard import body is not <code>application/x-ndjson</code>.</td>
+</tr>
+<tr>
+<td>422</td>
+<td>A field is not valid. <code>detail</code> names the field.</td>
+</tr>
+<tr>
+<td>501</td>
+<td>The CSV or VEX export of findings got a past <code>as_of</code>. Make a report with <code>as_of_t</code> instead (<a href="#a-past-time-as_of">A past time: <code>as_of</code></a>).</td>
+</tr>
+<tr>
+<td>429</td>
+<td>Too many requests. Some answers have a <code>Retry-After</code> header with the seconds to wait. The title "The search backend is busy" tells that OpenSearch itself has too much work (a full queue or a circuit breaker). That answer has <code>Retry-After: 5</code>.</td>
+</tr>
+<tr>
+<td>503</td>
+<td>OpenSearch is not available. Do the request again later. The type <code>store-read-only</code>, with the title <code>The store is read-only: its disk is full</code>, tells that the disk of OpenSearch is past its flood-stage watermark. Reads work. Each change that OpenSearch refuses, also a sign-in, gets this 503 until OpenSearch has free disk space. An ingest push gets the ingest 503 instead (<a href="#ingest-a-scan">Ingest a scan</a>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="list-responses">List responses<a class="headerlink" href="#list-responses" title="Permanent link">&para;</a></h2>
+<p>A list has one of three forms. The form comes from how the endpoint pages its rows.</p>
+<table>
+<thead>
+<tr>
+<th>Paging</th>
+<th>Form</th>
+<th>Endpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cursor</td>
+<td><code>{"data": [...], "next_cursor": "...", "total": {"value": N, "relation": "eq"}}</code></td>
+<td><code>/findings</code>, <code>/audit</code>, <code>/scanners/ingest-failures</code></td>
+</tr>
+<tr>
+<td>Offset: <code>size</code> and <code>offset</code></td>
+<td><code>{"&lt;name&gt;": [...], "total": N}</code></td>
+<td><code>/decisions</code> (<code>decisions</code>), <code>/decisions/approvals</code> (<code>approvals</code>), <code>/admin/users</code> (<code>users</code>), <code>/admin/tokens</code> (<code>tokens</code>)</td>
+</tr>
+<tr>
+<td>None</td>
+<td><code>{"&lt;name&gt;": [...]}</code></td>
+<td><code>/contributors</code> (<code>leaderboard</code>), <code>/images</code> (<code>images</code>), <code>/images/timeline</code> (<code>events</code>), <code>/findings/top-components</code> (<code>components</code>), <code>/clusters</code> (<code>clusters</code>), <code>/views</code> (<code>views</code>), <code>/dashboards</code> (<code>dashboards</code>), <code>/dashboards/roles</code> (<code>roles</code>), <code>/notifications</code> (<code>items</code>), <code>/admin/jobs</code> (<code>jobs</code>), <code>/admin/roles</code> (<code>roles</code>), <code>/admin/snapshots</code> (<code>snapshots</code>), <code>/scanners/provenance</code> (<code>scanners</code>), <code>/scanners/freshness</code> (<code>scanners</code>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>/findings/groups</code> uses a cursor, but it has no <code>total</code>.</li>
+<li><code>/notifications</code> puts its rows in <code>items</code>, not in a key with the name of the resource.</li>
+<li>Some answers have more keys next to the list. For example, <code>/images</code> also has <code>inventory</code>.</li>
+<li>In a cursor list, <code>total</code> is an object. In an offset list, <code>total</code> is a number.</li>
+</ul>
+<p>Read a key by its name, and check that it exists. In <code>jq</code>, a key that does not exist gives <code>null</code>,
+and the length of <code>null</code> is 0. That looks the same as an empty list.</p>
+<h2 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h2>
+<p>In the tables, the <strong>Access</strong> column gives the authentication, or the permission that the
+endpoint needs:</p>
+<ul>
+<li><strong>none:</strong> no authentication.</li>
+<li><strong>token:</strong> a scanner token.</li>
+<li><strong>session:</strong> any signed-in user.</li>
+<li>a permission name: a signed-in user with that permission (<a href="#roles-and-permissions">Roles and permissions</a>).</li>
+</ul>
+<p>The audit log keeps each sign-in and sign-out, and each change to triage, decisions, settings,
+the scan scope, users, tokens, saved views, dashboards, clusters, snapshots and jobs. It also keeps each query
+of the data inspector.</p>
+<p>Each signed-in user reads the audit log. Only a user with <code>can_manage_users</code> reads the account
+events: the rows with <code>entity_type</code> <code>user</code> (sign-ins and sign-outs, password, user and role
+changes) and <code>token</code> (the scanner tokens). For the other users, the three audit endpoints leave
+these rows out of the list, the counts and the CSV.</p>
+<p>Only a user with <code>can_manage_settings</code> reads the rows with <code>entity_type</code> <code>dashboard</code>. A dashboard
+row holds the whole dashboard, also a private one, and these users can see each dashboard. For
+the other users, the three audit endpoints leave these rows out in the same way.</p>
+<h3 id="system">System<a class="headerlink" href="#system" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/healthz</code></td>
+<td>none</td>
+<td>Liveness. It answers 200 while the process runs. It does not use OpenSearch.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/readyz</code></td>
+<td>none</td>
+<td>Readiness. It answers 200 <code>{"status": "ready"}</code> when OpenSearch answers, else 503 <code>{"status": "degraded"}</code>. OpenSearch can answer but refuse writes (its disk is past the flood-stage watermark), or be red (part of its data is not available). Then the answer is 200 with <code>"checks": {"store": "read-only"}</code> or <code>"red"</code>. Reads still work, so the backend stays in service.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/metrics</code></td>
+<td>none</td>
+<td>The metrics, in the Prometheus format (<a href="#metrics">Metrics</a>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/meta</code></td>
+<td>session</td>
+<td>The versions that the backend runs: <code>version</code> (the JAVV release), <code>mapping_version</code>, <code>envelope_versions</code> (the ingest schema versions that it accepts), <code>opensearch_version</code> and <code>python_version</code>. If OpenSearch does not answer, <code>opensearch_version</code> is <code>null</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The backend also writes the release and the mapping version in its <code>bootstrap complete</code> log line.</p>
+<h3 id="scanner-endpoints">Scanner endpoints<a class="headerlink" href="#scanner-endpoints" title="Permanent link">&para;</a></h3>
+<p>The scanners use these endpoints. Each one applies to the cluster and the scanner of the token,
+never to values in the body. <a href="../INGEST-CONTRACT/">Push from your own script</a> gives the order of the calls
+in a scan cycle.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/ingest/scan</code></td>
+<td>token</td>
+<td>Accepts the results of one scan (<a href="#ingest-a-scan">Ingest a scan</a>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scan-scope</code></td>
+<td>token</td>
+<td>Gives the scan scope of the cluster of the token</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/scan-runs</code></td>
+<td>token</td>
+<td>Gives the next <code>scan_order</code> for the cluster and scanner of the token. Each value is larger than the one before.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/inventory-runs</code></td>
+<td>token</td>
+<td>Closes the inventory of a scan cycle. Body: <code>{scan_run_id, expected_count, started_at}</code>. The backend counts the images that it received. The run is <code>committed</code> only if that count is complete. A repeated call gives the first result again.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sign-in-and-sessions">Sign-in and sessions<a class="headerlink" href="#sign-in-and-sessions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/auth/login</code></td>
+<td>none</td>
+<td>Signs in and sets the session cookie. The username can be in any case: the backend looks for the name as typed, then for the name in lower case. A wrong username or password gets 401. Too many failures get 429 (<a href="#authentication">Authentication</a>).</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/logout</code></td>
+<td>none</td>
+<td>Signs out. It ends the session of the cookie on the server, if the request has a cookie, and deletes the cookie. The answer is 204, also with no session.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/auth/password</code></td>
+<td>session</td>
+<td>Changes your password. Body: <code>{current_password, new_password}</code>. It signs you out of each session and sets a new cookie. The rules and the refusals are in <a href="#a-password-change">A password change</a>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/auth/me</code></td>
+<td>session</td>
+<td>Your user: <code>username</code>, <code>role</code>, <code>capabilities</code> and <code>must_change</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="admin">Admin<a class="headerlink" href="#admin" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET/POST</td>
+<td><code>/api/v1/admin/tokens</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>GET lists the scanner tokens, newest first, with <code>size</code> (1 to 1000, default 100), <code>offset</code> (0 to 9000) and an optional <code>cluster_id</code>. POST makes a token for <code>{cluster_id, scanner, expiry}</code>. The answer shows the token one time only. A cluster with a delete that did not finish gets 409. A token for a deleted cluster's ID onboards that cluster again: JAVV then keeps its new data.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/tokens/{token_id}/revoke</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>Disables a token</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/tokens/{token_id}/rotate</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. A revoked token and an expired token get 409, and nothing changes. Make a new token for them.</td>
+</tr>
+<tr>
+<td>GET/POST</td>
+<td><code>/api/v1/admin/users</code></td>
+<td><code>can_manage_users</code></td>
+<td>GET lists the users, with <code>size</code> (1 to 1000, default 100) and <code>offset</code> (0 to 9000). POST makes a user with <code>{username, temp_password, role}</code>. A username has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. A username with a capital letter gets 422, and so do <code>system</code> and <code>fleet</code>. A username that exists gets 409.</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/admin/users/{username}/role</code></td>
+<td><code>can_manage_users</code></td>
+<td>Changes the role of a user, and signs that user out of each session</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/admin/users/{username}/disabled</code></td>
+<td><code>can_manage_users</code></td>
+<td>Disables or enables a user. A disabled user loses each session. The last enabled admin gets 409.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/users/{username}/password-reset</code></td>
+<td><code>can_manage_users</code></td>
+<td>Sets a temporary password, which the user must change. It signs that user out of each session.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/roles</code></td>
+<td><code>can_manage_users</code></td>
+<td>The roles and their permissions in <code>roles</code>. Also <code>permissions</code>: each permission with its <code>id</code>, a <code>name</code> and a <code>description</code> of what it allows, in the order of the table in <a href="#roles-and-permissions">Roles and permissions</a>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/snapshots</code></td>
+<td><code>can_manage_retention</code></td>
+<td>The snapshots in the configured repository, newest first. With no repository, <code>configured</code> is <code>false</code>.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/snapshots</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Starts a snapshot of <code>findings</code>, <code>javv-images-*</code> and <code>system-*</code> except <code>system-sessions</code>, and answers 202 at once. The scan history is not in the snapshot (<a href="../CONFIGURATION/#snapshots">Snapshots</a>). With no repository, it answers 409.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/snapshots/{snapshot_name}/restore</code></td>
+<td><code>can_restore_snapshot</code></td>
+<td>Restores a snapshot into copies with the prefix <code>restored-</code>. It never writes to the live indices. To use a copy, move it in by hand.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/opensearch-runtime</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Facts about OpenSearch: version, health, nodes, roles, heap, <code>discovery.type</code>, <code>path.repo</code> and the security plugin. It gives only these fields.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/opensearch/inspect</code></td>
+<td><code>can_inspect_store</code></td>
+<td>The data inspector. <a href="#the-data-inspector">The data inspector</a> gives its rules.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/admin/jobs</code></td>
+<td><code>can_inspect_store</code></td>
+<td>The status of each of the eight background jobs, and of the scheduler (<a href="#the-jobs-list">The jobs list</a>)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/jobs/{kind}/run</code></td>
+<td>the permission of the job</td>
+<td>Starts a job, and answers 202 <code>{attempt_id}</code> (<a href="#start-a-background-job">Start a background job</a>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="the-data-inspector">The data inspector<a class="headerlink" href="#the-data-inspector" title="Permanent link">&para;</a></h4>
+<p><code>POST /api/v1/admin/opensearch/inspect</code> takes <code>{method, path, body}</code> and sends only allowed reads
+to OpenSearch:</p>
+<ul>
+<li><code>GET</code> or <code>POST</code> on <code>&lt;index&gt;/_search</code> and <code>&lt;index&gt;/_count</code></li>
+<li><code>GET</code> on <code>&lt;index&gt;/_mapping</code></li>
+<li><code>GET</code> on <code>_cat/indices</code>, <code>_cat/shards</code>, <code>_cluster/health</code> and <code>_nodes/stats</code>. The <code>_cat</code> reads
+  show only the indices of JAVV.</li>
+</ul>
+<p>These requests get 422, with the reason:</p>
+<ul>
+<li>a request on <code>system-users</code>, <code>system-sessions</code> or <code>system-tokens</code></li>
+<li>a body with <code>script</code>, <code>script_fields</code>, <code>runtime_mappings</code>, <code>pit</code> or <code>scroll</code></li>
+<li>a <code>size</code> larger than <code>JAVV_INSPECT_MAX_HITS</code>.</li>
+</ul>
+<p>An answer larger than <code>JAVV_INSPECT_MAX_RESPONSE_BYTES</code> gets 413. A good answer is
+<code>{took_ms, bytes, cap_bytes, body}</code>. The audit log keeps each query, with the user, the method and
+path, and a hash of the query.</p>
+<h4 id="the-jobs-list">The jobs list<a class="headerlink" href="#the-jobs-list" title="Permanent link">&para;</a></h4>
+<p><code>GET /api/v1/admin/jobs</code> gives <code>{jobs, scheduler}</code>. <code>jobs</code> has one entry for each job kind:</p>
+<ul>
+<li>the last run: <code>status</code>, <code>requested_by</code>, <code>started_at</code>, <code>finished_at</code>, <code>result</code> and <code>error</code>. A job
+  that never ran has <code>status: idle</code>.</li>
+<li><code>stale</code>: <code>true</code> when a run is <code>running</code>, but it stopped its heartbeat.</li>
+<li><code>runnable</code> and <code>capability</code>: if you can start the job with <code>POST .../run</code>, and the permission
+  for it. <code>capability</code> is <code>null</code> for a job that you cannot start.</li>
+<li><code>schedule</code>: the cron expression from <code>JAVV_JOB_&lt;KIND&gt;_CRON</code>, or <code>null</code>.</li>
+<li><code>next_run_at</code>: the next run, in UTC. It is <code>null</code> when the job or the scheduler is off.</li>
+<li><code>health</code>, one of these values. The first value that applies is the result:<ol>
+<li><code>failed</code>: the last run failed.</li>
+<li><code>off</code>: the job has no schedule, or the scheduler is off.</li>
+<li><code>never_ran</code>: the job has a schedule, but no run.</li>
+<li><code>overdue</code>: two scheduled times passed after the last start.</li>
+<li><code>ok</code>: all other cases.</li>
+</ol>
+</li>
+</ul>
+<p><code>scheduler</code> is <code>{enabled, timezone}</code>: if this backend runs the schedules, and the time zone of the
+cron expressions.</p>
+<h4 id="start-a-background-job">Start a background job<a class="headerlink" href="#start-a-background-job" title="Permanent link">&para;</a></h4>
+<p><code>POST /api/v1/admin/jobs/{kind}/run</code> starts one of three jobs:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Permission</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rebuild_state</code></td>
+<td><code>can_rebuild_state</code></td>
+</tr>
+<tr>
+<td><code>staleness_sweep</code></td>
+<td><code>can_manage_settings</code></td>
+</tr>
+<tr>
+<td><code>lifecycle_sweep</code></td>
+<td><code>can_drop_index</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The other five kinds, and a kind that does not exist, get 404.</li>
+<li>If a run of the job is in progress, the request gets 409. The scheduler applies the same rule.
+  Thus one run of a kind at a time occurs.</li>
+<li><code>?dry_run=true</code> applies to <code>lifecycle_sweep</code> only. It answers 200
+  <code>{dry_run, result: {rolled, dropped, errors}}</code> with the counts that a run would give. It changes
+  nothing. On the other kinds, <code>dry_run</code> gets 422.</li>
+</ul>
+<h3 id="findings-read">Findings: read<a class="headerlink" href="#findings-read" title="Permanent link">&para;</a></h3>
+<p>These endpoints need a session only. Each one needs <code>cluster_id</code>, except
+<code>POST /api/v1/cursors/close</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings</code></td>
+<td>session</td>
+<td>One page of findings, with a cursor (<a href="#read-a-list-page-by-page">Read a list page by page</a>). <code>size</code> is 1 to 500, default 50. <code>sort</code> is <code>severity_rank</code>, <code>first_seen_at</code>, <code>last_scan_at</code>, <code>cvss</code> or <code>epss</code>. The last page closes the search of the cursor. With <code>keep_open=true</code>, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with <code>POST /api/v1/cursors/close</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/facets</code></td>
+<td>session</td>
+<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/groups</code></td>
+<td>session</td>
+<td>Findings in groups, page by page with a cursor. <code>by</code> is <code>image_repo</code>, <code>image_digest</code>, <code>namespaces</code>, <code>cve_id</code>, <code>assignee</code>, <code>app</code> or <code>ptype</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/top-components</code></td>
+<td>session</td>
+<td>The packages with the most findings, and the count of different CVEs for each scanner. A past <code>as_of</code> gets 422.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/trends/scans</code> · <code>/api/v1/trends/findings</code></td>
+<td>session</td>
+<td>Counts for each day over <code>days</code> (1 to 365, default 30), for each scanner. <a href="#trends">Trends</a> gives the details.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/trends/ingest-failures</code></td>
+<td>session</td>
+<td>The pushes that the ingest refused after the token check, for each time interval and scanner (<a href="#trends">Trends</a>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/contributors</code></td>
+<td>session</td>
+<td>The triage work of each user over <code>days</code> (1 to 365, default 30): actions, time to fix and SLA results. <code>totals</code> gives the same values for the team.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/contributors/export.csv</code></td>
+<td><code>can_export</code></td>
+<td>The data of <code>/contributors</code> as CSV. It has one <code>action_&lt;name&gt;</code> column for each triage action. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scanners/freshness</code></td>
+<td>session</td>
+<td>For each scanner of the cluster: <code>last_ingest_at</code> and <code>silent_for_seconds</code>. With no push yet, both are <code>null</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scanners/ingest-failures</code></td>
+<td>session</td>
+<td>The pushes that the ingest refused after the token check, newest first. <code>scanner</code> is necessary. <code>days</code> is 1 to 365 (default 30), and <code>size</code> is 1 to 100 (default 25). <a href="#failed-pushes">Failed pushes</a> gives the fields.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/scanners/provenance</code></td>
+<td>session</td>
+<td>For each scanner: the versions and <code>effective_config</code> of the last committed run, and the last <code>runs</code> runs (1 to 50, default 10)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit</code></td>
+<td>session</td>
+<td>The audit log, page by page with a cursor. Filters: <code>entity_type</code>, <code>action</code>, <code>actor</code> and <code>finding_key</code>, each with an <code>exclude_</code> form except <code>finding_key</code>. <code>entity_type</code>, <code>action</code> and <code>actor</code> take several values, for example <code>actor=a&amp;actor=b</code>, at most 32 for each filter. A row matches when it has one of the values. An <code>exclude_</code> filter with several values leaves out the rows with any of them. <code>finding_key</code> also returns each bulk change that included the finding (<code>action</code> <code>bulk_triage</code>). Such a row lists the changed findings in <code>target_ids</code>. <code>order</code> is <code>desc</code> (default) or <code>asc</code>. <code>keep_open</code> is as in <code>/findings</code>. Each row also shows the CVE, image and scanner of the finding or decision that it changed.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/cursors/close</code></td>
+<td>session</td>
+<td>Closes a cursor of <code>/findings</code> or <code>/audit</code> before its last page. Body: <code>{cursor}</code>. It closes the search of the cursor and frees your slot (<a href="#exports-and-reports">Exports and reports</a>), and answers 204. A cursor of a different user, of a list that ended, or that expired also gets 204, and nothing changes. A cursor that is not valid gets 422.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit/facets</code></td>
+<td>session</td>
+<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. The <code>actor</code> counts leave out the <code>actor</code> and <code>exclude_actor</code> filters, so the other users keep their counts. With <code>interval</code> (<code>day</code> or <code>hour</code>) and <code>window_days</code>, it also gives <code>activity</code>: the events in each interval.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit/export.csv</code></td>
+<td><code>can_export</code></td>
+<td>The audit log as CSV, with the same filters. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/images</code></td>
+<td>session</td>
+<td>The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, <code>inventory</code> is <code>null</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/images/timeline</code></td>
+<td>session</td>
+<td>The scan history of one image tag. <code>image_repo</code> and <code>tag</code> are necessary.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/clusters</code></td>
+<td>session</td>
+<td>The clusters (<a href="#the-clusters-list">The clusters list</a>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="filters">Filters<a class="headerlink" href="#filters" title="Permanent link">&para;</a></h4>
+<p><code>/findings</code>, <code>/findings/facets</code>, <code>/findings/groups</code>, the findings exports and the saved views take
+the same filters:</p>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>What it selects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>severity</code></td>
+<td><code>critical</code>, <code>high</code>, <code>medium</code>, <code>low</code>, <code>negligible</code> or <code>unknown</code>. The facet uses the same words. A row also shows the word of its scanner in <code>severity</code>.</td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td><code>open</code>, <code>acknowledged</code>, <code>not_affected</code>, <code>risk_accepted</code>, <code>resolved</code> or <code>stale</code></td>
+</tr>
+<tr>
+<td><code>scanner</code>, <code>image_digest</code></td>
+<td>The rows with that value</td>
+</tr>
+<tr>
+<td><code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code></td>
+<td>The rows with one of the values. Give the parameter one time for each value, for example <code>namespace=a&amp;namespace=b</code>. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces.</td>
+</tr>
+<tr>
+<td><code>kev</code>, <code>fixable</code>, <code>disagree</code></td>
+<td><code>true</code> or <code>false</code></td>
+</tr>
+<tr>
+<td><code>present</code></td>
+<td><code>true</code> (default): the findings in the last scan. <code>false</code>: the findings that are gone.</td>
+</tr>
+<tr>
+<td><code>new_within_days</code></td>
+<td>The findings first seen in the last 1 to 365 days</td>
+</tr>
+<tr>
+<td><code>overdue</code></td>
+<td><code>true</code> or <code>false</code>, from the SLA policy at the time of the request. A change of the policy changes the result at once.</td>
+</tr>
+<tr>
+<td><code>unassigned</code></td>
+<td><code>true</code>: the rows with no owner. An empty <code>assignee</code> counts as no owner.</td>
+</tr>
+<tr>
+<td><code>q</code></td>
+<td>2 to 128 characters. It finds the rows where <code>cve_id</code>, <code>image_repo</code>, <code>namespaces</code>, <code>assignee</code> or <code>package_name</code> contains the text, in any case.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Each filter except <code>kev</code>, <code>fixable</code>, <code>disagree</code>, <code>present</code>, <code>new_within_days</code>, <code>overdue</code>,
+  <code>unassigned</code>, <code>image_digest</code> and <code>q</code> has an <code>exclude_</code> form, for example <code>exclude_severity</code>.
+  An <code>exclude_</code> filter leaves out the rows with that value. A row with no value for the field stays.
+  Thus <code>exclude_assignee=bob</code> keeps the rows with no owner. An <code>exclude_</code> filter with more than one
+  value leaves out the rows with any of the values.</li>
+<li><code>package_name</code> is not a facet. <code>fields=package_name</code> gets 422.</li>
+<li>In a saved view (<code>preset</code>) and in a report (<code>params</code>), the filters that take more than one value
+  (<code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code> and their <code>exclude_</code>
+  forms) also take one string. JAVV keeps it as a list with that one value.</li>
+<li>One field takes the filter or its <code>exclude_</code> form, not both. <code>assignee</code> and <code>unassigned</code> also
+  do not go together. Each of these pairs gets 422, also in a saved view and in a report.</li>
+</ul>
+<h4 id="a-past-time-as_of">A past time: <code>as_of</code><a class="headerlink" href="#a-past-time-as_of" title="Permanent link">&para;</a></h4>
+<p>Each read takes <code>as_of</code>. With no value, <code>now</code> or a time in the future, the read shows the current
+state. With a time in the past, JAVV builds the state at that time from the history:</p>
+<ul>
+<li><code>kev</code>, <code>epss</code>, <code>disagree</code>, <code>image_repo</code>, <code>tag</code> and <code>app</code> are not in the history. They are
+  <code>null</code> in the rows.</li>
+<li>The SLA deadline (<code>overdue</code> and <code>due_at</code>) uses the KEV value that each scan recorded, as a
+  read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
+  A finding from such a scan gets the deadline of its severity.</li>
+<li>A filter, sort or group on one of these fields gets 422. <code>image_repo</code> and <code>exclude_image_repo</code>
+  get 422 too.</li>
+<li>A facet on one of these fields gives no values.</li>
+<li><code>ptype</code>, <code>package_name</code> and the <code>exclude_</code> filters on recorded fields apply as usual.</li>
+<li>The CSV and VEX exports of findings get 501. A report (<code>POST /api/v1/reports</code>) can use a past
+  <code>as_of_t</code>.</li>
+<li>The audit log and the failed pushes end their window at that time.</li>
+</ul>
+<h4 id="trends">Trends<a class="headerlink" href="#trends" title="Permanent link">&para;</a></h4>
+<ul>
+<li><code>/trends/scans</code>: the committed scans. <code>interval</code> is <code>day</code> (default) or <code>hour</code>. <code>hour</code> is
+  possible only for 31 days or less, else 422. At a past <code>as_of</code>, the intervals are days.</li>
+<li><code>/trends/findings</code>: the new findings and the resolved findings. <code>resolved</code> counts only the
+  findings that a scan no longer showed (<code>resolved_semantics: "scan_resolved"</code>). A triage to
+  <code>resolved</code> does not count. <code>split</code> is <code>scanner</code> (default) or <code>severity</code>. <code>split=severity</code> gets
+  422 at a past <code>as_of</code>. <code>scanner</code> (<code>trivy</code> or <code>grype</code>) limits the series to one scanner.</li>
+<li><code>/trends/ingest-failures</code>: the same <code>days</code> and <code>interval</code> as <code>/trends/scans</code>, so the two series
+  align. It gives <code>{series: {&lt;scanner&gt;: [{date, count}]}, days, interval}</code>. With no refused push,
+  <code>series</code> is <code>{}</code>.</li>
+</ul>
+<h4 id="failed-pushes">Failed pushes<a class="headerlink" href="#failed-pushes" title="Permanent link">&para;</a></h4>
+<p><code>GET /api/v1/scanners/ingest-failures</code> gives <code>{data, total, next_cursor}</code>. Each row has
+<code>@timestamp</code>, <code>failure_id</code>, <code>scanner</code>, <code>stage</code>, <code>reason</code>, <code>status</code>, <code>error</code> and <code>image_ref</code>. The
+<code>ingest rejected</code> log line has the same <code>failure_id</code>. The read uses no point in time. Thus a push
+that fails during your read can show on a later page.</p>
+<h4 id="the-clusters-list">The clusters list<a class="headerlink" href="#the-clusters-list" title="Permanent link">&para;</a></h4>
+<p><code>GET /api/v1/clusters</code> gives each cluster that has a token, a name or a retirement record.
+<code>cluster_name</code> is a name to show. JAVV never uses it in a query. Without a name, it is the
+<code>cluster_id</code>. Each row has:</p>
+<ul>
+<li><code>retired</code>. A retired cluster is in the list only with <code>?include_retired=true</code>. A cluster that
+  sent a scan after its retirement is not retired.</li>
+<li><code>last_scan_at</code>: the newest accepted scan, or <code>null</code>.</li>
+<li><code>silent_since</code>: the start of the retirement countdown. This is the newest accepted scan, else the
+  first token, or the return from retirement if that is later.</li>
+<li><code>warns_at</code> and <code>retires_at</code>. <code>null</code> means that the cluster never retires.</li>
+<li><code>delete_started</code>: <code>true</code> when a delete of the cluster started and did not finish. Delete it
+  again.</li>
+<li><code>retirement_mode</code>: <code>manual</code> or <code>auto</code> for a retired cluster, else <code>null</code>. A manual
+  retirement revoked the tokens. To bring the cluster back, make a new token.</li>
+</ul>
+<h3 id="findings-triage-and-decisions">Findings: triage and decisions<a class="headerlink" href="#findings-triage-and-decisions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/findings/{finding_key}/triage</code></td>
+<td><code>can_triage</code></td>
+<td>Changes the state of one finding: <code>open</code>, <code>acknowledged</code>, <code>not_affected</code>, <code>risk_accepted</code> or <code>resolved</code>. <code>not_affected</code> needs a <code>vex_justification</code>. <code>risk_accepted</code> also needs <code>can_accept_audit_final</code>. A change of state of a risk-accepted finding also needs <code>can_accept_audit_final</code>. This includes a <code>stale</code> finding that goes back to <code>risk_accepted</code> when the scanner reports it again. A change of <code>notes</code> or <code>assignee</code> only does not need it.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/findings/bulk-triage</code></td>
+<td><code>can_triage</code></td>
+<td>Changes the state of all the findings that a selector finds, now. More than <code>JAVV_BULK_INLINE_LIMIT</code> (5000) findings get 413. Use a report for more. A selector that finds more than <code>JAVV_BULK_MAX_TARGETS</code> (10000) gets 413. An empty selector gets 422. A change of state of a set that holds risk-accepted findings needs <code>can_accept_audit_final</code>. Without it, the request gets 403 with the count, and JAVV changes no finding.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/decisions</code></td>
+<td><code>can_triage</code></td>
+<td>Makes a decision. A <code>risk_accepted</code> or <code>ignore_rule</code> decision also needs <code>can_accept_audit_final</code>. <code>expiry</code> is a date (<code>YYYY-MM-DD</code>), or a date and time with a time zone. JAVV keeps a date and time in UTC. A date stops at 00:00 UTC on that day. Thus the date must be after today in UTC, and a date and time must be after now. Else the answer is 422.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/decisions</code></td>
+<td>session</td>
+<td>Lists the decisions of the cluster, with <code>cve_id</code>, <code>include_revoked</code> (default <code>false</code>), <code>size</code> (1 to 500, default 50) and <code>offset</code> (0 to 10000)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/decisions/{decision_id}</code></td>
+<td><code>can_triage</code></td>
+<td>Changes a decision. JAVV never changes a decision. It revokes the old one and makes a new one, at the same time. A change from or to <code>risk_accepted</code> or <code>ignore_rule</code> also needs <code>can_accept_audit_final</code>. The new decision keeps the old <code>expiry</code> when the change does not set one. When that expiry is not in the future, the answer is 422, as for <code>POST</code>.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/decisions/{decision_id}/revoke</code></td>
+<td><code>can_triage</code></td>
+<td>Revokes a decision. Its effect on the findings stops. A <code>risk_accepted</code> or <code>ignore_rule</code> decision also needs <code>can_accept_audit_final</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/decisions/approvals</code></td>
+<td><code>can_accept_audit_final</code></td>
+<td>The approvals queue: the active risk acceptances, the nearest expiry first (<a href="#the-approvals-queue">The approvals queue</a>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/decisions/approvals/export.csv</code></td>
+<td><code>can_accept_audit_final</code> and <code>can_export</code></td>
+<td>The approvals queue as CSV, with the same filters (<a href="#the-approvals-queue">The approvals queue</a>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="the-approvals-queue">The approvals queue<a class="headerlink" href="#the-approvals-queue" title="Permanent link">&para;</a></h4>
+<p><code>GET /api/v1/decisions/approvals</code> takes <code>size</code> and <code>offset</code>, and these filters:</p>
+<ul>
+<li><code>q</code>: a part of the CVE id.</li>
+<li><code>status</code>: <code>active</code>, <code>expiring</code>, <code>expired</code> or <code>open-ended</code>. JAVV calculates it from <code>expiry</code> at the
+  time of the request. <code>warn_days</code> (default 7) sets when <code>expiring</code> starts.</li>
+<li><code>created_by</code>.</li>
+<li><code>scanner</code>: <code>both</code>, <code>trivy</code> or <code>grype</code>.</li>
+</ul>
+<p><code>status</code> and <code>created_by</code> take several values, for example <code>status=expired&amp;status=expiring</code>, at
+most 32 for each filter. An acceptance matches when it has one of the values. <code>q</code> and <code>scanner</code>
+take one value. Each filter except <code>q</code> has an <code>exclude_</code> form. An <code>exclude_</code> filter with several
+values leaves out the acceptances with any of them. The answer also has <code>facets</code>: the counts of
+<code>status</code>, <code>created_by</code> and <code>scanner</code> with the same filters. The <code>created_by</code> counts leave out the
+<code>created_by</code> and <code>exclude_created_by</code> filters, so the other approvers keep their counts. A revoked acceptance is never in the
+queue.</p>
+<p>The CSV export has the same rows. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.
+Two columns are different from the screen:</p>
+<ul>
+<li>JAVV calculates <code>status</code> for each row, with the same rules as the <code>status</code> filter.</li>
+<li><code>scope_namespaces</code> and <code>scope_images</code> give the full lists. If both are empty, the acceptance
+  applies to the full cluster.</li>
+</ul>
+<h3 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/sla</code></td>
+<td>session</td>
+<td>The SLA policy: <code>critical_days</code>, <code>high_days</code>, <code>medium_days</code>, <code>low_days</code> and <code>kev_days</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/sla</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Replaces the SLA policy</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/staleness</code></td>
+<td>session</td>
+<td>The staleness timers for <code>?cluster_id</code>: the value for the cluster, else the value for all clusters. <code>per_cluster_override</code> shows which one applies.</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/staleness</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Replaces the staleness timers. With <code>cluster_id</code> in the body, for that cluster. Without it, for all clusters.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/retirement</code></td>
+<td>session</td>
+<td>The retirement window for <code>?cluster_id</code>: <code>retire_after_days</code> (<code>null</code> means never) and <code>warn_days</code>, with <code>per_cluster_override</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/retirement</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Sets <code>retire_after_days</code> and <code>warn_days</code>. Both are necessary. <code>cluster_id</code> in the body applies as for staleness. A window that is not longer than the scanner-down timer gets 422. A <code>warn_days</code> that is not shorter than the window gets 422.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/scan-scope</code></td>
+<td>session</td>
+<td>The scan scope of <code>?cluster_id</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/scan-scope</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Replaces the scan scope of a cluster: <code>include_namespaces</code>, <code>ignore_namespaces</code>, <code>exclude_images</code> and <code>ignore_kinds</code>. An empty include list means all namespaces. An ignore entry wins over an include entry.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/data</code></td>
+<td><code>can_manage_retention</code></td>
+<td>The data settings for <code>?cluster_id</code>: retention, rollover, export lifetime, findings cleanup and the snapshot repository</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/retention</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Sets <code>retention_days</code>. <code>cluster_id</code> in the body applies as for staleness.</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/rollover</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Sets <code>max_age_days</code>, <code>max_docs</code> and <code>max_size_gb</code>. <code>cluster_id</code> in the body applies as for staleness.</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/report-ttl</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Sets the export lifetime in <code>hours</code>, for all clusters</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/findings-cleanup</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Sets <code>cleanup_days</code>: how long a finding that is gone stays. <code>cluster_id</code> in the body applies as for staleness.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../CONFIGURATION/#runtime-settings">Configuring JAVV</a> gives the defaults and the limits of each
+runtime setting.</p>
+<h3 id="clusters">Clusters<a class="headerlink" href="#clusters" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/clusters/{cluster_id}/name</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Changes the name that JAVV shows for a cluster. The <code>cluster_id</code> never changes.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/clusters/{cluster_id}/retire</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Retires a cluster. It leaves the cluster list, and JAVV revokes its tokens. JAVV keeps its data. A cluster that does not exist gets 404. A retired cluster gets 409.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/clusters/{cluster_id}/unretire</code></td>
+<td><code>can_manage_settings</code></td>
+<td>Brings a retired cluster back to the list. Its tokens stay revoked. The retirement countdown starts again. A cluster that is not retired gets 409. A cluster with a delete that did not finish gets 409.</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/clusters/{cluster_id}</code></td>
+<td><code>can_manage_retention</code></td>
+<td>Deletes a retired cluster (<a href="#delete-a-cluster">Delete a cluster</a>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="delete-a-cluster">Delete a cluster<a class="headerlink" href="#delete-a-cluster" title="Permanent link">&para;</a></h4>
+<p><code>DELETE /api/v1/clusters/{cluster_id}</code> deletes all the data of a retired cluster, except its rows
+in the audit log. Snapshots from before keep the data.</p>
+<ol>
+<li>It writes a marker for the delete.</li>
+<li>It deletes the tokens of the cluster. A scanner that still pushes gets 401.</li>
+<li>It deletes the history indices of the cluster.</li>
+<li>It deletes the rows of the cluster in <code>findings</code>, <code>javv-scan-watermarks</code>, <code>javv-scan-orders</code>,
+   <code>system-decisions</code>, <code>system-notifications</code> and <code>system-reports</code>.</li>
+<li>It deletes the settings and the name of the cluster, then its retirement record.</li>
+<li>
+<p>It marks the delete as finished.</p>
+</li>
+<li>
+<p>A cluster that is not retired gets 409. A cluster that does not exist gets 404.</p>
+</li>
+<li>If an admin brings the cluster back while the delete starts, only one of the two goes ahead.
+  When the delete loses, it gets 409 and deletes nothing. When the bring back loses, it gets 409,
+  and the delete continues.</li>
+<li>If a step cannot finish, or OpenSearch is not available, the request gets 503. Send the request
+  again. The delete continues from the step that stopped.</li>
+<li>The answer is <code>{cluster_id, deleted: {&lt;what&gt;: count}}</code>.</li>
+<li>The marker stays. Each night, the retirement sweep deletes the rows that a push wrote after the
+  delete. Before it deletes them, it writes an audit row with their counts. After a second pass with no rows, or if the cluster comes back, the sweep deletes the
+  marker. A new token for the cluster's ID also deletes the marker: the cluster is back, and JAVV
+  keeps its new data.</li>
+<li>A second delete of the same ID, after the cluster came back, writes its own marker.</li>
+</ol>
+<h3 id="saved-views">Saved views<a class="headerlink" href="#saved-views" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/views</code></td>
+<td>session</td>
+<td>Lists the saved views. Each user can see each view.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/views</code></td>
+<td>session</td>
+<td>Saves a view. You are its <code>owner</code>. <code>preset</code> takes the <a href="#filters">filters</a>. A value that is not valid gets 422, and so does a pair that Findings refuses. <code>workbench</code> keeps the table setup: <code>columns</code>, <code>dense</code>, <code>sort</code>, <code>order</code> and <code>window_days</code>.</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/views/{view_id}</code></td>
+<td>session, the owner or <code>can_manage_settings</code></td>
+<td>Changes the name, the description, <code>preset</code> or <code>workbench</code>. A <code>preset</code> gets the same checks as on <code>POST</code>. A different user gets 403. A change by a different request first gets 409.</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/views/{view_id}</code></td>
+<td>session, the owner or <code>can_manage_settings</code></td>
+<td>Deletes a view (204). The audit log keeps a copy of it.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dashboards">Dashboards<a class="headerlink" href="#dashboards" title="Permanent link">&para;</a></h3>
+<p>A dashboard is a layout of panels. It holds no data: each panel gets its data with the
+permissions of the user who opens the dashboard.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards</code></td>
+<td>session</td>
+<td>Lists the dashboards that you can see, at most 1,000, by name</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards/{dashboard_id}</code></td>
+<td>session</td>
+<td>One dashboard. A dashboard that you cannot see gets 404, as a dashboard that does not exist.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/dashboards</code></td>
+<td><code>can_edit_dashboards</code></td>
+<td>Saves a new dashboard (201). You are its <code>owner</code>. It is <code>private</code> if the body does not set <code>sharing</code>. A name in <code>roles</code> that is not the name of a role gets 422 (<code>unknown_role</code>).</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/dashboards/{dashboard_id}</code></td>
+<td><code>can_edit_dashboards</code>, the owner or <code>can_manage_settings</code></td>
+<td>Changes the fields in the body. The body must have the <code>revision</code> that you read. A different <code>revision</code> gets 409. A user who can see the dashboard, but is not its owner, gets 403. To stop the sharing with roles, send the new <code>sharing</code> and <code>"roles": []</code> together. A change that sends no <code>panels</code> keeps the stored panels. A name in <code>roles</code> that is not the name of a role gets 422 (<code>unknown_role</code>). A change that sends no <code>roles</code> keeps the stored roles, and does not examine them.</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/dashboards/{dashboard_id}</code></td>
+<td><code>can_edit_dashboards</code>, the owner or <code>can_manage_settings</code></td>
+<td>Deletes the dashboard (204). The query parameter <code>revision</code> is the revision that you read. A different <code>revision</code> gets 409. The audit log keeps a copy of it.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards/roles</code></td>
+<td><code>can_edit_dashboards</code></td>
+<td>The names of the roles that you can share a dashboard with, sorted: <code>{"roles": ["admin", ...]}</code>. It gives no capabilities. <code>/api/v1/admin/roles</code> gives them and needs <code>can_manage_users</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/dashboards/export.ndjson</code></td>
+<td>session</td>
+<td>A file of the dashboards that you can see, at most 1,000. Give one <code>dashboard_id</code> for each dashboard, or no <code>dashboard_id</code> for all of them. See "Dashboard files".</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/dashboards/import</code></td>
+<td><code>can_edit_dashboards</code></td>
+<td>Makes a dashboard from each line of a file (200, with a result for each line). With <code>copy=true</code>, each line gets a new ID. See "Dashboard files".</td>
+</tr>
+</tbody>
+</table>
+<p>Who can see a dashboard:</p>
+<ul>
+<li><code>sharing: private</code>: the owner only</li>
+<li><code>sharing: everyone</code>: each user</li>
+<li><code>sharing: roles</code>: the users with one of the roles in <code>roles</code></li>
+<li>a user with <code>can_manage_settings</code>: each dashboard</li>
+</ul>
+<p>The fields that you set:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>1 to 128 characters</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>At most 1,024 characters</td>
+</tr>
+<tr>
+<td><code>scanner</code></td>
+<td><code>all</code> (default), <code>trivy</code> or <code>grype</code>: the scanner that the dashboard opens with</td>
+</tr>
+<tr>
+<td><code>sharing</code></td>
+<td><code>private</code> (default), <code>everyone</code> or <code>roles</code></td>
+</tr>
+<tr>
+<td><code>roles</code></td>
+<td>The roles that can see the dashboard, with <code>sharing: roles</code> only. At least one.</td>
+</tr>
+<tr>
+<td><code>panels</code></td>
+<td>At most 24 panels</td>
+</tr>
+</tbody>
+</table>
+<p>Each panel:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>panel</code></td>
+<td>The panel ID, for example <code>findings-summary</code>. <code>openapi.json</code> lists the IDs.</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>The column: 0 (left) or 1 (right)</td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td>The row of the top of the panel: 0 to 1,000</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td>The width: 1 (one column) or 2 (both columns). <code>x + w</code> is at most 2.</td>
+</tr>
+<tr>
+<td><code>h</code></td>
+<td>The height: <code>short</code> or <code>tall</code>. Each panel has the heights that its catalog entry gives.</td>
+</tr>
+<tr>
+<td><code>scanner</code></td>
+<td><code>dashboard</code> (default), <code>trivy</code> or <code>grype</code>, only on a panel with scanner data. <code>dashboard</code> follows the scanner switch of the dashboard.</td>
+</tr>
+</tbody>
+</table>
+<p>The backend refuses with 422:</p>
+<ul>
+<li>a field that is not in these lists, or a panel ID that it does not know</li>
+<li>a height that the panel does not have, or a <code>scanner</code> on a panel with no scanner data</li>
+<li>a panel outside the two columns, or two panels on the same cell</li>
+<li><code>roles</code> without <code>sharing: roles</code>, or <code>sharing: roles</code> without a role</li>
+</ul>
+<p>JAVV writes <code>owner</code>, <code>created_by</code>, <code>created_at</code>, <code>updated_by</code>, <code>updated_at</code> and <code>revision</code>. Each
+change adds 1 to <code>revision</code>. The audit log has a row for each change (<code>dashboard_create</code>,
+<code>dashboard_update</code> and <code>dashboard_delete</code>).</p>
+<h4 id="dashboard-files">Dashboard files<a class="headerlink" href="#dashboard-files" title="Permanent link">&para;</a></h4>
+<p>A dashboard file is NDJSON: one dashboard on each line, then one summary line. A line has
+<code>dashboard_id</code>, <code>schema_version</code>, <code>name</code>, <code>description</code>, <code>scanner</code>, <code>panels</code>, <code>sharing</code> and
+<code>roles</code>. A line has no owner, user names or times. The summary line is
+<code>{"exported_count": N, "missing_ids": [...]}</code>. A missing ID is an ID that does not exist or a
+dashboard that you cannot see. The export does not need <code>can_export</code>.</p>
+<p>The export sorts the dashboards by name. Without <code>dashboard_id</code>, it gives the first 1,000, and
+the summary line does not tell if there are more. The IDs are in the URL: each ID adds
+approximately 45 characters. A URL longer than 16 KB (approximately 350 IDs) gets 431 from the
+frontend server.</p>
+<p>The import reads the file as the body of the request, with <code>Content-Type: application/x-ndjson</code>.
+A different type gets 415.</p>
+<ul>
+<li>You are the owner of each dashboard that the import makes. The audit log gets a
+  <code>dashboard_create</code> row for each one.</li>
+<li>The import ignores <code>owner</code>, <code>created_by</code>, <code>created_at</code>, <code>updated_by</code>, <code>updated_at</code> and
+  <code>revision</code> in a line. JAVV sets them.</li>
+<li>Each line gets the checks of <code>POST /api/v1/dashboards</code>. A <code>dashboard_id</code> has 32 lower-case
+  hexadecimal characters. A line must be UTF-8. The import ignores a byte order mark at the start
+  of a line. An object in a line has at most 14 fields. A field that is in an object two times
+  counts two times.</li>
+<li>A line can have a role from a different JAVV. If this JAVV has no role with that name, the
+  line gets 422 (<code>unknown_role</code>), and the line does not make a dashboard.</li>
+<li>A line ends at a line feed (<code>\n</code>). The import ignores a <code>\r</code> before it. It skips empty lines
+  and the summary line of an export.</li>
+<li>The result of a line is <code>201</code> (made), <code>409</code> (the ID exists) or <code>422</code> (the line is not
+  valid). A <code>422</code> gives the place and the reason of each error, not the value of the file.</li>
+<li>With <code>copy=true</code>, each line gets a new ID, so no line gets <code>409</code>.</li>
+<li>A file larger than <code>JAVV_DASHBOARD_IMPORT_MAX_BYTES</code> gets 413. A file with more than 1,000
+  lines that are not empty also gets 413, also when some of those lines are not valid. The
+  summary line of an export is not in this count. After a 413, the import makes no dashboard.</li>
+<li>A line that makes a dashboard is 3 requests to OpenSearch. 100 such lines take approximately
+  5 seconds.</li>
+<li>If OpenSearch refuses a write, the import stops and the answer is the error (for example 429
+  or 503), without the results. The lines before that line have their dashboards. To complete an
+  import without <code>copy</code>, send the same file again: the dashboards that exist get <code>409</code>. To
+  complete an import with <code>copy=true</code>, count the dashboards that the import made: you are the
+  owner, and their <code>created_at</code> is after the start of the import. The import writes the lines in
+  the order of the file. Thus, delete that number of valid lines from the start of the file, and
+  send the other lines with <code>copy=true</code>.</li>
+</ul>
+<p>The answer has <code>results</code> and the counts <code>created</code>, <code>conflicts</code> and <code>invalid</code>. Each result has
+<code>line</code> and <code>status</code>. A <code>201</code> or <code>409</code> result also has <code>dashboard_id</code>, and a <code>422</code> result has
+<code>errors</code>.</p>
+<h3 id="exports-and-reports">Exports and reports<a class="headerlink" href="#exports-and-reports" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/export.csv</code></td>
+<td><code>can_export</code></td>
+<td>The findings of the <a href="#filters">filters</a> as CSV. More than <code>JAVV_EXPORT_MAX_ROWS</code> (50000) rows get 413. Make the filter narrower, or use a report.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/export.vex</code></td>
+<td><code>can_export</code></td>
+<td>The findings as an OpenVEX or CycloneDX document, for one scanner. <code>scanner</code> is necessary. The row limit is the same.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/reports</code></td>
+<td><code>can_export</code> for <code>export</code>, <code>can_triage</code> for <code>bulk_triage</code></td>
+<td>Puts a job in the queue and answers 201. Its <code>params</code> take the filters of <code>GET /api/v1/findings</code> and refuse the same pairs with 422: a filter with its <code>exclude_</code> side, and <code>assignee</code> with <code>unassigned</code>. <code>kind: bulk_triage</code> needs <code>can_triage</code>, and <code>can_accept_audit_final</code> for a risk acceptance or for a change of state of a set that holds risk-accepted findings. A bulk triage keeps the list of findings at this time. If the user does not have <code>can_accept_audit_final</code>, the job checks the set again before it changes a finding. When a finding became risk-accepted after the request, the job fails and changes no finding. Only the <code>JAVV_BULK_MAX_TARGETS</code> limit applies. Its <code>patch</code> takes the fields of <code>POST /api/v1/findings/bulk-triage</code> (<code>state</code>, <code>vex_justification</code>, <code>assignee</code> and <code>notes</code>), with the same limits. A different field gets 422. JAVV does not change a field whose value is <code>null</code>.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/reports/{report_id}</code></td>
+<td>session, the owner</td>
+<td>The status of your job. A job of a different user gets 404. When the job is <code>done</code> and not expired, the answer has a <code>download_token</code> for 15 minutes.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/reports/{report_id}/download</code></td>
+<td><code>can_export</code>, the owner, and <code>token</code></td>
+<td>Downloads the result. After <code>expires_at</code>, the request gets 410. With no result yet, it gets 404. A wrong or expired token gets 403.</td>
+</tr>
+</tbody>
+</table>
+<p>In each CSV file, JAVV puts an apostrophe before a cell that starts with <code>=</code>, <code>+</code>, <code>-</code>, <code>@</code>, a tab
+or a carriage return. Thus a spreadsheet does not run the cell as a formula.</p>
+<p>Each user can have <code>JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL</code> (default 10) open cursors and exports
+at the same time. One more gets 429 with <code>Retry-After</code>. A cursor is open from its first page until
+its last page, until you close it with <code>POST /api/v1/cursors/close</code>, or until
+<code>JAVV_SEARCH_PIT_KEEP_ALIVE</code> plus 30 seconds after the last page that you read. JAVV keeps the result of a report in
+OpenSearch for <code>JAVV_EXPORT_TTL_HOURS</code> (default 24). The <code>report_drain</code> job runs the queue, on
+<code>JAVV_JOB_REPORT_DRAIN_CRON</code> (default every 5 minutes). A result larger than
+<code>JAVV_EXPORT_MAX_BYTES</code> makes the job fail. Before a bulk triage job writes, it checks its patch
+again. A patch that is not valid makes the job fail, and the <code>error</code> of the job names the field,
+not its value. At the end of a job, a <code>report_ready</code> notification
+goes to the user.</p>
+<h3 id="notifications">Notifications<a class="headerlink" href="#notifications" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/notifications</code></td>
+<td>session</td>
+<td>Your 50 newest notifications, and <code>unread</code>, the count of the unread ones. Each item has <code>cluster_name</code>: the name of its cluster now, the <code>cluster_id</code> if the cluster has no name, or <code>null</code> if the item has no cluster.</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/notifications/{notification_id}/read</code></td>
+<td>session</td>
+<td>Marks one of your notifications as read. A notification of a different user gets 404.</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/notifications/{notification_id}</code></td>
+<td>session</td>
+<td>Deletes one of your notifications (204). A notification of a different user gets 404.</td>
+</tr>
+</tbody>
+</table>
+<p>The types are <code>report_ready</code>, <code>sla_breach</code>, <code>assignment</code> and <code>cluster_retiring</code>:</p>
+<ul>
+<li>The retirement sweep sends <code>cluster_retiring</code> to each user with <code>can_manage_settings</code> when a
+  cluster starts its warning period. It sends it one time for each silence. <code>ref</code> is the
+  <code>retires_at</code> of the cluster.</li>
+<li>The sweep deletes these notifications when the cluster scans again, or when a return from
+  retirement starts a new silence. A change of the settings keeps them.</li>
+</ul>
+<h2 id="ingest-a-scan">Ingest a scan<a class="headerlink" href="#ingest-a-scan" title="Permanent link">&para;</a></h2>
+<p><code>POST /api/v1/ingest/scan</code> accepts the results of one scan: an envelope with <code>schema_version</code> 3 or
+4, as JSON. The body can have <code>Content-Encoding: gzip</code>. The findings of a version 3 envelope have
+<code>ptype: null</code>. <a href="../INGEST-CONTRACT/">Push from your own script</a> gives the schema, the order of the calls
+and an example.</p>
+<p>The backend does these checks in this order:</p>
+<ol>
+<li>The <code>Authorization</code> header starts with <code>Bearer</code>.</li>
+<li>The token is not over its rate limit. The limit applies to each token value, before the backend
+   looks for the token.</li>
+<li>The token exists, is not disabled, and is not expired.</li>
+<li>The compressed body is not larger than its limit. The backend counts the bytes as they arrive,
+   and does not trust <code>Content-Length</code>.</li>
+<li>The body after gzip is not larger than its limit.</li>
+<li>The body is JSON.</li>
+<li>The envelope is valid. A field that the schema does not have makes it not valid.</li>
+<li>The <code>cluster_id</code> and <code>scanner</code> of the envelope are the ones of the token.</li>
+<li>The <code>scan_order</code> is not larger than the largest one that <code>POST /api/v1/scan-runs</code> gave to this
+   cluster and scanner.</li>
+<li>The <code>last_seen_at</code> is not more than <code>JAVV_INGEST_FUTURE_TOLERANCE_MINUTES</code> ahead of the
+    backend's clock, and not older than the staleness period of the cluster.</li>
+</ol>
+<p>Then the backend writes the findings. Each finding has a fixed id. Thus when a scanner sends the
+same envelope again, JAVV keeps one copy.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>202</td>
+<td>The backend accepted the envelope: <code>{accepted, findings, commit}</code></td>
+</tr>
+<tr>
+<td>400</td>
+<td>The body is not valid gzip, or not valid JSON.</td>
+</tr>
+<tr>
+<td>401</td>
+<td>The token is missing, not valid, disabled or expired. Each of these gets the same answer.</td>
+</tr>
+<tr>
+<td>403</td>
+<td>The <code>cluster_id</code> or the <code>scanner</code> of the envelope is not the one of the token.</td>
+</tr>
+<tr>
+<td>413</td>
+<td>The compressed body or the body after gzip is larger than its limit.</td>
+</tr>
+<tr>
+<td>422</td>
+<td>The envelope is not valid. Examples: a field that the schema does not have, a <code>cluster_id</code> that is not valid, or counts that do not agree. A time with no time zone and a <code>schema_version</code> that is not 3 or 4 also get 422. A <code>scan_order</code> that <code>POST /api/v1/scan-runs</code> did not give gets 422 with <code>reason</code> <code>unallocated_order</code>. A <code>last_seen_at</code> too far ahead or too old gets <code>clock_skew</code>. A value that OpenSearch refuses to store also gets 422. The scanner does not try again.</td>
+</tr>
+<tr>
+<td>429</td>
+<td>The token is over its rate limit.</td>
+</tr>
+<tr>
+<td>503</td>
+<td>OpenSearch could not keep the data, or OpenSearch is not reachable. The scanner tries again.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../CONFIGURATION/#scanner-pushes">Configuring JAVV</a> gives the limits and their defaults.</p>
+<h3 id="logs-of-a-refused-push">Logs of a refused push<a class="headerlink" href="#logs-of-a-refused-push" title="Permanent link">&para;</a></h3>
+<p>Each refused push increments <code>javv_ingest_rejected_total{reason}</code>. A push that the backend refused
+after the token check (400, 403, 413, 422 or 503) also writes one <code>ingest rejected</code> warning. The
+warning has these fields:</p>
+<ul>
+<li>always: <code>reason</code>, <code>status</code>, the <code>cluster_id</code> and <code>scanner</code> of the token, and <code>failure_id</code></li>
+<li>on a 413: <code>limit_bytes</code></li>
+<li>on a 422 for an envelope that is not valid: <code>errors</code>, the count of errors</li>
+<li>on a 422 for <code>unallocated_order</code>: <code>scan_order</code>, and <code>max_allocated</code>, the largest order given</li>
+<li>on a 422 for <code>clock_skew</code>: <code>last_seen_at</code>, and <code>freshness_days</code> when the time is too old</li>
+<li>on a 503 because OpenSearch is not reachable: <code>error</code>, the kind of the connection error</li>
+<li>on a 403: <code>payload_cluster_id</code> and <code>payload_scanner</code>.</li>
+</ul>
+<p>The backend never logs the token. A 429 writes one warning for each token in each minute, at
+most. A 401 writes no warning, so that a sender with no token cannot fill the log.</p>
+<h3 id="records-of-a-refused-push">Records of a refused push<a class="headerlink" href="#records-of-a-refused-push" title="Permanent link">&para;</a></h3>
+<p>The backend also keeps each push that it refused after the token check. It writes one document to
+<code>javv-ingest-failures-&lt;cluster_id&gt;</code>, with the cluster and scanner of the token. The <strong>Failed
+ingests</strong> table on the <strong>Scanner status</strong> page and <code>GET /api/v1/scanners/ingest-failures</code> show
+these documents. A 401 and a 429 make no
+record.</p>
+<p>The answer to the scanner does not depend on the record. If the backend cannot write the record,
+it logs <code>ingest failure not recorded</code> with the <code>failure_id</code>. It also increments
+<code>javv_ingest_failures_unrecorded_total{reason}</code>.</p>
+<h2 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h2>
+<p><code>GET /metrics</code> gives these metrics, in the Prometheus format (<a href="#scrape-the-metrics">Scrape the metrics</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Type</th>
+<th>Labels</th>
+<th>What it counts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>javv_ingest_accepted_total</code></td>
+<td>counter</td>
+<td><code>scanner</code></td>
+<td>Envelopes that the backend accepted and wrote</td>
+</tr>
+<tr>
+<td><code>javv_ingest_rejected_total</code></td>
+<td>counter</td>
+<td><code>reason</code></td>
+<td>Envelopes that the backend refused. <code>reason</code> is <code>bad_token</code>, <code>rate_limited</code>, <code>too_large</code>, <code>bad_gzip</code>, <code>bad_json</code>, <code>invalid_envelope</code>, <code>unallocated_order</code>, <code>clock_skew</code>, <code>scope_mismatch</code> or <code>storage_error</code>.</td>
+</tr>
+<tr>
+<td><code>javv_ingest_failures_unrecorded_total</code></td>
+<td>counter</td>
+<td><code>reason</code></td>
+<td>Refused pushes with no record (<a href="#records-of-a-refused-push">Records of a refused push</a>). A value larger than 0 means that the <strong>Failed ingests</strong> table does not show all the refused pushes.</td>
+</tr>
+<tr>
+<td><code>javv_ingest_findings_written_total</code></td>
+<td>counter</td>
+<td><code>scanner</code></td>
+<td>Findings that the backend wrote</td>
+</tr>
+<tr>
+<td><code>javv_http_request_duration_seconds</code></td>
+<td>histogram</td>
+<td><code>method</code>, <code>route</code>, <code>status</code></td>
+<td>The time of each request. <code>route</code> is the route pattern, not the full path. A path with no route counts as <code>unmatched</code>. <code>/metrics</code> and the probes are not counted.</td>
+</tr>
+<tr>
+<td><code>javv_opensearch_request_errors_total</code></td>
+<td>counter</td>
+<td><code>kind</code></td>
+<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes. <code>429</code> also counts each request that got 429 "The search backend is busy". The backend logs <code>store busy</code> for these at most once in 10 seconds, with <code>held_back</code>.</td>
+</tr>
+<tr>
+<td><code>javv_opensearch_backoff_retries_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy.</td>
+</tr>
+<tr>
+<td><code>javv_sla_clock_missing_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Pages of findings with a row that has no <code>sla_clock_at</code>. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the <code>rebuild_state</code> job.</td>
+</tr>
+<tr>
+<td><code>javv_cas_conflicts_total</code></td>
+<td>counter</td>
+<td><code>site</code></td>
+<td>Writes that lost a race to a different writer: <code>watermarks</code>, <code>scan_orders</code>, <code>inventory_orders</code>, <code>reconcile</code>, <code>reproject</code>, <code>merge</code>, <code>report_claim</code> and <code>retirement</code>. A high rate means many writers on the same data.</td>
+</tr>
+<tr>
+<td><code>javv_limit_rejections_total</code></td>
+<td>counter</td>
+<td><code>limit</code></td>
+<td>Requests that a limit refused: <code>pit_cap</code>, <code>export_rows</code>, <code>bulk_targets</code>, <code>bulk_inline</code>, <code>client_events</code>, <code>inspect_bytes</code> and <code>dashboard_import</code></td>
+</tr>
+<tr>
+<td><code>javv_pits_open</code></td>
+<td>gauge</td>
+<td>none</td>
+<td>The cursors and exports that are open now. A cursor that a client stopped using counts until <code>JAVV_SEARCH_PIT_KEEP_ALIVE</code> plus 30 seconds after the last page that the client read, and then stops counting.</td>
+</tr>
+<tr>
+<td><code>javv_export_rows_total</code> / <code>javv_export_bytes_total</code></td>
+<td>counter</td>
+<td><code>format</code></td>
+<td>The rows and bytes that the exports sent. If a client stops the download, the count shows what it received.</td>
+</tr>
+<tr>
+<td><code>javv_auth_failures_total</code></td>
+<td>counter</td>
+<td><code>reason</code></td>
+<td><code>bad_credentials</code>, <code>locked_out</code>, <code>expired_session</code>, <code>missing_capability</code>, <code>must_change</code> (a session with a temporary password) or <code>session_not_minted</code> (a password change with no new session). The labels never show a username.</td>
+</tr>
+<tr>
+<td><code>javv_config_warnings_total</code></td>
+<td>counter</td>
+<td><code>setting</code></td>
+<td>Starts with a weak connection to OpenSearch: <code>JAVV_OPENSEARCH_VERIFY_CERTS</code> (the certificate is not checked on <code>https</code>) or <code>JAVV_OPENSEARCH_URL</code> (a password over plain <code>http</code>). Each one also logs a warning at the start.</td>
+</tr>
+<tr>
+<td><code>javv_stored_setting_unknown_fields_total</code></td>
+<td>counter</td>
+<td><code>setting</code></td>
+<td>Reads of a runtime setting that had fields this release does not know. The backend ignores these fields. After a rollback, a value larger than 0 means that a newer release saved that setting. <code>setting</code> is <code>sla</code>, <code>scan_scope</code>, <code>snapshot_repo</code>, <code>report_ttl</code>, <code>lifecycle</code>, <code>findings_cleanup</code>, <code>staleness</code>, <code>retirement</code> or <code>cluster-retirement</code>.</td>
+</tr>
+<tr>
+<td><code>javv_job_runs_total</code></td>
+<td>counter</td>
+<td><code>kind</code>, <code>outcome</code></td>
+<td>Background jobs that the scheduler started. <code>outcome</code> is <code>done</code>, <code>failed</code> or <code>skipped</code>. <code>skipped</code> means that a different run held the job. A steady <code>failed</code> rate is a job that fails each time. No <code>done</code> over the schedule of a job is a job that does not run.</td>
+</tr>
+<tr>
+<td><code>javv_job_last_success_timestamp_seconds</code></td>
+<td>gauge</td>
+<td><code>kind</code></td>
+<td>The Unix time of the last successful scheduled run in this process. It is 0 after a restart, until a run succeeds. Alert on <code>time() - value</code>, against the schedule of the job.</td>
+</tr>
+<tr>
+<td><code>javv_scheduler_tick_errors_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Scheduler ticks that failed before a job started, usually because OpenSearch was not available. A steady rate means that no job runs.</td>
+</tr>
+<tr>
+<td><code>javv_cluster_retirement_held_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Retirement sweeps that retired nothing, because no cluster sent an accepted scan in its scanner-down time. This points at JAVV, an outage or a refused scanner version, not at the clusters. Each one also logs a warning.</td>
+</tr>
+<tr>
+<td><code>javv_store_unavailable_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Requests that got 503 because OpenSearch was not reachable or still starting. The counter counts each one. The backend logs <code>store unavailable</code> at most once in 10 seconds, with <code>held_back</code>: the count since the line before. Any sender can repeat a request while OpenSearch is away.</td>
+</tr>
+<tr>
+<td><code>javv_store_read_only_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Writes that got 503 <code>store-read-only</code> because the disk of OpenSearch is past its flood-stage watermark. The counter counts each one. The backend logs <code>store read-only</code> at most once in 10 seconds, with <code>held_back</code>.</td>
+</tr>
+<tr>
+<td><code>javv_cluster_delete_incomplete_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Cluster deletes that stopped and answered 503. Send the delete again to finish it. Each one also logs a warning.</td>
+</tr>
+<tr>
+<td><code>javv_cluster_delete_leftovers_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Deleted clusters with rows that a push or a job wrote after the delete. The retirement sweep deleted those rows, after it wrote an audit row with their counts (action <code>cluster_delete_recheck</code>). Each one also logs a warning.</td>
+</tr>
+<tr>
+<td><code>javv_cluster_delete_recheck_failures_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Deleted clusters that the retirement sweep could not check, or sweeps that could not check any. The sweep goes on to the next deleted cluster, and the next run checks them again. Each one also logs a warning.</td>
+</tr>
+<tr>
+<td><code>javv_cluster_retirement_notify_failures_total</code></td>
+<td>counter</td>
+<td>none</td>
+<td>Retirement sweeps that could not write or delete their notifications. The retirements stay, and the next run tries again. Each one also logs a warning.</td>
+</tr>
+</tbody>
+</table>
+<p>The backend also gives the default process and garbage collection metrics of <code>prometheus_client</code>.
+A scrape does not use OpenSearch. Thus the metrics stay available during an OpenSearch outage.
+The backend runs one process, and the metrics are for that process.</p>
+<h2 id="client-events">Client events<a class="headerlink" href="#client-events" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Access</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/client-events</code></td>
+<td>session</td>
+<td>Writes the warnings and errors of the browser to the backend log, and answers 204. It keeps nothing in OpenSearch and writes no audit row.</td>
+</tr>
+</tbody>
+</table>
+<p>The body is <code>{events: [{level, event, fields}]}</code>, with 1 to 20 events:</p>
+<ul>
+<li><code>level</code> is <code>warn</code> or <code>error</code>. Other values get 422.</li>
+<li><code>event</code> matches <code>^[a-z0-9][a-z0-9 ._-]{0,63}$</code>.</li>
+<li><code>fields</code> has at most 25 keys in each object, at most 3 levels, keys of at most 64 characters,
+  values of at most 512 characters, and lists of at most 20 items.</li>
+</ul>
+<p>A body that does not agree with these rules gets 422.</p>
+<p>The backend writes each event as <code>client.&lt;event&gt;</code>, with <code>client_event=true</code> and the <code>username</code>.
+Thus an event from a browser cannot look like an event of the backend. The <code>fields</code> of the event
+stay under one <code>fields</code> key. Thus a browser cannot set the <code>username</code> of the log line. The log
+redaction also applies inside <code>fields</code>.</p>
+<p>Each user can send <code>JAVV_CLIENT_EVENTS_RATE_LIMIT_PER_MINUTE</code> requests in each minute. One more
+gets 429 with <code>Retry-After</code>. It also increments <code>javv_limit_rejections_total{limit="client_events"}</code>
+and logs a warning. The backend checks the body before the rate limit. Thus a refused body writes
+nothing to the log.</p>
+<p>A session with a temporary password gets 403. A request with no session gets 401.</p>
+<h2 id="logs">Logs<a class="headerlink" href="#logs" title="Permanent link">&para;</a></h2>
+<p>The backend writes JSON log lines to its standard output.</p>
+<ul>
+<li><strong>Request id:</strong> each line of a request has its <code>request_id</code>. <a href="#errors">Errors</a> tells how to set
+  it. Each line of a push also has the <code>cluster_id</code> and <code>scanner</code>.</li>
+<li><strong>Unexpected errors:</strong> an error with no handler logs one <code>unhandled error</code> line at the <code>error</code>
+  level, with the stack, <code>method</code>, <code>path</code> and <code>request_id</code>. The answer is a 500 with the same
+  <code>request_id</code>.</li>
+<li><strong>Redaction:</strong> the backend replaces the value of each key that contains <code>token</code>, <code>secret</code>,
+  <code>password</code>, <code>authorization</code>, <code>pepper</code>, <code>session</code> or <code>cookie</code>. It also replaces each <code>Bearer ...</code>
+  text. No log line has a token.</li>
+<li><strong>OpenSearch bodies:</strong> the backend never logs the body of a request to OpenSearch, or of its
+  answer, at any log level.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","content.code.copy"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
+      
+    
+  </body>
+</html>
