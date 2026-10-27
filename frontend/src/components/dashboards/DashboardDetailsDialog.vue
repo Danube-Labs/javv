@@ -83,7 +83,7 @@ function apply() {
         <SettingsInput id="dash-description" v-model="form.description" prose :maxlength="DESCRIPTION_MAX" />
       </UiField>
       <UiField label="Who can see it">
-        <UiSegControl v-model="form.sharing" :options="SHARING_OPTS" />
+        <UiSegControl v-model="form.sharing" :options="SHARING_OPTS" label="Who can see it" />
       </UiField>
       <UiField v-if="form.sharing === 'roles'" label="Roles">
         <UiSkeleton v-if="!rolesLoaded" :height="36" label="Loading the roles" />
@@ -102,7 +102,7 @@ function apply() {
         <p class="dd-help">An admin can see each dashboard.</p>
       </UiField>
       <UiField label="Opens on" hint="the scanner switch when the page opens">
-        <UiSegControl v-model="form.scanner" :options="SCANNER_SWITCH_OPTS" />
+        <UiSegControl v-model="form.scanner" :options="SCANNER_SWITCH_OPTS" label="Opens on" />
       </UiField>
       <p v-if="problem" id="dd-problem" class="dd-help">{{ problem }}</p>
       <p v-if="error" class="modal-error" role="alert">{{ error }}</p>

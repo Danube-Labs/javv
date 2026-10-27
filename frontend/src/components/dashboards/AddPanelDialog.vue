@@ -100,13 +100,13 @@ const previewProps = computed(() =>
         <p class="cat-desc">{{ picked.line }}</p>
         <div class="cat-opts">
           <UiField v-if="picked.usesScanner" label="Scanner" first>
-            <UiSegControl v-model="scanner" :options="PANEL_SCANNER_OPTS" />
+            <UiSegControl v-model="scanner" :options="PANEL_SCANNER_OPTS" label="Scanner" />
           </UiField>
           <UiField label="Width" first>
-            <UiSegControl v-model="w" :options="WIDTH_OPTS" />
+            <UiSegControl v-model="w" :options="WIDTH_OPTS" label="Width" />
           </UiField>
           <UiField v-if="heightsOf(picked).length > 1" label="Height" first>
-            <UiSegControl v-model="h" :options="HEIGHT_OPTS" />
+            <UiSegControl v-model="h" :options="HEIGHT_OPTS" label="Height" />
           </UiField>
         </div>
         <p v-if="picked.usesScanner" class="cat-help">{{ scannerHelp(scanner, dashboardScanner) }}</p>
