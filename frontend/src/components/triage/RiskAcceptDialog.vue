@@ -143,7 +143,7 @@ async function submit() {
             <input id="ra-expiry" v-model="expiry" class="fld" type="date" :min="minExpiry" :aria-invalid="!expiryOk" />
           </UiField>
           <UiField label="Apply to">
-            <UiSegControl v-model="applyTo" :options="APPLY_OPTS" />
+            <UiSegControl v-model="applyTo" :options="APPLY_OPTS" label="Apply to" />
           </UiField>
         </div>
 

@@ -81,8 +81,8 @@ function onDragEnd() {
     <div class="dd-menu cols-menu">
       <div class="dd-head">Density</div>
       <UiSegControl
-
         class="density-seg"
+        label="Density"
         :model-value="dense ? 'compact' : 'comfortable'"
         :options="DENSITY_OPTS"
         @update:model-value="(v) => emit('update:dense', v === 'compact')"

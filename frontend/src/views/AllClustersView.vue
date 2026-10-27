@@ -77,7 +77,7 @@ const needAttention = computed(
         </p>
       </div>
       <div v-if="!fleet.limited" class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" />
       </div>
     </div>
 

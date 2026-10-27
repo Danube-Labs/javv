@@ -151,7 +151,7 @@ const laneOptions = computed(() =>
 
       <template v-else>
         <div class="lane-pick">
-          <UiSegControl v-model="picked" :options="laneOptions" />
+          <UiSegControl v-model="picked" :options="laneOptions" label="Scanner" />
         </div>
         <div class="lanes" :style="{ '--lanes': scanners.length }">
           <section

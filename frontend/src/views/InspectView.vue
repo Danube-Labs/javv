@@ -166,7 +166,7 @@ const budgetPct = computed(() =>
       <section class="card console">
         <h2 class="panel-band">Query</h2>
         <div class="console-head">
-          <UiSegControl v-model="method" :options="METHODS" aria-label="HTTP method" />
+          <UiSegControl v-model="method" :options="METHODS" label="HTTP method" />
           <input
             v-model="path"
             class="pathbox"

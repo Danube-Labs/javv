@@ -286,7 +286,7 @@ async function save() {
         </template>
       </div>
       <div v-if="dash" class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" />
         <!-- the save bar holds the only ways out of unsaved changes: Discard and Save changes -->
         <template v-if="editing">
           <UiButton

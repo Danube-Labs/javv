@@ -227,14 +227,14 @@ const downloadHref = computed(() =>
             Rewound lens: the export is queued off-peak and reconstructs the rows
             <strong>as they stood at T</strong> (Run now streams current state only).
           </p>
-            <UiSegControl v-if="!historical" v-model="tab" class="tabs" :options="TAB_OPTS" />
+            <UiSegControl v-if="!historical" v-model="tab" class="tabs" :options="TAB_OPTS" label="When to run" />
 
             <UiField label="Format">
-              <UiSegControl v-model="format" :options="FORMAT_OPTS" />
+              <UiSegControl v-model="format" :options="FORMAT_OPTS" label="Format" />
             </UiField>
             <div v-if="format === 'vex'" class="vex-scanner">
               <UiField label="Scanner (one per VEX file)">
-                <UiSegControl v-model="vexScanner" :options="SCANNER_OPTS" />
+                <UiSegControl v-model="vexScanner" :options="SCANNER_OPTS" label="Scanner" />
               </UiField>
             </div>
 

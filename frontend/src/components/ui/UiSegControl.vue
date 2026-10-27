@@ -9,6 +9,8 @@ withDefaults(
   defineProps<{
     options: readonly { value: T; label: string; accent?: string }[]
     modelValue: T
+    // the group's name for a screen reader: a label above the control does not name a div (issue 1011)
+    label: string
   }>(),
   {},
 )
@@ -16,7 +18,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
 </script>
 
 <template>
-  <div class="ui-seg" role="group">
+  <div class="ui-seg" role="group" :aria-label="label">
     <button
       v-for="opt in options"
       :key="opt.value"
