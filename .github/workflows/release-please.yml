@@ -201,7 +201,7 @@ jobs:
         env:
           BACKEND: ${{ steps.push.outputs.backend }}
           FRONTEND: ${{ steps.push.outputs.frontend }}
-          IDENTITY: '^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/release-please\.yml@refs/heads/main$'
+          IDENTITY: '^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
           ISSUER: https://token.actions.githubusercontent.com
         run: |
           for ref in "$BACKEND" "$FRONTEND"; do
@@ -319,7 +319,7 @@ jobs:
       - name: Anyone can pull and verify them
         env:
           CHARTS: ${{ steps.push.outputs.charts }}
-          IDENTITY: '^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/release-please\.yml@refs/heads/main$'
+          IDENTITY: '^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
           ISSUER: https://token.actions.githubusercontent.com
         run: |
           helm registry logout ghcr.io

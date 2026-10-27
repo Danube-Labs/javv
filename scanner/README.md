@@ -97,7 +97,7 @@ a **signed SPDX SBOM attestation**. Both bind to the image digest, not a tag. To
 
 ```bash
 IMAGE=ghcr.io/danube-labs/javv-scanner-trivy:0.76.1
-IDENTITY='^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/scanner-images\.yml@refs/(heads/main|tags/scanner-v.+)$'
+IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/scanner-images\.yml@refs/(heads/main|tags/scanner-v.+)$'
 ISSUER=https://token.actions.githubusercontent.com
 
 cosign verify "$IMAGE" --certificate-identity-regexp "$IDENTITY" --certificate-oidc-issuer "$ISSUER"
