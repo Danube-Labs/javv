@@ -7,6 +7,7 @@ lists every backend setting with its default and a comment, like a Helm values f
   `development/scripts/check-docs-drift.sh`: `JAVV_LOG_LEVEL` is read by javv_common, and
   `JAVV_BACKEND_URL` by the frontend server);
 - every value is the code default, except the named set the compose file sets on purpose;
+- every name the frontend server reads is in its compose service and in the chart (issue 1023);
 - the backend and frontend run the images a release publishes, under the release-please manifest's
   version, on lines release-please rewrites (a release PR gets no CI run of its own);
 - OpenSearch runs with its security plugin on, and one password from `.env` reaches both the
@@ -405,6 +406,34 @@ def test_the_frontend_reaches_the_backend_by_its_service_name() -> None:
     assert _parsed("JAVV_BACKEND_URL", frontend["JAVV_BACKEND_URL"])["rest"] == (
         "http://backend:8000"
     )
+
+
+FRONTEND_SERVER = ROOT / "frontend" / "server"
+FRONTEND_TEMPLATE = ROOT / "deploy" / "helm" / "javv" / "templates" / "frontend.yaml"
+# the template sets it to the container's port, so frontend.config leaves it out
+SET_BY_THE_FRONTEND_TEMPLATE = {"JAVV_FRONTEND_PORT"}
+
+
+def _read_by_the_frontend_server() -> set[str]:
+    return {
+        name
+        for path in FRONTEND_SERVER.glob("*.mjs")
+        for name in re.findall(r"process\.env\.(JAVV_[A-Z0-9_]+)", path.read_text())
+    }
+
+
+def test_every_name_the_frontend_server_reads_is_in_compose_and_the_chart() -> None:
+    """The other tests start from the files; this one starts from the server, so a new name it
+    reads cannot ship without its compose and chart value."""
+    names = _read_by_the_frontend_server()
+    assert names, f"found no process.env.JAVV_ name in {FRONTEND_SERVER.relative_to(ROOT)}"
+    in_compose = set(_environment("frontend"))
+    assert not sorted(names - in_compose), f"missing from the frontend service of {COMPOSE.name}"
+    in_chart = set(_chart("frontend")) | SET_BY_THE_FRONTEND_TEMPLATE
+    assert not sorted(names - in_chart), f"missing from frontend.config in {CHART_VALUES.name}"
+    template = FRONTEND_TEMPLATE.read_text()
+    for name in SET_BY_THE_FRONTEND_TEMPLATE:
+        assert f"- name: {name}\n" in template, f"{FRONTEND_TEMPLATE.name} no longer sets {name}"
 
 
 @pytest.mark.parametrize("app", ["backend", "frontend"])
