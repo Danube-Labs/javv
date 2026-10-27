@@ -1,72 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/CHANGELOG/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/CHANGELOG/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/SECURITY/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/SECURITY/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/deploy/helm/javv-opensearch/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/deploy/helm/javv-opensearch/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/deploy/helm/javv-scanner/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/deploy/helm/javv-scanner/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/deploy/helm/javv/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/deploy/helm/javv/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/API/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/API/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/CONFIGURATION/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/CONFIGURATION/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/DEPLOYING/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/DEPLOYING/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/INGEST-CONTRACT/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/INGEST-CONTRACT/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/UPGRADING/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/UPGRADING/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/runbooks/indices-and-data/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/runbooks/indices-and-data/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/runbooks/multi-pod/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/runbooks/multi-pod/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/runbooks/opensearch-sizing/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/runbooks/opensearch-sizing/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/supported-versions/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/supported-versions/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/accept-a-risk/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/accept-a-risk/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/build-a-dashboard/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/build-a-dashboard/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/change-many-findings/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/change-many-findings/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/from-a-scan-to-a-finding/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/from-a-scan-to-a-finding/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/set-the-state-of-a-finding/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/set-the-state-of-a-finding/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/when-a-scanner-stops/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/when-a-scanner-stops/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv-poc/dev/docs/use/who-changed-what/</loc>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/who-changed-what/</loc>
       </url>
 </urlset>

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://danube-labs.github.io/javv-poc/dev/docs/DEPLOYING/">
+        <link rel="canonical" href="https://danube-labs.github.io/javv/dev/docs/DEPLOYING/">
       
       
       
@@ -176,7 +176,7 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/Danube-Labs/javv" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -222,7 +222,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/Danube-Labs/javv-poc" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/Danube-Labs/javv" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -2164,9 +2164,9 @@ the published images and how to use an OpenSearch that you operate.</p>
 <li>Docker Engine with the compose plugin 2.23.1 or later.</li>
 <li>A POSIX shell (Linux or macOS).</li>
 <li>These three files, in one folder:<ul>
-<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.9.1/deploy/compose/compose.yaml"><code>compose.yaml</code></a> <!-- x-release-please-version --></li>
-<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.9.1/deploy/compose/.env.example"><code>.env.example</code></a> <!-- x-release-please-version --></li>
-<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv-poc/v0.9.1/deploy/compose/setup.sh"><code>setup.sh</code></a> <!-- x-release-please-version --></li>
+<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/compose.yaml"><code>compose.yaml</code></a> <!-- x-release-please-version --></li>
+<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/.env.example"><code>.env.example</code></a> <!-- x-release-please-version --></li>
+<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/setup.sh"><code>setup.sh</code></a> <!-- x-release-please-version --></li>
 </ul>
 </li>
 </ul>
@@ -2174,7 +2174,7 @@ the published images and how to use an OpenSearch that you operate.</p>
 <!-- x-release-please-start-version -->
 <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.1
 <span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>compose.yaml<span class="w"> </span>.env.example<span class="w"> </span>setup.sh<span class="p">;</span><span class="w"> </span><span class="k">do</span>
-<span class="w">  </span>curl<span class="w"> </span>-fsSLO<span class="w"> </span><span class="s2">"https://raw.githubusercontent.com/Danube-Labs/javv-poc/v</span><span class="nv">$VERSION</span><span class="s2">/deploy/compose/</span><span class="nv">$f</span><span class="s2">"</span>
+<span class="w">  </span>curl<span class="w"> </span>-fsSLO<span class="w"> </span><span class="s2">"https://raw.githubusercontent.com/Danube-Labs/javv/v</span><span class="nv">$VERSION</span><span class="s2">/deploy/compose/</span><span class="nv">$f</span><span class="s2">"</span>
 <span class="k">done</span>
 chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
 </code></pre></div>
@@ -2787,11 +2787,10 @@ cosign<span class="w"> </span>verify-attestation<span class="w"> </span><span cl
 </ol>
 <p>The identity accepts only the release workflow when it runs on <code>main</code> of this repository. Thus an
 image that a different system made fails the verification. Before the release ends, it runs these
-commands without a sign-in. The identity accepts two names of this repository: <code>javv-poc</code> and
-<code>javv</code>. The repository changes its name to <code>javv</code>, and the releases after that change carry the new
-name.</p>
+commands without a sign-in. The identity accepts the two names of this repository. Until
+2026-10-27, its name was <code>javv-poc</code>. The releases after that date carry the name <code>javv</code>.</p>
 <p>A different workflow signs the scanner images in the same way.
-<a href="https://github.com/Danube-Labs/javv-poc/blob/main/scanner/README.md#verify-a-published-image"><code>scanner/README.md</code></a>
+<a href="https://github.com/Danube-Labs/javv/blob/main/scanner/README.md#verify-a-published-image"><code>scanner/README.md</code></a>
 gives its identity. Before the release puts the digest of a scanner image into the published
 <code>javv-scanner</code> chart, it verifies the signature of that image.</p>
 <h2 id="an-opensearch-of-your-own">An OpenSearch of your own<a class="headerlink" href="#an-opensearch-of-your-own" title="Permanent link">&para;</a></h2>
