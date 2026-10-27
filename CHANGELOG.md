@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.1](https://github.com/Danube-Labs/javv-poc/compare/v0.9.0...v0.9.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* at a past time, a kev finding gets the kev sla deadline ([#1026](https://github.com/Danube-Labs/javv-poc/issues/1026)) ([e5c5b55](https://github.com/Danube-Labs/javv-poc/commit/e5c5b55d083fe1a4dfc68d4f02d072c241259cb8))
+* each segmented control has a name for screen readers ([#1029](https://github.com/Danube-Labs/javv-poc/issues/1029)) ([be6a7c6](https://github.com/Danube-Labs/javv-poc/commit/be6a7c6775249bc62607f74351ac6584082ff322))
+
 ## [0.9.0](https://github.com/Danube-Labs/javv-poc/compare/v0.8.9...v0.9.0) (2026-10-26)
 
 This release has no code changes after 0.8.9. It marks the changes of [0.8.9](https://github.com/Danube-Labs/javv-poc/releases/tag/v0.8.9) as a minor release: composable dashboards, the Roles card and the `can_export` permission. The notes of 0.8.9 list each change.
