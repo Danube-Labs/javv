@@ -119,7 +119,7 @@ function goFindings(query: Record<string, string>) {
         </p>
       </div>
       <div class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" />
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" />
         <UiButton variant="primary" @click="goFindings({ severity: 'critical' })">
           Triage critical <AppIcon name="chevron" :size="13" />
         </UiButton>
@@ -168,8 +168,8 @@ function goFindings(query: Record<string, string>) {
             <UiSegControl
               v-if="timeTravel.isNow"
               v-model="trendLens"
-
               :options="LENS_OPTS"
+              label="Group the chart"
             />
           </div>
           <div class="card-body">

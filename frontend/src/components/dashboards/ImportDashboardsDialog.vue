@@ -87,7 +87,7 @@ async function run() {
         </div>
       </UiField>
       <UiField label="IDs" hint="a copy gets a new ID; an ID that exists is not made again">
-        <UiSegControl v-model="mode" :options="MODE_OPTS" />
+        <UiSegControl v-model="mode" :options="MODE_OPTS" label="IDs" />
       </UiField>
       <p class="imp-note">You become the owner of each dashboard that the import makes.</p>
       <p v-if="failure" class="load-error" role="alert">{{ failure }}</p>

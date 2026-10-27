@@ -336,7 +336,7 @@ const fmt = (iso: string | null) =>
         <div class="raw-token mono-cell sm cmd">{{ CLUSTER_ID_COMMAND }}</div>
       </UiField>
       <UiField label="Scanner" hint="per-scanner is sacred: one token each">
-        <UiSegControl v-model="mintScanner" :options="SCANNER_OPTS" />
+        <UiSegControl v-model="mintScanner" :options="SCANNER_OPTS" label="Scanner" />
       </UiField>
       <UiField label="Expiry" hint="optional: must be in the future; ingest rejects the token past it">
         <UiDateTime v-model="mintExpiryParts" id-prefix="mint-expiry" :invalid="mintExpiryInvalid" />

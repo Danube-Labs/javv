@@ -181,6 +181,7 @@ function onKeydown(e: KeyboardEvent) {
           <div v-if="negatable(editField)" class="filter-mode">
             <UiSegControl
               :options="MODE_OPTIONS"
+              :label="editField.label"
               :model-value="modeOf(editField.key)"
               @update:model-value="(m) => emit('setMode', editField!.key, m)"
             />

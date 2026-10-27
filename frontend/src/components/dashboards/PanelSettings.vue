@@ -56,14 +56,14 @@ function apply() {
   >
     <div>
       <UiField v-if="entry?.usesScanner" label="Scanner" first>
-        <UiSegControl v-model="scanner" :options="PANEL_SCANNER_OPTS" />
+        <UiSegControl v-model="scanner" :options="PANEL_SCANNER_OPTS" label="Scanner" />
         <p class="ps-help">{{ scannerHelp(scanner, dashboardScanner) }}</p>
       </UiField>
       <UiField label="Width" :first="!entry?.usesScanner">
-        <UiSegControl v-model="w" :options="WIDTH_OPTS" />
+        <UiSegControl v-model="w" :options="WIDTH_OPTS" label="Width" />
       </UiField>
       <UiField v-if="heights.length > 1" label="Height">
-        <UiSegControl v-model="h" :options="HEIGHT_OPTS" />
+        <UiSegControl v-model="h" :options="HEIGHT_OPTS" label="Height" />
       </UiField>
       <div class="ps-actions">
         <UiButton variant="control" @click="emit('close')">Cancel</UiButton>

@@ -77,7 +77,7 @@ async function save() {
         :hint="`A cluster that sends no scans this long leaves the cluster list. Its data is kept, and a new scan brings it back. ${scannerDownNote}`"
       >
         <div class="retire-ctl">
-          <UiSegControl v-model="form.mode.value" :options="MODES" />
+          <UiSegControl v-model="form.mode.value" :options="MODES" label="Retire a silent cluster" />
           <SettingsInput
             v-if="form.mode.value === 'after'"
             id="retire-after"
