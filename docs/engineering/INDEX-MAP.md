@@ -71,6 +71,7 @@ cvss              float         as-of-then
 fixable           boolean
 fixed_version     keyword
 ptype             keyword       package type (M8d/B-1): "os" | ecosystem string; null on v3-era rows
+kev               boolean       as-of-then, grype only (issue 1000, mapping v20): the past-time SLA deadline; absent on older rows
 schema_version    short
 ```
 *(No `severity_rank` here - OE-5/D38; as-of-T severity sort uses a fixed order map

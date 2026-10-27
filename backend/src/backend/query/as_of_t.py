@@ -9,10 +9,11 @@ the winning active decision projects.
 
 Return shapes MATCH the current-state responses (FR-23: time-travel changes WHEN, never the
 wire contract). Two deliberate deviations, both spec-rooted:
-- fields history deliberately does not record (OE-5/D38: `kev`, `epss`, `disagree`,
-  `image_repo`, `tag`, `app`) come back `null`; a FILTER or SORT or GROUP on them at past T is a
-  422 (`ValueError` at the seam) — silently mis-filtering would be worse; whitelisted FACETS on
-  them return empty buckets.
+- fields the history does not record (`epss`, `disagree`, `image_repo`, `tag`, `app`) come back
+  `null`; a FILTER or SORT or GROUP on them at past T is a 422 (`ValueError` at the seam) —
+  silently mis-filtering would be worse; whitelisted FACETS on them return empty buckets. `kev`
+  is recorded only from mapping v20 on (issue 1000): it decides the SLA deadline, and otherwise
+  is treated like the fields above, because the older history has no value.
 - paging is stateless (an opaque `search_after`-style cursor, no PIT): history is immutable, so
   a walk is consistent by construction.
 
@@ -55,7 +56,8 @@ _FACET_FIELDS = (
     "overdue",  # issue 363: counts the reconstruction's own at-T verdict (rows carry the bool)
     "unassigned",  # issue 349 §1: an expression over the row's assignee, mirrored below
 )
-_EMPTY_FACETS = ("kev", "disagree")  # whitelisted, but history has no values → empty buckets
+# whitelisted, but no history values → empty buckets (kev: none before mapping v20, issue 1000)
+_EMPTY_FACETS = ("kev", "disagree")
 _GROUP_FIELDS = ("image_digest", "namespaces", "cve_id", "assignee", "ptype")  # no image_repo/app
 
 
@@ -158,8 +160,8 @@ async def _last_rows_per_key(
 
 
 def _finding_row(raw: dict[str, Any], human: dict[str, Any]) -> dict[str, Any]:
-    """One wire row in the findings-grid vocabulary. History-less fields are explicit nulls
-    (as-scanned: the envelope-era values were deliberately not snapshotted, OE-5/D38)."""
+    """One wire row in the findings-grid vocabulary. Fields the history does not record are
+    explicit nulls; `kev` too, since the history before mapping v20 has none (issue 1000)."""
     occ = raw["occurrence"]
     return {
         "finding_key": occ["finding_key"],
@@ -255,7 +257,10 @@ class AsOfTQuery:
                     row["state_decision_id"] = won.decision_id
             rows.append(row)
 
-        await self._decorate_overdue(client, rows, t, prefix=prefix)
+        # the deadline judges KEV as the scan recorded it (issue 1000); a history row written
+        # before mapping v20 has no value, so that finding gets the deadline of its severity
+        kev = {r["occurrence"]["finding_key"]: bool(r["occurrence"].get("kev")) for r in raws}
+        await self._decorate_overdue(client, rows, t, kev=kev, prefix=prefix)
         return rows
 
     async def _committed_asc(
@@ -291,13 +296,19 @@ class AsOfTQuery:
         return [h["_source"] for h in resp["hits"]["hits"]]
 
     async def _decorate_overdue(
-        self, client: AsyncOpenSearch, rows: list[dict[str, Any]], t: datetime, *, prefix: str
+        self,
+        client: AsyncOpenSearch,
+        rows: list[dict[str, Any]],
+        t: datetime,
+        *,
+        kev: dict[str, bool],
+        prefix: str,
     ) -> None:
         if not rows:
             return
-        # the D21 group clock across the WHOLE reconstruction (siblings included), judged at T;
-        # kev is unrecorded at T (null) → the kev fast-lane can't apply, treat as False
-        judged = [dict(r, kev=bool(r["kev"])) for r in rows]
+        # the D21 group clock across the WHOLE reconstruction (siblings included), judged at T
+        # with the recorded KEV value; the row itself keeps `kev: null` (issue 1000, D2)
+        judged = [dict(r, kev=kev[r["finding_key"]]) for r in rows]
         verdicts = compute_overdue(
             judged, policy=await read_sla_policy(client, prefix=prefix), now=t
         )
