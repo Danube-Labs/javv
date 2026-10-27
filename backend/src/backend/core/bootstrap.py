@@ -63,7 +63,9 @@ from opensearchpy import AsyncOpenSearch, RequestError
 #             token check; per-cluster series under the lifecycle's drop-whole-index retention)
 #          v19 + system-dashboards (issue 440 — saved dashboards: a layout of catalog panels,
 #             shared with the owner, everyone or roles; panels enabled:false like a view preset)
-MAPPING_VERSION = 19
+#          v20 + kev on javv-finding-occurrences (issue 1000 — the scan's own KEV value, so a
+#             past-time read gives a KEV finding the KEV deadline, as the live read does)
+MAPPING_VERSION = 20
 
 _KW = {"type": "keyword"}
 _DATE = {"type": "date"}
@@ -464,6 +466,8 @@ _OCCURRENCES_PROPERTIES: dict[str, Any] = {
     "fixable": _BOOL,
     "fixed_version": _KW,
     "ptype": _KW,  # package type (M8d/B-1): "os" | ecosystem string; null on v3-era rows
+    # as-of-then (issue 1000): the past-time SLA deadline; absent on rows written before v20
+    "kev": _BOOL,
     "schema_version": {"type": "short"},
 }
 

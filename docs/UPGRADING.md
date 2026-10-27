@@ -344,6 +344,7 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
+| 0.9.1 | 20 | 3 and 4 | Nothing. The backend adds a field to the store on the first start. |
 | 0.8.9 | 19 | 3 and 4 | The notes **A new permission for the export files** and **A new permission for dashboards** below |
 | 0.8.7 | 18 | 3 and 4 | The note **JAVV refuses a username with a capital letter** below |
 | 0.8.0 | 18 | 3 and 4 | The note **A bootstrap admin password longer than 256 characters stops the backend** below |

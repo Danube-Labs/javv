@@ -64,6 +64,15 @@ def test_row_values_are_as_of_then_and_verbatim() -> None:
     assert row["ingested_at"] == docs["scan_event"]["ingested_at"]  # server stamp, shared
 
 
+def test_row_records_the_kev_value_of_its_finding() -> None:
+    """Issue 1000: a read at a past time gives a KEV finding the KEV deadline only if the history
+    keeps the KEV value that the scan sent (grype sends it, trivy never does)."""
+    env = dict(GOLDEN)
+    env["findings"] = [dict(f, kev=(i == 0)) for i, f in enumerate(GOLDEN["findings"])]
+    rows = build_occurrence_rows(build_docs(IngestEnvelope.model_validate(env)))
+    assert [row["kev"] for _, row in rows] == [i == 0 for i in range(len(rows))]
+
+
 def test_occurrence_id_is_deterministic_and_distinct() -> None:
     docs = _golden_docs()
     ids = [rid for rid, _ in build_occurrence_rows(docs)]
