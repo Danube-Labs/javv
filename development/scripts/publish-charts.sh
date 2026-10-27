@@ -19,7 +19,7 @@ cd "$(dirname "$0")/../.."
 
 CHARTS=(javv-opensearch javv javv-scanner)
 SCANNERS=(trivy grype)
-SCANNER_IDENTITY='^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/scanner-images\.yml@refs/(heads/main|tags/scanner-v.+)$'
+SCANNER_IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/scanner-images\.yml@refs/(heads/main|tags/scanner-v.+)$'
 ISSUER=https://token.actions.githubusercontent.com
 
 package() {

@@ -140,7 +140,7 @@ def test_the_release_verifies_with_the_identity_the_docs_give() -> None:
     charts = _step("publish-charts", "Anyone can pull and verify them")["env"]
     assert (charts["IDENTITY"], charts["ISSUER"]) == (verify["IDENTITY"], verify["ISSUER"])
     assert verify["IDENTITY"] == (
-        r"^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/release-please\.yml"
+        r"^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml"
         r"@refs/heads/main$"
     )
     assert verify["ISSUER"] == "https://token.actions.githubusercontent.com"

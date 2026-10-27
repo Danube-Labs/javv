@@ -614,7 +614,7 @@ Each release signs the backend and frontend images that it publishes, with **cos
     ```bash
     VERSION=0.9.1
     IMAGE=ghcr.io/danube-labs/javv-backend:$VERSION   # or javv-frontend
-    IDENTITY='^https://github\.com/Danube-Labs/javv-poc/\.github/workflows/release-please\.yml@refs/heads/main$'
+    IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
     ISSUER=https://token.actions.githubusercontent.com
 
     cosign verify "$IMAGE" --certificate-identity-regexp "$IDENTITY" --certificate-oidc-issuer "$ISSUER"
@@ -631,7 +631,9 @@ Each release signs the backend and frontend images that it publishes, with **cos
 
 The identity accepts only the release workflow when it runs on `main` of this repository. Thus an
 image that a different system made fails the verification. Before the release ends, it runs these
-commands without a sign-in.
+commands without a sign-in. The identity accepts two names of this repository: `javv-poc` and
+`javv`. The repository changes its name to `javv`, and the releases after that change carry the new
+name.
 
 A different workflow signs the scanner images in the same way.
 [`scanner/README.md`](https://github.com/Danube-Labs/javv-poc/blob/main/scanner/README.md#verify-a-published-image)
