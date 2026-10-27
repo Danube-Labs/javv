@@ -3095,6 +3095,9 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 <ul>
 <li><code>kev</code>, <code>epss</code>, <code>disagree</code>, <code>image_repo</code>, <code>tag</code> and <code>app</code> are not in the history. They are
   <code>null</code> in the rows.</li>
+<li>The SLA deadline (<code>overdue</code> and <code>due_at</code>) uses the KEV value that each scan recorded, as a
+  read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
+  A finding from such a scan gets the deadline of its severity.</li>
 <li>A filter, sort or group on one of these fields gets 422. <code>image_repo</code> and <code>exclude_image_repo</code>
   get 422 too.</li>
 <li>A facet on one of these fields gives no values.</li>
