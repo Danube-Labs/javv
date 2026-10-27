@@ -381,6 +381,9 @@ The frontend image runs a small Node server.
   `/readyz` on to the backend. Thus the browser uses one address.
 - The server reads these settings when its container starts. A restart applies a change, with no
   new build.
+- [`compose.yaml`](../deploy/compose/compose.yaml) lists each one in the `frontend` service. The
+  `javv` chart sets each one under `frontend.config`, except `JAVV_FRONTEND_PORT`: the chart sets
+  it to the port of the container. `backend/tests/test_compose_settings.py` makes sure of this.
 
 The server sends these headers on each reply, so that JAVV needs no proxy to add them:
 
