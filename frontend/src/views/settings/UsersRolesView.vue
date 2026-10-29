@@ -262,7 +262,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
                 </td>
                 <td class="fit">
                   <select
-                    class="set-select"
+                    class="set-select set-select--row"
                     :value="user.role"
                     :disabled="busy || user.disabled"
                     :aria-label="`Role for ${user.username}`"
@@ -417,29 +417,6 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
 .row-error {
   color: var(--health-down-fg);
   font-size: var(--text-sm);
-}
-.set-select {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 6px 9px;
-  font-size: var(--text-body);
-  font-family: var(--font-ui);
-  color: var(--ink);
-  background: var(--card);
-  min-width: 140px;
-}
-.set-select:hover:not(:disabled) {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
-}
-.set-select:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
-.set-select:disabled {
-  color: var(--soft);
-  background: var(--panel);
-  cursor: not-allowed;
 }
 .load-error {
   margin: 14px 0 8px;

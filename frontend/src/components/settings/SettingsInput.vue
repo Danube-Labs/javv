@@ -60,49 +60,8 @@ const row = inject(SETTINGS_ROW_LABEL, null)
   display: flex;
   width: 100%;
 }
-.set-input-wrap--block .set-input {
+.set-input-wrap--block > input {
   flex: 1;
-}
-.set-input {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 11px;
-  font-size: var(--text-mono-cell);
-  font-family: var(--font-mono);
-  color: var(--ink);
-  background: var(--card);
-  outline: none;
-  width: 100%;
-  transition:
-    border-color var(--dur-quick) var(--ease-out),
-    background var(--dur-quick) var(--ease-out);
-}
-.set-input--num {
-  width: 88px;
-}
-.set-input--prose {
-  font-family: var(--font-ui);
-  font-size: var(--text-body);
-}
-.set-input:hover:not(:disabled) {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
-}
-.set-input:focus {
-  border-color: var(--coral);
-  background: var(--card);
-}
-.set-input:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
-.set-input--invalid {
-  border-color: var(--coral-d);
-}
-.set-input:disabled {
-  color: var(--soft);
-  background: var(--panel);
-  cursor: not-allowed;
 }
 .set-input-unit {
   font-family: var(--font-mono);

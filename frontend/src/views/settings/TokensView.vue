@@ -417,24 +417,6 @@ const fmt = (iso: string | null) =>
   word-break: break-all;
   user-select: all;
 }
-.set-select {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 11px;
-  font-size: var(--text-body);
-  font-family: var(--font-ui);
-  color: var(--ink);
-  background: var(--card);
-  width: 100%;
-}
-.set-select:hover {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
-}
-.set-select:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
 .fld-hint {
   margin: 8px 0 0;
   font-size: var(--text-sm);
