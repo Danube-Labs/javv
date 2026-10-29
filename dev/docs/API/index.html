@@ -3564,7 +3564,9 @@ permissions of the user who opens the dashboard.</p>
 <ul>
 <li>a field that is not in these lists, or a panel ID that it does not know</li>
 <li>a height that the panel does not have, or a <code>scanner</code> on a panel with no scanner data</li>
-<li>a panel outside the two columns, or two panels on the same cell</li>
+<li>a panel outside the two columns, or two panels that start on the same cell. A panel holds
+  only the cells of its top row: one cell for a width of 1, and both cells for a width of 2. The
+  height takes no part in this check, because the page makes each panel as tall as its content.</li>
 <li><code>roles</code> without <code>sharing: roles</code>, or <code>sharing: roles</code> without a role</li>
 </ul>
 <p>JAVV writes <code>owner</code>, <code>created_by</code>, <code>created_at</code>, <code>updated_by</code>, <code>updated_at</code> and <code>revision</code>. Each
