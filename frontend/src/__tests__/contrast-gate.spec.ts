@@ -112,6 +112,14 @@ describe('contrast gate — every text pair computed ≥4.5:1 (AA)', () => {
     for (const sc of ['cluster', 'scanner', 'org']) {
       expect.soft(ratio('kev-fg', `scope-${sc}`), `scope-${sc} badge`).toBeGreaterThanOrEqual(AA)
     }
+    // who can see a saved item (issue 1004): the badge text on its tint
+    for (const who of ['everyone', 'roles']) {
+      expect.soft(ratio(`share-${who}-fg`, `share-${who}-bg`), `share-${who} badge`).toBeGreaterThanOrEqual(AA)
+    }
+    expect.soft(ratio('soft', 'panel'), 'share owner badge').toBeGreaterThanOrEqual(AA)
+    // the primary button (issue 1004): white label on the slate fill and on its hover
+    expect.soft(ratio('kev-fg', 'slate2'), 'primary button').toBeGreaterThanOrEqual(AA)
+    expect.soft(ratio('kev-fg', 'slate'), 'primary button hover').toBeGreaterThanOrEqual(AA)
     // save-bar dirty surface (M9e): the unsaved-changes message on the warm tint
     expect.soft(ratio('coral-text', 'save-dirty-bg'), 'save-bar dirty msg').toBeGreaterThanOrEqual(AA)
     expect.soft(ratio('ink', 'save-dirty-bg'), 'save-bar dirty ink').toBeGreaterThanOrEqual(AA)
@@ -230,7 +238,7 @@ describe('contrast gate — every text pair computed ≥4.5:1 (AA)', () => {
   })
 
   it('documents the ruled exceptions instead of testing them', () => {
-    // DESIGN.md §9: white-on-coral action/selected chips (login button, tt-on) are a recorded
+    // DESIGN.md §9: white-on-coral selected chips (tt-on) are a recorded
     // brand-contract exception (≈2.7:1) — deliberately NOT asserted here.
     expect(ratio('kev-fg', 'coral')).toBeLessThan(AA) // proves the exception is real, not stale
   })

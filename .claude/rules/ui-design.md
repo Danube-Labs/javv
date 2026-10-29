@@ -41,8 +41,9 @@ operator ruling on a **built specimen** (DESIGN.md §8.5), not an argument in a 
    exceptions** — those are settled; don't relitigate them each pass.
 
 **Color — pick from the right bucket; the wrong bucket is a bug (DESIGN.md §2)**
-- **Brand** (`--coral --amber --teal --slate*`) = chrome, buttons, active nav, focus, links.
-  Coral and amber must **never** encode severity. Teal is info only.
+- **Brand** (`--coral --amber --teal --slate*`) = chrome, active nav, focus, links. The primary
+  button is **slate**, not coral (issue 1004, 2026-10-29). Coral and amber must **never** encode
+  severity. Teal is info only.
 - **Severity** (`--sev-<level>-{fg,bg,line,solid}`) = **data only**, six D46 canonicals
   (`critical high medium low negligible unknown`). `negligible` is muted, **never red**. From script
   use `SEV_COLOR` / `CHART_SEV` from `@/styles/tokens`, never a literal.

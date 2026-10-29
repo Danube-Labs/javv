@@ -8,6 +8,9 @@
  * The whole card opens the item (issue 1004): the title is a RowLink whose ::after covers the
  * card, so a click anywhere opens it, Tab reaches it once, and a ctrl click opens a new tab. The
  * badge, the remove button and the actions sit above that layer and keep their own clicks.
+ *
+ * `badgeTone` colors the badge by who can see the item (issue 1004): only the owner a quiet gray,
+ * everyone teal, a role list blue. With no tone the badge keeps its gray outline.
  */
 import type { RouteLocationRaw } from 'vue-router'
 
@@ -21,6 +24,7 @@ defineProps<{
   summary?: string
   owner: string
   removeLabel?: string
+  badgeTone?: 'private' | 'everyone' | 'roles'
 }>()
 defineEmits<{ open: []; remove: [] }>()
 </script>
@@ -31,7 +35,7 @@ defineEmits<{ open: []; remove: [] }>()
       <h2>
         <RowLink class="vc-link" :to="to" @open="$emit('open')">{{ title }}</RowLink>
       </h2>
-      <span v-if="$slots.badge" class="vc-badge"><slot name="badge" /></span>
+      <span v-if="$slots.badge" class="vc-badge" :data-tone="badgeTone"><slot name="badge" /></span>
       <button v-if="removeLabel" type="button" class="vc-x" :aria-label="removeLabel" @click="$emit('remove')">
         ×
       </button>
@@ -109,6 +113,22 @@ defineEmits<{ open: []; remove: [] }>()
   border-radius: var(--r-chip);
   font-size: var(--text-sm);
   color: var(--soft);
+}
+.vc-badge[data-tone='private'] {
+  background: var(--panel);
+}
+.vc-badge[data-tone='everyone'] {
+  background: var(--share-everyone-bg);
+  border-color: var(--share-everyone-line);
+  color: var(--share-everyone-fg);
+}
+.vc-badge[data-tone='everyone'] :slotted(svg) {
+  color: var(--share-everyone-icon);
+}
+.vc-badge[data-tone='roles'] {
+  background: var(--share-roles-bg);
+  border-color: var(--share-roles-line);
+  color: var(--share-roles-fg);
 }
 .vc-badge :slotted(.vc-badge-text) {
   min-width: 0;

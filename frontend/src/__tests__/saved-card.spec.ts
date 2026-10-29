@@ -115,6 +115,36 @@ describe('the look of the card (rulings 1 and 2)', () => {
   })
 })
 
+describe('the badge says who can see the item by its color (operator, 2026-10-29, option C)', () => {
+  const src = readFileSync(join(__dirname, '../components/saved/SavedCard.vue'), 'utf8')
+  it('the screen gives the tone; with none the badge keeps its gray outline', () => {
+    const slots = { badge: () => h('span', { class: 'vc-badge-text' }, 'Everyone') }
+    const tinted = mount(SavedCard, { props: { title: 't', owner: 'o', to: '/', badgeTone: 'everyone' }, slots, global: { plugins: [router] } })
+    expect(tinted.get('.vc-badge').attributes('data-tone')).toBe('everyone')
+    const plain = mount(SavedCard, { props: { title: 't', owner: 'o', to: '/' }, slots, global: { plugins: [router] } })
+    expect(plain.get('.vc-badge').attributes('data-tone')).toBeUndefined()
+  })
+  it('everyone is teal, a role list blue, only the owner a quiet gray', () => {
+    const rule = (sel: string) => src.slice(src.indexOf(`${sel} {`), src.indexOf('}', src.indexOf(`${sel} {`)))
+    expect(rule(".vc-badge[data-tone='everyone']")).toContain('background: var(--share-everyone-bg)')
+    expect(rule(".vc-badge[data-tone='everyone']")).toContain('color: var(--share-everyone-fg)')
+    expect(rule(".vc-badge[data-tone='roles']")).toContain('background: var(--share-roles-bg)')
+    expect(rule(".vc-badge[data-tone='roles']")).toContain('color: var(--share-roles-fg)')
+    expect(rule(".vc-badge[data-tone='private']")).toContain('background: var(--panel)')
+  })
+})
+
+describe('the primary button is slate, not coral (operator, 2026-10-29)', () => {
+  it('fills, hovers and presses in slate; coral stays for focus, links and the active page', () => {
+    const src = readFileSync(join(__dirname, '../components/ui/UiButton.vue'), 'utf8')
+    expect(src).toMatch(/\.ui-btn--primary \{\s*position: relative;\s*border-color: var\(--slate2\);\s*background: var\(--slate2\);/)
+    expect(src).toMatch(/\.ui-btn--primary:hover:not\(:disabled\) \{\s*background: var\(--slate\);/)
+    expect(src).not.toMatch(/var\(--coral/)
+    const login = readFileSync(join(__dirname, '../views/LoginView.vue'), 'utf8')
+    expect(login).not.toMatch(/background: var\(--coral/)
+  })
+})
+
 describe('UiButton bordered', () => {
   it('adds the darker border only when a caller asks for it', () => {
     const plain = mount(UiButton, { slots: { default: () => 'Export' } })

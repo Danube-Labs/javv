@@ -82,16 +82,17 @@ withDefaults(
   font-size: var(--text-control);
   font-weight: 600;
 }
-/* FLAT solid primary (operator 2026-07-17, Nuxt solid grammar): coral fill + inverted text,
+/* FLAT solid primary (operator 2026-07-17, Nuxt solid grammar): a solid fill + inverted text,
    NO gloss — the inset highlight + drop shadow were the "plasticky" read, not the hue.
-   (A soft-wash variant was tried and ruled too muted.)
+   (A soft-wash variant was tried and ruled too muted.) The fill is slate, not coral (operator
+   2026-10-29, issue 1004): coral shares the red-orange of critical, KEV and "down".
    Press (operator 2026-10-11, variant E on built specimens, issue 817): it sinks 1px and shrinks
-   to 97%, and a coral ring shows and fades on release, so a click lands with force. The ring is a
+   to 97%, and a ring shows and fades on release, so a click lands with force. The ring is a
    pseudo-element whose opacity animates: the motion layer moves transform and opacity only. */
 .ui-btn--primary {
   position: relative;
-  border-color: var(--coral);
-  background: var(--coral);
+  border-color: var(--slate2);
+  background: var(--slate2);
   color: var(--kev-fg);
   transition:
     background 120ms ease,
@@ -103,7 +104,7 @@ withDefaults(
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  box-shadow: 0 0 0 5px var(--coral-drop);
+  box-shadow: 0 0 0 5px var(--slate-drop);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-panel) var(--ease-out);
@@ -116,12 +117,12 @@ withDefaults(
   transition: none;
 }
 .ui-btn--primary:hover:not(:disabled) {
-  background: var(--coral-dd);
-  border-color: var(--coral-dd);
+  background: var(--slate);
+  border-color: var(--slate);
 }
 .ui-btn--primary:active:not(:disabled) {
-  background: var(--coral-dd);
-  border-color: var(--coral-dd);
+  background: var(--slate);
+  border-color: var(--slate);
 }
 .ui-btn--block {
   width: 100%;

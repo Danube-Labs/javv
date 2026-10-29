@@ -22,8 +22,8 @@ theme). High information density: subtle borders and panel tints, almost no deco
 
 | Bucket | Tokens | Rule |
 |---|---|---|
-| **Brand** | `--coral` `--coral-d` `--amber` `--teal` `--slate*` | Chrome, buttons, active nav, focus, links. Coral/amber must **never** encode severity. Teal = info only. |
-| **Severity** | `--sev-<severity>-{fg,bg,line,solid}` | **DATA ONLY.** Six D46 canonicals: `critical high medium low negligible unknown`. `negligible` is muted, never red (A-1). From script use `SEV_COLOR` / `CHART_SEV` (`@/styles/tokens`). **Chip language A (operator 2026-07-11):** `-bg`/`-line` are DERIVED from the level's `-solid` (10% / 30% flattened on white — never hand-picked pastels); weight ESCALATES: critical renders solid + inner highlight (`--chip-hi`), high the heavy `--sev-high-ring`, tails near-neutral. State pills = soft 9% tint + `--state-*-solid` dot, no ring (workflow reads quieter than severity). Alarms (KEV `--kev-grad`, SLA overdue) carry the ONE depth treatment: `inset 0 1px 0 var(--chip-hi)` + a soft drop (`--chip-crit-drop`/`--kev-drop`). Primary buttons are flat (operator 2026-07-17); `--coral-drop` is defined but unused. **Chart ramp (issue 659):** `CHART_SEV` also steps lighter at every level, critical to unknown, so mix bars and charts keep their bands in grayscale; critical and high stay the full solids. |
+| **Brand** | `--coral` `--coral-d` `--amber` `--teal` `--slate*` | Chrome, active nav, focus, links. **The primary button is slate (`--slate2`, hover `--slate`), not coral** (operator ruling 2026-10-29 on built specimens, issue 1004). Coral shares the red-orange of critical, KEV and "down". Coral/amber must **never** encode severity. Teal = info only. |
+| **Severity** | `--sev-<severity>-{fg,bg,line,solid}` | **DATA ONLY.** Six D46 canonicals: `critical high medium low negligible unknown`. `negligible` is muted, never red (A-1). From script use `SEV_COLOR` / `CHART_SEV` (`@/styles/tokens`). **Chip language A (operator 2026-07-11):** `-bg`/`-line` are DERIVED from the level's `-solid` (10% / 30% flattened on white — never hand-picked pastels); weight ESCALATES: critical renders solid + inner highlight (`--chip-hi`), high the heavy `--sev-high-ring`, tails near-neutral. State pills = soft 9% tint + `--state-*-solid` dot, no ring (workflow reads quieter than severity). Alarms (KEV `--kev-grad`, SLA overdue) carry the ONE depth treatment: `inset 0 1px 0 var(--chip-hi)` + a soft drop (`--chip-crit-drop`/`--kev-drop`). Primary buttons are flat (operator 2026-07-17). **Chart ramp (issue 659):** `CHART_SEV` also steps lighter at every level, critical to unknown, so mix bars and charts keep their bands in grayscale; critical and high stay the full solids. |
 | **Status** | `--state-<open\|stale\|ack\|resolved>-*` · `--health-{ok,degraded,down}-*` · `--kev-*` · `--scanner-{trivy,grype}-*` · `--scope-{cluster,scanner,org}` | Finding state pills, health ramp (the same ramp as the degraded banner), KEV tag, scanner tags, settings scope dots/badges (M9e — darkened from the prototype so the white badge label computes AA). **Status has its own hues (operator rulings 2026-10-02 on built specimens, issue 659):** open is rose, acknowledged is indigo; a status token is never a copy of a severity token (`tokens.spec.ts` fails one; `--health-down-fg` is the one listed leftover). **One caution amber:** `--hist-*` (viewing history, picker and banner alike), `--health-degraded-fg/-bg` and `--sla-tight-fg` share one set of values. **Overdue** is `--sla-over-bg`, the KEV maroon, not critical's red. **Lightness carries it too:** the triage bar (`--triage-seg-handled`, `--state-open-solid`, `--triage-seg-ack`, `--state-stale-line`) and the health dots (`--health-ok-dot` / `--health-degraded-dot`) are a lightness step apart, so they read in grayscale. |
 
 ### Surfaces & text
@@ -259,8 +259,8 @@ menu grip rows. Drag is a different verb than click; the arrow there hid a real 
 `pointer` stays banned (enforced by the style rules test).
 
 **Primary button press (operator ruling 2026-10-11, variant E chosen from five built specimens,
-issue 817):** on press the primary button sinks 1px and shrinks to 97%, and a coral ring
-(`--coral-drop`) shows and fades on release, so a click lands with force. The ring is a
+issue 817):** on press the primary button sinks 1px and shrinks to 97%. A slate ring
+(`--slate-drop`, coral until issue 1004) shows and fades on release, so a click lands with force. The ring is a
 pseudo-element whose opacity animates (transform and opacity only). Under reduced motion nothing
 moves; the darker fill and the ring still show the press. Owned by `UiButton`.
 
@@ -362,7 +362,7 @@ that failed while it was drawn). A new "this could not be shown" page uses it; S
 Page bg:        var(--bg)              Card:          var(--card) + var(--r) + var(--shadow)
 Panel/inset:    var(--panel)           Border:        var(--line)  / subtle var(--line2)
 Text:           var(--ink) / var(--soft)   (--muted = decorative only, never text)
-Brand action:   var(--coral), hover var(--coral-d)
+Primary action: var(--slate2), hover var(--slate)   (issue 1004; coral stays for focus and links)
 Severity chip:  color var(--sev-critical-fg); background var(--sev-critical-bg);
                 border-color var(--sev-critical-line)   (× six severities)
 Chart series:   CHART_SEV.critical … (from '@/styles/tokens' — pinned to tokens.css by test)
@@ -458,7 +458,7 @@ reflex defaults (operator ruling 2026-07-09):
 |---|---|
 | `cream-palette` (`--bg` #efeadf / `--panel` #fbfaf6) | The warm-paper identity — deliberate palette, not a default. |
 | `tiny-text 10–11.5px` on mono micro-scale | Ops-tool density (table headers, counts, chips) per the v4 scale. Body text stays ≥13px. |
-| `low-contrast` white-on-coral (login/action buttons) | Prototype button treatment; 13px/600 button label, not body text. |
+| `low-contrast` white-on-coral (selected chips) | Prototype treatment; 13px/600 label, not body text. The primary and login buttons left it on 2026-10-29: they are slate (issue 1004). |
 | `cramped-padding` on `tbl-wrap` | Full-bleed table inside the card is the prototype's design. |
 | `layout-transition: width` on `.sidebar` | The collapse rail (226↔64px) — a deliberate layout animation: user-initiated, rare, and the standard sidebar pattern (Nuxt UI reference does the same). Nothing else animates layout except the header card stretch below — the `t-*` classes are transform/opacity only. **Enforced, not just stated:** `style-rules.spec.ts` fails any other width/height/padding/margin transition in `src/` (issue 484 — the triage meter had been breaking this sentence unnoticed). |
 | width animation in `composables/useStretchWidth.ts` | The header card stretch (operator decision 2026-10-17, issue 902). It runs only when a card gets wider, for `--dur-panel`, and not with reduced motion. It moves one small card, not the page. `style-rules.spec.ts` permits it in this one file, and also fails a layout animation from script (`element.animate()`) anywhere else. |

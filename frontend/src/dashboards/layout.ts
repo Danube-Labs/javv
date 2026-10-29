@@ -80,10 +80,11 @@ export function parseScanner(value: unknown): ScannerLens | null {
   return value === 'all' || value === 'trivy' || value === 'grype' ? value : null
 }
 
-/** Who can see a dashboard, in the fewest words: the badge of a card and of the read page. */
+/** Who can see a dashboard, in the fewest words: the badge of a card and of the read page. Role
+ * ids show as words (security_lead reads "security lead"), as in the user menu. */
 export function sharingLine(sharing: string | undefined, roles: readonly string[] | undefined): string {
   if (sharing === 'everyone') return 'Everyone'
-  if (sharing === 'roles') return (roles ?? []).join(', ')
+  if (sharing === 'roles') return (roles ?? []).map((r) => r.replaceAll('_', ' ')).join(', ')
   return 'Only the owner'
 }
 

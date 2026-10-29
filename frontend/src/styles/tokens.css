@@ -34,8 +34,9 @@
   --meter-track: #d6cbb8;
   --coral: #ec7e54;
   --coral-d: #d96a41;
-  --coral-dd: #c05631; /* flat-primary hover/pressed — coral-d alone was too small a step */
-  --coral-drop: rgb(217 106 65 / 30%); /* primary-button depth (chip language A) */
+  /* the primary button is slate, not coral (issue 1004, operator 2026-10-29): coral sits in the
+     red-orange of critical, KEV and "down". Hover and press take --slate; the press ring is this */
+  --slate-drop: rgb(33 56 74 / 30%);
   --coral-text: #a8481f; /* coral as TEXT — AA on card/panel/washes; coral/coral-d are fills only */
   --amber: #f4a368;
   --teal: #1f8e84; /* fills/accents; as TEXT use --teal-text (this fails AA on light) */
@@ -45,6 +46,10 @@
   --r: 12px; /* cards */
   --r-sm: 8px; /* controls */
   --r-chip: 6px; /* chips/tags (5–7px band) */
+  /* a button that sits on the page paper, not on a card: a small lift (issue 1004, head B) */
+  --control-lift:
+    0 1px 2px rgb(22 35 47 / 10%),
+    0 1px 1px rgb(22 35 47 / 6%);
   --shadow:
     0 1px 2px rgba(22, 35, 47, 0.06),
     0 10px 28px -14px rgba(22, 35, 47, 0.38);
@@ -261,6 +266,17 @@
   --scope-cluster: #2e6285;
   --scope-scanner: #17706b;
   --scope-org: #7a5504;
+
+  /* who can see a saved item, the badge of its card (issue 1004, operator 2026-10-29): a 9% tint
+     and a 30% line of the hue, flattened on white. Everyone takes the info teal, a role list the
+     cluster-scope blue; only the owner stays a quiet gray (--panel, --soft) */
+  --share-everyone-fg: #17756d;
+  --share-everyone-icon: #1f8e84;
+  --share-everyone-bg: #ebf5f4;
+  --share-everyone-line: #bcddda;
+  --share-roles-fg: #2e6285;
+  --share-roles-bg: #ecf1f4;
+  --share-roles-line: #c0d0da;
 
   /* save-bar dirty state (M9e, prototype .save-bar-on) — warm unsaved-changes surface */
   --save-dirty-bg: #fffcfa;

@@ -221,7 +221,7 @@ button {
   padding: 9px;
   border: none;
   border-radius: var(--r-sm);
-  background: var(--coral); /* the full-page CTA keeps the ruled solid fill (§9) */
+  background: var(--slate2); /* the primary fill of UiButton (issue 1004) */
   color: var(--card);
   font-family: var(--font-ui);
   font-size: var(--text-body);
@@ -230,7 +230,7 @@ button {
   transition: background 0.12s;
 }
 button:hover:not(:disabled) {
-  background: var(--coral-d);
+  background: var(--slate);
 }
 button:disabled {
   opacity: 0.6;

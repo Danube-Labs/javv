@@ -521,7 +521,9 @@ On hover and on keyboard focus the card stays white, its border turns coral and 
 prototype card, DESIGN.md §5). A line separates the footer, and the buttons in the card have the
 darker border (`UiButton` `bordered`). The page color stays the warm paper (DESIGN.md §9). The
 footer shows the owner as "Owner <name>" at the size of the other card text, and the name is
-dark (operator, 2026-10-29).
+dark (operator, 2026-10-29). The badge that says who can see the item takes a color (operator,
+2026-10-29, `--share-*` tokens). Only the owner is a quiet gray fill, everyone is teal, and a
+role list is blue. Role ids show as words: security_lead reads "security lead".
 
 ---
 
@@ -1091,7 +1093,9 @@ and the grid are one component pair, `components/saved/SavedCard.vue` and `Saved
 both screens use. A card shows the name, a badge with who can see it (`Everyone`, the role list,
 or `Only the owner`), the description, the number of panels and when it changed, the owner and
 **Export**. The whole card opens the dashboard (issue 1004, §6), with no "Open" text (operator,
-2026-10-29). A long role list ends in "…", and the title of the badge has the full list.
+2026-10-29). The badge colors by who can see the dashboard (§6). The three head buttons (New
+dashboard, Export all, Import) have one height and a small lift off the paper (`--control-lift`).
+Export all and Import have the darker border (operator, 2026-10-29). A long role list ends in "…", and the title of the badge has the full list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
   **New dashboard** opens the details window (below) in its create mode. **Create** makes the
@@ -1260,6 +1264,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 | 6 | — | Cards additionally show the schema-v2 **workbench capture** (columns/density/sort/relative window; cluster-agnostic by shape) and page through the kit GridPager (operator ask); apply = deep-link round-trip incl. `!`-negation grammar | 2026-07-17, M9f slice 4 |
 | global | (prototype topbar: disabled search input, text sign-out, mixed control heights) | **Topbar register**: all three controls (cluster switcher · time picker · search) at **40px** with **2px `--line` borders**, keep-beige (white-chip and slate-tint A/Bs LOST); search sits on `--bg` with ink hint + real control wash; Sign out = kit UiButton `control`; FilterBar pills/add-filter at **38px** | 2026-07-17 §8.5 rulings on built specimens (M9f slice 2) |
 | global | (prototype primary button: gloss — inset highlight + drop shadow) | **Flat solid coral** (solid-button grammar): hue kept, gloss removed; hover/active = `--coral-dd` (a full step — `--coral-d` was too small). Muted-terracotta and soft-wash variants built and LOST | 2026-07-17 §8.5 ruling (M9f slice 3) |
+| global | (the flat coral primary above) | **Flat solid slate** (`--slate2`, hover and press `--slate`, press ring `--slate-drop`), on every primary button and the sign-in button. Coral sits in the red-orange of critical, KEV and "down". A deep teal specimen LOST, because teal means info and Trivy | 2026-10-29 §8.5 ruling on built specimens (issue 1004) |
 | global | (prototype drawer: flush right panel, opaque card) | **Glass floating drawer** (SlideoverShell): `--glass` 0.78 white + 14px backdrop blur, neutral `--glass-edge`, 12px backdrop detach + 4px backdrop blur, nested head radius (kills the corner seam). 0.65 opacity tried and reverted | 2026-07-17 §8.5 rulings (M9f slice 3) |
 | global | (prototype: topbar search input) | **⌘K command palette** (issue-319 ruling): composed `/findings/groups` queries (CVE/image/namespace) + jump-to-screen off the ONE nav model; the topbar "input" is a button that opens it | 2026-07-17, M9f slice 2 |
 | global | — | **Notification bell**: ringed count badge (server unread, pauses on failed poll), inbox rows with per-row ✕ + Mark-all-read/Clear-all (kit mini buttons), ready-export resolves the signed token on click (expired flips the row), toast ECHO for mid-session arrivals only | 2026-07-17 rulings (M9f slice 3) |
