@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/Danube-Labs/javv/compare/v0.9.2...v0.9.3) (2026-10-29)
+
+
+### Bug Fixes
+
+* role names in words, and one height with a 1px edge in every screen head ([#1041](https://github.com/Danube-Labs/javv/issues/1041)) ([5feec35](https://github.com/Danube-Labs/javv/commit/5feec35964fbbd8639df2db0de04e546019a05d8))
+
 ## [0.9.2](https://github.com/Danube-Labs/javv/compare/v0.9.1...v0.9.2) (2026-10-29)
 
 
