@@ -4,7 +4,7 @@
  * line each, and for the chosen panel its settings and a preview with live data, at the width
  * and the height it will have on the dashboard.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
 import type { DashboardPanel } from '@/api/generated'
 import PanelFrame from '@/components/dashboards/PanelFrame.vue'
@@ -39,7 +39,8 @@ const emit = defineEmits<{ close: []; add: [choice: { panel: DashboardPanel['pan
 
 const GROUPS: PanelGroup[] = ['Findings', 'Scanners', 'People']
 
-const picked = ref(PANELS[0]!)
+// shallow: an entry holds its component, which Vue must not make reactive
+const picked = shallowRef(PANELS[0]!)
 const w = ref<WidthChoice>(widthChoice(picked.value.defaultWidth))
 const h = ref<PanelHeight>(heightsOf(picked.value)[0]!)
 const scanner = ref<PanelScannerChoice>('dashboard')
