@@ -189,7 +189,7 @@ describe('layout', () => {
 
   it('names who can see it, and when it changed', () => {
     expect(sharingLine('everyone', [])).toBe('Everyone')
-    expect(sharingLine('roles', ['security_lead', 'triager'])).toBe('security_lead, triager')
+    expect(sharingLine('roles', ['security_lead', 'triager'])).toBe('security lead, triager')
     expect(sharingLine('private', [])).toBe('Only the owner')
     const now = Date.parse('2026-10-25T12:00:00Z')
     expect(changedLine('2026-10-25T09:30:00Z', 'lead', now)).toBe('changed 2 hours ago by lead')

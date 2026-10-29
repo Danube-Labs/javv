@@ -2,17 +2,40 @@
 /**
  * One card of a saved-items grid (SCREENS §6): Saved views and Dashboards share it. The title,
  * a badge or a remove button (the remove button only for a user who may remove the item), a
- * description and a summary line, then a footer: the item's number, its owner and its actions.
+ * description and a summary line, then a footer: the item's number, its owner, its actions and,
+ * when the screen gives an `openLabel`, a quiet "<label> ›" that says where the card goes.
+ *
+ * The whole card opens the item (issue 1004): the title is a RowLink whose ::after covers the
+ * card, so a click anywhere opens it, Tab reaches it once, and a ctrl click opens a new tab. The
+ * badge, the remove button and the actions sit above that layer and keep their own clicks.
+ *
+ * `badgeTone` colors the badge by who can see the item (issue 1004): only the owner a quiet gray,
+ * everyone teal, a role list blue. With no tone the badge keeps its gray outline.
  */
-defineProps<{ title: string; description?: string; summary?: string; owner: string; removeLabel?: string }>()
-defineEmits<{ remove: [] }>()
+import type { RouteLocationRaw } from 'vue-router'
+
+import RowLink from '@/components/ui/RowLink.vue'
+
+defineProps<{
+  title: string
+  to: RouteLocationRaw
+  openLabel?: string
+  description?: string
+  summary?: string
+  owner: string
+  removeLabel?: string
+  badgeTone?: 'private' | 'everyone' | 'roles'
+}>()
+defineEmits<{ open: []; remove: [] }>()
 </script>
 
 <template>
   <article class="view-card">
     <div class="vc-head">
-      <h2>{{ title }}</h2>
-      <span v-if="$slots.badge" class="vc-badge"><slot name="badge" /></span>
+      <h2>
+        <RowLink class="vc-link" :to="to" @open="$emit('open')">{{ title }}</RowLink>
+      </h2>
+      <span v-if="$slots.badge" class="vc-badge" :data-tone="badgeTone"><slot name="badge" /></span>
       <button v-if="removeLabel" type="button" class="vc-x" :aria-label="removeLabel" @click="$emit('remove')">
         ×
       </button>
@@ -21,14 +44,16 @@ defineEmits<{ remove: [] }>()
     <p class="vc-summary"><slot name="summary">{{ summary }}</slot></p>
     <div class="vc-foot">
       <span class="vc-count"><slot name="stat" /></span>
-      <span class="vc-owner mono">{{ owner }}</span>
+      <span class="vc-owner">Owner <b class="vc-owner-name">{{ owner }}</b></span>
       <slot name="actions" />
+      <span v-if="openLabel" class="vc-open" aria-hidden="true">{{ openLabel }} <span class="vc-open-mark">›</span></span>
     </div>
   </article>
 </template>
 
 <style scoped>
 .view-card {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -37,10 +62,31 @@ defineEmits<{ remove: [] }>()
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition:
+    border-color var(--dur-quick) var(--ease-out),
+    transform var(--dur-quick) var(--ease-out);
 }
-.view-card:hover {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
+/* the prototype's clickable card (DESIGN.md §5): it stays white, so a button's hover wash inside
+   it always shows; a fill here gave the button and the card one color (issue 1004) */
+.view-card:hover,
+.view-card:has(.vc-link:focus-visible) {
+  border-color: var(--coral);
+  transform: translateY(-1px);
+}
+.view-card:has(.vc-link:active) {
+  transform: none;
+}
+.vc-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.vc-badge,
+.vc-x,
+.vc-foot :slotted(.ui-btn) {
+  position: relative;
+  z-index: 1;
 }
 .vc-head {
   display: flex;
@@ -67,6 +113,22 @@ defineEmits<{ remove: [] }>()
   border-radius: var(--r-chip);
   font-size: var(--text-sm);
   color: var(--soft);
+}
+.vc-badge[data-tone='private'] {
+  background: var(--panel);
+}
+.vc-badge[data-tone='everyone'] {
+  background: var(--share-everyone-bg);
+  border-color: var(--share-everyone-line);
+  color: var(--share-everyone-fg);
+}
+.vc-badge[data-tone='everyone'] :slotted(svg) {
+  color: var(--share-everyone-icon);
+}
+.vc-badge[data-tone='roles'] {
+  background: var(--share-roles-bg);
+  border-color: var(--share-roles-line);
+  color: var(--share-roles-fg);
 }
 .vc-badge :slotted(.vc-badge-text) {
   min-width: 0;
@@ -104,15 +166,43 @@ defineEmits<{ remove: [] }>()
   align-items: center;
   gap: 10px;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line2);
 }
 .vc-count {
   font-weight: 600;
   font-size: var(--text-sm);
 }
+/* the size of the other card text: at the 10px label size the name was hard to read (issue 1004) */
 .vc-owner {
   flex: 1;
-  font-size: var(--text-facet-label);
+  font-size: var(--text-sm);
   color: var(--soft);
+}
+.vc-owner-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+.vc-open {
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--soft);
+}
+.vc-open-mark {
+  color: var(--dash-muted);
+}
+.view-card:hover .vc-open,
+.view-card:hover .vc-open-mark {
+  color: var(--coral-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-card {
+    transition: none;
+  }
+  .view-card:hover,
+  .view-card:has(.vc-link:focus-visible) {
+    transform: none;
+  }
 }
 </style>

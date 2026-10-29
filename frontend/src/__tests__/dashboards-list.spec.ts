@@ -93,20 +93,52 @@ describe('the list', () => {
     const cards = w.findAll('.view-card')
     expect(cards).toHaveLength(2)
     expect(cards[0]!.find('h2').text()).toBe('Weekly risk review')
-    expect(cards[0]!.find('.vc-badge').text()).toBe('security_lead, triager')
+    // role ids show as words, as in the user menu (operator, 2026-10-29)
+    expect(cards[0]!.find('.vc-badge').text()).toBe('security lead, triager')
     // a long role list ends in "…" in the card; its title keeps the whole list
-    expect(cards[0]!.find('.vc-badge-text').attributes('title')).toBe('security_lead, triager')
+    expect(cards[0]!.find('.vc-badge-text').attributes('title')).toBe('security lead, triager')
     expect(cards[0]!.text()).toContain('1 panel · changed 2 hours ago by lead')
-    expect(cards[0]!.find('.vc-owner').text()).toBe('owner lead')
+    expect(cards[0]!.find('.vc-owner').text()).toBe('Owner lead')
     expect(cards[1]!.find('.vc-badge').text()).toBe('Only the owner')
     expect(cards[1]!.text()).toContain('0 panels')
   })
 
-  it('opens a dashboard from its card', async () => {
+  it('the badge takes the color of who can see the dashboard (operator, 2026-10-29, option C)', async () => {
+    signIn([])
+    const everyone = { ...DOCS[1]!, dashboard_id: 'c'.repeat(32), name: 'Shared', sharing: 'everyone' }
+    vi.mocked(listDashboardsApiV1DashboardsGet).mockResolvedValue(ok({ dashboards: [...DOCS, everyone] }))
+    const { w } = await mountList()
+    const tones = w.findAll('.view-card').map((c) => [c.find('h2').text(), c.get('.vc-badge').attributes('data-tone')])
+    expect(tones).toEqual([
+      ['Weekly risk review', 'roles'],
+      ['Mine', 'private'],
+      ['Shared', 'everyone'],
+    ])
+  })
+
+  it('the head buttons have one size and lift off the paper (operator, 2026-10-29, option B)', async () => {
+    signIn(['can_edit_dashboards'])
+    const { w } = await mountList()
+    const head = w.findAll('.head-actions .ui-btn')
+    expect(head.map((b) => b.text())).toEqual(['New dashboard', 'Export all', 'Import'])
+    expect(head.slice(1).every((b) => b.classes().includes('ui-btn--bordered'))).toBe(true)
+    const view = readFileSync(resolve(process.cwd(), 'src/views/DashboardsView.vue'), 'utf8')
+    expect(view).toMatch(/\.head-actions :deep\(\.ui-btn\) \{\s*box-shadow: var\(--control-lift\);/)
+    // the primary takes the padding of the control variant, so the three are one height
+    const pad = /\.head-actions :deep\(\.ui-btn--primary\) \{\s*padding: ([^;]+);/.exec(view)?.[1]
+    const button = readFileSync(resolve(process.cwd(), 'src/components/ui/UiButton.vue'), 'utf8')
+    expect(pad).toBe(/\.ui-btn--control \{\s*padding: ([^;]+);/.exec(button)?.[1])
+  })
+
+  it('opens a dashboard from its card: the title is a link that covers the card, no Open button', async () => {
     signIn([])
     const { w, router } = await mountList()
-    const open = w.findAll('.view-card')[0]!.findAll('button').find((b) => b.text() === 'Open')!
-    await open.trigger('click')
+    const card = w.findAll('.view-card')[0]!
+    expect(card.findAll('button').map((b) => b.text())).toEqual(['Export'])
+    expect(card.find('.vc-open').exists()).toBe(false)
+    const link = card.get('a.vc-link')
+    expect(link.attributes('href')).toBe(`/dashboards/${'a'.repeat(32)}`)
+    await link.trigger('click', { button: 0 })
     await flushPromises()
     expect(router.currentRoute.value.path).toBe(`/dashboards/${'a'.repeat(32)}`)
   })

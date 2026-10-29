@@ -137,11 +137,12 @@ function exportDashboard(d: DashboardDoc) {
         >
           <AppIcon name="plus" :size="13" />New dashboard
         </UiButton>
-        <UiButton variant="control" :disabled="exporter.exporting.value" @click="exportAll">
+        <UiButton variant="control" bordered :disabled="exporter.exporting.value" @click="exportAll">
           <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export all' }}
         </UiButton>
         <UiButton
           variant="control"
+          bordered
           :disabled="!canEdit"
           :aria-describedby="canEdit ? undefined : 'no-import-note'"
           @click="importing = true"
@@ -173,8 +174,11 @@ function exportDashboard(d: DashboardDoc) {
         v-for="d in pager.shown.value"
         :key="d.dashboard_id"
         :title="d.name"
+        :to="`/dashboards/${d.dashboard_id}`"
         :description="d.description"
-        :owner="`owner ${d.owner}`"
+        :owner="d.owner"
+        :badge-tone="d.sharing === 'everyone' || d.sharing === 'roles' ? d.sharing : 'private'"
+        @open="router.push(`/dashboards/${d.dashboard_id}`)"
       >
         <template #badge>
           <AppIcon :name="d.sharing === 'private' ? 'key' : 'users'" :size="12" /><span
@@ -190,11 +194,8 @@ function exportDashboard(d: DashboardDoc) {
           </span>
         </template>
         <template #actions>
-          <UiButton variant="mini" :disabled="exporter.exporting.value" @click="exportDashboard(d)">
+          <UiButton variant="mini" bordered :disabled="exporter.exporting.value" @click="exportDashboard(d)">
             <AppIcon name="download" :size="12" />Export
-          </UiButton>
-          <UiButton variant="mini" @click="router.push(`/dashboards/${d.dashboard_id}`)">
-            <AppIcon name="chevron" :size="12" />Open
           </UiButton>
         </template>
       </SavedCard>
@@ -232,6 +233,14 @@ function exportDashboard(d: DashboardDoc) {
   flex: none;
   align-items: center;
   gap: 10px;
+}
+/* the head buttons sit on the page paper (issue 1004, operator 2026-10-29): one size, a small
+   lift. The primary takes the padding of the control variant (UiButton) */
+.head-actions :deep(.ui-btn) {
+  box-shadow: var(--control-lift);
+}
+.head-actions :deep(.ui-btn--primary) {
+  padding: 6px 11px;
 }
 /* the Saved views summary is an italic line; here it is a count and a time */
 .dash-sum {

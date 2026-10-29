@@ -163,7 +163,7 @@ async function oneClick(page, issues) {
     try {
       await page.goto(`${BASE}/views`)
       const card = page.locator('.view-card', { hasText: 'smoke one-click 7d' })
-      await card.getByRole('button', { name: 'Open in Findings' }).click()
+      await card.getByRole('link', { name: 'smoke one-click 7d' }).click()
       await page.waitForURL(pathIs('/findings', (url) => url.searchParams.get('win') === '7'), { timeout: 10_000 })
     } finally {
       await page.evaluate((id) => fetch(`/api/v1/views/${id}`, { method: 'DELETE' }), created.id)

@@ -62,6 +62,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-01 | No em dashes in UI copy. Copy is for users, not engineers: no decision codes, no internal names. No diagrams in the help inside the app. | 341, 652 |
 | 2026-10-17 | New names, comments and text use plain words (step, not slice, and panel, not lens). Old names stay. | 543 |
 | 2026-10-18 | Videos: the app in a window, a spotlight on the control, and a caption under the window. The pace lets a reader follow. No caption says what the screen does not show. | 699 |
+| 2026-10-29 | The primary button is slate, not coral, because coral is in the red-orange of critical, KEV and "down". Coral stays for focus, links and the active page. A saved card opens its item from anywhere on the card. | 1004 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process
