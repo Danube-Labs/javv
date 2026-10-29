@@ -519,7 +519,9 @@ of the real app):** the title is a link whose layer covers the card, so a click 
 card opens the item. The badge, × and the buttons sit above that layer and keep their own clicks.
 On hover and on keyboard focus the card stays white, its border turns coral and it rises 1px (the
 prototype card, DESIGN.md §5). A line separates the footer, and the buttons in the card have the
-darker border (`UiButton` `bordered`). The page color stays the warm paper (DESIGN.md §9).
+darker border (`UiButton` `bordered`). The page color stays the warm paper (DESIGN.md §9). The
+footer shows the owner as "Owner <name>" at the size of the other card text, and the name is
+dark (operator, 2026-10-29).
 
 ---
 
