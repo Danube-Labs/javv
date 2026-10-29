@@ -171,8 +171,9 @@ const CHIP_SELECTOR =
   // (incl. the table-head band — B2 ruling 2026-07-16: slate2 + parchment, ~10:1 — the
   // triage-panel head that joined the same band per the 2026-07-17 ruling, and the inspector
   // cards' panel-band that joined it 2026-07-18, and the badge of a saved card that says who can
-  // see the item, ruled 2026-10-29 in issue 1004)
-  /\.(time-range-hist|kev-tag|kev-lg|both-tag|state-opt-on|vm-fp|vm-ne|side-item|tbl|triage-head|so-head|card-head|assignee-none|panel-band|vc-badge)\b/
+  // see the item, ruled 2026-10-29 in issue 1004, and the window head that joined the band the
+  // same day in issue 1049)
+  /\.(time-range-hist|kev-tag|kev-lg|both-tag|state-opt-on|vm-fp|vm-ne|side-item|tbl|triage-head|so-head|modal-head|card-head|assignee-none|panel-band|vc-badge)\b/
 
 describe('style rules — no same-hue text on its own tint', () => {
   const files = walk(SRC)

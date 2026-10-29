@@ -55,13 +55,20 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   display: flex;
   flex-direction: column;
 }
+/* the slate band of the table heads and the side panel head, on every window (operator
+   2026-10-29, issue 1049): one pair of tokens, so all three bands move together */
 .modal-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 16px 18px 12px;
-  border-bottom: 1px solid var(--line2);
+  background: var(--table-head-bg);
+  color: var(--table-head-fg);
+  /* nested radius (outer minus border), as on the side panel head: a square corner shows a
+     light seam under the card edge */
+  border-top-left-radius: calc(var(--r) - 1px);
+  border-top-right-radius: calc(var(--r) - 1px);
 }
 .modal-head h3 {
   margin: 0;
@@ -69,19 +76,29 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 .modal-sub {
   margin: 2px 0 0;
   font-size: var(--text-sm);
-  color: var(--soft);
+  opacity: 0.75;
 }
+/* a control on the slate takes the sidebar collapse button's ramp: the beige hover wash of the
+   light surfaces would flash a pale chip on the band */
 .modal-close {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--table-head-line);
+  background: var(--side-control-bg);
   border-radius: var(--r-sm);
   padding: 3px 8px;
   font-size: var(--text-sm);
-  color: var(--ink);
+  color: var(--table-head-fg);
   cursor: default;
 }
 .modal-close:hover {
-  border-color: var(--control-hover-line);
+  background: var(--side-control-hover-bg);
+  border-color: var(--side-label);
+}
+.modal-close:active {
+  background: var(--side-control-active-bg);
+}
+.modal-close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
 }
 .modal-body {
   padding: 14px 18px;
