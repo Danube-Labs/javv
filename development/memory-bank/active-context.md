@@ -1,21 +1,20 @@
 # Active context
 
-As of: 2026-10-26
+As of: 2026-10-29
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
 
 ## Where the project is
 
-- The last release is 0.9.0 (2026-10-26). It has no code changes after 0.8.9 (2026-10-26), and it
-  marks as a minor release what 0.8.9 holds: composable dashboards (issue 440), the Roles card
-  (issue 990) and the `can_export` permission (issue 243).
+- The last release is 0.9.1 (2026-10-27): the KEV SLA deadline at a past time (issue 1000), names
+  for segmented controls (issue 1011), and docs that agree with the code (issues 1012 and 1017).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
 
-- **Issue 1012:** the memory bank (PR 1013) and the bolts frozen as history. Next: a separate issue
-  for a docs pass over each live Markdown file against the code.
+- **Issue 1004:** the cards of Dashboards and Saved views (PR 1037). Release 0.9.2 waits for it
+  (operator, 2026-10-29).
 
 ## Open, in the 1.0.0 milestone
 
@@ -30,10 +29,7 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 | Issue | What | Note |
 |---|---|---|
-| 1000 | At a past time, a KEV finding gets the SLA deadline of its severity | The operator decides later |
-| 1004 | Tidy the cards of Dashboards and Saved views | After issue 440, on the operator's word |
 | 1009 | A video for the page "Build a dashboard" | On the operator's word |
-| 1011 | Segmented controls have no name for screen readers | Found during issue 440 |
 | 884 | A version stamp for the preferences that the browser keeps | Later |
 | 903 | All clusters sends 3 requests for each cluster | After 1.0 |
 
