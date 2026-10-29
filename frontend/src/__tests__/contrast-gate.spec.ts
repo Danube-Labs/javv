@@ -156,6 +156,21 @@ describe('contrast gate — every text pair computed ≥4.5:1 (AA)', () => {
     expect.soft(ratio('val-act-not-fg', 'slate3'), 'exclude mark on the chip').toBeGreaterThanOrEqual(NON_TEXT)
   })
 
+  it('window head (issue 1049): the title, the line under it and the close mark on the slate band', () => {
+    // the band is --table-head-bg, which is var(--slate2); the token regex reads hex values only
+    expect.soft(ratio('table-head-fg', 'slate2'), 'window title on the band').toBeGreaterThanOrEqual(AA)
+    // the line under the title is the head text at 75% opacity, composited on the band
+    const sub = blend('rgba(217, 226, 232, 0.75)', tokens['slate2'] as string)
+    const subRatio = (luminance(sub) + 0.05) / (luminance(parseColor(tokens['slate2'] as string).rgb) + 0.05)
+    expect.soft(tokens['table-head-fg'], 'the 75% line above is this token').toBe('#d9e2e8')
+    expect.soft(subRatio, 'window subtitle on the band').toBeGreaterThanOrEqual(AA)
+    // the close mark sits on the button's resting and hover fills, both composited on the band
+    for (const fill of ['side-control-bg', 'side-control-hover-bg', 'side-control-active-bg']) {
+      expect.soft(ratio('table-head-fg', fill, tokens['slate2']), `close mark on --${fill}`).toBeGreaterThanOrEqual(AA)
+    }
+    expect.soft(ratio('coral', 'slate2'), 'focus ring on the band').toBeGreaterThanOrEqual(NON_TEXT)
+  })
+
   it('scanner-status lanes: the table-head text clears AA on each scanner hue', () => {
     // a lane swaps only --table-head-bg for its scanner's -fg hue; the head text token stays
     for (const scanner of ['trivy', 'grype']) {

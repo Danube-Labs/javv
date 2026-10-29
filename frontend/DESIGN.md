@@ -222,6 +222,12 @@ every outside host unanswered. Neither face is on the vendored detector's overus
   operator B2 ruling 2026-07-16; supersedes both the `--panel` head and the short-lived
   settings "quiet sans head" — `tbl-quiet` is density only). On-band column dividers use
   `--table-head-line`, never the beige hairlines.
+- **Window heads take the same band** (operator ruling 2026-10-29 on built pictures, issue 1049):
+  `ModalShell` paints its head `--table-head-bg`/`--table-head-fg`, as the side panel head
+  (`SlideoverShell`) does. The line under the title is that text at 75% opacity, the register of
+  the side panel head. The ✕ is a control on the slate, so it takes the sidebar collapse button's
+  ramp (`--side-control-bg` / `-hover-bg` / `-active-bg`, a `--table-head-line` edge that turns
+  `--side-label` on hover). No window restyles the head (`window-head.spec.ts`).
 - **A table card never clips its columns** (issue 652). A hand-built `.tbl` card whose
   columns can outgrow it at the 1024 floor opts into `.tbl-scroll-pin` (base.css): the table
   scrolls sideways inside the card and its first, identity column stays pinned (All clusters,
@@ -323,7 +329,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiToggleGroup` | a row of buttons that each turn one value on or off, `aria-pressed`, the coral selection of `UiSegControl`, an optional mono `detail` after the label; the parent owns the list | any pick-several row with few options (the scan scope's owner kinds) |
 | `UiField` | mono uppercase micro-label + parenthesized `hint`, 14px band / 6px label gap (`first` zeroes the top) | any labeled control |
 | `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
-| `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss | every dialog |
+| `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049) | every dialog |
 | `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, `t-pop` motion | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard) |
 | `UiLoadingBar` | the 2px coral loading bar on the bottom edge of its positioned parent. It shows only after 250 ms of work and grows more slowly near the end. When the work ends, it fills and fades. It has `role="progressbar"`. The parent owns `busy` | the top bar's sign that the app works, fed by `system/pendingWork.ts` (open page changes and API requests). Also a panel that needs its own sign |
 | `UiSkeleton` | the one loading pulse (`.skel` + `skel-shimmer` in base.css) and its reduced-motion off-switch; `height` is a prop because a skeleton mirrors the panel it stands in for, `label` only when it is its own loading region | every loading placeholder. The style rules test fails any view that grows its own shimmer |
@@ -390,6 +396,7 @@ Severity chip:  color var(--sev-critical-fg); background var(--sev-critical-bg);
 Chart series:   CHART_SEV.critical … (from '@/styles/tokens' — pinned to tokens.css by test)
 State pill:     var(--state-open-*) etc.   Health dot: var(--health-ok-dot)
 Table head:     background var(--table-head-bg); color var(--table-head-fg)
+Window head:    the same band, in ModalShell only. The ✕ is on --side-control-bg   (issue 1049)
 Scanner identity: var(--scanner-trivy-*) / var(--scanner-grype-*)  (tags, seg dots, mix labels,
                 and on Scanner status each lane's head + table-head band: --table-head-bg takes the
                 lane's -fg hue there, the one place the slate band yields — ruling 2026-09-27 on

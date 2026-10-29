@@ -134,6 +134,32 @@ test('the Add panel preview is as tall as its content, as on the dashboard', asy
   })
 })
 
+test('the window head has the colors of a table head (issue 1049)', async ({ page }) => {
+  await login(page)
+  await withDashboard(page, LAYOUT, async (id) => {
+    await page.goto(`${BASE}/dashboards/${id}?edit=1`)
+    await expect(page.getByRole('button', { name: 'Move Findings summary', exact: true })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: 'Add panel', exact: true }).first().click()
+    const colors = await page.getByRole('dialog').evaluate((dialog) => {
+      // the built CSS, read the way the browser paints it, against the band tokens it should use
+      const probe = document.createElement('div')
+      probe.style.background = 'var(--table-head-bg)'
+      probe.style.color = 'var(--table-head-fg)'
+      document.body.append(probe)
+      const band = getComputedStyle(probe)
+      const head = getComputedStyle(dialog.querySelector('.modal-head')!)
+      const out = {
+        head: [head.backgroundColor, getComputedStyle(dialog.querySelector('.modal-head h3')!).color],
+        band: [band.backgroundColor, band.color],
+      }
+      probe.remove()
+      return out
+    })
+    expect(colors.head).toEqual(colors.band)
+    expect(colors.band[0]).not.toBe('rgba(0, 0, 0, 0)')
+  })
+})
+
 test('a dashboard is made, moved, shared and removed; the viewer cannot change it', async ({ page, browser }) => {
   test.setTimeout(120_000)
   const name = `e2e dashboard ${Date.now()}`
