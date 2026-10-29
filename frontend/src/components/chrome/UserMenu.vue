@@ -11,13 +11,14 @@ import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
 import { logger } from '@/lib/logger'
+import { roleLabel } from '@/lib/roleLabel'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 
 const initials = computed(() => (auth.user?.username ?? '?').slice(0, 2).toUpperCase())
-const roleLabel = computed(() => (auth.user?.role ?? '').replaceAll('_', ' '))
+const role = computed(() => roleLabel(auth.user?.role ?? ''))
 
 async function signOut(close: () => void) {
   close()
@@ -53,7 +54,7 @@ function goSettings(close: () => void) {
           <span class="avatar avatar-echo" aria-hidden="true">{{ initials }}</span>
           <div class="user-id">
             <b>{{ auth.user?.username }}</b>
-            <span class="user-role">{{ roleLabel }}</span>
+            <span class="user-role">{{ role }}</span>
           </div>
         </div>
         <button

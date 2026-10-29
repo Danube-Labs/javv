@@ -116,18 +116,15 @@ describe('the list', () => {
     ])
   })
 
-  it('the head buttons have one size and lift off the paper (operator, 2026-10-29, option B)', async () => {
+  it('the head buttons are screen head controls: one height and the 1px edge (issue 1039, option D)', async () => {
     signIn(['can_edit_dashboards'])
     const { w } = await mountList()
     const head = w.findAll('.head-actions .ui-btn')
     expect(head.map((b) => b.text())).toEqual(['New dashboard', 'Export all', 'Import'])
-    expect(head.slice(1).every((b) => b.classes().includes('ui-btn--bordered'))).toBe(true)
+    expect(head.every((b) => b.classes().includes('ui-btn--head'))).toBe(true)
+    // the soft shadow of issue 1004 is gone from the view: the kit owns the head rule now
     const view = readFileSync(resolve(process.cwd(), 'src/views/DashboardsView.vue'), 'utf8')
-    expect(view).toMatch(/\.head-actions :deep\(\.ui-btn\) \{\s*box-shadow: var\(--control-lift\);/)
-    // the primary takes the padding of the control variant, so the three are one height
-    const pad = /\.head-actions :deep\(\.ui-btn--primary\) \{\s*padding: ([^;]+);/.exec(view)?.[1]
-    const button = readFileSync(resolve(process.cwd(), 'src/components/ui/UiButton.vue'), 'utf8')
-    expect(pad).toBe(/\.ui-btn--control \{\s*padding: ([^;]+);/.exec(button)?.[1])
+    expect(view).not.toMatch(/:deep\(\.ui-btn/)
   })
 
   it('opens a dashboard from its card: the title is a link that covers the card, no Open button', async () => {

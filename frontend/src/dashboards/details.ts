@@ -4,6 +4,7 @@
  * saves them with the panels, and a save sends only the fields that changed.
  */
 import type { DashboardFields, UpdateDashboard } from '@/api/generated'
+import { roleLabel } from '@/lib/roleLabel'
 import type { ScannerLens } from '@/lib/scannerLens'
 
 export type Sharing = 'private' | 'everyone' | 'roles'
@@ -99,7 +100,7 @@ export function newDashboardBody(d: DashboardDetails): DashboardFields {
 /** The roles that the window offers: the server's list, and a role of the dashboard that the
  * list does not have, so a saved choice always shows. */
 export function roleOptions(listed: readonly string[], chosen: readonly string[]) {
-  return [...new Set([...listed, ...chosen])].map((r) => ({ value: r, label: r }))
+  return [...new Set([...listed, ...chosen])].map((r) => ({ value: r, label: roleLabel(r) }))
 }
 
 /** The message of a remove that the backend did not do. */

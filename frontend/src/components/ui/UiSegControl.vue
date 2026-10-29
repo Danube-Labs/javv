@@ -11,6 +11,8 @@ withDefaults(
     modelValue: T
     // the group's name for a screen reader: a label above the control does not name a div (issue 1011)
     label: string
+    /** in a screen head: the height of the head buttons and their 1px edge (issue 1039) */
+    head?: boolean
   }>(),
   {},
 )
@@ -18,7 +20,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
 </script>
 
 <template>
-  <div class="ui-seg" role="group" :aria-label="label">
+  <div class="ui-seg" :class="{ 'ui-seg--head': head }" role="group" :aria-label="label">
     <button
       v-for="opt in options"
       :key="opt.value"
@@ -76,6 +78,14 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
 }
 .ui-seg-opt:active:not(.ui-seg-on) {
   background: var(--control-active-bg);
+}
+/* in a screen head the bar is 30px high, as the head buttons (UiButton `head`), and has their edge */
+.ui-seg--head {
+  box-shadow: var(--control-edge);
+}
+.ui-seg--head .ui-seg-opt {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 .ui-seg-on {
   background: var(--dd-on-bg);

@@ -131,18 +131,19 @@ function exportDashboard(d: DashboardDoc) {
       <div class="head-actions">
         <UiButton
           variant="primary"
+          head
           :disabled="!canEdit"
           :aria-describedby="canEdit ? undefined : 'no-import-note'"
           @click="startCreate"
         >
           <AppIcon name="plus" :size="13" />New dashboard
         </UiButton>
-        <UiButton variant="control" bordered :disabled="exporter.exporting.value" @click="exportAll">
+        <UiButton variant="control" head :disabled="exporter.exporting.value" @click="exportAll">
           <AppIcon name="download" :size="13" />{{ exporter.exporting.value ? 'Exporting…' : 'Export all' }}
         </UiButton>
         <UiButton
           variant="control"
-          bordered
+          head
           :disabled="!canEdit"
           :aria-describedby="canEdit ? undefined : 'no-import-note'"
           @click="importing = true"
@@ -233,14 +234,6 @@ function exportDashboard(d: DashboardDoc) {
   flex: none;
   align-items: center;
   gap: 10px;
-}
-/* the head buttons sit on the page paper (issue 1004, operator 2026-10-29): one size, a small
-   lift. The primary takes the padding of the control variant (UiButton) */
-.head-actions :deep(.ui-btn) {
-  box-shadow: var(--control-lift);
-}
-.head-actions :deep(.ui-btn--primary) {
-  padding: 6px 11px;
 }
 /* the Saved views summary is an italic line; here it is a count and a time */
 .dash-sum {

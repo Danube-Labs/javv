@@ -5,6 +5,7 @@
  */
 import type { DashboardPanel } from '@/api/generated'
 import { panelById, type CatalogPanel, type PanelContext, type PanelHeight } from '@/dashboards/catalog'
+import { roleLabel } from '@/lib/roleLabel'
 import type { ScannerLens } from '@/lib/scannerLens'
 import { silentFor } from '@/system/freshness'
 
@@ -84,7 +85,7 @@ export function parseScanner(value: unknown): ScannerLens | null {
  * ids show as words (security_lead reads "security lead"), as in the user menu. */
 export function sharingLine(sharing: string | undefined, roles: readonly string[] | undefined): string {
   if (sharing === 'everyone') return 'Everyone'
-  if (sharing === 'roles') return (roles ?? []).map((r) => r.replaceAll('_', ' ')).join(', ')
+  if (sharing === 'roles') return (roles ?? []).map(roleLabel).join(', ')
   return 'Only the owner'
 }
 

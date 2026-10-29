@@ -264,6 +264,17 @@ issue 817):** on press the primary button sinks 1px and shrinks to 97%. A slate 
 pseudo-element whose opacity animates (transform and opacity only). Under reduced motion nothing
 moves; the darker fill and the ring still show the press. Owned by `UiButton`.
 
+**Screen head controls (operator ruling 2026-10-29 on built specimens, issue 1039, option D):**
+every control in a screen head is one height, 30px: the buttons and the scanner switch. A primary
+or ghost button in a head takes the padding of the `control` variant. The head sits on the page
+paper, so a head button has the darker line (`--control-hover-line`) and a 1px edge under it with
+no blur (`--control-edge`, as the default button of GitHub's Primer). The soft blurred shadow of
+issue 1004 (`--control-lift`) LOST: a soft shadow under every outline control is the default of
+shadcn/ui and Tailwind, and it read as a generic template. The kit owns the rule: `head` on
+`UiButton` and `UiSegControl`, off by default. A view does not restyle its head controls with
+`:deep`. `screen-head-controls.spec.ts` fails a screen head control without `head`. A card's action
+slot (for example the Users card on Users and roles) is not a screen head.
+
 ### Motion (#319) — the one scale, applied through the kit
 
 Durations/curves come from the motion tokens (`--ease-out`, `--dur-quick` 120ms,
@@ -363,6 +374,8 @@ Page bg:        var(--bg)              Card:          var(--card) + var(--r) + v
 Panel/inset:    var(--panel)           Border:        var(--line)  / subtle var(--line2)
 Text:           var(--ink) / var(--soft)   (--muted = decorative only, never text)
 Primary action: var(--slate2), hover var(--slate)   (issue 1004; coral stays for focus and links)
+Head control:   30px, var(--control-hover-line), box-shadow var(--control-edge)   (UiButton/UiSegControl `head`, issue 1039)
+Role name:      roleLabel(id) from '@/lib/roleLabel': security_lead shows as "security lead"   (issue 1039)
 Severity chip:  color var(--sev-critical-fg); background var(--sev-critical-bg);
                 border-color var(--sev-critical-line)   (× six severities)
 Chart series:   CHART_SEV.critical … (from '@/styles/tokens' — pinned to tokens.css by test)

@@ -10,6 +10,8 @@ withDefaults(
     block?: boolean
     /** the darker border, for a button on a white card where the thin one hardly shows (issue 1004) */
     bordered?: boolean
+    /** a control in a screen head: one height for the row, the darker border and a 1px edge (issue 1039) */
+    head?: boolean
   }>(),
   { variant: 'mini' },
 )
@@ -19,7 +21,7 @@ withDefaults(
   <button
     type="button"
     class="ui-btn"
-    :class="[`ui-btn--${variant}`, { 'ui-btn--block': block, 'ui-btn--bordered': bordered }]"
+    :class="[`ui-btn--${variant}`, { 'ui-btn--block': block, 'ui-btn--bordered': bordered, 'ui-btn--head': head }]"
   >
     <slot />
   </button>
@@ -128,6 +130,16 @@ withDefaults(
   width: 100%;
 }
 .ui-btn--bordered {
+  border-color: var(--control-hover-line);
+}
+/* a control in a screen head (operator 2026-10-29, option D, issue 1039): every control there is
+   the height of the control variant, so the primary and ghost give up their larger padding. The
+   head sits on the page paper, so the line is the darker one and a 1px edge with no blur is under it */
+.ui-btn--head {
+  padding: 6px 11px;
+  box-shadow: var(--control-edge);
+}
+.ui-btn--head:not(.ui-btn--primary) {
   border-color: var(--control-hover-line);
 }
 @media (prefers-reduced-motion: reduce) {

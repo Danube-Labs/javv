@@ -161,7 +161,8 @@ Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 **Header card (issue 902).** While the fleet loads, the note says only "Fleet current state".
 When the counts arrive, it adds "· 34 clusters · 33 need attention" (or "all healthy"), and the
 card stretches to the right. Before, it showed "0 clusters" while it loaded. Overview's card
-stretches the same way when "last sweep" arrives.
+stretches the same way when "last sweep" arrives. The scanner switch in the head is a screen head
+control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
 
 **Data**
 - Cluster list: **RULED (D-5/C-5, 2026-07-07)** — the `system-config` cluster-registry doc
@@ -194,6 +195,9 @@ so its title is the page's one h1 in the page-title style (issue 829; operator r
 ---
 
 ## 2. Overview — single cluster (bolt: **M9c**)
+
+**Head (issue 1039):** the scanner switch and **Triage critical** are screen head controls, both
+30px high with the 1px edge. Triage critical is the slate primary at the size of a control button.
 
 **Data**
 - KPI strip (severity cards + Fix-coverage): `GET /api/v1/findings/facets?cluster_id=…` —
@@ -576,6 +580,9 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
   until M8b these render the C-1 "history available after M8b" state. `T=now` per-scanner
   findings work today.
 
+The "Showing results from" switch in the head is a screen head control: 30px high, with the 1px
+edge (issue 1039).
+
 **States:** loading; **"Not yet scanned then"** (T before the first committed scan); build-changed
 marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`. A
 refused build-history read says so in the Build history card and is never read as "not yet
@@ -853,6 +860,10 @@ Username hint says "3 to 64 lower-case letters, digits, dots, underscores or hyp
 422 shows the form's own text inline: "Rejected: a username has 3 to 64 lower-case letters, digits,
 dots, underscores or hyphens. You cannot use system or fleet." Any other refusal, for example the
 409 for a username that exists, shows the backend's message.
+**Role names (issue 1039):** each role shows in words, as in the user menu: `security_lead` reads
+"security lead". That is so in the Role list of each user, the Role list of the Invite window, the
+"Change role?" window ("becomes security lead"), its message after the change, and the column heads
+of the Roles table and their screen reader labels. The value that the form sends is the id.
 **Roles panel (A-4):** renders the 4 roles as **capability bundles** (viewer — none · triager —
 can_triage · security_lead — + can_accept_audit_final · admin — *), from `system-roles` content.
 The v4 5-role permission matrix is gone.
@@ -1094,8 +1105,8 @@ both screens use. A card shows the name, a badge with who can see it (`Everyone`
 or `Only the owner`), the description, the number of panels and when it changed, the owner and
 **Export**. The whole card opens the dashboard (issue 1004, §6), with no "Open" text (operator,
 2026-10-29). The badge colors by who can see the dashboard (§6). The three head buttons (New
-dashboard, Export all, Import) have one height and a small lift off the paper (`--control-lift`).
-Export all and Import have the darker border (operator, 2026-10-29). A long role list ends in "…", and the title of the badge has the full list.
+dashboard, Export all, Import) are screen head controls: 30px high, the darker line and a 1px
+edge with no blur (`head`, issue 1039, option D). The soft lift of issue 1004 is gone. A long role list ends in "…", and the title of the badge has the full list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
   **New dashboard** opens the details window (below) in its create mode. **Create** makes the
@@ -1142,14 +1153,16 @@ dashboard** stays, off, with the reason in `UiRoleNote`, and `?edit=1` in a link
 page.
 - **Head:** `Editing <name>`. The scanner switch stays, so the panels show what they will show.
   **Add panel**, **Name and sharing**, **Remove** and **Exit edit** replace Export and Edit
-  dashboard. Exit edit is off while the page has changes to save: the save bar under the head
+  dashboard. Every control of the head is a screen head control, 30px high with the 1px edge
+  (issue 1039): before, Exit edit was 34px and the scanner switch 36px. Exit edit is off while the page has changes to save: the save bar under the head
   card, Discard or Save changes, is the way out. Next to a long name, the controls go to a second row, on the
   right.
 - **Name and sharing (`ModalShell`, `components/dashboards/DashboardDetailsDialog.vue`):** the
   name and the description (`SettingsInput` in the UI face, at most 128 and 1,024 characters), who can see it
   (Only me, Everyone or Some roles, D2), and the scanner that the page opens on. With Some roles,
   `UiToggleGroup` shows each role that `GET /api/v1/dashboards/roles` gives, admin too (ruling of
-  2026-10-26), and a role of the dashboard that the list does not have. A note says that an admin
+  2026-10-26), and a role of the dashboard that the list does not have. Each role shows in words
+  (`security lead`), and the saved value is the id (issue 1039). A note says that an admin
   can see each dashboard. **Apply** is off while the name is empty or Some roles has no role, and
   the reason shows under the fields. Apply changes the draft, as the panel settings do: the save
   bar saves the details with the panels. If the list of roles does not load, an alert says so,
@@ -1264,6 +1277,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 | 6 | — | Cards additionally show the schema-v2 **workbench capture** (columns/density/sort/relative window; cluster-agnostic by shape) and page through the kit GridPager (operator ask); apply = deep-link round-trip incl. `!`-negation grammar | 2026-07-17, M9f slice 4 |
 | global | (prototype topbar: disabled search input, text sign-out, mixed control heights) | **Topbar register**: all three controls (cluster switcher · time picker · search) at **40px** with **2px `--line` borders**, keep-beige (white-chip and slate-tint A/Bs LOST); search sits on `--bg` with ink hint + real control wash; Sign out = kit UiButton `control`; FilterBar pills/add-filter at **38px** | 2026-07-17 §8.5 rulings on built specimens (M9f slice 2) |
 | global | (prototype primary button: gloss — inset highlight + drop shadow) | **Flat solid coral** (solid-button grammar): hue kept, gloss removed; hover/active = `--coral-dd` (a full step — `--coral-d` was too small). Muted-terracotta and soft-wash variants built and LOST | 2026-07-17 §8.5 ruling (M9f slice 3) |
+| global | (issue 1004: a soft lift on the Dashboards head buttons. Other heads: a 34px primary or ghost, 30px buttons and a 36px switch.) | **One 30px height for every screen head control, with a 1px edge and no blur.** The token is `--control-edge`, set by `head` on UiButton and UiSegControl. The soft shadow (C) LOST: it is the generic look of shadcn/ui. No shadow (E) LOST. | 2026-10-29 §8.5 ruling on built specimens, option D (issue 1039) |
 | global | (the flat coral primary above) | **Flat solid slate** (`--slate2`, hover and press `--slate`, press ring `--slate-drop`), on every primary button and the sign-in button. Coral sits in the red-orange of critical, KEV and "down". A deep teal specimen LOST, because teal means info and Trivy | 2026-10-29 §8.5 ruling on built specimens (issue 1004) |
 | global | (prototype drawer: flush right panel, opaque card) | **Glass floating drawer** (SlideoverShell): `--glass` 0.78 white + 14px backdrop blur, neutral `--glass-edge`, 12px backdrop detach + 4px backdrop blur, nested head radius (kills the corner seam). 0.65 opacity tried and reverted | 2026-07-17 §8.5 rulings (M9f slice 3) |
 | global | (prototype: topbar search input) | **⌘K command palette** (issue-319 ruling): composed `/findings/groups` queries (CVE/image/namespace) + jump-to-screen off the ONE nav model; the topbar "input" is a button that opens it | 2026-07-17, M9f slice 2 |
