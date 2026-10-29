@@ -20,6 +20,7 @@ withDefaults(
     disabled?: boolean
     maxlength?: number
     prose?: boolean
+    placeholder?: string
   }>(),
   { num: false, invalid: false, prose: false },
 )
@@ -41,6 +42,7 @@ const row = inject(SETTINGS_ROW_LABEL, null)
       :aria-invalid="invalid || undefined"
       :disabled="disabled"
       :maxlength="maxlength"
+      :placeholder="placeholder"
       :inputmode="num ? 'decimal' : undefined"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />

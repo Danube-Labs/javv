@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 
 import { createViewApiV1ViewsPost, type ViewPreset, type ViewWorkbench } from '@/api/generated'
+import SettingsInput from '@/components/settings/SettingsInput.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -58,38 +59,32 @@ async function save() {
 <template>
   <UiButton variant="control" @click="show">Save view</UiButton>
   <ModalShell v-if="open" title="Save this view" subtitle="Filters, columns and time window, reusable by everyone" :width="440" @close="open = false">
-    <div class="svd-body">
-      <p class="svd-summary">{{ summary }}</p>
-      <UiField label="Name">
-        <input v-model="name" maxlength="128" placeholder="e.g. Critical KEV backlog" @keydown.enter="save" />
-      </UiField>
-      <UiField label="Description (optional)">
-        <input v-model="description" maxlength="1024" placeholder="What this view is for" @keydown.enter="save" />
-      </UiField>
-      <div class="svd-actions">
-        <UiButton variant="control" @click="open = false">Cancel</UiButton>
-        <UiButton variant="primary" :disabled="saving" @click="save">Save view</UiButton>
-      </div>
-    </div>
+    <p class="svd-summary">{{ summary }}</p>
+    <UiField label="Name" for="svd-name">
+      <SettingsInput id="svd-name" v-model="name" prose :maxlength="128" placeholder="e.g. Critical KEV backlog" @keydown.enter="save" />
+    </UiField>
+    <UiField label="Description" hint="optional" for="svd-description">
+      <SettingsInput
+        id="svd-description"
+        v-model="description"
+        prose
+        :maxlength="1024"
+        placeholder="What this view is for"
+        @keydown.enter="save"
+      />
+    </UiField>
+    <template #actions>
+      <UiButton variant="control" @click="open = false">Cancel</UiButton>
+      <UiButton variant="primary" :disabled="saving" @click="save">Save view</UiButton>
+    </template>
   </ModalShell>
 </template>
 
 <style scoped>
-.svd-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 16px;
-}
 .svd-summary {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--soft);
   font-style: italic;
-}
-.svd-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 </style>
