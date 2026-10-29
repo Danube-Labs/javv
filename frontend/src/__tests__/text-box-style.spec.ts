@@ -86,4 +86,19 @@ describe('the text box and the dropdown (issue 1050)', () => {
     )
     expect(plain).toEqual([])
   })
+
+  it('the time picker, the Inspect path box and the sign-in page use the shared box (issue 1053)', () => {
+    // Inspect: the path box only. The request body editor is a code panel, not a form field.
+    const boxes: [string, (tag: string) => boolean][] = [
+      ['components/time-travel/GlobalTimePicker.vue', () => true],
+      ['views/InspectView.vue', (tag) => tag.includes('aria-label="Store path"')],
+      ['views/LoginView.vue', () => true],
+    ]
+    const plain = boxes.flatMap(([f, keep]) => {
+      const tags = rawFields(f).filter(keep)
+      expect(tags.length, `${f} has boxes`).toBeGreaterThan(0)
+      return tags.filter((tag) => !/class="[^"]*\bset-(input|select)\b/.test(tag)).map((tag) => `${f}: ${tag}`)
+    })
+    expect(plain).toEqual([])
+  })
 })

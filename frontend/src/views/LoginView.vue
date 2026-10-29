@@ -88,18 +88,19 @@ async function submitChange() {
 
       <template v-if="mode === 'login'">
         <label for="username">Username</label>
-        <input id="username" v-model="username" autocomplete="username" required />
+        <input class="set-input" id="username" v-model="username" autocomplete="username" required />
         <label for="password">Password</label>
-        <input id="password" v-model="password" type="password" autocomplete="current-password" required />
+        <input class="set-input" id="password" v-model="password" type="password" autocomplete="current-password" required />
       </template>
 
       <template v-else>
         <p class="notice">Your password must be changed before continuing.</p>
         <label for="current">Current password</label>
-        <input id="current" v-model="password" type="password" autocomplete="current-password" required />
+        <input class="set-input" id="current" v-model="password" type="password" autocomplete="current-password" required />
         <label for="new">New password</label>
         <input
           id="new"
+          class="set-input"
           v-model="newPassword"
           type="password"
           autocomplete="new-password"
@@ -107,7 +108,7 @@ async function submitChange() {
           required
         />
         <label for="confirm">Confirm new password</label>
-        <input id="confirm" v-model="confirm" type="password" autocomplete="new-password" required />
+        <input class="set-input" id="confirm" v-model="confirm" type="password" autocomplete="new-password" required />
         <p id="password-rule" class="rule">
           At least {{ PASSWORD_MIN_LENGTH }} characters. Your current password stops working once
           you set the new one.
@@ -188,15 +189,6 @@ label {
   letter-spacing: 0.06em;
   color: var(--soft);
   margin: 10px 0 4px;
-}
-input {
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-body);
-  background: var(--panel);
-  color: var(--ink);
 }
 .rule {
   margin: 10px 0 0;
