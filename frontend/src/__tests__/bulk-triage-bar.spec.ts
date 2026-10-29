@@ -68,6 +68,12 @@ describe('BulkTriageBar', () => {
     expect(buttons().some((t) => t.startsWith('Apply'))).toBe(true)
   })
 
+  it('the assignee and the note use the shared text box (issue 1050)', async () => {
+    await open({ severity: ['critical'] })
+    expect(document.body.querySelector('#bulk-assignee')!.className).toBe('set-input')
+    expect(document.body.querySelector('#bulk-notes')!.className).toBe('set-input set-input--prose')
+  })
+
   // issue 833, F1: the count came from the last answer, so a refused read showed the old count
   it.each([
     [12, '≈ 12 findings', false],

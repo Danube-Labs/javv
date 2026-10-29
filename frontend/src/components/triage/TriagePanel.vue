@@ -166,7 +166,7 @@ function undoLast() {
         <textarea
           id="triage-notes"
           v-model="notes"
-          class="fld"
+          class="set-input set-input--prose"
           rows="2"
           placeholder="Add context for the audit trail…"
           :disabled="locked"
@@ -345,26 +345,6 @@ function undoLast() {
 }
 .pn-stale {
   background: var(--state-stale-fg);
-}
-.fld {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 10px;
-  font-family: var(--font-ui);
-  font-size: var(--text-mono-cell);
-  color: var(--ink);
-  background: var(--card);
-  outline: none;
-  resize: vertical;
-  box-sizing: border-box;
-}
-.fld:focus {
-  border-color: var(--coral);
-}
-.fld:disabled {
-  background: var(--panel);
-  color: var(--soft);
 }
 .draft-error {
   margin: 8px 0 0;

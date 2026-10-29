@@ -4,14 +4,30 @@
  * refuses a copy of either rule outside base.css.
  */
 import { mount } from '@vue/test-utils'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import SettingsInput from '@/components/settings/SettingsInput.vue'
 import UiDateTime from '@/components/ui/UiDateTime.vue'
 
-const base = readFileSync(join(__dirname, '..', 'styles', 'base.css'), 'utf8')
+const SRC = join(__dirname, '..')
+const base = readFileSync(join(SRC, 'styles', 'base.css'), 'utf8')
+
+function vueFiles(dir: string): string[] {
+  return readdirSync(join(SRC, dir), { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? vueFiles(join(dir, e.name)) : e.name.endsWith('.vue') ? [join(dir, e.name)] : [],
+  )
+}
+
+/** every raw text box, text area, date box and dropdown in a file's template, as its opening tag */
+function rawFields(rel: string): string[] {
+  const src = readFileSync(join(SRC, rel), 'utf8')
+  const template = src.slice(src.indexOf('<template>'), src.lastIndexOf('</template>'))
+  return [...template.matchAll(/<(input|textarea|select)\b[^>]*>/g)]
+    .map((m) => m[0])
+    .filter((tag) => !/type="(checkbox|radio|file)"/.test(tag))
+}
 
 /** the declarations of one rule in base.css, by its exact selector */
 function rule(selector: string): string {
@@ -56,5 +72,18 @@ describe('the text box and the dropdown (issue 1050)', () => {
     const boxes = w.findAll('input')
     expect(boxes).toHaveLength(2)
     for (const b of boxes) expect(b.classes()).toEqual(expect.arrayContaining(['set-input', 'set-input--invalid']))
+  })
+
+  it('every box in a window and in the triage panel is the shared box or a kit part', () => {
+    const files = vueFiles('.')
+      .filter((f) => !f.includes('__tests__') && !f.endsWith('ModalShell.vue'))
+      .filter((f) => /<ModalShell\b/.test(readFileSync(join(SRC, f), 'utf8')) || f.endsWith('TriagePanel.vue'))
+    expect(files.length).toBeGreaterThan(10)
+    const plain = files.flatMap((f) =>
+      rawFields(f)
+        .filter((tag) => !/class="[^"]*\bset-(input|select)\b/.test(tag))
+        .map((tag) => `${f}: ${tag}`),
+    )
+    expect(plain).toEqual([])
   })
 })

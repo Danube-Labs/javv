@@ -107,6 +107,16 @@ describe('RiskAcceptDialog expiry (issue 984)', () => {
     }
   })
 
+  it('uses the shared text box, and marks a refused date invalid (issue 1050)', async () => {
+    await open('2026-10-23')
+    const date = document.body.querySelector('#ra-expiry')!
+    expect([...date.classList]).toEqual(['set-input', 'set-input--invalid'])
+    expect(document.body.querySelector('textarea')!.className).toBe('set-input set-input--prose')
+    document.body.innerHTML = ''
+    await open('2026-10-24')
+    expect([...document.body.querySelector('#ra-expiry')!.classList]).toEqual(['set-input'])
+  })
+
   it('tomorrow, or no date, can be sent', async () => {
     for (const day of ['2026-10-24', '']) {
       document.body.innerHTML = ''

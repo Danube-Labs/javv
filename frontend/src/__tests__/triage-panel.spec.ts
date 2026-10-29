@@ -113,6 +113,10 @@ describe('TriagePanel (FR-7 gates)', () => {
     expect(w.find('.ui-btn--ghost').text()).toContain('Risk-accept')
   })
 
+  it('the notes use the shared text box in the prose face (issue 1050)', () => {
+    expect(panel().find('#triage-notes').classes()).toEqual(['set-input', 'set-input--prose'])
+  })
+
   it('notes-only draft saves without a state change', async () => {
     const w = panel()
     await w.find('#triage-notes').setValue('looked into it')

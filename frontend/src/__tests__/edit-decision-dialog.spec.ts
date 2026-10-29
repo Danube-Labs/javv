@@ -66,6 +66,13 @@ describe('EditDecisionDialog expiry (issue 984)', () => {
     expect(document.body.querySelector('#ed-expiry')!.getAttribute('min')).toBe('2026-10-24')
   })
 
+  it('uses the shared text box, and marks a refused date invalid (issue 1050)', async () => {
+    await open('2026-09-30')
+    expect(document.body.querySelector('#ed-just')!.className).toBe('set-input set-input--prose')
+    expect(document.body.querySelector('#ed-expiry')!.classList).toContain('set-input')
+    expect(document.body.querySelector('#ed-expiry')!.classList).toContain('set-input--invalid')
+  })
+
   it('a decision that has expired cannot keep its date, and says why', async () => {
     await open('2026-09-30', { justification: 'Still no fix.' })
     expect(saveButton().disabled).toBe(true)
