@@ -55,7 +55,7 @@ describe('the window head (issue 1049)', () => {
     expect(rule(shell, '.modal-close:focus-visible')).toContain('outline: var(--focus-ring);')
   })
 
-  it('is restyled by no window, so all of them look the same', () => {
+  it('has no restyle in any window, so all of them look the same', () => {
     const restyles = vueFiles('.')
       .filter((f) => !f.endsWith('ModalShell.vue'))
       .filter((f) => /<style[\s\S]*\.modal-(head|sub)\b/.test(read(f)))
