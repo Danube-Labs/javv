@@ -73,7 +73,9 @@ import { useToastStore } from '@/stores/toast'
 import DashboardView from '@/views/DashboardView.vue'
 import DashboardsView from '@/views/DashboardsView.vue'
 
-import { resetGridstack } from './helpers/fakeGridstack'
+import { FakeResizeObserver, resetGridstack } from './helpers/fakeGridstack'
+
+vi.stubGlobal('ResizeObserver', FakeResizeObserver)
 
 const ID = 'c'.repeat(32)
 const PANELS: DashboardPanel[] = [{ panel: 'triage-progress', x: 0, y: 0, w: 1, h: 'short' }]

@@ -31,15 +31,32 @@ export function placeOne<T extends DashboardPanel>(s: T): (PlacedPanel & { store
   return { stored: s, panel, rows: panel.heights[height] ?? 1 }
 }
 
-/** CSS custom properties for one grid cell; the read page's stylesheet places it with them,
- * so a narrow screen can drop the columns and keep the height. */
-export function cellStyle(p: PlacedPanel): Record<string, string> {
-  return {
-    '--col': String(p.stored.x + 1),
-    '--cols': String(p.stored.w),
-    '--row': String(p.stored.y + 1),
-    '--rows': String(p.rows),
+/** A part of the read page: a Full panel by itself (one column), or the Half panels between two
+ * Full ones (two columns, each from the top down). */
+export interface PageBlock {
+  full: boolean
+  columns: PlacedPanel[][]
+}
+
+/** The read page in blocks. Each panel is as tall as its content, so the stored `y` gives only the
+ * order: in the edit grid a Full panel never shares a row with a Half one, so it closes the block of
+ * Half panels above it. The page and a screen reader read block by block, the left column first. */
+export function pageBlocks(placed: readonly PlacedPanel[]): PageBlock[] {
+  const blocks: PageBlock[] = []
+  let open: PageBlock | null = null
+  for (const p of placed) {
+    if (p.stored.w >= 2) {
+      blocks.push({ full: true, columns: [[p]] })
+      open = null
+      continue
+    }
+    if (!open) {
+      open = { full: false, columns: [[], []] }
+      blocks.push(open)
+    }
+    open.columns[p.stored.x >= 1 ? 1 : 0]!.push(p)
   }
+  return blocks
 }
 
 /** The scanner a panel reads: its pinned one, or the dashboard's switch (Q7). */

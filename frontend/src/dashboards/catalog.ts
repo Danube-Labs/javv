@@ -42,9 +42,9 @@ export interface CatalogPanel {
   line: string
   component: Component
   defaultWidth: PanelWidth
-  /** grid rows of 40 px for each height the panel can take, the first one its default. A slot
-   * of n rows holds n × 40 px less the grid's 2 × 15 px margin; each value fits the panel as
-   * measured on its own screen, with a table panel at TABLE_ROWS rows. */
+  /** grid rows of 40 px for each height the panel can take, the first one its default. n rows
+   * hold n × 40 px less the grid's 2 × 15 px margin. On a dashboard a panel is as tall as its
+   * content (issue 1045): the rows are only the first height of a new panel in edit mode. */
   heights: Partial<Record<PanelHeight, number>>
   /** the panel splits its numbers by scanner, so the dashboard's scanner switch applies */
   usesScanner: boolean

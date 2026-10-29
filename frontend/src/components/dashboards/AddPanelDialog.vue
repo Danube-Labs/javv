@@ -116,7 +116,6 @@ const previewProps = computed(() =>
           v-else-if="preview"
           class="cat-prev"
           :class="{ 'cat-prev-half': w === 'half' }"
-          :style="{ height: `${preview.rows * 40 - 30}px` }"
         >
           <PanelFrame v-if="picked.framed" :title="picked.name" :line="picked.line">
             <component :is="picked.component" :key="picked.id" v-bind="previewProps" />
@@ -233,10 +232,7 @@ const previewProps = computed(() =>
   text-transform: uppercase;
   color: var(--soft);
 }
-/* the slot the panel gets on the dashboard; a panel taller than it scrolls, as there */
-.cat-prev {
-  overflow: auto;
-}
+/* as tall as its content, as on the dashboard (issue 1045): only the window scrolls */
 .cat-prev-half {
   width: calc(50% - 15px);
 }

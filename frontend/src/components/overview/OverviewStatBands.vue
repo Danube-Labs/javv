@@ -151,4 +151,20 @@ function goFindings(query: Record<string, string>) {
     border-left: none;
   }
 }
+/* a Half panel of a dashboard, whose cell is a size container: five numbers do not fit in a row,
+   so the bands take three columns at any screen width. Overview declares no container. */
+@container (max-width: 700px) {
+  .stat-band {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stat-cell + .stat-cell {
+    border-left: 1px solid var(--line2);
+  }
+  .stat-cell:nth-child(3n + 1) {
+    border-left: none;
+  }
+  .stat-cell:nth-child(n + 4) {
+    border-top: 1px solid var(--line2);
+  }
+}
 </style>
