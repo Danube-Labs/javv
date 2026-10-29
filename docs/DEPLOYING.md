@@ -34,15 +34,15 @@ There are two installation methods. They use the same images, settings and defau
 - Docker Engine with the compose plugin 2.23.1 or later.
 - A POSIX shell (Linux or macOS).
 - These three files, in one folder:
-    - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/compose.yaml) <!-- x-release-please-version -->
-    - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/.env.example) <!-- x-release-please-version -->
-    - [`setup.sh`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.1/deploy/compose/setup.sh) <!-- x-release-please-version -->
+    - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.2/deploy/compose/compose.yaml) <!-- x-release-please-version -->
+    - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.2/deploy/compose/.env.example) <!-- x-release-please-version -->
+    - [`setup.sh`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.2/deploy/compose/setup.sh) <!-- x-release-please-version -->
 
 To get the files, run these commands in an empty folder. `VERSION` is the release that you install.
 
 <!-- x-release-please-start-version -->
 ```bash
-VERSION=0.9.1
+VERSION=0.9.2
 for f in compose.yaml .env.example setup.sh; do
   curl -fsSLO "https://raw.githubusercontent.com/Danube-Labs/javv/v$VERSION/deploy/compose/$f"
 done
@@ -394,7 +394,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
 
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.1
+    VERSION=0.9.2
     read -rs -p 'OpenSearch admin password: ' pw && echo
     printf '%s' "$pw" | kubectl create secret generic javv-opensearch-admin --from-file=password=/dev/stdin
     unset pw
@@ -427,7 +427,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
 3. **Install JAVV.** The backend signs in to OpenSearch as `javv`, with the Secret of `javv`:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.1
+    VERSION=0.9.2
     helm install javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" \
       --set secrets.existingSecret=javv-secrets \
       --set opensearch.passwordSecret.name=javv-opensearch-backend
@@ -496,7 +496,7 @@ network. Each pair of a cluster and a scanner has its own token.
     address of JAVV:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.1
+    VERSION=0.9.2
     kubectl create namespace javv-scanner
     # asks for each token, so it is not in your shell history or the process list
     for s in trivy grype; do
@@ -612,7 +612,7 @@ Each release signs the backend and frontend images that it publishes, with **cos
 1. Verify an image and its SBOM attestation:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.1
+    VERSION=0.9.2
     IMAGE=ghcr.io/danube-labs/javv-backend:$VERSION   # or javv-frontend
     IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
     ISSUER=https://token.actions.githubusercontent.com
