@@ -69,6 +69,10 @@ and `usePagedSlice` (a bounded row set the client already holds — saved views,
 Activity/Affected cards, DecisionsCard).
 Backend: `query/paging.py` + the bulk helpers.
 **Grep first.** A raw parallel implementation of a solved surface fails review.
+**Screen head controls** take `head` (`UiButton`, `UiSegControl`): one 30px height, the darker
+line and the 1px `--control-edge` with no blur (issue 1039, option D). Never a soft blurred
+shadow, and never a `:deep` restyle in the view. **Role ids** show through `roleLabel()`
+(`@/lib/roleLabel`): `security_lead` reads "security lead", and the id stays the value.
 
 **Building a NEW agg-backed panel (chart, board, histogram, leaderboard)** — it is a *lens*, and
 lenses are built self-contained: `(cluster_id, T, params)` in, owns its own aggregation fetch, its
