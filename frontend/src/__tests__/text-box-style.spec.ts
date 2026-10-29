@@ -87,6 +87,22 @@ describe('the text box and the dropdown (issue 1050)', () => {
     expect(plain).toEqual([])
   })
 
+  it('the search box has the hover wash and line and the coral line on focus, on the rail card too (issue 1053)', () => {
+    // one rule set serves both selectors, so the rail card cannot drift from the box
+    expect(rule('.search-box,\n.facet-search')).toContain('border: 1px solid var(--line);')
+    const hover = rule('.search-box:hover,\n.facet-search:hover')
+    expect(hover).toContain('background: var(--control-hover-bg);')
+    expect(hover).toContain('border-color: var(--control-hover-line);')
+    expect(rule('.search-box:focus-within,\n.facet-search:focus-within')).toContain('border-color: var(--coral);')
+  })
+
+  it('the value search of Add filter is the shared search box (issue 1053)', () => {
+    const src = readFileSync(join(SRC, 'components/filters/FilterBar.vue'), 'utf8')
+    const boxes = [...src.matchAll(/class="([^"]*\bfilter-vsearch\b[^"]*)"/g)].map((m) => m[1])
+    expect(boxes).toHaveLength(2)
+    for (const c of boxes) expect(c.split(/\s+/)).toContain('search-box')
+  })
+
   it('the time picker, the Inspect path box and the sign-in page use the shared box (issue 1053)', () => {
     // Inspect: the path box only. The request body editor is a code panel, not a form field.
     const boxes: [string, (tag: string) => boolean][] = [
