@@ -1,7 +1,8 @@
 """The dashboard panels the backend accepts (issue 440): the same closed list as the frontend's
 `src/dashboards/catalog.ts`, which panel-catalog-ids.spec.ts holds equal to this one. A saved
-panel names its height (`short` or `tall`); the rows here are only for finding two panels on the
-same cell, so a new measurement of the heights changes no saved dashboard (ruling of 2026-10-25)."""
+panel names its height (`short` or `tall`), and the backend checks only that name: the rows are
+the frontend's first height for a new panel in edit mode, before its content sets the height
+(issue 1045), so a new measurement of the heights changes no saved dashboard."""
 
 from dataclasses import dataclass
 from typing import Literal

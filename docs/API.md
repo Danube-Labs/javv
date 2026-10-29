@@ -667,7 +667,9 @@ The backend refuses with 422:
 
 - a field that is not in these lists, or a panel ID that it does not know
 - a height that the panel does not have, or a `scanner` on a panel with no scanner data
-- a panel outside the two columns, or two panels on the same cell
+- a panel outside the two columns, or two panels that start on the same cell. A panel holds
+  only the cells of its top row: one cell for a width of 1, and both cells for a width of 2. The
+  height takes no part in this check, because the page makes each panel as tall as its content.
 - `roles` without `sharing: roles`, or `sharing: roles` without a role
 
 JAVV writes `owner`, `created_by`, `created_at`, `updated_by`, `updated_at` and `revision`. Each

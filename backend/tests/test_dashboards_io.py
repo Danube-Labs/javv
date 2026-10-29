@@ -179,7 +179,7 @@ async def test_a_bad_line_gets_its_own_error_and_the_others_continue(env) -> Non
             good,
             _line(color=secret),  # an unknown field
             _line(panels=[_panel(secret)]),  # an unknown panel
-            _line(panels=[_panel(), _panel("package-type", w=1, y=6)]),  # two on one cell
+            _line(panels=[_panel(), _panel("package-type", w=1, y=0)]),  # two on one cell
         )
         + "{not json\n"
         + "\n"  # an empty line is skipped
