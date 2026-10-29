@@ -66,14 +66,15 @@ describe('the whole card opens the item', () => {
     expect(open).not.toHaveBeenCalled()
   })
 
-  it('has no Open button: a quiet "Open ›" ends the footer, with the label the screen gives', () => {
+  it('has no Open button: a quiet "<label> ›" ends the footer only when the screen gives a label', () => {
     const { w } = mountCard({ openLabel: 'Open in Findings' })
     expect(w.findAll('button').map((b) => b.text())).not.toContain('Open in Findings')
     const cue = w.get('.vc-foot .vc-open')
     expect(cue.text()).toBe('Open in Findings ›')
     // the link already names the action; the cue is only a sign for the eye
     expect(cue.attributes('aria-hidden')).toBe('true')
-    expect(mountCard().w.get('.vc-open').text()).toBe('Open ›')
+    // Dashboards gives no label: its card opens the dashboard and needs no sign (operator, 2026-10-29)
+    expect(mountCard().w.find('.vc-open').exists()).toBe(false)
   })
 })
 

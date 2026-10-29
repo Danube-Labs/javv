@@ -2,8 +2,8 @@
 /**
  * One card of a saved-items grid (SCREENS §6): Saved views and Dashboards share it. The title,
  * a badge or a remove button (the remove button only for a user who may remove the item), a
- * description and a summary line, then a footer: the item's number, its owner, its actions and
- * a quiet "Open ›".
+ * description and a summary line, then a footer: the item's number, its owner, its actions and,
+ * when the screen gives an `openLabel`, a quiet "<label> ›" that says where the card goes.
  *
  * The whole card opens the item (issue 1004): the title is a RowLink whose ::after covers the
  * card, so a click anywhere opens it, Tab reaches it once, and a ctrl click opens a new tab. The
@@ -13,18 +13,15 @@ import type { RouteLocationRaw } from 'vue-router'
 
 import RowLink from '@/components/ui/RowLink.vue'
 
-withDefaults(
-  defineProps<{
-    title: string
-    to: RouteLocationRaw
-    openLabel?: string
-    description?: string
-    summary?: string
-    owner: string
-    removeLabel?: string
-  }>(),
-  { openLabel: 'Open' },
-)
+defineProps<{
+  title: string
+  to: RouteLocationRaw
+  openLabel?: string
+  description?: string
+  summary?: string
+  owner: string
+  removeLabel?: string
+}>()
 defineEmits<{ open: []; remove: [] }>()
 </script>
 
@@ -45,7 +42,7 @@ defineEmits<{ open: []; remove: [] }>()
       <span class="vc-count"><slot name="stat" /></span>
       <span class="vc-owner mono">{{ owner }}</span>
       <slot name="actions" />
-      <span class="vc-open" aria-hidden="true">{{ openLabel }} <span class="vc-open-mark">›</span></span>
+      <span v-if="openLabel" class="vc-open" aria-hidden="true">{{ openLabel }} <span class="vc-open-mark">›</span></span>
     </div>
   </article>
 </template>

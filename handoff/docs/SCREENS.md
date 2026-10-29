@@ -1087,9 +1087,9 @@ a later pass.
 **List (`/dashboards`, Monitor group under Saved views):** the Saved views card grid. The card
 and the grid are one component pair, `components/saved/SavedCard.vue` and `SavedGrid.vue`, that
 both screens use. A card shows the name, a badge with who can see it (`Everyone`, the role list,
-or `Only the owner`), the description, the number of panels and when it changed, the owner,
-**Export**, and a quiet "Open ›". The whole card opens the dashboard (issue 1004, §6). A long role
-list ends in "…", and the title of the badge has the full list.
+or `Only the owner`), the description, the number of panels and when it changed, the owner and
+**Export**. The whole card opens the dashboard (issue 1004, §6), with no "Open" text (operator,
+2026-10-29). A long role list ends in "…", and the title of the badge has the full list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
   **New dashboard** opens the details window (below) in its create mode. **Create** makes the

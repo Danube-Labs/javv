@@ -107,6 +107,7 @@ describe('the list', () => {
     const { w, router } = await mountList()
     const card = w.findAll('.view-card')[0]!
     expect(card.findAll('button').map((b) => b.text())).toEqual(['Export'])
+    expect(card.find('.vc-open').exists()).toBe(false)
     const link = card.get('a.vc-link')
     expect(link.attributes('href')).toBe(`/dashboards/${'a'.repeat(32)}`)
     await link.trigger('click', { button: 0 })
