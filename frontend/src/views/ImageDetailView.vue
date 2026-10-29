@@ -180,7 +180,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
       </div>
       <div class="head-actions">
         <span class="lens-label">Showing results from</span>
-        <UiSegControl v-model="scanner" :options="SCANNER_OPTS" label="Showing results from" />
+        <UiSegControl v-model="scanner" :options="SCANNER_OPTS" label="Showing results from" head />
       </div>
     </div>
 

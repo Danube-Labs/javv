@@ -286,11 +286,12 @@ async function save() {
         </template>
       </div>
       <div v-if="dash" class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" />
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" head />
         <!-- the save bar holds the only ways out of unsaved changes: Discard and Save changes -->
         <template v-if="editing">
           <UiButton
             variant="control"
+            head
             :disabled="full"
             :aria-describedby="full ? 'panel-cap-note' : undefined"
             @click="adding = true"
@@ -298,15 +299,16 @@ async function save() {
             <AppIcon name="plus" :size="13" />Add panel
           </UiButton>
           <UiRoleNote v-if="full" id="panel-cap-note" icon="info">{{ PANEL_CAP_NOTE }}</UiRoleNote>
-          <UiButton variant="control" @click="detailsOpen = true">
+          <UiButton variant="control" head @click="detailsOpen = true">
             <AppIcon name="users" :size="13" />Name and sharing
           </UiButton>
-          <UiButton variant="control" @click="removing = true"><AppIcon name="trash" :size="13" />Remove</UiButton>
-          <UiButton variant="ghost" :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
+          <UiButton variant="control" head @click="removing = true"><AppIcon name="trash" :size="13" />Remove</UiButton>
+          <UiButton variant="ghost" head :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
         </template>
         <template v-else>
           <UiButton
             variant="control"
+            head
             :disabled="exporter.exporting.value"
             @click="exporter.run({ dashboard_id: dash.dashboard_id })"
           >
@@ -314,6 +316,7 @@ async function save() {
           </UiButton>
           <UiButton
             variant="control"
+            head
             :disabled="refusal !== null"
             :aria-describedby="refusal ? 'no-edit-note' : undefined"
             @click="setEditing(true)"

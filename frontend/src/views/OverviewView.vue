@@ -119,8 +119,8 @@ function goFindings(query: Record<string, string>) {
         </p>
       </div>
       <div class="head-actions">
-        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" />
-        <UiButton variant="primary" @click="goFindings({ severity: 'critical' })">
+        <UiSegControl v-model="scanner" :options="SCANNER_SWITCH_OPTS" label="Scanner" head />
+        <UiButton variant="primary" head @click="goFindings({ severity: 'critical' })">
           Triage critical <AppIcon name="chevron" :size="13" />
         </UiButton>
       </div>
