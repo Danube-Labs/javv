@@ -7,16 +7,15 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 ## Where the project is
 
-- The last release is 0.9.2 (2026-10-29): the cards of Dashboards and Saved views, and a slate
-  primary button (issue 1004).
+- The last release is 0.9.3 (2026-10-29): role names in words, and one 30px height with a 1px
+  edge for every control in a screen head (issue 1039).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
 
-- **Issue 1039:** role names in place of role ids, and one button height in the heads of Overview
-  and of a dashboard in edit mode. It is for the next release (operator, 2026-10-29). The operator ruled D1:
-  one height in every screen head, with a 1px edge under each control. A second PR puts the same
-  edge on every bordered button.
+- Nothing. Issue 1043, the same 1px edge on the other bordered buttons, is not planned: the
+  operator ruled on 2026-10-29 that the change is too small to see. The issue lists the files
+  that the change would touch.
 
 ## Open, in the 1.0.0 milestone
 
