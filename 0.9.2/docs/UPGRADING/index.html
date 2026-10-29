@@ -1,0 +1,2351 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Docs for JAVV, Just Another Vulnerability Viewer">
+      
+      
+      
+        <link rel="canonical" href="https://danube-labs.github.io/javv/0.9.2/docs/UPGRADING/">
+      
+      
+      
+        <link rel="prev" href="../runbooks/indices-and-data/">
+      
+      
+        <link rel="next" href="../../CHANGELOG/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.73">
+    
+    
+      
+        <title>Upgrading - JAVV</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/javv.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="JAVV" class="md-header__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            JAVV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Upgrading
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark theme"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark theme" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light theme"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light theme" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/Danube-Labs/javv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="JAVV" class="md-nav__button md-logo" aria-label="JAVV" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    JAVV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Danube-Labs/javv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Use JAVV
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Use JAVV
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/from-a-scan-to-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  From a scan to a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/set-the-state-of-a-finding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Set the state of a finding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/accept-a-risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Accept a risk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/change-many-findings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Change many findings at once
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/when-a-scanner-stops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  When a scanner stops
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/who-changed-what/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  See who changed what
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/build-a-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a dashboard
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Install
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPLOYING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deploying
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Supported versions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-opensearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-opensearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/helm/javv-scanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chart: javv-scanner
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Operate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Operate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/opensearch-sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sizing OpenSearch
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/multi-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scaling and failures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runbooks/indices-and-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Indices and data
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrade
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Upgrade
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you upgrade
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-of-the-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sequence of the upgrade
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sequence of the upgrade">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        With docker compose
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="With docker compose">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-from-051-to-061-or-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Upgrade from 0.5.1 to 0.6.1 or later
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-an-opensearch-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change an OpenSearch password
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#only-for-opensearch-started-from-a-main-checkout-load-the-missing-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Only for OpenSearch started from a <code>main</code> checkout: load the missing users
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-kubernetes-helm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On Kubernetes (Helm)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#check-what-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Check what runs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#go-back-to-a-previous-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Go back to a previous release
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-first-run-of-the-background-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The first run of the background jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Version notes
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#089-a-new-permission-for-the-export-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.9: a new permission for the export files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#089-a-new-permission-for-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.9: a new permission for dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#087-javv-refuses-a-username-with-a-capital-letter" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.7: JAVV refuses a username with a capital letter
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.0: a bootstrap admin password longer than 256 characters stops the backend
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#070-javv_token_pepper-is-now-javv_secret_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.7.0: <code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#062-javv-retires-clusters-that-send-no-scans" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.6.2: JAVV retires clusters that send no scans
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#060-how-the-backend-connects-to-opensearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.6.0: how the backend connects to OpenSearch
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Integrate
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Integrate
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INGEST-CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Push from your own script
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you upgrade
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-of-the-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sequence of the upgrade
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sequence of the upgrade">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        With docker compose
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="With docker compose">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-from-051-to-061-or-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Upgrade from 0.5.1 to 0.6.1 or later
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-an-opensearch-password" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change an OpenSearch password
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#only-for-opensearch-started-from-a-main-checkout-load-the-missing-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Only for OpenSearch started from a <code>main</code> checkout: load the missing users
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-kubernetes-helm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On Kubernetes (Helm)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#check-what-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Check what runs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#go-back-to-a-previous-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Go back to a previous release
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-first-run-of-the-background-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The first run of the background jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Version notes
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#089-a-new-permission-for-the-export-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.9: a new permission for the export files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#089-a-new-permission-for-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.9: a new permission for dashboards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#087-javv-refuses-a-username-with-a-capital-letter" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.7: JAVV refuses a username with a capital letter
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.8.0: a bootstrap admin password longer than 256 characters stops the backend
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#070-javv_token_pepper-is-now-javv_secret_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.7.0: <code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#062-javv-retires-clusters-that-send-no-scans" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.6.2: JAVV retires clusters that send no scans
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#060-how-the-backend-connects-to-opensearch" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.6.0: how the backend connects to OpenSearch
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="upgrading-javv">Upgrading JAVV<a class="headerlink" href="#upgrading-javv" title="Permanent link">&para;</a></h1>
+<p>This page tells you how to move a running JAVV to a newer release:</p>
+<ul>
+<li>What to check before you start.</li>
+<li>The sequence of the upgrade, with docker compose or with Helm.</li>
+<li>How to check the result, and how to go back to the previous release.</li>
+</ul>
+<p>JAVV has three parts. You upgrade each part separately:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>What changes its version</th>
+<th>Where to find the version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Backend</strong> (FastAPI)</td>
+<td>The JAVV release</td>
+<td>The release tag. <code>GET /api/v1/meta</code> → <code>version</code></td>
+</tr>
+<tr>
+<td><strong>Frontend</strong> (Vue)</td>
+<td>The JAVV release, together with the backend</td>
+<td>The same release</td>
+</tr>
+<tr>
+<td><strong>Scanner images</strong> (Trivy, Grype)</td>
+<td>You change the published image tag in your deployment</td>
+<td><a href="../../versions.yaml"><code>versions.yaml</code></a> lists the supported scanner versions</td>
+</tr>
+</tbody>
+</table>
+<p>JAVV never changes a version in a cluster that you scan. You set each version as a tag in your
+own deployment. To install JAVV, see <a href="../DEPLOYING/"><code>DEPLOYING.md</code></a>.</p>
+<h2 id="before-you-upgrade">Before you upgrade<a class="headerlink" href="#before-you-upgrade" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Read the release notes.</strong> Each release has a GitHub Release and an entry in
+    <a href="../../CHANGELOG/"><code>CHANGELOG.md</code></a>. Then read <a href="#version-notes">Version notes</a> on this page. They
+    tell you what a release needs from you.</li>
+<li><strong>Make a snapshot.</strong> The upgrade does not need it.<ul>
+<li>Use <strong>Settings › Data &amp; OpenSearch › Snapshot now</strong>, or <code>POST /api/v1/admin/snapshots</code>. The
+  request needs <code>can_manage_retention</code>.</li>
+<li>The request returns 409 when OpenSearch has no snapshot repository.
+  <a href="../CONFIGURATION/#snapshots">Snapshots</a> tells you how to add the repository.</li>
+<li>The snapshot keeps the current state, the triage, the decisions, the users, the settings and
+  the audit log. <strong>It does not keep the scan history</strong> that time travel reads. Thus a restore
+  does not bring the history back.</li>
+</ul>
+</li>
+<li><strong>Check the OpenSearch version.</strong> CI tests JAVV with the version in <code>datastore.opensearch</code> in
+    <a href="../../versions.yaml"><code>versions.yaml</code></a>.</li>
+</ol>
+<h2 id="sequence-of-the-upgrade">Sequence of the upgrade<a class="headerlink" href="#sequence-of-the-upgrade" title="Permanent link">&para;</a></h2>
+<p><strong>Upgrade the backend first, then the frontend, then the scanner images.</strong></p>
+<ol>
+<li><strong>Backend.</strong> Each new backend pod upgrades the indices when it starts.<ul>
+<li>It compares each index and template with the schema version of the release, and it adds the
+  missing parts.</li>
+<li>It opens its port only after this step. Thus it receives no requests before its indices are
+  ready.</li>
+<li>You do not need to do a step manually.</li>
+</ul>
+</li>
+<li><strong>Frontend.</strong> Upgrade it together with the backend, or immediately after the backend. A newer
+    frontend can send requests that an older backend does not have.</li>
+<li><strong>Scanner images.</strong> Change the Trivy and Grype image tags after the backend runs the new
+    release. A newer scanner can send a report format (<code>schema_version</code>) that only the newer backend
+    accepts. <code>GET /api/v1/meta</code> → <code>envelope_versions</code> lists the formats that the backend accepts.</li>
+</ol>
+<p>There is only one backend, and an upgrade replaces it. Thus two backend releases never run at the
+same time.</p>
+<p>After you go back to an older release, an older backend reads indices that a newer backend changed.
+This is safe, because each schema change until now only added fields:</p>
+<ul>
+<li>An older backend ignores the fields that it does not know.</li>
+<li>A newer backend reads a missing field as empty.</li>
+</ul>
+<h3 id="with-docker-compose">With docker compose<a class="headerlink" href="#with-docker-compose" title="Permanent link">&para;</a></h3>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>Your <code>.env</code> file. Keep it: it holds your settings.</li>
+<li>The <code>compose.yaml</code> of the new release. It names the backend and frontend images of that release.</li>
+<li>A copy of your changes to <code>compose.yaml</code>, for example the host port. Make the same changes in the
+  new file.</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>In the folder of your installation, keep a copy of the old file, and get the file of the new
+    release. <code>VERSION</code> is the release that you upgrade to:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.2
+cp<span class="w"> </span>compose.yaml<span class="w"> </span>compose.yaml.old
+curl<span class="w"> </span>-fsSLO<span class="w"> </span><span class="s2">"https://raw.githubusercontent.com/Danube-Labs/javv/v</span><span class="nv">$VERSION</span><span class="s2">/deploy/compose/compose.yaml"</span>
+</code></pre></div>
+    <!-- x-release-please-end --></li>
+<li>Make your changes to <code>compose.yaml</code> again, if you had changes.</li>
+<li>Pull the images and start them:
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>pull
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div></li>
+</ol>
+<p>JAVV is not available for some seconds, while the new backend starts and upgrades the indices. The
+frontend waits until the backend reports healthy (<code>depends_on</code>).</p>
+<p><strong>To go back to the previous release,</strong> put the <code>compose.yaml</code> of that release back
+(<code>compose.yaml.old</code>), and run the two commands of step 3. To go back to a release before 0.7.0,
+first put back the old name of the secret key
+(<a href="#go-back-to-a-previous-release">Go back to a previous release</a>).</p>
+<h4 id="upgrade-from-051-to-061-or-later">Upgrade from 0.5.1 to 0.6.1 or later<a class="headerlink" href="#upgrade-from-051-to-061-or-later" title="Permanent link">&para;</a></h4>
+<p>From 0.6.0, OpenSearch requires a sign-in. 0.6.0 published no images, so use 0.6.1 or later.
+Before step 3, add these two values to your <code>.env</code>:</p>
+<ul>
+<li><code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code>: the password of the OpenSearch admin.</li>
+<li><code>JAVV_OPENSEARCH_PASSWORD</code>: the password of <code>javv</code>, the user that the backend signs in as.</li>
+</ul>
+<p>The compose file does not start without these two values. OpenSearch refuses a weak admin password.
+<a href="../DEPLOYING/#install-with-docker-compose"><code>DEPLOYING.md</code></a> gives the rules.</p>
+<p>Your data stays:</p>
+<ul>
+<li>When OpenSearch first starts with its sign-in on, it keeps each index, and it adds its security
+  configuration.</li>
+<li>You can also go back to a 0.5.x <code>compose.yaml</code> with the same data. Then OpenSearch runs without
+  its sign-in again.</li>
+</ul>
+<p>We did these steps on the real compose files, from a 0.5.1 installation with data.</p>
+<h4 id="change-an-opensearch-password">Change an OpenSearch password<a class="headerlink" href="#change-an-opensearch-password" title="Permanent link">&para;</a></h4>
+<p>OpenSearch reads <code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code> and <code>JAVV_OPENSEARCH_PASSWORD</code> only on its first
+start with its sign-in on. It keeps the two passwords in its data. Thus OpenSearch ignores a new
+value in <code>.env</code>:</p>
+<ul>
+<li>With a new admin password, OpenSearch never reports healthy, because its <code>healthcheck</code> uses the
+  new value. The backend waits for OpenSearch, and <code>docker compose up -d</code> fails after some minutes.</li>
+<li>With a new <code>javv</code> password, the backend stops with "refused the credentials in
+  JAVV_OPENSEARCH_USERNAME".</li>
+</ul>
+<p>To change a password and keep the data:</p>
+<ol>
+<li>Put the new password in <code>.env</code>.</li>
+<li>Start only OpenSearch: <code>docker compose up -d opensearch</code>. It still accepts only the old
+    password.</li>
+<li>Load the new password into the security index of OpenSearch. Use the demo admin certificate in
+    the image:
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>opensearch<span class="w"> </span>plugins/opensearch-security/tools/securityadmin.sh<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-f<span class="w"> </span>config/opensearch-security/internal_users.yml<span class="w"> </span>-t<span class="w"> </span>internalusers<span class="w"> </span>-icl<span class="w"> </span>-nhnv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-cacert<span class="w"> </span>config/root-ca.pem<span class="w"> </span>-cert<span class="w"> </span>config/kirk.pem<span class="w"> </span>-key<span class="w"> </span>config/kirk-key.pem
+</code></pre></div>
+    The command ends with <code>Done with success</code>. The compose file writes <code>internal_users.yml</code> from
+    <code>.env</code> at each start. Thus the file holds the two new passwords.</li>
+<li>Run <code>docker compose up -d</code>.</li>
+</ol>
+<p>Other methods do not work, or delete data:</p>
+<ul>
+<li><code>docker compose down -v</code> also makes OpenSearch use a new password. But it deletes all JAVV data.</li>
+<li>The account API of OpenSearch cannot change the admin password: <code>admin</code> is a reserved user (403).</li>
+</ul>
+<h4 id="only-for-opensearch-started-from-a-main-checkout-load-the-missing-users">Only for OpenSearch started from a <code>main</code> checkout: load the missing users<a class="headerlink" href="#only-for-opensearch-started-from-a-main-checkout-load-the-missing-users" title="Permanent link">&para;</a></h4>
+<p>Do these steps only when the security index of OpenSearch holds only <code>admin</code>. No release made this
+state. A <code>main</code> checkout before 0.6.0 can make it, because OpenSearch reads the files for users,
+roles and role mappings only on its first start with its sign-in on.</p>
+<ol>
+<li>In <code>.env</code>, move the value of <code>JAVV_OPENSEARCH_PASSWORD</code> to <code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code>. In
+    this state, <code>JAVV_OPENSEARCH_PASSWORD</code> was the admin password.</li>
+<li>Give <code>JAVV_OPENSEARCH_PASSWORD</code> a new value. This is the password of <code>javv</code>.</li>
+<li>Start only OpenSearch: <code>docker compose up -d opensearch</code>.</li>
+<li>Load the three files one time, with the same certificate:
+    <div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>internal_users:internalusers<span class="w"> </span>roles:roles<span class="w"> </span>roles_mapping:rolesmapping<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>opensearch<span class="w"> </span>plugins/opensearch-security/tools/securityadmin.sh<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-f<span class="w"> </span><span class="s2">"config/opensearch-security/</span><span class="si">${</span><span class="nv">f</span><span class="p">%%:*</span><span class="si">}</span><span class="s2">.yml"</span><span class="w"> </span>-t<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">f</span><span class="p">#*:</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span>-icl<span class="w"> </span>-nhnv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-cacert<span class="w"> </span>config/root-ca.pem<span class="w"> </span>-cert<span class="w"> </span>config/kirk.pem<span class="w"> </span>-key<span class="w"> </span>config/kirk-key.pem
+<span class="k">done</span>
+</code></pre></div>
+    Each file ends with <code>Done with success</code>. Sometimes the tool then shows a
+    <code>java.nio.channels.ClosedSelectorException</code>. This message comes from the HTTP client of the tool
+    when it closes, after the load. You can ignore it.</li>
+<li>Run <code>docker compose up -d</code>.</li>
+</ol>
+<p>The same loop loads a changed <code>javv</code> role. If a release changes the role, its notes tell you. We did
+these steps on the real compose files, from an OpenSearch that a <code>main</code> checkout started.</p>
+<h3 id="on-kubernetes-helm">On Kubernetes (Helm)<a class="headerlink" href="#on-kubernetes-helm" title="Permanent link">&para;</a></h3>
+<p>Each release publishes the JAVV chart and the OpenSearch chart
+(<a href="../DEPLOYING/#install-on-kubernetes-with-helm"><code>DEPLOYING.md</code></a>) at <code>oci://ghcr.io/danube-labs/charts</code>,
+with the version of the release.</p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>Your settings in your own values files. An install with <code>--set</code>, as in <code>DEPLOYING.md</code>, writes no
+  values file. Thus, before the first upgrade, write the values of each release to a file:
+    <div class="highlight"><pre><span></span><code>helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>store<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-store-values.yaml
+helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>javv<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-javv-values.yaml
+helm<span class="w"> </span>get<span class="w"> </span>values<span class="w"> </span>scanner<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span>&gt;<span class="w"> </span>my-scanner-values.yaml<span class="w">   </span><span class="c1"># in each scanned cluster</span>
+</code></pre></div></li>
+<li>These files hold each value that you set, the passwords included. Keep them as safe as your
+  Secrets.</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Upgrade with the chart of the new release and the same files. <code>VERSION</code> is the release that you
+    upgrade to:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.2
+helm<span class="w"> </span>upgrade<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-f<span class="w"> </span>my-store-values.yaml
+helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span>my-javv-values.yaml
+helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>javv
+</code></pre></div>
+    <!-- x-release-please-end --><ul>
+<li>Do the <code>store</code> upgrade when the release changed the OpenSearch chart.
+  <a href="#version-notes">Version notes</a> tells you which releases did.</li>
+<li>It is safe to do it when the chart did not change. Then the upgrade changes only labels, and
+  OpenSearch does not restart.</li>
+</ul>
+</li>
+<li>Upgrade the scanners last, in each cluster that you scan, after JAVV runs the new release. Keep
+    your values file (<code>backendUrl</code> and the token Secrets):
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.2
+helm<span class="w"> </span>upgrade<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>-f<span class="w"> </span>my-scanner-values.yaml
+</code></pre></div>
+    <!-- x-release-please-end --><ul>
+<li>A newer scanner can send a report format that only the newer backend accepts.</li>
+<li>The <code>javv-scanner</code> chart holds the scanner versions of its release.</li>
+<li>When the refresh container changes, the upgrade starts a vuln-DB refresh. The refresh
+  container changes with the image, the DB source, <code>extraEnv</code>, <code>resources</code> or <code>pullPolicy</code>.</li>
+<li>The next cycle uses the new image.</li>
+</ul>
+</li>
+</ol>
+<p><strong>While the backend restarts:</strong></p>
+<ul>
+<li>The backend runs as one pod with <code>strategy: Recreate</code>. The backend runs the background jobs, so
+  two backends must never run at the same time. Kubernetes stops the old pod before it starts the
+  new pod.</li>
+<li>JAVV is not available for some seconds, while the new pod checks OpenSearch and upgrades the
+  indices. The startup probe gives this step 300 seconds.</li>
+<li>During this time, the frontend replies 502, and the web app shows "backend not answering".</li>
+<li>Kubernetes replaces the frontend with no gap.</li>
+</ul>
+<p><strong>To go back to a previous revision,</strong> use one command. <code>helm history javv</code> lists the revisions:</p>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>rollback<span class="w"> </span>javv<span class="w">          </span><span class="c1"># to the revision before the current one</span>
+helm<span class="w"> </span>rollback<span class="w"> </span>javv<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># or to a specific revision</span>
+</code></pre></div>
+<ul>
+<li>The settings and the images of that revision come back.</li>
+<li>The indices stay as the newer release left them, and an older backend can read them
+  (<a href="#go-back-to-a-previous-release">Go back to a previous release</a>).</li>
+<li>CI does an upgrade and a rollback for each change to the charts.</li>
+<li>For the scanners, run <code>helm rollback scanner</code> in each scanned cluster. Do this before you go back
+  to the previous JAVV release.</li>
+</ul>
+<p><strong>To change an OpenSearch password</strong> (of <code>admin</code>, or of <code>javv</code>, the user that the backend signs in
+as), see the
+<a href="../../deploy/helm/javv-opensearch/#change-a-password"><code>javv-opensearch</code> chart README</a>.</p>
+<ul>
+<li>After you change the <code>javv</code> password, restart the backend. Then it reads the new password from
+  the same Secret: <code>kubectl rollout restart deploy/javv-backend</code>.</li>
+<li>The same section of the README tells you how to load the <code>javv</code> role and its mapping into an
+  OpenSearch that first started without them.</li>
+</ul>
+<h2 id="check-what-runs">Check what runs<a class="headerlink" href="#check-what-runs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Where</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenSearch replies</td>
+<td><code>GET /readyz</code> (no sign-in)</td>
+<td><code>200</code></td>
+</tr>
+<tr>
+<td>The versions that run</td>
+<td><code>GET /api/v1/meta</code> (with a signed-in session)</td>
+<td><code>{"version": "&lt;release&gt;", "mapping_version": &lt;n&gt;, "envelope_versions": [...]}</code></td>
+</tr>
+<tr>
+<td>The versions that run, in the web app</td>
+<td>The bottom of the sidebar</td>
+<td>Three lines: <code>v&lt;release&gt;</code>, <code>store schema v&lt;n&gt;</code>, <code>scanner schema v&lt;n&gt;</code></td>
+</tr>
+<tr>
+<td>What the upgrade did</td>
+<td>The backend log, one line for each pod start</td>
+<td>The event <code>bootstrap complete</code>, with <code>app_version</code>, <code>mapping_version</code>, and the indices in <code>created</code>, <code>updated</code> or <code>unchanged</code></td>
+</tr>
+<tr>
+<td>The scanners use the new version</td>
+<td>The <strong>Scanner status</strong> page, after the next scan cycle</td>
+<td>The new scanner version for each cluster</td>
+</tr>
+</tbody>
+</table>
+<p>On the first start of a new release, <code>updated</code> lists the indices whose schema changed. Later starts
+list all indices as <code>unchanged</code>.</p>
+<h2 id="go-back-to-a-previous-release">Go back to a previous release<a class="headerlink" href="#go-back-to-a-previous-release" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The indices stay safe when you go back to an older backend.</strong> The index setup changes indices
+  only to a newer schema. An older release finds the indices at a newer schema version, and it does
+  not change them. The fields that the newer release added stay, and the older release does not use
+  them.</li>
+<li><strong>The older release can read the settings that the newer release saved.</strong> The newer release can
+  add a field to a setting. If you saved that setting, the older release ignores the new field. The
+  backend logs <code>stored setting has unknown keys</code> one time for each setting. It counts each of these
+  reads in <code>javv_stored_setting_unknown_fields_total</code>
+  (<a href="../API/#metrics"><code>API.md</code> § Metrics</a>). If you <strong>save</strong> that setting while the
+  older release runs, the older release saves only the fields that it knows. After you upgrade
+  again, the new field has its default value. This is true when you go back to 0.4.8 or later.</li>
+<li><strong>Go back with the scanners first</strong> when the report format changed between the two releases.
+  Then the scanners do not send a format that the older backend refuses.</li>
+<li><strong>A release before 0.7.0 needs the old name of the secret key.</strong> These releases read
+  <code>JAVV_TOKEN_PEPPER</code> (docker compose) or the key <code>token-pepper</code> of <code>secrets.existingSecret</code> (Helm).
+  If you deleted it after the upgrade to 0.7.0, put it back with the same value before you go back:<ul>
+<li>docker compose: <code>sed -n 's/^JAVV_SECRET_KEY=/JAVV_TOKEN_PEPPER=/p' .env &gt;&gt; .env</code>. Without it,
+  <code>docker compose up</code> stops with <code>set JAVV_TOKEN_PEPPER in .env</code>, and the newer release
+  continues to run.</li>
+<li>Helm with <code>secrets.existingSecret</code>: copy the value of <code>secret-key</code> into <code>token-pepper</code>.
+  Without it, <code>helm rollback javv</code> succeeds, but the older backend pod does not start
+  (<code>couldn't find key token-pepper in Secret</code>). JAVV is not available until you copy the value.
+  <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>patch<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>--type<span class="w"> </span>merge<span class="w"> </span>-p<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">"{\"data\":{\"token-pepper\":\"</span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.data.secret-key}'</span><span class="k">)</span><span class="s2">\"}}"</span>
+</code></pre></div></li>
+</ul>
+</li>
+<li><strong>CI tests a rollback from each change to the last release.</strong> On a new docker compose store,
+  CI starts the last release and writes data with it. Then CI starts the change, the last release
+  again, and the change again. After each start, CI signs in and reads the same findings and the
+  same SLA policy.</li>
+<li><strong>A snapshot does not give a rollback in one step.</strong> A restore makes <code>restored-*</code> copies next to
+  the live indices. It never writes over them
+  (<code>POST /api/v1/admin/snapshots/{snapshot_name}/restore</code>). To use a copy, you must move it into
+  place manually.</li>
+</ul>
+<h2 id="the-first-run-of-the-background-jobs">The first run of the background jobs<a class="headerlink" href="#the-first-run-of-the-background-jobs" title="Permanent link">&para;</a></h2>
+<p>From 0.5.0, <strong>the backend starts its own background jobs.</strong> On an installation that ran these jobs
+only manually, or never, the first scheduled runs do all the work at the same time:</p>
+<ul>
+<li><strong>The lifecycle sweep</strong> (03:00 by default) deletes all scan history that is older than the
+  retention of each cluster (90 days by default). After this, time travel cannot show that period.
+  Before the jobs run for the first time, see what the sweep will do: <strong>Data inspector › Repair
+  actions › Lifecycle sweep › Dry run</strong>. If it deletes more than you want, increase the retention in
+  <strong>Settings › Data &amp; OpenSearch</strong>.</li>
+<li><strong>The staleness sweep</strong> (02:00) marks as stale each finding that no scan found again for 3 days. It
+  also marks as stale all findings of a scanner that sent nothing for 7 days.</li>
+<li><strong>The findings cleanup</strong> (04:00) deletes the findings that no scan reported for longer than its
+  period (180 days).</li>
+</ul>
+<p>A job does not run because the backend started. Each job waits for its next scheduled time.</p>
+<ul>
+<li>To stop all the jobs, start the backend with <code>JAVV_SCHEDULER_ENABLED=false</code>.</li>
+<li>To stop one job, set its <code>JAVV_JOB_&lt;KIND&gt;_CRON</code> to an empty value.</li>
+<li><a href="../CONFIGURATION/#job-schedules-and-the-time-zone">Job schedules and the time zone</a> gives the
+  schedules, and the time zone that the backend uses for them.</li>
+</ul>
+<p>If you ran these jobs from your own cron or from CronJobs, delete them. The scheduler of the
+backend replaces them. If both run, nothing breaks: the backend does not start a job that is
+already running. But the second run is work for no result.</p>
+<h2 id="version-notes">Version notes<a class="headerlink" href="#version-notes" title="Permanent link">&para;</a></h2>
+<p>A release gets an entry here when it needs something from you. These are the conditions:</p>
+<ul>
+<li>The store schema changed (<code>mapping_version</code>).</li>
+<li>The report formats that the backend accepts changed (<code>envelope_versions</code>).</li>
+<li>The scanner images must be published again, or changed together with the release.</li>
+<li>The OpenSearch chart (<code>javv-opensearch</code>) changed. Then do the <code>store</code> upgrade.</li>
+</ul>
+<p>The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
+applied it automatically on the first start.</p>
+<table>
+<thead>
+<tr>
+<th>Release</th>
+<th>Store schema</th>
+<th>Report formats accepted</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.9.1</td>
+<td>20</td>
+<td>3 and 4</td>
+<td>Nothing. The backend adds a field to the store on the first start.</td>
+</tr>
+<tr>
+<td>0.8.9</td>
+<td>19</td>
+<td>3 and 4</td>
+<td>The notes <strong>A new permission for the export files</strong> and <strong>A new permission for dashboards</strong> below</td>
+</tr>
+<tr>
+<td>0.8.7</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>JAVV refuses a username with a capital letter</strong> below</td>
+</tr>
+<tr>
+<td>0.8.0</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>A bootstrap admin password longer than 256 characters stops the backend</strong> below</td>
+</tr>
+<tr>
+<td>0.7.0</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong><code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code></strong> below</td>
+</tr>
+<tr>
+<td>0.6.2</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>JAVV retires clusters that send no scans</strong> below</td>
+</tr>
+<tr>
+<td>0.6.0</td>
+<td>18</td>
+<td>3 and 4</td>
+<td>The note <strong>How the backend connects to OpenSearch</strong> below</td>
+</tr>
+</tbody>
+</table>
+<p>No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
+backend accepts (3 and 4).</p>
+<p>No release up to and including 0.9.0 changed the OpenSearch chart in a way that needs the <code>store</code>
+upgrade. Each release changed its version number. Some releases also changed other parts of the
+chart, but not OpenSearch:</p>
+<ul>
+<li>0.7.1 and 0.8.6 changed the text of its README and of the comments in <code>values.yaml</code>, and no
+  value. 0.8.1 changed the text of its README.</li>
+<li>0.8.7 changed the test pod of the chart (<code>helm test store</code>). The pod can now run in a namespace
+  with the <code>restricted</code> level of the pod security standards.</li>
+</ul>
+<h3 id="089-a-new-permission-for-the-export-files">0.8.9: a new permission for the export files<a class="headerlink" href="#089-a-new-permission-for-the-export-files" title="Permanent link">&para;</a></h3>
+<p>A user now needs the permission <code>can_export</code> to download a file of the data:</p>
+<ul>
+<li>the CSV and VEX files of the findings</li>
+<li>the CSV files of the audit log, the contributors and the approvals queue</li>
+<li>an export report</li>
+</ul>
+<p>Without the permission, these requests get 403. The <code>viewer</code> role does not get it. A viewer can
+still read the data on the screens and through the API.</p>
+<p>A new store gives the permission to the <code>triager</code>, <code>security_lead</code> and <code>admin</code> roles. But JAVV
+writes the roles only on the first start of a store. Thus on a store that you have, only <code>admin</code>
+gets the permission, because <code>*</code> holds each permission. Also, each user keeps a copy of the
+permissions of its role.</p>
+<p>After the upgrade, give the permission to the <code>triager</code> and <code>security_lead</code> roles and to their
+users:</p>
+<ol>
+<li>Save this script as <code>can-export.sh</code>, in the folder of your installation:
+    <div class="highlight"><pre><span></span><code><span class="c1"># Adds can_export to the triager and security_lead roles, and to their users.</span>
+<span class="nv">login</span><span class="o">=</span><span class="k">$(</span><span class="nb">printf</span><span class="w"> </span>%s<span class="w"> </span><span class="s2">"</span><span class="nv">$OPENSEARCH_INITIAL_ADMIN_PASSWORD</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">'s/[\\"]/\\&amp;/g'</span><span class="k">)</span>
+curl<span class="w"> </span>-sSk<span class="w"> </span>-K<span class="w"> </span>-<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s1">'https://localhost:9200/system-roles,system-users/_update_by_query?refresh=true'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{</span>
+<span class="s1">  "query": {"terms": {"role": ["triager", "security_lead"]}},</span>
+<span class="s1">  "script": {"lang": "painless", "source": "def c = ctx._source.capabilities; if (c == null || c.contains(\"can_export\")) { ctx.op = \"noop\" } else { c.add(\"can_export\") }"}</span>
+<span class="s1">}'</span><span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">user = "admin:$login"</span>
+<span class="s">EOF</span>
+<span class="nb">echo</span>
+</code></pre></div></li>
+<li>Run the script in the OpenSearch container:
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>opensearch<span class="w"> </span>sh<span class="w"> </span>&lt;<span class="w"> </span>can-export.sh
+</code></pre></div>
+    The answer has <code>"failures":[]</code>. <code>updated</code> is the number of roles and users that the script
+    changed. If you run the script again, it changes nothing.</li>
+</ol>
+<p>The script reads the admin password in the container, as the health check of the compose file
+does. Thus the password is not in your shell history or in the arguments of a process. The users
+do not sign in again: JAVV reads the permissions of a user on each request.</p>
+<p>On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
+its admin.</p>
+<p>We did these steps on the compose files of 0.8.8, with a triager and a security lead.</p>
+<h3 id="089-a-new-permission-for-dashboards">0.8.9: a new permission for dashboards<a class="headerlink" href="#089-a-new-permission-for-dashboards" title="Permanent link">&para;</a></h3>
+<p>A user needs the permission <code>can_edit_dashboards</code> to make a dashboard. The <code>viewer</code> role does not
+get it.</p>
+<p>The store schema is now 19. At its first start, the backend makes the new index
+<code>system-dashboards</code>. You do not do a step for it. The <code>javv</code> role of an OpenSearch of your own
+already has access to it, because its name starts with <code>system-</code>.</p>
+<p>A new store gives the permission to the <code>triager</code>, <code>security_lead</code> and <code>admin</code> roles. On a store
+that you have, only <code>admin</code> gets it, because JAVV writes the roles only on the first start of a
+store. Also, each user keeps a copy of the permissions of its role.</p>
+<p>After the upgrade, give the permission to the <code>triager</code> and <code>security_lead</code> roles and to their
+users:</p>
+<ol>
+<li>Save this script as <code>can-edit-dashboards.sh</code>, in the folder of your installation:
+    <div class="highlight"><pre><span></span><code><span class="c1"># Adds can_edit_dashboards to the triager and security_lead roles, and to their users.</span>
+<span class="nv">login</span><span class="o">=</span><span class="k">$(</span><span class="nb">printf</span><span class="w"> </span>%s<span class="w"> </span><span class="s2">"</span><span class="nv">$OPENSEARCH_INITIAL_ADMIN_PASSWORD</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">'s/[\\"]/\\&amp;/g'</span><span class="k">)</span>
+curl<span class="w"> </span>-sSk<span class="w"> </span>-K<span class="w"> </span>-<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s1">'https://localhost:9200/system-roles,system-users/_update_by_query?refresh=true'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{</span>
+<span class="s1">  "query": {"terms": {"role": ["triager", "security_lead"]}},</span>
+<span class="s1">  "script": {"lang": "painless", "source": "def c = ctx._source.capabilities; if (c == null || c.contains(\"can_edit_dashboards\")) { ctx.op = \"noop\" } else { c.add(\"can_edit_dashboards\") }"}</span>
+<span class="s1">}'</span><span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">user = "admin:$login"</span>
+<span class="s">EOF</span>
+<span class="nb">echo</span>
+</code></pre></div></li>
+<li>Run the script in the OpenSearch container:
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>opensearch<span class="w"> </span>sh<span class="w"> </span>&lt;<span class="w"> </span>can-edit-dashboards.sh
+</code></pre></div>
+    The answer has <code>"failures":[]</code>. <code>updated</code> is the number of roles and users that the script
+    changed. If you run the script again, it changes nothing.</li>
+</ol>
+<p>The users do not sign in again: JAVV reads the permissions of a user on each request.</p>
+<p>On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
+its admin.</p>
+<p>We sent the request of the script two times to OpenSearch 3.9.0, with the roles and users of
+0.8.8. The first time changed the two roles and their users. The second time changed nothing.</p>
+<h3 id="087-javv-refuses-a-username-with-a-capital-letter">0.8.7: JAVV refuses a username with a capital letter<a class="headerlink" href="#087-javv-refuses-a-username-with-a-capital-letter" title="Permanent link">&para;</a></h3>
+<p>A new username must be in lower case. Before 0.8.7, <code>Alice</code> and <code>alice</code> could be two different
+users. Users that exist keep their names.</p>
+<ul>
+<li><strong>New users.</strong> <code>POST /api/v1/admin/users</code> gives 422 for a username with a capital letter, with
+  the message <code>a username must be in lower case</code>.</li>
+<li><strong>The first admin.</strong> A <code>JAVV_BOOTSTRAP_ADMIN_USERNAME</code> with a capital letter stops the backend at
+  each start, also when the first admin exists. The backend shows
+  <code>invalid settings: JAVV_BOOTSTRAP_ADMIN_USERNAME: Value error, a username must be in lower case</code>.
+  Then set the name in lower case. If no user has that name, and you set
+  <code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code>, the backend makes a new first admin. The old admin stays.</li>
+<li><strong>Sign-in.</strong> A user can type a lower-case username in any case: <code>ALICE</code> signs in as <code>alice</code>. A
+  user whose name has a capital letter, for example <code>Alice</code>, must type the name exactly. The
+  sign-in lock counts the failures of all cases of a name together.</li>
+</ul>
+<h3 id="080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend">0.8.0: a bootstrap admin password longer than 256 characters stops the backend<a class="headerlink" href="#080-a-bootstrap-admin-password-longer-than-256-characters-stops-the-backend" title="Permanent link">&para;</a></h3>
+<p>A sign-in accepts a password of 256 characters at most. A first admin with a longer
+<code>JAVV_BOOTSTRAP_ADMIN_PASSWORD</code> could never sign in. The backend now refuses such a value at start,
+and shows <code>invalid settings: JAVV_BOOTSTRAP_ADMIN_PASSWORD: String should have at most 256
+characters</code>. It does this also when the first admin exists, because the backend reads the setting
+at each start.</p>
+<p>If you see this error, set a password of 256 characters or fewer. A new value does not change
+the password of an admin that exists.</p>
+<h3 id="070-javv_token_pepper-is-now-javv_secret_key">0.7.0: <code>JAVV_TOKEN_PEPPER</code> is now <code>JAVV_SECRET_KEY</code><a class="headerlink" href="#070-javv_token_pepper-is-now-javv_secret_key" title="Permanent link">&para;</a></h3>
+<p>Only the name changes. <strong>Keep the same value.</strong> A backend that finds the old name stops at start,
+and it shows the new name. If you change the value:</p>
+<ul>
+<li>Each scanner gets 401 and needs a new token.</li>
+<li>Each user must sign in again.</li>
+<li>
+<p>Each open download link stops working.</p>
+</li>
+<li>
+<p><strong>docker compose:</strong> in <code>.env</code>, add the new name with the same value. Keep the line with the old
+  name until you do not need to go back to a release before 0.7.0:
+  <div class="highlight"><pre><span></span><code>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'s/^JAVV_TOKEN_PEPPER=/JAVV_SECRET_KEY=/p'</span><span class="w"> </span>.env<span class="w"> </span>&gt;&gt;<span class="w"> </span>.env
+</code></pre></div>
+  Until you add the new name, <code>docker compose up</code> stops with <code>set JAVV_SECRET_KEY in .env</code>. The
+  <code>compose.yaml</code> of 0.7.0 and later gives only <code>JAVV_SECRET_KEY</code> to the backend. Thus the old name
+  in <code>.env</code> has no effect on it.</p>
+</li>
+<li><strong>Helm, with the value in your values file:</strong> change the name <code>secrets.tokenPepper</code> to
+  <code>secrets.secretKey</code>, and keep its value. Until you do this, the upgrade stops with
+  <code>additional properties 'tokenPepper' not allowed</code>. If you set the value with <code>--set</code>, write your
+  values to a file first (see <a href="#on-kubernetes-helm">On Kubernetes (Helm)</a>). Change the name in
+  <code>my-javv-values.yaml</code>. Then upgrade with <code>-f my-javv-values.yaml</code>.</li>
+<li><strong>Helm, with <code>secrets.existingSecret</code>:</strong> the chart now reads the key <code>secret-key</code> from that
+  Secret. Before the upgrade, copy the value of <code>token-pepper</code> into it:
+  <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>patch<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>--type<span class="w"> </span>merge<span class="w"> </span>-p<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">"{\"data\":{\"secret-key\":\"</span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>secret<span class="w"> </span>&lt;your-secret&gt;<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.data.token-pepper}'</span><span class="k">)</span><span class="s2">\"}}"</span>
+</code></pre></div>
+  Keep the key <code>token-pepper</code> until you do not need to go back to a release before 0.7.0. Those
+  releases read only <code>token-pepper</code>. After that, you can delete it.</li>
+</ul>
+<h3 id="062-javv-retires-clusters-that-send-no-scans">0.6.2: JAVV retires clusters that send no scans<a class="headerlink" href="#062-javv-retires-clusters-that-send-no-scans" title="Permanent link">&para;</a></h3>
+<p>A new daily job retires a cluster that sent no accepted scan for 45 days
+(<code>JAVV_CLUSTER_RETIRE_AFTER_DAYS</code>). A retired cluster is not in the cluster list, in the cluster
+selector or in All clusters. JAVV keeps all of its data and its tokens. The cluster comes back with
+its next accepted scan. You can also bring it back manually:
+<code>POST /api/v1/clusters/{cluster_id}/unretire</code>.</p>
+<p>The first run (04:15 by default) retires each cluster that sent no scan for that time. An example
+is a cluster that you made again: it comes back with a new ID. To keep a cluster, do one of these
+steps:</p>
+<ul>
+<li>Set its period to never: <code>PUT /api/v1/settings/retirement</code> with its <code>cluster_id</code>,
+  <code>retire_after_days: null</code>, and <code>warn_days</code> as before.</li>
+<li>Set <code>JAVV_CLUSTER_RETIRE_AFTER_DAYS=0</code> to stop retirement for all clusters.</li>
+</ul>
+<p>When no cluster had an accepted scan within its scanner-down period, the job retires nothing, and
+it logs a warning. This condition shows a problem in JAVV, not in the clusters.</p>
+<h3 id="060-how-the-backend-connects-to-opensearch">0.6.0: how the backend connects to OpenSearch<a class="headerlink" href="#060-how-the-backend-connects-to-opensearch" title="Permanent link">&para;</a></h3>
+<p>There are two changes, both on purpose:</p>
+<ul>
+<li><strong>A <code>JAVV_OPENSEARCH_URL</code> that holds a user or a password stops the backend at start.</strong> Earlier
+  releases sent <code>https://user:pass@host</code> (or <code>user:pass@host</code>, with no scheme) to the client. Move
+  the credentials into <code>JAVV_OPENSEARCH_USERNAME</code> and <code>JAVV_OPENSEARCH_PASSWORD</code>
+  (<a href="../CONFIGURATION/#connection-to-opensearch">Connection to OpenSearch</a>).</li>
+<li><strong>A wrong setting stops the start, with one line for each variable:</strong>
+  <code>invalid settings: JAVV_&lt;NAME&gt;: &lt;reason&gt;</code>. The line holds no value from your environment.
+  Earlier releases showed part of the environment, and secrets could be in it.</li>
+</ul>
+<p>The token command (<code>python -m backend.core.tokens</code>) and the scan-scope command now also use
+<code>JAVV_REQUEST_TIMEOUT</code>, as the rest of the backend did before (30 seconds by default).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+          
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","content.code.copy"],"redirect":"../../redirect.json","search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"provider":"mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.77dd0ce9.min.js"></script>
+      
+    
+  </body>
+</html>
