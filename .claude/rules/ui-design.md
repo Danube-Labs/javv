@@ -64,7 +64,10 @@ SlideoverShell · PopoverShell · ToastStack · EmptyState · UiSkeleton · UiLo
 the shared table skin + GridPager, and the stat-band skin (`.stat-band`/`.stat-cell` in base.css,
 composed by `components/overview/OverviewStatBands.vue` — it is a skin, not a kit component).
 A **text box or dropdown** is `SettingsInput`, `UiDateTime`, or the base.css skin `.set-input` /
-`.set-select` (issue 1050). A window never styles a box of its own.
+`.set-select` (issue 1050). A window never styles a box of its own, and neither do the form
+fields outside windows (issue 1053). A **search box** is the base.css skin `.search-box`
+(`.facet-search` is the same box as the rail card). A **window footer** is a `ghost` Cancel,
+Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)
 and `usePagedSlice` (a bounded row set the client already holds — saved views, a finding's
