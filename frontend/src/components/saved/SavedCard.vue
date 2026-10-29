@@ -40,7 +40,7 @@ defineEmits<{ open: []; remove: [] }>()
     <p class="vc-summary"><slot name="summary">{{ summary }}</slot></p>
     <div class="vc-foot">
       <span class="vc-count"><slot name="stat" /></span>
-      <span class="vc-owner mono">{{ owner }}</span>
+      <span class="vc-owner">Owner <b class="vc-owner-name">{{ owner }}</b></span>
       <slot name="actions" />
       <span v-if="openLabel" class="vc-open" aria-hidden="true">{{ openLabel }} <span class="vc-open-mark">›</span></span>
     </div>
@@ -153,10 +153,15 @@ defineEmits<{ open: []; remove: [] }>()
   font-weight: 600;
   font-size: var(--text-sm);
 }
+/* the size of the other card text: at the 10px label size the name was hard to read (issue 1004) */
 .vc-owner {
   flex: 1;
-  font-size: var(--text-facet-label);
+  font-size: var(--text-sm);
   color: var(--soft);
+}
+.vc-owner-name {
+  color: var(--ink);
+  font-weight: 600;
 }
 .vc-open {
   white-space: nowrap;

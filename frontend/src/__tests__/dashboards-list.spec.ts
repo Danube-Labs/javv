@@ -97,7 +97,7 @@ describe('the list', () => {
     // a long role list ends in "…" in the card; its title keeps the whole list
     expect(cards[0]!.find('.vc-badge-text').attributes('title')).toBe('security_lead, triager')
     expect(cards[0]!.text()).toContain('1 panel · changed 2 hours ago by lead')
-    expect(cards[0]!.find('.vc-owner').text()).toBe('owner lead')
+    expect(cards[0]!.find('.vc-owner').text()).toBe('Owner lead')
     expect(cards[1]!.find('.vc-badge').text()).toBe('Only the owner')
     expect(cards[1]!.text()).toContain('0 panels')
   })

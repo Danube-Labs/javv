@@ -26,7 +26,7 @@ function mountCard(extra: Record<string, unknown> = {}) {
   const exported = vi.fn<() => void>()
   const remove = vi.fn<() => void>()
   const w = mount(SavedCard, {
-    props: { title: 'Weekly risk review', owner: 'owner lead', to: '/dashboards/abc', onOpen: open, onRemove: remove, ...extra },
+    props: { title: 'Weekly risk review', owner: 'lead', to: '/dashboards/abc', onOpen: open, onRemove: remove, ...extra },
     slots: { actions: () => h(UiButton, { variant: 'mini', bordered: true, onClick: exported }, () => 'Export') },
     global: { plugins: [router] },
     attachTo: document.body,
@@ -99,6 +99,15 @@ describe('the look of the card (rulings 1 and 2)', () => {
     const above = rule('.vc-badge,\n.vc-x,\n.vc-foot :slotted(.ui-btn)')
     expect(above).toContain('position: relative')
     expect(above).toContain('z-index: 1')
+  })
+
+  it('the owner reads "Owner <name>" at the card text size, the name dark (ruling of 2026-10-29)', () => {
+    const { w } = mountCard()
+    expect(w.get('.vc-owner').text()).toBe('Owner lead')
+    expect(w.get('.vc-owner .vc-owner-name').text()).toBe('lead')
+    expect(w.get('.vc-owner').classes()).not.toContain('mono')
+    expect(rule('.vc-owner')).toContain('font-size: var(--text-sm)')
+    expect(rule('.vc-owner-name')).toContain('color: var(--ink)')
   })
 
   it('a line sits above the footer', () => {

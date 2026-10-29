@@ -175,7 +175,7 @@ function exportDashboard(d: DashboardDoc) {
         :title="d.name"
         :to="`/dashboards/${d.dashboard_id}`"
         :description="d.description"
-        :owner="`owner ${d.owner}`"
+        :owner="d.owner"
         @open="router.push(`/dashboards/${d.dashboard_id}`)"
       >
         <template #badge>
