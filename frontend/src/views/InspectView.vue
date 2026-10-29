@@ -169,7 +169,7 @@ const budgetPct = computed(() =>
           <UiSegControl v-model="method" :options="METHODS" label="HTTP method" />
           <input
             v-model="path"
-            class="pathbox"
+            class="set-input pathbox"
             type="text"
             spellcheck="false"
             aria-label="Store path"
@@ -282,20 +282,6 @@ const budgetPct = computed(() =>
 .pathbox {
   flex: 1;
   min-width: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono-cell);
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 11px;
-}
-.pathbox:hover {
-  border-color: var(--control-hover-line);
-}
-.pathbox:focus-visible {
-  outline: 2px solid var(--coral);
-  outline-offset: 1px;
 }
 
 /* the in-flight indicator (mockup: framework7 infinite bar) — 3px under the toolbar */

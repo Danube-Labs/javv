@@ -108,7 +108,7 @@ function apply() {
       <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     </div>
     <template #actions>
-      <UiButton variant="control" :disabled="busy" @click="close">Cancel</UiButton>
+      <UiButton variant="ghost" :disabled="busy" @click="close">Cancel</UiButton>
       <UiButton
         variant="primary"
         :disabled="problem !== null || busy"

@@ -158,21 +158,39 @@ html [class*=' p-'] {
 .rail-col > :last-child {
   width: 100%;
 }
+/* the one search box: a magnifier and a bare input in a bordered row, with the hover wash and line
+   and the coral line while it has focus. `.facet-search` is that box as the card over a filter rail. */
+.search-box,
 .facet-search {
   display: flex;
   align-items: center;
   gap: 8px;
   border: 1px solid var(--line);
-  border-radius: var(--r);
+  border-radius: var(--r-sm);
   background: var(--card);
+  padding: 7px 10px;
+  color: var(--soft);
+  transition:
+    border-color var(--dur-quick) var(--ease-out),
+    background var(--dur-quick) var(--ease-out);
+}
+.facet-search {
+  border-radius: var(--r);
   box-shadow: var(--shadow);
   padding: 9px 12px;
-  color: var(--soft);
   margin-bottom: 10px;
 }
+.search-box:hover,
+.facet-search:hover {
+  background: var(--control-hover-bg);
+  border-color: var(--control-hover-line);
+}
+.search-box:focus-within,
 .facet-search:focus-within {
   border-color: var(--coral);
+  background: var(--card);
 }
+.search-box input,
 .facet-search input {
   border: 0;
   background: transparent;
@@ -180,8 +198,11 @@ html [class*=' p-'] {
   flex: 1;
   min-width: 0;
   font-family: var(--font-ui);
-  font-size: var(--text-mono-cell);
+  font-size: var(--text-control);
   color: var(--ink);
+}
+.facet-search input {
+  font-size: var(--text-mono-cell);
 }
 .load-error {
   color: var(--health-down-fg);

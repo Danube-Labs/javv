@@ -13,9 +13,13 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 ## In progress
 
-- Nothing. Issue 1043, the same 1px edge on the other bordered buttons, is not planned: the
-  operator ruled on 2026-10-29 that the change is too small to see. The issue lists the files
-  that the change would touch.
+- Issue 1053: the form fields and the search boxes outside the windows take the kit styles, and
+  every window footer has a ghost Cancel and a primary main button (operator rulings 2026-10-29,
+  D1 option A and D2 option B). Main has the window head (issue 1049) and the window boxes
+  (issue 1050), and the release PR for 0.9.4 (PR 1047) lists both.
+- Issue 1043, the same 1px edge on the other bordered buttons, is not planned: the operator ruled
+  on 2026-10-29 that the change is too small to see. The issue lists the files that the change
+  would touch.
 
 ## Open, in the 1.0.0 milestone
 

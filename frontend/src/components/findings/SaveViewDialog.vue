@@ -74,7 +74,7 @@ async function save() {
       />
     </UiField>
     <template #actions>
-      <UiButton variant="control" @click="open = false">Cancel</UiButton>
+      <UiButton variant="ghost" @click="open = false">Cancel</UiButton>
       <UiButton variant="primary" :disabled="saving" @click="save">Save view</UiButton>
     </template>
   </ModalShell>

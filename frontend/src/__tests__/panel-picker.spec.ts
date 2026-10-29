@@ -156,6 +156,15 @@ describe('the catalog window', () => {
     expect(w.text()).toContain(`This dashboard has 3 of ${MAX_PANELS}.`)
   })
 
+  it('keeps the panel component out of reactive state, so Vue gives no warning (issue 1053)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const w = mountDialog()
+    await w.find('[data-panel="top-components"]').trigger('click')
+    const reactive = warn.mock.calls.filter((c) => String(c[0]).includes('made a reactive object'))
+    warn.mockRestore()
+    expect(reactive).toEqual([])
+  })
+
   it('the first panel is chosen, at its default width, and the preview reads live data', () => {
     const w = mountDialog()
     expect(w.find('.cat-row-on').attributes('data-panel')).toBe('findings-summary')

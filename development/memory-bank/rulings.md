@@ -67,6 +67,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-29 | A dashboard panel is as tall as its content on the read page and in edit mode (option B). The read page goes block by block: a Full panel alone, or two columns of Half panels. The gap is the grid gap across and down. The backend refuses only two panels that start on the same cell (E1). The preview in the Add panel window is as tall as its content too. | 1045 |
 | 2026-10-29 | The head of every window is dark blue, the band of the table heads and of the side panel head. The close button on it has the colors of the sidebar collapse button. | 1049 |
 | 2026-10-29 | Every text box and dropdown has one look, the kit box, with as much shared code as possible. A window does not style a box of its own. | 1050 |
+| 2026-10-29 | The form fields outside the windows use the kit box too: the time picker, the Inspect path box and the sign-in page. The search boxes have one shared style with the hover wash (D1 option A). The command palette keeps its own row. | 1053 |
+| 2026-10-29 | In every window, Cancel, Close or Done is the ghost button. The button that does the work is primary (D2 option B). | 1053 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process

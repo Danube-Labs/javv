@@ -350,7 +350,20 @@ note) in the UI face, and the default mono face is for code-like data (a usernam
 `textarea.set-input` changes only its height. `.set-select` is the dropdown, and `--row` is its
 size in a table row. `SettingsInput` and `UiDateTime` draw the box. A window's own text area, date
 box or select takes the class. The style rules test refuses a copy outside base.css, and
-`text-box-style.spec.ts` checks each box of every window and of the triage panel.
+`text-box-style.spec.ts` checks each box of every window and of the triage panel. The form fields
+outside the windows take it too (operator 2026-10-29 on built pictures, issue 1053, D1 option A):
+the boxes of the time picker, the Inspect path box and the sign-in page.
+
+**One search box** (issue 1053, D1 option A): `.search-box` in base.css is a magnifier and a bare
+input in a bordered row, with the hover wash and line and the coral line while it has focus. The
+search card over a filter rail (`.facet-search`: Findings, Running images, Approvals) shares its
+rules and keeps its card size, and the value search of Add filter takes `.search-box`. The command
+palette keeps its own row: the cursor is in it when it opens. The style rules test refuses a copy
+of either outside base.css.
+
+**One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
+in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
+`primary`. `window-footer-buttons.spec.ts` reads every window footer.
 
 ## 6. Do / Don't
 

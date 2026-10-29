@@ -151,13 +151,13 @@ function backToNow() {
         <span class="time-rel-label">Last</span>
         <input
           v-model.number="relN"
-          class="num-input mono-cell"
+          class="set-input num-input"
           type="number"
           min="1"
           max="365"
           aria-label="Range length"
         />
-        <select v-model="relUnit" class="select-input" aria-label="Range unit">
+        <select v-model="relUnit" class="set-select select-input" aria-label="Range unit">
           <option value="minutes">minutes</option>
           <option value="hours">hours</option>
           <option value="days">days</option>
@@ -181,20 +181,20 @@ function backToNow() {
 
       <div class="dd-head">Absolute range (24h)</div>
       <div class="time-abs">
-        <input v-model="fromDate" class="text-input mono-cell" type="date" :max="today()" aria-label="Range start date" />
+        <input v-model="fromDate" class="set-input text-input" type="date" :max="today()" aria-label="Range start date" />
         <input
           v-model="fromTime"
-          class="text-input mono-cell hhmm"
+          class="set-input text-input hhmm"
           type="text"
           placeholder="HH:mm"
           maxlength="5"
           aria-label="Range start time (24h)"
         />
         <span class="time-arrow">→</span>
-        <input v-model="toDate" class="text-input mono-cell" type="date" :max="today()" aria-label="Range end date" />
+        <input v-model="toDate" class="set-input text-input" type="date" :max="today()" aria-label="Range end date" />
         <input
           v-model="toTime"
-          class="text-input mono-cell hhmm"
+          class="set-input text-input hhmm"
           type="text"
           placeholder="HH:mm"
           maxlength="5"
@@ -328,43 +328,18 @@ function backToNow() {
   color: var(--soft);
   flex: none;
 }
-.text-input,
-.num-input {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-size: var(--text-sm);
-  color: var(--ink);
-  background: var(--card);
-  outline: none;
-  font-family: inherit;
+.text-input {
+  width: auto;
 }
 .num-input {
   width: 64px;
 }
 .hhmm {
-  width: 62px;
+  width: 76px;
   text-align: center;
 }
-.text-input:focus,
-.num-input:focus {
-  border-color: var(--coral);
-}
 .select-input {
-  border: 1px solid var(--line);
-  background: var(--card);
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-size: var(--text-control);
-  color: var(--ink);
-  outline: none;
   width: 96px;
-}
-.select-input:focus {
-  border-color: var(--coral);
-}
-.mono-cell {
-  font-family: var(--font-mono);
 }
 .back-now {
   display: flex;

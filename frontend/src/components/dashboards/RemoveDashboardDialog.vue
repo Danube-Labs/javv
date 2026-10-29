@@ -52,7 +52,7 @@ async function confirm() {
     </p>
     <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     <template #actions>
-      <UiButton variant="control" :disabled="busy" @click="close">Cancel</UiButton>
+      <UiButton variant="ghost" :disabled="busy" @click="close">Cancel</UiButton>
       <UiButton variant="primary" :disabled="busy" @click="confirm">
         {{ busy ? 'Removing…' : 'Remove dashboard' }}
       </UiButton>

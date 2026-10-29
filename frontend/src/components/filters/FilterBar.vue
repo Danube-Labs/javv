@@ -188,7 +188,7 @@ function onKeydown(e: KeyboardEvent) {
           </div>
 
           <template v-if="editItems">
-            <div v-if="editItems.length > 8 || valueQuery" class="filter-vsearch">
+            <div v-if="editItems.length > 8 || valueQuery" class="search-box filter-vsearch">
               <AppIcon name="search" :size="13" />
               <input v-model="valueQuery" placeholder="Filter values…" />
             </div>
@@ -200,7 +200,7 @@ function onKeydown(e: KeyboardEvent) {
           </template>
 
           <template v-else>
-            <div class="filter-vsearch">
+            <div class="search-box filter-vsearch">
               <AppIcon name="search" :size="13" />
               <input
                 v-model="textDraft"
@@ -367,23 +367,8 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--soft);
 }
 .filter-vsearch {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 6px 9px;
   margin: 0 4px 6px;
-  color: var(--soft);
-}
-.filter-vsearch input {
-  border: 0;
-  background: transparent;
-  outline: none;
-  flex: 1;
-  font-size: var(--text-control);
-  color: var(--ink);
-  font-family: inherit;
+  padding: 6px 9px;
 }
 .filter-note {
   margin: 0 8px 6px;

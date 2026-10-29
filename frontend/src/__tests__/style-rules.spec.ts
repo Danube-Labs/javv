@@ -140,12 +140,12 @@ describe('style rules — one shared skeleton pulse', () => {
  * to five views, panels, dialogs and banners, some under other names, so a component whose styles
  * define its own copy fails here instead of drifting. The text box `.set-input` and the dropdown
  * `.set-select` joined them (issue 1050): the box had four copies, the dropdown two, and the
- * `.fld` box three, which is gone. Only style rules count: comments, templates and scripts are
- * not read.
+ * `.fld` box three, which is gone. The search box `.search-box` and its rail card `.facet-search`
+ * joined too (issue 1053). Only style rules count: comments, templates and scripts are not read.
  */
 describe('style rules: one shared set of skins', () => {
   it('no skin defined outside base.css', () => {
-    const skin = /\.(set-flush|modal-error|confirm-copy|sys-line|sys-icon|set-input|set-select|fld)(?![\w-])[^{};]*\{/
+    const skin = /\.(set-flush|modal-error|confirm-copy|sys-line|sys-icon|set-input|set-select|search-box|facet-search|fld)(?![\w-])[^{};]*\{/
     const styles = (rel: string): string => {
       const source = readFileSync(join(SRC, rel), 'utf8')
       if (rel.endsWith('.css')) return source
