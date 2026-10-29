@@ -9,6 +9,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import RolesCard, { type PermissionRow, type RoleRow } from '@/components/settings/RolesCard.vue'
+import { setRoleApiV1AdminUsersUsernameRolePatch } from '@/api/generated'
+import { useToastStore } from '@/stores/toast'
 import UsersRolesView from '@/views/settings/UsersRolesView.vue'
 
 vi.mock('@/api/generated', async (importOriginal) =>
@@ -26,11 +28,23 @@ vi.mock('@/api/generated', async (importOriginal) =>
               auth_source: 'local',
               created_at: null,
             },
+            {
+              username: 'tri',
+              role: 'triager',
+              capabilities: [],
+              must_change: false,
+              disabled: false,
+              auth_source: 'local',
+              created_at: null,
+            },
           ],
-          total: 1,
+          total: 2,
         },
         response: { ok: true, status: 200 },
       }),
+    ),
+    setRoleApiV1AdminUsersUsernameRolePatch: vi.fn<() => Promise<unknown>>(() =>
+      Promise.resolve({ data: {}, response: { ok: true, status: 200 } }),
     ),
     listRolesApiV1AdminRolesGet: vi.fn<() => Promise<unknown>>(() =>
       Promise.resolve({ data: { roles: ROLES, permissions: PERMISSIONS }, response: { ok: true, status: 200 } }),
@@ -68,7 +82,8 @@ describe('RolesCard (issue 990)', () => {
     const heads = mountCard()
       .findAll('thead th')
       .map((th) => th.text())
-    expect(heads).toEqual(['Permission', 'viewer', 'triager', 'security_lead', 'admin'])
+    // role names as words, as in the user menu (issue 1039)
+    expect(heads).toEqual(['Permission', 'viewer', 'triager', 'security lead', 'admin'])
   })
 
   it('has a row for each permission, with its name and what it allows, and no id', () => {
@@ -81,9 +96,9 @@ describe('RolesCard (issue 990)', () => {
 
   it('marks what each role holds, and admin holds every permission', () => {
     const w = mountCard()
-    expect(marks(w, 'Triage findings')).toEqual(['viewer: no', 'triager: yes', 'security_lead: yes', 'admin: yes'])
-    expect(marks(w, 'Accept a risk')).toEqual(['viewer: no', 'triager: no', 'security_lead: yes', 'admin: yes'])
-    expect(marks(w, 'Manage users')).toEqual(['viewer: no', 'triager: no', 'security_lead: no', 'admin: yes'])
+    expect(marks(w, 'Triage findings')).toEqual(['viewer: no', 'triager: yes', 'security lead: yes', 'admin: yes'])
+    expect(marks(w, 'Accept a risk')).toEqual(['viewer: no', 'triager: no', 'security lead: yes', 'admin: yes'])
+    expect(marks(w, 'Manage users')).toEqual(['viewer: no', 'triager: no', 'security lead: no', 'admin: yes'])
   })
 
   it('gives a permission that the server does not list a row named by its id', () => {
@@ -93,7 +108,7 @@ describe('RolesCard (issue 990)', () => {
       'viewer: no',
       'triager: no',
       'auditor: yes',
-      'security_lead: no',
+      'security lead: no',
       'admin: yes',
     ])
     const row = w.findAll('tbody tr').at(-1)!
@@ -123,6 +138,36 @@ describe('Settings > Users and roles (issue 990)', () => {
     const card = (await mountView()).findComponent(RolesCard)
     expect(card.props('permissions')).toEqual(PERMISSIONS)
     expect(card.findAll('tbody tr')).toHaveLength(PERMISSIONS.length)
+  })
+
+  // a role shows as words and the id stays the value that the server gets (issue 1039)
+  const options = (select: ReturnType<ReturnType<typeof mount>['find']>) =>
+    select.findAll('option').map((o) => [o.text(), o.attributes('value')])
+  const NAMED = [
+    ['admin', 'admin'],
+    ['security lead', 'security_lead'],
+    ['triager', 'triager'],
+    ['viewer', 'viewer'],
+  ]
+
+  it('names each role in words in the Role list of a user and of the Invite window', async () => {
+    const w = await mountView()
+    expect(options(w.find('select[aria-label="Role for lead"]'))).toEqual(NAMED)
+    await w.findAll('button').find((b) => b.text() === 'Invite user')!.trigger('click')
+    expect(options(w.find('select#inv-role'))).toEqual(NAMED)
+  })
+
+  it('names the new role in words in the confirmation and the message, and sends its id', async () => {
+    const w = await mountView()
+    await w.find('select[aria-label="Role for tri"]').setValue('security_lead')
+    const confirm = w.find('.confirm-copy')
+    expect(confirm.text()).toContain('becomes security lead.')
+    await w.findAll('button').find((b) => b.text() === 'Change role')!.trigger('click')
+    await flushPromises()
+    expect(vi.mocked(setRoleApiV1AdminUsersUsernameRolePatch)).toHaveBeenCalledWith(
+      expect.objectContaining({ path: { username: 'tri' }, body: { role: 'security_lead' } }),
+    )
+    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['tri is now security lead. Their sessions were revoked'])
   })
 
   it('shows the Source of a user in the UI font, as a plain word', async () => {

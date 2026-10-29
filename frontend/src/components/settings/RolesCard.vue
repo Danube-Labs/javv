@@ -7,6 +7,7 @@
 import { computed } from 'vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { roleLabel } from '@/lib/roleLabel'
 
 export interface RoleRow {
   role: string
@@ -46,7 +47,7 @@ const has = (r: RoleRow, id: string) => holdsAll(r) || r.capabilities.includes(i
         <thead>
           <tr>
             <th>Permission</th>
-            <th v-for="r in columns" :key="r.role" class="c">{{ r.role }}</th>
+            <th v-for="r in columns" :key="r.role" class="c">{{ roleLabel(r.role) }}</th>
           </tr>
         </thead>
         <tbody>
@@ -56,10 +57,10 @@ const has = (r: RoleRow, id: string) => holdsAll(r) || r.capabilities.includes(i
               <div v-if="p.description" class="perm-does">{{ p.description }}</div>
             </td>
             <td v-for="r in columns" :key="r.role" class="c">
-              <span v-if="has(r, p.id)" role="img" class="perm-yes" :aria-label="`${r.role}: yes`">
+              <span v-if="has(r, p.id)" role="img" class="perm-yes" :aria-label="`${roleLabel(r.role)}: yes`">
                 <AppIcon name="check" :size="15" />
               </span>
-              <span v-else role="img" class="perm-no" :aria-label="`${r.role}: no`">–</span>
+              <span v-else role="img" class="perm-no" :aria-label="`${roleLabel(r.role)}: no`">–</span>
             </td>
           </tr>
         </tbody>

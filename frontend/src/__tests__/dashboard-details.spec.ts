@@ -165,6 +165,8 @@ describe('the details rules', () => {
   })
 
   it('the window offers the listed roles and a saved role that the list does not have', () => {
+    // the label is in words; the value stays the id that the server stores (issue 1039)
+    expect(roleOptions(['security_lead'], []).map((o) => [o.label, o.value])).toEqual([['security lead', 'security_lead']])
     expect(roleOptions(['admin', 'triager'], ['old_role', 'triager']).map((o) => o.value)).toEqual([
       'admin',
       'triager',
@@ -210,10 +212,10 @@ describe('the details window', () => {
     const w = await open(details({ roles: ['triager', 'gone_role'] }))
     expect(roleButtons(w).map((b) => [b.text(), b.attributes('aria-pressed')])).toEqual([
       ['admin', 'false'],
-      ['security_lead', 'false'],
+      ['security lead', 'false'],
       ['triager', 'true'],
       ['viewer', 'false'],
-      ['gone_role', 'true'],
+      ['gone role', 'true'],
     ])
     expect(w.find('label[for="dash-name"]').exists()).toBe(true)
     expect(w.find('input#dash-name').attributes('maxlength')).toBe('128')

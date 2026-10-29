@@ -31,6 +31,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { logger } from '@/lib/logger'
+import { roleLabel } from '@/lib/roleLabel'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 
@@ -155,7 +156,7 @@ async function submitRoleChange() {
     return
   }
   rowError.value = null
-  toast.success(`${change.user.username} is now ${change.to}. Their sessions were revoked`)
+  toast.success(`${change.user.username} is now ${roleLabel(change.to)}. Their sessions were revoked`)
   await load()
 }
 
@@ -267,7 +268,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
                     :aria-label="`Role for ${user.username}`"
                     @change="onRolePick(user, $event)"
                   >
-                    <option v-for="r in roles" :key="r.role" :value="r.role">{{ r.role }}</option>
+                    <option v-for="r in roles" :key="r.role" :value="r.role">{{ roleLabel(r.role) }}</option>
                   </select>
                 </td>
                 <td class="fit">{{ user.auth_source }}</td>
@@ -321,7 +322,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
       </UiField>
       <UiField label="Role" for="inv-role">
         <select id="inv-role" v-model="inviteRole" class="set-select">
-          <option v-for="r in roles" :key="r.role" :value="r.role">{{ r.role }}</option>
+          <option v-for="r in roles" :key="r.role" :value="r.role">{{ roleLabel(r.role) }}</option>
         </select>
       </UiField>
       <p v-if="inviteError" class="modal-error" role="alert">{{ inviteError }}</p>
@@ -337,7 +338,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
     <ModalShell v-if="roleChange" title="Change role?" @close="roleChange = null; void load()">
       <p class="confirm-copy">
         <span class="mono-cell sm">{{ roleChange.user.username }}</span> becomes
-        <b>{{ roleChange.to }}</b>. Their capabilities change immediately and
+        <b>{{ roleLabel(roleChange.to) }}</b>. Their capabilities change immediately and
         <b>every active session is signed out</b>: a new role never rides an old session.
       </p>
       <template #actions>
