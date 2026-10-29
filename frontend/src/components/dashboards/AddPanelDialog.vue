@@ -125,7 +125,7 @@ const previewProps = computed(() =>
       </section>
     </div>
     <template #actions>
-      <UiButton variant="control" @click="emit('close')">Cancel</UiButton>
+      <UiButton variant="ghost" @click="emit('close')">Cancel</UiButton>
       <UiButton variant="primary" @click="emit('add', choice)">Add panel</UiButton>
     </template>
   </ModalShell>

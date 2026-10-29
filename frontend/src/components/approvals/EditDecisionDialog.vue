@@ -99,8 +99,8 @@ async function submit() {
     </UiField>
     <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     <template #actions>
-      <UiButton variant="quiet" @click="emit('close')">Cancel</UiButton>
-      <UiButton :disabled="!valid || submitting" @click="submit">
+      <UiButton variant="ghost" @click="emit('close')">Cancel</UiButton>
+      <UiButton variant="primary" :disabled="!valid || submitting" @click="submit">
         {{ submitting ? 'Saving…' : 'Revoke + re-issue' }}
       </UiButton>
     </template>

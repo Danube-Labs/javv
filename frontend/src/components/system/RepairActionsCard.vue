@@ -171,7 +171,7 @@ function canRun(job: JobDoc): boolean {
         changing anything.
       </p>
       <template #actions>
-        <UiButton variant="control" @click="confirming = null">Cancel</UiButton>
+        <UiButton variant="ghost" @click="confirming = null">Cancel</UiButton>
         <UiButton variant="primary" @click="run(confirming)">Run the sweep</UiButton>
       </template>
     </ModalShell>

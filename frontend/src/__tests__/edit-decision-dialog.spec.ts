@@ -73,6 +73,13 @@ describe('EditDecisionDialog expiry (issue 984)', () => {
     expect(document.body.querySelector('#ed-expiry')!.classList).toContain('set-input--invalid')
   })
 
+  it('the footer has the window pair: a ghost Cancel and a primary main button (issue 1053)', async () => {
+    await open('2026-12-31')
+    const cancel = [...document.body.querySelectorAll('button')].find((b) => b.textContent!.trim() === 'Cancel')!
+    expect(cancel.classList).toContain('ui-btn--ghost')
+    expect(saveButton().classList).toContain('ui-btn--primary')
+  })
+
   it('a decision that has expired cannot keep its date, and says why', async () => {
     await open('2026-09-30', { justification: 'Still no fix.' })
     expect(saveButton().disabled).toBe(true)
