@@ -98,7 +98,7 @@ describe('the text box and the dropdown (issue 1050)', () => {
 
   it('the value search of Add filter is the shared search box (issue 1053)', () => {
     const src = readFileSync(join(SRC, 'components/filters/FilterBar.vue'), 'utf8')
-    const boxes = [...src.matchAll(/class="([^"]*\bfilter-vsearch\b[^"]*)"/g)].map((m) => m[1])
+    const boxes = [...src.matchAll(/class="([^"]*\bfilter-vsearch\b[^"]*)"/g)].map((m) => m[1] ?? '')
     expect(boxes).toHaveLength(2)
     for (const c of boxes) expect(c.split(/\s+/)).toContain('search-box')
   })

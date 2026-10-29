@@ -30,9 +30,9 @@ function footerButtons(rel: string): FooterButton[] {
     const before = src.slice(0, slot.index)
     // the slot belongs to a window only when a <ModalShell> is open at that point
     if (before.lastIndexOf('<ModalShell') <= before.lastIndexOf('</ModalShell>')) continue
-    for (const b of slot[1].matchAll(/<UiButton\b([\s\S]*?)>([\s\S]*?)<\/UiButton>/g)) {
-      const variant = /(?<![:\w-])variant="(\w+)"/.exec(b[1])?.[1] ?? (/:variant=/.test(b[1]) ? 'bound' : 'default')
-      const label = b[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    for (const b of (slot[1] ?? '').matchAll(/<UiButton\b([\s\S]*?)>([\s\S]*?)<\/UiButton>/g)) {
+      const variant = /(?<![:\w-])variant="(\w+)"/.exec(b[1] ?? '')?.[1] ?? (/:variant=/.test(b[1] ?? '') ? 'bound' : 'default')
+      const label = (b[2] ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
       out.push({ file: rel, label, variant })
     }
   }
