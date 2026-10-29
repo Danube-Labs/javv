@@ -118,6 +118,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.1 | 2026-10-27 | At a past time, a KEV finding gets the KEV SLA deadline (issue 1000). Segmented controls have names for screen readers (issue 1011). The docs agree with the code of 0.9.0 (issue 1017), and the bolts are frozen as history (issue 1012) |
 | 0.9.0 | 2026-10-26 | No code changes after 0.8.9. It marks the 0.8.9 changes as a minor release (ruling of 2026-10-26) |
 | 0.8.9 | 2026-10-26 | Composable dashboards (issue 440), the Roles card (issue 990) and the `can_export` permission (issue 243). Release 0.9.0 marks these changes. |
 | 0.8.8 | 2026-10-23 | Filter counts and pairs (issues 975, 979, 980, 983) |
