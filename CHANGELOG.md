@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/Danube-Labs/javv/compare/v0.9.1...v0.9.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* a saved card opens its item from anywhere, and its hover keeps the card white ([#1037](https://github.com/Danube-Labs/javv/issues/1037)) ([b88e27a](https://github.com/Danube-Labs/javv/commit/b88e27a8aa05e9f4c0280fdd8a3dd1ab882095f7))
+* **deps:** update dependency zensical to v0.0.73 ([#1035](https://github.com/Danube-Labs/javv/issues/1035)) ([dec7852](https://github.com/Danube-Labs/javv/commit/dec78521a1d0d635d3dfec1234afdb164417da3d))
+
 ## [0.9.1](https://github.com/Danube-Labs/javv/compare/v0.9.0...v0.9.1) (2026-10-27)
 
 
