@@ -268,8 +268,17 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
         pytest.param({"panels": [_panel(x=2, w=1)]}, id="a third column"),
         pytest.param({"panels": [_panel(y=-1)]}, id="above the top"),
         pytest.param(
-            {"panels": [_panel(), _panel("package-type", w=1, y=6)]},
-            id="two panels on one cell",
+            {"panels": [_panel(), _panel("package-type", w=1, y=0)]},
+            id="a Half panel on the first row of a Full one",
+        ),
+        pytest.param(
+            {
+                "panels": [
+                    _panel("package-type", w=1, x=1, y=4),
+                    _panel("scan-ingest", x=1, y=4, w=1),
+                ]
+            },
+            id="two panels that start on one cell",
         ),
         pytest.param(
             {"panels": [_panel("scan-ingest", y=5 * i) for i in range(25)]},
@@ -359,18 +368,35 @@ async def test_a_change_of_panels_goes_through_the_same_checks(env) -> None:
     made = await _create(owner)
     r = await owner.patch(
         f"/api/v1/dashboards/{made['dashboard_id']}",
-        json={"revision": 1, "panels": [_panel(), _panel("package-type", w=1, y=3)]},
+        json={"revision": 1, "panels": [_panel(), _panel("package-type", w=1, y=0)]},
     )
     assert r.status_code == 422
 
 
-async def test_a_new_height_does_not_stop_a_change_that_sends_no_panels(env, monkeypatch) -> None:
-    """A panel stores its height name, so a new measurement of the rows changes no saved dashboard
-    (ruling of 2026-10-25). A change of the name keeps the stored panels; a change of the panels
-    is checked with the new rows."""
+async def test_a_panel_holds_only_its_first_row(env) -> None:
+    """In edit mode each panel is as tall as its content, so the rows of the catalog are not the
+    rows a panel fills (issue 1045). A panel with no data is short, and the panel under it moves
+    up into the catalog rows: the backend accepts that layout."""
     user, _ = env
     owner = await user(EDIT)
-    panels = [_panel(), _panel("scan-ingest", y=7)]  # flush: findings-summary is 7 rows
+    made = await _create(
+        owner,
+        panels=[
+            _panel(),  # the catalog gives 7 rows
+            _panel("package-type", x=0, y=3, w=1),
+            _panel("top-components", x=1, y=3, w=1),
+            _panel("scan-ingest", x=0, y=5, w=2),  # 2 rows under the Half panels' first row
+        ],
+    )
+    assert [(p["x"], p["y"]) for p in made["panels"]] == [(0, 0), (0, 3), (1, 3), (0, 5)]
+
+
+async def test_a_new_height_does_not_stop_a_change(env, monkeypatch) -> None:
+    """A panel stores its height name, so a new measurement of the rows changes no saved dashboard
+    (ruling of 2026-10-25): the rows take no part in the check, with or without panels."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [_panel(), _panel("scan-ingest", y=7)]
     made = await _create(owner, panels=panels)
     path = f"/api/v1/dashboards/{made['dashboard_id']}"
     monkeypatch.setitem(PANELS, "findings-summary", CatalogPanel({"short": 8}, uses_scanner=True))
@@ -380,7 +406,7 @@ async def test_a_new_height_does_not_stop_a_change_that_sends_no_panels(env, mon
     assert r.json()["panels"] == made["panels"]
 
     r = await owner.patch(path, json={"revision": 2, "panels": panels})
-    assert r.status_code == 422
+    assert r.status_code == 200, r.text
 
 
 async def test_only_a_settings_admin_reads_the_audit_rows_of_dashboards(env) -> None:

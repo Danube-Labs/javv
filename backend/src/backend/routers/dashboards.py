@@ -74,11 +74,10 @@ class DashboardPanel(BaseModel):
             self.scanner = "dashboard"
         return self
 
-    def cells(self) -> set[tuple[int, int]]:
-        rows = PANELS[self.panel].heights[self.h]
-        return {
-            (x, y) for x in range(self.x, self.x + self.w) for y in range(self.y, self.y + rows)
-        }
+    def start_cells(self) -> set[tuple[int, int]]:
+        # only the first row: in edit mode a panel is as tall as its content, so the catalog rows
+        # are not the rows it fills, and a short panel lets the one under it move up (issue 1045)
+        return {(x, self.y) for x in range(self.x, self.x + self.w)}
 
 
 class DashboardFields(BaseModel):
@@ -101,7 +100,7 @@ class DashboardFields(BaseModel):
             raise ValueError("roles go with sharing 'roles', and sharing 'roles' needs a role")
         taken: set[tuple[int, int]] = set()
         for panel in self.panels:
-            cells = panel.cells()
+            cells = panel.start_cells()
             if taken & cells:
                 raise ValueError(f"the panel {panel.panel} at ({panel.x}, {panel.y}) overlaps")
             taken |= cells
