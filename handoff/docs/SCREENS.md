@@ -78,6 +78,13 @@ grows more slowly near the end, then fills and fades when the work ends. The not
 does not count. The main area has `aria-busy` while the work is open. The code of the other pages
 loads while the browser is idle, so most clicks show the new page at once.
 
+**Window head (issue 1049, operator ruling 2026-10-29).** Every window (`ModalShell`) has a dark
+blue head: the band of the table heads and of the side panel head (`--table-head-bg`,
+`--table-head-fg`). The title is light, and the line under it has 75% of that color. The close
+button has a light fill on the band, a stronger fill and a lighter edge on hover, a pressed fill
+and the focus ring. These are the colors of the sidebar collapse button. No window changes the
+head, so all 20 windows look the same.
+
 **Time picker (C-1, D28/FR-23).** Two visibly distinct controls in one group (V4-DELTA conflict 4):
 the **time-travel `T`** (Now / rewind / jump-to-date → amber "Viewing history: as scanned at T"
 banner + Back to now) and the **trend window** (relative to `T`, scopes charts + Contributors).
