@@ -101,7 +101,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import DashboardView from '@/views/DashboardView.vue'
 
-import { gs, resetGridstack } from './helpers/fakeGridstack'
+import { FakeResizeObserver, gs, resetGridstack } from './helpers/fakeGridstack'
+
+vi.stubGlobal('ResizeObserver', FakeResizeObserver)
 
 const ID = 'c'.repeat(32)
 const answer = (status: number, data?: unknown) =>
@@ -158,8 +160,8 @@ describe('the catalog window', () => {
     const w = mountDialog()
     expect(w.find('.cat-row-on').attributes('data-panel')).toBe('findings-summary')
     expect(w.find('.cat-prev').classes()).not.toContain('cat-prev-half')
-    // 7 rows of 40 px, less the grid margin: the slot it gets on the dashboard
-    expect(w.find('.cat-prev').attributes('style')).toContain('height: 250px')
+    // as tall as its content, as on the dashboard: no box of catalog rows (issue 1045)
+    expect(w.find('.cat-prev').attributes('style')).toBeUndefined()
     expect(probeProps(w)).toEqual({ scanner: 'trivy', clusterId: 'c1' })
   })
 
@@ -173,7 +175,7 @@ describe('the catalog window', () => {
     await button(w, 'grype').trigger('click')
     expect(probeProps(w)).toEqual({ scanner: 'grype', pageSize: 25 })
     expect(w.find('.cat-help').text()).toContain('always shows grype')
-    expect(w.find('.cat-prev').attributes('style')).toContain(`height: ${26 * 40 - 30}px`)
+    expect(w.find('.cat-prev').attributes('style')).toBeUndefined()
 
     await w.find('[data-panel="scan-ingest"]').trigger('click')
     expect(labels()).toEqual(['Width'])
@@ -266,6 +268,8 @@ describe('Add panel in edit mode', () => {
     const added = w.find('.grid-stack-item[data-panel="scan-ingest"]')
     expect([added.attributes('gs-x'), added.attributes('gs-y')]).toEqual(['0', '20'])
     expect(gs.made).toEqual([added.attributes('gs-id')])
+    // the new panel takes the rows of its content too
+    expect(gs.observed.has(added.find('.dash-fit').element)).toBe(true)
     expect(w.find('.save-msg').text()).toBe('You have unsaved changes')
 
     await button(w, 'Save changes').trigger('click')

@@ -64,6 +64,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-18 | Videos: the app in a window, a spotlight on the control, and a caption under the window. The pace lets a reader follow. No caption says what the screen does not show. | 699 |
 | 2026-10-29 | The primary button is slate, not coral, because coral is in the red-orange of critical, KEV and "down". Coral stays for focus, links and the active page. A saved card opens its item from anywhere on the card. | 1004 |
 | 2026-10-29 | Every control in a screen head is 30px high, the scanner switch too. Under each one is a 1px edge with no blur (option D). A soft blurred shadow read as a generic template. Role ids show as words. The other bordered buttons do not get the edge, because the change is too small to see. | 1039, 1043 |
+| 2026-10-29 | A dashboard panel is as tall as its content on the read page and in edit mode (option B). The read page goes block by block: a Full panel alone, or two columns of Half panels. The gap is the grid gap across and down. The backend refuses only two panels that start on the same cell (E1). The preview in the Add panel window is as tall as its content too. | 1045 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process

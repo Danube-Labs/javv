@@ -1133,11 +1133,14 @@ says what a second import does in each mode. The list reads again after each ans
 the scanner switch (`UiSegControl`, the Overview options) and **Export**. While the dashboard
 loads, the head card shows `Dashboard` and no actions. It stretches when the name arrives (issue
 902). The page ignores a late answer for a dashboard that the user left.
-- **Panels:** a CSS grid of two columns and rows of 40 px, from each panel's `x`, `y`, `w` and
-  the rows of its height name (`components/dashboards/DashboardGrid.vue`). Each cell keeps a
-  15 px margin, the edit grid's margin, so a layout reads the same in both modes. A panel with no
-  card of its own goes in `PanelFrame`. Below 1,100 px, one column in the order `y`, then `x`,
-  each panel as tall as its content.
+- **Panels:** in blocks (`pageBlocks` in `dashboards/layout.ts`,
+  `components/dashboards/DashboardGrid.vue`, ruling B of issue 1045). A Full panel is a block by
+  itself. The Half panels between two Full panels are a block of two columns, and each column
+  goes from the top down. Each panel is as tall as its content, so no panel scrolls and each card
+  draws its whole shadow. The gap is `--grid-gap` across and down. The stored `y` gives only the
+  order. A panel with no card of its own goes in `PanelFrame`. The Findings summary sets its
+  bands by the width of its panel: in a panel narrower than 700 px, each band has 3 columns.
+  Below 1,100 px, the page has one column, block by block, and the left column first.
 - **Scanner switch (Q7):** starts on the scanner the owner saved. The URL keeps the viewer's
   choice (`?scanner=`), and the dashboard does not change. A panel pinned to one scanner shows
   the scanner tag and `pinned` over its top right corner and does not follow the switch. A switch
@@ -1173,8 +1176,11 @@ page.
   gone already counts as removed. A refused remove stays in the window with the reason: no
   permission, somebody changed it (409), the store is busy or read-only, or no answer.
 - **Panels:** gridstack (`components/dashboards/DashboardEditGrid.vue`, its own chunk that only
-  edit mode loads) in `top` mode, on the cells of the read page: two columns, rows of 40 px, a
-  15 px margin, no resize (R10). Each panel shows, at rest, a **Move** tab over its top left
+  edit mode loads) in `top` mode: two columns, rows of 40 px, a 15 px margin, no resize (R10).
+  Each panel takes the whole rows that its content needs, so no panel scrolls (ruling E1 of issue
+  1045). A short panel lets the panel under it move up. These new rows are not a change: the save
+  bar compares the reading order, the columns, the widths, the heights and the scanners, and not
+  `y`. Each panel shows, at rest, a **Move** tab over its top left
   corner and **Settings** and remove over its top right corner, with the scanner tag of a pinned
   panel. The Move tab is the one drag handle, with the `grab` cursor (§5). During a drag the drop
   place is a dashed coral box, and the panels under it move down while the user drags. They jump to
@@ -1182,9 +1188,9 @@ page.
 - **Add panel (`ModalShell`, `components/dashboards/AddPanelDialog.vue`, ruling Q1):** on the
   left, the catalog by group (Findings, Scanners, People), one row for each panel with its name
   and its line. The chosen row has the coral selection of an overlay. On the right, the name, the
-  line and the settings of the chosen panel, then a preview with live data in the slot that the
-  panel gets on the dashboard: rows × 40 px less the margin, and half of the column for a Half
-  panel. A new choice starts from the default width and the first height. **Add panel** puts the
+  line and the settings of the chosen panel, then a preview with live data as the dashboard
+  shows the panel: as tall as its content, and half of the column for a Half panel. Only the
+  window scrolls (ruling of 2026-10-29, issue 1045). A new choice starts from the default width and the first height. **Add panel** puts the
   panel at the left edge, in the first free place from the top: `top` mode moves it up. At 24 panels (Q2) **Add panel** in the head is
   off, and the reason shows next to it in `UiRoleNote` with an info icon, because a limit is not
   a permission. A dashboard with no panels shows **Add panel** in its `EmptyState`.

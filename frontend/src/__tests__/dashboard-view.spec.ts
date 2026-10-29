@@ -73,7 +73,7 @@ vi.mock('@/api/client', () => ({ client: {} }))
 
 import type { DashboardPanel } from '@/api/generated'
 import { getDashboardApiV1DashboardsDashboardIdGet } from '@/api/generated'
-import { cellStyle, changedLine, isPinned, panelScanner, placePanels, sharingLine } from '@/dashboards/layout'
+import { changedLine, isPinned, pageBlocks, panelScanner, placePanels, sharingLine } from '@/dashboards/layout'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import DashboardView from '@/views/DashboardView.vue'
@@ -171,7 +171,26 @@ describe('layout', () => {
     const [summary, , top] = placePanels(PANELS)
     expect(summary!.rows).toBe(7)
     expect(top!.rows).toBe(26)
-    expect(cellStyle(top!)).toEqual({ '--col': '2', '--cols': '1', '--row': '8', '--rows': '26' })
+  })
+
+  it('a Full panel is a block by itself and closes the block of Half panels above it', () => {
+    const blocks = pageBlocks(
+      placePanels([
+        ...PANELS,
+        { panel: 'triage-progress', x: 0, y: 30, w: 2, h: 'short' },
+        { panel: 'top-components', x: 1, y: 40, w: 1, h: 'short' },
+      ]),
+    )
+    const ids = blocks.map((b) => ({ full: b.full, columns: b.columns.map((c) => c.map((p) => p.stored.y)) }))
+    expect(ids).toEqual([
+      { full: true, columns: [[0]] },
+      // each column from the top down, whatever rows the panels take
+      { full: false, columns: [[7, 14], [7]] },
+      { full: true, columns: [[30]] },
+      // a Half panel with nothing to its left keeps its column
+      { full: false, columns: [[], [40]] },
+    ])
+    expect(pageBlocks([])).toEqual([])
   })
 
   it('uses the first catalog height for a height the panel cannot take', () => {
@@ -206,19 +225,20 @@ describe('the read page', () => {
     expect(probeProps(w)).toEqual([
       { panel: 'findings-summary', props: { scanner: 'trivy', query: { cluster_id: 'c-1' }, windowDays: 30 } },
       { panel: 'findings-summary', props: { scanner: 'grype', query: { cluster_id: 'c-1' }, windowDays: 30 } },
-      { panel: 'top-components', props: { scanner: 'trivy', pageSize: 20 } },
+      // block by block, the left column first
       { panel: 'triage-progress', props: { query: { cluster_id: 'c-1' } } },
+      { panel: 'top-components', props: { scanner: 'trivy', pageSize: 20 } },
     ])
   })
 
   it('follows the scanner in the URL, and keeps that choice in the URL', async () => {
     const { w, router } = await mountView('?scanner=all&t=x')
-    expect(probeProps(w).map((p) => p.props.scanner)).toEqual(['all', 'grype', 'all', undefined])
+    expect(probeProps(w).map((p) => p.props.scanner)).toEqual(['all', 'grype', undefined, 'all'])
     const grype = w.findAll('.head-actions button').find((b) => b.text() === 'grype')!
     await grype.trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.query).toEqual({ scanner: 'grype', t: 'x' })
-    expect(probeProps(w).map((p) => p.props.scanner)).toEqual(['grype', 'grype', 'grype', undefined])
+    expect(probeProps(w).map((p) => p.props.scanner)).toEqual(['grype', 'grype', undefined, 'grype'])
   })
 
   it('the switch renders again only the panels that follow it', async () => {
@@ -227,7 +247,7 @@ describe('the read page', () => {
     await w.findAll('.head-actions button').find((b) => b.text() === 'trivy')!.trigger('click')
     await flushPromises()
     // the pinned grype panel and the panel with no scanner data keep their props
-    expect(renders(w)).toEqual([2, 1, 2, 1])
+    expect(renders(w)).toEqual([2, 1, 1, 2])
   })
 
   it('shows the pin on a pinned panel only, and frames a panel with no card', async () => {
@@ -235,7 +255,7 @@ describe('the read page', () => {
     const cells = w.findAll('.dash-cell')
     expect(cells.map((c) => c.find('.dash-pin').exists())).toEqual([false, true, false, false])
     expect(cells[1]!.find('.dash-pin').text()).toBe('grype pinned')
-    expect(cells[3]!.find('.panel-frame h2').text()).toBe('Triage progress')
+    expect(cells[2]!.find('.panel-frame h2').text()).toBe('Triage progress')
   })
 
   it('gives each panel the T of the time picker', async () => {

@@ -5,7 +5,7 @@
  */
 import type { DashboardPanel } from '@/api/generated'
 import type { PanelHeight, PanelWidth } from '@/dashboards/catalog'
-import { placeOne } from '@/dashboards/layout'
+import { pageBlocks, placeOne, placePanels } from '@/dashboards/layout'
 
 /** The backend's cap on the panels of one dashboard (MAX_PANELS, ruling Q2, docs/API.md). */
 export const MAX_PANELS = 24
@@ -78,17 +78,20 @@ export function fromDraft(draft: readonly DraftPanel[]): DashboardPanel[] {
   return draft.map(({ key: _key, ...p }) => p)
 }
 
-const panelSig = (p: DashboardPanel) => `${p.panel}|${p.x}|${p.y}|${p.w}|${p.h}|${p.scanner ?? ''}`
+const panelSig = (p: DashboardPanel) => `${p.panel}|${p.x}|${p.w}|${p.h}|${p.scanner ?? ''}`
+const pageSigs = (panels: readonly DashboardPanel[]) =>
+  pageBlocks(placePanels(panels)).flatMap((b) => b.columns.flat().map((p) => panelSig(p.stored)))
 
-/** The same panels in the same places, in any order: a save then leaves out `panels`, so the
- * backend keeps the stored ones without checking them again (PR B). */
+/** The same page, whatever order the list has: the same panels in the same reading order, columns,
+ * widths, heights and scanners. `y` counts only for that order, because each panel is as tall as
+ * its content (issue 1045): the rows that edit mode measures as it opens are not a change. A save
+ * of the same page leaves out `panels`, so the backend keeps the stored ones without checking them
+ * again. */
 export function sameLayout(a: readonly DashboardPanel[], b: readonly DashboardPanel[]): boolean {
   if (a.length !== b.length) return false
-  const sigs = b.map(panelSig).sort()
-  return a
-    .map(panelSig)
-    .sort()
-    .every((s, i) => s === sigs[i])
+  const sigs = pageSigs(b)
+  const mine = pageSigs(a)
+  return mine.length === sigs.length && mine.every((s, i) => s === sigs[i])
 }
 
 /** A panel from the catalog window, at the left edge under all the others (the kickoff of S8b). */

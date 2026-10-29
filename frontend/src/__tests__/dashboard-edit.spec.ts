@@ -89,7 +89,9 @@ import { useClusterStore } from '@/stores/cluster'
 import { useToastStore } from '@/stores/toast'
 import DashboardView from '@/views/DashboardView.vue'
 
-import { gs, resetGridstack } from './helpers/fakeGridstack'
+import { FakeResizeObserver, gs, resetGridstack, resize } from './helpers/fakeGridstack'
+
+vi.stubGlobal('ResizeObserver', FakeResizeObserver)
 
 const ID = 'b'.repeat(32)
 const PANELS: DashboardPanel[] = [
@@ -167,9 +169,19 @@ describe('the edit rules', () => {
   it('two layouts are the same in any order, and differ on any field of any panel', () => {
     expect(sameLayout(PANELS, [...PANELS].reverse())).toBe(true)
     expect(sameLayout(PANELS, PANELS.slice(1))).toBe(false)
-    for (const change of [{ x: 1 }, { y: 9 }, { w: 2 }, { h: 'tall' }, { scanner: 'grype' }] as const) {
+    for (const change of [{ x: 1 }, { w: 2 }, { h: 'tall' }, { scanner: 'grype' }] as const) {
       expect(sameLayout(PANELS, [{ ...PANELS[1]!, ...change }, PANELS[0]!, PANELS[2]!])).toBe(false)
     }
+  })
+
+  it('a new y is a change only when it changes the reading order (issue 1045)', () => {
+    // the rows that edit mode measures move the panels up or down, in the same order
+    const measured = [PANELS[0]!, { ...PANELS[1]!, y: 5 }, { ...PANELS[2]!, y: 5 }]
+    expect(sameLayout(PANELS, measured)).toBe(true)
+    // a Half panel above the Full one, or two panels of one column the other way round
+    expect(sameLayout(PANELS, [{ ...PANELS[0]!, y: 20 }, PANELS[1]!, PANELS[2]!])).toBe(false)
+    const column = [...PANELS, { panel: 'triage-progress', x: 0, y: 20, w: 1, h: 'short' } as const]
+    expect(sameLayout(column, [column[0]!, { ...column[1]!, y: 30 }, column[2]!, column[3]!])).toBe(false)
   })
 
   it('a full-width panel moves to the left edge, a half one keeps its column', () => {
@@ -386,6 +398,45 @@ describe('edit mode', () => {
     expect(patchBody().body.panels).toContainEqual({ panel: 'triage-progress', x: 0, y: 7, w: 1, h: 'short' })
   })
 
+  it('each panel takes the whole rows its content needs, and those rows are not a change', async () => {
+    const { w } = await mountView('?edit=1')
+    const fits = w.findAll('.dash-fit')
+    expect(fits).toHaveLength(3)
+    expect(fits.every((f) => gs.observed.has(f.element))).toBe(true)
+    const id = (panel: string) => w.find(`[data-panel="${panel}"]`).attributes('gs-id')
+
+    // 2 x 15 px of margin around the content, in rows of 40 px
+    resize(fits[0]!.element, 170)
+    resize(fits[1]!.element, 339)
+    // the same rows again: nothing to change
+    resize(fits[2]!.element, 370)
+    expect(gs.updates).toEqual([
+      { id: id('findings-summary'), opts: { h: 5 } },
+      { id: id('top-components'), opts: { h: 10 } },
+    ])
+    // top mode moves the two Half panels up under the shorter summary
+    await drop({ 'top-components': { x: 0, y: 5 }, 'triage-progress': { x: 1, y: 5 } })
+    expect(w.find('.save-msg').text()).toBe('All changes saved')
+    expect(button(w, 'Exit edit').attributes('disabled')).toBeUndefined()
+  })
+
+  it('the page stops measuring a removed panel, and every panel when edit mode closes', async () => {
+    const { w } = await mountView('?edit=1')
+    const fit = w.find('[data-panel="triage-progress"] .dash-fit').element
+    await w.find('[aria-label="Remove Triage progress"]').trigger('click')
+    await flushPromises()
+    expect(gs.observed.has(fit)).toBe(false)
+    expect(gs.observed.size).toBe(2)
+    await button(w, 'Discard').trigger('click')
+    await settle()
+    expect(gs.disconnected).toBe(1)
+    expect(gs.observed.size).toBe(3)
+    await button(w, 'Exit edit').trigger('click')
+    await settle()
+    expect(gs.disconnected).toBe(2)
+    expect(gs.observed.size).toBe(0)
+  })
+
   it('panel settings change the draft and gridstack: the height, the width and the scanner', async () => {
     const { w } = await mountView('?edit=1')
     await w.find('[aria-label="Settings of Top components"]').trigger('click')
@@ -405,7 +456,8 @@ describe('edit mode', () => {
     expect(w.find('[role="dialog"]').exists()).toBe(false)
     expect(w.findAll('.dash-item-on')).toHaveLength(0)
     const id = w.find('[data-panel="top-components"]').attributes('gs-id')
-    expect(gs.updates).toEqual([{ id, opts: { x: 0, w: 2, h: 26 } }])
+    // the content sets the height: the catalog rows of Tall do not go to gridstack
+    expect(gs.updates).toEqual([{ id, opts: { x: 0, w: 2 } }])
     // the panel reads its new rows and its pinned scanner at once
     expect(JSON.parse(w.find('[data-panel="top-components"] .probe').attributes('data-props')!)).toEqual({
       scanner: 'grype',

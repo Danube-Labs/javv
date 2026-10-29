@@ -1,18 +1,16 @@
 <script setup lang="ts">
 /**
- * A saved dashboard's panels on a CSS grid (issue 440, decision Q5): two columns and rows of
- * 40 px, the cells of the edit grid, with no layout library on the read page. Each cell keeps
- * a 15 px margin inside it, the gridstack margin, so a layout reads the same in both modes; the
- * cell scrolls a panel taller than its slot, and its margin leaves room for the card's shadow.
- * Below the shared breakpoint the panels stack in one column in reading order (y, then x), each
- * as tall as its content.
+ * A saved dashboard's panels on the read page, in the blocks of `pageBlocks`: a Full panel by
+ * itself, or two columns of Half panels. Each panel is as tall as its content and the gaps are the
+ * page's grid gap in both directions, so nothing scrolls inside a panel and each card draws its
+ * whole shadow. Below the shared breakpoint the columns stack in one column, in the same order.
  */
 import { computed } from 'vue'
 
 import type { DashboardPanel } from '@/api/generated'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
 import PanelFrame from '@/components/dashboards/PanelFrame.vue'
-import { cellStyle, isPinned, panelPropsCache, placePanels } from '@/dashboards/layout'
+import { isPinned, pageBlocks, panelPropsCache, placePanels, type PageBlock, type PlacedPanel } from '@/dashboards/layout'
 import type { ScannerLens } from '@/lib/scannerLens'
 
 const props = defineProps<{
@@ -23,53 +21,63 @@ const props = defineProps<{
   scanner: ScannerLens
 }>()
 
-const placed = computed(() => placePanels(props.panels))
+const blocks = computed(() => pageBlocks(placePanels(props.panels)))
 
 const propsFor = panelPropsCache()
-const panelProps = computed(() => placed.value.map((p) => propsFor(`${p.stored.x}-${p.stored.y}`, p, props)))
+const place = (p: PlacedPanel) => `${p.stored.x}-${p.stored.y}`
+const panelProps = (p: PlacedPanel) => propsFor(place(p), p, props)
+const blockKey = (b: PageBlock) => place(b.columns.flat()[0]!)
 </script>
 
 <template>
   <div class="dash-grid">
-    <div
-      v-for="(p, i) in placed"
-      :key="`${p.stored.x}-${p.stored.y}`"
-      class="dash-cell"
-      :style="cellStyle(p)"
-      :data-panel="p.panel.id"
-    >
-      <span v-if="p.panel.usesScanner && isPinned(p.stored)" class="dash-pin">
-        <ScannerTag :name="String(p.stored.scanner)" /> pinned
-      </span>
-      <PanelFrame v-if="p.panel.framed" :title="p.panel.name" :line="p.panel.line">
-        <component :is="p.panel.component" v-bind="panelProps[i]" />
-      </PanelFrame>
-      <component :is="p.panel.component" v-else v-bind="panelProps[i]" />
+    <div v-for="b in blocks" :key="blockKey(b)" class="dash-block" :class="{ 'dash-block--full': b.full }">
+      <div v-for="(col, ci) in b.columns" :key="ci" class="dash-stack">
+        <div v-for="p in col" :key="place(p)" class="dash-cell" :data-panel="p.panel.id">
+          <span v-if="p.panel.usesScanner && isPinned(p.stored)" class="dash-pin">
+            <ScannerTag :name="String(p.stored.scanner)" /> pinned
+          </span>
+          <PanelFrame v-if="p.panel.framed" :title="p.panel.name" :line="p.panel.line">
+            <component :is="p.panel.component" v-bind="panelProps(p)" />
+          </PanelFrame>
+          <component :is="p.panel.component" v-else v-bind="panelProps(p)" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.dash-grid {
+.dash-grid,
+.dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+}
+.dash-block {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 40px;
-  /* the cells' own margin lines their cards up with the page edge */
-  margin: 0 -15px;
+  gap: var(--grid-gap);
+  align-items: start;
 }
+.dash-block--full {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* min-width 0: an ECharts canvas's drawn width would otherwise pin the column (OverviewView) */
+.dash-stack,
 .dash-cell {
-  grid-column: var(--col) / span var(--cols);
-  grid-row: var(--row) / span var(--rows);
-  position: relative;
   min-width: 0;
-  padding: 15px;
-  overflow: auto;
 }
-/* in the cell's top margin, over the card's top right corner */
+/* the Findings summary sets its bands by the width of its cell, not of the screen */
+.dash-cell {
+  position: relative;
+  container-type: inline-size;
+}
+/* over the card's top right corner, half in the gap above it */
 .dash-pin {
   position: absolute;
-  top: 0;
-  right: 30px;
+  top: -12px;
+  right: 15px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -81,17 +89,10 @@ const panelProps = computed(() => placed.value.map((p) => propsFor(`${p.stored.x
   font-size: var(--text-sm);
   color: var(--soft);
 }
-/* the shared breakpoint (DESIGN.md §4): one column, and each panel takes the height of its
-   content, since a narrow panel wraps (the findings summary's bands go to three rows) */
+/* the shared breakpoint (DESIGN.md §4): one column, left column first in each block */
 @media (max-width: 1100px) {
-  .dash-grid {
+  .dash-block {
     grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: auto;
-  }
-  .dash-cell {
-    grid-column: 1;
-    grid-row: auto;
-    overflow: visible;
   }
 }
 </style>

@@ -2,8 +2,8 @@
 /**
  * The card for a catalog panel that has none of its own (Triage progress lives inside a
  * Contributors section card): the Overview card skin, the panel's name and one line, then the
- * panel. It never clips: the card draws its own --shadow outside its box, and a panel taller
- * than its slot scrolls in the slot the dashboard gives it, not here.
+ * panel. It never clips: the card draws its own --shadow outside its box, and the dashboard
+ * makes each panel as tall as its content, so nothing scrolls (issue 1045).
  */
 defineProps<{ title: string; line: string }>()
 </script>
