@@ -8,13 +8,19 @@ withDefaults(
   defineProps<{
     variant?: 'mini' | 'control' | 'quiet' | 'ghost' | 'primary'
     block?: boolean
+    /** the darker border, for a button on a white card where the thin one hardly shows (issue 1004) */
+    bordered?: boolean
   }>(),
   { variant: 'mini' },
 )
 </script>
 
 <template>
-  <button type="button" class="ui-btn" :class="[`ui-btn--${variant}`, { 'ui-btn--block': block }]">
+  <button
+    type="button"
+    class="ui-btn"
+    :class="[`ui-btn--${variant}`, { 'ui-btn--block': block, 'ui-btn--bordered': bordered }]"
+  >
     <slot />
   </button>
 </template>
@@ -119,6 +125,9 @@ withDefaults(
 }
 .ui-btn--block {
   width: 100%;
+}
+.ui-btn--bordered {
+  border-color: var(--control-hover-line);
 }
 @media (prefers-reduced-motion: reduce) {
   .ui-btn,

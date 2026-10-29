@@ -173,8 +173,10 @@ function exportDashboard(d: DashboardDoc) {
         v-for="d in pager.shown.value"
         :key="d.dashboard_id"
         :title="d.name"
+        :to="`/dashboards/${d.dashboard_id}`"
         :description="d.description"
         :owner="`owner ${d.owner}`"
+        @open="router.push(`/dashboards/${d.dashboard_id}`)"
       >
         <template #badge>
           <AppIcon :name="d.sharing === 'private' ? 'key' : 'users'" :size="12" /><span
@@ -190,11 +192,8 @@ function exportDashboard(d: DashboardDoc) {
           </span>
         </template>
         <template #actions>
-          <UiButton variant="mini" :disabled="exporter.exporting.value" @click="exportDashboard(d)">
+          <UiButton variant="mini" bordered :disabled="exporter.exporting.value" @click="exportDashboard(d)">
             <AppIcon name="download" :size="12" />Export
-          </UiButton>
-          <UiButton variant="mini" @click="router.push(`/dashboards/${d.dashboard_id}`)">
-            <AppIcon name="chevron" :size="12" />Open
           </UiButton>
         </template>
       </SavedCard>

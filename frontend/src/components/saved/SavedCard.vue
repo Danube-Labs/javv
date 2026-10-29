@@ -2,16 +2,38 @@
 /**
  * One card of a saved-items grid (SCREENS §6): Saved views and Dashboards share it. The title,
  * a badge or a remove button (the remove button only for a user who may remove the item), a
- * description and a summary line, then a footer: the item's number, its owner and its actions.
+ * description and a summary line, then a footer: the item's number, its owner, its actions and
+ * a quiet "Open ›".
+ *
+ * The whole card opens the item (issue 1004): the title is a RowLink whose ::after covers the
+ * card, so a click anywhere opens it, Tab reaches it once, and a ctrl click opens a new tab. The
+ * badge, the remove button and the actions sit above that layer and keep their own clicks.
  */
-defineProps<{ title: string; description?: string; summary?: string; owner: string; removeLabel?: string }>()
-defineEmits<{ remove: [] }>()
+import type { RouteLocationRaw } from 'vue-router'
+
+import RowLink from '@/components/ui/RowLink.vue'
+
+withDefaults(
+  defineProps<{
+    title: string
+    to: RouteLocationRaw
+    openLabel?: string
+    description?: string
+    summary?: string
+    owner: string
+    removeLabel?: string
+  }>(),
+  { openLabel: 'Open' },
+)
+defineEmits<{ open: []; remove: [] }>()
 </script>
 
 <template>
   <article class="view-card">
     <div class="vc-head">
-      <h2>{{ title }}</h2>
+      <h2>
+        <RowLink class="vc-link" :to="to" @open="$emit('open')">{{ title }}</RowLink>
+      </h2>
       <span v-if="$slots.badge" class="vc-badge"><slot name="badge" /></span>
       <button v-if="removeLabel" type="button" class="vc-x" :aria-label="removeLabel" @click="$emit('remove')">
         ×
@@ -23,12 +45,14 @@ defineEmits<{ remove: [] }>()
       <span class="vc-count"><slot name="stat" /></span>
       <span class="vc-owner mono">{{ owner }}</span>
       <slot name="actions" />
+      <span class="vc-open" aria-hidden="true">{{ openLabel }} <span class="vc-open-mark">›</span></span>
     </div>
   </article>
 </template>
 
 <style scoped>
 .view-card {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -37,10 +61,31 @@ defineEmits<{ remove: [] }>()
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition:
+    border-color var(--dur-quick) var(--ease-out),
+    transform var(--dur-quick) var(--ease-out);
 }
-.view-card:hover {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
+/* the prototype's clickable card (DESIGN.md §5): it stays white, so a button's hover wash inside
+   it always shows; a fill here gave the button and the card one color (issue 1004) */
+.view-card:hover,
+.view-card:has(.vc-link:focus-visible) {
+  border-color: var(--coral);
+  transform: translateY(-1px);
+}
+.view-card:has(.vc-link:active) {
+  transform: none;
+}
+.vc-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.vc-badge,
+.vc-x,
+.vc-foot :slotted(.ui-btn) {
+  position: relative;
+  z-index: 1;
 }
 .vc-head {
   display: flex;
@@ -104,7 +149,8 @@ defineEmits<{ remove: [] }>()
   align-items: center;
   gap: 10px;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line2);
 }
 .vc-count {
   font-weight: 600;
@@ -114,5 +160,27 @@ defineEmits<{ remove: [] }>()
   flex: 1;
   font-size: var(--text-facet-label);
   color: var(--soft);
+}
+.vc-open {
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--soft);
+}
+.vc-open-mark {
+  color: var(--dash-muted);
+}
+.view-card:hover .vc-open,
+.view-card:hover .vc-open-mark {
+  color: var(--coral-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-card {
+    transition: none;
+  }
+  .view-card:hover,
+  .view-card:has(.vc-link:focus-visible) {
+    transform: none;
+  }
 }
 </style>

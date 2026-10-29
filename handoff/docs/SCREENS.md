@@ -502,7 +502,10 @@ Card grid preserved.
 mutations owner-or-admin). The per-card **live count** is
 `GET /api/v1/findings/facets?<view's filter params>` (server agg — fetched lazily per visible
 card; never counted client-side). Card → Findings with the filter preset (deep-link round-trip
-must reproduce identical query params).
+must reproduce identical query params). The whole card is the link (issue 1004): its address is
+the /findings address of the filters, so a ctrl click opens a new tab. A plain click applies the
+whole view first (columns, density, sort, time window). The footer ends in a quiet
+"Open in Findings ›", not a button.
 
 **States:** empty ("save a filter set from Findings"); count-loading per card; degraded (counts
 show em-dash); 403 on mutating someone else's view (edit/delete affordances hidden unless owner
@@ -511,7 +514,12 @@ or admin). The head count shows "-" until the list read answers, and after a ref
 
 **Changed vs SCREENS.md:** C-6 ruled server-side (M8e); owner column kept per the v4 design.
 The card and the grid are `components/saved/SavedCard.vue` and `SavedGrid.vue`, shared with
-Dashboards (§20, issue 440).
+Dashboards (§20, issue 440). **The card (issue 1004, operator rulings 2026-10-29 on A/B pictures
+of the real app):** the title is a link whose layer covers the card, so a click anywhere on the
+card opens the item. The badge, × and the buttons sit above that layer and keep their own clicks.
+On hover and on keyboard focus the card stays white, its border turns coral and it rises 1px (the
+prototype card, DESIGN.md §5). A line separates the footer, and the buttons in the card have the
+darker border (`UiButton` `bordered`). The page color stays the warm paper (DESIGN.md §9).
 
 ---
 
@@ -1079,9 +1087,9 @@ a later pass.
 **List (`/dashboards`, Monitor group under Saved views):** the Saved views card grid. The card
 and the grid are one component pair, `components/saved/SavedCard.vue` and `SavedGrid.vue`, that
 both screens use. A card shows the name, a badge with who can see it (`Everyone`, the role list,
-or `Only the owner`), the description, the number of panels and when it changed, the owner, and
-**Export** and **Open**. A long role list ends in "…", and the title of the badge has the full
-list.
+or `Only the owner`), the description, the number of panels and when it changed, the owner,
+**Export**, and a quiet "Open ›". The whole card opens the dashboard (issue 1004, §6). A long role
+list ends in "…", and the title of the badge has the full list.
 - **Data:** `GET /api/v1/dashboards`: only the dashboards that the user can see (D2, Q3).
 - **Head:** the count, `-` until the list read answers and after a refused one (issue 833 F5).
   **New dashboard** opens the details window (below) in its create mode. **Create** makes the

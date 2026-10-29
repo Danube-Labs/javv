@@ -18,7 +18,6 @@ import {
 import GridPager from '@/components/findings/GridPager.vue'
 import SavedCard from '@/components/saved/SavedCard.vue'
 import SavedGrid from '@/components/saved/SavedGrid.vue'
-import AppIcon from '@/components/ui/AppIcon.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { usePagedSlice } from '@/composables/usePagedSlice'
@@ -187,21 +186,19 @@ function summary(v: ViewDoc): string {
         v-for="v in pager.shown.value"
         :key="v.view_id"
         :title="v.name"
+        :to="{ path: '/findings', query: presetToRouteQuery(FINDINGS_FIELDS, v.preset) }"
+        open-label="Open in Findings"
         :description="v.description"
         :summary="summary(v)"
         :owner="v.owner"
         :remove-label="mayDelete(v) ? `Delete ${v.name}` : undefined"
+        @open="apply(v)"
         @remove="remove(v)"
       >
         <template #stat>
           <template v-if="counts[v.view_id] === undefined">…</template>
           <span v-else-if="counts[v.view_id] === null" class="muted-dash">-</span>
           <template v-else>{{ counts[v.view_id]!.toLocaleString('en-US') }} findings</template>
-        </template>
-        <template #actions>
-          <UiButton variant="mini" @click="apply(v)">
-            <AppIcon name="chevron" :size="12" />Open in Findings
-          </UiButton>
         </template>
       </SavedCard>
       <template v-if="loaded && views.length > 0" #pager>

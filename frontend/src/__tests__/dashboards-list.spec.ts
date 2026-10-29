@@ -102,11 +102,14 @@ describe('the list', () => {
     expect(cards[1]!.text()).toContain('0 panels')
   })
 
-  it('opens a dashboard from its card', async () => {
+  it('opens a dashboard from its card: the title is a link that covers the card, no Open button', async () => {
     signIn([])
     const { w, router } = await mountList()
-    const open = w.findAll('.view-card')[0]!.findAll('button').find((b) => b.text() === 'Open')!
-    await open.trigger('click')
+    const card = w.findAll('.view-card')[0]!
+    expect(card.findAll('button').map((b) => b.text())).toEqual(['Export'])
+    const link = card.get('a.vc-link')
+    expect(link.attributes('href')).toBe(`/dashboards/${'a'.repeat(32)}`)
+    await link.trigger('click', { button: 0 })
     await flushPromises()
     expect(router.currentRoute.value.path).toBe(`/dashboards/${'a'.repeat(32)}`)
   })

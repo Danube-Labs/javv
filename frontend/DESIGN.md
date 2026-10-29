@@ -242,6 +242,10 @@ every outside host unanswered. Neither face is on the vendored detector's overus
 Transitions short and functional (`.12–.15s`), no decorative animation. Row hover tints
 `var(--row-hover)`; clickable cards lift 1px + coral border. Focus-visible = `var(--focus-ring)`
 (2px coral, 1px offset) on every interactive element. Dropdowns close on outside-click and Esc.
+**Clickable cards (issue 1004, operator rulings 2026-10-29):** the card keeps its white fill on
+hover, so the hover wash of a button in the card always shows. A beige card hover gave the card
+and its button one color. The whole card is the link. Its title is a `RowLink`, and the `::after`
+of the link covers the card. The controls in the card sit above that layer (`SavedCard.vue`).
 **At-rest clickability (operator ruling 2026-07-10):** a cell/row that NAVIGATES carries a soft
 trailing chevron at rest (`--dash-muted` → `--coral-text` with the hover wash) and its
 identifier takes the link treatment on hover (coral + underline, the grid's `cve-link`
