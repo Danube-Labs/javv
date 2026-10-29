@@ -7,14 +7,16 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 ## Where the project is
 
-- The last release is 0.9.1 (2026-10-27): the KEV SLA deadline at a past time (issue 1000), names
-  for segmented controls (issue 1011), and docs that agree with the code (issues 1012 and 1017).
+- The last release is 0.9.2 (2026-10-29): the cards of Dashboards and Saved views, and a slate
+  primary button (issue 1004).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
 
-- **Issue 1004:** the cards of Dashboards and Saved views (PR 1037). Release 0.9.2 waits for it
-  (operator, 2026-10-29).
+- **Issue 1039:** role names in place of role ids, and one button height in the heads of Overview
+  and of a dashboard in edit mode. It is for the next release (operator, 2026-10-29). The operator ruled D1:
+  one height in every screen head, with a 1px edge under each control. A second PR puts the same
+  edge on every bordered button.
 
 ## Open, in the 1.0.0 milestone
 
