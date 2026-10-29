@@ -14,8 +14,9 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 ## In progress
 
 - **Issue 1039:** role names in place of role ids, and one button height in the heads of Overview
-  and of a dashboard in edit mode. It is for the next release (operator, 2026-10-29). Decision D1
-  on the issue waits for a ruling.
+  and of a dashboard in edit mode. It is for the next release (operator, 2026-10-29). The operator ruled D1:
+  one height in every screen head, with a 1px edge under each control. A second PR puts the same
+  edge on every bordered button.
 
 ## Open, in the 1.0.0 milestone
 
