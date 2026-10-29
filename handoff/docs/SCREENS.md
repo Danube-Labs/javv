@@ -78,6 +78,12 @@ grows more slowly near the end, then fills and fades when the work ends. The not
 does not count. The main area has `aria-busy` while the work is open. The code of the other pages
 loads while the browser is idle, so most clicks show the new page at once.
 
+**Text boxes and dropdowns (issue 1050, operator 2026-10-29).** Every box in a window and in the
+triage panel has one look: the kit text box (`.set-input`). It has the hover wash and line, the
+coral line on focus, the focus ring for the keyboard, and the invalid line. Text that people write
+(a name, a note, a justification) is in the UI face. Code-like data (a username, a date) is in the
+mono face. A dropdown is `.set-select`, with the same states.
+
 **Time picker (C-1, D28/FR-23).** Two visibly distinct controls in one group (V4-DELTA conflict 4):
 the **time-travel `T`** (Now / rewind / jump-to-date → amber "Viewing history: as scanned at T"
 banner + Back to now) and the **trend window** (relative to `T`, scopes charts + Contributors).
