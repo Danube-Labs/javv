@@ -40,8 +40,7 @@ describe('Save this view (issue 1050)', () => {
     await open()
     for (const id of ['svd-name', 'svd-description']) {
       const box = document.getElementById(id) as HTMLInputElement
-      expect(box.classList.contains('set-input'), id).toBe(true)
-      expect(box.classList.contains('set-input--prose'), id).toBe(true)
+      expect({ id, classes: [...box.classList] }).toEqual({ id, classes: ['set-input', 'set-input--prose'] })
     }
     expect((document.getElementById('svd-name') as HTMLInputElement).placeholder).toBe('e.g. Critical KEV backlog')
     expect((document.getElementById('svd-name') as HTMLInputElement).maxLength).toBe(128)
