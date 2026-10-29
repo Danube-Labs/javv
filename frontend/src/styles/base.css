@@ -991,6 +991,88 @@ button.stat-cell:hover .cell-go,
   color: var(--ink);
 }
 
+/* ---- text box and dropdown skins (issue 1050): the one look of a field that people type in or
+   pick from, with every state (hover wash + line, focus, keyboard focus, invalid, disabled).
+   `SettingsInput` and `UiDateTime` compose the box; a window's own text area, date box or select
+   takes the class. `--prose` sets text that people write in the UI face; the default mono face is
+   for code-like data (names, ids). The style rules test refuses a second definition. */
+.set-input {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+  font-size: var(--text-mono-cell);
+  font-family: var(--font-mono);
+  color: var(--ink);
+  background: var(--card);
+  outline: none;
+  width: 100%;
+  transition:
+    border-color var(--dur-quick) var(--ease-out),
+    background var(--dur-quick) var(--ease-out);
+}
+.set-input--num {
+  width: 88px;
+}
+.set-input--prose {
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+}
+.set-input:hover:not(:disabled) {
+  background: var(--control-hover-bg);
+  border-color: var(--control-hover-line);
+}
+.set-input:focus {
+  border-color: var(--coral);
+  background: var(--card);
+}
+.set-input:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+.set-input--invalid {
+  border-color: var(--coral-d);
+}
+.set-input:disabled {
+  color: var(--soft);
+  background: var(--panel);
+  cursor: not-allowed;
+}
+textarea.set-input {
+  resize: vertical;
+}
+.set-select {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+  font-size: var(--text-body);
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--card);
+  width: 100%;
+  transition:
+    border-color var(--dur-quick) var(--ease-out),
+    background var(--dur-quick) var(--ease-out);
+}
+/* the role list in a table row: the row's height, not a form field's */
+.set-select--row {
+  padding: 6px 9px;
+  width: auto;
+  min-width: 140px;
+}
+.set-select:hover:not(:disabled) {
+  background: var(--control-hover-bg);
+  border-color: var(--control-hover-line);
+}
+.set-select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+.set-select:disabled {
+  color: var(--soft);
+  background: var(--panel);
+  cursor: not-allowed;
+}
+
 /* ---- system lines (issue 765): the one-line notices under the top bar, the backend-down line,
    the scanner-freshness line and its check line, the retirement countdown, and the history line
    while time-travelling. Prose is ink: the hue lives in the wash, the border and the icon, never

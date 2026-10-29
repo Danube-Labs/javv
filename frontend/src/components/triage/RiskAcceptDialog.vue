@@ -140,7 +140,15 @@ async function submit() {
 
         <div class="fld-2">
           <UiField label="Expiry" :hint="expiryOk ? 'immutable: change = revoke + new' : EXPIRY_REFUSED" for="ra-expiry">
-            <input id="ra-expiry" v-model="expiry" class="fld" type="date" :min="minExpiry" :aria-invalid="!expiryOk" />
+            <input
+              id="ra-expiry"
+              v-model="expiry"
+              class="set-input"
+              :class="{ 'set-input--invalid': !expiryOk }"
+              type="date"
+              :min="minExpiry"
+              :aria-invalid="!expiryOk"
+            />
           </UiField>
           <UiField label="Apply to">
             <UiSegControl v-model="applyTo" :options="APPLY_OPTS" label="Apply to" />
@@ -151,7 +159,7 @@ async function submit() {
           <textarea
             id="ra-just"
             v-model="justification"
-            class="fld"
+            class="set-input set-input--prose"
             rows="3"
             placeholder="Why is this risk acceptable, and for how long?"
           />
@@ -241,22 +249,6 @@ async function submit() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-}
-.fld {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 10px;
-  font-family: var(--font-ui);
-  font-size: var(--text-mono-cell);
-  color: var(--ink);
-  background: var(--card);
-  outline: none;
-  resize: vertical;
-  box-sizing: border-box;
-}
-.fld:focus {
-  border-color: var(--coral);
 }
 .ra-note {
   display: flex;

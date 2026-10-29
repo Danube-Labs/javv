@@ -343,6 +343,15 @@ One layout lives outside the kit folder and is owned once the same way:
 `components/system/ErrorPage.vue`, the page for anything that cannot be shown (not found, a page
 that failed while it was drawn). A new "this could not be shown" page uses it; SCREENS §18.
 
+**One text box and one dropdown** (operator 2026-10-29, issue 1050) are skins in base.css, as the
+table skin is. `.set-input` is the box, with every state: the hover wash and line, focus, the
+keyboard focus ring, `--invalid` and disabled. `--prose` sets text that people write (a name, a
+note) in the UI face, and the default mono face is for code-like data (a username, a date).
+`textarea.set-input` changes only its height. `.set-select` is the dropdown, and `--row` is its
+size in a table row. `SettingsInput` and `UiDateTime` draw the box. A window's own text area, date
+box or select takes the class. The style rules test refuses a copy outside base.css, and
+`text-box-style.spec.ts` checks each box of every window and of the triage panel.
+
 ## 6. Do / Don't
 
 **Do**

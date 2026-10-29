@@ -85,6 +85,12 @@ button has a light fill on the band, a stronger fill and a lighter edge on hover
 and the focus ring. These are the colors of the sidebar collapse button. No window changes the
 head, so all 20 windows look the same.
 
+**Text boxes and dropdowns (issue 1050, operator 2026-10-29).** Every box in a window and in the
+triage panel has one look: the kit text box (`.set-input`). It has the hover wash and line, the
+coral line on focus, the focus ring for the keyboard, and the invalid line. Text that people write
+(a name, a note, a justification) is in the UI face. Code-like data (a username, a date) is in the
+mono face. A dropdown is `.set-select`, with the same states.
+
 **Time picker (C-1, D28/FR-23).** Two visibly distinct controls in one group (V4-DELTA conflict 4):
 the **time-travel `T`** (Now / rewind / jump-to-date → amber "Viewing history: as scanned at T"
 banner + Back to now) and the **trend window** (relative to `T`, scopes charts + Contributors).

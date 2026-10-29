@@ -139,11 +139,11 @@ async function apply() {
             </div>
 
             <UiField label="Assign to" hint="optional" for="bulk-assignee">
-              <input id="bulk-assignee" v-model="assignee" class="fld" type="text" placeholder="username" />
+              <input id="bulk-assignee" v-model="assignee" class="set-input" type="text" placeholder="username" />
             </UiField>
 
             <UiField label="Note" hint="one note on every target" for="bulk-notes">
-              <textarea id="bulk-notes" v-model="notes" class="fld" rows="2" placeholder="Why this bulk action…" />
+              <textarea id="bulk-notes" v-model="notes" class="set-input set-input--prose" rows="2" placeholder="Why this bulk action…" />
             </UiField>
 
             <p v-if="draft.error" class="bulk-error" role="alert">{{ draft.error }}</p>
@@ -221,22 +221,6 @@ async function apply() {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--soft);
-}
-.fld {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 10px;
-  font-family: var(--font-ui);
-  font-size: var(--text-mono-cell);
-  color: var(--ink);
-  background: var(--card);
-  outline: none;
-  resize: vertical;
-  box-sizing: border-box;
-}
-.fld:focus {
-  border-color: var(--coral);
 }
 .vex-block {
   margin-top: 2px;

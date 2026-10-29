@@ -63,6 +63,8 @@ Both are served by the app (`src/styles/fonts.css`, Fontsource); a font host lin
 SlideoverShell · PopoverShell · ToastStack · EmptyState · UiSkeleton · UiLoadingBar · AppIcon · SectionNav · RowLink), plus `components/chips/`, the M9a filter module,
 the shared table skin + GridPager, and the stat-band skin (`.stat-band`/`.stat-cell` in base.css,
 composed by `components/overview/OverviewStatBands.vue` — it is a skin, not a kit component).
+A **text box or dropdown** is `SettingsInput`, `UiDateTime`, or the base.css skin `.set-input` /
+`.set-select` (issue 1050). A window never styles a box of its own.
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)
 and `usePagedSlice` (a bounded row set the client already holds — saved views, a finding's

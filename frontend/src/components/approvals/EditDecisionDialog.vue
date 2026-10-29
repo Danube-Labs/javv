@@ -84,10 +84,18 @@ async function submit() {
       revoked and a new one takes effect atomically, keeping the audit trail causal.
     </p>
     <UiField label="Justification" for="ed-just">
-      <textarea id="ed-just" v-model="justification" class="fld ed-just" rows="4" />
+      <textarea id="ed-just" v-model="justification" class="set-input set-input--prose" rows="4" />
     </UiField>
     <UiField label="Expiry" :hint="expiryOk ? 'empty keeps the current expiry' : EXPIRY_REFUSED" for="ed-expiry">
-      <input id="ed-expiry" v-model="expiry" class="fld" type="date" :min="minExpiry" :aria-invalid="!expiryOk" />
+      <input
+        id="ed-expiry"
+        v-model="expiry"
+        class="set-input"
+        :class="{ 'set-input--invalid': !expiryOk }"
+        type="date"
+        :min="minExpiry"
+        :aria-invalid="!expiryOk"
+      />
     </UiField>
     <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     <template #actions>
@@ -104,8 +112,5 @@ async function submit() {
   margin: 0 0 12px;
   font-size: var(--text-sm);
   color: var(--soft);
-}
-.ed-just {
-  resize: vertical;
 }
 </style>

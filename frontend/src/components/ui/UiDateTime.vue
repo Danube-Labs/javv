@@ -25,8 +25,8 @@ function set(part: 'date' | 'time', value: string) {
   <span class="dt-pair">
     <input
       :id="idPrefix ? `${idPrefix}-date` : undefined"
-      class="dt-input"
-      :class="{ 'dt-invalid': invalid }"
+      class="set-input dt-input"
+      :class="{ 'set-input--invalid': invalid }"
       type="date"
       aria-label="Date"
       :value="modelValue.date"
@@ -34,8 +34,8 @@ function set(part: 'date' | 'time', value: string) {
     />
     <input
       :id="idPrefix ? `${idPrefix}-time` : undefined"
-      class="dt-input dt-hhmm"
-      :class="{ 'dt-invalid': invalid }"
+      class="set-input dt-input dt-hhmm"
+      :class="{ 'set-input--invalid': invalid }"
       type="text"
       placeholder="HH:mm"
       maxlength="5"
@@ -52,36 +52,12 @@ function set(part: 'date' | 'time', value: string) {
   align-items: center;
   gap: 7px;
 }
+/* the box look is the shared `.set-input` (base.css); a date box keeps its own width in the pair */
 .dt-input {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 8px 11px;
-  font-size: var(--text-mono-cell);
-  font-family: var(--font-mono);
-  color: var(--ink);
-  background: var(--card);
-  outline: none;
-  transition:
-    border-color var(--dur-quick) var(--ease-out),
-    background var(--dur-quick) var(--ease-out);
-}
-.dt-input:hover {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
-}
-.dt-input:focus {
-  border-color: var(--coral);
-  background: var(--card);
-}
-.dt-input:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
+  width: auto;
 }
 .dt-hhmm {
   width: 74px;
   text-align: center;
-}
-.dt-invalid {
-  border-color: var(--coral-d);
 }
 </style>
