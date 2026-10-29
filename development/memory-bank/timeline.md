@@ -118,6 +118,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.3 | 2026-10-29 | Role names show in words on every screen, and the id stays the value. Every control in a screen head is 30px high, with a 1px edge under it (issue 1039) |
 | 0.9.2 | 2026-10-29 | A saved card opens its item from a click anywhere on the card, and its hover keeps the card white. The badge of a dashboard card has a color for each audience, and role names show with spaces. The primary button is slate, not coral (issue 1004) |
 | 0.9.1 | 2026-10-27 | At a past time, a KEV finding gets the KEV SLA deadline (issue 1000). Segmented controls have names for screen readers (issue 1011). The docs agree with the code of 0.9.0 (issue 1017), and the bolts are frozen as history (issue 1012) |
 | 0.9.0 | 2026-10-26 | No code changes after 0.8.9. It marks the 0.8.9 changes as a minor release (ruling of 2026-10-26) |
