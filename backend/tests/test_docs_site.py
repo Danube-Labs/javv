@@ -14,6 +14,7 @@ links to other files, nor that the tree publishes only the listed files. These t
 - a release publishes its docs as a version of its own with the script that chooses the aliases
   (`major.minor`, `latest`), and the backfill workflow publishes older releases the same way;
 - no published page carries an em dash;
+- each published page of `docs/` passes the STE linter (issue 1061);
 - the pages carry no engineering references (milestones, decisions, audit ids, issue
   numbers), except links to issues that track a limit an operator meets today;
 - every `page.md#heading` link reaches a heading on that page;
@@ -22,10 +23,12 @@ links to other files, nor that the tree publishes only the listed files. These t
 """
 
 import fnmatch
+import importlib.util
 import json
 import os
 import re
 import subprocess
+import sys
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -290,6 +293,31 @@ def test_published_pages_carry_no_em_dash(page: str) -> None:
     lines = (ROOT / page).read_text().splitlines()
     found = [n for n, line in enumerate(lines, 1) if "\u2014" in line]
     assert not found, f"{page} has an em dash on lines {found}"
+
+
+def _ste_lint() -> Any:
+    path = ROOT / "development" / "scripts" / "ste-lint.py"
+    spec = importlib.util.spec_from_file_location("ste_lint", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    # no __pycache__ next to the script: the docs-drift check lists every file in that folder
+    write_bytecode, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    spec.loader.exec_module(module)
+    sys.dont_write_bytecode = write_bytecode
+    return module
+
+
+@pytest.mark.parametrize("page", sorted(p for p in PAGES if p.startswith("docs/")))
+def test_published_docs_pages_pass_the_ste_linter(page: str) -> None:
+    # the operator pages are written in STE; the linter checks the structure (sentence length,
+    # semicolons, phrasal verbs), not the words, which stay with the writer and the review
+    findings, _ = _ste_lint().lint((ROOT / page).read_text(), filename=page)
+    hard = [
+        f"{f['line']}: {f['rule']} [{f['match']}]"
+        for f in findings
+        if f["level"] == "advisory-free"
+    ]
+    assert not hard, f"{page} fails the STE linter: {hard}"
 
 
 def test_the_release_publishes_its_docs_as_its_version_and_latest() -> None:
