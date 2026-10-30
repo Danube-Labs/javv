@@ -106,9 +106,9 @@ function textValues(field: FilterField, v: unknown): string[] {
 const names = (field: FilterField, values: unknown[]): string =>
   values.map((v) => valueLabel(field, String(v))).join(', ')
 
-/** One-line human summary of a preset for the card ("severity is none of low, negligible ·
- * KEV"). Field labels come from the same config that renders the pills. */
-export function presetSummary(fields: readonly FilterField[], preset: ViewPreset): string {
+/** The filters of a preset in words, one text for each ("severity is none of low, negligible",
+ * "KEV"). Field labels come from the same config that renders the pills. */
+export function presetParts(fields: readonly FilterField[], preset: ViewPreset): string[] {
   const p = preset as Record<string, unknown>
   const parts: string[] = []
   for (const field of fields) {
@@ -133,7 +133,13 @@ export function presetSummary(fields: readonly FilterField[], preset: ViewPreset
       else if (inc.length > 1) parts.push(`${field.label} is one of ${inc.join(', ')}`)
     }
   }
-  return parts.join(' · ') || 'No filters: everything'
+  return parts
+}
+
+/** One-line human summary of a preset for the card ("severity is none of low, negligible ·
+ * KEV"). */
+export function presetSummary(fields: readonly FilterField[], preset: ViewPreset): string {
+  return presetParts(fields, preset).join(' · ') || 'No filters: everything'
 }
 
 /** The API query for the card's live server count (SCREENS §6): the preset params verbatim

@@ -11,6 +11,7 @@ import {
   captureLens,
   facetsTotal,
   presetCountQuery,
+  presetParts,
   presetSummary,
   presetToRouteQuery,
 } from '@/findings/savedViews'
@@ -91,6 +92,15 @@ describe('saved views — the golden capture ⇄ apply round-trip (SCREENS §6)'
     expect(s).toContain('Namespace is payments')
     expect(s).toContain('KEV')
     expect(presetSummary(FINDINGS_FIELDS, {} as never)).toBe('No filters: everything')
+  })
+
+  it('the summary is the filter texts of presetParts, joined, so a card reads as before', () => {
+    const parts = presetParts(FINDINGS_FIELDS, GOLDEN_PRESET as never)
+    expect(parts).toContain('Severity is none of low, negligible')
+    expect(parts).toContain('Namespace is payments')
+    expect(parts).toContain('KEV')
+    expect(presetSummary(FINDINGS_FIELDS, GOLDEN_PRESET as never)).toBe(parts.join(' · '))
+    expect(presetParts(FINDINGS_FIELDS, {} as never)).toEqual([])
   })
 
   it('an empty workbench captures an empty preset — "everything" is a valid view', () => {
