@@ -59,15 +59,16 @@ no ad-hoc sizes — use the scale tokens (`--text-page-title`, `--text-card-titl
 Both are served by the app (`src/styles/fonts.css`, Fontsource); a font host link fails `index-html.spec.ts`.
 
 **Reuse before building — the kit already solves most of it**
-`components/ui/` (UiButton · UiField · UiTextBox · UiTextArea · UiSelect · UiDropdown · UiSegControl · UiToggleGroup · UiDateTime · ModalShell ·
+`components/ui/` (UiButton · UiField · UiTextBox · UiTextArea · UiSelect · UiSearchBox · UiDropdown · UiSegControl · UiToggleGroup · UiDateTime · ModalShell ·
 SlideoverShell · PopoverShell · ToastStack · EmptyState · UiSkeleton · UiLoadingBar · AppIcon · SectionNav · RowLink), plus `components/chips/`, the M9a filter module,
 the shared table skin + GridPager, and the stat-band skin (`.stat-band`/`.stat-cell` in base.css,
 composed by `components/overview/OverviewStatBands.vue` — it is a skin, not a kit component).
 A **text box or dropdown** is a kit piece: `UiTextBox`, `UiTextArea`, `UiSelect` (issue 1055),
 `SettingsInput` or `UiDateTime`. They wear the base.css skins `.set-input` / `.set-select` (issue
 1050). A window never styles a box of its own, and neither do the form fields outside windows
-(issue 1053). A **search box** is the base.css skin `.search-box`
-(`.facet-search` is the same box as the rail card). A **window footer** is a `ghost` Cancel,
+(issue 1053). ESLint refuses a raw `input`, `select` or `textarea` outside `components/ui/`. The
+four places that keep one say why in the disable comment (issue 1055). A **search box** is
+`UiSearchBox` on the base.css skin `.search-box` (`card` is the `.facet-search` card over a filter list). A **window footer** is a `ghost` Cancel,
 Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)
