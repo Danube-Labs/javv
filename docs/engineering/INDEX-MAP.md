@@ -413,7 +413,9 @@ revoked           boolean       revoke-on-role-change / logout-all
 #                          sharing: private|everyone|roles, roles[], owner, created_by, created_at,
 #                          updated_by, updated_at, revision, schema_version }   (issue 440, mapping v19)
 #                          `panels` is opaque in _source (enabled:false, like a view's `preset`):
-#                          [{ panel, x: 0|1, y, w: 1|2, h: short|tall, scanner?: dashboard|trivy|grype }].
+#                          [{ panel, x: 0|1, y, w: 1|2, h: short|tall, scanner?: dashboard|trivy|grype,
+#                             filters?: <a view's preset> }]. `filters` only on the panels that read
+#                          findings counts (issue 999); opaque too, so no MAPPING_VERSION change.
 #                          A dashboard holds no cluster and no numbers: each panel reads at view time.
 #                          Listed by who may see it (owner / sharing / roles terms), fetched by _id.
 # system-notifications : { notification_id, user_id, type: sla_breach|assignment|report_ready|cluster_retiring, ref, cluster_id, created_at, read }

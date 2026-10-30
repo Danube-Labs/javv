@@ -37,6 +37,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-17 | All clusters sends 3 requests for each cluster. The change waits until after 1.0. | 903 |
 | 2026-10-20 | The charts keep the defaults of the official OpenSearch chart. Do not add jobs or policies for a risk that the upstream chart does not address. | 945 |
 | 2026-10-27 | The repository `javv-poc` has the new name `javv`, with its full history, issues and numbers. This replaces the plan to clean the history and delete `javv-poc`. The placeholder repository is `javv-backup`. The release identity accepts both names. | 926, PR 1030 |
+| 2026-10-30 | Filters on a dashboard panel: five panels read findings counts. They take the filters of Findings, in the shape of a saved view. Riskiest images and Triage activity get filters in a separate issue (decision 1). | 999, 1063 |
 
 ## Design and architecture
 
@@ -52,6 +53,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-24 | Dashboard edit: a free grid that you move with the mouse (gridstack, `top` mode). No resize and no keyboard editing. Panels are short or tall. One scanner switch, with an override for each panel. | 440 |
 | 2026-10-26 | Panel settings open in a popover next to the panel, with Cancel and Apply. | 440 |
 | 2026-10-27 | At a past time, the SLA deadline of a finding uses the KEV value that its scan recorded. The KEV value of the row stays empty, the KEV filter gives 422 and the KEV count stays empty. Only the docs tell about the change, not the Findings screen. | 1000 |
+| 2026-10-30 | A dashboard panel takes a filter on the field that it lists. Its facets read asks with `all_filters=true`, so "Namespace is not kube-system" takes that row out. The Findings filter list keeps the rule of issue 949 (decision 4 B). | 999 |
 
 ## UI copy and look
 
@@ -72,6 +74,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-29 | The kit has its own text box, text area and dropdown pieces. A lint rule refuses a raw form field outside the kit, with a reason on each place that stays raw (G1 option B). | 1055 |
 | 2026-10-29 | The test of the window footers stays the check for the footer buttons. `ModalShell` keeps its footer slot (G2 option A). | 1055 |
 | 2026-10-30 | The rows-per-page list of the pager is the small kit dropdown. It keeps the size and the mono text of the pager. It takes the kit corner and focus ring (B3 option A, on built pictures). | 1055 |
+| 2026-10-30 | A filtered panel shows a "N filters" button on the corner of its card. A click opens a popover with the filters and "Open in Findings" (decision 2 C). | 999 |
+| 2026-10-30 | The panel settings show the filter bar of Findings for the filters of the panel (decision 3 B). | 999 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process

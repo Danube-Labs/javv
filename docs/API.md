@@ -413,7 +413,7 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/v1/findings` | session | One page of findings, with a cursor ([Read a list page by page](#read-a-list-page-by-page)). `size` is 1 to 500, default 50. `sort` is `severity_rank`, `first_seen_at`, `last_scan_at`, `cvss` or `epss`. The last page closes the search of the cursor. With `keep_open=true`, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with `POST /api/v1/cursors/close`. |
-| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The `unassigned` facet counts without the `assignee` values, and it keeps `exclude_assignee`. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. |
+| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The `unassigned` facet counts without the `assignee` values, and it keeps `exclude_assignee`. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. With `all_filters=true`, each facet counts with all filters, also the filter of its own field. A dashboard panel uses this, so that "Namespace is not kube-system" takes `kube-system` out of its list. |
 | GET | `/api/v1/findings/groups` | session | Findings in groups, page by page with a cursor. `by` is `image_repo`, `image_digest`, `namespaces`, `cve_id`, `assignee`, `app` or `ptype`. |
 | GET | `/api/v1/findings/top-components` | session | The packages with the most findings, and the count of different CVEs for each scanner. A past `as_of` gets 422. |
 | GET | `/api/v1/trends/scans` · `/api/v1/trends/findings` | session | Counts for each day over `days` (1 to 365, default 30), for each scanner. [Trends](#trends) gives the details. |
@@ -662,11 +662,15 @@ Each panel:
 | `w` | The width: 1 (one column) or 2 (both columns). `x + w` is at most 2. |
 | `h` | The height: `short` or `tall`. Each panel has the heights that its catalog entry gives. |
 | `scanner` | `dashboard` (default), `trivy` or `grype`, only on a panel with scanner data. `dashboard` follows the scanner switch of the dashboard. |
+| `filters` | The filters of `GET /api/v1/findings`, with the fields and checks of the `preset` of a saved view. Only on the panels that read findings counts: `findings-summary`, `package-type`, `findings-by-namespace`, `top-components` and `triage-progress`. |
 
 The backend refuses with 422:
 
 - a field that is not in these lists, or a panel ID that it does not know
 - a height that the panel does not have, or a `scanner` on a panel with no scanner data
+- `filters` on a panel that does not read findings counts
+- `scanner` or `exclude_scanner` in `filters`. The `scanner` field of the panel does this.
+- `state` or `exclude_state` in the `filters` of `triage-progress`. This panel shows each state.
 - a panel outside the two columns, or two panels that start on the same cell. A panel holds
   only the cells of its top row: one cell for a width of 1, and both cells for a width of 2. The
   height takes no part in this check, because the page makes each panel as tall as its content.
