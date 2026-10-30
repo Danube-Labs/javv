@@ -1,7 +1,8 @@
 /**
  * One text box and one dropdown (issue 1050): their look lives in base.css with every state, and
  * the kit parts that draw a box (`SettingsInput`, `UiDateTime`) wear it. The style rules test
- * refuses a copy of either rule outside base.css.
+ * refuses a copy of either rule outside base.css. The windows draw their boxes with the kit pieces
+ * `UiTextBox`, `UiTextArea` and `UiSelect` (issue 1055).
  */
 import { mount } from '@vue/test-utils'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -74,17 +75,19 @@ describe('the text box and the dropdown (issue 1050)', () => {
     for (const b of boxes) expect(b.classes()).toEqual(expect.arrayContaining(['set-input', 'set-input--invalid']))
   })
 
-  it('every box in a window and in the triage panel is the shared box or a kit part', () => {
+  it('every box in a window, in the triage panel and in SettingsInput is a kit piece, never a raw field (issue 1055)', () => {
+    // a raw field could wear the class and still drift in its own scoped style; a kit piece cannot.
+    // rawFields leaves out the file picker of Import dashboards: a button stands in for it.
     const files = vueFiles('.')
-      .filter((f) => !f.includes('__tests__') && !f.endsWith('ModalShell.vue'))
-      .filter((f) => /<ModalShell\b/.test(readFileSync(join(SRC, f), 'utf8')) || f.endsWith('TriagePanel.vue'))
+      .filter((f) => !f.includes('__tests__') && !f.startsWith('components/ui/'))
+      .filter(
+        (f) =>
+          /<ModalShell\b/.test(readFileSync(join(SRC, f), 'utf8')) ||
+          f.endsWith('TriagePanel.vue') ||
+          f.endsWith('SettingsInput.vue'),
+      )
     expect(files.length).toBeGreaterThan(10)
-    const plain = files.flatMap((f) =>
-      rawFields(f)
-        .filter((tag) => !/class="[^"]*\bset-(input|select)\b/.test(tag))
-        .map((tag) => `${f}: ${tag}`),
-    )
-    expect(plain).toEqual([])
+    expect(files.flatMap((f) => rawFields(f).map((tag) => `${f}: ${tag}`))).toEqual([])
   })
 
   it('the search box has the hover wash and line and the coral line on focus, on the rail card too (issue 1053)', () => {

@@ -14,6 +14,8 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiTextArea from '@/components/ui/UiTextArea.vue'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 import type { FilterField } from '@/filters/fields.config'
 import { lensToSelector } from '@/findings/bulkSelector'
 import { buildTriagePatch } from '@/findings/triageRules'
@@ -139,11 +141,11 @@ async function apply() {
             </div>
 
             <UiField label="Assign to" hint="optional" for="bulk-assignee">
-              <input id="bulk-assignee" v-model="assignee" class="set-input" type="text" placeholder="username" />
+              <UiTextBox id="bulk-assignee" v-model="assignee" placeholder="username" />
             </UiField>
 
             <UiField label="Note" hint="one note on every target" for="bulk-notes">
-              <textarea id="bulk-notes" v-model="notes" class="set-input set-input--prose" rows="2" placeholder="Why this bulk action…" />
+              <UiTextArea id="bulk-notes" v-model="notes" prose rows="2" placeholder="Why this bulk action…" />
             </UiField>
 
             <p v-if="draft.error" class="bulk-error" role="alert">{{ draft.error }}</p>

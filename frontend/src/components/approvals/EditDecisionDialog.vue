@@ -18,6 +18,8 @@ import {
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiTextArea from '@/components/ui/UiTextArea.vue'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 import { logger } from '@/lib/logger'
 
 const props = defineProps<{ decision: ApprovalRow }>()
@@ -84,18 +86,10 @@ async function submit() {
       revoked and a new one takes effect atomically, keeping the audit trail causal.
     </p>
     <UiField label="Justification" for="ed-just">
-      <textarea id="ed-just" v-model="justification" class="set-input set-input--prose" rows="4" />
+      <UiTextArea id="ed-just" v-model="justification" prose rows="4" />
     </UiField>
     <UiField label="Expiry" :hint="expiryOk ? 'empty keeps the current expiry' : EXPIRY_REFUSED" for="ed-expiry">
-      <input
-        id="ed-expiry"
-        v-model="expiry"
-        class="set-input"
-        :class="{ 'set-input--invalid': !expiryOk }"
-        type="date"
-        :min="minExpiry"
-        :aria-invalid="!expiryOk"
-      />
+      <UiTextBox id="ed-expiry" v-model="expiry" type="date" :min="minExpiry" :invalid="!expiryOk" />
     </UiField>
     <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     <template #actions>

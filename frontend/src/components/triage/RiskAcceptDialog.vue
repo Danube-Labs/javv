@@ -16,6 +16,8 @@ import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
+import UiTextArea from '@/components/ui/UiTextArea.vue'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 import { useApi } from '@/composables/useApi'
 import { logger } from '@/lib/logger'
 import type { FindingRow } from '@/stores/findings'
@@ -140,15 +142,7 @@ async function submit() {
 
         <div class="fld-2">
           <UiField label="Expiry" :hint="expiryOk ? 'immutable: change = revoke + new' : EXPIRY_REFUSED" for="ra-expiry">
-            <input
-              id="ra-expiry"
-              v-model="expiry"
-              class="set-input"
-              :class="{ 'set-input--invalid': !expiryOk }"
-              type="date"
-              :min="minExpiry"
-              :aria-invalid="!expiryOk"
-            />
+            <UiTextBox id="ra-expiry" v-model="expiry" type="date" :min="minExpiry" :invalid="!expiryOk" />
           </UiField>
           <UiField label="Apply to">
             <UiSegControl v-model="applyTo" :options="APPLY_OPTS" label="Apply to" />
@@ -156,10 +150,10 @@ async function submit() {
         </div>
 
         <UiField label="Justification (required)" for="ra-just">
-          <textarea
+          <UiTextArea
             id="ra-just"
             v-model="justification"
-            class="set-input set-input--prose"
+            prose
             rows="3"
             placeholder="Why is this risk acceptable, and for how long?"
           />

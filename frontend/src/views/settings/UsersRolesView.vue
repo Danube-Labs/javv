@@ -29,6 +29,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { logger } from '@/lib/logger'
 import { roleLabel } from '@/lib/roleLabel'
@@ -130,8 +131,7 @@ async function submitInvite() {
 const roleChange = ref<{ user: UserRow; to: string } | null>(null)
 const rowError = ref<{ username: string; message: string } | null>(null)
 
-function onRolePick(user: UserRow, event: Event) {
-  const to = (event.target as HTMLSelectElement).value
+function onRolePick(user: UserRow, to: string) {
   if (to !== user.role) roleChange.value = { user, to }
 }
 
@@ -261,15 +261,15 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
                   <span v-if="isSelf(user)" class="self-tag">you</span>
                 </td>
                 <td class="fit">
-                  <select
-                    class="set-select set-select--row"
-                    :value="user.role"
+                  <UiSelect
+                    row
+                    :model-value="user.role"
                     :disabled="busy || user.disabled"
                     :aria-label="`Role for ${user.username}`"
-                    @change="onRolePick(user, $event)"
+                    @update:model-value="onRolePick(user, $event)"
                   >
                     <option v-for="r in roles" :key="r.role" :value="r.role">{{ roleLabel(r.role) }}</option>
-                  </select>
+                  </UiSelect>
                 </td>
                 <td class="fit">{{ user.auth_source }}</td>
                 <td class="fit">
@@ -321,9 +321,9 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
         <SettingsInput id="inv-pass" v-model="invitePassword" />
       </UiField>
       <UiField label="Role" for="inv-role">
-        <select id="inv-role" v-model="inviteRole" class="set-select">
+        <UiSelect id="inv-role" v-model="inviteRole">
           <option v-for="r in roles" :key="r.role" :value="r.role">{{ roleLabel(r.role) }}</option>
-        </select>
+        </UiSelect>
       </UiField>
       <p v-if="inviteError" class="modal-error" role="alert">{{ inviteError }}</p>
       <template #actions>

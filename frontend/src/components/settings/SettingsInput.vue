@@ -9,6 +9,7 @@
 import { inject } from 'vue'
 
 import { SETTINGS_ROW_LABEL } from '@/components/settings/rowLabel'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 
 withDefaults(
   defineProps<{
@@ -32,19 +33,19 @@ const row = inject(SETTINGS_ROW_LABEL, null)
 
 <template>
   <span class="set-input-wrap" :class="{ 'set-input-wrap--block': !num }">
-    <input
+    <UiTextBox
       :id="id"
-      class="set-input"
-      :class="{ 'set-input--num': num, 'set-input--invalid': invalid, 'set-input--prose': prose }"
-      :value="modelValue"
+      :model-value="modelValue"
+      :num="num"
+      :prose="prose"
+      :invalid="invalid"
       :aria-labelledby="row?.labelId"
       :aria-describedby="row?.hintId()"
-      :aria-invalid="invalid || undefined"
       :disabled="disabled"
       :maxlength="maxlength"
       :placeholder="placeholder"
       :inputmode="num ? 'decimal' : undefined"
-      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @update:model-value="emit('update:modelValue', String($event))"
     />
     <span v-if="unit" class="set-input-unit">{{ unit }}</span>
   </span>
