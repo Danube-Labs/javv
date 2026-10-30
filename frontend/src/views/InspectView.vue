@@ -17,6 +17,7 @@ import RepairActionsCard from '@/components/system/RepairActionsCard.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 import { logger } from '@/lib/logger'
 import {
   fmtBytes,
@@ -167,10 +168,9 @@ const budgetPct = computed(() =>
         <h2 class="panel-band">Query</h2>
         <div class="console-head">
           <UiSegControl v-model="method" :options="METHODS" label="HTTP method" />
-          <input
+          <UiTextBox
             v-model="path"
-            class="set-input pathbox"
-            type="text"
+            class="pathbox"
             spellcheck="false"
             aria-label="Store path"
             placeholder="findings/_search · _cat/indices · _cluster/health"
@@ -188,6 +188,7 @@ const budgetPct = computed(() =>
             <div class="pane-label">
               Request body <span class="quiet">JSON · ⌘↵ runs</span>
             </div>
+            <!-- eslint-disable-next-line vue/no-restricted-html-elements -- the request body is a code panel, not a form field -->
             <textarea
               v-model="bodyText"
               class="editor"

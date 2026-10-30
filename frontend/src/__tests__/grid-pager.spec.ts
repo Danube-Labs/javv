@@ -35,6 +35,15 @@ describe('GridPager', () => {
     expect(w.find('.pager-info').text()).toBe('Showing 26–40 of 40')
   })
 
+  it('the rows-per-page list is the small kit dropdown, and a pick gives the size as a number (issue 1055)', async () => {
+    const w = pager({})
+    const select = w.find('select')
+    expect(select.classes()).toEqual(['set-select', 'set-select--small'])
+    expect((select.element as HTMLSelectElement).value).toBe('25')
+    await select.setValue('50')
+    expect(w.emitted('update:size')).toEqual([[50]])
+  })
+
   it('stays on an empty later page, so Prev can still get back', () => {
     const w = pager({ total: 0, page: 1, shown: 0, hasPrev: true, hasNext: false })
     expect(w.find('.pager').exists()).toBe(true)

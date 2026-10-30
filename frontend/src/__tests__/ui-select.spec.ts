@@ -23,6 +23,11 @@ describe('UiSelect', () => {
     expect(w.classes()).toEqual(['set-select', 'set-select--row'])
   })
 
+  it('small takes the small mono size of the pager', () => {
+    const w = mount(UiSelect, { props: { modelValue: 'admin', small: true }, slots: { default: OPTIONS } })
+    expect(w.classes()).toEqual(['set-select', 'set-select--small'])
+  })
+
   it('passes the attributes of the screen to the select', () => {
     const w = mount(UiSelect, {
       props: { modelValue: 'admin' },

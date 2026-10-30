@@ -12,6 +12,8 @@ import { computed, ref } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 
 const timeTravel = useTimeTravelStore()
@@ -149,20 +151,20 @@ function backToNow() {
       <div class="dd-head">Quick select</div>
       <div class="time-rel">
         <span class="time-rel-label">Last</span>
-        <input
+        <UiTextBox
           v-model.number="relN"
-          class="set-input num-input"
+          class="num-input"
           type="number"
           min="1"
           max="365"
           aria-label="Range length"
         />
-        <select v-model="relUnit" class="set-select select-input" aria-label="Range unit">
+        <UiSelect v-model="relUnit" class="select-input" aria-label="Range unit">
           <option value="minutes">minutes</option>
           <option value="hours">hours</option>
           <option value="days">days</option>
           <option value="weeks">weeks</option>
-        </select>
+        </UiSelect>
         <UiButton variant="quiet" class="time-apply" @click="applyRelative">Apply</UiButton>
       </div>
 
@@ -181,20 +183,20 @@ function backToNow() {
 
       <div class="dd-head">Absolute range (24h)</div>
       <div class="time-abs">
-        <input v-model="fromDate" class="set-input text-input" type="date" :max="today()" aria-label="Range start date" />
-        <input
+        <UiTextBox v-model="fromDate" class="text-input" type="date" :max="today()" aria-label="Range start date" />
+        <UiTextBox
           v-model="fromTime"
-          class="set-input text-input hhmm"
+          class="text-input hhmm"
           type="text"
           placeholder="HH:mm"
           maxlength="5"
           aria-label="Range start time (24h)"
         />
         <span class="time-arrow">→</span>
-        <input v-model="toDate" class="set-input text-input" type="date" :max="today()" aria-label="Range end date" />
-        <input
+        <UiTextBox v-model="toDate" class="text-input" type="date" :max="today()" aria-label="Range end date" />
+        <UiTextBox
           v-model="toTime"
-          class="set-input text-input hhmm"
+          class="text-input hhmm"
           type="text"
           placeholder="HH:mm"
           maxlength="5"

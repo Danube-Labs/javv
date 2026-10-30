@@ -83,6 +83,7 @@ async function run() {
         <div class="imp-file">
           <UiButton variant="control" @click="picker?.click()">Choose a file</UiButton>
           <span class="imp-name mono">{{ fileLine }}</span>
+          <!-- eslint-disable-next-line vue/no-restricted-html-elements -- the file picker stays hidden; the Choose a file button opens it -->
           <input ref="picker" class="imp-input" type="file" accept=".ndjson,application/x-ndjson" @change="pick" />
         </div>
       </UiField>

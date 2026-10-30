@@ -329,7 +329,8 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiToggleGroup` | a row of buttons that each turn one value on or off, `aria-pressed`, the coral selection of `UiSegControl`, an optional mono `detail` after the label; the parent owns the list | any pick-several row with few options (the scan scope's owner kinds) |
 | `UiTextBox` | one `input` on the `.set-input` box: `type` text, password, date or number. `num`, `prose` and `invalid` (which also sets `aria-invalid`). The screen's attributes go to the input | every text, password, date or number box |
 | `UiTextArea` | one `textarea` on the same box, with `prose` and `invalid` | every text area |
-| `UiSelect` | one `select` on the `.set-select` dropdown, `row` for a table row. The options are the screen's, in the slot | every dropdown |
+| `UiSelect` | one `select` on the `.set-select` dropdown, `row` for a table row and `small` for the pager. The options are the screen's, in the slot | every dropdown |
+| `UiSearchBox` | the `.search-box` row with the magnifier, `card` for the search card over a filter list (`.facet-search`). The class of the screen goes on the row, the other attributes on the input. `v-model` is optional, so a search that applies on Enter can give the value only | every search box |
 | `UiField` | mono uppercase micro-label + parenthesized `hint`, 14px band / 6px label gap (`first` zeroes the top) | any labeled control |
 | `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
 | `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049) | every dialog |
@@ -351,19 +352,24 @@ table skin is. `.set-input` is the box, with every state: the hover wash and lin
 keyboard focus ring, `--invalid` and disabled. `--prose` sets text that people write (a name, a
 note) in the UI face, and the default mono face is for code-like data (a username, a date).
 `textarea.set-input` changes only its height. `.set-select` is the dropdown, and `--row` is its
-size in a table row. `UiTextBox`, `UiTextArea` and `UiSelect` are the kit pieces that wear them
-(issue 1055, G1 option B), and `SettingsInput` and `UiDateTime` draw the box too. A window, the
-triage panel and `SettingsInput` use the kit pieces and have no raw field. The style rules test
-refuses a copy outside base.css, and `text-box-style.spec.ts` refuses a raw field in a window. The form fields
-outside the windows take it too (operator 2026-10-29 on built pictures, issue 1053, D1 option A):
-the boxes of the time picker, the Inspect path box and the sign-in page.
+size in a table row. `--small` is the size of the pager's rows-per-page list (operator 2026-10-30
+on built pictures, issue 1055, B3 option A). `UiTextBox`, `UiTextArea` and `UiSelect` are the kit
+pieces that wear them (issue 1055, G1 option B), and `SettingsInput` and `UiDateTime` draw the box
+too. The style rules test refuses a copy outside base.css.
+
+**No raw form field outside the kit** (issue 1055): ESLint (`vue/no-restricted-html-elements`)
+refuses an `input`, `select` or `textarea` in a `.vue` file outside `components/ui/`, and names the
+kit pieces. Four places keep a raw field, each with its reason in the disable comment: the Inspect
+request body (a code panel), the command palette (its own row), the hidden file picker of Import
+dashboards and the chips input (the chip row is the box). `raw-form-fields.spec.ts` fixes that
+list, so a new place is a decision for review.
 
 **One search box** (issue 1053, D1 option A): `.search-box` in base.css is a magnifier and a bare
 input in a bordered row, with the hover wash and line and the coral line while it has focus. The
 search card over a filter rail (`.facet-search`: Findings, Running images, Approvals) shares its
-rules and keeps its card size, and the value search of Add filter takes `.search-box`. The command
-palette keeps its own row: the cursor is in it when it opens. The style rules test refuses a copy
-of either outside base.css.
+rules and keeps its card size. `UiSearchBox` draws both (issue 1055), and the searches of Add
+filter use it too. The command palette keeps its own row: the cursor is in it when it opens. The
+style rules test refuses a copy of either outside base.css.
 
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is

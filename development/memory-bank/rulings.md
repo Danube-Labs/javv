@@ -71,6 +71,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-29 | In every window, Cancel, Close or Done is the ghost button. The button that does the work is primary (D2 option B). | 1053 |
 | 2026-10-29 | The kit has its own text box, text area and dropdown pieces. A lint rule refuses a raw form field outside the kit, with a reason on each place that stays raw (G1 option B). | 1055 |
 | 2026-10-29 | The test of the window footers stays the check for the footer buttons. `ModalShell` keeps its footer slot (G2 option A). | 1055 |
+| 2026-10-30 | The rows-per-page list of the pager is the small kit dropdown. It keeps the size and the mono text of the pager. It takes the kit corner and focus ring (B3 option A, on built pictures). | 1055 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process

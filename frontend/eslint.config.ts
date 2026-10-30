@@ -32,5 +32,22 @@ export default defineConfigWithVueTs(
     rules: { 'no-console': 'error' },
   },
 
+  {
+    name: 'app/kit-form-fields',
+    files: ['src/**/*.vue'],
+    ignores: ['src/components/ui/**'],
+    // a form field is a kit piece, so the look of a box lives once, in the kit (issue 1055, G1 option B)
+    rules: {
+      'vue/no-restricted-html-elements': [
+        'error',
+        {
+          element: ['input', 'select', 'textarea'],
+          message:
+            'Use a kit piece from components/ui/ (UiTextBox, UiTextArea, UiSelect, UiSearchBox), or give the reason in an eslint-disable comment.',
+        },
+      ],
+    },
+  },
+
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 )
