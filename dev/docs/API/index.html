@@ -2925,7 +2925,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/findings/facets</code></td>
 <td>session</td>
-<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters.</td>
+<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. With <code>all_filters=true</code>, each facet counts with all filters, also the filter of its own field. A dashboard panel uses this, so that "Namespace is not kube-system" takes <code>kube-system</code> out of its list.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3558,12 +3558,19 @@ permissions of the user who opens the dashboard.</p>
 <td><code>scanner</code></td>
 <td><code>dashboard</code> (default), <code>trivy</code> or <code>grype</code>, only on a panel with scanner data. <code>dashboard</code> follows the scanner switch of the dashboard.</td>
 </tr>
+<tr>
+<td><code>filters</code></td>
+<td>The filters of <code>GET /api/v1/findings</code>, with the fields and checks of the <code>preset</code> of a saved view. Only on the panels that read findings counts: <code>findings-summary</code>, <code>package-type</code>, <code>findings-by-namespace</code>, <code>top-components</code> and <code>triage-progress</code>.</td>
+</tr>
 </tbody>
 </table>
 <p>The backend refuses with 422:</p>
 <ul>
 <li>a field that is not in these lists, or a panel ID that it does not know</li>
 <li>a height that the panel does not have, or a <code>scanner</code> on a panel with no scanner data</li>
+<li><code>filters</code> on a panel that does not read findings counts</li>
+<li><code>scanner</code> or <code>exclude_scanner</code> in <code>filters</code>. The <code>scanner</code> field of the panel does this.</li>
+<li><code>state</code> or <code>exclude_state</code> in the <code>filters</code> of <code>triage-progress</code>. This panel shows each state.</li>
 <li>a panel outside the two columns, or two panels that start on the same cell. A panel holds
   only the cells of its top row: one cell for a width of 1, and both cells for a width of 2. The
   height takes no part in this check, because the page makes each panel as tall as its content.</li>
