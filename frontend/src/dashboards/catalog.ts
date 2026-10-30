@@ -6,6 +6,7 @@
  */
 import type { Component } from 'vue'
 
+import type { ViewPreset } from '@/api/generated'
 import ContributorsLens from '@/components/contributors/ContributorsLens.vue'
 import ProgressPanel from '@/components/contributors/ProgressPanel.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
@@ -32,6 +33,8 @@ export interface PanelContext {
   windowDays: number
   scanner: ScannerLens
   height: PanelHeight
+  /** the panel's own findings filters (issue 999); only a panel that takes filters gets them */
+  filters?: ViewPreset | null
 }
 
 export interface CatalogPanel {
@@ -77,7 +80,7 @@ export const PANELS: readonly CatalogPanel[] = [
     usesScanner: true,
     framed: false,
     takesFilters: true,
-    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
+    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), filters: ctx.filters }),
   },
   {
     id: 'package-type',
@@ -90,7 +93,7 @@ export const PANELS: readonly CatalogPanel[] = [
     usesScanner: true,
     framed: false,
     takesFilters: true,
-    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
+    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), filters: ctx.filters }),
   },
   {
     id: 'findings-by-namespace',
@@ -103,7 +106,12 @@ export const PANELS: readonly CatalogPanel[] = [
     usesScanner: true,
     framed: false,
     takesFilters: true,
-    props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), limit: TABLE_ROWS[ctx.height] }),
+    props: (ctx) => ({
+      scanner: ctx.scanner,
+      query: globalQuery(ctx),
+      limit: TABLE_ROWS[ctx.height],
+      filters: ctx.filters,
+    }),
   },
   {
     id: 'riskiest-images',
@@ -129,7 +137,7 @@ export const PANELS: readonly CatalogPanel[] = [
     usesScanner: true,
     framed: false,
     takesFilters: true,
-    props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
+    props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height], filters: ctx.filters }),
   },
   {
     id: 'scan-ingest',
@@ -201,7 +209,7 @@ export const PANELS: readonly CatalogPanel[] = [
     framed: true,
     takesFilters: true,
     refusedFilters: ['state'],
-    props: (ctx) => ({ query: globalQuery(ctx) }),
+    props: (ctx) => ({ query: globalQuery(ctx), filters: ctx.filters }),
   },
 ]
 

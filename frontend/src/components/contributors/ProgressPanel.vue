@@ -5,13 +5,14 @@
  * `/findings/facets` reads: totals; the same read filtered to TRIAGED_STATES) — counts are
  * per-scanner finding rows, the same unit as Overview's KPI band, never a client CVE-merge.
  * State-at-T, NOT window-scoped — the sub says so, so it can't be conflated with the board's
- * trend window. Rows click through to what's LEFT (findings, severity + open/stale).
+ * trend window. Rows click through to what's LEFT (findings, severity + open/stale). On a
+ * dashboard the panel's filters go in both reads and in the links.
  */
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { facetFindingsApiV1FindingsFacetsGet } from '@/api/generated'
-import type { FacetFindingsApiV1FindingsFacetsGetData } from '@/api/generated'
+import type { FacetFindingsApiV1FindingsFacetsGetData, ViewPreset } from '@/api/generated'
 import SevChip from '@/components/chips/SevChip.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import {
@@ -21,12 +22,15 @@ import {
   UNTRIAGED_STATES,
   type FacetBucket,
 } from '@/contributors/viewModel'
+import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { logger } from '@/lib/logger'
 import { SEVERITIES } from '@/styles/tokens'
 
 const props = defineProps<{
   /** the screen's global query (cluster_id + as_of) — the panel rewinds with the app */
   query: Record<string, unknown> | null
+  /** a dashboard panel's own filters (issue 999); never a state filter, the panel splits by it */
+  filters?: ViewPreset | null
 }>()
 const router = useRouter()
 
@@ -36,15 +40,19 @@ const failed = ref(false)
 const settled = ref(false)
 
 watch(
-  () => props.query,
-  async (q, old) => {
+  () => [props.query, props.filters] as const,
+  async ([q], prev) => {
     if (!q) return
+    const old = prev?.[0]
     if (old && old.cluster_id !== q.cluster_id) {
       settled.value = false
       totals.value = []
       done.value = []
     }
-    const base = { cluster_id: q.cluster_id, ...(q.as_of ? { as_of: q.as_of } : {}) }
+    const base = panelQuery(
+      { cluster_id: String(q.cluster_id), ...(q.as_of ? { as_of: String(q.as_of) } : {}) },
+      props.filters,
+    )
     const [all, triaged] = await Promise.all([
       facetFindingsApiV1FindingsFacetsGet({
         query: base as FacetFindingsApiV1FindingsFacetsGetData['query'],
@@ -84,7 +92,7 @@ function openLeft(severity: string) {
   logger.debug('triage_progress_clicked', { severity })
   void router.push({
     name: 'findings',
-    query: { severity, state: UNTRIAGED_STATES.join(',') },
+    query: panelFindingsQuery(props.filters, { severity, state: UNTRIAGED_STATES.join(',') }),
   })
 }
 </script>

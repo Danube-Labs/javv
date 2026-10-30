@@ -84,6 +84,7 @@ export function panelPropsCache() {
       windowDays: dash.windowDays,
       scanner: p.panel.usesScanner ? panelScanner(p.stored, dash.scanner) : 'all',
       height: p.stored.h,
+      filters: p.panel.takesFilters ? (p.stored.filters ?? null) : null,
     }
     const key = `${p.panel.id}|${JSON.stringify(ctx)}`
     const kept = cache.get(place)
