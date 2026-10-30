@@ -5,7 +5,9 @@ k3d + real scanners) — unlike `backend/tests/`, which is the pytest suite. Not
 these are operator-driven rigs for proving the whole pipe and for measure-first perf questions.
 (The CI **route smoke** is a different, lighter animal: fixture-seeded, no k3d, gating every PR —
 `frontend/scripts/ci-smoke.mjs` + `development/scripts/seed-smoke.sh`, spec in
-`development/standards/testing.md` §4.)
+`development/standards/testing.md` §4. The Playwright specs in `frontend/tests/e2e/` run in that
+same CI job, and `kit-consistency.spec.ts` among them compares the boxes and window buttons of every
+screen with the kit. Testing.md §4 lists the specs and tells how to run one against the dev stack.)
 
 ## Contents
 

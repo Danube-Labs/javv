@@ -376,6 +376,16 @@ in the footer of a window, Cancel, Close or Done is `ghost`, and the button that
 `primary`. `window-footer-buttons.spec.ts` reads every window footer. That test is the check, and
 `ModalShell` keeps its footer slot (issue 1055, G2 option A).
 
+**A walk reads the rendered page** (issue 1055, G3): the checks above read the source.
+`tests/e2e/kit-consistency.spec.ts` goes to the sign-in page, each route of `scripts/walk.mjs`,
+`/dashboards`, a finding page and an image page. It also opens the time picker, Add filter and 18
+windows. It reads each text box, dropdown, search box and window footer button on the screen, and
+compares its line, corner, fill and type face with the kit tokens. Then it moves the pointer over
+each one, and the fill and the line must both change. It does not read the four raw fields above.
+Four windows need data that the CI store does not have, and the spec names them. The spec also
+counts the windows in each file, so a new window fails it until the walk opens it or the spec
+names it.
+
 ## 6. Do / Don't
 
 **Do**

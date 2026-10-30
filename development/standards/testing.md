@@ -52,7 +52,7 @@ drives the same browser interactively during dev (authoring/debugging these spec
 
 **As built — the spec suite (M9f slice 5, same CI job):** `frontend/playwright.config.ts` +
 `frontend/tests/e2e/*.spec.ts` (`npm run test:e2e`), run right after the route walk against the
-same built FE + seeded backend. Fifteen spec files, one worker, zero retries; among them: login
+same built FE + seeded backend. Twenty spec files, one worker, zero retries; among them: login
 round-trip incl. the bad-password path (`app.spec.ts`) · the core triage persist-and-revert loop
 (`triage-loop.spec.ts`) · the degraded banner via a `/readyz` route intercept — the mount-time
 health check makes it deterministic, no 30s poll wait (`degraded-banner.spec.ts`) · grid
@@ -63,8 +63,15 @@ client-events beacon end to end: a real `logger.warn` in the built app, flushed 
 must appear as a `client.<name>` line in the backend's log (`beacon.spec.ts`; the job writes
 backend stdout to `development/e2e/logs/backend.log` for it) · a slow cluster list, where the
 Findings loading row must not pass for a data row, and a click whose page is still loading when
-the list lands must still open it (`slow-cluster-list.spec.ts`, issues 786 and 669). Selectors and
-login come from `scripts/walk.mjs` (still the one owner).
+the list lands must still open it (`slow-cluster-list.spec.ts`, issues 786 and 669) · every text
+box, dropdown, search box and window footer button on each screen and in each window has the kit's
+line, corner, fill and type face, and its fill and line both change under the pointer
+(`kit-consistency.spec.ts`, issue 1055, and `frontend/DESIGN.md` §5). Selectors and login come from
+`scripts/walk.mjs` (still the one owner).
+
+To run one spec against the dev stack, from `frontend/`:
+`JAVV_BASE=http://127.0.0.1:5173 JAVV_USER=admin JAVV_PASS=<password> npx playwright test tests/e2e/kit-consistency.spec.ts`.
+The dev store must have the seeded viewer `smoke-viewer` (`development/scripts/seed-smoke.sh`).
 
 **A code error fails the test (issue 749).** Every spec takes `test` and `expect` from
 `tests/e2e/helpers.ts`, whose `test` fails a test whose page logs `page error` or `app error`,
