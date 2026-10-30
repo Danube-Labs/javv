@@ -1,0 +1,29 @@
+name: Release notes
+
+# Issue 1061: release-please makes the release page from the body of the release PR, and the
+# "What's new" section at the top of that body is written in STE. This check lints the section.
+# release-please pushes and edits with GITHUB_TOKEN, which starts no workflow, so the check runs
+# when a person or an agent opens, edits or reopens the release PR: the edit that adds the section
+# is the one it checks.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  whats-new:
+    name: What's new is STE
+    if: startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Lint the What's new section
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n' "$BODY" > "$RUNNER_TEMP/body.md"
+          python3 development/scripts/check-release-notes.py "$RUNNER_TEMP/body.md"

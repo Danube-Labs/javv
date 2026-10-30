@@ -61,10 +61,17 @@ updated `CHANGELOG.md`.
    writes from them.
 3. **CI.** The release PR is pushed with `GITHUB_TOKEN`, so no CI runs on it (see Remaining gap).
    Close and reopen it to start CI.
-4. **When to merge.** Only when no `scanner-images` run is in progress on `main`. That workflow
+4. **The release notes.** After the last merge before the release, run `/release-notes`
+   (`.claude/commands/release-notes.md`, issue 1061). It writes a "What's new" section, in STE,
+   between `<!-- whats-new -->` and `<!-- /whats-new -->` at the top of the release PR body.
+   release-please makes the release page from that body. A merge to `main` makes release-please
+   write the body again without the section, so write the section last. The `Release notes`
+   workflow lints the section each time someone edits the body, and fails when it is not there.
+   The operator approves the text.
+5. **When to merge.** Only when no `scanner-images` run is in progress on `main`. That workflow
    republishes the scanner tags on a merge that touches `versions.yaml` or the scanner build, and
    signs them minutes later. The release refuses an unsigned scanner image.
-5. **Merging.** Every release PR so far was merged with a merge commit. Then follow both publish
+6. **Merging.** Every release PR so far was merged with a merge commit. Then follow both publish
    jobs through their pull-and-verify steps.
 
 **Why release-please over semantic-release:**
