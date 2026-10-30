@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.4](https://github.com/Danube-Labs/javv/compare/v0.9.3...v0.9.4) (2026-10-30)
+
+
+### Features
+
+* kit search box, small pager dropdown and a lint rule against raw form fields ([#1059](https://github.com/Danube-Labs/javv/issues/1059)) ([967580f](https://github.com/Danube-Labs/javv/commit/967580f48b282858e947c9b1b7691c9b234f7b40))
+* release notes with a What's new section, and an STE check for them and the docs pages ([#1062](https://github.com/Danube-Labs/javv/issues/1062)) ([c3ee84b](https://github.com/Danube-Labs/javv/commit/c3ee84bfb315a603ab47c59e3183f9e54c55eb9c)), closes [#1061](https://github.com/Danube-Labs/javv/issues/1061)
+
+
+### Bug Fixes
+
+* a dashboard panel holds only the cells of its top row ([#1046](https://github.com/Danube-Labs/javv/issues/1046)) ([4007ff7](https://github.com/Danube-Labs/javv/commit/4007ff7c68f136cf7cb8cb7040116aac3189c364)), closes [#1045](https://github.com/Danube-Labs/javv/issues/1045)
+* dashboard panels take the height of their content, on the read page and in edit mode ([#1048](https://github.com/Danube-Labs/javv/issues/1048)) ([7713485](https://github.com/Danube-Labs/javv/commit/7713485a8cb33e459a153809fa713da1c91c7dfa)), closes [#1045](https://github.com/Danube-Labs/javv/issues/1045)
+* every window box uses the one kit text box and dropdown style ([#1052](https://github.com/Danube-Labs/javv/issues/1052)) ([4e48cb2](https://github.com/Danube-Labs/javv/commit/4e48cb25122b01b02e65444b67c4618111e240ea)), closes [#1050](https://github.com/Danube-Labs/javv/issues/1050)
+* every window head takes the dark blue band of the table heads ([#1051](https://github.com/Danube-Labs/javv/issues/1051)) ([61100b1](https://github.com/Danube-Labs/javv/commit/61100b13e5d82d31afb8cfcde493dd3f76ae4ce6)), closes [#1049](https://github.com/Danube-Labs/javv/issues/1049)
+* the kit box and one search box outside the windows, and one pair of window footer buttons ([#1054](https://github.com/Danube-Labs/javv/issues/1054)) ([d912a74](https://github.com/Danube-Labs/javv/commit/d912a74abc829dbc26ab6a189b784136e66416de))
+
 ## [0.9.3](https://github.com/Danube-Labs/javv/compare/v0.9.2...v0.9.3) (2026-10-29)
 
 
