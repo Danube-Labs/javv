@@ -10,6 +10,7 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import icon from '@/assets/brand/icon.svg'
+import UiTextBox from '@/components/ui/UiTextBox.vue'
 import {
   PASSWORD_MIN_LENGTH,
   passwordLength,
@@ -88,19 +89,18 @@ async function submitChange() {
 
       <template v-if="mode === 'login'">
         <label for="username">Username</label>
-        <input class="set-input" id="username" v-model="username" autocomplete="username" required />
+        <UiTextBox id="username" v-model="username" autocomplete="username" required />
         <label for="password">Password</label>
-        <input class="set-input" id="password" v-model="password" type="password" autocomplete="current-password" required />
+        <UiTextBox id="password" v-model="password" type="password" autocomplete="current-password" required />
       </template>
 
       <template v-else>
         <p class="notice">Your password must be changed before continuing.</p>
         <label for="current">Current password</label>
-        <input class="set-input" id="current" v-model="password" type="password" autocomplete="current-password" required />
+        <UiTextBox id="current" v-model="password" type="password" autocomplete="current-password" required />
         <label for="new">New password</label>
-        <input
+        <UiTextBox
           id="new"
-          class="set-input"
           v-model="newPassword"
           type="password"
           autocomplete="new-password"
@@ -108,7 +108,7 @@ async function submitChange() {
           required
         />
         <label for="confirm">Confirm new password</label>
-        <input class="set-input" id="confirm" v-model="confirm" type="password" autocomplete="new-password" required />
+        <UiTextBox id="confirm" v-model="confirm" type="password" autocomplete="new-password" required />
         <p id="password-rule" class="rule">
           At least {{ PASSWORD_MIN_LENGTH }} characters. Your current password stops working once
           you set the new one.

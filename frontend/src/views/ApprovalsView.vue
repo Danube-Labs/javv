@@ -25,6 +25,7 @@ import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiRoleNote from '@/components/ui/UiRoleNote.vue'
+import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
@@ -239,15 +240,13 @@ const fmt = (n: number) => n.toLocaleString('en-US')
 
     <div v-else class="findings-layout">
       <div class="rail-col">
-        <div class="facet-search">
-          <AppIcon name="search" :size="14" />
-          <input
-            :value="filters.selections.q?.[0] ?? ''"
-            placeholder="CVE…"
-            aria-label="Search acceptances by CVE (contains match)"
-            @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
-          />
-        </div>
+        <UiSearchBox
+          card
+          :model-value="filters.selections.q?.[0] ?? ''"
+          placeholder="CVE…"
+          aria-label="Search acceptances by CVE (contains match)"
+          @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
+        />
         <FacetRail
           :fields="APPROVAL_FIELDS"
           :selections="filters.selections"

@@ -12,6 +12,7 @@ import FilterPill from '@/components/filters/FilterPill.vue'
 import FilterValueRows, { type ValueRow } from '@/components/filters/FilterValueRows.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
+import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { facetItems, type FacetsResponse } from '@/filters/facets'
 import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
@@ -188,10 +189,12 @@ function onKeydown(e: KeyboardEvent) {
           </div>
 
           <template v-if="editItems">
-            <div v-if="editItems.length > 8 || valueQuery" class="search-box filter-vsearch">
-              <AppIcon name="search" :size="13" />
-              <input v-model="valueQuery" placeholder="Filter values…" />
-            </div>
+            <UiSearchBox
+              v-if="editItems.length > 8 || valueQuery"
+              v-model="valueQuery"
+              class="filter-vsearch"
+              placeholder="Filter values…"
+            />
             <FilterValueRows
               :rows="editItems"
               :counts-unknown="countsUnknown"
@@ -200,14 +203,12 @@ function onKeydown(e: KeyboardEvent) {
           </template>
 
           <template v-else>
-            <div class="search-box filter-vsearch">
-              <AppIcon name="search" :size="13" />
-              <input
-                v-model="textDraft"
-                :placeholder="isMultiText(editField) ? `Add ${inText(editField.label)}…` : `${editField.label}…`"
-                @keydown.enter="applyText"
-              />
-            </div>
+            <UiSearchBox
+              v-model="textDraft"
+              class="filter-vsearch"
+              :placeholder="isMultiText(editField) ? `Add ${inText(editField.label)}…` : `${editField.label}…`"
+              @keydown.enter="applyText"
+            />
             <FilterValueRows
               v-if="typedRows.length > 0"
               :rows="typedRows"

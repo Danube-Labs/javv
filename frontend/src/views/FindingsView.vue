@@ -25,7 +25,7 @@ import BulkTriageBar from '@/components/triage/BulkTriageBar.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import GridPager from '@/components/findings/GridPager.vue'
-import AppIcon from '@/components/ui/AppIcon.vue'
+import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import { useApi } from '@/composables/useApi'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import type { FacetsResponse } from '@/filters/facets'
@@ -315,15 +315,13 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
 
     <div class="findings-layout">
       <div class="rail-col">
-        <div class="facet-search">
-          <AppIcon name="search" :size="14" />
-          <input
-            :value="filters.selections.q?.[0] ?? ''"
-            placeholder="CVE, image, namespace…"
-            aria-label="Search findings (contains match)"
-            @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
-          />
-        </div>
+        <UiSearchBox
+          card
+          :model-value="filters.selections.q?.[0] ?? ''"
+          placeholder="CVE, image, namespace…"
+          aria-label="Search findings (contains match)"
+          @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
+        />
       <FacetRail
         :fields="FINDINGS_FIELDS"
         :selections="filters.selections"

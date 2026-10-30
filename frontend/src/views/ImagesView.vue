@@ -23,6 +23,7 @@ import ImagesTable, { type ImagesSortField } from '@/components/images/ImagesTab
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiRoleNote from '@/components/ui/UiRoleNote.vue'
+import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
 import { IMAGES_COLUMNS, IMAGES_FIELDS } from '@/images/fields.config'
@@ -197,15 +198,13 @@ const fmt = (n: number) => n.toLocaleString('en-US')
 
     <div v-else class="findings-layout">
       <div class="rail-col">
-        <div class="facet-search">
-          <AppIcon name="search" :size="14" />
-          <input
-            :value="filters.selections.q?.[0] ?? ''"
-            placeholder="image, registry, namespace…"
-            aria-label="Search images (contains match)"
-            @keydown.enter="filters.setText('q', ($event.target as HTMLInputElement).value)"
-          />
-        </div>
+        <UiSearchBox
+          card
+          :model-value="filters.selections.q?.[0] ?? ''"
+          placeholder="image, registry, namespace…"
+          aria-label="Search images (contains match)"
+          @keydown.enter="filters.setText('q', ($event.target as HTMLInputElement).value)"
+        />
         <FacetRail
           :fields="IMAGES_FIELDS"
           :selections="filters.selections"

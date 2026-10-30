@@ -2,7 +2,7 @@
  * One text box and one dropdown (issue 1050): their look lives in base.css with every state, and
  * the kit parts that draw a box (`SettingsInput`, `UiDateTime`) wear it. The style rules test
  * refuses a copy of either rule outside base.css. The windows draw their boxes with the kit pieces
- * `UiTextBox`, `UiTextArea` and `UiSelect` (issue 1055).
+ * `UiTextBox`, `UiTextArea` and `UiSelect`, and the search boxes with `UiSearchBox` (issue 1055).
  */
 import { mount } from '@vue/test-utils'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -99,25 +99,31 @@ describe('the text box and the dropdown (issue 1050)', () => {
     expect(rule('.search-box:focus-within,\n.facet-search:focus-within')).toContain('border-color: var(--coral);')
   })
 
-  it('the value search of Add filter is the shared search box (issue 1053)', () => {
+  it('the value searches of Add filter are the kit search box (issues 1053 and 1055)', () => {
     const src = readFileSync(join(SRC, 'components/filters/FilterBar.vue'), 'utf8')
-    const boxes = [...src.matchAll(/class="([^"]*\bfilter-vsearch\b[^"]*)"/g)].map((m) => m[1] ?? '')
+    const boxes = [...src.matchAll(/<UiSearchBox\b[\s\S]*?\/>/g)].map((m) => m[0])
     expect(boxes).toHaveLength(2)
-    for (const c of boxes) expect(c.split(/\s+/)).toContain('search-box')
+    for (const tag of boxes) expect(tag).toContain('class="filter-vsearch"')
+    expect(rawFields('components/filters/FilterBar.vue')).toEqual([])
   })
 
-  it('the time picker, the Inspect path box and the sign-in page use the shared box (issue 1053)', () => {
-    // Inspect: the path box only. The request body editor is a code panel, not a form field.
-    const boxes: [string, (tag: string) => boolean][] = [
-      ['components/time-travel/GlobalTimePicker.vue', () => true],
-      ['views/InspectView.vue', (tag) => tag.includes('aria-label="Store path"')],
-      ['views/LoginView.vue', () => true],
+  it('the time picker, sign-in, the Inspect path box and the filter searches draw their fields with kit pieces (issue 1055)', () => {
+    // Inspect keeps one raw field: the request body editor is a code panel, not a form field.
+    const files: [string, number][] = [
+      ['components/time-travel/GlobalTimePicker.vue', 6],
+      ['views/LoginView.vue', 5],
+      ['views/InspectView.vue', 1],
+      ['views/FindingsView.vue', 1],
+      ['views/ImagesView.vue', 1],
+      ['views/ApprovalsView.vue', 1],
     ]
-    const plain = boxes.flatMap(([f, keep]) => {
-      const tags = rawFields(f).filter(keep)
-      expect(tags.length, `${f} has boxes`).toBeGreaterThan(0)
-      return tags.filter((tag) => !/class="[^"]*\bset-(input|select)\b/.test(tag)).map((tag) => `${f}: ${tag}`)
+    const raw = files.flatMap(([f, pieces]) => {
+      const src = readFileSync(join(SRC, f), 'utf8')
+      expect(src.match(/<Ui(TextBox|Select|SearchBox)\b/g)?.length, `${f} draws its fields with kit pieces`).toBe(pieces)
+      return rawFields(f)
+        .filter((tag) => !(f === 'views/InspectView.vue' && tag.includes('class="editor"')))
+        .map((tag) => `${f}: ${tag}`)
     })
-    expect(plain).toEqual([])
+    expect(raw).toEqual([])
   })
 })
