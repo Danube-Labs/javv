@@ -367,7 +367,34 @@ async def test_the_same_id_twice_in_one_file_makes_one_dashboard(env) -> None:
     assert [x["status"] for x in out["results"]] == [201, 409]
 
 
-@pytest.mark.parametrize("over", [{"sharing": "roles"}, {"panels": [_panel(h="tall")]}])
+async def test_an_export_keeps_the_panel_filters_and_imports_them_again(env) -> None:
+    """Issue 999: the filters of a panel travel with the export, and the import stores them."""
+    user, _ = env
+    author = await user(EDIT)
+    filters = {"exclude_namespace": ["kube-system"], "severity": ["critical"]}
+    made = await _create(author, panels=[_panel("findings-by-namespace", w=1, filters=filters)])
+    exported = (
+        await author.get(
+            "/api/v1/dashboards/export.ndjson", params={"dashboard_id": made["dashboard_id"]}
+        )
+    ).text
+    assert json.loads(exported.splitlines()[0])["panels"][0]["filters"]["severity"] == ["critical"]
+    importer = await user(EDIT)
+    out = (await _import(importer, exported, copy="true")).json()
+    copy_id = out["results"][0]["dashboard_id"]
+    copy = (await importer.get(f"/api/v1/dashboards/{copy_id}")).json()
+    assert copy["panels"] == made["panels"]
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"sharing": "roles"},
+        {"panels": [_panel(h="tall")]},
+        {"panels": [_panel(filters={"scanner": "trivy"})]},
+        {"panels": [_panel("scan-ingest", filters={"kev": True})]},
+    ],
+)
 async def test_the_import_uses_the_checks_of_a_create(env, over: dict[str, Any]) -> None:
     user, _ = env
     importer = await user(ADMIN)

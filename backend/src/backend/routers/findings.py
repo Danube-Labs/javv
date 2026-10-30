@@ -422,12 +422,18 @@ async def facet_findings(
     filters: Filters,
     as_of_t: AsOf,
     fields: Annotated[list[str] | None, Query()] = None,
+    all_filters: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:
         return await _reconstructed(
             _reader_or_501().findings_facets(
-                client, cluster_id=cluster_id, t=as_of_t, filters=filters, fields=fields
+                client,
+                cluster_id=cluster_id,
+                t=as_of_t,
+                filters=filters,
+                fields=fields,
+                all_filters=all_filters,
             )
         )
     # no read-side refresh (audit A-m2/#191) — see search_findings
@@ -437,6 +443,7 @@ async def facet_findings(
             filters,
             fields=fields,
             sla_cutoffs=await _sla_cutoffs(client, filters, facet=wants_overdue),
+            all_filters=all_filters,
         )
     except ValueError as exc:  # non-whitelisted facet field
         raise HTTPException(422, str(exc)) from exc

@@ -2,7 +2,8 @@
  * The backend keeps its own copy of the panel catalog (`backend/src/backend/dashboards/catalog.py`)
  * to check a saved dashboard: the panel ids, the heights each panel can take with their grid rows,
  * and which panels have scanner data. A copy that drifts refuses a dashboard the page lets a user
- * build, or lets two panels share a cell (issue 440).
+ * build, or lets two panels share a cell (issue 440). It also lists the panels that take filters
+ * and the filters each one refuses (issue 999).
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -26,6 +27,17 @@ function backendPanels(): Map<string, BackendPanel> {
     const heights: Record<string, number> = {}
     for (const h of m[2]!.matchAll(/"(\w+)": (\d+)/g)) heights[h[1]!] = Number(h[2])
     panels.set(m[1]!, { heights, usesScanner: m[3] === 'True' })
+  }
+  return panels
+}
+
+/** FILTER_PANELS in catalog.py, one entry per line: "id": ("field", ...) */
+function backendFilterPanels(): Map<string, string[]> {
+  const text = readFileSync(CATALOG_PY, 'utf8')
+  const block = /^FILTER_PANELS[^{]*\{\n([\s\S]*?)^\}/m.exec(text)?.[1] ?? ''
+  const panels = new Map<string, string[]>()
+  for (const m of block.matchAll(/^\s+"([\w-]+)": \(([^)]*)\),$/gm)) {
+    panels.set(m[1]!, [...m[2]!.matchAll(/"(\w+)"/g)].map((f) => f[1]!))
   }
   return panels
 }
@@ -63,6 +75,17 @@ describe('the backend copy of the panel catalog', () => {
   it('each panel has scanner data on both sides or on neither', () => {
     expect(byId((id) => backend.get(id)?.usesScanner)).toEqual(
       byId((id) => panelById(id)?.usesScanner),
+    )
+  })
+
+  it('each panel takes the filters on both sides or on neither, with the same refusals', () => {
+    const filters = backendFilterPanels()
+    expect(filters.get('triage-progress')).toEqual(['state'])
+    expect(byId((id) => filters.get(id) ?? null)).toEqual(
+      byId((id) => {
+        const p = panelById(id)
+        return p?.takesFilters ? [...(p.refusedFilters ?? [])] : null
+      }),
     )
   })
 })

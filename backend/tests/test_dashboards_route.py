@@ -284,6 +284,31 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             {"panels": [_panel("scan-ingest", y=5 * i) for i in range(25)]},
             id="25 panels",
         ),
+        pytest.param(
+            {"panels": [_panel("scan-ingest", filters={"kev": True})]},
+            id="filters on a panel that reads no findings counts",
+        ),
+        pytest.param({"panels": [_panel(filters={"scanner": "trivy"})]}, id="a scanner filter"),
+        pytest.param(
+            {"panels": [_panel(filters={"exclude_scanner": "grype"})]}, id="a scanner exclude"
+        ),
+        pytest.param(
+            {"panels": [_panel("triage-progress", w=1, filters={"state": ["open"]})]},
+            id="a state filter on Triage progress",
+        ),
+        pytest.param(
+            {"panels": [_panel("triage-progress", w=1, filters={"exclude_state": ["open"]})]},
+            id="a state exclude on Triage progress",
+        ),
+        pytest.param(
+            {"panels": [_panel(filters={"severity": ["High"]})]},
+            id="a filter value a saved view refuses",
+        ),
+        pytest.param(
+            {"panels": [_panel(filters={"assignee": ["lead"], "unassigned": True})]},
+            id="a filter pair the API refuses",
+        ),
+        pytest.param({"panels": [_panel(filters={"color": "red"})]}, id="an unknown filter"),
         pytest.param({"sharing": "roles", "roles": []}, id="shared with no role"),
         pytest.param(
             {"sharing": "everyone", "roles": ["triager"]}, id="roles without role sharing"
@@ -298,6 +323,48 @@ async def test_the_model_refuses(env, body: dict[str, Any]) -> None:
     owner = await user(EDIT)
     r = await owner.post("/api/v1/dashboards", json={"name": "d", "panels": [], **body})
     assert r.status_code == 422, r.text
+
+
+async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> None:
+    """Issue 999: the five panels of decision 1 store the filters of /findings, in the shape of
+    a saved view. Decision 4: a panel takes a filter on the field it lists, so Findings by
+    namespace keeps "Namespace is not kube-system". A change replaces the filters."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [
+        _panel(filters={"severity": ["critical", "high"], "kev": True}),
+        _panel("package-type", w=1, y=1, filters={"exclude_ptype": ["os"]}),
+        _panel(
+            "findings-by-namespace", x=1, w=1, y=1, filters={"exclude_namespace": "kube-system"}
+        ),
+        _panel("top-components", w=1, y=2, filters={"fixable": True}),
+        _panel("triage-progress", x=1, w=1, y=2, filters={"namespace": ["payments"]}),
+        _panel("scan-ingest", y=3),
+    ]
+    made = await _create(owner, panels=panels)
+    path = f"/api/v1/dashboards/{made['dashboard_id']}"
+    stored = (await owner.get(path)).json()["panels"]
+    filters = {p["panel"]: p.get("filters") for p in stored}
+    assert filters["findings-summary"] == {
+        "severity": ["critical", "high"],
+        "kev": True,
+        "present": True,
+    }
+    # one value is stored as a list, as in a saved view (issue 949)
+    assert filters["findings-by-namespace"]["exclude_namespace"] == ["kube-system"]
+    assert filters["package-type"]["exclude_ptype"] == ["os"]
+    assert filters["triage-progress"]["namespace"] == ["payments"]
+    assert filters["scan-ingest"] is None
+
+    changed = [
+        {**p, "filters": {"state": ["open"]}} if p["panel"] == "top-components" else p
+        for p in stored
+    ]
+    r = await owner.patch(path, json={"revision": 1, "panels": changed})
+    assert r.status_code == 200, r.text
+    after = {p["panel"]: p.get("filters") for p in r.json()["panels"]}
+    assert after["top-components"] == {"state": ["open"], "present": True}
+    assert after["findings-summary"] == filters["findings-summary"]
 
 
 async def test_a_role_that_no_bundle_has_is_refused_on_create_and_on_change(env) -> None:

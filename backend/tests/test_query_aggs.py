@@ -212,6 +212,26 @@ def test_the_unassigned_count_leaves_out_assignee_is() -> None:
     assert _ASSIGNEE_IS not in json.dumps(body["query"])
 
 
+@pytest.mark.parametrize("mode", ["", "exclude_"])
+def test_all_filters_counts_every_facet_under_every_filter(mode: str) -> None:
+    """Issue 999, decision 4: a dashboard panel that lists namespaces with "Namespace is not
+    kube-system" must leave that row out. With `all_filters`, no facet is freed: the body is
+    the plain one, every facet a direct `terms` or `filter` agg under the whole query."""
+    f = SearchFilters(
+        **dict[str, Any]({f"{mode}namespace": ["a"], f"{mode}ptype": ["deb"]}),
+        assignee=["lead"],
+    )
+    fields = ["severity", "namespaces", "ptype", "assignee", "unassigned"]
+    body = build_facets_body(f, fields=fields, all_filters=True)
+    query = json.dumps(body["query"])
+    for clause in ({"namespaces": ["a"]}, {"ptype": ["deb"]}, {"assignee": ["lead"]}):
+        assert json.dumps({"terms": clause}) in query, clause
+    for name in fields:
+        assert "values" not in body["aggs"][name].get("aggs", {}), name
+    # the default is unchanged: the same filters free the list facets
+    assert "values" in build_facets_body(f, fields=fields)["aggs"]["namespaces"]["aggs"]
+
+
 def test_the_unassigned_count_keeps_assignee_is_not() -> None:
     """The click keeps Assignee "is not" (the API takes that pair), so the count keeps it."""
     f = SearchFilters(exclude_assignee=["lead"])

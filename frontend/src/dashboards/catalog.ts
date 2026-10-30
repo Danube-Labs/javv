@@ -50,6 +50,10 @@ export interface CatalogPanel {
   usesScanner: boolean
   /** the component has no card of its own: the dashboard puts it in PanelFrame */
   framed: boolean
+  /** the panel reads findings counts and takes the filters of /findings (issue 999) */
+  takesFilters: boolean
+  /** the filters it refuses, by API name: Triage progress splits by state itself */
+  refusedFilters?: readonly string[]
   props: (ctx: PanelContext) => Record<string, unknown>
 }
 
@@ -72,6 +76,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 7 },
     usesScanner: true,
     framed: false,
+    takesFilters: true,
     props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
   },
   {
@@ -84,6 +89,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 12 },
     usesScanner: true,
     framed: false,
+    takesFilters: true,
     props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx) }),
   },
   {
@@ -96,6 +102,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 11, tall: 24 },
     usesScanner: true,
     framed: false,
+    takesFilters: true,
     props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), limit: TABLE_ROWS[ctx.height] }),
   },
   {
@@ -108,6 +115,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 13, tall: 26 },
     usesScanner: true,
     framed: false,
+    takesFilters: false,
     props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
   },
   {
@@ -120,6 +128,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 13, tall: 26 },
     usesScanner: true,
     framed: false,
+    takesFilters: true,
     props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
   },
   {
@@ -132,6 +141,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 4 },
     usesScanner: false,
     framed: false,
+    takesFilters: false,
     props: (ctx) => ({ clusterId: ctx.clusterId, subject: 'this dashboard' }),
   },
   {
@@ -144,6 +154,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 4 },
     usesScanner: false,
     framed: false,
+    takesFilters: false,
     props: (ctx) => ({ clusterId: ctx.clusterId, t: ctx.t, windowDays: ctx.windowDays }),
   },
   {
@@ -156,6 +167,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 5 },
     usesScanner: false,
     framed: false,
+    takesFilters: false,
     props: (ctx) => ({
       // a risk accept or a not-affected decision is a decision row; a state change is a finding row
       query: { ...globalQuery(ctx), entity_type: ['finding', 'decision'] },
@@ -174,6 +186,7 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 5 },
     usesScanner: false,
     framed: false,
+    takesFilters: false,
     props: (ctx) => ({ query: { ...globalQuery(ctx), days: daysFromWindow(ctx.windowDays) } }),
   },
   {
@@ -186,6 +199,8 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 10 },
     usesScanner: false,
     framed: true,
+    takesFilters: true,
+    refusedFilters: ['state'],
     props: (ctx) => ({ query: globalQuery(ctx) }),
   },
 ]

@@ -711,6 +711,43 @@ async def test_list_facets_leave_out_their_own_filter_against_a_real_index(env) 
     assert sum(two["severity"].values()) == grid.json()["total"]["value"] == 2
 
 
+async def test_all_filters_counts_the_list_facets_under_their_own_filter_against_a_real_index(
+    env,
+) -> None:
+    """Issue 999, decision 4. A dashboard panel asks with `all_filters=true`: "Namespace is not
+    a" leaves a out of the Namespace facet, and "Namespace is one of a, b" lists only a and b.
+    Without the parameter, the Findings filter list keeps every value (issue 949)."""
+    login, client = env
+    cid = f"c-f999-{uuid.uuid4().hex[:8]}"
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(2, cve="CVE-2024-0001", namespaces=["a"], severity="critical", ptype="deb"),
+            *_rows(3, cve="CVE-2024-0002", namespaces=["b"], severity="low", ptype="npm"),
+            *_rows(1, cve="CVE-2024-0003", namespaces=["c"], severity="low", ptype="deb"),
+        ],
+    )
+    http = await login()
+
+    async def facets(**params: Any) -> dict[str, dict[str, int]]:
+        r = await http.get(
+            "/api/v1/findings/facets",
+            params={"cluster_id": cid, "fields": ["namespaces", "ptype"], **params},
+        )
+        assert r.status_code == 200, r.text
+        return {k: {b["key"]: b["count"] for b in v} for k, v in r.json()["facets"].items()}
+
+    not_a = await facets(exclude_namespace="a", all_filters="true")
+    assert not_a["namespaces"] == {"b": 3, "c": 1}
+    assert not_a["ptype"] == {"npm": 3, "deb": 1}
+    two = await facets(namespace=["a", "b"], ptype="deb", all_filters="true")
+    assert two["namespaces"] == {"a": 2}
+    assert two["ptype"] == {"deb": 2}
+    # the default stays the Findings rule
+    assert (await facets(exclude_namespace="a"))["namespaces"] == {"a": 2, "b": 3, "c": 1}
+
+
 async def test_the_unassigned_count_is_the_rows_its_click_shows_against_a_real_index(env) -> None:
     """Issue 979. With Assignee "is lead", a click on Unassigned clears Assignee (issue 975), so
     the Unassigned count must equal the grid total of `unassigned=true` under the other

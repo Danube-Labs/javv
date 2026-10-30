@@ -41,3 +41,14 @@ PANELS: dict[str, CatalogPanel] = {
     "handled-findings": CatalogPanel({"short": 5}, uses_scanner=False),
     "triage-progress": CatalogPanel({"short": 10}, uses_scanner=False),
 }
+
+# the panels that read findings counts take the filters of /findings (issue 999, decision 1),
+# each with the fields it refuses: Triage progress splits by state itself. The scanner is the
+# panel's own setting, so no panel takes a scanner filter (see DashboardPanel).
+FILTER_PANELS: dict[str, tuple[str, ...]] = {
+    "findings-summary": (),
+    "package-type": (),
+    "findings-by-namespace": (),
+    "top-components": (),
+    "triage-progress": ("state",),
+}
