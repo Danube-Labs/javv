@@ -156,7 +156,7 @@ Vue 3 `<script setup lang="ts">` + PrimeVue 4 + Pinia + Vue Router, built with V
 gates ESLint/oxlint + stylelint + vue-tsc (`npm run lint` / `npm run test:ci`, the CI `Frontend` job).
 **Read [`frontend/DESIGN.md`](frontend/DESIGN.md) before touching any screen** - the agent-facing
 design contract over `src/styles/tokens.css` (the binding token source, ui-foundations.md).
-`src/components/ui/` is the mandatory UI kit (buttons/segs/fields/dropdowns/modals/toasts +
+`src/components/ui/` is the mandatory UI kit (buttons/segs/fields/text boxes/dropdowns/modals/toasts +
 motion - DESIGN.md §5; re-rolling any of it is a review failure). Other shared families:
 `components/chips/` (every same-hue status/severity pair lives here - enforced by the style rules test),
 `components/filters/` (FacetRail/FilterBar over `filters/fields.config.ts`),
