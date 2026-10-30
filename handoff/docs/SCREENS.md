@@ -1169,6 +1169,17 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   renders again only the panels that follow it, so the other panels do not read their data again.
 - **Data:** each panel reads its own data at the selected cluster, T and window (D8,
   DESIGN.md §10).
+- **Panel filters (issue 999, decision 2 C):** five panels can keep findings filters: Findings
+  summary, Package type, Findings by namespace, Top components and Triage progress. Such a panel
+  sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
+  kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens
+  Findings with the filters of the panel and the value of the row. The value of the row replaces
+  the filter of the panel on the same field, and the flags of both stay.
+  `components/dashboards/PanelFiltersButton.vue` shows "1 filter" or "N filters" over the top
+  right corner of the panel, next to the pinned scanner tag. A click opens `PopoverShell` "Panel
+  filters" next to the panel: one tag for each filter, and **Open in Findings**, which also
+  carries the scanner of a pinned panel. A panel with no filters shows no button. Edit mode shows
+  the same button in the tab over the top right corner of the panel, before **Settings**.
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
   does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
 

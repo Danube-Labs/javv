@@ -13,6 +13,7 @@ import { GridStack, type GridStackNode } from 'gridstack'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import ScannerTag from '@/components/chips/ScannerTag.vue'
+import PanelFiltersButton from '@/components/dashboards/PanelFiltersButton.vue'
 import PanelFrame from '@/components/dashboards/PanelFrame.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -150,6 +151,12 @@ watch(
           <span v-if="p.panel.usesScanner && isPinned(p.stored)" class="dash-pinned">
             <ScannerTag :name="String(p.stored.scanner)" /> pinned
           </span>
+          <PanelFiltersButton
+            v-if="p.panel.takesFilters"
+            :filters="p.stored.filters"
+            :panel-name="p.panel.name"
+            :pinned="p.panel.usesScanner && isPinned(p.stored) ? (p.stored.scanner as 'trivy' | 'grype') : null"
+          />
           <UiButton variant="mini" :aria-label="`Settings of ${p.panel.name}`" @click="emit('settings', p.stored.key, $event.currentTarget as HTMLElement)">
             <AppIcon name="gear" :size="12" />Settings
           </UiButton>

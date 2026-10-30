@@ -234,6 +234,10 @@ describe('the read page', () => {
     const [left, right] = probeProps(w)
     expect(left!.props.filters).toEqual(filters)
     expect(right!.props).not.toHaveProperty('filters')
+    // the corner button of decision 2 C: only on the panel that has filters
+    const cells = w.findAll('.dash-cell')
+    expect(cells[0]!.find('.dash-corner button').text()).toBe('1 filter')
+    expect(cells[1]!.find('.dash-corner button').exists()).toBe(false)
   })
 
   it('draws each panel with the cluster and the scanner the owner saved', async () => {
