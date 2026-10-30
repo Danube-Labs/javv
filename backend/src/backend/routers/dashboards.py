@@ -32,7 +32,8 @@ from pydantic import (
 from backend.audit.writer import append_field_change
 from backend.auth.capabilities import ROLES_INDEX, holds, require_capability
 from backend.auth.principal import Principal, get_current_principal
-from backend.dashboards.catalog import PANELS, PanelHeight, PanelId
+from backend.dashboards.catalog import FILTER_PANELS, PANELS, PanelHeight, PanelId
+from backend.routers.views import ViewPreset
 
 router = APIRouter(prefix="/api/v1/dashboards", tags=["dashboards"])
 
@@ -60,6 +61,8 @@ class DashboardPanel(BaseModel):
     h: PanelHeight
     # only on a panel with scanner data; `dashboard` follows the dashboard's switch (ruling Q7)
     scanner: Literal["dashboard", "trivy", "grype"] | None = None
+    # the filters of /findings, in the shape and with the checks of a saved view (issue 999)
+    filters: ViewPreset | None = None
 
     @model_validator(mode="after")
     def _fits_the_catalog(self) -> "DashboardPanel":
@@ -72,7 +75,20 @@ class DashboardPanel(BaseModel):
             raise ValueError(f"the panel {self.panel} has no scanner data")
         if entry.uses_scanner and self.scanner is None:
             self.scanner = "dashboard"
+        if self.filters is not None:
+            self._check_filters(self.filters)
         return self
+
+    def _check_filters(self, filters: ViewPreset) -> None:
+        refused = FILTER_PANELS.get(self.panel)
+        if refused is None:
+            raise ValueError(f"the panel {self.panel} takes no filters")
+        given = {name for name, value in filters if value is not None}
+        if given & {"scanner", "exclude_scanner"}:
+            raise ValueError("a panel takes no scanner filter: its scanner setting does that")
+        for field in refused:
+            if given & {field, f"exclude_{field}"}:
+                raise ValueError(f"the panel {self.panel} takes no {field} filter")
 
     def start_cells(self) -> set[tuple[int, int]]:
         # only the first row: in edit mode a panel is as tall as its content, so the catalog rows

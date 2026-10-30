@@ -390,6 +390,16 @@
         "additionalProperties": false,
         "description": "One panel: a catalog ID, its cell, its width in columns and the NAME of its height.",
         "properties": {
+          "filters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ViewPreset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "h": {
             "enum": [
               "short",
@@ -6968,6 +6978,16 @@
                 }
               ],
               "title": "Fields"
+            }
+          },
+          {
+            "in": "query",
+            "name": "all_filters",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "All Filters",
+              "type": "boolean"
             }
           },
           {

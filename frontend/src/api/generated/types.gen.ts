@@ -222,6 +222,7 @@ export type DashboardFields = {
  * One panel: a catalog ID, its cell, its width in columns and the NAME of its height.
  */
 export type DashboardPanel = {
+    filters?: ViewPreset | null;
     /**
      * H
      */
@@ -3035,6 +3036,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          * Fields
          */
         fields?: Array<string> | null;
+        /**
+         * All Filters
+         */
+        all_filters?: boolean;
         /**
          * Severity
          */

@@ -488,6 +488,7 @@ class AsOfTQuery:
         filters: SearchFilters,
         fields: list[str] | None,
         prefix: str = "",
+        all_filters: bool = False,
     ) -> dict[str, Any]:
         chosen = list(fields) if fields is not None else list(_FACET_FIELDS)
         bad = [f for f in chosen if f not in _FACET_FIELDS]
@@ -500,8 +501,8 @@ class AsOfTQuery:
             if field in _EMPTY_FACETS:  # whitelisted but unrecorded at T — explicit empty
                 facets[field] = []
                 continue
-            # mirrors the live facet: the same filters per facet (issues 949 and 979)
-            own_filters = counting_filters(filters, field)
+            # mirrors the live facet: the same filters per facet (issues 949, 979 and 999)
+            own_filters = filters if all_filters else counting_filters(filters, field)
             counted = (
                 rows if own_filters == filters else self._apply_filters(reconstructed, own_filters)
             )

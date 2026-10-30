@@ -106,7 +106,11 @@ def build_facets_body(
     fields: list[str] | None = None,
     *,
     sla_cutoffs: dict[str, str] | None = None,
+    all_filters: bool = False,
 ) -> dict[str, Any]:
+    """`all_filters`: every facet counts under every filter, its own field's too. A dashboard
+    panel that lists namespaces with "Namespace is not kube-system" must leave that row out
+    (issue 999, decision 4); the Findings filter list keeps the default."""
     chosen = fields if fields is not None else list(FACET_FIELDS)
     bad = [f for f in chosen if f not in FACET_FIELDS]
     if bad:
@@ -135,7 +139,7 @@ def build_facets_body(
         # the rail flag's count: absence is an expression, so the facet reuses the grid's own
         # clause — count ≡ filtered rows by construction, same contract as overdue
         body["aggs"]["unassigned"] = {"filter": unassigned_clause(), "aggs": dict(_BY_SCANNER)}
-    freed = [f for f in chosen if counting_filters(filters, f) != filters]
+    freed = [] if all_filters else [f for f in chosen if counting_filters(filters, f) != filters]
     if not freed:
         return body
     # disjunctive facets: the top-level query drops the filters that the freed facets leave

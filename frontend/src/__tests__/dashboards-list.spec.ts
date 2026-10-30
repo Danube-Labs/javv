@@ -309,6 +309,9 @@ describe('the words of a result', () => {
     [{ line: 1, status: 422, errors: [{ loc: ['roles', 1], msg: 'String should have at most 64 characters', type: 'string_too_long' }] }, 'Not correct: String should have at most 64 characters (role 2)'],
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: 'Value error, the panel findings-summary has no tall height', type: 'value_error' }] }, 'Not correct: a height that this panel does not have (panel 1)'],
     [{ line: 1, status: 422, errors: [{ loc: [], msg: 'Value error, the panel findings-summary at (1, 7) overlaps', type: 'value_error' }] }, 'Not correct: two panels in the same place'],
+    [{ line: 1, status: 422, errors: [{ loc: ['panels', 1], msg: 'Value error, a panel takes no scanner filter: its scanner setting does that', type: 'value_error' }] }, 'Not correct: a scanner filter, which the scanner setting of the panel does (panel 2)'],
+    [{ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: 'Value error, the panel scan-ingest takes no filters', type: 'value_error' }] }, 'Not correct: filters on a panel that takes no filters (panel 1)'],
+    [{ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: 'Value error, the panel triage-progress takes no state filter', type: 'value_error' }] }, 'Not correct: a filter that this panel does not take (panel 1)'],
     [{ line: 1, status: 422, errors: [{ loc: [], msg: 'Value error, a check that is new', type: 'value_error' }] }, 'Not correct: a value that JAVV cannot use'],
   ] as const)('%o', (result, words) => {
     expect(lineResultCopy(result as never)).toBe(words)
