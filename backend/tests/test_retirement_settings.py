@@ -13,27 +13,33 @@ import pytest
 from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.auth.passwords import hash_password
-from backend.jobs.staleness import StalenessTimers, write_staleness_timers
+from backend.jobs.staleness import STALENESS_KEY, StalenessTimers, write_staleness_timers
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
 
 PASSWORD = "retirement-window-password"
 
-# serial: these tests write and restore the shared fleet-wide `retirement` doc; under `-n 2` a
-# test on the other worker would read another test's value
+# serial: these tests write and restore the shared fleet-wide `retirement` and `staleness` docs;
+# under `-n 2` a test on the other worker would read another test's value
 pytestmark = [requires_opensearch, pytest.mark.serial]
+
+_FLEET_DOCS = ("retirement", STALENESS_KEY)
 
 
 @pytest.fixture
 async def env():
     client = AsyncOpenSearch(hosts=[OS_URL])
-    # the fleet default is shared state: hold it aside so every test starts from "never set"
-    try:
-        saved = (await client.get(index="system-config", id="retirement"))["_source"]
-    except NotFoundError:
-        saved = None
-    with contextlib.suppress(NotFoundError):
-        await client.delete(index="system-config", id="retirement", params={"refresh": "true"})
+    # the fleet defaults are shared state: hold them aside so every test starts from "never set".
+    # `staleness` too: the window checks against its scanner-down timer, and a store where someone
+    # set that timer would move the 422 boundary the tests expect
+    saved: dict[str, dict | None] = {}
+    for doc_id in _FLEET_DOCS:
+        try:
+            saved[doc_id] = (await client.get(index="system-config", id=doc_id))["_source"]
+        except NotFoundError:
+            saved[doc_id] = None
+        with contextlib.suppress(NotFoundError):
+            await client.delete(index="system-config", id=doc_id, params={"refresh": "true"})
 
     app = create_app()
     app.state.opensearch = client
@@ -59,12 +65,13 @@ async def env():
     assert r.status_code == 200
     yield http, client
 
-    with contextlib.suppress(NotFoundError):
-        await client.delete(index="system-config", id="retirement", params={"refresh": "true"})
-    if saved is not None:
-        await client.index(
-            index="system-config", id="retirement", body=saved, params={"refresh": "true"}
-        )
+    for doc_id, body in saved.items():
+        with contextlib.suppress(NotFoundError):
+            await client.delete(index="system-config", id=doc_id, params={"refresh": "true"})
+        if body is not None:
+            await client.index(
+                index="system-config", id=doc_id, body=body, params={"refresh": "true"}
+            )
     await client.delete(index="system-users", id=username, params={"refresh": "true"})
     await http.aclose()
     await client.close()
