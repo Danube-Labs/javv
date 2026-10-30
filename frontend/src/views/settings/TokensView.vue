@@ -33,6 +33,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiDateTime from '@/components/ui/UiDateTime.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -308,7 +309,7 @@ const fmt = (iso: string | null) =>
     <!-- mint dialog -->
     <ModalShell v-if="mintOpen" title="Mint a push token" subtitle="scoped to one (cluster, scanner) pair" @close="mintOpen = false">
       <UiField label="Cluster" first for="mint-cluster">
-        <select id="mint-cluster" v-model="mintCluster" class="set-select">
+        <UiSelect id="mint-cluster" v-model="mintCluster">
           <option v-for="c in activeClusters" :key="c.cluster_id" :value="c.cluster_id">
             {{ c.cluster_name }}
           </option>
@@ -318,7 +319,7 @@ const fmt = (iso: string | null) =>
               {{ c.cluster_name }} (retired)
             </option>
           </optgroup>
-        </select>
+        </UiSelect>
       </UiField>
       <p v-if="mintRetired" class="fld-hint" role="status">
         {{ mintRetired.cluster_name }} is retired. Its first scan on this token brings it back to the cluster

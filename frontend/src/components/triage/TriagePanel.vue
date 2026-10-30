@@ -17,6 +17,7 @@ import VexJustificationPicker from '@/components/triage/VexJustificationPicker.v
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiTextArea from '@/components/ui/UiTextArea.vue'
 import { stateLabel } from '@/findings/stateLabels'
 import { buildTriagePatch, holdsRiskAccept, type TriagePatchBody } from '@/findings/triageRules'
 import type { FindingRow } from '@/stores/findings'
@@ -163,10 +164,10 @@ function undoLast() {
       </p>
 
       <UiField label="Note" for="triage-notes">
-        <textarea
+        <UiTextArea
           id="triage-notes"
           v-model="notes"
-          class="set-input set-input--prose"
+          prose
           rows="2"
           placeholder="Add context for the audit trail…"
           :disabled="locked"
