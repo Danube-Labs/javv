@@ -85,6 +85,10 @@ export const VALUE_ERROR_WORDS: readonly (readonly [RegExp, string])[] = [
   [/has no scanner data/, 'a scanner on a panel that has no scanner data'],
   [/overlaps/, 'two panels in the same place'],
   [/roles go with sharing/, 'roles that do not agree with the sharing'],
+  // the scanner case first: the last pattern matches its message too
+  [/takes no scanner filter/, 'a scanner filter, which the scanner setting of the panel does'],
+  [/takes no filters/, 'filters on a panel that takes no filters'],
+  [/takes no \S+ filter/, 'a filter that this panel does not take'],
 ]
 const VALUE_ERROR_ELSE = 'a value that JAVV cannot use'
 
