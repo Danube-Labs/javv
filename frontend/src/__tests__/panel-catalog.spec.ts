@@ -351,6 +351,33 @@ describe('a panel that its screen can feed', () => {
     expect(facetsMock()).toHaveBeenCalledTimes(1)
   })
 
+  /** a facets panel mounted with its own query: the whole query is the request (issue 999) */
+  function mountWithQuery(component: typeof OverviewStatBands | typeof PackageTypeCard, query: Record<string, unknown>) {
+    return mount(component, {
+      props: { scanner: 'all', query: query as never },
+      global: { plugins: [createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })], stubs: { EChart: true } },
+    })
+  }
+
+  it('two panels with different filters send two reads, each with its own filters', async () => {
+    facetsMock().mockImplementation(later)
+    mountWithQuery(OverviewStatBands, { cluster_id: CLUSTER, exclude_namespace: ['kube-system'], all_filters: true })
+    mountWithQuery(PackageTypeCard, { cluster_id: CLUSTER, severity: ['critical'], all_filters: true })
+    await flushPromises()
+    expect(facetsMock()).toHaveBeenCalledTimes(2)
+    const sent = facetsMock().mock.calls.map((c) => (c[0] as { query: unknown }).query)
+    expect(sent).toContainEqual({ cluster_id: CLUSTER, exclude_namespace: ['kube-system'], all_filters: true })
+    expect(sent).toContainEqual({ cluster_id: CLUSTER, severity: ['critical'], all_filters: true })
+  })
+
+  it('two panels with the same filters share one read, whatever the order of the params', async () => {
+    facetsMock().mockImplementation(later)
+    mountWithQuery(OverviewStatBands, { cluster_id: CLUSTER, severity: ['critical'], all_filters: true })
+    mountWithQuery(PackageTypeCard, { all_filters: true, severity: ['critical'], cluster_id: CLUSTER })
+    await flushPromises()
+    expect(facetsMock()).toHaveBeenCalledTimes(1)
+  })
+
   it('a second ask after the read came back reads again', async () => {
     facetsMock().mockResolvedValue(ok({ facets: FACETS }))
     mountPanel(panelById('findings-summary')!)
