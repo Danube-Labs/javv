@@ -1080,6 +1080,13 @@ textarea.set-input {
   width: auto;
   min-width: 140px;
 }
+/* the rows-per-page list of the pager: the small mono size of the text around it */
+.set-select--small {
+  padding: 4px 6px;
+  width: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-quiet-action);
+}
 .set-select:hover:not(:disabled) {
   background: var(--control-hover-bg);
   border-color: var(--control-hover-line);

@@ -7,6 +7,7 @@
 import { computed } from 'vue'
 
 import UiButton from '@/components/ui/UiButton.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 
 const props = defineProps<{
   total: number
@@ -40,9 +41,9 @@ const fmt = (n: number) => n.toLocaleString('en-US')
     <div class="pager-right">
       <label class="pager-size">
         Rows per page
-        <select :value="size" @change="emit('update:size', Number(($event.target as HTMLSelectElement).value))">
-          <option v-for="s in SIZES" :key="s" :value="s">{{ s }}</option>
-        </select>
+        <UiSelect small :model-value="String(size)" @update:model-value="emit('update:size', Number($event))">
+          <option v-for="s in SIZES" :key="s" :value="String(s)">{{ s }}</option>
+        </UiSelect>
       </label>
       <div class="pager-btns">
         <UiButton class="pager-btn" :disabled="!hasPrev" @click="emit('prev')">Prev</UiButton>
@@ -81,36 +82,11 @@ const fmt = (n: number) => n.toLocaleString('en-US')
   color: var(--soft);
   font-family: var(--font-mono);
 }
-.pager-size select {
-  border: 1px solid var(--line);
-  background: var(--card);
-  border-radius: 7px;
-  padding: 4px 6px;
-  font-size: var(--text-quiet-action);
-  color: var(--ink);
-  font-family: inherit;
-  outline: none;
-  transition:
-    background 120ms ease,
-    border-color 120ms ease;
-}
-.pager-size select:hover {
-  background: var(--control-hover-bg);
-  border-color: var(--control-hover-line);
-}
-.pager-size select:focus {
-  border-color: var(--coral);
-}
 .pager-btns {
   display: flex;
   gap: 5px;
 }
 .pager-btn {
   min-width: 48px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .pager-size select {
-    transition: none;
-  }
 }
 </style>

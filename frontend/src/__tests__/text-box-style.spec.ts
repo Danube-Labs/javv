@@ -59,6 +59,7 @@ describe('the text box and the dropdown (issue 1050)', () => {
     expect(rule('.set-select:focus-visible')).toContain('outline: var(--focus-ring);')
     expect(rule('.set-select:disabled')).toContain('cursor: not-allowed;')
     expect(rule('.set-select--row')).toContain('padding: 6px 9px;')
+    expect(rule('.set-select--small')).toContain('font-family: var(--font-mono);')
   })
 
   it('SettingsInput draws the shared box, and prose and invalid add their variants', () => {
