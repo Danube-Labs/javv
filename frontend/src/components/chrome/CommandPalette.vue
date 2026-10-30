@@ -116,6 +116,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
       <div class="cp" role="dialog" aria-modal="true" aria-label="Global search">
         <div class="cp-input-row">
           <AppIcon name="search" :size="15" />
+          <!-- eslint-disable-next-line vue/no-restricted-html-elements -- the palette keeps its own search row, with the cursor in it on open (issue 1053) -->
           <input
             ref="inputEl"
             v-model="text"

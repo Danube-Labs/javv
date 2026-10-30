@@ -27,6 +27,7 @@ function commit() {
         ×
       </button>
     </span>
+    <!-- eslint-disable-next-line vue/no-restricted-html-elements -- the chip row is the box, and this input inside it has no border of its own -->
     <input
       :id="inputId"
       v-model="draft"

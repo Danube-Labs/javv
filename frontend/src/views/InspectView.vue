@@ -188,6 +188,7 @@ const budgetPct = computed(() =>
             <div class="pane-label">
               Request body <span class="quiet">JSON · ⌘↵ runs</span>
             </div>
+            <!-- eslint-disable-next-line vue/no-restricted-html-elements -- the request body is a code panel, not a form field -->
             <textarea
               v-model="bodyText"
               class="editor"
