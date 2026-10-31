@@ -3732,7 +3732,7 @@ workload?</p>
 </tr>
 <tr>
 <td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>
-<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 45 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard.</td>
+<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. The Audit log User list and the Approvals Approver list use it too. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 45 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard.</td>
 <td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
 </tr>
 </tbody>

@@ -2997,7 +2997,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/audit/facets</code></td>
 <td>session</td>
-<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. The <code>actor</code> counts leave out the <code>actor</code> and <code>exclude_actor</code> filters, so the other users keep their counts. With <code>interval</code> (<code>day</code> or <code>hour</code>) and <code>window_days</code>, it also gives <code>activity</code>: the events in each interval.</td>
+<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. The <code>actor</code> counts leave out the <code>actor</code> and <code>exclude_actor</code> filters, so the other users keep their counts. With <code>interval</code> (<code>day</code> or <code>hour</code>) and <code>window_days</code>, it also gives <code>activity</code>: the events in each interval. <code>contains</code> is a value search on the <code>actor</code> values, with 2 to 128 characters. It gives the users that contain the text, in any case, from all users and not only the 32 with the most events. The counts use the same filters as the <code>actor</code> counts. It gives at most 32 values, and <code>more</code> is <code>true</code> when more users contain the text. It gives no <code>entity_type</code>, <code>action</code> or <code>activity</code>. <code>contains</code> with <code>interval</code> gives 422.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3218,6 +3218,11 @@ values leaves out the acceptances with any of them. The answer also has <code>fa
 <code>status</code>, <code>created_by</code> and <code>scanner</code> with the same filters. The <code>created_by</code> counts leave out the
 <code>created_by</code> and <code>exclude_created_by</code> filters, so the other approvers keep their counts. A revoked acceptance is never in the
 queue.</p>
+<p><code>contains</code> is a value search on the <code>created_by</code> values, with 2 to 128 characters. It gives the
+approvers that contain the text, in any case, from all approvers and not only the 32 with the most
+acceptances. The counts use the same filters and <code>warn_days</code> as the <code>created_by</code> counts. The answer
+has only <code>facets.created_by</code>, with at most 32 values, and <code>more</code>. <code>more</code> is <code>true</code> when more
+approvers contain the text. The answer has no rows and no <code>total</code>.</p>
 <p>The CSV export has the same rows. A file larger than <code>JAVV_EXPORT_MAX_ROWS</code> rows gets 413.
 Two columns are different from the screen:</p>
 <ul>
