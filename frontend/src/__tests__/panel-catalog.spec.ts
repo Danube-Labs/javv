@@ -41,6 +41,7 @@ import {
   type CatalogPanel,
   type PanelContext,
 } from '@/dashboards/catalog'
+import { panelPropsCache, placePanels } from '@/dashboards/layout'
 import { useClusterStore } from '@/stores/cluster'
 import OverviewView from '@/views/OverviewView.vue'
 
@@ -860,5 +861,16 @@ describe('a panel with filters (issue 999)', () => {
     await w.find('tbody tr').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.query).toEqual({ namespace: 'ns-00' })
+  })
+
+  it('"New in range" reads in the range of the dashboard, not in the stored days', async () => {
+    facetsMock().mockResolvedValue(ok({ facets: FACETS }))
+    const [placed] = placePanels([
+      { panel: 'findings-by-namespace', x: 0, y: 0, w: 1, h: 'short', filters: { present: true, new_within_days: 7 } },
+    ])
+    const props = panelPropsCache()('0-0', placed!, { clusterId: CLUSTER, t: null, windowDays: 30, scanner: 'all' })
+    mount(panelById('findings-by-namespace')!.component, { props, global: { stubs: { EChart: true } } })
+    await flushPromises()
+    expect((facetsMock().mock.calls[0]![0] as { query: object }).query).toMatchObject({ new_within_days: 30, all_filters: true })
   })
 })

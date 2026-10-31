@@ -5,6 +5,7 @@
  */
 import type { DashboardPanel } from '@/api/generated'
 import { panelById, type CatalogPanel, type PanelContext, type PanelHeight } from '@/dashboards/catalog'
+import { panelFiltersAt } from '@/dashboards/panelFilters'
 import { roleLabel } from '@/lib/roleLabel'
 import type { ScannerLens } from '@/lib/scannerLens'
 import { silentFor } from '@/system/freshness'
@@ -84,7 +85,7 @@ export function panelPropsCache() {
       windowDays: dash.windowDays,
       scanner: p.panel.usesScanner ? panelScanner(p.stored, dash.scanner) : 'all',
       height: p.stored.h,
-      filters: p.panel.takesFilters ? (p.stored.filters ?? null) : null,
+      filters: p.panel.takesFilters ? panelFiltersAt(p.stored.filters, dash.windowDays) : null,
     }
     const key = `${p.panel.id}|${JSON.stringify(ctx)}`
     const kept = cache.get(place)
