@@ -27,6 +27,7 @@ import FindingsTable from '@/components/findings/FindingsTable.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import { useApi } from '@/composables/useApi'
+import { findingsValueSearch } from '@/composables/useValueSearch'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import type { FacetsResponse } from '@/filters/facets'
 import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
@@ -102,6 +103,8 @@ async function loadFacets(q: typeof facetsQuery.value) {
   }
 }
 watch(facetsQuery, (q) => void loadFacets(q), { immediate: true })
+// a value past the top 32 of a list: the menu asks for it under the same filters (issue 1064)
+const searchValues = findingsValueSearch(() => facetsQuery.value)
 
 /* ---- grid rows (M9b) ---- */
 // filters or globals changed → any held cursor belongs to the old query: back to page 0
@@ -348,6 +351,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
             :facets="facets"
             :counts-unknown="facetsFailed"
             :max-values="MAX_FILTER_VALUES"
+            :search-values="searchValues"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"

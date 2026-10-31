@@ -89,6 +89,32 @@ export function facetItems(
   return [...buckets.map((b) => item(b.key, valueLabel(field, b.key), b)), ...extra]
 }
 
+/** The server stopped this field's list at its cap, so values past it can exist. It counts the
+ * server's buckets, not the items: a 0 of a fixed list (issue 980) or a picked value added at
+ * the end is no bucket. */
+export function stoppedAtCap(field: FilterField, facets: FacetsResponse): boolean {
+  return (
+    field.type === 'terms' &&
+    field.facetKey !== undefined &&
+    (facets[field.facetKey]?.length ?? 0) >= capOf(field)
+  )
+}
+
+/** The values of a field that contain a text, from all values and not only the listed ones
+ * (issue 1064). `more`: more values contain the text than the server sent. */
+export interface ValueSearch {
+  buckets: FacetBucket[]
+  more: boolean
+}
+
+/** Asks for one field's values that contain a text. null: the search failed. */
+export type ValueSearchFn = (field: FilterField, text: string) => Promise<ValueSearch | null>
+
+/** Display items for the buckets of a value search, in server order. */
+export function searchItems(field: FilterField, buckets: readonly FacetBucket[]): FacetItem[] {
+  return buckets.map((b) => item(b.key, valueLabel(field, b.key), b))
+}
+
 /** `trivy 791 · grype 854` — tooltip text for the per-scanner split. */
 export function scannerSplit(byScanner: Record<string, number> | null): string {
   if (!byScanner) return ''

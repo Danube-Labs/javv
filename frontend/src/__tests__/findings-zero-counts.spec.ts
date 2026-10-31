@@ -102,3 +102,20 @@ describe('Findings: a flag with no rows, now and at a past time (issue 980)', ()
     expect(railCount(w, 'KEV')).toBeNull()
   })
 })
+
+/** Issue 1064: the menu of Findings asks for a value past the top 32 under the filters of the
+ * list, so the counts it shows are the counts of the list. */
+describe('Findings: the value search of the menu (issue 1064)', () => {
+  it('sends the query of the list with the field and the text', async () => {
+    const w = await mountFindings()
+    const bar = w.findComponent({ name: 'FilterBar' })
+    const search = bar.props('searchValues') as (f: unknown, t: string) => Promise<unknown>
+    const NAMESPACE = (bar.props('fields') as { key: string }[]).find((f) => f.key === 'namespace')
+    vi.mocked(facetFindingsApiV1FindingsFacetsGet).mockClear()
+    await search(NAMESPACE, 'pay')
+    expect(vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+      query: { cluster_id: CLUSTER, fields: ['namespaces'], contains: 'pay' },
+    })
+    expect(vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0].query).not.toHaveProperty('all_filters')
+  })
+})

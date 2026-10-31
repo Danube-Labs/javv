@@ -1,9 +1,9 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
-import type { FacetsResponse } from '@/filters/facets'
+import type { FacetsResponse, ValueSearchFn } from '@/filters/facets'
 import { FINDINGS_FIELDS, emptySelections, type FilterField } from '@/filters/fields.config'
 
 const FACETS: FacetsResponse = {
@@ -334,5 +334,66 @@ describe('FilterBar several typed values', () => {
     expect(pill.text()).toContain('CVE-1, CVE-2')
     // the pill truncates long values; the title holds them all
     expect(pill.find('.fpill-vals').attributes('title')).toBe('CVE-1, CVE-2')
+  })
+})
+
+/** Issue 1064: a list that stopped at the top 32 asks the server for the values that contain the
+ * typed text. A list under the cap, or a bar with no search, filters the listed values. */
+describe('FilterBar value search', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  const TOP = Array.from({ length: 32 }, (_, i) => ({ key: `ns-${i}`, count: 100 - i, by_scanner: { trivy: 100 - i } }))
+  const CAPPED: FacetsResponse = { ...FACETS, namespaces: TOP }
+  const hit = { key: 'payments-eu-7', count: 4, by_scanner: { trivy: 1, grype: 3 } }
+
+  async function typeIn(facets: FacetsResponse, searchValues: ValueSearchFn | undefined, text: string) {
+    const bar = mount(FilterBar, {
+      props: { fields: FINDINGS_FIELDS, selections: emptySelections(FINDINGS_FIELDS), facets, searchValues },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('Namespace'))!.trigger('click')
+    await bar.find('.filter-vsearch input').setValue(text)
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+    return bar
+  }
+  const rows = (bar: ReturnType<typeof mount>) => bar.findAll('.facet-row .facet-label').map((r) => r.text())
+
+  it('asks the server for the field and the text, and lists its values with their counts', async () => {
+    const search = vi.fn<ValueSearchFn>(async () => ({ buckets: [hit], more: false }))
+    const bar = await typeIn(CAPPED, search, 'pay')
+    expect(search).toHaveBeenCalledTimes(1)
+    expect(search.mock.calls[0]![0].key).toBe('namespace')
+    expect(search.mock.calls[0]![1]).toBe('pay')
+    expect(rows(bar)).toEqual(['payments-eu-7'])
+    expect(bar.find('.facet-row .facet-count').text()).toBe('4')
+    expect(bar.text()).not.toContain('More values match')
+
+    await bar.find('.facet-row').trigger('click')
+    expect(bar.emitted('toggle')?.[0]).toEqual(['namespace', 'payments-eu-7']) // an exact filter
+  })
+
+  it('says when more values match than the server sent', async () => {
+    const bar = await typeIn(CAPPED, async () => ({ buckets: [hit], more: true }), 'pay')
+    expect(bar.find('.filter-note').text()).toBe('More values match. Type more letters.')
+  })
+
+  it('a failed search says so and keeps the listed values that match', async () => {
+    const bar = await typeIn(CAPPED, async () => null, 'ns-1')
+    expect(bar.find('.filter-note').text()).toBe('Could not search all values. The list shows the top 32.')
+    expect(rows(bar)).toContain('ns-1')
+  })
+
+  it('a list under the cap filters its own values and asks nothing', async () => {
+    const search = vi.fn<ValueSearchFn>()
+    const bar = await typeIn({ ...FACETS, namespaces: TOP.slice(0, 31) }, search, 'ns-3')
+    expect(search).not.toHaveBeenCalled()
+    expect(rows(bar)).toEqual(['ns-3', 'ns-30'])
+  })
+
+  it('a bar with no search filters the listed values, as before', async () => {
+    const bar = await typeIn(CAPPED, undefined, 'ns-3')
+    expect(rows(bar)).toEqual(['ns-3', 'ns-30', 'ns-31'])
   })
 })
