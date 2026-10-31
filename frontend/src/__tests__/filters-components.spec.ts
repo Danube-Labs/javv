@@ -190,7 +190,7 @@ describe('FilterBar in a popover', () => {
 
   it('an Escape in the open menu closes only the menu, so the popover around it stays', async () => {
     const bar = mount(FilterBar, { props, attachTo: document.body })
-    const page = vi.fn()
+    const page = vi.fn<(e: KeyboardEvent) => void>()
     document.addEventListener('keydown', page)
     try {
       await bar.find('.add-filter').trigger('click')
