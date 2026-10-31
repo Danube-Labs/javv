@@ -63,18 +63,9 @@ export function useValueSearch() {
 
 type ListQuery = () => Record<string, unknown> | null | undefined
 
-/** The values of `key` in the answer of a value search, or null when the server refused it.
- * A bucket with no scanner split (Approvals) gets an empty one, the shape of the lists. */
-function readAnswer(
-  event: string,
-  key: string,
-  data: unknown,
-  response: Response | undefined,
-): ValueSearch | null {
-  if (!response?.ok || !data) {
-    logger.warn(event, { status: response?.status })
-    return null
-  }
+/** The values of `key` in the answer of a value search. A bucket with no scanner split
+ * (Approvals) gets an empty one, the shape of the lists. */
+function readAnswer(key: string, data: unknown): ValueSearch {
   const out = data as { facets?: Record<string, Omit<FacetBucket, 'by_scanner'>[]>; more?: boolean }
   const buckets = (out.facets?.[key] ?? []).map((b) => ({ by_scanner: {}, ...b }))
   return { buckets, more: out.more === true }
@@ -91,7 +82,11 @@ export function findingsValueSearch(query: ListQuery): ValueSearchFn {
       client,
       query: { ...q, fields: [key], contains: text } as never,
     })
-    return readAnswer('findings_value_search_failed', key, data, response)
+    if (!response?.ok || !data) {
+      logger.warn('findings_value_search_failed', { status: response?.status })
+      return null
+    }
+    return readAnswer(key, data)
   }
 }
 
@@ -105,7 +100,11 @@ export function auditValueSearch(query: ListQuery): ValueSearchFn {
       client,
       query: { ...q, contains: text } as never,
     })
-    return readAnswer('audit_value_search_failed', 'actor', data, response)
+    if (!response?.ok || !data) {
+      logger.warn('audit_value_search_failed', { status: response?.status })
+      return null
+    }
+    return readAnswer('actor', data)
   }
 }
 
@@ -119,6 +118,10 @@ export function approvalsValueSearch(query: ListQuery): ValueSearchFn {
       client,
       query: { ...q, contains: text } as never,
     })
-    return readAnswer('approvals_value_search_failed', 'created_by', data, response)
+    if (!response?.ok || !data) {
+      logger.warn('approvals_value_search_failed', { status: response?.status })
+      return null
+    }
+    return readAnswer('created_by', data)
   }
 }
