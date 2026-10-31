@@ -5,7 +5,15 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ViewPreset } from '@/api/generated'
-import { panelFilterParts, panelFiltersAt, panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
+import { panelById } from '@/dashboards/catalog'
+import {
+  panelFilterFields,
+  panelFilterParts,
+  panelFiltersAt,
+  panelFindingsQuery,
+  panelQuery,
+} from '@/dashboards/panelFilters'
+import { FINDINGS_FIELDS } from '@/filters/fields.config'
 
 const base = { cluster_id: 'c-k3d-0001' }
 // a stored preset has `present: true` (the ViewPreset default); it is no filter of its own
@@ -91,5 +99,19 @@ describe('"New in range" in a panel follows the dashboard range (operator, 2026-
     expect(panelFiltersAt(f, 30)).toEqual(f)
     expect(panelFiltersAt(null, 30)).toBeNull()
     expect(panelFiltersAt(undefined, 30)).toBeNull()
+  })
+})
+
+describe('the fields of the Filters field in the panel settings', () => {
+  const keys = (id: string) => panelFilterFields(panelById(id)!).map((f) => f.key)
+
+  it('are the Findings fields less Scanner: the dashboard and the panel pick the scanner', () => {
+    expect(keys('findings-by-namespace')).toEqual(FINDINGS_FIELDS.map((f) => f.key).filter((k) => k !== 'scanner'))
+  })
+
+  it('leave out the filters that a panel refuses: Triage progress splits by state itself', () => {
+    expect(keys('triage-progress')).not.toContain('state')
+    expect(keys('triage-progress')).not.toContain('scanner')
+    expect(keys('findings-summary')).toContain('state')
   })
 })

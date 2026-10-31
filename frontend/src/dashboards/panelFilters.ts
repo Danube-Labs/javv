@@ -4,7 +4,8 @@
  */
 import type { ViewPreset } from '@/api/generated'
 import { daysFromWindow } from '@/contributors/viewModel'
-import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import type { CatalogPanel } from '@/dashboards/catalog'
+import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 import { presetParts, presetToRouteQuery } from '@/findings/savedViews'
 
 type Filters = ViewPreset | null | undefined
@@ -15,6 +16,13 @@ export function panelFiltersAt(filters: Filters, windowDays: number): ViewPreset
   if (!filters) return null
   if (filters.new_within_days === null || filters.new_within_days === undefined) return filters
   return { ...filters, new_within_days: daysFromWindow(windowDays) }
+}
+
+/** The fields a panel's settings can filter on: the Findings fields less Scanner, which the
+ * dashboard switch and the panel's own setting pick, and less the filters the panel refuses. */
+export function panelFilterFields(panel: Pick<CatalogPanel, 'refusedFilters'>): readonly FilterField[] {
+  const refused = panel.refusedFilters ?? []
+  return FINDINGS_FIELDS.filter((f) => f.key !== 'scanner' && !(f.type !== 'flags' && refused.includes(f.param)))
 }
 
 /** The filters of a panel in words, one text for each. */

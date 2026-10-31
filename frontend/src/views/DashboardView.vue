@@ -416,6 +416,9 @@ async function save() {
       :anchor="settingsAnchor"
       :trigger="settingsTrigger"
       :dashboard-scanner="scanner"
+      :cluster-id="clusterStore.selectedId"
+      :t="timeTravel.t"
+      :window-days="timeTravel.windowDays"
       @close="settingsKey = null"
       @apply="applySettings"
     />
