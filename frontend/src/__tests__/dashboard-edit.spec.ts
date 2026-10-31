@@ -66,11 +66,14 @@ vi.mock('@/dashboards/catalog', () => {
 vi.mock('@/api/generated', () => ({
   getDashboardApiV1DashboardsDashboardIdGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   updateDashboardApiV1DashboardsDashboardIdPatch: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  // the counts of the Add filter menu in the panel settings (issue 999)
+  facetFindingsApiV1FindingsFacetsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 }))
 vi.mock('@/api/client', () => ({ client: {} }))
 
 import type { DashboardPanel } from '@/api/generated'
 import {
+  facetFindingsApiV1FindingsFacetsGet,
   getDashboardApiV1DashboardsDashboardIdGet,
   updateDashboardApiV1DashboardsDashboardIdPatch,
 } from '@/api/generated'
@@ -195,6 +198,26 @@ describe('the edit rules', () => {
       h: 'tall',
       scanner: 'trivy',
     })
+  })
+
+  it('a change of filters is a change; the stored default and the days of New in range are not (issue 999)', () => {
+    const at = (filters?: Record<string, unknown>) => [{ ...PANELS[0]!, ...(filters ? { filters } : {}) }, PANELS[1]!, PANELS[2]!]
+    expect(sameLayout(at(), at({ kev: true }))).toBe(false)
+    expect(sameLayout(at({ severity: ['critical'] }), at({ severity: ['high'] }))).toBe(false)
+    // the backend stores present: true with each preset; a panel applied again without it is the same
+    expect(sameLayout(at({ present: true, kev: true }), at({ kev: true }))).toBe(true)
+    expect(sameLayout(at({ present: true }), at())).toBe(true)
+    // the panel reads New in range with the range of the dashboard, so the stored days do not count
+    expect(sameLayout(at({ new_within_days: 7 }), at({ new_within_days: 30 }))).toBe(true)
+    expect(sameLayout(at({ kev: true, fixable: true }), at({ fixable: true, kev: true }))).toBe(true)
+  })
+
+  it('the settings set or clear the filters, and leave them when they carry none', () => {
+    const p: DraftPanel = { ...PANELS[0]!, key: 'k', filters: { kev: true } }
+    const s = { w: 2, h: 'short', scanner: null } as const
+    expect(withSettings(p, { ...s, filters: { fixable: true } }).filters).toEqual({ fixable: true })
+    expect('filters' in withSettings(p, { ...s, filters: null })).toBe(false)
+    expect(withSettings(p, s).filters).toEqual({ kev: true })
   })
 
   it('places go to the panels by key, and an unknown key changes nothing', () => {
@@ -502,6 +525,101 @@ describe('edit mode', () => {
     await flushPromises()
     expect(w.find('[role="dialog"]').exists()).toBe(false)
     expect(w.find('.save-msg').text()).toBe('All changes saved')
+  })
+
+  describe('the Filters field of the panel settings (issue 999)', () => {
+    const FACETS = {
+      severity: [{ key: 'critical', count: 3, by_scanner: { trivy: 3 } }],
+      namespaces: [{ key: 'kube-system', count: 9, by_scanner: { trivy: 9 } }],
+    }
+    beforeEach(() => {
+      vi.mocked(facetFindingsApiV1FindingsFacetsGet).mockResolvedValue(answer(200, { facets: FACETS }))
+    })
+
+    async function openSettings(w: ReturnType<typeof mount>, name: string) {
+      await w.find(`[aria-label="Settings of ${name}"]`).trigger('click')
+      await flushPromises()
+      return w.find('[role="dialog"]')
+    }
+    const labels = (w: ReturnType<typeof mount>) => w.findAll('[role="dialog"] .ui-fld-label').map((l) => l.text())
+
+    it('sets the filters of a panel: Apply makes the draft unsaved, and Save sends them', async () => {
+      const { w } = await mountView('?edit=1')
+      const pop = await openSettings(w, 'Findings summary')
+      expect(labels(w)).toContain('Filters')
+      // the menu opens above the bar, and its counts are of the dashboard cluster
+      await pop.find('.add-filter').trigger('click')
+      expect(pop.find('.filter-menu').classes()).toContain('dd-menu--up')
+      const fields = pop.findAll('.filter-field').map((b) => b.text())
+      expect(fields).not.toContain('Scanner')
+      await pop.findAll('.filter-field').find((b) => b.text().includes('Severity'))!.trigger('click')
+      await pop.find('.facet-row').trigger('click')
+      await flushPromises()
+      expect(vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+        query: { cluster_id: 'c1', severity: ['critical'] },
+      })
+      expect(w.find('.save-msg').text()).toBe('All changes saved')
+
+      await button(w, 'Apply').trigger('click')
+      await flushPromises()
+      expect(w.find('.save-msg').text()).toBe('You have unsaved changes')
+      await button(w, 'Save changes').trigger('click')
+      await flushPromises()
+      expect(patchBody().body.panels![0]).toMatchObject({ panel: 'findings-summary', filters: { severity: ['critical'] } })
+    })
+
+    it('the menu counts with the scanner that the panel reads, as the panel counts', async () => {
+      vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ scanner: 'grype' })))
+      const { w } = await mountView('?edit=1')
+      const lastQuery = () => vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0].query
+      const pop = await openSettings(w, 'Findings summary')
+      expect(lastQuery()).toMatchObject({ cluster_id: 'c1', scanner: 'grype' })
+      await pop.findAll('button').find((b) => b.text() === 'trivy')!.trigger('click')
+      await flushPromises()
+      expect(lastQuery()).toMatchObject({ scanner: 'trivy' })
+    })
+
+    it('shows the stored filters, and Apply with no change is no change', async () => {
+      const panels = [{ ...PANELS[0]!, filters: { present: true, exclude_namespace: ['kube-system'] } }, PANELS[1]!, PANELS[2]!]
+      vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ panels })))
+      const { w } = await mountView('?edit=1')
+      const pop = await openSettings(w, 'Findings summary')
+      expect(pop.find('.fpill').text()).toContain('Namespace')
+      await button(w, 'Apply').trigger('click')
+      await flushPromises()
+      expect(w.find('.save-msg').text()).toBe('All changes saved')
+    })
+
+    it('Clear all and Apply take the filters off the panel, and Save sends it without them', async () => {
+      const panels = [{ ...PANELS[0]!, filters: { present: true, exclude_namespace: ['kube-system'] } }, PANELS[1]!, PANELS[2]!]
+      vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ panels })))
+      const { w } = await mountView('?edit=1')
+      const pop = await openSettings(w, 'Findings summary')
+      await pop.find('.clear-all').trigger('click')
+      await button(w, 'Apply').trigger('click')
+      await flushPromises()
+      expect(w.find('.save-msg').text()).toBe('You have unsaved changes')
+      await button(w, 'Save changes').trigger('click')
+      await flushPromises()
+      expect(patchBody().body.panels![0]).not.toHaveProperty('filters')
+    })
+
+    it('a panel that takes no filters has no Filters field', async () => {
+      const { w } = await mountView('?edit=1')
+      await openSettings(w, 'Top components')
+      expect(labels(w)).not.toContain('Filters')
+      expect(vi.mocked(facetFindingsApiV1FindingsFacetsGet)).not.toHaveBeenCalled()
+    })
+
+    it('an Escape in the Add filter menu closes the menu and keeps the settings open', async () => {
+      const { w } = await mountView('?edit=1')
+      const pop = await openSettings(w, 'Findings summary')
+      await pop.find('.add-filter').trigger('click')
+      await pop.find('.add-filter').trigger('keydown', { key: 'Escape' })
+      await flushPromises()
+      expect(w.find('[role="dialog"]').exists()).toBe(true)
+      expect(w.find('.filter-menu').exists()).toBe(false)
+    })
   })
 
   it('remove takes the panel out of gridstack and of the save', async () => {

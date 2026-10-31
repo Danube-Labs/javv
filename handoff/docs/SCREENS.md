@@ -1182,6 +1182,17 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   filters" next to the panel: one tag for each filter, and **Open in Findings**, which also
   carries the scanner of a pinned panel. A panel with no filters shows no button. Edit mode shows
   the same button in the tab over the top right corner of the panel, before **Settings**.
+- **Filters field (issue 999, decision 3 B):** in edit mode, the panel settings of such a panel
+  have a Filters field: the Findings `FilterBar` with `menu-up`, so its Add filter menu opens
+  above the bar. The fields are the Findings fields less Scanner, and less the filters the panel
+  refuses (State on Triage progress, `refusedFilters`). The menu counts at the dashboard cluster
+  and T, where a field does not count under its own filter, as on Findings. It counts the scanner
+  that the panel counts (`countedScanner`): the scanner of the settings or the dashboard switch.
+  A panel without scanner data counts all scanners. An Escape in the menu
+  closes only the menu. Apply puts the filters in the draft, or takes them off after Clear all,
+  and a change of filters makes the save bar show unsaved changes. "New in range" counts in the
+  range of the dashboard, not in the days that the panel stores with the filter (operator,
+  2026-10-31). The popover takes its place again when it grows, so Apply stays on the screen.
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
   does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
 

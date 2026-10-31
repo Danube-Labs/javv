@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
@@ -171,6 +171,40 @@ describe('FilterBar interactions', () => {
     await input.setValue('nginx')
     await input.trigger('keydown.enter')
     expect(bar.emitted('setText')?.[0]).toEqual(['image', 'nginx'])
+  })
+})
+
+/** Issue 999 C1: the filter bar in the settings popover of a dashboard panel. */
+describe('FilterBar in a popover', () => {
+  const props = { fields: FINDINGS_FIELDS, selections: emptySelections(FINDINGS_FIELDS), facets: FACETS }
+
+  it('menuUp opens the menu above the bar; the default stays below', async () => {
+    const up = mount(FilterBar, { props: { ...props, menuUp: true } })
+    await up.find('.add-filter').trigger('click')
+    expect(up.find('.filter-menu').classes()).toContain('dd-menu--up')
+
+    const down = mount(FilterBar, { props })
+    await down.find('.add-filter').trigger('click')
+    expect(down.find('.filter-menu').classes()).not.toContain('dd-menu--up')
+  })
+
+  it('an Escape in the open menu closes only the menu, so the popover around it stays', async () => {
+    const bar = mount(FilterBar, { props, attachTo: document.body })
+    const page = vi.fn<(e: KeyboardEvent) => void>()
+    document.addEventListener('keydown', page)
+    try {
+      await bar.find('.add-filter').trigger('click')
+      expect(bar.find('.filter-menu').exists()).toBe(true)
+      await bar.find('.add-filter').trigger('keydown', { key: 'Escape' })
+      expect(bar.find('.filter-menu').exists()).toBe(false)
+      expect(page).not.toHaveBeenCalled()
+      // with the menu closed, Escape goes on to the page as before
+      await bar.find('.add-filter').trigger('keydown', { key: 'Escape' })
+      expect(page).toHaveBeenCalledTimes(1)
+    } finally {
+      document.removeEventListener('keydown', page)
+      bar.unmount()
+    }
   })
 })
 

@@ -28,6 +28,8 @@ const props = defineProps<{
   countsUnknown?: boolean
   /** the most values one field takes, where the API caps it (Findings, issue 949) */
   maxValues?: number
+  /** the menu opens above the bar: in the settings popover of a dashboard panel (issue 999) */
+  menuUp?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -122,6 +124,8 @@ function applyText() {
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
+    // an open menu takes this Escape, so a popover or a window around the bar stays open
+    if (open.value) e.stopPropagation()
     close()
     return
   }
@@ -157,7 +161,7 @@ function onKeydown(e: KeyboardEvent) {
           <AppIcon name="plus" :size="13" />Add filter
         </button>
       </template>
-      <div class="dd-menu filter-menu">
+      <div class="dd-menu filter-menu" :class="{ 'dd-menu--up': menuUp }">
         <template v-if="!editField">
           <div class="dd-head">Filter by field</div>
           <button
@@ -301,6 +305,10 @@ function onKeydown(e: KeyboardEvent) {
 .filter-menu {
   min-width: 248px;
   max-width: 280px;
+}
+.dd-menu--up {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 .dd-head {
   font-family: var(--font-mono);

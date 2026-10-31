@@ -3,10 +3,27 @@
  * view's preset, so the saved-view helpers give their words and their Findings link.
  */
 import type { ViewPreset } from '@/api/generated'
-import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { daysFromWindow } from '@/contributors/viewModel'
+import type { CatalogPanel } from '@/dashboards/catalog'
+import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 import { presetParts, presetToRouteQuery } from '@/findings/savedViews'
 
 type Filters = ViewPreset | null | undefined
+
+/** The filters a panel reads with. "New in range" counts in the range of the dashboard, as on
+ * Findings, and not in the days stored when the filter was applied (operator, 2026-10-31). */
+export function panelFiltersAt(filters: Filters, windowDays: number): ViewPreset | null {
+  if (!filters) return null
+  if (filters.new_within_days === null || filters.new_within_days === undefined) return filters
+  return { ...filters, new_within_days: daysFromWindow(windowDays) }
+}
+
+/** The fields a panel's settings can filter on: the Findings fields less Scanner, which the
+ * dashboard switch and the panel's own setting pick, and less the filters the panel refuses. */
+export function panelFilterFields(panel: Pick<CatalogPanel, 'refusedFilters'>): readonly FilterField[] {
+  const refused = panel.refusedFilters ?? []
+  return FINDINGS_FIELDS.filter((f) => f.key !== 'scanner' && !(f.type !== 'flags' && refused.includes(f.param)))
+}
 
 /** The filters of a panel in words, one text for each. */
 export function panelFilterParts(filters: Filters): string[] {

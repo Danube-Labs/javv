@@ -3,7 +3,7 @@
  * element, and the dismiss contract of DESIGN.md §2 (Escape, a click outside, a visible ✕).
  */
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { h, nextTick } from 'vue'
 
 import PopoverShell from '@/components/ui/PopoverShell.vue'
@@ -97,6 +97,44 @@ describe('the popover', () => {
     expect(w.emitted('close')).toHaveLength(1)
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     expect(w.emitted('close')).toHaveLength(2)
+  })
+
+  it('goes to its place again when its content grows, so its foot stays inside the screen (issue 999)', async () => {
+    let grew: (() => void) | null = null
+    let watched: Element | null = null
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: () => void) {
+          grew = cb
+        }
+        observe(el: Element) {
+          watched = el
+        }
+        disconnect() {}
+      },
+    )
+    try {
+      const { w, trigger } = mountPopover()
+      // a trigger low on the screen, as the settings of a panel at the foot of a dashboard
+      trigger.getBoundingClientRect = () => ({ ...box(700, 690, 760, 710), width: 60, height: 20 }) as DOMRect
+      await nextTick()
+      const card = w.find('[role="dialog"]')
+      let height = 300
+      Object.defineProperty(card.element, 'offsetHeight', { get: () => height })
+      grew!()
+      await nextTick()
+      expect(watched).toBe(card.element)
+      const top = () => parseFloat((card.element as HTMLElement).style.top)
+      expect(top() + 300).toBeLessThanOrEqual(window.innerHeight - POPOVER_MARGIN)
+      // a filter row more: the card is taller, and it moves up so its foot stays on the screen
+      height = 600
+      grew!()
+      await nextTick()
+      expect(top() + 600).toBeLessThanOrEqual(window.innerHeight - POPOVER_MARGIN)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('gives the focus back to its trigger when it closes', async () => {

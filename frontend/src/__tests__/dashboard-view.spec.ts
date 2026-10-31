@@ -75,7 +75,7 @@ vi.mock('@/api/client', () => ({ client: {} }))
 
 import type { DashboardPanel } from '@/api/generated'
 import { getDashboardApiV1DashboardsDashboardIdGet } from '@/api/generated'
-import { changedLine, isPinned, pageBlocks, panelScanner, placePanels, sharingLine } from '@/dashboards/layout'
+import { changedLine, countedScanner, isPinned, pageBlocks, panelScanner, placePanels, sharingLine } from '@/dashboards/layout'
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import DashboardView from '@/views/DashboardView.vue'
@@ -206,6 +206,12 @@ describe('layout', () => {
     expect(panelScanner(PANELS[1]!, 'trivy')).toBe('trivy')
     expect(panelScanner({ ...PANELS[1]!, scanner: 'dashboard' }, 'all')).toBe('all')
     expect(isPinned({ ...PANELS[1]!, scanner: 'dashboard' })).toBe(false)
+  })
+
+  it('a panel without scanner data counts every scanner, pinned or not (issue 999)', () => {
+    expect(countedScanner({ usesScanner: true }, { scanner: 'grype' }, 'trivy')).toBe('grype')
+    expect(countedScanner({ usesScanner: true }, { scanner: 'dashboard' }, 'trivy')).toBe('trivy')
+    expect(countedScanner({ usesScanner: false }, { scanner: 'grype' }, 'trivy')).toBe('all')
   })
 
   it('names who can see it, and when it changed', () => {

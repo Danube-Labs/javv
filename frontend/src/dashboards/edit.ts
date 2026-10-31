@@ -3,7 +3,7 @@
  * its tests share them. gridstack moves the panels on screen; these functions decide who may
  * change a dashboard, what a save sends and what a failed save says.
  */
-import type { DashboardPanel } from '@/api/generated'
+import type { DashboardPanel, ViewPreset } from '@/api/generated'
 import type { PanelHeight, PanelWidth } from '@/dashboards/catalog'
 import { pageBlocks, placeOne, placePanels } from '@/dashboards/layout'
 
@@ -63,6 +63,8 @@ export interface PanelSettings {
   w: PanelWidth
   h: PanelHeight
   scanner: PanelScannerChoice | null
+  /** the findings filters of the panel (issue 999): null clears them, absent leaves them */
+  filters?: ViewPreset | null
 }
 
 let nextKey = 0
@@ -78,12 +80,24 @@ export function fromDraft(draft: readonly DraftPanel[]): DashboardPanel[] {
   return draft.map(({ key: _key, ...p }) => p)
 }
 
-const panelSig = (p: DashboardPanel) => `${p.panel}|${p.x}|${p.w}|${p.h}|${p.scanner ?? ''}`
+/** The filters as a value key. `present: true` is the stored default and no filter, and the days
+ * of New in range are not compared: the panel reads with the range of the dashboard. */
+function filtersSig(f: ViewPreset | null | undefined): string {
+  if (!f) return ''
+  const kept = Object.entries(f)
+    .filter(([k, v]) => v !== null && v !== undefined && !(k === 'present' && v === true))
+    .map(([k, v]): [string, unknown] => [k, k === 'new_within_days' ? 'range' : v])
+    .sort(([a], [b]) => a.localeCompare(b))
+  return kept.length ? JSON.stringify(kept) : ''
+}
+
+const panelSig = (p: DashboardPanel) =>
+  `${p.panel}|${p.x}|${p.w}|${p.h}|${p.scanner ?? ''}|${filtersSig(p.filters)}`
 const pageSigs = (panels: readonly DashboardPanel[]) =>
   pageBlocks(placePanels(panels)).flatMap((b) => b.columns.flat().map((p) => panelSig(p.stored)))
 
 /** The same page, whatever order the list has: the same panels in the same reading order, columns,
- * widths, heights and scanners. `y` counts only for that order, because each panel is as tall as
+ * widths, heights, scanners and filters. `y` counts only for that order, because each panel is as tall as
  * its content (issue 1045): the rows that edit mode measures as it opens are not a change. A save
  * of the same page leaves out `panels`, so the backend keeps the stored ones without checking them
  * again. */
@@ -113,7 +127,10 @@ export function addedPanel(
 
 /** A full-width panel starts at the left edge; a half-width one keeps its column. */
 export function withSettings(p: DraftPanel, s: PanelSettings): DraftPanel {
-  return { ...p, w: s.w, h: s.h, x: s.w === 2 ? 0 : p.x, ...(s.scanner ? { scanner: s.scanner } : {}) }
+  const next: DraftPanel = { ...p, w: s.w, h: s.h, x: s.w === 2 ? 0 : p.x, ...(s.scanner ? { scanner: s.scanner } : {}) }
+  if (s.filters === null) delete next.filters
+  else if (s.filters) next.filters = s.filters
+  return next
 }
 
 export const NO_EDIT_NOTE = 'Only the owner or an admin can change this dashboard.'

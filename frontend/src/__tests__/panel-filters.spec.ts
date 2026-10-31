@@ -5,7 +5,15 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ViewPreset } from '@/api/generated'
-import { panelFilterParts, panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
+import { panelById } from '@/dashboards/catalog'
+import {
+  panelFilterFields,
+  panelFilterParts,
+  panelFiltersAt,
+  panelFindingsQuery,
+  panelQuery,
+} from '@/dashboards/panelFilters'
+import { FINDINGS_FIELDS } from '@/filters/fields.config'
 
 const base = { cluster_id: 'c-k3d-0001' }
 // a stored preset has `present: true` (the ViewPreset default); it is no filter of its own
@@ -75,5 +83,35 @@ describe('the Findings link of a click in a filtered panel', () => {
   it('gives the row query as it is for a panel with no filters', () => {
     expect(panelFindingsQuery(null, { ptype: 'npm' })).toEqual({ ptype: 'npm' })
     expect(panelFindingsQuery(undefined, {})).toEqual({})
+  })
+})
+
+describe('"New in range" in a panel follows the dashboard range (operator, 2026-10-31)', () => {
+  it('reads with the days of the dashboard range, not the stored days', () => {
+    expect(panelFiltersAt(stored({ new_within_days: 7, kev: true }), 30)).toEqual(stored({ new_within_days: 30, kev: true }))
+    // Last 24h is one day; a range is at most 365 days, as on Findings
+    expect(panelFiltersAt(stored({ new_within_days: 7 }), 0.5)?.new_within_days).toBe(1)
+    expect(panelFiltersAt(stored({ new_within_days: 7 }), 400)?.new_within_days).toBe(365)
+  })
+
+  it('leaves the other filters as they are, and gives null for no filters', () => {
+    const f = stored({ exclude_namespace: ['kube-system'] })
+    expect(panelFiltersAt(f, 30)).toEqual(f)
+    expect(panelFiltersAt(null, 30)).toBeNull()
+    expect(panelFiltersAt(undefined, 30)).toBeNull()
+  })
+})
+
+describe('the fields of the Filters field in the panel settings', () => {
+  const keys = (id: string) => panelFilterFields(panelById(id)!).map((f) => f.key)
+
+  it('are the Findings fields less Scanner: the dashboard and the panel pick the scanner', () => {
+    expect(keys('findings-by-namespace')).toEqual(FINDINGS_FIELDS.map((f) => f.key).filter((k) => k !== 'scanner'))
+  })
+
+  it('leave out the filters that a panel refuses: Triage progress splits by state itself', () => {
+    expect(keys('triage-progress')).not.toContain('state')
+    expect(keys('triage-progress')).not.toContain('scanner')
+    expect(keys('findings-summary')).toContain('state')
   })
 })
