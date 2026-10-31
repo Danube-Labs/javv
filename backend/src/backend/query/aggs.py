@@ -116,6 +116,11 @@ def contains_pattern(text: str) -> str:
     return ".*" + "".join(out) + ".*"
 
 
+def cap_value_search[T](values: list[T]) -> tuple[list[T], bool]:
+    """The values a value search sends, and whether more values match than it sends."""
+    return values[:_FACET_TERMS_SIZE], len(values) > _FACET_TERMS_SIZE
+
+
 def facet_aggregation(agg: dict[str, Any]) -> dict[str, Any]:
     """One facet's aggregation from the response, whether or not the body wrapped it in its
     own filter context (see build_facets_body)."""

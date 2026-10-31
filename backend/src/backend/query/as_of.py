@@ -59,6 +59,7 @@ class AsOfTReader(Protocol):
         filters: SearchFilters,
         fields: list[str] | None,
         all_filters: bool = False,
+        contains: str | None = None,
     ) -> dict[str, Any]: ...
 
     async def findings_groups(

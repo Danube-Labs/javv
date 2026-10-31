@@ -21,6 +21,7 @@ from backend.query.aggs import (
     build_composite_body,
     build_facets_body,
     build_top_components_body,
+    cap_value_search,
     contains_pattern,
     decode_after,
     encode_after,
@@ -342,6 +343,12 @@ def test_a_value_search_keeps_the_filter_rules_of_its_facet() -> None:
 def test_a_value_search_takes_exactly_one_list_facet(fields: list[str] | None) -> None:
     with pytest.raises(ValueError):
         build_facets_body(SearchFilters(), fields=fields, contains="pay", sla_cutoffs=_CUTOFFS)
+
+
+def test_a_value_search_sends_the_cap_and_tells_when_more_match() -> None:
+    assert cap_value_search(list(range(33))) == (list(range(32)), True)
+    assert cap_value_search(list(range(32))) == (list(range(32)), False)
+    assert cap_value_search([]) == ([], False)
 
 
 def test_no_value_search_keeps_the_body_unchanged() -> None:

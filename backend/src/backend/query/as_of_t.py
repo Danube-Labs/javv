@@ -34,7 +34,7 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.decisions.projection import project
 from backend.models.envelope import SEVERITY_RANK, canonical_severity
-from backend.query.aggs import counting_filters
+from backend.query.aggs import SEARCHABLE_FACETS, cap_value_search, counting_filters
 from backend.query.human_at import decisions_active_at, finding_states_at
 from backend.query.pit import latest_committed_runs
 from backend.query.search import SearchFilters
@@ -489,11 +489,16 @@ class AsOfTQuery:
         fields: list[str] | None,
         prefix: str = "",
         all_filters: bool = False,
+        contains: str | None = None,
     ) -> dict[str, Any]:
         chosen = list(fields) if fields is not None else list(_FACET_FIELDS)
         bad = [f for f in chosen if f not in _FACET_FIELDS]
         if bad:
             raise ValueError(f"not facetable (whitelist {_FACET_FIELDS}): {bad}")
+        # the live rule (issue 1064). The history has no namespaces or assignee facet, so of the
+        # searchable lists only the package type gets here.
+        if contains is not None and (len(chosen) != 1 or chosen[0] not in SEARCHABLE_FACETS):
+            raise ValueError(f"contains needs exactly one field of {SEARCHABLE_FACETS}")
         reconstructed = await self._reconstruct(client, cluster_id, t, prefix=prefix)
         rows = self._apply_filters(reconstructed, filters)
         facets: dict[str, list[dict[str, Any]]] = {}
@@ -526,6 +531,13 @@ class AsOfTQuery:
                 b["count"] += 1
                 b["by_scanner"][r["scanner"]] = b["by_scanner"].get(r["scanner"], 0) + 1
             facets[field] = sorted(counts.values(), key=lambda b: (-b["count"], str(b["key"])))
+        if contains is not None:
+            # the live include pattern matches each letter in either case: lower() reads the same
+            needle = contains.lower()
+            (field,) = chosen
+            hits = [b for b in facets[field] if needle in str(b["key"]).lower()]
+            facets[field], more = cap_value_search(hits)
+            return {"facets": facets, "more": more}
         return {"facets": facets}
 
     async def findings_groups(

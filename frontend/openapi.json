@@ -6992,6 +6992,24 @@
           },
           {
             "in": "query",
+            "name": "contains",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Contains"
+            }
+          },
+          {
+            "in": "query",
             "name": "severity",
             "required": false,
             "schema": {
