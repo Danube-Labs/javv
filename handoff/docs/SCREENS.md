@@ -1176,7 +1176,9 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   Findings with the filters of the panel and the value of the row. The value of the row replaces
   the filter of the panel on the same field, and the flags of both stay.
   `components/dashboards/PanelFiltersButton.vue` shows "1 filter" or "N filters" over the top
-  right corner of the panel, next to the pinned scanner tag. A click opens `PopoverShell` "Panel
+  right corner of the panel, next to the pinned scanner tag. The tag and the button are one
+  row with the height of a `mini` button (24 px). The row is 3 px under the panel above and 4 px
+  over a button in the head of the panel (operator 2026-10-31, option B). A click opens `PopoverShell` "Panel
   filters" next to the panel: one tag for each filter, and **Open in Findings**, which also
   carries the scanner of a pinned panel. A panel with no filters shows no button. Edit mode shows
   the same button in the tab over the top right corner of the panel, before **Settings**.

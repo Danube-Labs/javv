@@ -84,21 +84,25 @@ const pinnedOf = (p: PlacedPanel) => (p.panel.usesScanner && isPinned(p.stored) 
   container-type: inline-size;
 }
 /* over the card's top right corner, half in the gap above it: the pinned scanner tag and the
-   filters button of the panel (issue 999) */
+   filters button of the panel (issue 999). The row is 24px tall: at -13px it ends 3px under the
+   panel above and 4px over a button in the card's head, which starts 15px down */
 .dash-corner {
   position: absolute;
-  top: -12px;
+  top: -13px;
   right: 15px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
+/* the height of a mini UiButton, so the tag and the filters button make one row */
 .dash-pin {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 6px;
+  box-sizing: border-box;
+  min-height: 24px;
+  padding: 0 6px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-chip);
