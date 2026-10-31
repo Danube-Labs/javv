@@ -546,6 +546,12 @@ values leaves out the acceptances with any of them. The answer also has `facets`
 `created_by` and `exclude_created_by` filters, so the other approvers keep their counts. A revoked acceptance is never in the
 queue.
 
+`contains` is a value search on the `created_by` values, with 2 to 128 characters. It gives the
+approvers that contain the text, in any case, from all approvers and not only the 32 with the most
+acceptances. The counts use the same filters and `warn_days` as the `created_by` counts. The answer
+has only `facets.created_by`, with at most 32 values, and `more`. `more` is `true` when more
+approvers contain the text. The answer has no rows and no `total`.
+
 The CSV export has the same rows. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413.
 Two columns are different from the screen:
 

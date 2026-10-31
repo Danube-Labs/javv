@@ -11,6 +11,7 @@ from backend.query.approvals import (
     ApprovalFilters,
     build_approvals_body,
     build_approvals_query,
+    build_approver_search_body,
     derive_status,
     shape_facets,
 )
@@ -299,3 +300,36 @@ def test_a_date_only_expiry_is_read_as_utc_midnight_like_opensearch_does() -> No
     assert derive_status(far_off, now=NOW, warn_days=7) == "active"
     # the midnight-UTC reading itself: today's date is already past at midday NOW
     assert derive_status(NOW.date().isoformat(), now=NOW, warn_days=7) == "expired"
+
+
+def test_the_approver_search_counts_under_the_lens_without_the_approver_filter() -> None:
+    """issue 1064: the search on the Approver list counts under every filter of the list
+    except the approver one, as the Approver count does. It sends no rows, ignores case, and
+    asks for 33 values: the 33rd means that more values match."""
+    filters = ApprovalFilters(
+        created_by=["lead"], exclude_created_by=None, status=["expiring"], scanner="trivy"
+    )
+    body = build_approver_search_body(
+        filters, cluster_id="c-1", now=NOW, warn_days=3, contains="Le.a"
+    )
+    assert body["query"] == build_approvals_query(
+        ApprovalFilters(status=["expiring"], scanner="trivy"),
+        cluster_id="c-1",
+        now=NOW,
+        warn_days=3,
+    )
+    assert body["size"] == 0
+    assert "post_filter" not in body
+    assert body["aggs"] == {
+        "created_by": {
+            "terms": {"field": "created_by", "size": 33, "include": ".*[lL][eE]\\.[aA].*"}
+        }
+    }
+    excluded = build_approver_search_body(
+        ApprovalFilters(exclude_created_by=["lead"]),
+        cluster_id="c-1",
+        now=NOW,
+        warn_days=7,
+        contains="le",
+    )
+    assert "created_by" not in str(excluded["query"])

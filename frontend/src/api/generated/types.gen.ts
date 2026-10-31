@@ -2366,6 +2366,10 @@ export type ApprovalListApiV1DecisionsApprovalsGetData = {
          */
         warn_days?: number;
         /**
+         * Contains
+         */
+        contains?: string | null;
+        /**
          * Q
          */
         q?: string | null;

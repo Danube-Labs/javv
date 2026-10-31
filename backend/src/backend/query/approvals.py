@@ -13,11 +13,10 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from backend.query.aggs import facet_aggregation
+from backend.query.aggs import _FACET_TERMS_SIZE, contains_pattern, facet_aggregation
 
 STATUS_VALUES = ("active", "expiring", "expired", "open-ended")
 SCANNER_VALUES = ("both", "trivy", "grype")
-_APPROVER_TERMS_SIZE = 32  # top-N rail dim, the audit-actor precedent
 
 
 @dataclass(frozen=True)
@@ -171,7 +170,7 @@ def build_approvals_body(
                 }
             }
         },
-        "created_by": {"terms": {"field": "created_by", "size": _APPROVER_TERMS_SIZE}},
+        "created_by": {"terms": {"field": "created_by", "size": _FACET_TERMS_SIZE}},
         "scanner": {"filters": {"filters": {s: _scanner_clause(s) for s in SCANNER_VALUES}}},
     }
     approver = _approver_clause(filters)
@@ -193,6 +192,39 @@ def build_approvals_body(
         for field in ("status", "scanner"):
             aggs[field] = {"filter": approver, "aggs": {"values": aggs[field]}}
     return body
+
+
+def build_approver_search_body(
+    filters: ApprovalFilters,
+    *,
+    cluster_id: str,
+    now: datetime,
+    warn_days: int,
+    contains: str,
+) -> dict[str, Any]:
+    """A value search on the Approver list (issue 1064): the approvers that contain `contains`,
+    in any case, from all approvers and not only the top 32. It counts as the Approver count
+    does, under every filter but the approver one, and sends no rows. It asks for one value more
+    than the cap: the caller sends the cap and reads the extra one as "more values match"
+    (`aggs.cap_value_search`)."""
+    return {
+        "size": 0,
+        "query": build_approvals_query(
+            replace(filters, created_by=None, exclude_created_by=None),
+            cluster_id=cluster_id,
+            now=now,
+            warn_days=warn_days,
+        ),
+        "aggs": {
+            "created_by": {
+                "terms": {
+                    "field": "created_by",
+                    "size": _FACET_TERMS_SIZE + 1,
+                    "include": contains_pattern(contains),
+                }
+            }
+        },
+    }
 
 
 def shape_facets(aggregations: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:

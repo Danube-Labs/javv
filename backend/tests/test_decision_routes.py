@@ -348,3 +348,80 @@ async def test_approval_list_is_accept_final_only_and_sorted_by_expiry(env) -> N
     ours = [a for a in r.json()["approvals"] if a["cve_id"] == cve]
     assert len(ours) == 2  # the revoked one is out
     assert [a["expiry"] for a in ours] == [soon["expiry"], late["expiry"]]  # soonest first
+
+
+async def _accept(client: AsyncOpenSearch, cid: str, approver: str, expiry: str) -> None:
+    await client.index(
+        index=DECISIONS_INDEX,
+        body={
+            "decision_id": f"d-{uuid.uuid4().hex}",
+            "type": "risk_accepted",
+            "cve_id": f"CVE-{uuid.uuid4().hex[:8]}",
+            "cluster_id": cid,
+            "created_by": approver,
+            "expiry": expiry,
+            "apply_both_scanners": True,
+        },
+    )
+
+
+async def test_the_approver_search_finds_an_approver_past_the_top_32(env) -> None:
+    """issue 1064: the Approver list stops at the 32 approvers with the most acceptances. The
+    search finds an approver past them, in any case, with the count of the list. It sends no
+    rows. A picked approver does not hide it; the status filter, with its warn_days, does."""
+    login_with, client = env
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    cid = f"c-appr-{uuid.uuid4().hex[:8]}"
+    busy = [f"u-busy-{i:02d}" for i in range(33)]
+    quiet = "Svc-Payments-Lead"  # raw casing, not pre-folded
+    for approver in busy:
+        for _ in range(2):
+            await _accept(client, cid, approver, _from_now(days=100))
+    await _accept(client, cid, quiet, _from_now(days=5))
+    await client.indices.refresh(index=DECISIONS_INDEX)
+
+    r = await lead.get("/api/v1/decisions/approvals", params={"cluster_id": cid})
+    listed = {b["key"] for b in r.json()["facets"]["created_by"]}
+    assert len(listed) == 32 and quiet not in listed
+
+    search = {"cluster_id": cid, "contains": "PAYMENTS"}
+    r = await lead.get("/api/v1/decisions/approvals", params=search)
+    assert r.status_code == 200
+    assert r.json() == {"facets": {"created_by": [{"key": quiet, "count": 1}]}, "more": False}
+    r = await lead.get("/api/v1/decisions/approvals", params={**search, "created_by": [busy[0]]})
+    assert [b["key"] for b in r.json()["facets"]["created_by"]] == [quiet]
+    # expiring in 5 days: inside a 7-day warn window, outside a 3-day one
+    for warn_days, found in ((7, [quiet]), (3, [])):
+        r = await lead.get(
+            "/api/v1/decisions/approvals",
+            params={**search, "status": ["expiring"], "warn_days": warn_days},
+        )
+        assert [b["key"] for b in r.json()["facets"]["created_by"]] == found
+
+    r = await lead.get(
+        "/api/v1/decisions/approvals", params={"cluster_id": cid, "contains": "busy"}
+    )
+    body = r.json()
+    assert len(body["facets"]["created_by"]) == 32 and body["more"] is True
+
+
+async def test_the_approver_search_is_accept_final_only_and_takes_2_to_128_characters(
+    env,
+) -> None:
+    login_with, _ = env
+    lead = await login_with(["can_triage", "can_accept_audit_final"])
+    triager = await login_with(["can_triage"])
+    cid = f"c-appr-{uuid.uuid4().hex[:8]}"
+    r = await triager.get(
+        "/api/v1/decisions/approvals", params={"cluster_id": cid, "contains": "le"}
+    )
+    assert r.status_code == 403
+    for text in ("a", "a" * 129):
+        r = await lead.get(
+            "/api/v1/decisions/approvals", params={"cluster_id": cid, "contains": text}
+        )
+        assert r.status_code == 422, len(text)
+    r = await lead.get(
+        "/api/v1/decisions/approvals", params={"cluster_id": cid, "contains": "a" * 128}
+    )
+    assert r.json() == {"facets": {"created_by": []}, "more": False}

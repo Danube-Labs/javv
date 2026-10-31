@@ -381,6 +381,8 @@ export const createApiV1DecisionsPost = <ThrowOnError extends boolean = false>(o
  * `q` (CVE contains) / `status` (derived from `expiry` at query time against `warn_days`,
  * mirroring the FE chip's window) / `created_by` / `scanner` (the column value, both|trivy|
  * grype) — plus facet counts under the same lens, one round trip.
+ * With `contains` it is a value search on the Approver list instead (issue 1064): the
+ * approvers that contain the text, at most 32, and `more`, with no rows.
  */
 export const approvalListApiV1DecisionsApprovalsGet = <ThrowOnError extends boolean = false>(options: Options<ApprovalListApiV1DecisionsApprovalsGetData, ThrowOnError>): RequestResult<ApprovalListApiV1DecisionsApprovalsGetResponses, ApprovalListApiV1DecisionsApprovalsGetErrors, ThrowOnError> => (options.client ?? client).get<ApprovalListApiV1DecisionsApprovalsGetResponses, ApprovalListApiV1DecisionsApprovalsGetErrors, ThrowOnError>({ url: '/api/v1/decisions/approvals', ...options });
 
