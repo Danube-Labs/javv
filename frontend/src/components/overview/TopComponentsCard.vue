@@ -6,17 +6,19 @@
  * (the contributors-leaderboard model). The lens picks a scanner's uniques; `all` adds them
  * (additive, like every facet) — a cross-scanner distinct count would be a merge. A now-only
  * read (the route 422s at a past T — the card says so instead of guessing). Rows click through
- * to the findings grid contains-filtered on the package.
+ * to the findings grid contains-filtered on the package. On a dashboard the panel's filters go
+ * in the read and the links.
  */
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { client } from '@/api/client'
-import { topComponentsFindingsApiV1FindingsTopComponentsGet } from '@/api/generated'
+import { topComponentsFindingsApiV1FindingsTopComponentsGet, type ViewPreset } from '@/api/generated'
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
@@ -33,8 +35,10 @@ const props = withDefaults(
     scanner: ScannerLens
     /** rows a page; a dashboard panel sets it from its height */
     pageSize?: number
+    /** a dashboard panel's own filters (issue 999) */
+    filters?: ViewPreset | null
   }>(),
-  { pageSize: 10 },
+  { pageSize: 10, filters: null },
 )
 
 const router = useRouter()
@@ -50,7 +54,8 @@ let rowsFor: string | null = null
 
 let seq = 0
 watch(
-  () => [clusterStore.selectedId, timeTravel.t] as const,
+  // the filters by value: an equal filters object starts no new read
+  () => [clusterStore.selectedId, timeTravel.t, JSON.stringify(props.filters ?? null)] as const,
   async ([id, t]) => {
     const mine = ++seq // also when no read starts: an older read in flight must not land
     if (id !== rowsFor) {
@@ -61,7 +66,7 @@ watch(
     if (!id || t !== null) return // now-only read — the template shows the rewound note
     const { data, response } = await topComponentsFindingsApiV1FindingsTopComponentsGet({
       client,
-      query: { cluster_id: id } as never,
+      query: panelQuery({ cluster_id: id }, props.filters) as never,
     })
     if (mine !== seq) return // a newer read owns the board now
     failed.value = !response?.ok || !data
@@ -109,7 +114,7 @@ function setSize(next: number) {
   page.value = 0
 }
 
-const findingsRoute = (pkg: string) => ({ path: '/findings', query: { q: pkg } })
+const findingsRoute = (pkg: string) => ({ path: '/findings', query: panelFindingsQuery(props.filters, { q: pkg }) })
 function goFindings(pkg: string) {
   void router.push(findingsRoute(pkg))
 }

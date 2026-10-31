@@ -3,16 +3,19 @@
  * The Overview "Package type" card (B-1: the v4 donut, fed by the M8d `ptype` facet), out of
  * OverviewView so a dashboard can show it: the share of findings per package type under the
  * scanner lens, each slice and legend row a click-through to the ptype-filtered grid. Overview
- * passes its facets read; on a dashboard the card reads its own (useFindingsFacets).
+ * passes its facets read; on a dashboard the card reads its own (useFindingsFacets), with the
+ * panel's filters in the read and the links.
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+import type { ViewPreset } from '@/api/generated'
 import { buildPtypeDonutOption } from '@/charts/buildPtypeDonutOption'
 import EChart from '@/components/charts/EChart.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useFindingsFacets, type Facets, type FacetsQuery } from '@/composables/useFindingsFacets'
+import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { countOf, fmt, type ScannerLens } from '@/lib/scannerLens'
 import { CHART_PTYPE_RAMP } from '@/styles/tokens'
 
@@ -21,12 +24,14 @@ const props = defineProps<{
   /** the screen's facets read; without it the card reads its own for `query` */
   facets?: Facets
   query?: FacetsQuery | null
+  /** a dashboard panel's own filters (issue 999) */
+  filters?: ViewPreset | null
 }>()
 
 const router = useRouter()
 const { facets, settled, failed } = useFindingsFacets(
   () => props.facets,
-  () => props.query,
+  () => props.query && panelQuery(props.query, props.filters),
 )
 
 /** ptype buckets minus a lone `unknown` (pre-M8d rows heal on the next sweep, D30). */
@@ -38,7 +43,7 @@ const ptypeBuckets = computed(() =>
 const donutOption = computed(() => buildPtypeDonutOption(ptypeBuckets.value))
 
 function goFindings(ptype: string) {
-  void router.push({ path: '/findings', query: { ptype } })
+  void router.push({ path: '/findings', query: panelFindingsQuery(props.filters, { ptype }) })
 }
 function onDonutClick(e: { name?: string }) {
   if (e?.name) goFindings(e.name)

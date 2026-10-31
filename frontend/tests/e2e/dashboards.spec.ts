@@ -91,6 +91,35 @@ test('the read page: each panel is as tall as its content, and the gaps are the 
   })
 })
 
+test('the corner of a pinned panel with filters touches neither its head button nor the panel above (issue 999)', async ({ page }) => {
+  await login(page)
+  const corner = [
+    { panel: 'findings-summary', x: 0, y: 0, w: 2, h: 'short' },
+    { panel: 'findings-by-namespace', x: 1, y: 7, w: 1, h: 'short', scanner: 'trivy', filters: { present: true, exclude_namespace: ['kube-system'] } },
+  ]
+  await withDashboard(page, corner, async (id) => {
+    await page.goto(`${BASE}/dashboards/${id}`)
+    const cell = page.locator('.dash-cell[data-panel="findings-by-namespace"]')
+    await expect(cell.locator('.pf-btn')).toBeVisible({ timeout: 20_000 })
+    const m = await cell.evaluate((c) => {
+      const box = (el: Element) => el.getBoundingClientRect()
+      const pin = box(c.querySelector('.dash-pin')!)
+      const btn = box(c.querySelector('.pf-btn')!)
+      const head = box([...c.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'View inventory')!)
+      const above = box(c.closest('.dash-block')!.previousElementSibling!)
+      return {
+        pinH: pin.height,
+        btnH: btn.height,
+        toHead: head.top - Math.max(pin.bottom, btn.bottom),
+        toAbove: Math.min(pin.top, btn.top) - above.bottom,
+      }
+    })
+    expect(m.pinH, 'the pinned tag and the filters button are one height').toBe(m.btnH)
+    expect(m.toHead, 'space between the corner and View inventory').toBeGreaterThanOrEqual(3)
+    expect(m.toAbove, 'space between the corner and the panel above').toBeGreaterThanOrEqual(2)
+  })
+})
+
 test('edit mode: each panel takes the rows of its content, and opening it is not a change', async ({ page }) => {
   await login(page)
   await withDashboard(page, LAYOUT, async (id) => {

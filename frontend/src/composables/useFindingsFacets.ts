@@ -3,7 +3,8 @@
  * (Overview reads them once for all its panels, so its numbers cannot disagree); a panel on a
  * dashboard gets none and reads them itself for the dashboard's cluster and T. Panels that ask
  * for the same query while that read is open share it, so a dashboard with three facet panels
- * sends one request (DESIGN.md §10).
+ * sends one request (DESIGN.md §10). The query is the whole request, the filters of a panel
+ * too (issue 999): two panels with different filters must not share counts.
  */
 import { computed, ref, watch, type ComputedRef } from 'vue'
 
@@ -16,6 +17,8 @@ export type Facets = Record<string, FacetBucket[]>
 export interface FacetsQuery {
   cluster_id: string
   as_of?: string
+  /** the /findings filters of a dashboard panel, and `all_filters` with them */
+  [param: string]: unknown
 }
 
 type Read = { facets: Facets } | { failed: number | null }
@@ -31,9 +34,19 @@ async function readFacets(query: FacetsQuery): Promise<Read> {
   return { facets: (data as { facets?: Facets }).facets ?? {} }
 }
 
+/** A value key of the whole query: equal queries give one key, whatever their key order. An
+ * undefined param is not sent, so it is not in the key. */
+function queryKey(query: FacetsQuery): string {
+  return JSON.stringify(
+    Object.keys(query)
+      .filter((k) => query[k] !== undefined)
+      .sort()
+      .map((k) => [k, query[k]]),
+  )
+}
+
 /** One read per query while it is open; the next ask after it lands reads again. */
-function sharedRead(query: FacetsQuery): Promise<Read> {
-  const key = JSON.stringify([query.cluster_id, query.as_of ?? null])
+function sharedRead(key: string, query: FacetsQuery): Promise<Read> {
   let read = open.get(key)
   if (!read) {
     read = readFacets(query).finally(() => open.delete(key))
@@ -57,18 +70,18 @@ export function useFindingsFacets(
     () => {
       const q = given() === undefined ? query() : null
       // a value key: a host that rebuilds an equal query object starts no new read
-      return q ? JSON.stringify([q.cluster_id, q.as_of ?? null]) : null
+      return q ? queryKey(q) : null
     },
     async (key) => {
       const mine = ++seq // also when no read starts: an older read in flight must not land
       if (!key) return
-      const [clusterId, asOf] = JSON.parse(key) as [string, string | null]
-      if (clusterId !== ownFor) {
+      const q = Object.fromEntries(JSON.parse(key) as [string, unknown][]) as FacetsQuery
+      if (q.cluster_id !== ownFor) {
         ownSettled.value = false
         own.value = {}
-        ownFor = clusterId
+        ownFor = q.cluster_id
       }
-      const read = await sharedRead({ cluster_id: clusterId, ...(asOf ? { as_of: asOf } : {}) })
+      const read = await sharedRead(key, q)
       if (mine !== seq) return // a newer read owns the panel now
       failed.value = 'failed' in read
       if (!('failed' in read)) own.value = read.facets
