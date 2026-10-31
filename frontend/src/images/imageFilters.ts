@@ -1,7 +1,7 @@
 /** Pure filter layer for the Running-images screen (unit-tested): the committed inventory is
  * one run's rows, fully served — matching + bucket counts derive from those rows (IMAGE
  * counts). Severity buckets use the canonical vocabulary mapped from the doc's short keys. */
-import { FACET_CAP } from '@/filters/facets'
+import { FACET_CAP, type ValueSearch } from '@/filters/facets'
 import type { Selections } from '@/filters/fields.config'
 import type { FilterMode, Modes } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
@@ -40,8 +40,33 @@ interface Bucket {
 
 /* The repo and tag lists stop at the server facet cap (the rail's "top 32 by count" note): a
  * fleet-sized run has one repo/tag per image, and an uncapped list would grow the rail without
- * bound. `q` still contains-matches repo and tag, so the tail stays reachable — the note holds
- * here too. */
+ * bound. The menu's value search reaches the rest (searchImageValues, issue 1064). */
+
+/** The values of each list field of an image row. */
+const VALUES_OF: Record<string, (r: ImageRow) => readonly (string | null | undefined)[]> = {
+  namespaces: (r) => r.namespaces,
+  repos: (r) => [r.image_repo],
+  tags: (r) => [r.tag],
+}
+
+/** Image counts of each value of one list field, largest first, with no cap. */
+function countsOf(rows: ImageRow[], facetKey: string): Bucket[] {
+  const values = VALUES_OF[facetKey]!
+  const counts = new Map<string, number>()
+  for (const r of rows) for (const v of values(r)) if (v) counts.set(v, (counts.get(v) ?? 0) + 1)
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, count]) => ({ key, count, by_scanner: {} }))
+}
+
+/** The values of one list field that contain a text, in any case, from all the rows and not
+ * only the top 32: the browser holds the whole run, so it answers the menu itself (issue 1064). */
+export function searchImageValues(rows: ImageRow[], facetKey: string, text: string): ValueSearch | null {
+  if (!(facetKey in VALUES_OF)) return null
+  const needle = text.toLowerCase()
+  const hits = countsOf(rows, facetKey).filter((b) => b.key.toLowerCase().includes(needle))
+  return { buckets: hits.slice(0, FACET_CAP), more: hits.length > FACET_CAP }
+}
 
 /** FacetsResponse-shaped buckets for the rail/bar — counts are images, not findings. */
 export function imagesFacets(rows: ImageRow[]): Record<string, Bucket[]> {
@@ -52,28 +77,12 @@ export function imagesFacets(rows: ImageRow[]): Record<string, Bucket[]> {
   const scanners = ['trivy', 'grype'].map((s) =>
     bucket(s, rows.filter((r) => scannersOf(r).includes(s)).length),
   )
-  const nsCounts = new Map<string, number>()
-  for (const r of rows) for (const ns of r.namespaces) nsCounts.set(ns, (nsCounts.get(ns) ?? 0) + 1)
-  const namespaces = [...nsCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([ns, n]) => bucket(ns, n))
-  const byCount = (pick: (r: ImageRow) => string | null | undefined): Bucket[] => {
-    const counts = new Map<string, number>()
-    for (const r of rows) {
-      const key = pick(r)
-      if (key) counts.set(key, (counts.get(key) ?? 0) + 1)
-    }
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, FACET_CAP)
-      .map(([k, n]) => bucket(k, n))
-  }
   return {
     severity,
     scanner: scanners,
-    namespaces,
-    repos: byCount((r) => r.image_repo),
-    tags: byCount((r) => r.tag),
+    namespaces: countsOf(rows, 'namespaces'),
+    repos: countsOf(rows, 'repos').slice(0, FACET_CAP),
+    tags: countsOf(rows, 'tags').slice(0, FACET_CAP),
   }
 }
 
