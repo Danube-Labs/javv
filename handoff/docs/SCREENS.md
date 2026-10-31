@@ -660,6 +660,12 @@ does not hide the others. The Status counts follow the pick, as Severity does on
 filter stops at 32 values, the API cap, and the rail and the edit box show "A filter takes at most
 32 values." The queue table is `components/approvals/ApprovalsTable.vue`.
 
+**A value past the top 32 (issue 1064):** the Approver list shows the 32 approvers with the most
+acceptances. When it stops at 32, the Add filter menu and a box in the Approver group of the rail
+("Find an approver…") ask the server for the approvers that contain the typed text. The search
+uses the filters and the warn window of the queue, and it sends no rows. The notes and the rules
+of the box are the Findings ones in §3.
+
 **Edit dialog and the expiry (issue 984):** an edit keeps the current expiry unless it sets a
 new one. The date field takes tomorrow in UTC or later. A decision whose expiry is in the past
 needs a new date. Until the user sets one, "Revoke + re-issue" stays disabled, and the hint says
@@ -689,7 +695,10 @@ rows with `entity_type` `dashboard` reach only `can_manage_settings` (issue 440,
 actions.
 The Action list has 45 values. The server counts Entity and Action with 64 buckets, so each
 action has a count. An action with no events shows 0 (issues 980 and 983). The User list keeps
-the top 32.
+the top 32. When it stops at 32, the Add filter menu and a box in the User group of the rail
+("Find a user…") ask the server for the users that contain the typed text (issue 1064). The
+search uses the filters and the time of the list, and it finds only the users of the rows that
+this person can see. The notes and the rules of the box are the Findings ones in §3.
 
 **Layout:** facet rail (entity_type, action, actor) + filter bar + timeline table: When · Actor ·
 entity_type+action tag pair · Target (frozen `target_ids`, rendered verbatim — never a
