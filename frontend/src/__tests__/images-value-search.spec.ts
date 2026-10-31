@@ -2,6 +2,10 @@
  * Running images: the menu and the filter list search all the rows the browser holds for a value
  * past the top 32 (issue 1064). The Image list of 40 images stops at 32, so its group gets the
  * search box of the filter list (Q1 option B), with the same search as the menu.
+ *
+ * The test router has `image-detail`, the route each row links to. Without it, the row link
+ * cannot resolve, and the table redraws its columns until Vue stops it ("Maximum recursive
+ * updates exceeded in component <DataTable>").
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -53,12 +57,14 @@ const image = (i: number) => ({
 async function mountImages() {
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }],
+    routes: [
+      { path: '/images/:digest', name: 'image-detail', component: { template: '<div />' } },
+      { path: '/:any(.*)*', component: { template: '<div />' } },
+    ],
   })
   await router.push('/')
-  // the table is stubbed: this spec looks only at the filters
   const w = mount(ImagesView, {
-    global: { plugins: [router, [PrimeVue, { unstyled: true }]], stubs: { EChart: true, ImagesTable: true } },
+    global: { plugins: [router, [PrimeVue, { unstyled: true }]], stubs: { EChart: true } },
   })
   await flushPromises()
   return w
@@ -85,6 +91,11 @@ describe('Running images: a value past the top 32 (issue 1064)', () => {
     expect(w.findComponent({ name: 'FacetRail' }).props('searchValues')).toBe(search)
     const found = await search(REPO, 'app-39')
     expect(found?.buckets.map((b) => b.key)).toEqual(['docker.io/team/app-39'])
+  })
+
+  it('the table shows the first page of the 40 images', async () => {
+    const w = await mountImages()
+    expect(w.findAll('.tbl tbody tr')).toHaveLength(25)
   })
 
   it('the Image group, at its cap, has the search box', async () => {
