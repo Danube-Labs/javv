@@ -28,6 +28,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import { useApi } from '@/composables/useApi'
 import { useCsvExport } from '@/composables/useCsvExport'
+import { auditValueSearch } from '@/composables/useValueSearch'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { readFailureCopy } from '@/findings/failureCopy'
@@ -87,6 +88,8 @@ async function loadFacets(q: typeof facetsQuery.value) {
   }
 }
 watch(facetsQuery, (q) => void loadFacets(q), { immediate: true })
+// the menu and the filter list find a user past the top 32, under the filters of the list
+const searchValues = auditValueSearch(() => facetsQuery.value)
 
 /* ---- table rows: cursor-stack paging, same contract as the findings grid ---- */
 // filters or globals changed → any held cursor belongs to the old query: back to page 0
@@ -248,6 +251,7 @@ async function exportCsv() {
           :counts-unknown="facetsFailed"
           :modes="filters.modes"
           :max-values="MAX_FILTER_VALUES"
+          :search-values="searchValues"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
         />
@@ -262,6 +266,7 @@ async function exportCsv() {
             :facets="facets"
             :counts-unknown="facetsFailed"
             :max-values="MAX_FILTER_VALUES"
+            :search-values="searchValues"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"

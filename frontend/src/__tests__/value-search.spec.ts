@@ -7,11 +7,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/api/generated', () => ({
   facetFindingsApiV1FindingsFacetsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  auditFacetsApiV1AuditFacetsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  approvalListApiV1DecisionsApprovalsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 }))
 vi.mock('@/api/client', () => ({ client: {} }))
 
-import { facetFindingsApiV1FindingsFacetsGet } from '@/api/generated'
-import { findingsValueSearch, useValueSearch } from '@/composables/useValueSearch'
+import {
+  approvalListApiV1DecisionsApprovalsGet,
+  auditFacetsApiV1AuditFacetsGet,
+  facetFindingsApiV1FindingsFacetsGet,
+} from '@/api/generated'
+import { APPROVAL_FIELDS } from '@/approvals/fields.config'
+import { AUDIT_FIELDS } from '@/audit/fields.config'
+import {
+  approvalsValueSearch,
+  auditValueSearch,
+  findingsValueSearch,
+  useValueSearch,
+} from '@/composables/useValueSearch'
 import type { ValueSearch, ValueSearchFn } from '@/filters/facets'
 import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 
@@ -118,5 +131,70 @@ describe('findingsValueSearch', () => {
     expect(await findingsValueSearch(() => null)(NAMESPACE, 'pay')).toBeNull()
     expect(await findingsValueSearch(() => ({ cluster_id: 'c1' }))(CVE as FilterField, 'pay')).toBeNull()
     expect(facetFindingsApiV1FindingsFacetsGet).not.toHaveBeenCalled()
+  })
+})
+
+describe('auditValueSearch (Audit log User list)', () => {
+  const ok = (body: unknown) => ({ data: body, response: { ok: true, status: 200 } })
+  const USER = AUDIT_FIELDS.find((f) => f.key === 'actor')!
+  const ACTION = AUDIT_FIELDS.find((f) => f.key === 'action')!
+
+  it('sends the query of the list with the text, and reads the actor values', async () => {
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValue(
+      ok({ facets: { actor: [{ key: 'svc-pay', count: 3, by_scanner: {} }] }, more: true }) as never,
+    )
+    const search = auditValueSearch(() => ({ cluster_id: 'c1', action: ['assign'], actor: ['ann'] }))
+    expect(await search(USER, 'pay')).toEqual({
+      buckets: [{ key: 'svc-pay', count: 3, by_scanner: {} }],
+      more: true,
+    })
+    expect(vi.mocked(auditFacetsApiV1AuditFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+      query: { cluster_id: 'c1', action: ['assign'], actor: ['ann'], contains: 'pay' },
+    })
+  })
+
+  it('a refused read is a failed search; another field or no query asks nothing', async () => {
+    // a refusal carries an error body: the status decides, not the body
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValue({
+      data: { detail: 'contains takes no interval' },
+      response: { ok: false, status: 422 },
+    } as never)
+    expect(await auditValueSearch(() => ({ cluster_id: 'c1' }))(USER, 'pay')).toBeNull()
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockClear()
+    expect(await auditValueSearch(() => ({ cluster_id: 'c1' }))(ACTION, 'pay')).toBeNull()
+    expect(await auditValueSearch(() => null)(USER, 'pay')).toBeNull()
+    expect(auditFacetsApiV1AuditFacetsGet).not.toHaveBeenCalled()
+  })
+})
+
+describe('approvalsValueSearch (Approvals Approver list)', () => {
+  const ok = (body: unknown) => ({ data: body, response: { ok: true, status: 200 } })
+  const APPROVER = APPROVAL_FIELDS.find((f) => f.key === 'approver')!
+  const STATUS = APPROVAL_FIELDS.find((f) => f.key === 'status')!
+
+  it('sends the query of the queue with the text; a bucket gets an empty scanner split', async () => {
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValue(
+      ok({ facets: { created_by: [{ key: 'Lead-Pay', count: 2 }] }, more: false }) as never,
+    )
+    const search = approvalsValueSearch(() => ({ cluster_id: 'c1', status: ['expiring'], warn_days: 7 }))
+    expect(await search(APPROVER, 'pay')).toEqual({
+      buckets: [{ key: 'Lead-Pay', count: 2, by_scanner: {} }],
+      more: false,
+    })
+    expect(vi.mocked(approvalListApiV1DecisionsApprovalsGet).mock.calls.at(-1)![0]).toMatchObject({
+      query: { cluster_id: 'c1', status: ['expiring'], warn_days: 7, contains: 'pay' },
+    })
+  })
+
+  it('a refused read is a failed search; another field or no query asks nothing', async () => {
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValue({
+      data: undefined,
+      response: { ok: false, status: 403 },
+    } as never)
+    expect(await approvalsValueSearch(() => ({ cluster_id: 'c1' }))(APPROVER, 'pay')).toBeNull()
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockClear()
+    expect(await approvalsValueSearch(() => ({ cluster_id: 'c1' }))(STATUS, 'pay')).toBeNull()
+    expect(await approvalsValueSearch(() => null)(APPROVER, 'pay')).toBeNull()
+    expect(approvalListApiV1DecisionsApprovalsGet).not.toHaveBeenCalled()
   })
 })

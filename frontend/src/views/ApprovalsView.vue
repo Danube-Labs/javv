@@ -28,6 +28,7 @@ import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useCsvExport } from '@/composables/useCsvExport'
+import { approvalsValueSearch } from '@/composables/useValueSearch'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 import type { FacetsResponse } from '@/filters/facets'
@@ -76,6 +77,12 @@ const filterQuery = computed(() =>
         filters.modes,
       )
     : null,
+)
+
+// the menu and the filter list find an approver past the top 32, under the filters and the
+// warn window of the queue
+const searchValues = approvalsValueSearch(
+  () => filterQuery.value && { ...filterQuery.value, warn_days: EXPIRY_WARN_DAYS },
 )
 
 /* ---- Export CSV (issue 359): useCsvExport owns fetch → blob → download, so a 413/failed
@@ -254,6 +261,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           :counts-unknown="failed"
           :modes="filters.modes"
           :max-values="MAX_FILTER_VALUES"
+          :search-values="searchValues"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
         />
@@ -268,6 +276,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
             :facets="facets"
             :counts-unknown="failed"
             :max-values="MAX_FILTER_VALUES"
+            :search-values="searchValues"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"

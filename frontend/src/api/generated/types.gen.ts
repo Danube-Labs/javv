@@ -1681,6 +1681,10 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
          */
         window_days?: number;
         /**
+         * Contains
+         */
+        contains?: string | null;
+        /**
          * Entity Type
          */
         entity_type?: Array<string> | null;
@@ -2361,6 +2365,10 @@ export type ApprovalListApiV1DecisionsApprovalsGetData = {
          * Warn Days
          */
         warn_days?: number;
+        /**
+         * Contains
+         */
+        contains?: string | null;
         /**
          * Q
          */

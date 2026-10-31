@@ -26,7 +26,11 @@ import {
   auditFacetsApiV1AuditFacetsGet,
   readAuditLogApiV1AuditGet,
 } from '@/api/generated'
+import { APPROVAL_FIELDS } from '@/approvals/fields.config'
+import { AUDIT_FIELDS } from '@/audit/fields.config'
+import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
+import type { ValueSearchFn } from '@/filters/facets'
 import { useClusterStore } from '@/stores/cluster'
 import ApprovalsView from '@/views/ApprovalsView.vue'
 import AuditTrailView from '@/views/AuditTrailView.vue'
@@ -125,5 +129,50 @@ describe('Audit log: Entity, Action and User take several values', () => {
     expect(lastQuery(auditFacetsApiV1AuditFacetsGet).actor).toEqual(forty.slice(0, 32))
     expect(w.find('.facet-cap[role="status"]').text()).toBe('A filter takes at most 32 values.')
     expect(w.findComponent(FilterBar).props('maxValues')).toBe(32)
+  })
+})
+
+describe('a user or an approver past the top 32 (issue 1064)', () => {
+  const buckets = (n: number) => Array.from({ length: n }, (_, i) => ({ key: `u${i}`, count: 40 - i, by_scanner: {} }))
+  const group = (w: Awaited<ReturnType<typeof mountAt>>, title: string) => {
+    const titles = w.findAll('.facet .facet-title').map((t) => t.text())
+    return w.findAll('.facet').at(titles.indexOf(title))!
+  }
+
+  it('Audit log: the menu and the User list share one search, with the query of the list', async () => {
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValue(
+      ok({ facets: { actor: buckets(32) }, activity: [] }) as never,
+    )
+    const w = await mountAt(AuditTrailView, { action: 'assign' })
+    const search = w.findComponent(FilterBar).props('searchValues') as ValueSearchFn
+    expect(search).toBeTypeOf('function')
+    expect(w.findComponent(FacetRail).props('searchValues')).toBe(search)
+    expect(group(w, 'User').find('.facet-vsearch input').attributes('placeholder')).toBe('Find a user…')
+
+    await search(AUDIT_FIELDS.find((f) => f.key === 'actor')!, 'pay')
+    const q = lastQuery(auditFacetsApiV1AuditFacetsGet)
+    expect(q).toMatchObject({ cluster_id: CLUSTER, action: ['assign'], contains: 'pay' })
+    expect(q).not.toHaveProperty('interval') // the route refuses a search with a chart
+  })
+
+  it('Approvals: the menu and the Approver list share one search, with the warn window', async () => {
+    vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValue(
+      ok({ approvals: [], total: 0, facets: { status: [], created_by: buckets(32), scanner: [] } }) as never,
+    )
+    const w = await mountAt(ApprovalsView, { status: 'expiring' })
+    const search = w.findComponent(FilterBar).props('searchValues') as ValueSearchFn
+    expect(search).toBeTypeOf('function')
+    expect(w.findComponent(FacetRail).props('searchValues')).toBe(search)
+    expect(group(w, 'Approver').find('.facet-vsearch input').attributes('placeholder')).toBe(
+      'Find an approver…',
+    )
+
+    await search(APPROVAL_FIELDS.find((f) => f.key === 'approver')!, 'pay')
+    expect(lastQuery(approvalListApiV1DecisionsApprovalsGet)).toMatchObject({
+      cluster_id: CLUSTER,
+      status: ['expiring'],
+      warn_days: 7,
+      contains: 'pay',
+    })
   })
 })

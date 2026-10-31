@@ -192,6 +192,8 @@ export const exportAuditCsvApiV1AuditExportCsvGet = <ThrowOnError extends boolea
  * other users stay listed) — the counts describe the current lens, server-side.
  * With `interval` (day|hour) the response adds `activity`: the audit lens's events-over-time
  * histogram across the picker window (quiet buckets included as zeros).
+ * With `contains` it is a value search on the User list instead (issue 1064): the users that
+ * contain the text, at most 32, and `more`.
  */
 export const auditFacetsApiV1AuditFacetsGet = <ThrowOnError extends boolean = false>(options: Options<AuditFacetsApiV1AuditFacetsGetData, ThrowOnError>): RequestResult<AuditFacetsApiV1AuditFacetsGetResponses, AuditFacetsApiV1AuditFacetsGetErrors, ThrowOnError> => (options.client ?? client).get<AuditFacetsApiV1AuditFacetsGetResponses, AuditFacetsApiV1AuditFacetsGetErrors, ThrowOnError>({ url: '/api/v1/audit/facets', ...options });
 
@@ -379,6 +381,8 @@ export const createApiV1DecisionsPost = <ThrowOnError extends boolean = false>(o
  * `q` (CVE contains) / `status` (derived from `expiry` at query time against `warn_days`,
  * mirroring the FE chip's window) / `created_by` / `scanner` (the column value, both|trivy|
  * grype) — plus facet counts under the same lens, one round trip.
+ * With `contains` it is a value search on the Approver list instead (issue 1064): the
+ * approvers that contain the text, at most 32, and `more`, with no rows.
  */
 export const approvalListApiV1DecisionsApprovalsGet = <ThrowOnError extends boolean = false>(options: Options<ApprovalListApiV1DecisionsApprovalsGetData, ThrowOnError>): RequestResult<ApprovalListApiV1DecisionsApprovalsGetResponses, ApprovalListApiV1DecisionsApprovalsGetErrors, ThrowOnError> => (options.client ?? client).get<ApprovalListApiV1DecisionsApprovalsGetResponses, ApprovalListApiV1DecisionsApprovalsGetErrors, ThrowOnError>({ url: '/api/v1/decisions/approvals', ...options });
 

@@ -107,7 +107,8 @@ function rows(g: Group) {
   const q = textOf(g).trim().toLowerCase()
   return g.items.filter((it) => it.label.toLowerCase().includes(q) || it.value.toLowerCase().includes(q))
 }
-const article = (label: string) => (/^[aeiou]/i.test(label) ? 'an' : 'a')
+// a `u` that sounds like "you" takes `a`: a user, an update
+const article = (label: string) => (/^(?!u[^aeiou][aeiou])[aeiou]/i.test(label) ? 'an' : 'a')
 function toggleOpen(g: Group) {
   const next = new Set(expanded.value)
   if (!next.delete(g.field.key)) next.add(g.field.key)

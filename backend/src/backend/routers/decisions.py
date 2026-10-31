@@ -37,11 +37,13 @@ from backend.decisions.lifecycle import (
 )
 from backend.export.approvals_csv import count_approvals_lens, stream_approvals_csv
 from backend.query import pit_guard
+from backend.query.aggs import cap_value_search
 from backend.query.approvals import (
     SCANNER_VALUES,
     STATUS_VALUES,
     ApprovalFilters,
     build_approvals_body,
+    build_approver_search_body,
     shape_facets,
 )
 from backend.query.search import MAX_FILTER_VALUES, FilterValue128
@@ -211,6 +213,8 @@ async def approval_list(
     size: Annotated[int, Query(ge=1, le=500)] = 50,
     offset: Annotated[int, Query(ge=0, le=10_000)] = 0,
     warn_days: WarnDays = 7,
+    # the limits of the findings value search: a search starts at 2 letters
+    contains: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
 ) -> dict[str, Any]:
     """M5d/FR-8: the risk-accept review surface for accept_final holders — ACTIVE risk-accept
     decisions, soonest-expiring first (RULING, #30: creation is already SEC-2-gated, so this is
@@ -218,8 +222,22 @@ async def approval_list(
     (operator re-ruling on the built 4a screen): the prototype rail's dims served server-side —
     `q` (CVE contains) / `status` (derived from `expiry` at query time against `warn_days`,
     mirroring the FE chip's window) / `created_by` / `scanner` (the column value, both|trivy|
-    grype) — plus facet counts under the same lens, one round trip."""
+    grype) — plus facet counts under the same lens, one round trip.
+    With `contains` it is a value search on the Approver list instead (issue 1064): the
+    approvers that contain the text, at most 32, and `more`, with no rows."""
     client = cast(Any, request.app.state.opensearch)
+    if contains is not None:
+        search = build_approver_search_body(
+            filters,
+            cluster_id=cluster_id,
+            now=datetime.now(UTC),
+            warn_days=warn_days,
+            contains=contains,
+        )
+        found = await client.search(index=DECISIONS_INDEX, body=search)
+        shown, more = cap_value_search(found["aggregations"]["created_by"]["buckets"])
+        approvers = [{"key": b["key"], "count": b["doc_count"]} for b in shown]
+        return {"facets": {"created_by": approvers}, "more": more}
     # no read-side refresh (audit A-m2/#191): decision writes use refresh=true, so read-your-writes
     # holds without forcing a Lucene refresh on every read
     body = build_approvals_body(

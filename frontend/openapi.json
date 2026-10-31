@@ -3493,7 +3493,7 @@
     },
     "/api/v1/audit/facets": {
       "get": {
-        "description": "Rail counts for the audit screen (M9d rework): entity_type/action/actor terms under the\nsame filters + D28 bound as the walk (the actor count leaves out the user filter, so the\nother users stay listed) \u2014 the counts describe the current lens, server-side.\nWith `interval` (day|hour) the response adds `activity`: the audit lens's events-over-time\nhistogram across the picker window (quiet buckets included as zeros).",
+        "description": "Rail counts for the audit screen (M9d rework): entity_type/action/actor terms under the\nsame filters + D28 bound as the walk (the actor count leaves out the user filter, so the\nother users stay listed) \u2014 the counts describe the current lens, server-side.\nWith `interval` (day|hour) the response adds `activity`: the audit lens's events-over-time\nhistogram across the picker window (quiet buckets included as zeros).\nWith `contains` it is a value search on the User list instead (issue 1064): the users that\ncontain the text, at most 32, and `more`.",
         "operationId": "audit_facets_api_v1_audit_facets_get",
         "parameters": [
           {
@@ -3549,6 +3549,24 @@
               "minimum": 1,
               "title": "Window Days",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "contains",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Contains"
             }
           },
           {
@@ -4636,7 +4654,7 @@
     },
     "/api/v1/decisions/approvals": {
       "get": {
-        "description": "M5d/FR-8: the risk-accept review surface for accept_final holders \u2014 ACTIVE risk-accept\ndecisions, soonest-expiring first (RULING, #30: creation is already SEC-2-gated, so this is\na review queue over standing acceptances, not a pending-approval workflow). Slice 4b\n(operator re-ruling on the built 4a screen): the prototype rail's dims served server-side \u2014\n`q` (CVE contains) / `status` (derived from `expiry` at query time against `warn_days`,\nmirroring the FE chip's window) / `created_by` / `scanner` (the column value, both|trivy|\ngrype) \u2014 plus facet counts under the same lens, one round trip.",
+        "description": "M5d/FR-8: the risk-accept review surface for accept_final holders \u2014 ACTIVE risk-accept\ndecisions, soonest-expiring first (RULING, #30: creation is already SEC-2-gated, so this is\na review queue over standing acceptances, not a pending-approval workflow). Slice 4b\n(operator re-ruling on the built 4a screen): the prototype rail's dims served server-side \u2014\n`q` (CVE contains) / `status` (derived from `expiry` at query time against `warn_days`,\nmirroring the FE chip's window) / `created_by` / `scanner` (the column value, both|trivy|\ngrype) \u2014 plus facet counts under the same lens, one round trip.\nWith `contains` it is a value search on the Approver list instead (issue 1064): the\napprovers that contain the text, at most 32, and `more`, with no rows.",
         "operationId": "approval_list_api_v1_decisions_approvals_get",
         "parameters": [
           {
@@ -4682,6 +4700,24 @@
               "minimum": 1,
               "title": "Warn Days",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "contains",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Contains"
             }
           },
           {
