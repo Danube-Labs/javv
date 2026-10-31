@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.5](https://github.com/Danube-Labs/javv/compare/v0.9.4...v0.9.5) (2026-10-31)
+
+
+### Features
+
+* dashboard panels read with their own filters and show them in a corner button ([#1068](https://github.com/Danube-Labs/javv/issues/1068)) ([22a5b5b](https://github.com/Danube-Labs/javv/commit/22a5b5b2789f5fde330479dcca2f2d2c535be935))
+* dashboard panels store findings filters, and facets count under all filters ([#1065](https://github.com/Danube-Labs/javv/issues/1065)) ([11eda1f](https://github.com/Danube-Labs/javv/commit/11eda1f6b15ad7c799c0190e1dc0875cafeb4d3e)), closes [#999](https://github.com/Danube-Labs/javv/issues/999)
+* the filter menu finds a value past the top 32 ([#1072](https://github.com/Danube-Labs/javv/issues/1072)) ([b1dae43](https://github.com/Danube-Labs/javv/commit/b1dae4333da53aab44c36a9c7fddc61866682fe4)), closes [#1064](https://github.com/Danube-Labs/javv/issues/1064)
+* the panel settings set the findings filters of a panel ([#1071](https://github.com/Danube-Labs/javv/issues/1071)) ([bfe583a](https://github.com/Danube-Labs/javv/commit/bfe583a62dcf130601cf28caf008bc54e90998ac))
+
+
+### Bug Fixes
+
+* **deps:** update dependency zensical to v0.0.74 ([#1069](https://github.com/Danube-Labs/javv/issues/1069)) ([dae3ac2](https://github.com/Danube-Labs/javv/commit/dae3ac2b19f2b2aade957b9e6f99a8ed6d001f90))
+
 ## [0.9.4](https://github.com/Danube-Labs/javv/compare/v0.9.3...v0.9.4) (2026-10-30)
 
 
