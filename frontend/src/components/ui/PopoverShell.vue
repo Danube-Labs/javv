@@ -35,6 +35,9 @@ function measure() {
     t ? { x: t.left + t.width / 2, y: t.top + t.height / 2 } : undefined,
   )
 }
+// a card whose content grows (a filter row more) goes to its place again, so it stays inside the
+// screen; the test DOM has no ResizeObserver
+const grown = typeof ResizeObserver === 'function' ? new ResizeObserver(() => measure()) : null
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
 }
@@ -51,9 +54,11 @@ onMounted(async () => {
   window.addEventListener('scroll', measure, true)
   await nextTick()
   measure()
+  if (card.value) grown?.observe(card.value)
   card.value?.focus()
 })
 onUnmounted(() => {
+  grown?.disconnect()
   document.removeEventListener('keydown', onKey)
   document.removeEventListener('mousedown', onDown)
   window.removeEventListener('resize', measure)
