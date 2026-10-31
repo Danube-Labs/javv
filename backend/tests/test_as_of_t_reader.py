@@ -801,3 +801,57 @@ async def test_past_t_facets_filter_again_only_for_a_field_with_its_own_filter(
             fields=["ptype", "severity"],  # ptype is the one freed facet recorded at T
         )
         assert len(passes) == expected, filters
+
+
+async def test_past_t_value_search_matches_the_live_rule(monkeypatch) -> None:
+    """Issue 1064 at a past T: the same text match in any case, the same cap of 32 and the same
+    `more` signal as the live route. The history has no namespaces or assignee facet, so a
+    search there is refused like the facet itself."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    def _row(ptype: str) -> dict[str, Any]:
+        return {
+            "present": True,
+            "severity_canonical": "high",
+            "state": "open",
+            "scanner": "trivy",
+            "assignee": None,
+            "fixable": False,
+            "cve_id": "CVE-1",
+            "image_digest": "sha256:y",
+            "ptype": ptype,
+            "package_name": None,
+            "namespaces": ["default"],
+            "overdue": False,
+        }
+
+    rows = [_row(f"Lang-{i:02d}") for i in range(34)] + [_row("deb"), _row("deb")]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+
+    async def search(text: str, fields: list[str] | None = None) -> dict[str, Any]:
+        return await AsOfTQuery().findings_facets(
+            cast(Any, None),
+            cluster_id="c",
+            t=datetime(2026, 1, 1, tzinfo=UTC),
+            filters=SearchFilters(),
+            fields=fields if fields is not None else ["ptype"],
+            contains=text,
+        )
+
+    many = await search("lANG")
+    assert len(many["facets"]["ptype"]) == 32 and many["more"] is True
+    assert all(b["key"].startswith("Lang-") for b in many["facets"]["ptype"])
+    one = await search("eb")
+    assert one == {
+        "facets": {"ptype": [{"key": "deb", "count": 2, "by_scanner": {"trivy": 2}}]},
+        "more": False,
+    }
+    assert (await search("l.*"))["facets"]["ptype"] == []  # a text, never a pattern
+    for fields in (["namespaces"], ["assignee"], ["severity"], ["ptype", "severity"]):
+        with pytest.raises(ValueError):
+            await search("pay", fields)

@@ -579,6 +579,28 @@ describe('edit mode', () => {
       expect(lastQuery()).toMatchObject({ scanner: 'trivy' })
     })
 
+    it('a Namespace list at the top 32 asks for the typed text with the scanner of the panel (issue 1064)', async () => {
+      const top = Array.from({ length: 32 }, (_, i) => ({ key: `ns-${i}`, count: 40 - i, by_scanner: { grype: 40 - i } }))
+      vi.mocked(facetFindingsApiV1FindingsFacetsGet).mockImplementation(async (opts) =>
+        answer(200, (opts as { query: { contains?: string } }).query.contains
+          ? { facets: { namespaces: [{ key: 'payments-eu-7', count: 2, by_scanner: { grype: 2 } }] }, more: false }
+          : { facets: { ...FACETS, namespaces: top } }),
+      )
+      vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ scanner: 'grype' })))
+      const { w } = await mountView('?edit=1')
+      const pop = await openSettings(w, 'Findings summary')
+      await pop.find('.add-filter').trigger('click')
+      await pop.findAll('.filter-field').find((b) => b.text().includes('Namespace'))!.trigger('click')
+      await pop.find('.filter-vsearch input').setValue('pay')
+      await new Promise((r) => setTimeout(r, 300)) // the pause before a search
+      await flushPromises()
+      const query = vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0].query as Record<string, unknown>
+      // the Findings rule for the menu: its own counts, with the panel's scanner and no all_filters
+      expect(query).toMatchObject({ cluster_id: 'c1', scanner: 'grype', fields: ['namespaces'], contains: 'pay' })
+      expect(query).not.toHaveProperty('all_filters')
+      expect(pop.findAll('.facet-row .facet-label').map((r) => r.text())).toEqual(['payments-eu-7'])
+    })
+
     it('shows the stored filters, and Apply with no change is no change', async () => {
       const panels = [{ ...PANELS[0]!, filters: { present: true, exclude_namespace: ['kube-system'] } }, PANELS[1]!, PANELS[2]!]
       vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ panels })))

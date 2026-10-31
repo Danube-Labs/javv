@@ -5,12 +5,12 @@
  * pins the structure the CSS relies on; the visual rig's layout check measures the pixels.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AUDIT_ACTIONS, AUDIT_FIELDS } from '@/audit/fields.config'
 import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
-import { FACET_CAP, type FacetsResponse } from '@/filters/facets'
+import { FACET_CAP, type FacetsResponse, type ValueSearch, type ValueSearchFn } from '@/filters/facets'
 import { emptySelections, type FilterField } from '@/filters/fields.config'
 
 const LONG = 'docker.io/rancher/mirrored-library-traefik'
@@ -145,18 +145,125 @@ describe('the "top N" note on a fixed list (issues 980 and 983)', () => {
 
   it('is shown when the server stopped at 32 buckets', async () => {
     const w = await open(FIXED, { fixed: values.slice(0, FACET_CAP).map(bucket) })
-    expect(w.find('.facet-cap').text()).toBe('top 32 by count; search reaches the rest')
+    expect(w.find('.facet-cap').text()).toBe('Top 32 by count. Add filter finds the other values.')
   })
 
   it('names the cap of the field', async () => {
     const small: FilterField = { ...FIXED, facetCap: 8 } as FilterField
     const w = await open(small, { fixed: values.slice(0, 8).map(bucket) })
-    expect(w.find('.facet-cap').text()).toBe('top 8 by count; search reaches the rest')
+    expect(w.find('.facet-cap').text()).toBe('Top 8 by count. Add filter finds the other values.')
   })
 
   it('is not shown on the Action list with 40 actions, and each action has a count (issue 983)', async () => {
     const w = await open(ACTION, { action: AUDIT_ACTIONS.slice(0, 40).map(bucket) })
     expect(w.findAll('.facet-count')).toHaveLength(AUDIT_ACTIONS.length)
     expect(w.find('.facet-cap').exists()).toBe(false)
+  })
+})
+
+/** Issue 1064, Q1 option B: a list that stopped at its cap gets a search box. The server matches
+ * the text against all values of the field, and the found values show with their counts. */
+describe('the search box of a list that stopped at its cap (issue 1064)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  const NS: FilterField = FIELDS[0]!
+  const AS: FilterField = { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', facetKey: 'assignee' }
+  const bucket = (key: string, count = 1) => ({ key, count, by_scanner: { trivy: count } })
+  const TOP = Array.from({ length: FACET_CAP }, (_, i) => bucket(`team-${String(i).padStart(2, '0')}`))
+  const CAPPED: FacetsResponse = { namespaces: TOP, assignee: TOP.map((b) => bucket(`u-${b.key}`)) }
+  const found = (...keys: string[]): ValueSearch => ({ buckets: keys.map((k) => bucket(k, 7)), more: false })
+  const mountSearch = (searchValues?: ValueSearchFn, facets: FacetsResponse = CAPPED, fields = [NS]) =>
+    mount(FacetRail, { props: { fields, selections: emptySelections(fields), facets, searchValues } })
+  const texts = (w: ReturnType<typeof mountSearch>) => w.findAll('.facet-row .facet-text').map((r) => r.text())
+  const type = async (w: ReturnType<typeof mountSearch>, text: string, at = 0) => {
+    await w.findAll('.facet-vsearch input')[at]!.setValue(text)
+  }
+
+  it('is not there without a search, or on a list with fewer values than its cap', () => {
+    expect(mountSearch().find('.facet-vsearch').exists()).toBe(false)
+    const short = mountSearch(vi.fn<ValueSearchFn>(), { namespaces: TOP.slice(0, 5) })
+    expect(short.find('.facet-vsearch').exists()).toBe(false)
+  })
+
+  it('is there on a list at its cap, and the note points to it', async () => {
+    const w = mountSearch(vi.fn<ValueSearchFn>())
+    expect(w.find('.facet-vsearch input').attributes('placeholder')).toBe('Find a namespace…')
+    expect(w.find('.facet-vsearch input').attributes('aria-label')).toBe('Find a value of Namespace')
+    await w.find('.facet-more').trigger('click')
+    expect(w.find('.facet-cap').text()).toBe('Top 32 by count. The box above finds the other values.')
+  })
+
+  it('a field whose name starts with a vowel reads "an"', () => {
+    const w = mountSearch(vi.fn<ValueSearchFn>(), CAPPED, [AS])
+    expect(w.find('.facet-vsearch input').attributes('placeholder')).toBe('Find an assignee…')
+  })
+
+  it('asks after the pause and lists the values the server found, with their counts', async () => {
+    const search = vi.fn<ValueSearchFn>(async () => found('payments-eu', 'payments-us'))
+    const w = mountSearch(search)
+    await type(w, 'pay')
+    expect(search).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(300)
+    expect(search).toHaveBeenCalledWith(NS, 'pay')
+    expect(texts(w)).toEqual(['payments-eu', 'payments-us'])
+    expect(w.findAll('.facet-count').map((c) => c.text())).toEqual(['7', '7'])
+    expect(w.find('.facet-more').exists()).toBe(false)
+    expect(w.find('.facet-body').classes()).toContain('facet-body-open')
+  })
+
+  it('a found value toggles like a listed one', async () => {
+    const w = mountSearch(vi.fn<ValueSearchFn>(async () => found('payments-eu')))
+    await type(w, 'pay')
+    await vi.advanceTimersByTimeAsync(300)
+    await w.find('.facet-row').trigger('click')
+    expect(w.emitted('toggle')).toEqual([['namespace', 'payments-eu']])
+  })
+
+  it('until the server answers, the listed values that contain the text show', async () => {
+    const w = mountSearch(vi.fn<ValueSearchFn>(() => new Promise<never>(() => {})))
+    await type(w, 'team-1')
+    expect(texts(w)).toEqual(TOP.map((b) => b.key).filter((k) => k.includes('team-1')))
+  })
+
+  it('says when more values match, and when the search failed', async () => {
+    const more = mountSearch(vi.fn<ValueSearchFn>(async () => ({ ...found('payments-eu'), more: true })))
+    await type(more, 'pay')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(more.find('.facet-cap').text()).toBe('More values match. Type more letters.')
+
+    const failed = mountSearch(vi.fn<ValueSearchFn>(async () => null))
+    await type(failed, 'team-0')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(failed.find('.facet-cap').text()).toBe('Could not search all values. The list shows the top 32.')
+    expect(texts(failed)).toEqual(TOP.map((b) => b.key).filter((k) => k.includes('team-0')))
+  })
+
+  it('typing in one box empties the other', async () => {
+    const w = mountSearch(vi.fn<ValueSearchFn>(async () => found('x')), CAPPED, [NS, AS])
+    await type(w, 'pay', 0)
+    await type(w, 'ann', 1)
+    const boxes = w.findAll('.facet-vsearch input')
+    expect((boxes[0]!.element as HTMLInputElement).value).toBe('')
+    expect((boxes[1]!.element as HTMLInputElement).value).toBe('ann')
+  })
+
+  it('new counts ask again, so the found values carry them', async () => {
+    const search = vi.fn<ValueSearchFn>(async () => found('payments-eu'))
+    const w = mountSearch(search)
+    await type(w, 'pay')
+    await vi.advanceTimersByTimeAsync(300)
+    await w.setProps({ facets: { namespaces: [...TOP] } })
+    await vi.advanceTimersByTimeAsync(300)
+    expect(search).toHaveBeenCalledTimes(2)
+  })
+
+  it('a list that drops under its cap drops the box and its search', async () => {
+    const w = mountSearch(vi.fn<ValueSearchFn>(async () => found('payments-eu')))
+    await type(w, 'pay')
+    await vi.advanceTimersByTimeAsync(300)
+    await w.setProps({ facets: { namespaces: TOP.slice(0, 3) } })
+    expect(w.find('.facet-vsearch').exists()).toBe(false)
+    expect(texts(w)).toEqual(TOP.slice(0, 3).map((b) => b.key))
   })
 })

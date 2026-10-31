@@ -95,6 +95,32 @@ def counting_filters(filters: SearchFilters, facet: str) -> SearchFilters:
     return filters
 
 
+# the facets a value search works on (issue 1064): the lists with no fixed values, where the
+# top 32 can leave out the value a user wants
+SEARCHABLE_FACETS = ("namespaces", "ptype", "assignee")
+
+
+def contains_pattern(text: str) -> str:
+    """A terms `include` pattern for the values that contain `text`, in any case. The fields
+    have no lowercase normalizer, so each letter becomes a pair ([pP]). Every other ASCII
+    character is escaped: the text cannot add a regex operator."""
+    out = []
+    for ch in text:
+        lo, up = ch.lower(), ch.upper()
+        if lo != up and len(lo) == len(up) == 1:
+            out.append(f"[{lo}{up}]")
+        elif ch.isascii() and not ch.isalnum():
+            out.append("\\" + ch)
+        else:
+            out.append(ch)
+    return ".*" + "".join(out) + ".*"
+
+
+def cap_value_search[T](values: list[T]) -> tuple[list[T], bool]:
+    """The values a value search sends, and whether more values match than it sends."""
+    return values[:_FACET_TERMS_SIZE], len(values) > _FACET_TERMS_SIZE
+
+
 def facet_aggregation(agg: dict[str, Any]) -> dict[str, Any]:
     """One facet's aggregation from the response, whether or not the body wrapped it in its
     own filter context (see build_facets_body)."""
@@ -107,21 +133,30 @@ def build_facets_body(
     *,
     sla_cutoffs: dict[str, str] | None = None,
     all_filters: bool = False,
+    contains: str | None = None,
 ) -> dict[str, Any]:
     """`all_filters`: every facet counts under every filter, its own field's too. A dashboard
     panel that lists namespaces with "Namespace is not kube-system" must leave that row out
-    (issue 999, decision 4); the Findings filter list keeps the default."""
+    (issue 999, decision 4); the Findings filter list keeps the default.
+
+    `contains`: a value search on exactly one of SEARCHABLE_FACETS (issue 1064). The facet
+    keeps its filter rules and asks for one bucket more than the cap: the caller shows the cap
+    and reads the extra one as "more values match"."""
     chosen = fields if fields is not None else list(FACET_FIELDS)
     bad = [f for f in chosen if f not in FACET_FIELDS]
     if bad:
         raise ValueError(f"not facetable (whitelist {FACET_FIELDS}): {bad}")
+    if contains is not None and (len(chosen) != 1 or chosen[0] not in SEARCHABLE_FACETS):
+        raise ValueError(f"contains needs exactly one field of {SEARCHABLE_FACETS}")
+    search = {} if contains is None else {"include": contains_pattern(contains)}
     body = _base(filters, sla_cutoffs)
     body["aggs"] = {
         f: {
             "terms": {
                 "field": _FACET_FIELD_ALIAS.get(f, f),
-                "size": _FACET_TERMS_SIZE,
+                "size": _FACET_TERMS_SIZE + (1 if search else 0),
                 **({"missing": _FACET_MISSING[f]} if f in _FACET_MISSING else {}),
+                **search,
             },
             "aggs": dict(_BY_SCANNER),
         }

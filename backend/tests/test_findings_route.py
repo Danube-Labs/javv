@@ -990,3 +990,71 @@ async def test_unbackfilled_rows_keep_their_chip_but_escape_the_filter_loudly(en
 
     breached = await http.get("/api/v1/findings", params={"cluster_id": cid, "overdue": "true"})
     assert breached.json()["data"] == []  # an expected gap until rebuild-state backfills
+
+
+async def test_a_value_search_finds_values_past_the_top_32_against_a_real_index(env) -> None:
+    """Issue 1064. The text matches in any case, from all values of the field, with the counts
+    of the list. A finding with a second namespace does not bring that namespace into the
+    result, and another tenant's values stay out."""
+    login, client = env
+    cid, other = f"c-f1064-{uuid.uuid4().hex[:8]}", f"c-f1064-{uuid.uuid4().hex[:8]}"
+    # 40 top values that do not match, so every "pay" value is past the top 32
+    await _seed(client, cid, [r for i in range(40) for r in _rows(3, namespaces=[f"ns-{i:02d}"])])
+    await _seed(client, cid, [r for i in range(33) for r in _rows(1, namespaces=[f"pay-{i:02d}"])])
+    await _seed(client, cid, _rows(2, namespaces=["Payroll-EU", "kube-system"], scanner="grype"))
+    await _seed(client, other, _rows(5, namespaces=["payments-other"]))
+    http = await login()
+
+    async def search(text: str, **params: Any) -> httpx.Response:
+        return await http.get(
+            "/api/v1/findings/facets",
+            params={"cluster_id": cid, "fields": ["namespaces"], "contains": text, **params},
+        )
+
+    top = await http.get(
+        "/api/v1/findings/facets", params={"cluster_id": cid, "fields": ["namespaces"]}
+    )
+    assert not any("pay" in b["key"].lower() for b in top.json()["facets"]["namespaces"])
+
+    r = await search("PAY")
+    assert r.status_code == 200, r.text
+    keys = [b["key"] for b in r.json()["facets"]["namespaces"]]
+    assert len(keys) == 32 and r.json()["more"] is True  # 34 values match, 32 are sent
+    assert all("pay" in k.lower() for k in keys)
+    assert "Payroll-EU" in keys  # the stored case, found with the text in another case
+
+    r = await search("roll-eu")
+    assert r.json() == {
+        "facets": {"namespaces": [{"key": "Payroll-EU", "count": 2, "by_scanner": {"grype": 2}}]},
+        "more": False,
+    }  # kube-system shares the findings but does not contain the text
+
+    # the text is a text, never a pattern: no value contains ".*" or "pay.*"
+    for text in (".*", "pay.*", "p[a]y"):
+        r = await search(text)
+        assert r.status_code == 200 and r.json()["facets"]["namespaces"] == [], text
+    assert (await search("payments")).json()["facets"]["namespaces"] == []  # other tenant
+
+    # the counts use the filters of the list: a picked namespace leaves its own field out
+    r = await search("roll", namespace="ns-01")
+    assert [b["key"] for b in r.json()["facets"]["namespaces"]] == ["Payroll-EU"]
+
+
+async def test_a_value_search_takes_one_list_field_and_a_short_text(env) -> None:
+    login, _client = env
+    http = await login()
+    cid = f"c-f1064-{uuid.uuid4().hex[:8]}"
+    for params in (
+        {"contains": "pay"},  # no field: all facets
+        {"contains": "pay", "fields": ["namespaces", "assignee"]},
+        {"contains": "pay", "fields": ["severity"]},  # a fixed list needs no search
+        {"contains": "p", "fields": ["namespaces"]},  # the menu asks from 2 letters
+        {"contains": "p" * 129, "fields": ["namespaces"]},
+    ):
+        r = await http.get("/api/v1/findings/facets", params={"cluster_id": cid, **params})
+        assert r.status_code == 422, params
+    ok = await http.get(
+        "/api/v1/findings/facets",
+        params={"cluster_id": cid, "fields": ["assignee"], "contains": "p" * 128},
+    )
+    assert ok.status_code == 200 and ok.json() == {"facets": {"assignee": []}, "more": False}

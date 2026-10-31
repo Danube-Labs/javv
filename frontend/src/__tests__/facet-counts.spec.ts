@@ -8,7 +8,14 @@
 import { describe, expect, it } from 'vitest'
 
 import { AUDIT_ACTIONS, AUDIT_FIELDS, AUDIT_LIST_CAP } from '@/audit/fields.config'
-import { FACET_CAP, facetItems, type FacetBucket, type FacetsResponse } from '@/filters/facets'
+import {
+  FACET_CAP,
+  facetItems,
+  searchItems,
+  stoppedAtCap,
+  type FacetBucket,
+  type FacetsResponse,
+} from '@/filters/facets'
 import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 
 const field = (fields: readonly FilterField[], key: string) => fields.find((f) => f.key === key)!
@@ -84,6 +91,36 @@ describe('a count of 0 on a fixed list (issue 980)', () => {
     expect(items.map((i) => [i.value, i.count])).toEqual([
       ['shop', 2],
       ['edge', null], // a picked value the buckets leave out has no count (issue 949)
+    ])
+  })
+})
+
+/** Issue 1064: a list the server stopped at its cap can leave out the value a user wants, so the
+ * menu asks the server for the values that contain the typed text. */
+describe('a list that stopped at its cap (issue 1064)', () => {
+  const many = (n: number) => Array.from({ length: n }, (_, i) => b(`ns-${i}`, 100 - i))
+
+  it(`stopped at ${FACET_CAP} buckets, not at ${FACET_CAP - 1}`, () => {
+    expect(stoppedAtCap(NAMESPACE, { namespaces: many(FACET_CAP) })).toBe(true)
+    expect(stoppedAtCap(NAMESPACE, { namespaces: many(FACET_CAP - 1) })).toBe(false)
+    expect(stoppedAtCap(NAMESPACE, {})).toBe(false) // the server did not count the field
+  })
+
+  it('a flag field or a text field never stops at a cap', () => {
+    expect(stoppedAtCap(ATTR, { kev: many(FACET_CAP) })).toBe(false)
+    expect(stoppedAtCap(field(FINDINGS_FIELDS, 'cve'), {})).toBe(false)
+  })
+
+  it(`the Action list stops at its own cap of ${AUDIT_LIST_CAP}, not at ${FACET_CAP}`, () => {
+    expect(stoppedAtCap(ACTION, { action: many(FACET_CAP) })).toBe(false)
+    expect(stoppedAtCap(ACTION, { action: many(AUDIT_LIST_CAP) })).toBe(true)
+  })
+
+  it('the items of a search keep the server order, counts and scanner split', () => {
+    const items = searchItems(NAMESPACE, [b('pay-2', 9), b('pay-1', 3)])
+    expect(items.map((i) => [i.value, i.count, i.byScanner])).toEqual([
+      ['pay-2', 9, { trivy: 9 }],
+      ['pay-1', 3, { trivy: 3 }],
     ])
   })
 })

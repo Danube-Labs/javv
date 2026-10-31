@@ -37,6 +37,7 @@ from backend.query.aggs import (
     build_composite_body,
     build_facets_body,
     build_top_components_body,
+    cap_value_search,
     decode_after,
     encode_after,
     facet_aggregation,
@@ -423,6 +424,8 @@ async def facet_findings(
     as_of_t: AsOf,
     fields: Annotated[list[str] | None, Query()] = None,
     all_filters: Annotated[bool, Query()] = False,
+    # the same limits as `q`: a search starts at 2 letters
+    contains: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
 ) -> dict[str, Any]:
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:
@@ -434,6 +437,7 @@ async def facet_findings(
                 filters=filters,
                 fields=fields,
                 all_filters=all_filters,
+                contains=contains,
             )
         )
     # no read-side refresh (audit A-m2/#191) — see search_findings
@@ -444,10 +448,15 @@ async def facet_findings(
             fields=fields,
             sla_cutoffs=await _sla_cutoffs(client, filters, facet=wants_overdue),
             all_filters=all_filters,
+            contains=contains,
         )
-    except ValueError as exc:  # non-whitelisted facet field
+    except ValueError as exc:  # non-whitelisted facet field, or contains on a wrong field
         raise HTTPException(422, str(exc)) from exc
     resp = await tenant_search(client, index="findings", cluster_id=cluster_id, body=body)
+    if contains is not None:
+        (field, raw), *_ = resp["aggregations"].items()
+        shown, more = cap_value_search(facet_aggregation(raw)["buckets"])
+        return {"facets": {field: [_bucket(b) for b in shown]}, "more": more}
     return {
         "facets": {
             # `overdue` is a filter agg (one count, no buckets) — shaped as a true-bucket so

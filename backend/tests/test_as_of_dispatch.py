@@ -113,7 +113,7 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
 
     surfaces = [
         ("/api/v1/findings", {}, "findings_page"),
-        ("/api/v1/findings/facets", {}, "findings_facets"),
+        ("/api/v1/findings/facets", {"fields": "ptype", "contains": "de"}, "findings_facets"),
         ("/api/v1/findings/groups", {"by": "image_repo"}, "findings_groups"),
         ("/api/v1/trends/scans", {}, "trends_scans"),
         ("/api/v1/trends/findings", {}, "trends_findings"),
@@ -129,6 +129,7 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
         assert kw["t"] == datetime(2026, 1, 1, tzinfo=UTC)  # the EXACT parsed instant
         assert kw["cluster_id"] == cid
     # the route's own params ride through the seam untouched
+    assert reader.calls[1][1]["contains"] == "de"  # a value search reads the history too
     assert reader.calls[2][1]["by"] == "image_repo"
     assert reader.calls[5][1]["days"] == 30
 

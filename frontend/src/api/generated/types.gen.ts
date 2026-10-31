@@ -3041,6 +3041,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          */
         all_filters?: boolean;
         /**
+         * Contains
+         */
+        contains?: string | null;
+        /**
          * Severity
          */
         severity?: Array<string> | null;

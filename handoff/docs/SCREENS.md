@@ -321,6 +321,23 @@ filters. Thus Severity shows only the counts of the rows that the grid shows. A 
 most 32 values. A picked value that is not in them stays at the end of the list, with no count, on
 every screen that uses the rail.
 
+**A value past the top 32** (issue 1064, operator rulings 2026-10-31): a list with no fixed
+values shows the 32 values with the most findings. When the list of a field has 32 values, the
+search box of the Add filter menu asks the server for the values that contain the typed text. The
+server searches all values, not only the 32. The menu asks after 2 letters and a short pause. The
+counts use the filters of the list. The menu shows at most 32 values. When more values contain the
+text, it says "More values match. Type more letters." When the search fails, the menu says "Could
+not search all values. The list shows the top 32." Then it filters the values that it has. The
+panel settings of a dashboard use the same menu, with the scanner that the panel counts. At a past
+time, the scan history has no Namespace or Assignee counts, so the menu does not ask for them.
+The filter list has the same search (operator ruling 2026-10-31, Q1 option B, on full-page
+pictures). A list at its cap has a search box under its title, "Find a namespace…". The box asks
+after 2 letters and a short pause, and shows the values that the server found, with their counts.
+Until the server answers, the box filters the values that the list has. The box shows the same two
+notes as the menu. A search in one box empties the other boxes. When the filters change, the box
+asks again for the new counts. The open list of such a field ends with the note "Top 32 by count.
+The box above finds the other values."
+
 **A count of 0** (operator ruling 2026-10-23, issue 980, on each screen that uses the rail): a
 value of a fixed list with no rows shows 0, as the prototype does. The fixed lists are Severity,
 Scanner, State, Entity, Action and the Attribute flags. A value shows no count when its count is
@@ -578,6 +595,9 @@ empty-value dash with the title "Pinned by digest: the pod names no tag." (opera
 Namespace, Image and Tag take several values: OR within a field, AND across fields. A second pick
 adds the value (issue 950). Scanner takes one value. Findings keeps the one-value limit of its
 backend (issue 949).
+The Image and Tag lists show the 32 values with the most images. The search box of the Add filter
+menu and the search box of a list at its cap find the other values in all the rows of the run
+(issue 1064).
 
 **States:** loading; empty/first-run; **scanner-silent** banner ("Inventory as of T; scanner
 silent since…"); **last-run-incomplete** banner ("showing the last complete inventory"); `T<now`

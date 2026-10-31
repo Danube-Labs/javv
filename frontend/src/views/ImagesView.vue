@@ -26,9 +26,10 @@ import UiRoleNote from '@/components/ui/UiRoleNote.vue'
 import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
+import type { ValueSearchFn } from '@/filters/facets'
 import { IMAGES_COLUMNS, IMAGES_FIELDS } from '@/images/fields.config'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
-import { filterImages, imagesCsv, imagesFacets } from '@/images/imageFilters'
+import { filterImages, imagesCsv, imagesFacets, searchImageValues } from '@/images/imageFilters'
 import { logger } from '@/lib/logger'
 import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { makeFiltersStore } from '@/stores/filters'
@@ -68,6 +69,9 @@ watch(
 /* ---- pure client pipeline over the served run: filter → facets → sort → slice ---- */
 const filtered = computed(() => filterImages(images.images, filters.selections, filters.modes))
 const facets = computed(() => imagesFacets(images.images))
+// the menu finds an Image or Tag past the top 32 in the rows the screen holds (issue 1064)
+const searchValues: ValueSearchFn = async (field, text) =>
+  field.type === 'terms' && field.facetKey ? searchImageValues(images.images, field.facetKey, text) : null
 
 const sort = ref<ImagesSortField | null>(null)
 const order = ref<'asc' | 'desc'>('desc')
@@ -210,6 +214,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           :selections="filters.selections"
           :facets="facets"
           :modes="filters.modes"
+          :search-values="searchValues"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
         >
@@ -227,6 +232,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
             :selections="filters.selections"
             :modes="filters.modes"
             :facets="facets"
+            :search-values="searchValues"
             @toggle="filters.toggle"
             @set-text="filters.setText"
             @set-mode="filters.setMode"

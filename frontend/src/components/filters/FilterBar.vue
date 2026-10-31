@@ -6,7 +6,7 @@
  * arrows walk the menu. Lists values through the same `facetItems()` the FacetRail uses — one
  * config drives both.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import FilterPill from '@/components/filters/FilterPill.vue'
 import FilterValueRows, { type ValueRow } from '@/components/filters/FilterValueRows.vue'
@@ -14,7 +14,15 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import UiDropdown from '@/components/ui/UiDropdown.vue'
 import UiSearchBox from '@/components/ui/UiSearchBox.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
-import { facetItems, type FacetsResponse } from '@/filters/facets'
+import { useValueSearch } from '@/composables/useValueSearch'
+import {
+  capOf,
+  facetItems,
+  searchItems,
+  stoppedAtCap,
+  type FacetsResponse,
+  type ValueSearchFn,
+} from '@/filters/facets'
 import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
 import { inText, typedValuesToAdd } from '@/filters/typedValues'
 import type { FilterMode, Modes } from '@/stores/filters'
@@ -30,6 +38,9 @@ const props = defineProps<{
   maxValues?: number
   /** the menu opens above the bar: in the settings popover of a dashboard panel (issue 999) */
   menuUp?: boolean
+  /** asks for the values that contain the typed text, from all values: used on a field whose
+   * list stopped at its cap (issue 1064). Without it, the search box filters the listed values. */
+  searchValues?: ValueSearchFn
 }>()
 
 const emit = defineEmits<{
@@ -59,15 +70,31 @@ const wrap = useTemplateRef<HTMLElement>('wrap')
 
 const active = computed(() => props.fields.filter((f) => (props.selections[f.key] ?? []).length > 0))
 const editField = computed(() => props.fields.find((f) => f.key === editKey.value) ?? null)
+const remote = useValueSearch()
+/** The field's list stopped at its cap and the screen can ask for the rest. */
+const searchesServer = computed(
+  () => editField.value !== null && props.searchValues !== undefined && stoppedAtCap(editField.value, props.facets),
+)
+watch([editKey, valueQuery, searchesServer], () => {
+  const field = editField.value
+  if (field && searchesServer.value && props.searchValues) remote.ask(props.searchValues, field, valueQuery.value)
+  else remote.reset()
+})
+const searched = computed(() => (editKey.value ? remote.resultFor(editKey.value, valueQuery.value) : null))
+
 const editItems = computed(() => {
   const field = editField.value
   if (!field) return null
+  const chosen = props.selections[field.key] ?? []
+  // the server already matched the text, against all values of the field
+  if (searched.value) {
+    return searchItems(field, searched.value.buckets).map((it): ValueRow => ({ ...it, on: chosen.includes(it.value) }))
+  }
   const items = facetItems(field, props.facets, props.selections[field.key])
   if (!items) return null
   const q = valueQuery.value.toLowerCase()
   // match the name on screen AND the stored value: someone who knows `not_affected` from a
   // URL or the API finds it too
-  const chosen = props.selections[field.key] ?? []
   const shown = q ? items.filter((it) => it.label.toLowerCase().includes(q) || it.value.toLowerCase().includes(q)) : items
   return shown.map((it): ValueRow => ({ ...it, on: chosen.includes(it.value) }))
 })
@@ -204,6 +231,10 @@ function onKeydown(e: KeyboardEvent) {
               :counts-unknown="countsUnknown"
               @toggle="(v) => emit('toggle', editField!.key, v)"
             />
+            <p v-if="searched?.more" class="filter-note" role="status">More values match. Type more letters.</p>
+            <p v-else-if="remote.failed.value" class="filter-note" role="status">
+              Could not search all values. The list shows the top {{ capOf(editField) }}.
+            </p>
           </template>
 
           <template v-else>

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { emptySelections } from '@/filters/fields.config'
 import { IMAGES_FIELDS } from '@/images/fields.config'
-import { filterImages, imagesCsv, imagesFacets } from '@/images/imageFilters'
+import { filterImages, imagesCsv, imagesFacets, searchImageValues } from '@/images/imageFilters'
 import { makeFiltersStore } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
 
@@ -247,5 +247,38 @@ describe('Images filters with several values in one field', () => {
     expect(reloaded.selections.namespace).toEqual(['payments', 'billing'])
     expect(reloaded.selections.tag).toEqual(['v0.4.17', '7.0.0'])
     expect(reloaded.modeOf('tag')).toBe('not')
+  })
+})
+
+/** Issue 1064: the Image and Tag lists stop at the top 32, so the menu searches all the rows the
+ * screen holds for the values that contain the typed text. */
+describe('searchImageValues', () => {
+  const many = Array.from({ length: 40 }, (_, i) =>
+    row({ image_repo: `registry/app-${i}`, tag: i % 2 ? 'v1' : `Release-${i}`, namespaces: [`ns-${i}`, 'shared'] }),
+  )
+
+  it('finds an image past the top 32, in any case, with its image count', () => {
+    expect(imagesFacets(many).repos).toHaveLength(32)
+    expect(searchImageValues(many, 'repos', 'APP-39')).toEqual({
+      buckets: [{ key: 'registry/app-39', count: 1, by_scanner: {} }],
+      more: false,
+    })
+  })
+
+  it('sends at most 32 values, and says when more match', () => {
+    const out = searchImageValues(many, 'repos', 'app-')!
+    expect(out.buckets).toHaveLength(32)
+    expect(out.more).toBe(true)
+    expect(searchImageValues(many, 'tags', 'release-')!.more).toBe(false) // 20 tags match
+  })
+
+  it('searches the namespaces of each row, and counts each image once', () => {
+    expect(searchImageValues(many, 'namespaces', 'shar')!.buckets).toEqual([
+      { key: 'shared', count: 40, by_scanner: {} },
+    ])
+  })
+
+  it('a field with no list asks nothing', () => {
+    expect(searchImageValues(many, 'severity', 'cri')).toBeNull()
   })
 })

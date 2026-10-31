@@ -14,6 +14,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import { useFindingsFacets } from '@/composables/useFindingsFacets'
+import { findingsValueSearch } from '@/composables/useValueSearch'
 import { heightsOf, panelById, type PanelHeight } from '@/dashboards/catalog'
 import {
   HEIGHT_OPTS,
@@ -63,18 +64,18 @@ const countScanner = computed(() =>
 
 // the Findings rule for the menu: a field does not count under its own filter, so the values not
 // picked yet stay in the list. The panel itself reads with all_filters.
-const { facets, failed } = useFindingsFacets(
-  () => undefined,
-  () =>
-    fields.length && props.clusterId
-      ? {
-          cluster_id: props.clusterId,
-          ...(props.t ? { as_of: props.t } : {}),
-          ...(countScanner.value !== 'all' ? { scanner: countScanner.value } : {}),
-          ...draftFilters.value,
-        }
-      : null,
-)
+const menuQuery = () =>
+  fields.length && props.clusterId
+    ? {
+        cluster_id: props.clusterId,
+        ...(props.t ? { as_of: props.t } : {}),
+        ...(countScanner.value !== 'all' ? { scanner: countScanner.value } : {}),
+        ...draftFilters.value,
+      }
+    : null
+const { facets, failed } = useFindingsFacets(() => undefined, menuQuery)
+// a value past the top 32: the menu asks under the same query (issue 1064)
+const searchValues = findingsValueSearch(menuQuery)
 
 function apply() {
   const settings: PanelSettings = { w: widthOf(w.value), h: h.value, scanner: entry?.usesScanner ? scanner.value : null }
@@ -121,6 +122,7 @@ const useSettingsFilters = makeFiltersStore(
           :facets="facets"
           :counts-unknown="failed"
           :max-values="MAX_FILTER_VALUES"
+          :search-values="searchValues"
           menu-up
           @toggle="filters.toggle"
           @set-text="filters.setText"
