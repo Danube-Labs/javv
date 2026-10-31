@@ -869,7 +869,8 @@ describe('a panel with filters (issue 999)', () => {
       { panel: 'findings-by-namespace', x: 0, y: 0, w: 1, h: 'short', filters: { present: true, new_within_days: 7 } },
     ])
     const props = panelPropsCache()('0-0', placed!, { clusterId: CLUSTER, t: null, windowDays: 30, scanner: 'all' })
-    mount(panelById('findings-by-namespace')!.component, { props, global: { stubs: { EChart: true } } })
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })
+    mount(panelById('findings-by-namespace')!.component, { props, global: { plugins: [router], stubs: { EChart: true } } })
     await flushPromises()
     expect((facetsMock().mock.calls[0]![0] as { query: object }).query).toMatchObject({ new_within_days: 30, all_filters: true })
   })
