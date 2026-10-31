@@ -4,14 +4,16 @@
  * change). Joined hairline-divided stat grammar (base.css owns the skin, issue 368); every
  * number is a server aggregation read through the scanner lens; every cell click-throughs to
  * the findings grid. Overview passes the facets it read for all its panels; on a dashboard the
- * bands read their own (useFindingsFacets).
+ * bands read their own (useFindingsFacets), with the panel's filters in the read and the links.
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+import type { ViewPreset } from '@/api/generated'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useFindingsFacets, type Facets, type FacetsQuery } from '@/composables/useFindingsFacets'
+import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { CHART_SEV, type Severity } from '@/styles/tokens'
 import { facetCount, fmt, type ScannerLens } from '@/lib/scannerLens'
 
@@ -22,12 +24,14 @@ const props = defineProps<{
   /** the screen's facets read; without it the bands read their own for `query` */
   facets?: Facets
   query?: FacetsQuery | null
+  /** a dashboard panel's own filters (issue 999) */
+  filters?: ViewPreset | null
 }>()
 
 const router = useRouter()
 const { facets, settled, failed } = useFindingsFacets(
   () => props.facets,
-  () => props.query,
+  () => props.query && panelQuery(props.query, props.filters),
 )
 
 const count = (facet: string, key: string) => facetCount(facets.value, facet, key, props.scanner)
@@ -58,7 +62,7 @@ const triage = computed(() => {
 })
 
 function goFindings(query: Record<string, string>) {
-  void router.push({ path: '/findings', query })
+  void router.push({ path: '/findings', query: panelFindingsQuery(props.filters, query) })
 }
 </script>
 

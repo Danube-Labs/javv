@@ -4,16 +4,19 @@
  * namespaces by findings under the scanner lens, each row a click-through to the
  * namespace-filtered grid. Per-namespace counts overlap by design (D30 — the all-namespaces
  * total is the only deduped number). Skinned by the shared base.css table (no scoped re-own).
- * Overview passes its facets read; on a dashboard the card reads its own (useFindingsFacets).
+ * Overview passes its facets read; on a dashboard the card reads its own (useFindingsFacets),
+ * with the panel's filters in the read and the links.
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+import type { ViewPreset } from '@/api/generated'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useFindingsFacets, type Facets, type FacetsQuery } from '@/composables/useFindingsFacets'
+import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { countOf, fmt, type ScannerLens } from '@/lib/scannerLens'
 
 const props = withDefaults(
@@ -24,14 +27,16 @@ const props = withDefaults(
     query?: FacetsQuery | null
     /** how many namespaces it lists; a dashboard panel sets it from its height */
     limit?: number
+    /** a dashboard panel's own filters (issue 999) */
+    filters?: ViewPreset | null
   }>(),
-  { facets: undefined, query: undefined, limit: 10 },
+  { facets: undefined, query: undefined, limit: 10, filters: null },
 )
 
 const router = useRouter()
 const { facets, settled, failed } = useFindingsFacets(
   () => props.facets,
-  () => props.query,
+  () => props.query && panelQuery(props.query, props.filters),
 )
 
 const namespaces = computed(() =>
@@ -41,7 +46,10 @@ const namespaces = computed(() =>
     .slice(0, props.limit),
 )
 
-const findingsRoute = (query: Record<string, string>) => ({ path: '/findings', query })
+const findingsRoute = (query: Record<string, string>) => ({
+  path: '/findings',
+  query: panelFindingsQuery(props.filters, query),
+})
 function goFindings(query: Record<string, string>) {
   void router.push(findingsRoute(query))
 }

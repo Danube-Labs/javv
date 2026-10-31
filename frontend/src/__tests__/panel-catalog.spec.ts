@@ -351,6 +351,33 @@ describe('a panel that its screen can feed', () => {
     expect(facetsMock()).toHaveBeenCalledTimes(1)
   })
 
+  /** a facets panel mounted with its own query: the whole query is the request (issue 999) */
+  function mountWithQuery(component: typeof OverviewStatBands | typeof PackageTypeCard, query: Record<string, unknown>) {
+    return mount(component, {
+      props: { scanner: 'all', query: query as never },
+      global: { plugins: [createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })], stubs: { EChart: true } },
+    })
+  }
+
+  it('two panels with different filters send two reads, each with its own filters', async () => {
+    facetsMock().mockImplementation(later)
+    mountWithQuery(OverviewStatBands, { cluster_id: CLUSTER, exclude_namespace: ['kube-system'], all_filters: true })
+    mountWithQuery(PackageTypeCard, { cluster_id: CLUSTER, severity: ['critical'], all_filters: true })
+    await flushPromises()
+    expect(facetsMock()).toHaveBeenCalledTimes(2)
+    const sent = facetsMock().mock.calls.map((c) => (c[0] as { query: unknown }).query)
+    expect(sent).toContainEqual({ cluster_id: CLUSTER, exclude_namespace: ['kube-system'], all_filters: true })
+    expect(sent).toContainEqual({ cluster_id: CLUSTER, severity: ['critical'], all_filters: true })
+  })
+
+  it('two panels with the same filters share one read, whatever the order of the params', async () => {
+    facetsMock().mockImplementation(later)
+    mountWithQuery(OverviewStatBands, { cluster_id: CLUSTER, severity: ['critical'], all_filters: true })
+    mountWithQuery(PackageTypeCard, { all_filters: true, severity: ['critical'], cluster_id: CLUSTER })
+    await flushPromises()
+    expect(facetsMock()).toHaveBeenCalledTimes(1)
+  })
+
   it('a second ask after the read came back reads again', async () => {
     facetsMock().mockResolvedValue(ok({ facets: FACETS }))
     mountPanel(panelById('findings-summary')!)
@@ -753,5 +780,85 @@ describe('each scanner value reaches the other scanner panels', () => {
     expect(pt.find('.donut-row b').text()).toBe(debianNs)
     expect(ns.find('tbody tr td:last-child').text()).toBe(debianNs)
     expect(ri.find('tbody tr td:nth-child(2)').text()).toBe(debianNs)
+  })
+})
+
+describe('a panel with filters (issue 999)', () => {
+  // a stored filters object, as the backend keeps it (`present: true` is the ViewPreset default).
+  // The flag is on no row, so each link must carry a panel filter that its row does not set.
+  const FILTERS = { present: true, exclude_namespace: ['kube-system'], kev: true }
+  const filtered = ctx({ filters: FILTERS as never })
+
+  /** each panel that takes filters, an answer that draws a row, and the element a click opens */
+  const CASES: Record<string, { answers: unknown[]; click: string; row: Record<string, string> }> = {
+    'findings-summary': { answers: [{ facets: FACETS }], click: '.stat-cell', row: { severity: 'critical' } },
+    'package-type': { answers: [{ facets: FACETS }], click: '.donut-row', row: { ptype: 'debian' } },
+    'findings-by-namespace': { answers: [{ facets: FACETS }], click: 'tbody tr', row: { namespace: 'ns-00' } },
+    'top-components': {
+      answers: [{ components: [{ package_name: 'openssl', count: 4, unique_cves_by_scanner: { trivy: 3 } }] }],
+      click: 'tbody tr',
+      row: { q: 'openssl' },
+    },
+    'triage-progress': {
+      answers: [{ facets: { severity: [bucket('high', 9, 4)] } }, { facets: { severity: [bucket('high', 3, 1)] } }],
+      click: '.prog-row',
+      row: { severity: 'high', state: 'open,stale' },
+    },
+  }
+
+  function mountFiltered(id: string) {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/:any(.*)*', name: 'findings', component: { template: '<div />' } }],
+    })
+    const panel = panelById(id)!
+    const w = mount(panel.component, {
+      props: panel.props(filtered),
+      global: { plugins: [router], stubs: { EChart: true, GuideLink: true } },
+    })
+    return { w, router }
+  }
+
+  it('covers every panel that takes filters', () => {
+    expect(Object.keys(CASES).sort()).toEqual(PANELS.filter((p) => p.takesFilters).map((p) => p.id).sort())
+  })
+
+  it.each(Object.keys(CASES))('%s sends its filters, with all_filters, in each read', async (id) => {
+    const c = CASES[id]!
+    const calls = READS[id]!.calls
+    for (const name of new Set(calls)) {
+      for (const a of c.answers) fn(name).mockResolvedValueOnce(ok(a))
+    }
+    mountFiltered(id)
+    await flushPromises()
+    const sent = calls.flatMap((name) => fn(name).mock.calls.map((call) => (call[0] as { query: object }).query))
+    expect(sent.length).toBeGreaterThan(0)
+    for (const q of sent) {
+      expect(q).toMatchObject({ cluster_id: CLUSTER, exclude_namespace: ['kube-system'], kev: true, all_filters: true })
+    }
+  })
+
+  it.each(Object.keys(CASES))('%s opens Findings with its filters and the value of the row', async (id) => {
+    const c = CASES[id]!
+    for (const name of new Set(READS[id]!.calls)) {
+      for (const a of c.answers) fn(name).mockResolvedValueOnce(ok(a))
+    }
+    const { w, router } = mountFiltered(id)
+    await flushPromises()
+    await w.find(c.click).trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toEqual({ namespace: '!kube-system', attr: 'kev', ...c.row })
+  })
+
+  it('a panel with no filters reads and links as before', async () => {
+    facetsMock().mockResolvedValue(ok({ facets: FACETS }))
+    const panel = panelById('findings-by-namespace')!
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })
+    const w = mount(panel.component, { props: panel.props(ctx({ filters: null })), global: { plugins: [router] } })
+    await flushPromises()
+    expect((facetsMock().mock.calls[0]![0] as { query: object }).query).toEqual({ cluster_id: CLUSTER })
+    await w.find('tbody tr').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toEqual({ namespace: 'ns-00' })
   })
 })

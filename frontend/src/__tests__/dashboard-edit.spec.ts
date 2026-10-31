@@ -31,6 +31,7 @@ vi.mock('@/dashboards/catalog', () => {
       heights: { short: 7 },
       usesScanner: true,
       framed: false,
+      takesFilters: true,
       props: (ctx: { scanner: string }) => ({ scanner: ctx.scanner }),
     },
     'top-components': {
@@ -282,6 +283,21 @@ describe('edit mode', () => {
     // ?edit=1 in a link does not open edit mode for them
     expect(gs.inits).toEqual([])
     expect(w.find('h1').text()).toBe('Weekly risk review')
+  })
+
+  it('a panel with filters shows its filters button in edit mode, and a move keeps the filters (issue 999)', async () => {
+    const filters = { present: true, exclude_namespace: ['kube-system'] }
+    const panels = [{ ...PANELS[0]!, filters }, PANELS[1]!, PANELS[2]!]
+    vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ panels })))
+    const { w } = await mountView('?edit=1')
+    const tools = w.findAll('.dash-tools')
+    expect(tools[0]!.find('[aria-label="1 filter on Findings summary"]').exists()).toBe(true)
+    expect(w.findAll('[aria-label$="filter on Findings summary"], [aria-label*="filters on"]')).toHaveLength(1)
+
+    await drop({ 'triage-progress': { x: 0, y: 20 } })
+    await button(w, 'Save changes').trigger('click')
+    await flushPromises()
+    expect(patchBody().body.panels).toContainEqual(expect.objectContaining({ panel: 'findings-summary', filters }))
   })
 
   it('a drop makes the layout unsaved; a save sends the revision and the new panels', async () => {

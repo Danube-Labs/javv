@@ -17,7 +17,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 
 /** a stub panel: its props, and how many times it rendered (a new prop object renders it again) */
 const Probe = defineComponent({
-  props: ['scanner', 'query', 'clusterId', 't', 'windowDays', 'pageSize'],
+  props: ['scanner', 'query', 'clusterId', 't', 'windowDays', 'pageSize', 'filters'],
   setup(props) {
     let renders = 0
     return () => h('div', { class: 'probe', 'data-props': JSON.stringify(props), 'data-renders': String(++renders) })
@@ -35,10 +35,12 @@ vi.mock('@/dashboards/catalog', () => ({
         heights: { short: 7 },
         usesScanner: true,
         framed: false,
-        props: (ctx: { clusterId: string; t: string | null; scanner: string; windowDays: number }) => ({
+        takesFilters: true,
+        props: (ctx: { clusterId: string; t: string | null; scanner: string; windowDays: number; filters?: unknown }) => ({
           scanner: ctx.scanner,
           query: { cluster_id: ctx.clusterId, ...(ctx.t ? { as_of: ctx.t } : {}) },
           windowDays: ctx.windowDays,
+          ...(ctx.filters ? { filters: ctx.filters } : {}),
         }),
       },
       'top-components': {
@@ -217,6 +219,27 @@ describe('layout', () => {
 })
 
 describe('the read page', () => {
+  it('gives a filtered panel its filters and an unfiltered panel none (issue 999)', async () => {
+    const filters = { present: true, exclude_namespace: ['kube-system'] }
+    vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+      answer(200, {
+        ...DOC,
+        panels: [
+          { panel: 'findings-summary', x: 0, y: 0, w: 1, h: 'short', filters },
+          { panel: 'findings-summary', x: 1, y: 0, w: 1, h: 'short' },
+        ],
+      }),
+    )
+    const { w } = await mountView()
+    const [left, right] = probeProps(w)
+    expect(left!.props.filters).toEqual(filters)
+    expect(right!.props).not.toHaveProperty('filters')
+    // the corner button of decision 2 C: only on the panel that has filters
+    const cells = w.findAll('.dash-cell')
+    expect(cells[0]!.find('.dash-corner button').text()).toBe('1 filter')
+    expect(cells[1]!.find('.dash-corner button').exists()).toBe(false)
+  })
+
   it('draws each panel with the cluster and the scanner the owner saved', async () => {
     const { w } = await mountView()
     expect(w.find('h1').text()).toBe('Weekly risk review')
