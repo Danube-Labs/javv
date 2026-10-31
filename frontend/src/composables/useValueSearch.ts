@@ -7,7 +7,11 @@
 import { ref } from 'vue'
 
 import { client } from '@/api/client'
-import { facetFindingsApiV1FindingsFacetsGet } from '@/api/generated'
+import {
+  approvalListApiV1DecisionsApprovalsGet,
+  auditFacetsApiV1AuditFacetsGet,
+  facetFindingsApiV1FindingsFacetsGet,
+} from '@/api/generated'
 import type { FacetBucket, ValueSearch, ValueSearchFn } from '@/filters/facets'
 import type { FilterField } from '@/filters/fields.config'
 import { logger } from '@/lib/logger'
@@ -57,11 +61,28 @@ export function useValueSearch() {
   return { failed, ask, reset, resultFor }
 }
 
+type ListQuery = () => Record<string, unknown> | null | undefined
+
+/** The values of `key` in the answer of a value search, or null when the server refused it.
+ * A bucket with no scanner split (Approvals) gets an empty one, the shape of the lists. */
+function readAnswer(
+  event: string,
+  key: string,
+  data: unknown,
+  response: Response | undefined,
+): ValueSearch | null {
+  if (!response?.ok || !data) {
+    logger.warn(event, { status: response?.status })
+    return null
+  }
+  const out = data as { facets?: Record<string, Omit<FacetBucket, 'by_scanner'>[]>; more?: boolean }
+  const buckets = (out.facets?.[key] ?? []).map((b) => ({ by_scanner: {}, ...b }))
+  return { buckets, more: out.more === true }
+}
+
 /** A value search over the findings facets, with the filters of the list (`query`): the
  * Findings screen and the panel settings of a dashboard. */
-export function findingsValueSearch(
-  query: () => Record<string, unknown> | null | undefined,
-): ValueSearchFn {
+export function findingsValueSearch(query: ListQuery): ValueSearchFn {
   return async (field, text) => {
     const q = query()
     const key = field.type === 'terms' ? field.facetKey : undefined
@@ -70,11 +91,34 @@ export function findingsValueSearch(
       client,
       query: { ...q, fields: [key], contains: text } as never,
     })
-    if (!response?.ok || !data) {
-      logger.warn('findings_value_search_failed', { status: response?.status })
-      return null
-    }
-    const out = data as { facets?: Record<string, FacetBucket[]>; more?: boolean }
-    return { buckets: out.facets?.[key] ?? [], more: out.more === true }
+    return readAnswer('findings_value_search_failed', key, data, response)
+  }
+}
+
+/** A value search over the Audit log User list, with the filters of the list (`query`). The
+ * server searches the `actor` values only. */
+export function auditValueSearch(query: ListQuery): ValueSearchFn {
+  return async (field, text) => {
+    const q = query()
+    if (!q || field.type !== 'terms' || field.facetKey !== 'actor') return null
+    const { data, response } = await auditFacetsApiV1AuditFacetsGet({
+      client,
+      query: { ...q, contains: text } as never,
+    })
+    return readAnswer('audit_value_search_failed', 'actor', data, response)
+  }
+}
+
+/** A value search over the Approvals Approver list, with the filters and the `warn_days` of
+ * the list (`query`). The server searches the `created_by` values only. */
+export function approvalsValueSearch(query: ListQuery): ValueSearchFn {
+  return async (field, text) => {
+    const q = query()
+    if (!q || field.type !== 'terms' || field.facetKey !== 'created_by') return null
+    const { data, response } = await approvalListApiV1DecisionsApprovalsGet({
+      client,
+      query: { ...q, contains: text } as never,
+    })
+    return readAnswer('approvals_value_search_failed', 'created_by', data, response)
   }
 }
