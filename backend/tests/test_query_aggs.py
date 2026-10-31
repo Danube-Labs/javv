@@ -16,10 +16,12 @@ import pytest
 from backend.query.aggs import (
     FACET_FIELDS,
     GROUP_FIELDS,
+    SEARCHABLE_FACETS,
     TOP_COMPONENTS_SIZE,
     build_composite_body,
     build_facets_body,
     build_top_components_body,
+    contains_pattern,
     decode_after,
     encode_after,
     facet_aggregation,
@@ -271,3 +273,77 @@ def test_facet_buckets_unwraps_both_shapes() -> None:
     assert facet_aggregation(wrapped) is plain
     assert facet_aggregation(flag) is flag
     assert facet_aggregation(wrapped_flag) is flag
+
+
+# issue 1064: a value search. The user types some letters and the server sends the values of
+# one list facet that contain them, from all values and not only the top 32.
+
+
+@pytest.mark.parametrize(
+    ("text", "pattern"),
+    [
+        ("pay", ".*[pP][aA][yY].*"),
+        ("PaY", ".*[pP][aA][yY].*"),  # the case of the text does not matter
+        ("eu-7", ".*[eE][uU]\\-7.*"),
+        # every regex operator is escaped, so the text cannot change the pattern
+        (
+            'a.b*c?+|{}[]()"\\#@&<>~',
+            '.*[aA]\\.[bB]\\*[cC]\\?\\+\\|\\{\\}\\[\\]\\(\\)\\"\\\\\\#\\@\\&\\<\\>\\~.*',
+        ),
+        ("ns 1", ".*[nN][sS]\\ 1.*"),
+        ("Ärzte", ".*[äÄ][rR][zZ][tT][eE].*"),
+    ],
+)
+def test_the_contains_pattern_matches_the_text_in_any_case(text: str, pattern: str) -> None:
+    assert contains_pattern(text) == pattern
+
+
+def test_the_contains_pattern_matches_values_as_the_store_reads_it() -> None:
+    """The store reads `include` as a Lucene regex over the whole value. Python's `re` reads the
+    same subset the same way, so a full match here is a full match there."""
+    import re
+
+    rx = re.compile(contains_pattern("Pay"))
+    assert rx.fullmatch("payments-EU-7")
+    assert rx.fullmatch("PAYROLL")
+    assert rx.fullmatch("team-pay")
+    assert not rx.fullmatch("billing")
+    dot = re.compile(contains_pattern("a.b"))
+    assert dot.fullmatch("xa.by") and not dot.fullmatch("axb")
+
+
+@pytest.mark.parametrize("field", SEARCHABLE_FACETS)
+def test_a_value_search_asks_one_more_bucket_than_the_cap(field: str) -> None:
+    body = build_facets_body(SearchFilters(), fields=[field], contains="pay")
+    terms = body["aggs"][field]["terms"]
+    assert terms["size"] == 33  # 32 to show, and one more that tells "more values match"
+    assert terms["include"] == contains_pattern("pay")
+    assert terms["field"] == field
+    assert body["aggs"][field]["aggs"]["by_scanner"]["terms"]["field"] == "scanner"
+
+
+def test_a_value_search_keeps_the_filter_rules_of_its_facet() -> None:
+    """The counts of a search use the same filters as the list: the facet leaves out its own
+    field (issue 949), and with all_filters it keeps it (issue 999)."""
+    f = SearchFilters(namespace=["payments"], severity=["high"])
+    own_free = build_facets_body(f, fields=["namespaces"], contains="pay")
+    counted = own_free["aggs"]["namespaces"]["filter"]
+    assert '"payments"' not in json.dumps(counted) and '"high"' in json.dumps(counted)
+    assert own_free["aggs"]["namespaces"]["aggs"]["values"]["terms"]["include"]
+    every = build_facets_body(f, fields=["namespaces"], contains="pay", all_filters=True)
+    assert '"payments"' in json.dumps(every["query"])
+    assert every["aggs"]["namespaces"]["terms"]["include"]
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [None, [], ["namespaces", "assignee"], ["severity"], ["state"], ["overdue"], ["unassigned"]],
+)
+def test_a_value_search_takes_exactly_one_list_facet(fields: list[str] | None) -> None:
+    with pytest.raises(ValueError):
+        build_facets_body(SearchFilters(), fields=fields, contains="pay", sla_cutoffs=_CUTOFFS)
+
+
+def test_no_value_search_keeps_the_body_unchanged() -> None:
+    body = build_facets_body(SearchFilters(), fields=["namespaces"])
+    assert body["aggs"]["namespaces"]["terms"] == {"field": "namespaces", "size": 32}
