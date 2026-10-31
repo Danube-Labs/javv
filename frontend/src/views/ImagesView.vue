@@ -214,6 +214,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           :selections="filters.selections"
           :facets="facets"
           :modes="filters.modes"
+          :search-values="searchValues"
           @toggle="filters.toggle"
           @pick="filters.pickValue"
         >

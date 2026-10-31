@@ -119,3 +119,12 @@ describe('Findings: the value search of the menu (issue 1064)', () => {
     expect(vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0].query).not.toHaveProperty('all_filters')
   })
 })
+
+describe('Findings: the search box of the filter list (issue 1064, Q1 option B)', () => {
+  it('gets the same search as the menu', async () => {
+    const w = await mountFindings()
+    const bar = w.findComponent({ name: 'FilterBar' })
+    expect(bar.props('searchValues')).toBeTypeOf('function')
+    expect(w.findComponent({ name: 'FacetRail' }).props('searchValues')).toBe(bar.props('searchValues'))
+  })
+})

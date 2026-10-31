@@ -332,6 +332,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         :counts-unknown="facetsFailed"
         :modes="filters.modes"
         :max-values="MAX_FILTER_VALUES"
+        :search-values="searchValues"
         @toggle="filters.toggle"
         @pick="filters.pickValue"
       >

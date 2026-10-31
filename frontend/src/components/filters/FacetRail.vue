@@ -5,10 +5,20 @@
  * Counts come from the server's facets response verbatim; the per-scanner split is shown as a
  * tooltip and never combined client-side (FR-12).
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import ValueActions from '@/components/filters/ValueActions.vue'
-import { capOf, facetItems, scannerSplit, stoppedAtCap, type FacetsResponse } from '@/filters/facets'
+import UiSearchBox from '@/components/ui/UiSearchBox.vue'
+import { useValueSearch } from '@/composables/useValueSearch'
+import {
+  capOf,
+  facetItems,
+  scannerSplit,
+  searchItems,
+  stoppedAtCap,
+  type FacetsResponse,
+  type ValueSearchFn,
+} from '@/filters/facets'
 import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
 import type { FilterMode, Modes } from '@/stores/filters'
 
@@ -21,6 +31,8 @@ const props = defineProps<{
   modes?: Modes
   /** the most values one field takes, where the API caps it (Findings, issue 949) */
   maxValues?: number
+  /** finds the values past a list's cap; a list that stopped at its cap gets a search box */
+  searchValues?: ValueSearchFn
 }>()
 
 const emit = defineEmits<{
@@ -63,6 +75,39 @@ const shown = (g: Group) =>
     ? g.items
     : g.items.filter((it, i) => i < VISIBLE || activeMode(g.field, it.value) !== null)
 const capped = (g: Group) => stoppedAtCap(g.field, props.facets)
+
+/**
+ * The search box of a list that stopped at its cap (issue 1064, Q1 option B). The server matches
+ * the text against all values of the field. Until it answers, the listed values that contain the
+ * text show. One box searches at a time: typing in a box empties the others.
+ */
+const remote = useValueSearch()
+const search = ref<{ field: string; text: string } | null>(null)
+const searchable = (g: Group) => props.searchValues !== undefined && capped(g)
+const textOf = (g: Group) => (searchable(g) && search.value?.field === g.field.key ? search.value.text : '')
+const searching = (g: Group) => textOf(g).trim() !== ''
+const searched = (g: Group) => (searching(g) ? remote.resultFor(g.field.key, textOf(g)) : null)
+function typeIn(g: Group, text: string) {
+  search.value = { field: g.field.key, text }
+}
+const searchedGroup = computed(() => {
+  const g = groups.value.find((x) => x.field.key === search.value?.field)
+  return g && searchable(g) ? g : null
+})
+// new counts (the filters changed) ask again, so the found values carry the new counts
+watch([() => search.value?.text, () => searchedGroup.value?.field, () => props.facets], () => {
+  const g = searchedGroup.value
+  if (g && search.value && props.searchValues) remote.ask(props.searchValues, g.field, search.value.text)
+  else remote.reset()
+})
+function rows(g: Group) {
+  const found = searched(g)
+  if (found) return searchItems(g.field, found.buckets)
+  if (!searching(g)) return shown(g)
+  const q = textOf(g).trim().toLowerCase()
+  return g.items.filter((it) => it.label.toLowerCase().includes(q) || it.value.toLowerCase().includes(q))
+}
+const article = (label: string) => (/^[aeiou]/i.test(label) ? 'an' : 'a')
 function toggleOpen(g: Group) {
   const next = new Set(expanded.value)
   if (!next.delete(g.field.key)) next.add(g.field.key)
@@ -77,9 +122,17 @@ const fmt = (n: number) => n.toLocaleString('en-US')
     <slot name="header" />
     <div v-for="g in groups" :key="g.field.key" class="facet">
       <div class="facet-title">{{ g.field.label }}</div>
-      <div class="facet-body" :class="{ 'facet-body-open': isOpen(g) }">
+      <UiSearchBox
+        v-if="searchable(g)"
+        class="facet-vsearch"
+        :model-value="textOf(g)"
+        :placeholder="`Find ${article(g.field.label)} ${g.field.label.toLowerCase()}…`"
+        :aria-label="`Find a value of ${g.field.label}`"
+        @update:model-value="(t: string) => typeIn(g, t)"
+      />
+      <div class="facet-body" :class="{ 'facet-body-open': isOpen(g) || searching(g) }">
       <button
-        v-for="it in shown(g)"
+        v-for="it in rows(g)"
         :key="it.value"
         class="facet-row"
         :class="{
@@ -110,15 +163,22 @@ const fmt = (n: number) => n.toLocaleString('en-US')
       </button>
       </div>
       <button
-        v-if="hasMore(g)"
+        v-if="hasMore(g) && !searching(g)"
         class="facet-more"
         :aria-expanded="isOpen(g)"
         @click="toggleOpen(g)"
       >
         {{ isOpen(g) ? 'show fewer' : `show all ${fmt(g.items.length)}` }}
       </button>
-      <p v-if="isOpen(g) && capped(g)" class="facet-cap">
-        Top {{ capOf(g.field) }} by count. Add filter finds the other values.
+      <template v-if="searching(g)">
+        <p v-if="searched(g)?.more" class="facet-cap" role="status">More values match. Type more letters.</p>
+        <p v-else-if="remote.failed.value" class="facet-cap" role="status">
+          Could not search all values. The list shows the top {{ capOf(g.field) }}.
+        </p>
+      </template>
+      <p v-else-if="isOpen(g) && capped(g)" class="facet-cap">
+        Top {{ capOf(g.field) }} by count.
+        {{ searchable(g) ? 'The box above finds the other values.' : 'Add filter finds the other values.' }}
       </p>
       <p
         v-if="maxValues !== undefined && (selections[g.field.key] ?? []).length >= maxValues"
@@ -188,6 +248,10 @@ const fmt = (n: number) => n.toLocaleString('en-US')
 .facet-more:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 1px;
+}
+.facet-vsearch {
+  margin: 0 4px 6px;
+  padding: 6px 9px;
 }
 .facet-cap {
   margin: 4px 8px 2px;

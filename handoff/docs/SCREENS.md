@@ -330,8 +330,13 @@ text, it says "More values match. Type more letters." When the search fails, the
 not search all values. The list shows the top 32." Then it filters the values that it has. The
 panel settings of a dashboard use the same menu, with the scanner that the panel counts. At a past
 time, the scan history has no Namespace or Assignee counts, so the menu does not ask for them.
-The open list of such a field ends with the note "Top 32 by count. Add filter finds the other
-values." (operator ruling 2026-10-31, Q1 option A). The list has no search box of its own.
+The filter list has the same search (operator ruling 2026-10-31, Q1 option B, on full-page
+pictures). A list at its cap has a search box under its title, "Find a namespace…". The box asks
+after 2 letters and a short pause, and shows the values that the server found, with their counts.
+Until the server answers, the box filters the values that the list has. The box shows the same two
+notes as the menu. A search in one box empties the other boxes. When the filters change, the box
+asks again for the new counts. The open list of such a field ends with the note "Top 32 by count.
+The box above finds the other values."
 
 **A count of 0** (operator ruling 2026-10-23, issue 980, on each screen that uses the rail): a
 value of a fixed list with no rows shows 0, as the prototype does. The fixed lists are Severity,
@@ -591,7 +596,8 @@ Namespace, Image and Tag take several values: OR within a field, AND across fiel
 adds the value (issue 950). Scanner takes one value. Findings keeps the one-value limit of its
 backend (issue 949).
 The Image and Tag lists show the 32 values with the most images. The search box of the Add filter
-menu finds the other values in all the rows of the run (issue 1064).
+menu and the search box of a list at its cap find the other values in all the rows of the run
+(issue 1064).
 
 **States:** loading; empty/first-run; **scanner-silent** banner ("Inventory as of T; scanner
 silent since…"); **last-run-incomplete** banner ("showing the last complete inventory"); `T<now`
