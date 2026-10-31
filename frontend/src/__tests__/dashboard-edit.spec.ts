@@ -568,6 +568,17 @@ describe('edit mode', () => {
       expect(patchBody().body.panels![0]).toMatchObject({ panel: 'findings-summary', filters: { severity: ['critical'] } })
     })
 
+    it('the menu counts with the scanner that the panel reads, as the panel counts', async () => {
+      vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ scanner: 'grype' })))
+      const { w } = await mountView('?edit=1')
+      const lastQuery = () => vi.mocked(facetFindingsApiV1FindingsFacetsGet).mock.calls.at(-1)![0].query
+      const pop = await openSettings(w, 'Findings summary')
+      expect(lastQuery()).toMatchObject({ cluster_id: 'c1', scanner: 'grype' })
+      await pop.findAll('button').find((b) => b.text() === 'trivy')!.trigger('click')
+      await flushPromises()
+      expect(lastQuery()).toMatchObject({ scanner: 'trivy' })
+    })
+
     it('shows the stored filters, and Apply with no change is no change', async () => {
       const panels = [{ ...PANELS[0]!, filters: { present: true, exclude_namespace: ['kube-system'] } }, PANELS[1]!, PANELS[2]!]
       vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ panels })))

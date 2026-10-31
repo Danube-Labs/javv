@@ -27,6 +27,7 @@ import {
   type PanelSettings,
   type WidthChoice,
 } from '@/dashboards/edit'
+import { countedScanner } from '@/dashboards/layout'
 import { panelFilterFields } from '@/dashboards/panelFilters'
 import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { captureLens, presetToRouteQuery } from '@/findings/savedViews'
@@ -56,13 +57,22 @@ const filters = useSettingsFilters()
 filters.fromQuery(props.panel.filters ? presetToRouteQuery(FINDINGS_FIELDS, props.panel.filters) : {})
 const draftFilters = computed(() => captureLens(fields, filters.selections, filters.modes, props.windowDays))
 
+const countScanner = computed(() =>
+  entry ? countedScanner(entry, { scanner: scanner.value }, props.dashboardScanner) : 'all',
+)
+
 // the Findings rule for the menu: a field does not count under its own filter, so the values not
 // picked yet stay in the list. The panel itself reads with all_filters.
 const { facets, failed } = useFindingsFacets(
   () => undefined,
   () =>
     fields.length && props.clusterId
-      ? { cluster_id: props.clusterId, ...(props.t ? { as_of: props.t } : {}), ...draftFilters.value }
+      ? {
+          cluster_id: props.clusterId,
+          ...(props.t ? { as_of: props.t } : {}),
+          ...(countScanner.value !== 'all' ? { scanner: countScanner.value } : {}),
+          ...draftFilters.value,
+        }
       : null,
 )
 

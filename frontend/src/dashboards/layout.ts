@@ -61,8 +61,18 @@ export function pageBlocks(placed: readonly PlacedPanel[]): PageBlock[] {
 }
 
 /** The scanner a panel reads: its pinned one, or the dashboard's switch (Q7). */
-export function panelScanner(stored: DashboardPanel, switched: ScannerLens): ScannerLens {
+export function panelScanner(stored: Pick<DashboardPanel, 'scanner'>, switched: ScannerLens): ScannerLens {
   return stored.scanner === 'trivy' || stored.scanner === 'grype' ? stored.scanner : switched
+}
+
+/** The scanner a panel counts, which the Add filter menu of its settings counts too: a panel
+ * without scanner data counts every scanner. */
+export function countedScanner(
+  panel: Pick<CatalogPanel, 'usesScanner'>,
+  stored: Pick<DashboardPanel, 'scanner'>,
+  switched: ScannerLens,
+): ScannerLens {
+  return panel.usesScanner ? panelScanner(stored, switched) : 'all'
 }
 
 export function isPinned(stored: DashboardPanel): boolean {
@@ -83,7 +93,7 @@ export function panelPropsCache() {
       clusterId: dash.clusterId,
       t: dash.t,
       windowDays: dash.windowDays,
-      scanner: p.panel.usesScanner ? panelScanner(p.stored, dash.scanner) : 'all',
+      scanner: countedScanner(p.panel, p.stored, dash.scanner),
       height: p.stored.h,
       filters: p.panel.takesFilters ? panelFiltersAt(p.stored.filters, dash.windowDays) : null,
     }

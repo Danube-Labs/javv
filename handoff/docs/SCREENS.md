@@ -1186,7 +1186,9 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   have a Filters field: the Findings `FilterBar` with `menu-up`, so its Add filter menu opens
   above the bar. The fields are the Findings fields less Scanner, and less the filters the panel
   refuses (State on Triage progress, `refusedFilters`). The menu counts at the dashboard cluster
-  and T, where a field does not count under its own filter, as on Findings. An Escape in the menu
+  and T, where a field does not count under its own filter, as on Findings. It counts the scanner
+  that the panel counts (`countedScanner`): the scanner of the settings or the dashboard switch.
+  A panel without scanner data counts all scanners. An Escape in the menu
   closes only the menu. Apply puts the filters in the draft, or takes them off after Clear all,
   and a change of filters makes the save bar show unsaved changes. "New in range" counts in the
   range of the dashboard, not in the days that the panel stores with the filter (operator,
