@@ -118,7 +118,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
         {{ isOpen(g) ? 'show fewer' : `show all ${fmt(g.items.length)}` }}
       </button>
       <p v-if="isOpen(g) && capped(g)" class="facet-cap">
-        top {{ capOf(g.field) }} by count; search reaches the rest
+        Top {{ capOf(g.field) }} by count. Add filter finds the other values.
       </p>
       <p
         v-if="maxValues !== undefined && (selections[g.field.key] ?? []).length >= maxValues"

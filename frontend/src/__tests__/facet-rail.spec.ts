@@ -145,13 +145,13 @@ describe('the "top N" note on a fixed list (issues 980 and 983)', () => {
 
   it('is shown when the server stopped at 32 buckets', async () => {
     const w = await open(FIXED, { fixed: values.slice(0, FACET_CAP).map(bucket) })
-    expect(w.find('.facet-cap').text()).toBe('top 32 by count; search reaches the rest')
+    expect(w.find('.facet-cap').text()).toBe('Top 32 by count. Add filter finds the other values.')
   })
 
   it('names the cap of the field', async () => {
     const small: FilterField = { ...FIXED, facetCap: 8 } as FilterField
     const w = await open(small, { fixed: values.slice(0, 8).map(bucket) })
-    expect(w.find('.facet-cap').text()).toBe('top 8 by count; search reaches the rest')
+    expect(w.find('.facet-cap').text()).toBe('Top 8 by count. Add filter finds the other values.')
   })
 
   it('is not shown on the Action list with 40 actions, and each action has a count (issue 983)', async () => {
