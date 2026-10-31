@@ -740,3 +740,101 @@ async def test_account_events_need_can_manage_users(env) -> None:
         )
     finally:
         await manager.aclose()
+
+
+def test_the_user_search_leaves_out_the_user_filter_and_asks_for_one_more_value() -> None:
+    """issue 1064: the search on the User list counts under the filters of the list, so it
+    leaves out the user filter too. The text becomes a pattern that ignores case, and the
+    search asks for 33 values: the 33rd means that more values match."""
+    from backend.query.audit import build_actor_search_body
+
+    t = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
+    filters = AuditFilters(actor=["alice"], exclude_actor=["bob"], action=["assign"], until=t)
+    body = build_actor_search_body(filters, "Pay.")
+    assert (
+        body["query"] == build_audit_body(AuditFilters(action=["assign"], until=t), size=0)["query"]
+    )
+    assert body["size"] == 0
+    assert body["aggs"] == {
+        "actor": {"terms": {"field": "actor", "size": 33, "include": ".*[pP][aA][yY]\\..*"}}
+    }
+
+
+async def test_the_user_search_finds_a_user_past_the_top_32(env) -> None:
+    """issue 1064: the User list stops at the 32 users with the most events. The search finds
+    a user past them, in any case, with the count of the list. A picked or excluded user does
+    not hide it. A text that more than 32 users contain gives 32 values and `more`."""
+    http, client = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    tag = uuid.uuid4().hex[:8]
+    kind = f"kind-{tag}"  # scopes the rows: fleet rows of other tests share the log
+    busy = [f"u-busy-{tag}-{i:02d}" for i in range(33)]
+    quiet = f"Svc-Payments-{tag}"  # a scanner-style raw casing, not pre-folded
+    for actor in busy:
+        await _journal(client, cid, n=2, actor=actor, entity_type=kind)
+    await _journal(client, cid, n=1, actor=quiet, entity_type=kind)
+    scope = {"cluster_id": cid, "entity_type": [kind]}
+
+    r = await http.get("/api/v1/audit/facets", params=scope)
+    listed = {b["key"] for b in r.json()["facets"]["actor"]}
+    assert len(listed) == 32 and quiet not in listed
+
+    r = await http.get("/api/v1/audit/facets", params={**scope, "contains": "PAYMENTS"})
+    assert r.status_code == 200
+    assert r.json() == {
+        "facets": {"actor": [{"key": quiet, "count": 1, "by_scanner": {}}]},
+        "more": False,
+    }
+    for pick in ({"actor": [busy[0]]}, {"exclude_actor": [quiet]}):
+        r = await http.get("/api/v1/audit/facets", params={**scope, **pick, "contains": "payments"})
+        assert [b["key"] for b in r.json()["facets"]["actor"]] == [quiet]
+
+    r = await http.get("/api/v1/audit/facets", params={**scope, "contains": f"busy-{tag}"})
+    body = r.json()
+    assert len(body["facets"]["actor"]) == 32 and body["more"] is True
+    # at a past time before the events, the search finds nothing
+    r = await http.get(
+        "/api/v1/audit/facets",
+        params={**scope, "contains": "payments", "as_of": "2020-01-01T00:00:00Z"},
+    )
+    assert r.json() == {"facets": {"actor": []}, "more": False}
+
+
+async def test_the_user_search_finds_only_the_users_the_session_can_see(env) -> None:
+    """issue 1064 with issue 892: without `can_manage_users`, the search leaves out the account
+    events, as the list does. A user with only sign-ins is not found."""
+    viewer, client = env
+    actor = f"u-signin-{uuid.uuid4().hex[:8]}"
+    await append_auth_event(
+        client,
+        actor=actor,
+        action="login",
+        entity_type="user",
+        entity_id=f"user:{actor}",
+        strict=True,
+    )
+    await client.indices.refresh(index="system-audit-log-*")
+    params = {"cluster_id": f"c-audit-{uuid.uuid4().hex[:8]}", "contains": actor}
+    r = await viewer.get("/api/v1/audit/facets", params=params)
+    assert r.status_code == 200
+    assert r.json()["facets"]["actor"] == []
+    manager = await _session_with(client, ["can_manage_users"])
+    try:
+        r = await manager.get("/api/v1/audit/facets", params=params)
+        assert [b["key"] for b in r.json()["facets"]["actor"]] == [actor]
+    finally:
+        await manager.aclose()
+
+
+async def test_the_user_search_takes_2_to_128_characters_and_no_interval(env) -> None:
+    http, _ = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    for params in (
+        {"contains": "a"},
+        {"contains": "a" * 129},
+        {"contains": "alice", "interval": "day"},
+    ):
+        r = await http.get("/api/v1/audit/facets", params={"cluster_id": cid, **params})
+        assert r.status_code == 422, params
+    r = await http.get("/api/v1/audit/facets", params={"cluster_id": cid, "contains": "a" * 128})
+    assert r.status_code == 200

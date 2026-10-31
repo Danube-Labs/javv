@@ -192,6 +192,8 @@ export const exportAuditCsvApiV1AuditExportCsvGet = <ThrowOnError extends boolea
  * other users stay listed) — the counts describe the current lens, server-side.
  * With `interval` (day|hour) the response adds `activity`: the audit lens's events-over-time
  * histogram across the picker window (quiet buckets included as zeros).
+ * With `contains` it is a value search on the User list instead (issue 1064): the users that
+ * contain the text, at most 32, and `more`.
  */
 export const auditFacetsApiV1AuditFacetsGet = <ThrowOnError extends boolean = false>(options: Options<AuditFacetsApiV1AuditFacetsGetData, ThrowOnError>): RequestResult<AuditFacetsApiV1AuditFacetsGetResponses, AuditFacetsApiV1AuditFacetsGetErrors, ThrowOnError> => (options.client ?? client).get<AuditFacetsApiV1AuditFacetsGetResponses, AuditFacetsApiV1AuditFacetsGetErrors, ThrowOnError>({ url: '/api/v1/audit/facets', ...options });
 

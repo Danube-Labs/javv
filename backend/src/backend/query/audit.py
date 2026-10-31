@@ -19,7 +19,7 @@ from opensearchpy import AsyncOpenSearch
 from opensearchpy.exceptions import NotFoundError, RequestError
 
 from backend.core.settings import get_settings
-from backend.query.aggs import _FACET_TERMS_SIZE
+from backend.query.aggs import _FACET_TERMS_SIZE, contains_pattern
 from backend.query.search import CursorExpired, decode_cursor, encode_cursor
 from backend.tenancy.read_path import tenant_query
 
@@ -293,6 +293,26 @@ async def decorate_rows(
             row["finding"] = findings.get(row["entity_id"])
         elif row.get("entity_type") == "decision":
             row["decision"] = decisions.get(row["entity_id"])
+
+
+def build_actor_search_body(filters: AuditFilters, contains: str) -> dict[str, Any]:
+    """A value search on the User list (issue 1064): the users that contain `contains`, in any
+    case, from all users and not only the top 32. It counts under the filters of the list, so it
+    leaves out the user filter too. It asks for one value more than the cap: the caller sends the
+    cap and reads the extra one as "more values match" (`aggs.cap_value_search`)."""
+    body = build_audit_body(replace(filters, actor=None, exclude_actor=None), size=0)
+    body.pop("sort")
+    body.pop("track_total_hits")
+    body["aggs"] = {
+        "actor": {
+            "terms": {
+                "field": "actor",
+                "size": _FACET_TERMS_SIZE + 1,
+                "include": contains_pattern(contains),
+            }
+        }
+    }
+    return body
 
 
 def build_audit_facets_body(

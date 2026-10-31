@@ -1681,6 +1681,10 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
          */
         window_days?: number;
         /**
+         * Contains
+         */
+        contains?: string | null;
+        /**
          * Entity Type
          */
         entity_type?: Array<string> | null;

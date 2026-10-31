@@ -27,12 +27,13 @@ from backend.core.metrics import EXPORT_BYTES, EXPORT_ROWS, LIMIT_REJECTIONS, OS
 from backend.core.settings import get_settings
 from backend.export.audit_csv import count_audit_lens, stream_audit_csv
 from backend.query import pit_guard
-from backend.query.aggs import facet_aggregation
+from backend.query.aggs import cap_value_search, facet_aggregation
 from backend.query.as_of import parse_as_of
 from backend.query.audit import (
     AuditFilters,
     CursorExpired,
     audit_tenant_query,
+    build_actor_search_body,
     build_audit_facets_body,
     run_audit_search,
 )
@@ -159,16 +160,26 @@ async def audit_facets(
     as_of: Annotated[str | None, Query(max_length=64)] = None,
     interval: Annotated[str | None, Query(max_length=8)] = None,
     window_days: Annotated[int, Query(ge=1, le=365)] = 30,
+    # the limits of the findings value search: a search starts at 2 letters
+    contains: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
 ) -> dict[str, Any]:
     """Rail counts for the audit screen (M9d rework): entity_type/action/actor terms under the
     same filters + D28 bound as the walk (the actor count leaves out the user filter, so the
     other users stay listed) — the counts describe the current lens, server-side.
     With `interval` (day|hour) the response adds `activity`: the audit lens's events-over-time
-    histogram across the picker window (quiet buckets included as zeros)."""
+    histogram across the picker window (quiet buckets included as zeros).
+    With `contains` it is a value search on the User list instead (issue 1064): the users that
+    contain the text, at most 32, and `more`."""
     client = cast(Any, request.app.state.opensearch)
     try:
         filters = replace(params, until=parse_as_of(as_of))
-        body = build_audit_facets_body(filters, interval=interval, window_days=window_days)
+        if contains is not None and interval is not None:
+            raise ValueError("contains takes no interval")
+        body = (
+            build_actor_search_body(filters, contains)
+            if contains is not None
+            else build_audit_facets_body(filters, interval=interval, window_days=window_days)
+        )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     try:
@@ -186,6 +197,10 @@ async def audit_facets(
         OS_REQUEST_ERRORS.labels(kind).inc()
         raise HTTPException(503, "search backend unavailable — retry") from exc
     aggs = resp["aggregations"]
+    if contains is not None:
+        shown, more = cap_value_search(aggs["actor"]["buckets"])
+        actors = [{"key": b["key"], "count": b["doc_count"], "by_scanner": {}} for b in shown]
+        return {"facets": {"actor": actors}, "more": more}
     activity = aggs.pop("activity", None)
     out: dict[str, Any] = {
         "facets": {
