@@ -31,6 +31,26 @@ shows the data of the cluster that you select at the top of the page.
 
 A dashboard has at most 24 panels.
 
+## Filter a panel
+
+Five panels can count only some findings: Findings summary, Package type, Findings by namespace,
+Top components and Triage progress.
+
+1. Open the dashboard, then select Edit dashboard.
+2. On the panel, select Settings.
+3. In Filters, select Add filter. Select a field, then select or type one value or more. To leave
+   out the values, select is not.
+4. Select Apply, then select Save changes.
+
+A panel with filters shows 1 filter or a number of filters over its top right corner. Select it to
+see the filters. Open in Findings shows the same findings on the Findings page.
+
+- The list has no Scanner filter. Use the Scanner setting of the panel.
+- Triage progress shows each state, so its list has no State filter.
+- New in range counts the findings first seen in the time range at the top of the page.
+
+To remove the filters of a panel, select Clear all in Filters. Then select Apply and Save changes.
+
 ## Change the name or the sharing
 
 1. Open the dashboard, then select Edit dashboard.
