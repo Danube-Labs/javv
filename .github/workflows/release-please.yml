@@ -102,7 +102,7 @@ jobs:
           done
 
       # before the build: a private package must read as published, not as missing (issue 833)
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -275,7 +275,7 @@ jobs:
         run: development/scripts/publish-charts.sh package "$VERSION" "$RUNNER_TEMP/charts"
 
       # docker's login is the one cosign reads; helm keeps its own
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
