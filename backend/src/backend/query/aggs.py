@@ -225,6 +225,67 @@ def build_top_components_body(filters: SearchFilters) -> dict[str, Any]:
     return body
 
 
+# the cap of the filtered Riskiest images board (issue 1063): the same server board as Top
+# components, which the card pages as display slices. Not a tunable.
+TOP_IMAGES_SIZE = 100
+
+# the canonical severity -> the bucket name of the images read, so a top-images row has the
+# shape of a GET /api/v1/images row (issue 1063)
+SEVERITY_BUCKETS = {
+    "critical": "crit",
+    "high": "high",
+    "medium": "med",
+    "low": "low",
+    "negligible": "negligible",
+    "unknown": "unknown",
+}
+# the rank of the Riskiest images card: critical, then high, medium and low
+TOP_IMAGES_RANK = ("crit", "high", "med", "low")
+
+
+def build_top_images_body(
+    filters: SearchFilters,
+    digests: list[str],
+    *,
+    sla_cutoffs: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """The filtered Riskiest images board (issue 1063): capped `terms` over `image_digest`,
+    limited to `digests` (the running images), ranked by the store on the findings of each
+    severity in TOP_IMAGES_RANK. One primary shard (INDEX-MAP), so the ranking is exact. Each
+    bucket counts each severity per scanner; with no scanner filter the rank adds the scanners'
+    counts, as the card's "all" does. Two scanners are never one count."""
+    canonical = {bucket: sev for sev, bucket in SEVERITY_BUCKETS.items()}
+    body = _base(filters, sla_cutoffs)
+    body["query"]["bool"]["filter"].append({"terms": {"image_digest": digests}})
+    body["aggs"] = {
+        "images": {
+            "terms": {
+                "field": "image_digest",
+                "size": TOP_IMAGES_SIZE,
+                "order": [{key: "desc"} for key in TOP_IMAGES_RANK] + [{"_key": "asc"}],
+            },
+            "aggs": {
+                **{
+                    key: {"filter": {"term": {"severity_canonical": canonical[key]}}}
+                    for key in TOP_IMAGES_RANK
+                },
+                "by_scanner": {
+                    "terms": {"field": "scanner", "size": 4},
+                    "aggs": {
+                        "severity": {
+                            "terms": {
+                                "field": "severity_canonical",
+                                "size": len(SEVERITY_BUCKETS),
+                            }
+                        }
+                    },
+                },
+            },
+        }
+    }
+    return body
+
+
 def build_composite_body(
     filters: SearchFilters,
     *,
