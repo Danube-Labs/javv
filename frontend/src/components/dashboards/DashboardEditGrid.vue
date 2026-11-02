@@ -152,8 +152,9 @@ watch(
             <ScannerTag :name="String(p.stored.scanner)" /> pinned
           </span>
           <PanelFiltersButton
-            v-if="p.panel.takesFilters"
+            v-if="p.panel.takesFilters || p.panel.takesAuditFilters"
             :filters="p.stored.filters"
+            :audit-filters="p.stored.audit_filters"
             :panel-name="p.panel.name"
             :pinned="p.panel.usesScanner && isPinned(p.stored) ? (p.stored.scanner as 'trivy' | 'grype') : null"
           />

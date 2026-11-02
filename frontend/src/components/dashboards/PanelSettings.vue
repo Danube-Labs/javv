@@ -3,18 +3,22 @@
  * The settings of one panel in edit mode (issue 440, rulings Q6 and Q7), in a popover next to the
  * panel (option B, 2026-10-26), so the panel stays in view: the scanner for a panel with scanner
  * data, the width, the height for a panel that has more than one, and the findings filters for a
- * panel that counts findings (issue 999, decision 3 B: the Findings filter bar). Apply changes the
- * draft only; the save bar saves it.
+ * panel that counts findings (issue 999, decision 3 B: the Findings filter bar), and the Audit log
+ * filters for a panel that counts audit-log rows (issue 1063). Apply changes the draft only; the save
+ * bar saves it.
  */
 import { computed, ref } from 'vue'
 
+import type { PanelAuditFilters, ViewPreset } from '@/api/generated'
+import { TRIAGE_ENTITY_TYPES } from '@/audit/fields.config'
 import FilterBar from '@/components/filters/FilterBar.vue'
 import PopoverShell from '@/components/ui/PopoverShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
+import { useAuditFacets } from '@/composables/useAuditFacets'
 import { useFindingsFacets } from '@/composables/useFindingsFacets'
-import { findingsValueSearch } from '@/composables/useValueSearch'
+import { auditValueSearch, findingsValueSearch } from '@/composables/useValueSearch'
 import { heightsOf, panelById, type PanelHeight } from '@/dashboards/catalog'
 import {
   HEIGHT_OPTS,
@@ -29,7 +33,7 @@ import {
   type WidthChoice,
 } from '@/dashboards/edit'
 import { countedScanner } from '@/dashboards/layout'
-import { panelFilterFields } from '@/dashboards/panelFilters'
+import { PANEL_AUDIT_FIELDS, panelFilterFields } from '@/dashboards/panelFilters'
 import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { captureLens, presetToRouteQuery } from '@/findings/savedViews'
 import type { ScannerLens } from '@/lib/scannerLens'
@@ -77,9 +81,30 @@ const { facets, failed } = useFindingsFacets(() => undefined, menuQuery)
 // a value past the top 32: the menu asks under the same query (issue 1064)
 const searchValues = findingsValueSearch(menuQuery)
 
+// the Audit log filters of a panel that counts audit-log rows (issue 1063): the menu counts the
+// rows of the panel, so it reads with the entities that the panel reads
+const auditFields = entry?.takesAuditFilters ? PANEL_AUDIT_FIELDS : []
+const audit = useSettingsAuditFilters()
+audit.fromQuery(props.panel.audit_filters ? presetToRouteQuery(PANEL_AUDIT_FIELDS, props.panel.audit_filters as ViewPreset) : {})
+const draftAudit = computed(
+  () => captureLens(auditFields, audit.selections, audit.modes, props.windowDays) as PanelAuditFilters,
+)
+const auditMenuQuery = () =>
+  auditFields.length && props.clusterId
+    ? {
+        cluster_id: props.clusterId,
+        ...(props.t ? { as_of: props.t } : {}),
+        entity_type: [...TRIAGE_ENTITY_TYPES],
+        ...draftAudit.value,
+      }
+    : null
+const { facets: auditFacets, failed: auditFailed } = useAuditFacets(auditMenuQuery)
+const searchAuditValues = auditValueSearch(auditMenuQuery)
+
 function apply() {
   const settings: PanelSettings = { w: widthOf(w.value), h: h.value, scanner: entry?.usesScanner ? scanner.value : null }
   if (fields.length) settings.filters = Object.keys(draftFilters.value).length ? draftFilters.value : null
+  if (auditFields.length) settings.auditFilters = Object.keys(draftAudit.value).length ? draftAudit.value : null
   emit('apply', settings)
 }
 </script>
@@ -92,6 +117,7 @@ const useSettingsFilters = makeFiltersStore(
   MAX_FILTER_VALUES,
   FINDINGS_EXCLUSIVE_PAIRS,
 )
+const useSettingsAuditFilters = makeFiltersStore('panel-settings-audit-filters', PANEL_AUDIT_FIELDS, MAX_FILTER_VALUES)
 </script>
 
 <template>
@@ -132,6 +158,25 @@ const useSettingsFilters = makeFiltersStore(
           @clear-all="filters.clearAll"
         />
         <p class="ps-help">The panel counts only the findings that match these filters.</p>
+      </UiField>
+      <UiField v-if="auditFields.length" label="Filters">
+        <FilterBar
+          :fields="auditFields"
+          :selections="audit.selections"
+          :modes="audit.modes"
+          :facets="auditFacets"
+          :counts-unknown="auditFailed"
+          :max-values="MAX_FILTER_VALUES"
+          :search-values="searchAuditValues"
+          menu-up
+          @toggle="audit.toggle"
+          @set-text="audit.setText"
+          @set-mode="audit.setMode"
+          @toggle-mode="audit.toggleMode"
+          @clear-field="audit.clearField"
+          @clear-all="audit.clearAll"
+        />
+        <p class="ps-help">The panel counts only the changes that match these filters.</p>
       </UiField>
       <div class="ps-actions">
         <UiButton variant="control" @click="emit('close')">Cancel</UiButton>

@@ -66,6 +66,19 @@ vi.mock('@/dashboards/catalog', () => ({
         framed: true,
         props: (ctx: { clusterId: string }) => ({ query: { cluster_id: ctx.clusterId } }),
       },
+      // the panel with audit filters (issue 1063)
+      'triage-activity': {
+        id: 'triage-activity',
+        name: 'Triage activity',
+        line: 'one line',
+        component: Probe,
+        heights: { short: 5 },
+        usesScanner: false,
+        framed: false,
+        takesFilters: false,
+        takesAuditFilters: true,
+        props: (ctx: { clusterId: string }) => ({ query: { cluster_id: ctx.clusterId } }),
+      },
     })[id],
 }))
 vi.mock('@/api/generated', () => ({
@@ -243,6 +256,23 @@ describe('the read page', () => {
     // the corner button of decision 2 C: only on the panel that has filters
     const cells = w.findAll('.dash-cell')
     expect(cells[0]!.find('.dash-corner button').text()).toBe('1 filter')
+    expect(cells[1]!.find('.dash-corner button').exists()).toBe(false)
+  })
+
+  it('shows the filters button of a Triage activity panel with audit filters (issue 1063)', async () => {
+    vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+      answer(200, {
+        ...DOC,
+        panels: [
+          { panel: 'triage-activity', x: 0, y: 0, w: 2, h: 'short', audit_filters: { action: ['risk_accept'] } },
+          { panel: 'triage-activity', x: 0, y: 5, w: 2, h: 'short' },
+        ],
+      }),
+    )
+    const { w } = await mountView()
+    const cells = w.findAll('.dash-cell')
+    expect(cells[0]!.find('.dash-corner button').text()).toBe('1 filter')
+    expect(cells[0]!.find('.dash-corner button').attributes('aria-label')).toBe('1 filter on Triage activity')
     expect(cells[1]!.find('.dash-corner button').exists()).toBe(false)
   })
 

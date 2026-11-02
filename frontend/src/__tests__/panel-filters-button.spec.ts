@@ -99,3 +99,38 @@ describe('the filters button of a panel', () => {
     expect(router.currentRoute.value.query).not.toHaveProperty('scanner')
   })
 })
+
+describe('the filters button of Triage activity (issue 1063)', () => {
+  const AUDIT = { action: ['risk_accept'], exclude_actor: ['bot'] }
+
+  it('counts and names the audit filters', async () => {
+    const { w } = mountButton({ panelName: 'Triage activity', auditFilters: AUDIT })
+    expect(w.find('button').text()).toBe('2 filters')
+    await w.find('button').trigger('click')
+    await flushPromises()
+    expect([...popover()!.querySelectorAll('.pf-item')].map((li) => li.textContent)).toEqual([
+      'Action is Risk accepted',
+      'User is not bot',
+    ])
+    expect(popover()!.querySelector('.pf-intro')?.textContent).toBe('The numbers of this panel count only these changes.')
+  })
+
+  it('opens the Audit log with the same filters and the entities that the panel counts', async () => {
+    const { w, router } = mountButton({ panelName: 'Triage activity', auditFilters: AUDIT })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    const open = [...popover()!.querySelectorAll('button')].find((b) => b.textContent === 'Open in Audit log')!
+    open.click()
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/audit')
+    expect(router.currentRoute.value.query).toEqual({ entity: 'finding,decision', action: 'risk_accept', actor: '!bot' })
+  })
+
+  it('shows no button when the panel has no audit filters', () => {
+    for (const auditFilters of [null, undefined, {}]) {
+      const { w } = mountButton({ panelName: 'Triage activity', auditFilters })
+      expect(w.find('button').exists()).toBe(false)
+      w.unmount()
+    }
+  })
+})
