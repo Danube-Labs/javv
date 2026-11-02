@@ -107,7 +107,7 @@ image_digest      keyword
 tag               keyword
 app               keyword
 crit high med low negligible unknown total fixable   integer   FINDINGS of the run, one per finding_key (issue 1076): build_docs merges report entries of one key (last wins) and counts by the server severity; total = sum of buckets; clean scan = all 0. Runs stored before mapping v21 counted report entries
-report_entries    long          rows of the scanner report in the envelope (issue 1076, v21) - >= total; a report repeats a finding once per file that holds the package. No screen reads it: the audit match with the report. Absent on runs stored before v21
+report_entries    long          rows of the scanner report in the envelope (issue 1076, v21) - >= total; a report repeats a finding once per file that holds the package. No screen reads it: the audit match with the report. Absent on runs stored before v21. Like any field a version adds to an append series, the template carries it and each cluster's current backing index maps it from its next rollover; until then it is in _source only (the round-trip script reads _source)
 schema_version    short
 ```
 
