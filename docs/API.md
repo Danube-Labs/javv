@@ -670,6 +670,7 @@ Each panel:
 | `h` | The height: `short` or `tall`. Each panel has the heights that its catalog entry gives. |
 | `scanner` | `dashboard` (default), `trivy` or `grype`, only on a panel with scanner data. `dashboard` follows the scanner switch of the dashboard. |
 | `filters` | The filters of `GET /api/v1/findings`, with the fields and checks of the `preset` of a saved view. Only on the panels that read findings counts: `findings-summary`, `package-type`, `findings-by-namespace`, `riskiest-images`, `top-components` and `triage-progress`. |
+| `audit_filters` | The Action and User filters of `GET /api/v1/audit`: `action`, `actor`, `exclude_action` and `exclude_actor`, each a list of at most 32 values. An action has at most 64 characters, and a user at most 128. Only on `triage-activity`. The panel sets the Entity filter itself. |
 
 The backend refuses with 422:
 
@@ -678,6 +679,8 @@ The backend refuses with 422:
 - `filters` on a panel that does not read findings counts
 - `scanner` or `exclude_scanner` in `filters`. The `scanner` field of the panel does this.
 - `state` or `exclude_state` in the `filters` of `triage-progress`. This panel shows each state.
+- `audit_filters` on a panel other than `triage-activity`, or `entity_type` in `audit_filters`
+- a field and its `exclude_` form in `audit_filters`, as the Audit log refuses them
 - a panel outside the two columns, or two panels that start on the same cell. A panel holds
   only the cells of its top row: one cell for a width of 1, and both cells for a width of 2. The
   height takes no part in this check, because the page makes each panel as tall as its content.

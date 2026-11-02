@@ -32,7 +32,14 @@ from pydantic import (
 from backend.audit.writer import append_field_change
 from backend.auth.capabilities import ROLES_INDEX, holds, require_capability
 from backend.auth.principal import Principal, get_current_principal
-from backend.dashboards.catalog import FILTER_PANELS, PANELS, PanelHeight, PanelId
+from backend.dashboards.catalog import (
+    AUDIT_FILTER_PANELS,
+    FILTER_PANELS,
+    PANELS,
+    PanelHeight,
+    PanelId,
+)
+from backend.query.search import MAX_FILTER_VALUES, FilterValue64, FilterValue128
 from backend.routers.views import ViewPreset
 
 router = APIRouter(prefix="/api/v1/dashboards", tags=["dashboards"])
@@ -49,6 +56,27 @@ _MAX_Y = 1_000  # 24 panels of at most 26 rows each fit with room to spare
 _RoleName = Annotated[str, StringConstraints(min_length=1, max_length=64)]
 
 
+class PanelAuditFilters(BaseModel):
+    """The Audit log filters of a panel (issue 1063, decision D2 A), with the caps of the audit
+    route. No Entity: the panel sets it, so a stored one is a 422 (extra=forbid)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: list[FilterValue64] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    actor: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    exclude_action: list[FilterValue64] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    exclude_actor: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+
+    @model_validator(mode="after")
+    def _included_or_excluded(self) -> "PanelAuditFilters":
+        # the audit route refuses the same pair with a 422 (`_audit_filters`)
+        if self.action and self.exclude_action:
+            raise ValueError("action and exclude_action are mutually exclusive")
+        if self.actor and self.exclude_actor:
+            raise ValueError("actor and exclude_actor are mutually exclusive")
+        return self
+
+
 class DashboardPanel(BaseModel):
     """One panel: a catalog ID, its cell, its width in columns and the NAME of its height."""
 
@@ -63,6 +91,7 @@ class DashboardPanel(BaseModel):
     scanner: Literal["dashboard", "trivy", "grype"] | None = None
     # the filters of /findings, in the shape and with the checks of a saved view (issue 999)
     filters: ViewPreset | None = None
+    audit_filters: PanelAuditFilters | None = None
 
     @model_validator(mode="after")
     def _fits_the_catalog(self) -> "DashboardPanel":
@@ -77,6 +106,8 @@ class DashboardPanel(BaseModel):
             self.scanner = "dashboard"
         if self.filters is not None:
             self._check_filters(self.filters)
+        if self.audit_filters is not None and self.panel not in AUDIT_FILTER_PANELS:
+            raise ValueError(f"the panel {self.panel} takes no audit filters")
         return self
 
     def _check_filters(self, filters: ViewPreset) -> None:

@@ -309,6 +309,56 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             id="a filter pair the API refuses",
         ),
         pytest.param({"panels": [_panel(filters={"color": "red"})]}, id="an unknown filter"),
+        pytest.param(
+            {"panels": [_panel(audit_filters={"action": ["risk_accept"]})]},
+            id="audit filters on a panel that reads no audit log",
+        ),
+        pytest.param(
+            {"panels": [_panel("triage-activity", audit_filters={"entity_type": ["user"]})]},
+            id="an Entity filter on Triage activity",
+        ),
+        pytest.param(
+            {
+                "panels": [
+                    _panel(
+                        "triage-activity",
+                        audit_filters={"action": ["resolve"], "exclude_action": ["note"]},
+                    )
+                ]
+            },
+            id="an audit field included and excluded",
+        ),
+        pytest.param(
+            {
+                "panels": [
+                    _panel(
+                        "triage-activity",
+                        audit_filters={"actor": ["alice"], "exclude_actor": ["bot"]},
+                    )
+                ]
+            },
+            id="the audit user included and excluded",
+        ),
+        pytest.param(
+            {
+                "panels": [
+                    _panel(
+                        "triage-activity",
+                        filters={"kev": True},
+                        audit_filters={"action": ["resolve"]},
+                    )
+                ]
+            },
+            id="findings filters and audit filters on Triage activity",
+        ),
+        pytest.param(
+            {"panels": [_panel("triage-activity", audit_filters={"actor": ["a"] * 33})]},
+            id="more audit values than a filter takes",
+        ),
+        pytest.param(
+            {"panels": [_panel("triage-activity", audit_filters={"actor": ["a" * 129]})]},
+            id="an audit value longer than the route takes",
+        ),
         pytest.param({"sharing": "roles", "roles": []}, id="shared with no role"),
         pytest.param(
             {"sharing": "everyone", "roles": ["triager"]}, id="roles without role sharing"
@@ -372,6 +422,35 @@ async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> N
     after = {p["panel"]: p.get("filters") for p in r.json()["panels"]}
     assert after["top-components"] == {"state": ["open"], "present": True}
     assert after["findings-summary"] == filters["findings-summary"]
+
+
+async def test_triage_activity_keeps_its_audit_filters(env) -> None:
+    """Issue 1063, decision D2 A: Triage activity stores the Action and User filters of the
+    Audit log in `audit_filters`, apart from the findings filters. A change replaces them, and
+    a panel without them stores none."""
+    user, _ = env
+    owner = await user(EDIT)
+    audit = {"action": ["risk_accept", "not_affected"], "exclude_actor": ["bot"]}
+    panels = [
+        _panel("triage-activity", audit_filters=audit),
+        _panel("handled-findings", y=1),
+    ]
+    made = await _create(owner, panels=panels)
+    path = f"/api/v1/dashboards/{made['dashboard_id']}"
+    stored = (await owner.get(path)).json()["panels"]
+    kept = {p["panel"]: p.get("audit_filters") for p in stored}
+    assert kept["triage-activity"] == audit
+    assert kept["handled-findings"] is None
+    assert "filters" not in stored[0]
+
+    changed = [
+        {**p, "audit_filters": {"actor": ["alice"]}} if p["panel"] == "triage-activity" else p
+        for p in stored
+    ]
+    r = await owner.patch(path, json={"revision": 1, "panels": changed})
+    assert r.status_code == 200, r.text
+    after = {p["panel"]: p.get("audit_filters") for p in r.json()["panels"]}
+    assert after["triage-activity"] == {"actor": ["alice"]}
 
 
 async def test_a_role_that_no_bundle_has_is_refused_on_create_and_on_change(env) -> None:

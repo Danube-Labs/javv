@@ -390,6 +390,16 @@
         "additionalProperties": false,
         "description": "One panel: a catalog ID, its cell, its width in columns and the NAME of its height.",
         "properties": {
+          "audit_filters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PanelAuditFilters"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "filters": {
             "anyOf": [
               {
@@ -1282,6 +1292,78 @@
           "scanner"
         ],
         "title": "MintRequest",
+        "type": "object"
+      },
+      "PanelAuditFilters": {
+        "additionalProperties": false,
+        "description": "The Audit log filters of a panel (issue 1063, decision D2 A), with the caps of the audit\nroute. No Entity: the panel sets it, so a stored one is a 422 (extra=forbid).",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "exclude_action": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Action"
+          },
+          "exclude_actor": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Actor"
+          }
+        },
+        "title": "PanelAuditFilters",
         "type": "object"
       },
       "PasswordChange": {
