@@ -839,6 +839,26 @@ describe('Riskiest images with filters (issue 1063)', () => {
     await flushPromises()
     expect(fn('topImagesFindingsApiV1FindingsTopImagesGet')).toHaveBeenCalledTimes(2)
   })
+
+  it.each([
+    ['trivy', 'grype', '2', '1'],
+    ['all', 'grype', '3', '1'],
+  ] as const)('a switch from %s to %s keeps the last answer until the next one comes', async (from, to, before, after) => {
+    let land: (v: unknown) => void = () => {}
+    fn('topImagesFindingsApiV1FindingsTopImagesGet')
+      .mockResolvedValueOnce(ok({ inventory: INVENTORY, images: [TOP_IMAGE] }))
+      .mockReturnValueOnce(new Promise((resolve) => (land = resolve)))
+    const panel = panelById('riskiest-images')!
+    const w = mountPanel(panel, ctx({ scanner: from, filters: FILTERS as never }))
+    await flushPromises()
+    await w.setProps(panel.props(ctx({ scanner: to, filters: FILTERS as never })))
+    await flushPromises()
+    // the counts of the answer on screen, as read, while the next read is open
+    expect(w.find('tbody tr td:nth-child(2)').text()).toBe(before)
+    land(ok({ inventory: INVENTORY, images: [TOP_IMAGE] }))
+    await flushPromises()
+    expect(w.find('tbody tr td:nth-child(2)').text()).toBe(after)
+  })
 })
 
 describe('a panel with filters (issue 999)', () => {

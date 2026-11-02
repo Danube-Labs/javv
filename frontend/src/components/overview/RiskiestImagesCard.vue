@@ -63,6 +63,8 @@ let imagesFor: string | null = null
 
 /** a scanner switch changes the read only when the store ranks under filters */
 const filtered = computed(() => panelFilterParts(props.filters).length > 0)
+/** the lens the store ranked the rows on screen for; null when the card ranks them itself */
+const rankedFor = ref<string | null>(null)
 
 /** The read of the card. With no filter, the running images, ranked here. With filters, the
  * store ranks them under the filters, for one scanner when the card shows one. */
@@ -105,16 +107,19 @@ watch(
       unknown.value = body.inventory === null
       unknownAt.value = t
       images.value = body.images ?? []
+      rankedFor.value = filtered.value ? props.scanner : null
     }
     settled.value = true
   },
   { immediate: true },
 )
 
-/** A row's severity bucket under the lens: one scanner's committed counts, or their sum. */
+/** A row's severity bucket under the lens: one scanner's committed counts, or their sum. Rows
+ * the store ranked for one scanner keep that scanner until the next answer comes. */
 function sev(row: ImageRow, key: (typeof RANK_KEYS)[number]): number {
   const per = row.severity_by_scanner ?? {}
-  if (props.scanner !== 'all') return per[props.scanner]?.[key] ?? 0
+  const lens = rankedFor.value ?? props.scanner
+  if (lens !== 'all') return per[lens]?.[key] ?? 0
   return Object.values(per).reduce((n, b) => n + (b[key] ?? 0), 0)
 }
 
