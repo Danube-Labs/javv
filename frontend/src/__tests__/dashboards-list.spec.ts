@@ -312,6 +312,8 @@ describe('the words of a result', () => {
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 1], msg: 'Value error, a panel takes no scanner filter: its scanner setting does that', type: 'value_error' }] }, 'Not correct: a scanner filter, which the scanner setting of the panel does (panel 2)'],
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: 'Value error, the panel scan-ingest takes no filters', type: 'value_error' }] }, 'Not correct: filters on a panel that takes no filters (panel 1)'],
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: 'Value error, the panel triage-progress takes no state filter', type: 'value_error' }] }, 'Not correct: a filter that this panel does not take (panel 1)'],
+    [{ line: 1, status: 422, errors: [{ loc: ['panels', 0], msg: 'Value error, the panel findings-summary takes no audit filters', type: 'value_error' }] }, 'Not correct: Audit log filters on a panel that takes none (panel 1)'],
+    [{ line: 1, status: 422, errors: [{ loc: ['panels', 0, 'audit_filters'], msg: 'Value error, actor and exclude_actor are mutually exclusive', type: 'value_error' }] }, 'Not correct: one field with both is and is not (panel 1, audit_filters)'],
     [{ line: 1, status: 422, errors: [{ loc: [], msg: 'Value error, a check that is new', type: 'value_error' }] }, 'Not correct: a value that JAVV cannot use'],
   ] as const)('%o', (result, words) => {
     expect(lineResultCopy(result as never)).toBe(words)
