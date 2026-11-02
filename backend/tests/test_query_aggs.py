@@ -9,10 +9,13 @@ every aggregation body.
 """
 
 import json
+import uuid
 from typing import Any
 
 import pytest
+from opensearchpy import AsyncOpenSearch
 
+from backend.core.bootstrap import MUTABLE_INDEXES
 from backend.query.aggs import (
     FACET_FIELDS,
     GROUP_FIELDS,
@@ -30,8 +33,10 @@ from backend.query.aggs import (
     decode_after,
     encode_after,
     facet_aggregation,
+    top_images_rows,
 )
 from backend.query.search import SearchFilters, unassigned_clause
+from os_env import OS_URL, requires_opensearch
 
 
 def test_facets_body_aggregates_each_whitelisted_field_by_scanner() -> None:
@@ -152,6 +157,8 @@ def test_top_images_body_ranks_the_running_images_on_the_store() -> None:
         {"low": "desc"},
         {"_key": "asc"},  # a tie keeps one order from read to read
     ]
+    # breadth-first would defer the counts the order reads and cut on key order (issue 1063)
+    assert images["terms"]["collect_mode"] == "depth_first"
     # each rank key counts the canonical severity, never the scanner's own word (D46)
     assert TOP_IMAGES_RANK == ("crit", "high", "med", "low")
     assert images["aggs"]["crit"] == {"filter": {"term": {"severity_canonical": "critical"}}}
@@ -169,6 +176,40 @@ def test_top_images_body_counts_each_severity_per_scanner_only() -> None:
     # the severity counts exist only under the scanner split: two scanners are never one count
     assert set(images["aggs"]) == {*TOP_IMAGES_RANK, "by_scanner"}
     assert set(SEVERITY_BUCKETS.values()) == {"crit", "high", "med", "low", "negligible", "unknown"}
+
+
+@requires_opensearch
+async def test_top_images_body_ranks_an_image_spread_over_segments_first() -> None:
+    """Issue 1063: the true top image has one critical finding in each of 6 segments; 1,200
+    others have 3 in one segment. Searched in segment slices, each slice keeps only its own top
+    buckets and drops it. The `findings` body of bootstrap searches without slices."""
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    index = f"t-topimg-{uuid.uuid4().hex[:8]}"
+    findings = MUTABLE_INDEXES["findings"]
+    settings = {**findings["settings"]["index"], "refresh_interval": -1}
+    await client.indices.create(
+        index=index, body={"settings": {"index": settings}, "mappings": findings["mappings"]}
+    )
+    try:
+        digests = ["sha256:x"] + [f"sha256:s{s}-{i:03d}" for s in range(6) for i in range(200)]
+        doc = {
+            "cluster_id": "c",
+            "scanner": "trivy",
+            "severity_canonical": "critical",
+            "present": True,
+        }
+        for s in range(6):  # one refresh per batch: one segment per batch
+            batch = ["sha256:x"] + [f"sha256:s{s}-{i:03d}" for i in range(200) for _ in range(3)]
+            lines = [x for d in batch for x in ({"index": {}}, {**doc, "image_digest": d})]
+            assert not (await client.bulk(index=index, body=lines))["errors"]
+            await client.indices.refresh(index=index)
+        body = build_top_images_body(SearchFilters(), digests)
+        rows = top_images_rows((await client.search(index=index, body=body))["aggregations"])
+        assert rows[0]["image_digest"] == "sha256:x"
+        assert rows[0]["severity_by_scanner"]["trivy"]["crit"] == 6
+    finally:
+        await client.indices.delete(index=index)
+        await client.close()
 
 
 def test_top_images_body_needs_the_cutoffs_for_an_overdue_filter() -> None:

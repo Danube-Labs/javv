@@ -67,7 +67,9 @@ from opensearchpy import AsyncOpenSearch, RequestError
 #             past-time read gives a KEV finding the KEV deadline, as the live read does)
 #          v21 + report_entries on javv-scan-events (issue 1076 — the counts count findings, and
 #             the run keeps the number of scanner report entries so an audit can match the report)
-MAPPING_VERSION = 21
+#          v22 findings searched without concurrent segment search (issue 1063 — a setting, no
+#             field: a capped ranking over segment slices can drop the true top image)
+MAPPING_VERSION = 22
 
 _KW = {"type": "keyword"}
 _DATE = {"type": "date"}
@@ -82,6 +84,14 @@ _BASE_SETTINGS: dict[str, Any] = {"number_of_shards": 1, "auto_expand_replicas":
 
 # the shared lowercase normalizer (INDEX-MAP header): verbatim in _source, normalized for aggs
 _LC_ANALYSIS = {"normalizer": {"lc": {"type": "custom", "filter": ["lowercase"]}}}
+
+# OpenSearch 3.x searches segment slices in parallel when a request aggregates, and applies a terms
+# shard_size to each slice: a capped ranking (Riskiest images, Top components) can then drop the
+# true top bucket even on one shard. The sequential path keeps it exact and measured no slower at
+# 1M findings (issue 1063). A dynamic setting, so an upgrade puts it on an existing index too.
+_UPGRADE_SETTINGS: dict[str, dict[str, Any]] = {
+    "findings": {"search.concurrent_segment_search.mode": "none"},
+}
 
 
 def _mappings(properties: dict[str, Any]) -> dict[str, Any]:
@@ -338,7 +348,9 @@ _DASHBOARDS_PROPERTIES: dict[str, Any] = {
 
 MUTABLE_INDEXES: dict[str, dict[str, Any]] = {
     "findings": {
-        "settings": {"index": {**_BASE_SETTINGS, "analysis": _LC_ANALYSIS}},
+        "settings": {
+            "index": {**_BASE_SETTINGS, "analysis": _LC_ANALYSIS, **_UPGRADE_SETTINGS["findings"]}
+        },
         "mappings": _mappings(_FINDINGS_PROPERTIES),
     },
     "system-tokens": {
@@ -624,6 +636,10 @@ async def bootstrap(client: AsyncOpenSearch, *, prefix: str = "") -> dict[str, s
                 results[full] = "unchanged"
             else:
                 await client.indices.put_mapping(index=full, body=body["mappings"])
+                if name in _UPGRADE_SETTINGS:
+                    await client.indices.put_settings(
+                        index=full, body={"index": _UPGRADE_SETTINGS[name]}
+                    )
                 results[full] = "updated"
         else:
             try:

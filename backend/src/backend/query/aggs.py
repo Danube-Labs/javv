@@ -226,7 +226,7 @@ def build_top_components_body(filters: SearchFilters) -> dict[str, Any]:
 
 
 # the cap of the filtered Riskiest images board (issue 1063): the same server board as Top
-# components, which the card pages as display slices. Not a tunable.
+# components, which the card shows page by page. Not a tunable.
 TOP_IMAGES_SIZE = 100
 
 # the canonical severity -> the bucket name of the images read, so a top-images row has the
@@ -262,8 +262,9 @@ def build_top_images_body(
 ) -> dict[str, Any]:
     """The filtered Riskiest images board (issue 1063): capped `terms` over `image_digest`,
     limited to `digests` (the running images), ranked by the store on the findings of each
-    severity in TOP_IMAGES_RANK. One primary shard (INDEX-MAP), so the ranking is exact. Each
-    bucket counts each severity per scanner; with no scanner filter the rank adds the scanners'
+    severity in TOP_IMAGES_RANK. The ranking is exact: one primary shard (INDEX-MAP), no segment
+    slices on `findings` (bootstrap), and depth-first collection. Each bucket counts each
+    severity per scanner; with no scanner filter the rank adds the scanners'
     counts, as the card's "all" does. Two scanners are never one count."""
     canonical = {bucket: sev for sev, bucket in SEVERITY_BUCKETS.items()}
     body = _base(filters, sla_cutoffs)
@@ -274,6 +275,9 @@ def build_top_images_body(
                 "field": "image_digest",
                 "size": TOP_IMAGES_SIZE,
                 "order": [{key: "desc"} for key in TOP_IMAGES_RANK] + [{"_key": "asc"}],
+                # left to itself the store can pick breadth-first and defer the very counts the
+                # order reads, then cut on key order and drop the top image (issue 1063)
+                "collect_mode": "depth_first",
             },
             "aggs": {
                 **{

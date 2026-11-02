@@ -57,6 +57,9 @@ def test_findings_mapping_matches_index_map() -> None:
     # the lc normalizer must exist in the index settings for the severity mapping to be valid
     analysis = MUTABLE_INDEXES["findings"]["settings"]["index"]["analysis"]
     assert analysis["normalizer"]["lc"] == {"type": "custom", "filter": ["lowercase"]}
+    # issue 1063: a capped ranking over segment slices can drop the true top image
+    settings = MUTABLE_INDEXES["findings"]["settings"]["index"]
+    assert settings["search.concurrent_segment_search.mode"] == "none"
 
 
 def test_scan_events_template_carries_commit_catalog_and_provenance() -> None:
@@ -277,3 +280,23 @@ async def test_bootstrap_reads_a_mutable_index_behind_an_alias(
     got = await client.indices.get_mapping(index=name)
     assert list(got) == [copy] and got[copy]["mappings"]["_meta"]["version"] == MAPPING_VERSION
     assert (await bootstrap(client, prefix=prefix))[name] == "unchanged"
+
+
+@requires_opensearch
+async def test_an_upgrade_searches_findings_without_concurrent_segments(
+    client: AsyncOpenSearch, prefix: str
+) -> None:
+    """Issue 1063: the setting is dynamic, so a store from before it gets it on the upgrade, not
+    only a new index at create."""
+    name = f"{prefix}findings"
+    body = MUTABLE_INDEXES["findings"]
+    index = {k: v for k, v in body["settings"]["index"].items() if not k.startswith("search.")}
+    older = {
+        "settings": {"index": index},
+        "mappings": {**body["mappings"], "_meta": {"version": MAPPING_VERSION - 1}},
+    }
+    await client.indices.create(index=name, body=older)
+
+    assert (await bootstrap(client, prefix=prefix))[name] == "updated"
+    got = await client.indices.get_settings(index=name, params={"flat_settings": "true"})
+    assert got[name]["settings"]["index.search.concurrent_segment_search.mode"] == "none"
