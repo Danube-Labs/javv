@@ -356,3 +356,75 @@ async def test_no_inventory_is_unknown_not_empty_and_tenant_scoped(env) -> None:
     body: dict[str, Any] = r.json()
     assert body["inventory"] is None and body["images"] == []  # unknown — the other tenant's
     # committed run never bleeds across cluster_id
+
+
+_SEVERITY_KEYS = ("crit", "high", "med", "low", "negligible", "unknown")
+
+
+async def test_images_and_top_images_give_the_same_counts_after_a_real_ingest(env) -> None:
+    """Issue 1063 step 3: with no filter, the Riskiest images card shows the same numbers from
+    either read. GET /api/v1/images takes them from the scan events, GET
+    /api/v1/findings/top-images from the findings. They agree because ingest counts findings,
+    not the entries of the report (issue 1076): the seed repeats one finding in a second file,
+    and the scanners send their own severity words."""
+    import json
+    from pathlib import Path
+
+    from backend.models.envelope import IngestEnvelope, canonical_severity
+    from backend.services.ingest import ingest_envelope
+
+    http, client = env
+    cid = f"c-cmp-{uuid.uuid4().hex[:8]}"
+    golden = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text())
+    digest = golden["image_digest"]
+    repeated = {**golden["findings"][1], "severity": golden["findings"][1]["severity"].lower()}
+    trivy = {**golden, "cluster_id": cid, "findings": [*golden["findings"], repeated]}
+    grype = {
+        **golden,
+        "cluster_id": cid,
+        "scanner": "grype",
+        "scan_run_id": "grypecmp0001",
+        "effective_config": {
+            **golden["effective_config"],
+            "tuning": {"only_fixed": False, "scope": None, "scan_timeout": 300},
+        },
+        "findings": [{**f, "severity": f["severity"].title()} for f in golden["findings"][:12]],
+    }
+    for raw in (trivy, grype):
+        # the scanner's counts are the entries of its report, as it sends them
+        counts: dict[str, int] = dict.fromkeys(_SEVERITY_KEYS, 0)
+        for f in raw["findings"]:
+            bucket = canonical_severity(f["severity"])
+            counts[{"critical": "crit", "medium": "med"}.get(bucket, bucket)] += 1
+        raw["counts"] = {
+            **counts,
+            "total": len(raw["findings"]),
+            "fixable": sum(1 for f in raw["findings"] if f.get("fixable")),
+        }
+        await ingest_envelope(client, IngestEnvelope.model_validate(raw))
+    await _manifest(client, cluster_id=cid, inventory_run_id="inv-cmp", inventory_order=1)
+    await _image(client, cluster_id=cid, inventory_run_id="inv-cmp", digest=digest, total=0)
+    await client.indices.refresh(index="findings")
+    await client.indices.refresh(index=f"javv-scan-events-{cid}-*")
+    await _refresh(client, cid)
+
+    images = (await http.get("/api/v1/images", params={"cluster_id": cid})).json()["images"]
+    top = (await http.get("/api/v1/findings/top-images", params={"cluster_id": cid})).json()[
+        "images"
+    ]
+    [row] = [i for i in images if i["image_digest"] == digest]
+    [ranked] = top
+    assert ranked["image_digest"] == digest
+    assert (
+        set(row["severity_by_scanner"])
+        == set(ranked["severity_by_scanner"])
+        == {
+            "trivy",
+            "grype",
+        }
+    )
+    for scanner, counts in ranked["severity_by_scanner"].items():
+        from_events = {k: row["severity_by_scanner"][scanner][k] for k in _SEVERITY_KEYS}
+        assert counts == from_events, scanner
+    # the repeated entry is one finding: 29 findings, not the 30 entries of the report
+    assert sum(ranked["severity_by_scanner"]["trivy"].values()) == len(golden["findings"])

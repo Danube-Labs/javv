@@ -53,6 +53,10 @@ class _StubReader:
     async def findings_groups(self, client: Any, **kw: Any) -> dict[str, Any]:
         return await self._record("findings_groups", kw)
 
+    async def findings_top_images(self, client: Any, **kw: Any) -> dict[str, Any]:
+        await self._record("findings_top_images", kw)
+        return {"images": []}
+
     async def trends_scans(self, client: Any, **kw: Any) -> dict[str, Any]:
         return await self._record("trends_scans", kw)
 
@@ -132,6 +136,26 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
     assert reader.calls[1][1]["contains"] == "de"  # a value search reads the history too
     assert reader.calls[2][1]["by"] == "image_repo"
     assert reader.calls[5][1]["days"] == 30
+
+
+async def test_top_images_at_a_past_t_asks_the_reader_with_no_inventory_too(http) -> None:
+    """Issue 1063: the reader checks the filters at a past T, also when no inventory was
+    committed then, so an unrecorded filter is a 422 in both cases."""
+    reader = _StubReader()
+    register_as_of_t(reader)
+    cid = f"c-asof-{uuid.uuid4().hex[:8]}"
+    params = {"cluster_id": cid, "as_of": PAST_T, "fixable": "true"}
+    r = await http.get("/api/v1/findings/top-images", params=params)
+    assert r.status_code == 200, r.text
+    assert r.json() == {"cluster_id": cid, "inventory": None, "images": []}
+    [(surface, kw)] = reader.calls
+    assert surface == "findings_top_images"
+    assert kw["t"] == datetime(2026, 1, 1, tzinfo=UTC)
+    assert kw["digests"] == []
+    assert kw["filters"].fixable is True
+    reader.raise_value_error = True
+    r = await http.get("/api/v1/findings/top-images", params={**params, "kev": "true"})
+    assert r.status_code == 422, r.text
 
 
 async def test_reader_rejections_are_422_never_500(http) -> None:

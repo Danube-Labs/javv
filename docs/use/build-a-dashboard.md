@@ -33,8 +33,11 @@ A dashboard has at most 24 panels.
 
 ## Filter a panel
 
-Five panels can count only some findings: Findings summary, Package type, Findings by namespace,
-Top components and Triage progress.
+Six panels can count only some findings: Findings summary, Package type, Findings by namespace,
+Riskiest images, Top components and Triage progress.
+
+Riskiest images with filters shows at most 100 images. A row opens the page of the image. That
+page does not use the filters of the panel.
 
 1. Open the dashboard, then select Edit dashboard.
 2. On the panel, select Settings.

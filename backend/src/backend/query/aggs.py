@@ -225,6 +225,107 @@ def build_top_components_body(filters: SearchFilters) -> dict[str, Any]:
     return body
 
 
+# the cap of the filtered Riskiest images board (issue 1063): the same server board as Top
+# components, which the card shows page by page. Not a tunable.
+TOP_IMAGES_SIZE = 100
+
+# the canonical severity -> the bucket name of the images read, so a top-images row has the
+# shape of a GET /api/v1/images row (issue 1063)
+SEVERITY_BUCKETS = {
+    "critical": "crit",
+    "high": "high",
+    "medium": "med",
+    "low": "low",
+    "negligible": "negligible",
+    "unknown": "unknown",
+}
+# the rank of the Riskiest images card: critical, then high, medium and low
+TOP_IMAGES_RANK = ("crit", "high", "med", "low")
+
+# OpenSearch searches a request with `terminate_after` in one pass per shard, never in segment
+# slices (its concurrent segment search docs). This value is Lucene's limit of documents in one
+# shard, so the search never stops early: only the one-pass side effect is wanted (issue 1063).
+ONE_PASS_TERMINATE_AFTER = 2**31 - 1
+
+
+def severity_buckets(by_severity: dict[str, int]) -> dict[str, int]:
+    """Counts by canonical severity -> the six buckets of an images row, zeros included."""
+    return {bucket: by_severity.get(sev, 0) for sev, bucket in SEVERITY_BUCKETS.items()}
+
+
+def top_images_rank(severity_by_scanner: dict[str, dict[str, int]]) -> tuple[int, ...]:
+    """The rank of one image: each key of TOP_IMAGES_RANK, the scanners' counts added, as the
+    card's "all" adds them. A filter on one scanner leaves one scanner in the split."""
+    return tuple(sum(c[k] for c in severity_by_scanner.values()) for k in TOP_IMAGES_RANK)
+
+
+def build_top_images_body(
+    filters: SearchFilters,
+    digests: list[str],
+    *,
+    sla_cutoffs: dict[str, str] | None = None,
+    exact: bool = True,
+) -> dict[str, Any]:
+    """The filtered Riskiest images board (issue 1063): capped `terms` over `image_digest`,
+    limited to `digests` (the running images), ranked by the store on the findings of each
+    severity in TOP_IMAGES_RANK. Exact with `JAVV_EXACT_RANKING`: one primary shard (INDEX-MAP),
+    searched in one pass. Each bucket counts each
+    severity per scanner; with no scanner filter the rank adds the scanners'
+    counts, as the card's "all" does. Two scanners are never one count."""
+    canonical = {bucket: sev for sev, bucket in SEVERITY_BUCKETS.items()}
+    body = _base(filters, sla_cutoffs)
+    body["query"]["bool"]["filter"].append({"terms": {"image_digest": digests}})
+    body["aggs"] = {
+        "images": {
+            "terms": {
+                "field": "image_digest",
+                "size": TOP_IMAGES_SIZE,
+                "order": [{key: "desc"} for key in TOP_IMAGES_RANK] + [{"_key": "asc"}],
+            },
+            "aggs": {
+                **{
+                    key: {"filter": {"term": {"severity_canonical": canonical[key]}}}
+                    for key in TOP_IMAGES_RANK
+                },
+                "by_scanner": {
+                    "terms": {"field": "scanner", "size": 4},
+                    "aggs": {
+                        "severity": {
+                            "terms": {
+                                "field": "severity_canonical",
+                                "size": len(SEVERITY_BUCKETS),
+                            }
+                        }
+                    },
+                },
+            },
+        }
+    }
+    if exact:
+        # in segment slices each slice keeps only its own top shard_size images, so an image
+        # with a few findings in every slice drops out of the 100
+        body["terminate_after"] = ONE_PASS_TERMINATE_AFTER
+    return body
+
+
+def top_images_rows(aggregations: dict[str, Any]) -> list[dict[str, Any]]:
+    """The rows of a build_top_images_body response, in the store's order. An image with none
+    of the TOP_IMAGES_RANK severities is not a row (the card's rule)."""
+    return [
+        {
+            "image_digest": b["key"],
+            "severity_by_scanner": {
+                s["key"]: severity_buckets(
+                    {v["key"]: v["doc_count"] for v in s["severity"]["buckets"]}
+                )
+                for s in b["by_scanner"]["buckets"]
+            },
+        }
+        for b in aggregations["images"]["buckets"]
+        if any(b[k]["doc_count"] for k in TOP_IMAGES_RANK)
+    ]
+
+
 def build_composite_body(
     filters: SearchFilters,
     *,

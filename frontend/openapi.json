@@ -8769,6 +8769,573 @@
         ]
       }
     },
+    "/api/v1/findings/top-images": {
+      "get": {
+        "description": "The filtered Riskiest images card (issue 1063): the running images of the latest\ncommitted inventory at T, ranked by the store on their critical, then high, medium and low\nfindings under the filters. At most TOP_IMAGES_SIZE rows; an image with none of the four\nis not a row. The rows have the shape of GET /api/v1/images rows, with the counts per\nscanner in `severity_by_scanner`, never added into one count.",
+        "operationId": "top_images_findings_api_v1_findings_top_images_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cluster_id",
+            "required": true,
+            "schema": {
+              "title": "Cluster Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scanner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scanner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assignee",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignee"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kev",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kev"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fixable",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fixable"
+            }
+          },
+          {
+            "in": "query",
+            "name": "disagree",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Disagree"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cve_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cve Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "image_digest",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Image Digest"
+            }
+          },
+          {
+            "in": "query",
+            "name": "image_repo",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Image Repo"
+            }
+          },
+          {
+            "in": "query",
+            "name": "namespace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Namespace"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ptype",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ptype"
+            }
+          },
+          {
+            "in": "query",
+            "name": "package_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "present",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Present",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_days",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overdue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Overdue"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unassigned",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_severity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Severity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_scanner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Scanner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_assignee",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Assignee"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_image_repo",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Image Repo"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_namespace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Namespace"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_ptype",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Ptype"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_cve_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Cve Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_package_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Top Images Findings Api V1 Findings Top Images Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Top Images Findings",
+        "tags": [
+          "findings"
+        ]
+      }
+    },
     "/api/v1/findings/{finding_key}/triage": {
       "patch": {
         "operationId": "triage_api_v1_findings__finding_key__triage_patch",

@@ -1205,8 +1205,12 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   renders again only the panels that follow it, so the other panels do not read their data again.
 - **Data:** each panel reads its own data at the selected cluster, T and window (D8,
   DESIGN.md §10).
-- **Panel filters (issue 999, decision 2 C):** five panels can keep findings filters: Findings
-  summary, Package type, Findings by namespace, Top components and Triage progress. Such a panel
+- **Panel filters (issue 999, decision 2 C):** six panels can keep findings filters: Findings
+  summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components and
+  Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
+  store ranks the running images under the filters, for the scanner of the panel, and the panel
+  pages through at most 100 of them. With no filter it reads `GET /api/v1/images` as before. A
+  row still opens the image page, which does not take the filters. Such a panel
   sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
   kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens
   Findings with the filters of the panel and the value of the row. The value of the row replaces

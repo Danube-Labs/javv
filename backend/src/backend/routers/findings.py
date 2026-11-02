@@ -32,17 +32,21 @@ from opensearchpy.exceptions import ConnectionTimeout
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import OS_REQUEST_ERRORS, SLA_CLOCK_MISSING
+from backend.core.settings import get_settings
 from backend.query import pit_guard
 from backend.query.aggs import (
     build_composite_body,
     build_facets_body,
     build_top_components_body,
+    build_top_images_body,
     cap_value_search,
     decode_after,
     encode_after,
     facet_aggregation,
+    top_images_rows,
 )
 from backend.query.as_of import AsOfTReader, AsOfTUnavailable, as_of_t_reader, parse_as_of
+from backend.query.pit import images_for_inventory_run, latest_committed_inventory
 from backend.query.search import (
     MAX_FILTER_VALUES,
     CursorExpired,
@@ -502,6 +506,71 @@ async def top_components_findings(
             }
             for b in resp["aggregations"]["components"]["buckets"]
         ]
+    }
+
+
+_MANIFEST_FIELDS = ("inventory_run_id", "inventory_order", "started_at", "completed_at")
+_IMAGE_FIELDS = ("image_digest", "image_repo", "tag", "namespaces")
+
+
+@router.get("/top-images")
+async def top_images_findings(
+    request: Request,
+    principal: Authenticated,
+    cluster_id: ClusterId,
+    filters: Filters,
+    as_of_t: AsOf,
+) -> dict[str, Any]:
+    """The filtered Riskiest images card (issue 1063): the running images of the latest
+    committed inventory at T, ranked by the store on their critical, then high, medium and low
+    findings under the filters. At most TOP_IMAGES_SIZE rows; an image with none of the four
+    is not a row. The rows have the shape of GET /api/v1/images rows, with the counts per
+    scanner in `severity_by_scanner`, never added into one count."""
+    client = cast(Any, request.app.state.opensearch)
+    manifest = await latest_committed_inventory(client, cluster_id, as_of_t or datetime.now(UTC))
+    running = (
+        {}
+        if manifest is None
+        else {
+            img["image_digest"]: img
+            for img in await images_for_inventory_run(
+                client, cluster_id, manifest["inventory_run_id"]
+            )
+        }
+    )
+    if as_of_t is not None:
+        # the reader refuses a filter the history does not keep (a 422), with or without
+        # running images, as the other reads at a past time do
+        ranked = (
+            await _reconstructed(
+                _reader_or_501().findings_top_images(
+                    client,
+                    cluster_id=cluster_id,
+                    t=as_of_t,
+                    filters=filters,
+                    digests=sorted(running),
+                )
+            )
+        )["images"]
+    elif not running:
+        ranked = []
+    else:
+        body = build_top_images_body(
+            filters,
+            sorted(running),
+            sla_cutoffs=await _sla_cutoffs(client, filters),
+            exact=get_settings().exact_ranking,
+        )
+        resp = await tenant_search(client, index="findings", cluster_id=cluster_id, body=body)
+        ranked = top_images_rows(resp["aggregations"])
+    if manifest is None:  # no committed inventory: unknown, not "no images", as on /images
+        return {"cluster_id": cluster_id, "inventory": None, "images": []}
+    return {
+        "cluster_id": cluster_id,
+        "inventory": {k: manifest.get(k) for k in _MANIFEST_FIELDS},
+        "images": [
+            {**{k: running[r["image_digest"]].get(k) for k in _IMAGE_FIELDS}, **r} for r in ranked
+        ],
     }
 
 

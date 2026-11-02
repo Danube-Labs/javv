@@ -9,25 +9,35 @@ every aggregation body.
 """
 
 import json
+import uuid
 from typing import Any
 
 import pytest
+from opensearchpy import AsyncOpenSearch
 
+from backend.core.bootstrap import MUTABLE_INDEXES
 from backend.query.aggs import (
     FACET_FIELDS,
     GROUP_FIELDS,
+    ONE_PASS_TERMINATE_AFTER,
     SEARCHABLE_FACETS,
+    SEVERITY_BUCKETS,
     TOP_COMPONENTS_SIZE,
+    TOP_IMAGES_RANK,
+    TOP_IMAGES_SIZE,
     build_composite_body,
     build_facets_body,
     build_top_components_body,
+    build_top_images_body,
     cap_value_search,
     contains_pattern,
     decode_after,
     encode_after,
     facet_aggregation,
+    top_images_rows,
 )
 from backend.query.search import SearchFilters, unassigned_clause
+from os_env import OS_URL, requires_opensearch
 
 
 def test_facets_body_aggregates_each_whitelisted_field_by_scanner() -> None:
@@ -128,6 +138,103 @@ def test_top_components_body_is_per_scanner_cardinality_only() -> None:
     assert body["size"] == 0
     # the caller's filter context applies to the body like every other agg
     assert {"term": {"fixable": True}} in body["query"]["bool"]["filter"]
+
+
+def test_top_images_body_ranks_the_running_images_on_the_store() -> None:
+    """Issue 1063: the filtered Riskiest images board. The store ranks the images by critical,
+    then high, medium and low findings, and the body counts only the running digests."""
+    body = build_top_images_body(SearchFilters(fixable=True), ["sha256:a", "sha256:b"])
+    assert body["size"] == 0
+    fl = body["query"]["bool"]["filter"]
+    assert {"terms": {"image_digest": ["sha256:a", "sha256:b"]}} in fl
+    assert {"term": {"fixable": True}} in fl  # the panel's filters apply
+    images = body["aggs"]["images"]
+    assert images["terms"]["field"] == "image_digest"
+    assert images["terms"]["size"] == TOP_IMAGES_SIZE == 100
+    assert images["terms"]["order"] == [
+        {"crit": "desc"},
+        {"high": "desc"},
+        {"med": "desc"},
+        {"low": "desc"},
+        {"_key": "asc"},  # a tie keeps one order from read to read
+    ]
+    # one pass per shard, never segment slices, unless JAVV_EXACT_RANKING is off (issue 1063)
+    assert body["terminate_after"] == ONE_PASS_TERMINATE_AFTER == 2**31 - 1
+    assert "terminate_after" not in build_top_images_body(
+        SearchFilters(), ["sha256:a"], exact=False
+    )
+    # each rank key counts the canonical severity, never the scanner's own word (D46)
+    assert TOP_IMAGES_RANK == ("crit", "high", "med", "low")
+    assert images["aggs"]["crit"] == {"filter": {"term": {"severity_canonical": "critical"}}}
+    assert images["aggs"]["med"] == {"filter": {"term": {"severity_canonical": "medium"}}}
+
+
+def test_top_images_body_counts_each_severity_per_scanner_only() -> None:
+    images = build_top_images_body(SearchFilters(), ["sha256:a"])["aggs"]["images"]
+    by_scanner = images["aggs"]["by_scanner"]
+    assert by_scanner["terms"]["field"] == "scanner"
+    assert by_scanner["aggs"]["severity"]["terms"] == {
+        "field": "severity_canonical",
+        "size": len(SEVERITY_BUCKETS),
+    }
+    # the severity counts exist only under the scanner split: two scanners are never one count
+    assert set(images["aggs"]) == {*TOP_IMAGES_RANK, "by_scanner"}
+    assert set(SEVERITY_BUCKETS.values()) == {"crit", "high", "med", "low", "negligible", "unknown"}
+
+
+@requires_opensearch
+async def test_top_images_body_ranks_an_image_spread_over_segments_first() -> None:
+    """Issue 1063: the true top image has one critical finding in each of 6 segments; 1,200
+    others have 3 in one segment. The index searches in 3 segment slices on any machine, as
+    OpenSearch's default does on 7 CPUs or more: each slice keeps only its own top images."""
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    index = f"t-topimg-{uuid.uuid4().hex[:8]}"
+    findings = MUTABLE_INDEXES["findings"]
+    settings = {
+        **findings["settings"]["index"],
+        "refresh_interval": -1,
+        "search.concurrent_segment_search.mode": "auto",
+        "search.concurrent.max_slice_count": 3,
+    }
+    await client.indices.create(
+        index=index, body={"settings": {"index": settings}, "mappings": findings["mappings"]}
+    )
+    try:
+        digests = ["sha256:x"] + [f"sha256:s{s}-{i:03d}" for s in range(6) for i in range(200)]
+        doc = {
+            "cluster_id": "c",
+            "scanner": "trivy",
+            "severity_canonical": "critical",
+            "present": True,
+        }
+        for s in range(6):  # one refresh per batch: one segment per batch
+            batch = ["sha256:x"] + [f"sha256:s{s}-{i:03d}" for i in range(200) for _ in range(3)]
+            lines = [x for d in batch for x in ({"index": {}}, {**doc, "image_digest": d})]
+            assert not (await client.bulk(index=index, body=lines))["errors"]
+            await client.indices.refresh(index=index)
+
+        async def first(body: dict[str, Any]) -> dict[str, Any]:
+            resp = await client.search(index=index, body=body)
+            return top_images_rows(resp["aggregations"])[0]
+
+        exact = build_top_images_body(SearchFilters(), digests)
+        row = await first(exact)
+        assert row["image_digest"] == "sha256:x"
+        assert row["severity_by_scanner"]["trivy"]["crit"] == 6
+
+        # the control: the same index searched in slices loses the image
+        sliced = build_top_images_body(SearchFilters(), digests, exact=False)
+        assert (await first(sliced))["image_digest"] != "sha256:x"
+    finally:
+        await client.indices.delete(index=index)
+        await client.close()
+
+
+def test_top_images_body_needs_the_cutoffs_for_an_overdue_filter() -> None:
+    with pytest.raises(ValueError):
+        build_top_images_body(SearchFilters(overdue=True), ["sha256:a"])
+    body = build_top_images_body(SearchFilters(overdue=True), ["sha256:a"], sla_cutoffs=_CUTOFFS)
+    assert {"terms": {"image_digest": ["sha256:a"]}} in body["query"]["bool"]["filter"]
 
 
 # issue 949, ruling 2: the namespace, package type and assignee facets leave out the filter

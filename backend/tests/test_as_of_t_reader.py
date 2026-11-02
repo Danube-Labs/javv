@@ -855,3 +855,122 @@ async def test_past_t_value_search_matches_the_live_rule(monkeypatch) -> None:
     for fields in (["namespaces"], ["assignee"], ["severity"], ["ptype", "severity"]):
         with pytest.raises(ValueError):
             await search("pay", fields)
+
+
+def _image_row(digest: str, scanner: str, sev: str, **over: Any) -> dict[str, Any]:
+    return {
+        "present": True,
+        "severity_canonical": sev,
+        "state": "open",
+        "scanner": scanner,
+        "assignee": None,
+        "fixable": False,
+        "cve_id": "CVE-1",
+        "image_digest": digest,
+        "ptype": "deb",
+        "package_name": "openssl",
+        "namespaces": ["default"],
+        "overdue": False,
+        **over,
+    }
+
+
+async def _top_images_at_t(
+    monkeypatch, rows: list[dict[str, Any]], digests: list[str], filters: SearchFilters
+) -> list[dict[str, Any]]:
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_top_images(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=filters,
+        digests=digests,
+    )
+    return out["images"]
+
+
+async def test_past_t_top_images_rank_the_running_images_like_the_live_read(monkeypatch) -> None:
+    """Issue 1063 at a past T: critical first, then high, medium and low, the scanners' counts
+    added for the rank only; a digest that does not run at T, or that has none of the four,
+    is not a row; the filters apply."""
+    rows = [
+        _image_row("sha256:a", "trivy", "high"),
+        _image_row("sha256:a", "grype", "high"),
+        _image_row("sha256:b", "trivy", "critical"),
+        _image_row("sha256:b", "trivy", "low", fixable=True),
+        _image_row("sha256:c", "grype", "negligible"),  # none of the four
+        _image_row("sha256:gone", "trivy", "critical"),  # not running at T
+        _image_row("sha256:d", "trivy", "high", present=False),  # gone from the image
+    ]
+    digests = ["sha256:a", "sha256:b", "sha256:c", "sha256:d"]
+    images = await _top_images_at_t(monkeypatch, rows, digests, SearchFilters())
+    assert [i["image_digest"] for i in images] == ["sha256:b", "sha256:a"]
+    zero = dict.fromkeys(("crit", "high", "med", "low", "negligible", "unknown"), 0)
+    assert images[1]["severity_by_scanner"] == {
+        "trivy": {**zero, "high": 1},
+        "grype": {**zero, "high": 1},
+    }
+    fixable = await _top_images_at_t(monkeypatch, rows, digests, SearchFilters(fixable=True))
+    assert fixable == [
+        {"image_digest": "sha256:b", "severity_by_scanner": {"trivy": {**zero, "low": 1}}}
+    ]
+
+
+async def test_past_t_top_images_keep_the_cap_and_a_stable_order_on_a_tie(monkeypatch) -> None:
+    import backend.query.as_of_t as as_of_t
+
+    monkeypatch.setattr(as_of_t, "TOP_IMAGES_SIZE", 2)
+    rows = [_image_row(d, "trivy", "high") for d in ("sha256:c", "sha256:a", "sha256:b")]
+    images = await _top_images_at_t(
+        monkeypatch, rows, ["sha256:a", "sha256:b", "sha256:c"], SearchFilters()
+    )
+    assert [i["image_digest"] for i in images] == ["sha256:a", "sha256:b"]
+
+
+async def test_past_t_top_images_refuse_an_unrecorded_filter_before_any_work(monkeypatch) -> None:
+    async def _never(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        raise AssertionError("reconstructed before the filter check")
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _never)
+    base: dict[str, Any] = {"cluster_id": "c", "t": datetime(2026, 1, 1, tzinfo=UTC)}
+    for digests in ([], ["sha256:a"]):
+        with pytest.raises(ValueError, match="kev"):
+            await AsOfTQuery().findings_top_images(
+                cast(Any, None), filters=SearchFilters(kev=True), digests=digests, **base
+            )
+    # no running image at T: no reconstruction at all
+    out = await AsOfTQuery().findings_top_images(
+        cast(Any, None), filters=SearchFilters(), digests=[], **base
+    )
+    assert out == {"images": []}
+
+
+@requires_opensearch
+async def test_past_t_top_images_equal_the_live_read_at_t_just_now(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """Issue 1063: after real ingests and triage, the reconstruction at T=just-now ranks and
+    counts the image exactly as the live store query does, with and without a filter."""
+    from backend.query.aggs import build_top_images_body, top_images_rows
+
+    client, prefix = real_os
+    seeded = await _seed(client, prefix)
+    for filters in (SearchFilters(), SearchFilters(state=["open"]), SearchFilters(fixable=True)):
+        body = build_top_images_body(filters, [DIGEST])
+        body["query"]["bool"]["filter"].append({"term": {"cluster_id": CLUSTER}})
+        live = top_images_rows(
+            (await client.search(index=f"{prefix}findings", body=body))["aggregations"]
+        )
+        past = await READER.findings_top_images(
+            client,
+            cluster_id=CLUSTER,
+            t=seeded["t2"],
+            filters=filters,
+            digests=[DIGEST],
+            prefix=prefix,
+        )
+        assert past["images"] == live, filters
+        assert live and live[0]["image_digest"] == DIGEST

@@ -1058,3 +1058,194 @@ async def test_a_value_search_takes_one_list_field_and_a_short_text(env) -> None
         params={"cluster_id": cid, "fields": ["assignee"], "contains": "p" * 128},
     )
     assert ok.status_code == 200 and ok.json() == {"facets": {"assignee": []}, "more": False}
+
+
+async def _inventory(
+    client: AsyncOpenSearch, cluster_id: str, images: dict[str, tuple[str, str]]
+) -> None:
+    """One committed inventory run of `images` (digest -> repo, tag)."""
+    run = f"inv-{uuid.uuid4().hex[:8]}"
+    now = datetime.now(UTC).isoformat()
+    await client.index(
+        index=f"javv-inventory-runs-{cluster_id}-000001",
+        id=run,
+        body={
+            "@timestamp": now,
+            "inventory_run_id": run,
+            "inventory_order": 1,
+            "cluster_id": cluster_id,
+            "started_at": now,
+            "completed_at": now,
+            "expected_count": len(images),
+            "written_count": len(images),
+            "status": "committed",
+            "schema_version": 1,
+        },
+        params={"refresh": "true"},
+    )
+    for digest, (repo, tag) in images.items():
+        await client.index(
+            index=f"javv-images-{cluster_id}-000001",
+            body={
+                "@timestamp": now,
+                "scan_run_id": run,
+                "inventory_run_id": run,
+                "cluster_id": cluster_id,
+                "image_digest": digest,
+                "image_repo": repo,
+                "tag": tag,
+                "namespaces": ["payments"],
+                "scanners": ["trivy", "grype"],
+                "total": 0,
+                "replicas": 1,
+                "schema_version": 3,
+            },
+            params={"refresh": "true"},
+        )
+
+
+_ZERO = dict.fromkeys(("crit", "high", "med", "low", "negligible", "unknown"), 0)
+
+
+async def test_top_images_rank_the_running_images_by_severity_in_the_store(env) -> None:
+    """Issue 1063: the filtered Riskiest images read. The store ranks the running images by
+    critical, then high, medium and low findings, each scanner counted apart. Seeds carry the
+    scanners' own severity words; the read counts the canonical bucket."""
+    login, client = env
+    http = await login()
+    cid = f"c-top-{uuid.uuid4().hex[:8]}"
+    other = f"c-top-{uuid.uuid4().hex[:8]}"
+    await _inventory(
+        client,
+        cid,
+        {"sha256:a": ("app/a", "1"), "sha256:b": ("app/b", "2"), "sha256:c": ("app/c", "3")},
+    )
+
+    def _f(digest: str, sev: str, scanner: str = "trivy", **over: Any) -> dict[str, Any]:
+        return {
+            "finding_key": f"fk-{uuid.uuid4().hex[:10]}",
+            "cve_id": f"CVE-{uuid.uuid4().hex[:6]}",
+            "image_digest": digest,
+            "severity": sev,
+            "scanner": scanner,
+            **over,
+        }
+
+    await _seed(
+        client,
+        cid,
+        [
+            _f("sha256:a", "HIGH"),
+            _f("sha256:a", "High", "grype"),
+            _f("sha256:a", "MEDIUM", fixable=True),
+            _f("sha256:b", "CRITICAL"),
+            _f("sha256:b", "Low", "grype", fixable=True),
+            _f("sha256:c", "Negligible", "grype"),  # none of the four: not a row
+            _f("sha256:gone", "CRITICAL"),  # no longer runs: not a row
+            _f("sha256:a", "CRITICAL", present=False),  # gone from the image
+        ],
+    )
+    await _seed(client, other, [_f("sha256:a", "CRITICAL")])  # another tenant
+
+    r = await http.get("/api/v1/findings/top-images", params={"cluster_id": cid})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["inventory"]["inventory_order"] == 1
+    assert [i["image_digest"] for i in body["images"]] == ["sha256:b", "sha256:a"]
+    b, a = body["images"]
+    assert (b["image_repo"], b["tag"], b["namespaces"]) == ("app/b", "2", ["payments"])
+    assert a["severity_by_scanner"] == {
+        "trivy": {**_ZERO, "high": 1, "med": 1},
+        "grype": {**_ZERO, "high": 1},
+    }
+
+    r = await http.get("/api/v1/findings/top-images", params={"cluster_id": cid, "fixable": "true"})
+    assert [i["image_digest"] for i in r.json()["images"]] == ["sha256:a", "sha256:b"]
+    r = await http.get(
+        "/api/v1/findings/top-images", params={"cluster_id": cid, "scanner": "grype"}
+    )
+    rows = r.json()["images"]
+    assert [i["image_digest"] for i in rows] == ["sha256:a", "sha256:b"]
+    assert all(set(i["severity_by_scanner"]) == {"grype"} for i in rows)
+
+
+async def test_top_images_cap_the_board_and_need_a_committed_inventory(env, monkeypatch) -> None:
+    import backend.query.aggs as aggs
+
+    login, client = env
+    http = await login()
+    cid = f"c-top-{uuid.uuid4().hex[:8]}"
+    r = await http.get("/api/v1/findings/top-images", params={"cluster_id": cid})
+    assert r.status_code == 200
+    assert r.json() == {"cluster_id": cid, "inventory": None, "images": []}
+
+    await _inventory(client, cid, {f"sha256:{i}": ("app/x", str(i)) for i in range(3)})
+    await _seed(
+        client,
+        cid,
+        [
+            {
+                "finding_key": f"fk-{i}-{uuid.uuid4().hex[:6]}",
+                "cve_id": "CVE-1",
+                "image_digest": f"sha256:{i}",
+                "severity": "high",
+            }
+            for i in range(3)
+        ],
+    )
+    monkeypatch.setattr(aggs, "TOP_IMAGES_SIZE", 2)
+    r = await http.get("/api/v1/findings/top-images", params={"cluster_id": cid})
+    # a tie keeps the digest order, so the cap drops the same image on every read
+    assert [i["image_digest"] for i in r.json()["images"]] == ["sha256:0", "sha256:1"]
+    r = await http.get(
+        "/api/v1/findings/top-images", params={"cluster_id": cid, "namespace": "nowhere"}
+    )
+    assert r.json()["images"] == []
+
+
+async def test_top_images_overdue_filter_reads_the_sla_clock(env) -> None:
+    """The overdue filter needs the SLA cutoffs from the store; without them the body refuses it."""
+    login, client = env
+    http = await login()
+    cid = f"c-top-{uuid.uuid4().hex[:8]}"
+    old = (datetime.now(UTC) - timedelta(days=30)).isoformat()
+    fresh = datetime.now(UTC).isoformat()
+    await _inventory(
+        client, cid, {"sha256:late": ("app/late", "1"), "sha256:new": ("app/new", "1")}
+    )
+    await _seed(
+        client,
+        cid,
+        [
+            {
+                "finding_key": f"fk-{uuid.uuid4().hex[:10]}",
+                "cve_id": "CVE-1",
+                "image_digest": digest,
+                "severity": "CRITICAL",
+                "first_seen_at": clock,
+                "sla_clock_at": clock,
+            }
+            for digest, clock in (("sha256:late", old), ("sha256:new", fresh))
+        ],
+    )
+    r = await http.get("/api/v1/findings/top-images", params={"cluster_id": cid, "overdue": "true"})
+    assert r.status_code == 200, r.text
+    assert [i["image_digest"] for i in r.json()["images"]] == ["sha256:late"]
+
+
+async def test_top_images_refuse_a_pair_and_need_a_session(env) -> None:
+    login, _ = env
+    cid = f"c-top-{uuid.uuid4().hex[:8]}"
+    http = await login()
+    bare = httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=http._transport.app),  # type: ignore[attr-defined]
+        base_url="https://t",
+    )
+    r = await bare.get("/api/v1/findings/top-images", params={"cluster_id": cid})
+    await bare.aclose()
+    assert r.status_code == 401
+    r = await http.get(
+        "/api/v1/findings/top-images",
+        params={"cluster_id": cid, "namespace": "a", "exclude_namespace": "b"},
+    )
+    assert r.status_code == 422

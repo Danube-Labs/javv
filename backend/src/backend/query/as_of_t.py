@@ -34,7 +34,14 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.decisions.projection import project
 from backend.models.envelope import SEVERITY_RANK, canonical_severity
-from backend.query.aggs import SEARCHABLE_FACETS, cap_value_search, counting_filters
+from backend.query.aggs import (
+    SEARCHABLE_FACETS,
+    TOP_IMAGES_SIZE,
+    cap_value_search,
+    counting_filters,
+    severity_buckets,
+    top_images_rank,
+)
 from backend.query.human_at import decisions_active_at, finding_states_at
 from backend.query.pit import latest_committed_runs
 from backend.query.search import SearchFilters
@@ -573,6 +580,45 @@ class AsOfTQuery:
         page = ordered[:size]
         next_cursor = _encode({"a": page[-1]["key"]}) if len(ordered) > size else None
         return {"data": page, "next_cursor": next_cursor}
+
+    async def findings_top_images(
+        self,
+        client: AsyncOpenSearch,
+        *,
+        cluster_id: str,
+        t: datetime,
+        filters: SearchFilters,
+        digests: list[str],
+        prefix: str = "",
+    ) -> dict[str, Any]:
+        """The live top-images read at T (issue 1063): the rows of `digests` (the running
+        images at T) under the filters, ranked by critical, then high, medium and low, the
+        scanners' counts added for the rank only. Same cap and same rule for an image with
+        none of the four."""
+        self._apply_filters([], filters)  # an unrecorded filter is a 422 before any work
+        if not digests:
+            return {"images": []}
+        rows = self._apply_filters(
+            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
+        )
+        running = set(digests)
+        counts: dict[str, dict[str, dict[str, int]]] = {}
+        for r in rows:
+            if r["image_digest"] not in running:
+                continue
+            per = counts.setdefault(r["image_digest"], {}).setdefault(r["scanner"], {})
+            per[r["severity_canonical"]] = per.get(r["severity_canonical"], 0) + 1
+        images = [
+            {
+                "image_digest": digest,
+                "severity_by_scanner": {s: severity_buckets(c) for s, c in by_scanner.items()},
+            }
+            for digest, by_scanner in counts.items()
+        ]
+        ranked = [i for i in images if any(top_images_rank(i["severity_by_scanner"]))]
+        ranked.sort(key=lambda i: i["image_digest"])
+        ranked.sort(key=lambda i: top_images_rank(i["severity_by_scanner"]), reverse=True)
+        return {"images": ranked[:TOP_IMAGES_SIZE]}
 
     # --- trends + contributors at T (slice 4) ---------------------------------
     # The scans trend and the contributors board read APPEND logs (scan-events, audit-log) —

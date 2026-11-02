@@ -123,8 +123,8 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 13, tall: 26 },
     usesScanner: true,
     framed: false,
-    takesFilters: false,
-    props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height] }),
+    takesFilters: true,
+    props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height], filters: ctx.filters }),
   },
   {
     id: 'top-components',
