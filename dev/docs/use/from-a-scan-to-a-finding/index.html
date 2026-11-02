@@ -420,6 +420,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-javv-shows-fewer-findings-than-the-scanner-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why JAVV shows fewer findings than the scanner report
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#steps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1273,6 +1284,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-javv-shows-fewer-findings-than-the-scanner-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why JAVV shows fewer findings than the scanner report
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#steps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1309,6 +1331,21 @@
 <h2 id="how-the-results-get-to-javv">How the results get to JAVV<a class="headerlink" href="#how-the-results-get-to-javv" title="Permanent link">&para;</a></h2>
 <p>Trivy and Grype run in your cluster. They scan each running image. Each scanner sends its results
 to JAVV. JAVV keeps the results of each scanner separate. It never merges them.</p>
+<h2 id="why-javv-shows-fewer-findings-than-the-scanner-report">Why JAVV shows fewer findings than the scanner report<a class="headerlink" href="#why-javv-shows-fewer-findings-than-the-scanner-report" title="Permanent link">&para;</a></h2>
+<p>A scanner report can show the same CVE in the same package version more than one time. Each entry
+is for a different file that holds the package. JAVV keeps one finding for each CVE, package
+version, image and scanner. Thus the number of findings in JAVV can be smaller than the number of
+entries in the report.</p>
+<p>Example: the Trivy report for rancher/local-path-provisioner v0.0.36 has 371 entries. The Go
+standard library v1.26.3 is in 11 programs of this image. Trivy shows each CVE of this library 11
+times. JAVV shows 101 findings for this image.</p>
+<p>What one finding covers:</p>
+<ul>
+<li>A finding closes when no file in the image holds the package version. If you rebuild 9 of the
+  11 programs, the finding stays open.</li>
+<li>A state or a risk acceptance applies to the finding. Thus it applies to all the files that hold
+  the package.</li>
+</ul>
 <h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
 <ol>
 <li>All clusters shows each cluster that sends results to JAVV. Select a cluster to open it.</li>
