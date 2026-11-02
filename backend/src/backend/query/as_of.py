@@ -74,6 +74,16 @@ class AsOfTReader(Protocol):
         cursor: str | None,
     ) -> dict[str, Any]: ...
 
+    async def findings_top_images(
+        self,
+        client: AsyncOpenSearch,
+        *,
+        cluster_id: str,
+        t: datetime,
+        filters: SearchFilters,
+        digests: list[str],
+    ) -> dict[str, Any]: ...
+
     async def trends_scans(
         self, client: AsyncOpenSearch, *, cluster_id: str, t: datetime, days: int
     ) -> dict[str, Any]: ...

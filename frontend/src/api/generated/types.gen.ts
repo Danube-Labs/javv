@@ -3494,6 +3494,152 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetResponses = {
 
 export type TopComponentsFindingsApiV1FindingsTopComponentsGetResponse = TopComponentsFindingsApiV1FindingsTopComponentsGetResponses[keyof TopComponentsFindingsApiV1FindingsTopComponentsGetResponses];
 
+export type TopImagesFindingsApiV1FindingsTopImagesGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Cluster Id
+         */
+        cluster_id: string;
+        /**
+         * Severity
+         */
+        severity?: Array<string> | null;
+        /**
+         * State
+         */
+        state?: Array<string> | null;
+        /**
+         * Scanner
+         */
+        scanner?: string | null;
+        /**
+         * Assignee
+         */
+        assignee?: Array<string> | null;
+        /**
+         * Kev
+         */
+        kev?: boolean | null;
+        /**
+         * Fixable
+         */
+        fixable?: boolean | null;
+        /**
+         * Disagree
+         */
+        disagree?: boolean | null;
+        /**
+         * Cve Id
+         */
+        cve_id?: Array<string> | null;
+        /**
+         * Image Digest
+         */
+        image_digest?: string | null;
+        /**
+         * Image Repo
+         */
+        image_repo?: Array<string> | null;
+        /**
+         * Namespace
+         */
+        namespace?: Array<string> | null;
+        /**
+         * Ptype
+         */
+        ptype?: Array<string> | null;
+        /**
+         * Package Name
+         */
+        package_name?: Array<string> | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Present
+         */
+        present?: boolean;
+        /**
+         * New Within Days
+         */
+        new_within_days?: number | null;
+        /**
+         * Overdue
+         */
+        overdue?: boolean | null;
+        /**
+         * Unassigned
+         */
+        unassigned?: boolean | null;
+        /**
+         * Exclude Severity
+         */
+        exclude_severity?: Array<string> | null;
+        /**
+         * Exclude State
+         */
+        exclude_state?: Array<string> | null;
+        /**
+         * Exclude Scanner
+         */
+        exclude_scanner?: string | null;
+        /**
+         * Exclude Assignee
+         */
+        exclude_assignee?: Array<string> | null;
+        /**
+         * Exclude Image Repo
+         */
+        exclude_image_repo?: Array<string> | null;
+        /**
+         * Exclude Namespace
+         */
+        exclude_namespace?: Array<string> | null;
+        /**
+         * Exclude Ptype
+         */
+        exclude_ptype?: Array<string> | null;
+        /**
+         * Exclude Cve Id
+         */
+        exclude_cve_id?: Array<string> | null;
+        /**
+         * Exclude Package Name
+         */
+        exclude_package_name?: Array<string> | null;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/v1/findings/top-images';
+};
+
+export type TopImagesFindingsApiV1FindingsTopImagesGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TopImagesFindingsApiV1FindingsTopImagesGetError = TopImagesFindingsApiV1FindingsTopImagesGetErrors[keyof TopImagesFindingsApiV1FindingsTopImagesGetErrors];
+
+export type TopImagesFindingsApiV1FindingsTopImagesGetResponses = {
+    /**
+     * Response Top Images Findings Api V1 Findings Top Images Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type TopImagesFindingsApiV1FindingsTopImagesGetResponse = TopImagesFindingsApiV1FindingsTopImagesGetResponses[keyof TopImagesFindingsApiV1FindingsTopImagesGetResponses];
+
 export type TriageApiV1FindingsFindingKeyTriagePatchData = {
     body: TriagePatch;
     path: {

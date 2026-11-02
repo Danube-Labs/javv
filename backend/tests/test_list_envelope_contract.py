@@ -152,6 +152,13 @@ REGISTRY: tuple[ListEndpoint, ...] = (
         total=ABSENT,
     ),
     ListEndpoint(
+        path=f"/api/v1/findings/top-images?cluster_id={EMPTY_CLUSTER}",
+        route_path="/api/v1/findings/top-images",
+        family=UNPAGED,
+        list_key="images",
+        total=ABSENT,
+    ),
+    ListEndpoint(
         path=f"/api/v1/scanners/provenance?cluster_id={EMPTY_CLUSTER}",
         route_path="/api/v1/scanners/provenance",
         family=UNPAGED,

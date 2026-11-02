@@ -243,6 +243,17 @@ SEVERITY_BUCKETS = {
 TOP_IMAGES_RANK = ("crit", "high", "med", "low")
 
 
+def severity_buckets(by_severity: dict[str, int]) -> dict[str, int]:
+    """Counts by canonical severity -> the six buckets of an images row, zeros included."""
+    return {bucket: by_severity.get(sev, 0) for sev, bucket in SEVERITY_BUCKETS.items()}
+
+
+def top_images_rank(severity_by_scanner: dict[str, dict[str, int]]) -> tuple[int, ...]:
+    """The rank of one image: each key of TOP_IMAGES_RANK, the scanners' counts added, as the
+    card's "all" adds them. A filter on one scanner leaves one scanner in the split."""
+    return tuple(sum(c[k] for c in severity_by_scanner.values()) for k in TOP_IMAGES_RANK)
+
+
 def build_top_images_body(
     filters: SearchFilters,
     digests: list[str],
@@ -284,6 +295,24 @@ def build_top_images_body(
         }
     }
     return body
+
+
+def top_images_rows(aggregations: dict[str, Any]) -> list[dict[str, Any]]:
+    """The rows of a build_top_images_body response, in the store's order. An image with none
+    of the TOP_IMAGES_RANK severities is not a row (the card's rule)."""
+    return [
+        {
+            "image_digest": b["key"],
+            "severity_by_scanner": {
+                s["key"]: severity_buckets(
+                    {v["key"]: v["doc_count"] for v in s["severity"]["buckets"]}
+                )
+                for s in b["by_scanner"]["buckets"]
+            },
+        }
+        for b in aggregations["images"]["buckets"]
+        if any(b[k]["doc_count"] for k in TOP_IMAGES_RANK)
+    ]
 
 
 def build_composite_body(
