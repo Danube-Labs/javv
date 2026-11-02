@@ -327,8 +327,9 @@ async def test_the_model_refuses(env, body: dict[str, Any]) -> None:
 
 async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> None:
     """Issue 999: the five panels of decision 1 store the filters of /findings, in the shape of
-    a saved view. Decision 4: a panel takes a filter on the field it lists, so Findings by
-    namespace keeps "Namespace is not kube-system". A change replaces the filters."""
+    a saved view, and Riskiest images does too (issue 1063). Decision 4: a panel takes a filter
+    on the field it lists, so Findings by namespace keeps "Namespace is not kube-system". A
+    change replaces the filters."""
     user, _ = env
     owner = await user(EDIT)
     panels = [
@@ -339,7 +340,8 @@ async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> N
         ),
         _panel("top-components", w=1, y=2, filters={"fixable": True}),
         _panel("triage-progress", x=1, w=1, y=2, filters={"namespace": ["payments"]}),
-        _panel("scan-ingest", y=3),
+        _panel("riskiest-images", w=1, y=3, filters={"namespace": "payments", "fixable": True}),
+        _panel("scan-ingest", y=4),
     ]
     made = await _create(owner, panels=panels)
     path = f"/api/v1/dashboards/{made['dashboard_id']}"
@@ -354,6 +356,11 @@ async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> N
     assert filters["findings-by-namespace"]["exclude_namespace"] == ["kube-system"]
     assert filters["package-type"]["exclude_ptype"] == ["os"]
     assert filters["triage-progress"]["namespace"] == ["payments"]
+    assert filters["riskiest-images"] == {
+        "namespace": ["payments"],
+        "fixable": True,
+        "present": True,
+    }
     assert filters["scan-ingest"] is None
 
     changed = [

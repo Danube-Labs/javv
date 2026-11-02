@@ -44,11 +44,13 @@ PANELS: dict[str, CatalogPanel] = {
 
 # the panels that read findings counts take the filters of /findings (issue 999, decision 1),
 # each with the fields it refuses: Triage progress splits by state itself. The scanner is the
-# panel's own setting, so no panel takes a scanner filter (see DashboardPanel).
+# panel's own setting, so no panel takes a scanner filter (see DashboardPanel). Riskiest
+# images ranks under its filters through /findings/top-images (issue 1063).
 FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "findings-summary": (),
     "package-type": (),
     "findings-by-namespace": (),
+    "riskiest-images": (),
     "top-components": (),
     "triage-progress": ("state",),
 }

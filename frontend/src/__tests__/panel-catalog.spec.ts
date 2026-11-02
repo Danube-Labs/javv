@@ -20,6 +20,7 @@ vi.mock('@/api/generated', async (importOriginal) =>
     auditFacetsApiV1AuditFacetsGet: vi.fn<() => Promise<unknown>>(),
     facetFindingsApiV1FindingsFacetsGet: vi.fn<() => Promise<unknown>>(),
     listRunningImagesApiV1ImagesGet: vi.fn<() => Promise<unknown>>(),
+    topImagesFindingsApiV1FindingsTopImagesGet: vi.fn<() => Promise<unknown>>(),
     contributorsApiV1ContributorsGet: vi.fn<() => Promise<unknown>>(),
     findingsTrendApiV1TrendsFindingsGet: vi.fn<() => Promise<unknown>>(),
   }),
@@ -784,14 +785,81 @@ describe('each scanner value reaches the other scanner panels', () => {
   })
 })
 
+const ZERO = { crit: 0, high: 0, med: 0, low: 0, negligible: 0, unknown: 0 }
+/** a row of the top-images read: the counts per scanner, no total (issue 1063) */
+const TOP_IMAGE = {
+  image_digest: 'sha256:top',
+  image_repo: 'app/top',
+  tag: '1.0',
+  namespaces: ['payments'],
+  severity_by_scanner: { trivy: { ...ZERO, crit: 2, high: 5 }, grype: { ...ZERO, crit: 1, high: 7 } },
+}
+
+describe('Riskiest images with filters (issue 1063)', () => {
+  const FILTERS = { present: true, namespace: ['payments'], fixable: true }
+
+  it('with no filters, reads the running images and not the ranked read', async () => {
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(ok({ inventory: INVENTORY, images: [] }))
+    mountPanel(panelById('riskiest-images')!, ctx({ filters: null }))
+    await flushPromises()
+    expect(fn('listRunningImagesApiV1ImagesGet')).toHaveBeenCalledTimes(1)
+    expect(fn('topImagesFindingsApiV1FindingsTopImagesGet')).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['all', undefined, '3', '12'],
+    ['trivy', 'trivy', '2', '5'],
+    ['grype', 'grype', '1', '7'],
+  ] as const)('under %s, the store ranks for that scanner and the row shows its counts', async (scanner, sent, crit, high) => {
+    fn('topImagesFindingsApiV1FindingsTopImagesGet').mockResolvedValue(ok({ inventory: INVENTORY, images: [TOP_IMAGE] }))
+    const w = mountPanel(panelById('riskiest-images')!, ctx({ scanner, filters: FILTERS as never }))
+    await flushPromises()
+    expect(fn('listRunningImagesApiV1ImagesGet')).not.toHaveBeenCalled()
+    const query = (fn('topImagesFindingsApiV1FindingsTopImagesGet').mock.calls[0]![0] as { query: Record<string, unknown> })
+      .query
+    expect(query).toMatchObject({ cluster_id: CLUSTER, namespace: ['payments'], fixable: true })
+    expect(query.scanner).toBe(sent)
+    expect(w.find('tbody tr td:nth-child(2)').text()).toBe(crit)
+    expect(w.find('tbody tr td:nth-child(3)').text()).toBe(high)
+  })
+
+  it('a scanner switch reads again only when the panel has filters', async () => {
+    fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(ok({ inventory: INVENTORY, images: [] }))
+    fn('topImagesFindingsApiV1FindingsTopImagesGet').mockResolvedValue(ok({ inventory: INVENTORY, images: [] }))
+    const panel = panelById('riskiest-images')!
+    const plain = mountPanel(panel)
+    await flushPromises()
+    await plain.setProps(panel.props(ctx({ scanner: 'trivy' })))
+    await flushPromises()
+    expect(fn('listRunningImagesApiV1ImagesGet')).toHaveBeenCalledTimes(1)
+
+    const withFilters = mountPanel(panel, ctx({ filters: FILTERS as never }))
+    await flushPromises()
+    await withFilters.setProps(panel.props(ctx({ scanner: 'trivy', filters: FILTERS as never })))
+    await flushPromises()
+    expect(fn('topImagesFindingsApiV1FindingsTopImagesGet')).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('a panel with filters (issue 999)', () => {
   // a stored filters object, as the backend keeps it (`present: true` is the ViewPreset default).
   // The flag is on no row, so each link must carry a panel filter that its row does not set.
   const FILTERS = { present: true, exclude_namespace: ['kube-system'], kev: true }
   const filtered = ctx({ filters: FILTERS as never })
 
-  /** each panel that takes filters, an answer that draws a row, and the element a click opens */
-  const CASES: Record<string, { answers: unknown[]; click: string; row: Record<string, string> }> = {
+  /** each panel that takes filters, an answer that draws a row, and the element a click opens.
+   * `calls` replaces the panel's reads when its filters change the route it reads; `opens` is the
+   * page a row opens when it is not Findings. */
+  const CASES: Record<
+    string,
+    {
+      answers: unknown[]
+      click: string
+      row: Record<string, string>
+      calls?: SdkName[]
+      opens?: { path: string; query: Record<string, string> }
+    }
+  > = {
     'findings-summary': { answers: [{ facets: FACETS }], click: '.stat-cell', row: { severity: 'critical' } },
     'package-type': { answers: [{ facets: FACETS }], click: '.donut-row', row: { ptype: 'debian' } },
     'findings-by-namespace': { answers: [{ facets: FACETS }], click: 'tbody tr', row: { namespace: 'ns-00' } },
@@ -799,6 +867,14 @@ describe('a panel with filters (issue 999)', () => {
       answers: [{ components: [{ package_name: 'openssl', count: 4, unique_cves_by_scanner: { trivy: 3 } }] }],
       click: 'tbody tr',
       row: { q: 'openssl' },
+    },
+    // issue 1063: with filters the store ranks the images; a row opens its image, as with none
+    'riskiest-images': {
+      answers: [{ inventory: INVENTORY, images: [TOP_IMAGE] }],
+      click: 'tbody tr',
+      row: {},
+      calls: ['topImagesFindingsApiV1FindingsTopImagesGet'],
+      opens: { path: '/images/sha256%3Atop', query: { repo: 'app/top', tag: '1.0' } },
     },
     'triage-progress': {
       answers: [{ facets: { severity: [bucket('high', 9, 4)] } }, { facets: { severity: [bucket('high', 3, 1)] } }],
@@ -826,7 +902,7 @@ describe('a panel with filters (issue 999)', () => {
 
   it.each(Object.keys(CASES))('%s sends its filters, with all_filters, in each read', async (id) => {
     const c = CASES[id]!
-    const calls = READS[id]!.calls
+    const calls = c.calls ?? READS[id]!.calls
     for (const name of new Set(calls)) {
       for (const a of c.answers) fn(name).mockResolvedValueOnce(ok(a))
     }
@@ -839,16 +915,29 @@ describe('a panel with filters (issue 999)', () => {
     }
   })
 
-  it.each(Object.keys(CASES))('%s opens Findings with its filters and the value of the row', async (id) => {
+  async function clickRow(id: string) {
     const c = CASES[id]!
-    for (const name of new Set(READS[id]!.calls)) {
+    for (const name of new Set(c.calls ?? READS[id]!.calls)) {
       for (const a of c.answers) fn(name).mockResolvedValueOnce(ok(a))
     }
     const { w, router } = mountFiltered(id)
     await flushPromises()
     await w.find(c.click).trigger('click')
     await flushPromises()
-    expect(router.currentRoute.value.query).toEqual({ namespace: '!kube-system', attr: 'kev', ...c.row })
+    return router.currentRoute.value
+  }
+
+  it.each(Object.keys(CASES).filter((id) => !CASES[id]!.opens))(
+    '%s opens Findings with its filters and the value of the row',
+    async (id) => {
+      const route = await clickRow(id)
+      expect(route.query).toEqual({ namespace: '!kube-system', attr: 'kev', ...CASES[id]!.row })
+    },
+  )
+
+  it.each(Object.keys(CASES).filter((id) => CASES[id]!.opens))('%s opens the page of its row', async (id) => {
+    const route = await clickRow(id)
+    expect({ path: route.path, query: route.query }).toEqual(CASES[id]!.opens)
   })
 
   it('a panel with no filters reads and links as before', async () => {

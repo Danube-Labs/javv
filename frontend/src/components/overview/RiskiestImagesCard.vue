@@ -7,18 +7,25 @@
  * the lens picks a scanner's buckets, `all` adds the per-scanner counts (additive, same
  * grammar as the fleet strip — never a cross-scanner dedupe). Rows open the image detail.
  * It reads the images itself, apart from the Running images screen's store, so it renders
- * alone on a dashboard with its own loading and error states.
+ * alone on a dashboard with its own loading and error states. A dashboard panel with filters
+ * reads the top-images route instead (issue 1063): the store ranks the running images under
+ * the filters, and the panel shows at most 100 of them.
  */
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { client } from '@/api/client'
-import { listRunningImagesApiV1ImagesGet } from '@/api/generated'
+import {
+  listRunningImagesApiV1ImagesGet,
+  topImagesFindingsApiV1FindingsTopImagesGet,
+  type ViewPreset,
+} from '@/api/generated'
 import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { panelFilterParts, panelQuery } from '@/dashboards/panelFilters'
 import { logger } from '@/lib/logger'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
 import { useClusterStore } from '@/stores/cluster'
@@ -32,8 +39,10 @@ const props = withDefaults(
     scanner: ScannerLens
     /** rows a page; a dashboard panel sets it from its height */
     pageSize?: number
+    /** a dashboard panel's own filters (issue 1063) */
+    filters?: ViewPreset | null
   }>(),
-  { pageSize: 10 },
+  { pageSize: 10, filters: null },
 )
 
 const router = useRouter()
@@ -52,9 +61,33 @@ const settled = ref(false)
 /** the cluster the images on screen belong to: another tenant's images would be a lie */
 let imagesFor: string | null = null
 
+/** a scanner switch changes the read only when the store ranks under filters */
+const filtered = computed(() => panelFilterParts(props.filters).length > 0)
+
+/** The read of the card. With no filter, the running images, ranked here. With filters, the
+ * store ranks them under the filters, for one scanner when the card shows one. */
+function readImages(id: string, t: string | null) {
+  const base = { cluster_id: id, ...(t ? { as_of: t } : {}) }
+  if (!filtered.value) {
+    return listRunningImagesApiV1ImagesGet({ client, query: base as never })
+  }
+  const scanner = props.scanner === 'all' ? {} : { scanner: props.scanner }
+  return topImagesFindingsApiV1FindingsTopImagesGet({
+    client,
+    query: { ...panelQuery(base, props.filters), ...scanner } as never,
+  })
+}
+
 let seq = 0
 watch(
-  () => [clusterStore.selectedId, timeTravel.t] as const,
+  // the filters by value: an equal filters object starts no new read
+  () =>
+    [
+      clusterStore.selectedId,
+      timeTravel.t,
+      JSON.stringify(props.filters ?? null),
+      filtered.value ? props.scanner : null,
+    ] as const,
   async ([id, t]) => {
     const mine = ++seq // also when no read starts: an older read in flight must not land
     if (id !== imagesFor) {
@@ -63,10 +96,7 @@ watch(
       imagesFor = id
     }
     if (!id) return
-    const { data, response } = await listRunningImagesApiV1ImagesGet({
-      client,
-      query: { cluster_id: id, ...(t ? { as_of: t } : {}) } as never,
-    })
+    const { data, response } = await readImages(id, t)
     if (mine !== seq) return // a newer read owns the card now
     failed.value = !response?.ok || !data
     if (failed.value) logger.warn('riskiest_images_failed', { status: response?.status })
