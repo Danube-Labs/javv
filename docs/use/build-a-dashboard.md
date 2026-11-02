@@ -57,7 +57,8 @@ To remove the filters of a panel, select Clear all in Filters. Then select Apply
 Triage activity can count only some changes. Its Filters list has Action and User. Action shows
 only the triage actions, because the panel counts only these. Select the filter button of the
 panel, then select Open in Audit log. The Audit log page shows the changes with the same filters.
-That page is not set to the time range of the dashboard.
+Its table shows all the changes up to the end of the time range, also the changes before the
+range.
 
 ## Change the name or the sharing
 

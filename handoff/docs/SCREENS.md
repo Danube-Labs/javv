@@ -1243,7 +1243,8 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   the same two entities. The help line says "The panel counts only the changes that match these
   filters." The corner button is the same `PanelFiltersButton`. Its popover says "changes", and
   **Open in Audit log** opens `/audit` with the two entities and the filters of the panel. The
-  Audit log page is not set to the time range of the dashboard.
+  activity chart of that page counts in the same time range as the panel. Its table shows all the
+  changes up to the end of the range (§10).
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
   does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
 
