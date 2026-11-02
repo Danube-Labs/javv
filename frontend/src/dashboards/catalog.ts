@@ -6,7 +6,8 @@
  */
 import type { Component } from 'vue'
 
-import type { ViewPreset } from '@/api/generated'
+import type { PanelAuditFilters, ViewPreset } from '@/api/generated'
+import { TRIAGE_ENTITY_TYPES } from '@/audit/fields.config'
 import ContributorsLens from '@/components/contributors/ContributorsLens.vue'
 import ProgressPanel from '@/components/contributors/ProgressPanel.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
@@ -18,6 +19,7 @@ import PackageTypeCard from '@/components/overview/PackageTypeCard.vue'
 import RiskiestImagesCard from '@/components/overview/RiskiestImagesCard.vue'
 import TopComponentsCard from '@/components/overview/TopComponentsCard.vue'
 import { daysFromWindow } from '@/contributors/viewModel'
+import { panelAuditQuery } from '@/dashboards/panelFilters'
 import type { ScannerLens } from '@/lib/scannerLens'
 
 export type PanelGroup = 'Findings' | 'Scanners' | 'People'
@@ -35,6 +37,8 @@ export interface PanelContext {
   height: PanelHeight
   /** the panel's own findings filters (issue 999); only a panel that takes filters gets them */
   filters?: ViewPreset | null
+  /** the panel's own Audit log filters (issue 1063); only a panel that takes them gets them */
+  auditFilters?: PanelAuditFilters | null
 }
 
 export interface CatalogPanel {
@@ -57,6 +61,9 @@ export interface CatalogPanel {
   takesFilters: boolean
   /** the filters it refuses, by API name: Triage progress splits by state itself */
   refusedFilters?: readonly string[]
+  /** the panel counts audit-log rows and takes the Action and User filters of the Audit log
+   * (issue 1063, decision D2 A) */
+  takesAuditFilters?: boolean
   props: (ctx: PanelContext) => Record<string, unknown>
 }
 
@@ -176,9 +183,10 @@ export const PANELS: readonly CatalogPanel[] = [
     usesScanner: false,
     framed: false,
     takesFilters: false,
+    takesAuditFilters: true,
     props: (ctx) => ({
       // a risk accept or a not-affected decision is a decision row; a state change is a finding row
-      query: { ...globalQuery(ctx), entity_type: ['finding', 'decision'] },
+      query: panelAuditQuery({ ...globalQuery(ctx), entity_type: [...TRIAGE_ENTITY_TYPES] }, ctx.auditFilters),
       title: 'Triage activity',
       sub: 'finding states and decisions that people changed',
       emptyNote: 'Nobody changed a finding in this range.',

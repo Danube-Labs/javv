@@ -283,6 +283,37 @@ describe('settings a panel takes from the dashboard', () => {
     expect(w.find('tbody tr td:last-child').text()).toBe(expected)
   })
 
+  it('Triage activity reads with its audit filters, and keeps its own entities (issue 1063)', async () => {
+    fn('auditFacetsApiV1AuditFacetsGet').mockResolvedValue(ok({ activity: [] }))
+    mountPanel(panelById('triage-activity')!, ctx({ auditFilters: { action: ['risk_accept'], exclude_actor: ['bot'] } }))
+    await flushPromises()
+    expect(fn('auditFacetsApiV1AuditFacetsGet').mock.calls[0]![0]).toMatchObject({
+      query: {
+        cluster_id: CLUSTER,
+        entity_type: ['finding', 'decision'],
+        action: ['risk_accept'],
+        exclude_actor: ['bot'],
+      },
+    })
+  })
+
+  it('only Triage activity takes audit filters; it takes no findings filters', () => {
+    expect(PANELS.filter((p) => p.takesAuditFilters).map((p) => p.id)).toEqual(['triage-activity'])
+    expect(panelById('triage-activity')!.takesFilters).toBe(false)
+  })
+
+  it('the dashboard gives the stored audit filters only to a panel that takes them', () => {
+    const audit = { action: ['resolve'] }
+    const [triage, summary] = placePanels([
+      { panel: 'triage-activity', x: 0, y: 0, w: 2, h: 'short', audit_filters: audit },
+      { panel: 'handled-findings', x: 0, y: 1, w: 2, h: 'short' },
+    ])
+    const props = panelPropsCache()
+    const dash = { clusterId: CLUSTER, t: null, windowDays: 30, scanner: 'all' as const }
+    expect((props('0-0', triage!, dash).query as Record<string, unknown>).action).toEqual(['resolve'])
+    expect(JSON.stringify(props('0-1', summary!, dash))).not.toContain('resolve')
+  })
+
   it('sends the dashboard time to a panel that reads at a past time', async () => {
     fn('auditFacetsApiV1AuditFacetsGet').mockResolvedValue(ok({ activity: [] }))
     mountPanel(panelById('triage-activity')!, ctx({ t: '2026-10-01T00:00:00Z' }))

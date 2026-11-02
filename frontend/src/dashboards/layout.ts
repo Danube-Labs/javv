@@ -96,6 +96,7 @@ export function panelPropsCache() {
       scanner: countedScanner(p.panel, p.stored, dash.scanner),
       height: p.stored.h,
       filters: p.panel.takesFilters ? panelFiltersAt(p.stored.filters, dash.windowDays) : null,
+      auditFilters: p.panel.takesAuditFilters ? (p.stored.audit_filters ?? null) : null,
     }
     const key = `${p.panel.id}|${JSON.stringify(ctx)}`
     const kept = cache.get(place)

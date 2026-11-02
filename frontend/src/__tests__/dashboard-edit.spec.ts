@@ -220,6 +220,21 @@ describe('the edit rules', () => {
     expect(withSettings(p, s).filters).toEqual({ kev: true })
   })
 
+  it('a change of the audit filters is a change, and the settings set or clear them (issue 1063)', () => {
+    // the catalog mock of this spec has no triage-activity, and placePanels drops a panel it does
+    // not know: the rule reads audit_filters on any panel, so the test sets them on one it knows
+    const at = (audit_filters?: Record<string, unknown>) => [PANELS[0]!, PANELS[1]!, { ...PANELS[2]!, ...(audit_filters ? { audit_filters } : {}) }]
+    expect(sameLayout(at(), at({ action: ['resolve'] }))).toBe(false)
+    expect(sameLayout(at({ action: ['resolve'] }), at({ action: ['note'] }))).toBe(false)
+    expect(sameLayout(at({ action: ['resolve'], actor: ['ana'] }), at({ actor: ['ana'], action: ['resolve'] }))).toBe(true)
+
+    const p: DraftPanel = { ...PANELS[2]!, key: 'k', audit_filters: { action: ['resolve'] } }
+    const s = { w: 2, h: 'short', scanner: null } as const
+    expect(withSettings(p, { ...s, auditFilters: { actor: ['ana'] } }).audit_filters).toEqual({ actor: ['ana'] })
+    expect('audit_filters' in withSettings(p, { ...s, auditFilters: null })).toBe(false)
+    expect(withSettings(p, s).audit_filters).toEqual({ action: ['resolve'] })
+  })
+
   it('places go to the panels by key, and an unknown key changes nothing', () => {
     const draft: DraftPanel[] = PANELS.map((p, i) => ({ ...p, key: `k${i}` }))
     const out = withPlaces(draft, [
