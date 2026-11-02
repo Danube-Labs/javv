@@ -573,10 +573,12 @@ role list is blue. Role ids show as words: security_lead reads "security lead".
 ## 7. Running images (bolt: **M9c**)
 
 **Data**
-- Per-image severity mix + finding counts: `GET /api/v1/findings/groups?cluster_id=…&group_by=image&…`
-  — per-scanner counts side-by-side + the `trivy_count`/`grype_count`/`count_delta`
+- Per-image severity mix + finding counts: `GET /api/v1/images?cluster_id=…`, the images of the
+  last committed inventory — per-scanner counts side-by-side + the `trivy_count`/`grype_count`/`count_delta`
   count-disagreement pair (D5b; per-image, distinct from per-finding `disagree` — V4-DELTA
-  conflict 7). Facets for the rail via `GET /api/v1/findings/facets`.
+  conflict 7). The counts count findings: one CVE in one package version, from one scanner. A
+  report that lists a finding one time for each file counts it one time (issue 1076). An image
+  scanned before release 0.9.5 counts the entries of the report until its next scan.
 - Inventory metadata (replicas at last sweep, app, first/last seen): **scheduled — M8c**
   inventory read (latest complete `inventory_run_id`, `status=committed`, ordered by
   `inventory_order`). M8c must check overlap with M8b's point-in-time API first (this read is
@@ -621,6 +623,9 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
   `vulns_as_scanned_at_T`, kept as two distinct facts): **M8b point-in-time API — not shipped**;
   until M8b these render the C-1 "history available after M8b" state. `T=now` per-scanner
   findings work today.
+- Build history (`GET /api/v1/images/timeline`): the count of a scan counts findings, as the
+  Findings table does (issue 1076). A scan stored before release 0.9.5 keeps the count of the
+  report entries.
 
 The "Showing results from" switch in the head is a screen head control: 30px high, with the 1px
 edge (issue 1039).
@@ -790,7 +795,9 @@ The v4 per-file ingest feed is gone. New composition per C-3:
   "operator-managed (GitOps): change by swapping the image tag" affordance. **Never a control.**
   **Scheduled — M8c** provenance read (latest *committed* scan-event via the commit catalog;
   M9e's ScanningView shares the same read).
-- **Last-N scan runs** (counts, durations): same M8c read.
+- **Last-N scan runs** (counts, durations): same M8c read. The count of a run counts findings, not
+  the entries of the scanner report (issue 1076). Runs stored before release 0.9.5 keep their
+  counts, so the first run after the upgrade can show a drop.
 
 **Trend:** `GET /api/v1/trends/scans?cluster_id=…&range=…` — scans over time per scanner
 (replaces "ingested vs failed": accepted/rejected are Prometheus counters, not a UI API).
