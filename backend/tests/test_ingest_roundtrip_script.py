@@ -21,9 +21,11 @@ SCRIPT = ROOT / "development" / "scripts" / "check-ingest-roundtrip.sh"
 GOLDEN = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text())
 
 
-async def _push_a_run_with_a_repeated_entry(client: AsyncOpenSearch) -> dict[str, Any]:
+async def _push_a_run_with_a_repeated_entry(
+    client: AsyncOpenSearch, cluster: str
+) -> dict[str, Any]:
     """Store one run as the cycle does, and give back the summary that `scanner.compat` writes."""
-    cluster, run = f"c-rt-{uuid.uuid4().hex[:8]}", f"rt-{uuid.uuid4().hex[:8]}"
+    run = f"rt-{uuid.uuid4().hex[:8]}"
     first, second = GOLDEN["findings"][:2]  # both LOW, not fixable
     counts = dict.fromkeys(("crit", "high", "med", "low", "negligible", "unknown", "fixable"), 0)
     counts |= {"low": 4, "total": 4}
@@ -65,13 +67,13 @@ def _check(summary: dict[str, Any], tmp_path: Path) -> subprocess.CompletedProce
 
 @requires_opensearch
 async def test_a_run_with_a_repeated_entry_passes_and_names_both_numbers(tmp_path: Path) -> None:
-    client = AsyncOpenSearch(hosts=[OS_URL])
+    client, cluster = AsyncOpenSearch(hosts=[OS_URL]), f"c-rt-{uuid.uuid4().hex[:8]}"
     try:
-        summary = await _push_a_run_with_a_repeated_entry(client)
+        summary = await _push_a_run_with_a_repeated_entry(client, cluster)
         result = _check(summary, tmp_path)
     finally:
         await client.indices.delete(
-            index=f"javv-*-{summary['cluster_id']}-*", params={"ignore_unavailable": "true"}
+            index=f"javv-*-{cluster}-*", params={"ignore_unavailable": "true"}
         )
         await client.close()
     assert result.returncode == 0, result.stdout + result.stderr
@@ -80,15 +82,15 @@ async def test_a_run_with_a_repeated_entry_passes_and_names_both_numbers(tmp_pat
 
 @requires_opensearch
 async def test_a_lost_entry_fails_the_check(tmp_path: Path) -> None:
-    client = AsyncOpenSearch(hosts=[OS_URL])
+    client, cluster = AsyncOpenSearch(hosts=[OS_URL]), f"c-rt-{uuid.uuid4().hex[:8]}"
     try:
-        summary = await _push_a_run_with_a_repeated_entry(client)
+        summary = await _push_a_run_with_a_repeated_entry(client, cluster)
         # the scanner sent one entry more than the store recorded
         sent = {**summary, "counts": {**summary["counts"], "low": 5, "total": 5}}
         result = _check(sent, tmp_path)
     finally:
         await client.indices.delete(
-            index=f"javv-*-{summary['cluster_id']}-*", params={"ignore_unavailable": "true"}
+            index=f"javv-*-{cluster}-*", params={"ignore_unavailable": "true"}
         )
         await client.close()
     assert result.returncode == 1
