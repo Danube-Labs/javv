@@ -1648,8 +1648,10 @@ JAVV.</p>
   to 0. This push tells JAVV that the image is clean.</li>
 <li><strong>Send each finding one time.</strong> JAVV identifies a finding by the cluster, the image digest, the
   scanner, <code>vuln_id</code>, <code>package_name</code> and <code>package_version</code>. If an envelope has two entries with
-  the same values, JAVV keeps one finding only, but the counts of the envelope include the two.
-  Thus the counts of the image do not agree with its findings.</li>
+  the same values, JAVV keeps one finding and counts it one time. It keeps the values of the last
+  entry. The counts of the envelope still include each entry, as <a href="#counts">Counts</a> tells. JAVV
+  keeps the number of entries of each scan in <code>report_entries</code>. Thus you can compare a scan in JAVV
+  with the report of the scanner.</li>
 <li><strong>Send the severity word that the scanner wrote, with no change.</strong> JAVV calculates its own
   severity from this word.</li>
 <li><strong>Make the counts agree.</strong> <code>counts.total</code> is equal to the number of findings, and to the sum of

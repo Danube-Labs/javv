@@ -2979,7 +2979,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/scanners/provenance</code></td>
 <td>session</td>
-<td>For each scanner: the versions and <code>effective_config</code> of the last committed run, and the last <code>runs</code> runs (1 to 50, default 10)</td>
+<td>For each scanner: the versions and <code>effective_config</code> of the last committed run, and the last <code>runs</code> runs (1 to 50, default 10). <code>findings_total</code> of a run counts findings. A run that JAVV stored before release 0.9.5 counts the entries of the scanner reports.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3009,13 +3009,13 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/images</code></td>
 <td>session</td>
-<td>The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, <code>inventory</code> is <code>null</code>.</td>
+<td>The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, <code>inventory</code> is <code>null</code>. The severity counts of an image count findings, as the counts of a scan in <code>/images/timeline</code> do. An image that JAVV scanned before release 0.9.5 counts the entries of the scanner report until its next scan.</td>
 </tr>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/images/timeline</code></td>
 <td>session</td>
-<td>The scan history of one image tag. <code>image_repo</code> and <code>tag</code> are necessary.</td>
+<td>The scan history of one image tag. <code>image_repo</code> and <code>tag</code> are necessary. <code>total</code> of a scan counts findings. A scan that JAVV stored before release 0.9.5 counts the entries of the scanner report.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3745,7 +3745,9 @@ and an example.</p>
     backend's clock, and not older than the staleness period of the cluster.</li>
 </ol>
 <p>Then the backend writes the findings. Each finding has a fixed id. Thus when a scanner sends the
-same envelope again, JAVV keeps one copy.</p>
+same envelope again, JAVV keeps one copy. Two entries of one envelope with the same <code>vuln_id</code>,
+<code>package_name</code> and <code>package_version</code> are one finding. The backend keeps the values of the last
+entry, and it counts the finding one time.</p>
 <table>
 <thead>
 <tr>
@@ -3756,7 +3758,7 @@ same envelope again, JAVV keeps one copy.</p>
 <tbody>
 <tr>
 <td>202</td>
-<td>The backend accepted the envelope: <code>{accepted, findings, commit}</code></td>
+<td>The backend accepted the envelope: <code>{accepted, findings, commit}</code>. <code>findings</code> is the number of findings that the backend wrote.</td>
 </tr>
 <tr>
 <td>400</td>
@@ -3847,7 +3849,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_ingest_findings_written_total</code></td>
 <td>counter</td>
 <td><code>scanner</code></td>
-<td>Findings that the backend wrote</td>
+<td>Findings that the backend wrote. Two entries of an envelope for one finding count one time.</td>
 </tr>
 <tr>
 <td><code>javv_http_request_duration_seconds</code></td>
