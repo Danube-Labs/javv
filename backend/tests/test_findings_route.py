@@ -1203,6 +1203,36 @@ async def test_top_images_cap_the_board_and_need_a_committed_inventory(env, monk
     assert r.json()["images"] == []
 
 
+async def test_top_images_overdue_filter_reads_the_sla_clock(env) -> None:
+    """The overdue filter needs the SLA cutoffs from the store; without them the body refuses it."""
+    login, client = env
+    http = await login()
+    cid = f"c-top-{uuid.uuid4().hex[:8]}"
+    old = (datetime.now(UTC) - timedelta(days=30)).isoformat()
+    fresh = datetime.now(UTC).isoformat()
+    await _inventory(
+        client, cid, {"sha256:late": ("app/late", "1"), "sha256:new": ("app/new", "1")}
+    )
+    await _seed(
+        client,
+        cid,
+        [
+            {
+                "finding_key": f"fk-{uuid.uuid4().hex[:10]}",
+                "cve_id": "CVE-1",
+                "image_digest": digest,
+                "severity": "CRITICAL",
+                "first_seen_at": clock,
+                "sla_clock_at": clock,
+            }
+            for digest, clock in (("sha256:late", old), ("sha256:new", fresh))
+        ],
+    )
+    r = await http.get("/api/v1/findings/top-images", params={"cluster_id": cid, "overdue": "true"})
+    assert r.status_code == 200, r.text
+    assert [i["image_digest"] for i in r.json()["images"]] == ["sha256:late"]
+
+
 async def test_top_images_refuse_a_pair_and_need_a_session(env) -> None:
     login, _ = env
     cid = f"c-top-{uuid.uuid4().hex[:8]}"
