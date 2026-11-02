@@ -14,7 +14,7 @@ import structlog
 from opensearchpy import AsyncOpenSearch, NotFoundError
 from opensearchpy.exceptions import ConnectionError as OSConnectionError
 
-from backend.core.metrics import INGEST_FAILURES_UNRECORDED, INGEST_REJECTED
+from backend.core.metrics import FINDINGS_WRITTEN, INGEST_FAILURES_UNRECORDED, INGEST_REJECTED
 from backend.core.security import hash_token, mint_token
 from backend.core.settings import get_settings
 from backend.main import create_app
@@ -126,6 +126,36 @@ async def test_happy_path_writes_in_commit_then_cache_order() -> None:
     assert "state" not in fields  # human fields never in the scanner-field params
     assert fake.updates[0]["body"]["doc"]["last_ingest_at"]  # scanner-down guard stamped
     assert fake.updates[0]["params"] == {"retry_on_conflict": "3"}  # racing pushes self-resolve
+
+
+async def test_a_repeated_finding_is_written_and_counted_one_time(captured: Any) -> None:
+    # issue 1076: the report lists the first finding three times (once per file)
+    first, second = _FIXTURE["findings"][:2]
+    envelope = _FIXTURE | {
+        "last_seen_at": datetime.now(UTC).isoformat(),
+        "findings": [first, second, first, first],
+        "counts": {
+            **dict.fromkeys(("crit", "high", "med", "low", "negligible", "unknown"), 0),
+            "low": 4,  # both golden entries are LOW
+            "total": 4,
+            "fixable": 0,
+        },
+    }
+    assert first["severity"] == second["severity"] == "LOW" and not first["fixable"]
+    written_before = FINDINGS_WRITTEN.labels(scanner="trivy")._value.get()
+    t = mint_token()
+    fake = FakeOS(token_doc(t))
+    async with app_with(fake) as c:
+        r = await post(c, gz(json.dumps(envelope)), t)
+    assert r.status_code == 202 and r.json()["findings"] == 2
+    image, occurrences, scan_event, cache = fake.bulks
+    two_low = {"low": 2, "total": 2}
+    assert {k: image[1][k] for k in two_low} == {k: scan_event[1][k] for k in two_low} == two_low
+    assert scan_event[1]["report_entries"] == 4
+    assert len(occurrences) == len(cache) == 2 * 2  # one (action, doc) pair per finding
+    assert FINDINGS_WRITTEN.labels(scanner="trivy")._value.get() - written_before == 2
+    [line] = [e for e in captured if e["event"] == "ingest committed"]
+    assert line["findings"] == 2 and line["entries"] == 4 and line["log_level"] == "info"
 
 
 async def test_last_ingest_stamp_conflict_never_fails_a_committed_ingest() -> None:

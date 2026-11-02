@@ -106,7 +106,8 @@ image_repo        keyword
 image_digest      keyword
 tag               keyword
 app               keyword
-crit high med low negligible unknown total fixable   integer   (total = sum of buckets - invariant-checked; clean scan = all 0)
+crit high med low negligible unknown total fixable   integer   FINDINGS of the run, one per finding_key (issue 1076): build_docs merges report entries of one key (last wins) and counts by the server severity; total = sum of buckets; clean scan = all 0. Runs stored before mapping v21 counted report entries
+report_entries    long          rows of the scanner report in the envelope (issue 1076, v21) - >= total; a report repeats a finding once per file that holds the package. No screen reads it: the audit match with the report. Absent on runs stored before v21
 schema_version    short
 ```
 
@@ -128,8 +129,8 @@ tag               keyword
 namespaces        keyword[]    distinct namespaces the digest runs in — a digest can span several (D30 dedup); ns filter = array-contains
 app               keyword
 scanners          keyword[]     scanners that reported this image this run
-crit high med low negligible unknown total fixable   integer
-trivy_count grype_count count_delta                  integer   count-disagreement pair (D5b)
+crit high med low negligible unknown total fixable   integer   = the scan event's counts: findings, not report entries (issue 1076)
+trivy_count grype_count count_delta                  integer   count-disagreement pair (D5b) - each side the findings total of its scanner's latest committed scan
 replicas          integer       observed at scan time
 schema_version    short
 ```

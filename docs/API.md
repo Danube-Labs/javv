@@ -422,13 +422,13 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | GET | `/api/v1/contributors/export.csv` | `can_export` | The data of `/contributors` as CSV. It has one `action_<name>` column for each triage action. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
 | GET | `/api/v1/scanners/freshness` | session | For each scanner of the cluster: `last_ingest_at` and `silent_for_seconds`. With no push yet, both are `null`. |
 | GET | `/api/v1/scanners/ingest-failures` | session | The pushes that the ingest refused after the token check, newest first. `scanner` is necessary. `days` is 1 to 365 (default 30), and `size` is 1 to 100 (default 25). [Failed pushes](#failed-pushes) gives the fields. |
-| GET | `/api/v1/scanners/provenance` | session | For each scanner: the versions and `effective_config` of the last committed run, and the last `runs` runs (1 to 50, default 10) |
+| GET | `/api/v1/scanners/provenance` | session | For each scanner: the versions and `effective_config` of the last committed run, and the last `runs` runs (1 to 50, default 10). `findings_total` of a run counts findings. A run that JAVV stored before release 0.9.5 counts the entries of the scanner reports. |
 | GET | `/api/v1/audit` | session | The audit log, page by page with a cursor. Filters: `entity_type`, `action`, `actor` and `finding_key`, each with an `exclude_` form except `finding_key`. `entity_type`, `action` and `actor` take several values, for example `actor=a&actor=b`, at most 32 for each filter. A row matches when it has one of the values. An `exclude_` filter with several values leaves out the rows with any of them. `finding_key` also returns each bulk change that included the finding (`action` `bulk_triage`). Such a row lists the changed findings in `target_ids`. `order` is `desc` (default) or `asc`. `keep_open` is as in `/findings`. Each row also shows the CVE, image and scanner of the finding or decision that it changed. |
 | POST | `/api/v1/cursors/close` | session | Closes a cursor of `/findings` or `/audit` before its last page. Body: `{cursor}`. It closes the search of the cursor and frees your slot ([Exports and reports](#exports-and-reports)), and answers 204. A cursor of a different user, of a list that ended, or that expired also gets 204, and nothing changes. A cursor that is not valid gets 422. |
 | GET | `/api/v1/audit/facets` | session | The counts of `entity_type`, `action` and `actor`, with the same filters. The `actor` counts leave out the `actor` and `exclude_actor` filters, so the other users keep their counts. With `interval` (`day` or `hour`) and `window_days`, it also gives `activity`: the events in each interval. `contains` is a value search on the `actor` values, with 2 to 128 characters. It gives the users that contain the text, in any case, from all users and not only the 32 with the most events. The counts use the same filters as the `actor` counts. It gives at most 32 values, and `more` is `true` when more users contain the text. It gives no `entity_type`, `action` or `activity`. `contains` with `interval` gives 422. |
 | GET | `/api/v1/audit/export.csv` | `can_export` | The audit log as CSV, with the same filters. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
-| GET | `/api/v1/images` | session | The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, `inventory` is `null`. |
-| GET | `/api/v1/images/timeline` | session | The scan history of one image tag. `image_repo` and `tag` are necessary. |
+| GET | `/api/v1/images` | session | The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, `inventory` is `null`. The severity counts of an image count findings, as the counts of a scan in `/images/timeline` do. |
+| GET | `/api/v1/images/timeline` | session | The scan history of one image tag. `image_repo` and `tag` are necessary. `total` of a scan counts findings. A scan that JAVV stored before release 0.9.5 counts the entries of the scanner report. |
 | GET | `/api/v1/clusters` | session | The clusters ([The clusters list](#the-clusters-list)) |
 
 #### Filters
@@ -799,11 +799,13 @@ The backend does these checks in this order:
     backend's clock, and not older than the staleness period of the cluster.
 
 Then the backend writes the findings. Each finding has a fixed id. Thus when a scanner sends the
-same envelope again, JAVV keeps one copy.
+same envelope again, JAVV keeps one copy. Two entries of one envelope with the same `vuln_id`,
+`package_name` and `package_version` are one finding. The backend keeps the values of the last
+entry, and it counts the finding one time.
 
 | Status | When |
 |---|---|
-| 202 | The backend accepted the envelope: `{accepted, findings, commit}` |
+| 202 | The backend accepted the envelope: `{accepted, findings, commit}`. `findings` is the number of findings that the backend wrote. |
 | 400 | The body is not valid gzip, or not valid JSON. |
 | 401 | The token is missing, not valid, disabled or expired. Each of these gets the same answer. |
 | 403 | The `cluster_id` or the `scanner` of the envelope is not the one of the token. |
@@ -852,7 +854,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_ingest_accepted_total` | counter | `scanner` | Envelopes that the backend accepted and wrote |
 | `javv_ingest_rejected_total` | counter | `reason` | Envelopes that the backend refused. `reason` is `bad_token`, `rate_limited`, `too_large`, `bad_gzip`, `bad_json`, `invalid_envelope`, `unallocated_order`, `clock_skew`, `scope_mismatch` or `storage_error`. |
 | `javv_ingest_failures_unrecorded_total` | counter | `reason` | Refused pushes with no record ([Records of a refused push](#records-of-a-refused-push)). A value larger than 0 means that the **Failed ingests** table does not show all the refused pushes. |
-| `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote |
+| `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote. Two entries of an envelope for one finding count one time. |
 | `javv_http_request_duration_seconds` | histogram | `method`, `route`, `status` | The time of each request. `route` is the route pattern, not the full path. A path with no route counts as `unmatched`. `/metrics` and the probes are not counted. |
 | `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes. `429` also counts each request that got 429 "The search backend is busy". The backend logs `store busy` for these at most once in 10 seconds, with `held_back`. |
 | `javv_opensearch_backoff_retries_total` | counter | none | Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy. |

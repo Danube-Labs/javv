@@ -35,6 +35,16 @@ SEVERITY_RANK: dict[str, int] = {
     "unknown": 0,
 }
 
+# the count COLUMN of each canonical bucket (the scanner's COUNT_COLUMN mirrors it)
+COUNT_COLUMN: dict[str, str] = {
+    "critical": "crit",
+    "high": "high",
+    "medium": "med",
+    "low": "low",
+    "negligible": "negligible",
+    "unknown": "unknown",
+}
+
 _CANONICAL = {
     "critical": "critical",
     "crit": "critical",

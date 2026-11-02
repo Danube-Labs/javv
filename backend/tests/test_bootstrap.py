@@ -71,6 +71,9 @@ def test_scan_events_template_carries_commit_catalog_and_provenance() -> None:
     for bucket in ("crit", "high", "med", "low", "negligible", "unknown", "total", "fixable"):
         assert p[bucket] == {"type": "integer"}, f"count bucket {bucket}"
     assert p["namespaces"] == {"type": "keyword"}
+    # issue 1076: the entries of the scanner report, beside the findings counts
+    assert p["report_entries"] == {"type": "long"}
+    assert "report_entries" not in _props(INDEX_TEMPLATES["javv-images"])
 
 
 def test_images_template_carries_observed_topology() -> None:

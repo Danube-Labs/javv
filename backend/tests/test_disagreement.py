@@ -192,6 +192,29 @@ async def test_image_doc_carries_the_count_pair_once_both_scanners_reported(real
 
 
 @requires_opensearch
+async def test_the_count_pair_counts_findings_not_report_entries(real_os) -> None:
+    # issue 1076: a report lists a finding once for each file that holds the package
+    client, prefix = real_os
+    three, five = GOLDEN["findings"][:3], GOLDEN["findings"][:5]
+    trivy = [*three, three[0], three[0]]  # 5 entries, 3 findings
+    grype = [*five, five[1], five[1]]  # 7 entries, 5 findings
+    await ingest_envelope(client, _env("trivy", 1, "t-r1", trivy), prefix=prefix)
+    await ingest_envelope(client, _env("grype", 1, "g-r1", grype), prefix=prefix)
+    await client.indices.refresh(index=f"{prefix}javv-images-{CLUSTER}-*")
+
+    hits = (
+        await client.search(
+            index=f"{prefix}javv-images-{CLUSTER}-*",
+            body={"size": 10, "query": {"term": {"scan_run_id": "g-r1"}}},
+        )
+    )["hits"]["hits"]
+    [grype_doc] = [h["_source"] for h in hits]
+    assert grype_doc["trivy_count"] == 3  # the stored total of the trivy run
+    assert grype_doc["grype_count"] == 5 and grype_doc["total"] == 5
+    assert grype_doc["count_delta"] == -2
+
+
+@requires_opensearch
 async def test_scanners_stay_separate_docs(real_os) -> None:
     # per-scanner sacred: the same (cve, pkg) from two scanners = two findings docs, never one
     client, prefix = real_os
