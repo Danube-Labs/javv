@@ -39,6 +39,7 @@ from backend.dashboards.catalog import (
     PanelHeight,
     PanelId,
 )
+from backend.query.contributors import TRIAGE_ACTIONS
 from backend.query.search import MAX_FILTER_VALUES, FilterValue64, FilterValue128
 from backend.routers.views import ViewPreset
 
@@ -69,6 +70,10 @@ class PanelAuditFilters(BaseModel):
 
     @model_validator(mode="after")
     def _included_or_excluded(self) -> "PanelAuditFilters":
+        # the panel counts only the triage rows, so another action would only ever count 0, and
+        # the settings could not show it (they offer the same list)
+        if not set((self.action or []) + (self.exclude_action or [])) <= TRIAGE_ACTIONS:
+            raise ValueError("an audit action filter takes only the triage actions")
         # the audit route refuses the same pair with a 422 (`_audit_filters`)
         if self.action and self.exclude_action:
             raise ValueError("action and exclude_action are mutually exclusive")

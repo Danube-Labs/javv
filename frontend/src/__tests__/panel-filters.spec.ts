@@ -2,6 +2,8 @@
  * The filters of a dashboard panel (issue 999): their words, the facets read that carries them,
  * and the Findings link of a click in a filtered panel.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import type { ViewPreset } from '@/api/generated'
@@ -135,6 +137,14 @@ describe('the audit filters of Triage activity (issue 1063)', () => {
     expect(TRIAGE_ACTIONS).toContain('decision_revoke')
     expect(TRIAGE_ACTIONS).not.toContain('login')
     expect(TRIAGE_ACTIONS).not.toContain('dashboard_update')
+  })
+
+  it('are the triage actions that the backend stores on a panel, no more and no fewer', () => {
+    const source = readFileSync(resolve(process.cwd(), '..', 'backend/src/backend/query/contributors.py'), 'utf8')
+    const block = /^TRIAGE_ACTIONS = frozenset\(([\s\S]*?)^\)/m.exec(source)?.[1] ?? ''
+    const backend = [...block.matchAll(/"([a-z_]+)"/g)].map((m) => m[1])
+    expect(backend.length).toBeGreaterThan(0)
+    expect([...backend].sort()).toEqual([...TRIAGE_ACTIONS].sort())
   })
 
   it('give one text for each filter, with the words of the Audit log', () => {

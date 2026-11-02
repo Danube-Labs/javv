@@ -20,6 +20,7 @@ from backend.auth.passwords import hash_password
 from backend.core.bootstrap import bootstrap
 from backend.dashboards.catalog import PANELS, CatalogPanel
 from backend.main import create_app
+from backend.query.contributors import TRIAGE_ACTIONS
 from os_env import OS_URL, requires_opensearch
 
 PASSWORD = "dashboards-route-password"
@@ -340,6 +341,14 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             id="the audit user included and excluded",
         ),
         pytest.param(
+            {"panels": [_panel("triage-activity", audit_filters={"action": ["login"]})]},
+            id="an audit action that is not a triage action",
+        ),
+        pytest.param(
+            {"panels": [_panel("triage-activity", audit_filters={"exclude_action": ["RESOLVE"]})]},
+            id="a triage action in capitals, which the audit log does not store",
+        ),
+        pytest.param(
             {
                 "panels": [
                     _panel(
@@ -451,6 +460,15 @@ async def test_triage_activity_keeps_its_audit_filters(env) -> None:
     assert r.status_code == 200, r.text
     after = {p["panel"]: p.get("audit_filters") for p in r.json()["panels"]}
     assert after["triage-activity"] == {"actor": ["alice"]}
+
+
+async def test_triage_activity_takes_each_triage_action(env) -> None:
+    """The Action list of the panel settings offers the triage actions, so each one stores."""
+    user, _ = env
+    owner = await user(EDIT)
+    audit = {"exclude_action": sorted(TRIAGE_ACTIONS)}
+    made = await _create(owner, panels=[_panel("triage-activity", audit_filters=audit)])
+    assert made["panels"][0]["audit_filters"] == audit
 
 
 async def test_a_role_that_no_bundle_has_is_refused_on_create_and_on_change(env) -> None:

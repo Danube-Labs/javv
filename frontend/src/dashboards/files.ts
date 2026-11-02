@@ -91,6 +91,9 @@ export const VALUE_ERROR_WORDS: readonly (readonly [RegExp, string])[] = [
   // before the last pattern, which matches this message too
   [/takes no audit filters/, 'Audit log filters on a panel that takes none'],
   [/takes no \S+ filter/, 'a filter that this panel does not take'],
+  [/takes only the triage actions/, 'an Audit log action that is not a triage action'],
+  // two fields, so the words of the last pattern would be wrong for it
+  [/assignee and unassigned are mutually exclusive/, 'an assignee and Unassigned together'],
   [/are mutually exclusive/, 'one field with both is and is not'],
 ]
 const VALUE_ERROR_ELSE = 'a value that JAVV cannot use'
