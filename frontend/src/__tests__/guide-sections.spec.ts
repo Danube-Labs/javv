@@ -49,6 +49,12 @@ describe('section bodies', () => {
     expect(tags).toEqual(['trivy', 'grype'])
   })
 
+  it('Two scanners says that JAVV counts findings, not the entries of a scanner report', () => {
+    const text = mount(TwoScannersSection).find('.count-unit').text()
+    expect(text).toContain('JAVV counts findings.')
+    expect(text).toContain('one time for each file that holds the package')
+  })
+
   it('Triage shows six states: the ones a person sets, risk accepted, and stale', () => {
     const w = mount(TriageSection)
     const states = w.findAll('.state-tag').map((t) => t.text())

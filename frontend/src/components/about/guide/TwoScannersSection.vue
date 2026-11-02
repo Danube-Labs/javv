@@ -19,5 +19,12 @@ import GuideProse from './GuideProse.vue'
       doesn't decide who is right.
     </p>
     <p>Some details come from one scanner only: KEV and EPSS are reported by Grype.</p>
+    <p class="count-unit">
+      JAVV counts findings. A finding is one CVE in one package version, in one image, from one
+      scanner. A scanner report can show the same finding more than one time: one time for each file
+      that holds the package. For example, the Trivy report for rancher/local-path-provisioner v0.0.36
+      has 371 entries. JAVV shows 101 findings for this image. The Go standard library is in 11
+      programs of the image, thus Trivy shows each of its CVEs 11 times.
+    </p>
   </GuideProse>
 </template>
