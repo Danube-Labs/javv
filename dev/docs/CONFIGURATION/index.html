@@ -2666,6 +2666,11 @@ description.</p>
 <td><code>4194304</code> (4 MiB)</td>
 <td>The largest dashboard file that an import reads. A larger file gets 413, and the import makes no dashboard. The backend also logs a warning and adds one to <code>javv_limit_rejections_total{limit="dashboard_import"}</code>. A dashboard with 24 panels is approximately 3.3 KB, so the default holds 1,000 dashboards.</td>
 </tr>
+<tr>
+<td><code>JAVV_EXACT_RANKING</code></td>
+<td><code>true</code></td>
+<td>How OpenSearch ranks the 100 images of a Riskiest images panel with filters. With <code>true</code>, OpenSearch reads each shard in one pass, and the panel shows the 100 images with the highest rank. With <code>false</code>, OpenSearch can divide the search into parts, one for each group of index segments, on a node with 4 CPUs or more. Each part keeps only its own top images. An image with some findings in each part can then be missing from the 100, although it has the most findings. <code>false</code> can be faster on a node with many CPUs. A one-pass read of 10,000 images and 1,000,000 findings took 19 ms.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="cluster-retirement">Cluster retirement<a class="headerlink" href="#cluster-retirement" title="Permanent link">&para;</a></h3>
@@ -3732,7 +3737,7 @@ workload?</p>
 </tr>
 <tr>
 <td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>
-<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. The Audit log User list and the Approvals Approver list use it too. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 45 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard.</td>
+<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. The Audit log User list and the Approvals Approver list use it too. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 45 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard. <code>query/aggs.TOP_IMAGES_SIZE</code> (100): the images of a Riskiest images panel with filters, which the panel shows page by page. A cluster can have more images. The panel shows only the first 100, as Top components shows only 100 packages. The rank is on critical findings, then high, medium and low findings.</td>
 <td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
 </tr>
 </tbody>
