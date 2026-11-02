@@ -116,6 +116,10 @@ class Settings(BaseSettings):
     # dashboards (issue 440): the largest NDJSON file one import reads (past it → 413). A dashboard
     # with 24 panels measured 3.3 KB, so the default holds the 1,000 a list can show.
     dashboard_import_max_bytes: int = Field(default=4 * 1024 * 1024, ge=1)
+    # the filtered Riskiest images ranking (issue 1063): true searches each shard in one pass, so
+    # the 100 images are exact. False lets OpenSearch split the search into segment slices; each
+    # slice keeps only its own top images, which can drop the true top image.
+    exact_ranking: bool = True
     # cluster retirement (issue 765): the seeds for the fleet-wide retirement window, used until
     # someone saves one in Settings. A cluster with no accepted scan for this many days is retired
     # by the daily sweep (0 = never); the warning banner and the admins' bell start this many

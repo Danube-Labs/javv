@@ -32,6 +32,7 @@ from opensearchpy.exceptions import ConnectionTimeout
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.core.metrics import OS_REQUEST_ERRORS, SLA_CLOCK_MISSING
+from backend.core.settings import get_settings
 from backend.query import pit_guard
 from backend.query.aggs import (
     build_composite_body,
@@ -555,7 +556,10 @@ async def top_images_findings(
         ranked = []
     else:
         body = build_top_images_body(
-            filters, sorted(running), sla_cutoffs=await _sla_cutoffs(client, filters)
+            filters,
+            sorted(running),
+            sla_cutoffs=await _sla_cutoffs(client, filters),
+            exact=get_settings().exact_ranking,
         )
         resp = await tenant_search(client, index="findings", cluster_id=cluster_id, body=body)
         ranked = top_images_rows(resp["aggregations"])

@@ -242,6 +242,11 @@ SEVERITY_BUCKETS = {
 # the rank of the Riskiest images card: critical, then high, medium and low
 TOP_IMAGES_RANK = ("crit", "high", "med", "low")
 
+# OpenSearch searches a request with `terminate_after` in one pass per shard, never in segment
+# slices (its concurrent segment search docs). This value is Lucene's limit of documents in one
+# shard, so the search never stops early: only the one-pass side effect is wanted (issue 1063).
+ONE_PASS_TERMINATE_AFTER = 2**31 - 1
+
 
 def severity_buckets(by_severity: dict[str, int]) -> dict[str, int]:
     """Counts by canonical severity -> the six buckets of an images row, zeros included."""
@@ -259,11 +264,12 @@ def build_top_images_body(
     digests: list[str],
     *,
     sla_cutoffs: dict[str, str] | None = None,
+    exact: bool = True,
 ) -> dict[str, Any]:
     """The filtered Riskiest images board (issue 1063): capped `terms` over `image_digest`,
     limited to `digests` (the running images), ranked by the store on the findings of each
-    severity in TOP_IMAGES_RANK. The ranking is exact: one primary shard (INDEX-MAP), no segment
-    slices on `findings` (bootstrap), and depth-first collection. Each bucket counts each
+    severity in TOP_IMAGES_RANK. Exact with `JAVV_EXACT_RANKING`: one primary shard (INDEX-MAP),
+    searched in one pass. Each bucket counts each
     severity per scanner; with no scanner filter the rank adds the scanners'
     counts, as the card's "all" does. Two scanners are never one count."""
     canonical = {bucket: sev for sev, bucket in SEVERITY_BUCKETS.items()}
@@ -275,9 +281,6 @@ def build_top_images_body(
                 "field": "image_digest",
                 "size": TOP_IMAGES_SIZE,
                 "order": [{key: "desc"} for key in TOP_IMAGES_RANK] + [{"_key": "asc"}],
-                # left to itself the store can pick breadth-first and defer the very counts the
-                # order reads, then cut on key order and drop the top image (issue 1063)
-                "collect_mode": "depth_first",
             },
             "aggs": {
                 **{
@@ -298,6 +301,10 @@ def build_top_images_body(
             },
         }
     }
+    if exact:
+        # in segment slices each slice keeps only its own top shard_size images, so an image
+        # with a few findings in every slice drops out of the 100
+        body["terminate_after"] = ONE_PASS_TERMINATE_AFTER
     return body
 
 

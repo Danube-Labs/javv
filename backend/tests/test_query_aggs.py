@@ -19,6 +19,7 @@ from backend.core.bootstrap import MUTABLE_INDEXES
 from backend.query.aggs import (
     FACET_FIELDS,
     GROUP_FIELDS,
+    ONE_PASS_TERMINATE_AFTER,
     SEARCHABLE_FACETS,
     SEVERITY_BUCKETS,
     TOP_COMPONENTS_SIZE,
@@ -157,8 +158,11 @@ def test_top_images_body_ranks_the_running_images_on_the_store() -> None:
         {"low": "desc"},
         {"_key": "asc"},  # a tie keeps one order from read to read
     ]
-    # breadth-first would defer the counts the order reads and cut on key order (issue 1063)
-    assert images["terms"]["collect_mode"] == "depth_first"
+    # one pass per shard, never segment slices, unless JAVV_EXACT_RANKING is off (issue 1063)
+    assert body["terminate_after"] == ONE_PASS_TERMINATE_AFTER == 2**31 - 1
+    assert "terminate_after" not in build_top_images_body(
+        SearchFilters(), ["sha256:a"], exact=False
+    )
     # each rank key counts the canonical severity, never the scanner's own word (D46)
     assert TOP_IMAGES_RANK == ("crit", "high", "med", "low")
     assert images["aggs"]["crit"] == {"filter": {"term": {"severity_canonical": "critical"}}}
@@ -181,12 +185,17 @@ def test_top_images_body_counts_each_severity_per_scanner_only() -> None:
 @requires_opensearch
 async def test_top_images_body_ranks_an_image_spread_over_segments_first() -> None:
     """Issue 1063: the true top image has one critical finding in each of 6 segments; 1,200
-    others have 3 in one segment. Searched in segment slices, each slice keeps only its own top
-    buckets and drops it. The `findings` body of bootstrap searches without slices."""
+    others have 3 in one segment. The index searches in 3 segment slices on any machine, as
+    OpenSearch's default does on 7 CPUs or more: each slice keeps only its own top images."""
     client = AsyncOpenSearch(hosts=[OS_URL])
     index = f"t-topimg-{uuid.uuid4().hex[:8]}"
     findings = MUTABLE_INDEXES["findings"]
-    settings = {**findings["settings"]["index"], "refresh_interval": -1}
+    settings = {
+        **findings["settings"]["index"],
+        "refresh_interval": -1,
+        "search.concurrent_segment_search.mode": "auto",
+        "search.concurrent.max_slice_count": 3,
+    }
     await client.indices.create(
         index=index, body={"settings": {"index": settings}, "mappings": findings["mappings"]}
     )
@@ -203,10 +212,19 @@ async def test_top_images_body_ranks_an_image_spread_over_segments_first() -> No
             lines = [x for d in batch for x in ({"index": {}}, {**doc, "image_digest": d})]
             assert not (await client.bulk(index=index, body=lines))["errors"]
             await client.indices.refresh(index=index)
-        body = build_top_images_body(SearchFilters(), digests)
-        rows = top_images_rows((await client.search(index=index, body=body))["aggregations"])
-        assert rows[0]["image_digest"] == "sha256:x"
-        assert rows[0]["severity_by_scanner"]["trivy"]["crit"] == 6
+
+        async def first(body: dict[str, Any]) -> dict[str, Any]:
+            resp = await client.search(index=index, body=body)
+            return top_images_rows(resp["aggregations"])[0]
+
+        exact = build_top_images_body(SearchFilters(), digests)
+        row = await first(exact)
+        assert row["image_digest"] == "sha256:x"
+        assert row["severity_by_scanner"]["trivy"]["crit"] == 6
+
+        # the control: the same index searched in slices loses the image
+        sliced = build_top_images_body(SearchFilters(), digests, exact=False)
+        assert (await first(sliced))["image_digest"] != "sha256:x"
     finally:
         await client.indices.delete(index=index)
         await client.close()

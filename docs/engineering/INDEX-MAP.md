@@ -238,9 +238,7 @@ commit doc lands (D39/H3-r2), and the reconcile `update_by_query` **retries scop
 **Presence ⟂ state (D39/M10-r2):** `present`/`resolved_at` (scan-presence) is orthogonal to `state` (human
 lifecycle + system `stale`) - `present=true` = on the latest committed scan; `present=false` + healthy scanner
 = resolved-by-scan (fixed); `state=stale` = scanner silent. Every "now" query **must** filter on both
-(`present=true` + the screen's `state`) and carry `cluster_id`+`scanner`. Settings: `lc` normalizer;
-`index.search.concurrent_segment_search.mode: none` (issue 1063: a capped ranking that the store runs on
-segment slices in parallel can drop the true top image; bootstrap sets it on an upgrade too); start at 1
+(`present=true` + the screen's `state`) and carry `cluster_id`+`scanner`. Settings: `lc` normalizer; start at 1
 primary shard (route/shard by `cluster_id` only if it ever grows large - it scales with live fleet, not time).
 **Namespace is multi-valued (D30):** digest-dedup collapses N pods of one image into one scan, but those pods
 can live in different namespaces - so `namespaces` is a `keyword[]` (matching the schema-v2 scanner envelope),

@@ -200,6 +200,9 @@ services:
       JAVV_INSPECT_TIMEOUT_SECONDS: ${JAVV_INSPECT_TIMEOUT_SECONDS:-10.0}
       # largest dashboard file that an import reads, in bytes (4 MiB)
       JAVV_DASHBOARD_IMPORT_MAX_BYTES: ${JAVV_DASHBOARD_IMPORT_MAX_BYTES:-4194304}
+      # a Riskiest images panel with filters ranks its 100 images in one pass of the store,
+      # so no image with the most findings is left out (false: faster, can leave one out)
+      JAVV_EXACT_RANKING: ${JAVV_EXACT_RANKING:-true}
       # cluster retirement: the fleet defaults until a value is saved at runtime
       # days without an accepted scan before JAVV retires a cluster (0 means never)
       JAVV_CLUSTER_RETIRE_AFTER_DAYS: ${JAVV_CLUSTER_RETIRE_AFTER_DAYS:-45}
