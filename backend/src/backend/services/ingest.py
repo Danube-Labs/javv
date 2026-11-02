@@ -62,7 +62,8 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
     ingested_at = datetime.now(UTC).isoformat()
 
     # one doc per finding key (issue 1076): a report repeats a finding once for each file that
-    # holds the package, and JAVV counts findings. The last entry wins, as the cache merge did.
+    # holds the package, and JAVV counts findings. The last entry wins, here and in the history
+    # rows; the cache merge alone would keep the first (its scan_order guard skips an equal order).
     by_key: dict[str, dict[str, Any]] = {}
     for f in env.findings:
         finding_key = _h(

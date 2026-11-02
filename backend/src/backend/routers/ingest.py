@@ -340,8 +340,8 @@ async def _ingest_authenticated(
 
     INGEST_ACCEPTED.labels(scanner=env.scanner).inc()
     FINDINGS_WRITTEN.labels(scanner=env.scanner).inc(written)
-    # findings = what JAVV stored and counts; entries = the rows of the scanner report, which
-    # repeat a finding once per file that holds the package (issue 1076)
+    # findings = the findings written to the cache (0 for a stale scan_order); entries = the rows
+    # of the scanner report, which repeat a finding once per file that holds it (issue 1076)
     log.info(
         "ingest committed",
         scan_run_id=env.scan_run_id,
