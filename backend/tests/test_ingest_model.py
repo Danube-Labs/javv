@@ -152,3 +152,102 @@ def test_scan_event_doc_carries_the_effective_config() -> None:
     # run-level metadata stays off the per-finding and image docs (D44)
     assert "effective_config" not in docs["findings"][0]
     assert "effective_config" not in docs["image"]
+
+
+# --- JAVV counts findings, not report entries (issue 1076) --------------------
+
+_COUNT_COLUMN = {
+    "critical": "crit",
+    "high": "high",
+    "medium": "med",
+    "low": "low",
+    "negligible": "negligible",
+    "unknown": "unknown",
+}
+
+
+def _entry(vuln_id: str, severity: str, *, fixable: bool = True) -> dict[str, object]:
+    # one report entry for the Go standard library, with the scanner's own severity word
+    return {
+        **GOLDEN["findings"][0],
+        "vuln_id": vuln_id,
+        "package_name": "stdlib",
+        "package_version": "v1.26.3",
+        "severity": severity,
+        "fixable": fixable,
+        "fixed_version": "1.26.4" if fixable else None,
+    }
+
+
+def _envelope(entries: list[dict[str, object]]) -> IngestEnvelope:
+    """The envelope as the scanner sends it: its counts count the entries."""
+    counts = dict.fromkeys(_COUNT_COLUMN.values(), 0)
+    for e in entries:
+        counts[_COUNT_COLUMN[canonical_severity(str(e["severity"]))]] += 1
+    counts |= {"total": len(entries), "fixable": sum(1 for e in entries if e["fixable"])}
+    return IngestEnvelope.model_validate({**GOLDEN, "findings": entries, "counts": counts})
+
+
+def _counts(doc: dict[str, object]) -> dict[str, object]:
+    return {k: doc[k] for k in (*_COUNT_COLUMN.values(), "total", "fixable")}
+
+
+def test_entries_of_one_finding_count_one_time() -> None:
+    from backend.services.ingest import build_docs
+
+    # Trivy lists a stdlib CVE once for each program that holds the library (raw case)
+    docs = build_docs(_envelope([_entry("CVE-2026-1", s) for s in ("HIGH", "High", "HIGH")]))
+    assert len(docs["findings"]) == 1
+    one_high = {**dict.fromkeys(_COUNT_COLUMN.values(), 0), "high": 1, "total": 1, "fixable": 1}
+    assert _counts(docs["scan_event"]) == _counts(docs["image"]) == one_high
+    assert docs["scan_event"]["report_entries"] == 3
+    assert "report_entries" not in docs["image"]
+
+
+def test_each_finding_counts_in_its_own_severity() -> None:
+    from backend.services.ingest import build_docs
+
+    entries = [
+        _entry("CVE-2026-1", "CRITICAL"),
+        _entry("CVE-2026-2", "Medium", fixable=False),
+        _entry("CVE-2026-1", "CRITICAL"),
+    ]
+    docs = build_docs(_envelope(entries))
+    assert _counts(docs["scan_event"]) == {
+        **dict.fromkeys(_COUNT_COLUMN.values(), 0),
+        "crit": 1,
+        "med": 1,
+        "total": 2,
+        "fixable": 1,
+    }
+    assert docs["scan_event"]["report_entries"] == 3
+
+
+def test_the_last_entry_of_a_finding_wins_in_the_doc_and_the_counts() -> None:
+    from backend.services.ingest import build_docs
+
+    entries = [_entry("CVE-2026-1", "High", fixable=False), _entry("CVE-2026-1", "Critical")]
+    docs = build_docs(_envelope(entries))
+    [finding] = docs["findings"]
+    assert finding["severity_canonical"] == "critical" and finding["fixable"] is True
+    assert docs["scan_event"]["crit"] == 1 and docs["scan_event"]["high"] == 0
+    assert docs["scan_event"]["fixable"] == 1
+
+
+def test_a_report_with_no_repeats_keeps_the_counts_of_the_envelope() -> None:
+    from backend.services.ingest import build_docs
+
+    env = IngestEnvelope.model_validate(GOLDEN)
+    docs = build_docs(env)
+    assert _counts(docs["scan_event"]) == env.counts.model_dump()
+    assert docs["scan_event"]["report_entries"] == 29
+
+
+def test_a_clean_scan_counts_zero() -> None:
+    from backend.services.ingest import build_docs
+
+    docs = build_docs(_envelope([]))
+    assert _counts(docs["scan_event"]) == dict.fromkeys(
+        (*_COUNT_COLUMN.values(), "total", "fixable"), 0
+    )
+    assert docs["scan_event"]["report_entries"] == 0

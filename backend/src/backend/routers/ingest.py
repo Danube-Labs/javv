@@ -340,7 +340,14 @@ async def _ingest_authenticated(
 
     INGEST_ACCEPTED.labels(scanner=env.scanner).inc()
     FINDINGS_WRITTEN.labels(scanner=env.scanner).inc(written)
-    log.info("ingest committed", scan_run_id=env.scan_run_id, findings=written)
+    # findings = the findings written to the cache (0 for a stale scan_order); entries = the rows
+    # of the scanner report, which repeat a finding once per file that holds it (issue 1076)
+    log.info(
+        "ingest committed",
+        scan_run_id=env.scan_run_id,
+        findings=written,
+        entries=len(env.findings),
+    )
 
     # server-side timestamp — the scanner-down guard must not be gameable by a client clock (M-3);
     # this records when the backend last accepted a push, not the scanner's self-reported scan

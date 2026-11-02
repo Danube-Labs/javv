@@ -22,8 +22,11 @@ For anything that depends on OpenSearch behavior (merge semantics, `update_by_qu
 - Covers: ingest round-trips, partial-doc merge, reconcile-on-commit, watermark guard, PIT two-step queries.
 - **The cross-stack round trip** (issue 631) runs in `scanner-images.yml`'s compat job, per supported scanner
   version: the real binary scans the compat fixture, `scanner.compat --push` sends it through the real cycle
-  to a real backend, and `development/scripts/check-ingest-roundtrip.sh` checks the run's stored
-  per-severity counts, scan-event version and committed inventory against what was sent.
+  to a real backend, and `development/scripts/check-ingest-roundtrip.sh` checks the run in the store: the
+  history rows per severity against the counts of the stored scan event (both count findings, issue
+  1076), its `report_entries` against the entries that were sent, its scanner version, and the committed
+  inventory. `backend/tests/test_ingest_roundtrip_script.py` runs the script on a run with a repeated
+  entry.
 
 ### 3. Golden fixtures - checked-in real data + expected output
 The anti-regression backbone for the data model. A real scanner envelope (or sequence of scans) in, the

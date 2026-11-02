@@ -69,7 +69,7 @@ JAVV never writes to the clusters it monitors; the scanners push to it.
 | Dependency audit (`npm audit`, `pip-audit`) | CI, every PR and push | report-only for now ([dependency-policy.md](dependency-policy.md)) |
 | GitHub vulnerability alerts → Renovate security PRs | repo settings + Renovate | a PR, fixed within the [policy's](dependency-policy.md) deadline |
 | RBAC/IDOR registry | backend tests | CI fails |
-| Ingest round trip: each supported scanner version's real output pushed into a real backend, the store checked against it | `scanner-images.yml` compat job + `development/scripts/check-ingest-roundtrip.sh` | the job fails, and publish needs it |
+| Ingest round trip: each supported scanner version's real output pushed into a real backend, the store checked against it: the findings counts against the history rows, and the stored report entries against the sent ones | `scanner-images.yml` compat job + `development/scripts/check-ingest-roundtrip.sh` | the job fails, and publish needs it |
 | SBOM + report-only Grype pass over the scanner images | `.github/workflows/scanner-images.yml` | reported, not blocking |
 | cosign keyless signature + signed SBOM attestation of each published image, by digest | `scanner-images.yml` and `release-please.yml` (the app images, issue 615) via `.github/actions/sign-image` | the publish fails; an image is never left pushed and unsigned by a green run |
 

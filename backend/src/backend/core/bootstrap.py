@@ -65,7 +65,9 @@ from opensearchpy import AsyncOpenSearch, RequestError
 #             shared with the owner, everyone or roles; panels enabled:false like a view preset)
 #          v20 + kev on javv-finding-occurrences (issue 1000 — the scan's own KEV value, so a
 #             past-time read gives a KEV finding the KEV deadline, as the live read does)
-MAPPING_VERSION = 20
+#          v21 + report_entries on javv-scan-events (issue 1076 — the counts count findings, and
+#             the run keeps the number of scanner report entries so an audit can match the report)
+MAPPING_VERSION = 21
 
 _KW = {"type": "keyword"}
 _DATE = {"type": "date"}
@@ -419,6 +421,7 @@ _SCAN_EVENTS_PROPERTIES: dict[str, Any] = {
     # (enabled:false keeps it in _source without mapping churn as tuning settings evolve)
     "effective_config": {"type": "object", "enabled": False},
     **{bucket: _INT for bucket in _COUNT_BUCKETS},
+    "report_entries": {"type": "long"},  # entries of the scanner report (issue 1076)
     "schema_version": {"type": "short"},
 }
 

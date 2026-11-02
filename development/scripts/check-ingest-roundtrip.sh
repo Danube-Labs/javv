@@ -3,7 +3,10 @@
 # Ingest round trip (issue 631): compare what `python -m scanner.compat --push --summary` sent with
 # what the store now holds for that run. The push path is binary → adapters → envelope → ingest →
 # store; the compat gate alone stops at the envelope. Checks, for the summary's scan_run_id:
-#   - the run's occurrences per canonical severity equal the envelope's counts, and their total
+#   - the run's occurrences per canonical severity equal the counts of its scan event, and their
+#     total. Both count findings: a report lists a finding once per file that holds the package,
+#     and ingest keeps one finding per key (issue 1076)
+#   - the scan event's report_entries equals the entries the envelope sent (counts.total)
 #   - the run's scan event carries the scanner version the binary reported
 #   - the run's inventory is committed
 # Reads OpenSearch directly: the backend offers no machine-token read of a run.
@@ -30,19 +33,25 @@ stored=$(curl -sf "$OS/javv-finding-occurrences*/_search" -H 'content-type: appl
   \"size\": 0, \"track_total_hits\": true, \"query\": $run_filter,
   \"aggs\": {\"sev\": {\"terms\": {\"field\": \"severity_canonical\", \"size\": 10}}}}")
 
-# the envelope's count columns keep the short names (D46 COUNT_COLUMN); the store keys on full words
+event=$(curl -sf "$OS/javv-scan-events-$cluster-*/_search" -H 'content-type: application/json' \
+  -d "{\"size\": 1, \"query\": $run_filter}" | jq '.hits.hits[0]._source // {}')
+
+# the scan event's count columns keep the short names (D46 COUNT_COLUMN); the store keys on full words
 for pair in crit:critical high:high med:medium low:low negligible:negligible unknown:unknown; do
   column=${pair%%:*}; severity=${pair#*:}
-  sent=$(jq -r ".counts.$column" "$summary")
+  counted=$(jq -r ".$column // \"none\"" <<<"$event")
   got=$(jq -r --arg s "$severity" '[.aggregations.sev.buckets[] | select(.key == $s) | .doc_count] | add // 0' <<<"$stored")
-  [ "$sent" = "$got" ] || bad "$severity: sent $sent, stored $got"
+  [ "$counted" = "$got" ] || bad "$severity: scan event counts $counted, stored $got"
 done
-sent_total=$(jq -r .counts.total "$summary")
+findings=$(jq -r '.total // "none"' <<<"$event")
 got_total=$(jq -r .hits.total.value <<<"$stored")
-[ "$sent_total" = "$got_total" ] || bad "total: sent $sent_total, stored $got_total"
+[ "$findings" = "$got_total" ] || bad "total: scan event counts $findings, stored $got_total"
 
-got_version=$(curl -sf "$OS/javv-scan-events-$cluster-*/_search" -H 'content-type: application/json' \
-  -d "{\"size\": 1, \"query\": $run_filter}" | jq -r '.hits.hits[0]._source.scanner_version // "none"')
+sent_entries=$(jq -r .counts.total "$summary")
+entries=$(jq -r '.report_entries // "none"' <<<"$event")
+[ "$sent_entries" = "$entries" ] || bad "entries: sent $sent_entries, stored $entries"
+
+got_version=$(jq -r '.scanner_version // "none"' <<<"$event")
 [ "$got_version" = "$version" ] || bad "scan event scanner_version: sent $version, stored $got_version"
 
 status=$(curl -sf "$OS/javv-inventory-runs*/_search" -H 'content-type: application/json' \
@@ -51,4 +60,4 @@ status=$(curl -sf "$OS/javv-inventory-runs*/_search" -H 'content-type: applicati
 [ "$status" = "committed" ] || bad "inventory run $run is $status, not committed"
 
 if [ "$fail" -ne 0 ]; then exit 1; fi
-echo "OK $scanner $version: run $run stored exactly what was sent ($sent_total findings), inventory committed"
+echo "OK $scanner $version: run $run stored what was sent ($sent_entries entries, $findings findings), inventory committed"

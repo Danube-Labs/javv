@@ -14,7 +14,7 @@ from typing import Any
 import structlog
 from opensearchpy import AsyncOpenSearch
 
-from backend.models.envelope import IngestEnvelope
+from backend.models.envelope import COUNT_COLUMN, IngestEnvelope
 from backend.repositories.bulk import bulk_write
 from backend.services.aliases import ensure_write_alias
 from backend.services.disagreement import (
@@ -44,17 +44,27 @@ def _repo_tag(image_ref: str) -> tuple[str, str]:
     return image_ref, ""
 
 
+def _count_findings(findings: list[dict[str, Any]]) -> dict[str, int]:
+    """The count columns of the scan event and image doc, from the findings the run stored."""
+    counts = dict.fromkeys(COUNT_COLUMN.values(), 0)
+    for f in findings:
+        counts[COUNT_COLUMN[f["severity_canonical"]]] += 1
+    return counts | {"total": len(findings), "fixable": sum(1 for f in findings if f["fixable"])}
+
+
 def build_docs(env: IngestEnvelope) -> dict[str, Any]:
     """All docs + ids for one envelope. Pure — unit-testable without OpenSearch."""
     repo, tag = _repo_tag(env.image_ref)
-    counts = env.counts.model_dump()
     commit_key = _h(env.cluster_id, env.scanner, env.image_digest, env.scan_run_id)
     ts = env.last_seen_at.isoformat()
     # SERVER-stamped append time (task F m-4): the retention clock must never trust the
     # client-supplied @timestamp — a backdated scanner clock could age-out recent data
     ingested_at = datetime.now(UTC).isoformat()
 
-    findings = []
+    # one doc per finding key (issue 1076): a report repeats a finding once for each file that
+    # holds the package, and JAVV counts findings. The last entry wins, here and in the history
+    # rows; the cache merge alone would keep the first (its scan_order guard skips an equal order).
+    by_key: dict[str, dict[str, Any]] = {}
     for f in env.findings:
         finding_key = _h(
             env.cluster_id,
@@ -64,39 +74,39 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
             f.package_name,
             f.package_version,
         )
-        findings.append(
-            {
-                "finding_key": finding_key,
-                "cluster_id": env.cluster_id,
-                "scanner": env.scanner,
-                "image_digest": env.image_digest,
-                "image_repo": repo,
-                "tag": tag,
-                "namespaces": env.namespaces,
-                "cve_id": f.vuln_id,
-                "package_name": f.package_name,
-                "installed_version": f.package_version,
-                "severity": f.severity,  # verbatim (D16) — evidence/display only
-                # D46 (#274): the QUERY key — the server-derived full-word canonical bucket;
-                # filters + facets target this, never the verbatim word
-                "severity_canonical": f.severity_server,
-                "severity_rank": f.severity_rank,  # server-derived, never the client's
-                "cvss": f.cvss,
-                "fixable": f.fixable,
-                "fixed_version": f.fixed_version,
-                "epss": f.epss,
-                "kev": f.kev,
-                "ptype": f.ptype,  # M8d/B-1: null on v3 envelopes until the next sweep (D30)
-                "first_seen_at": ts,  # naive in M1; M3's partial-merge preserves it
-                "last_seen_at": ts,
-                "last_scan_run_id": env.scan_run_id,
-                "last_scan_order": env.scan_order,
-                "last_scan_at": ts,
-                "present": True,
-                "state": "open",
-                "schema_version": env.schema_version,
-            }
-        )
+        by_key[finding_key] = {
+            "finding_key": finding_key,
+            "cluster_id": env.cluster_id,
+            "scanner": env.scanner,
+            "image_digest": env.image_digest,
+            "image_repo": repo,
+            "tag": tag,
+            "namespaces": env.namespaces,
+            "cve_id": f.vuln_id,
+            "package_name": f.package_name,
+            "installed_version": f.package_version,
+            "severity": f.severity,  # verbatim (D16) — evidence/display only
+            # D46 (#274): the QUERY key — the server-derived full-word canonical bucket;
+            # filters + facets target this, never the verbatim word
+            "severity_canonical": f.severity_server,
+            "severity_rank": f.severity_rank,  # server-derived, never the client's
+            "cvss": f.cvss,
+            "fixable": f.fixable,
+            "fixed_version": f.fixed_version,
+            "epss": f.epss,
+            "kev": f.kev,
+            "ptype": f.ptype,  # M8d/B-1: null on v3 envelopes until the next sweep (D30)
+            "first_seen_at": ts,  # naive in M1; M3's partial-merge preserves it
+            "last_seen_at": ts,
+            "last_scan_run_id": env.scan_run_id,
+            "last_scan_order": env.scan_order,
+            "last_scan_at": ts,
+            "present": True,
+            "state": "open",
+            "schema_version": env.schema_version,
+        }
+    findings = list(by_key.values())
+    counts = _count_findings(findings)
 
     scan_event = {
         "@timestamp": ts,
@@ -116,6 +126,8 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
         # what the cycle ran with (D44/FR-25) — run-level, scan-events only, display/audit
         "effective_config": env.effective_config.model_dump(mode="json"),
         **counts,
+        # the entries of the scanner report, so an audit can match the run with the report
+        "report_entries": len(env.findings),
         "schema_version": env.schema_version,
     }
     image = {
@@ -163,7 +175,7 @@ async def ingest_envelope(client: AsyncOpenSearch, env: IngestEnvelope, *, prefi
     other_total = await latest_committed_total(
         client, env.cluster_id, other, env.image_digest, prefix=prefix
     )
-    docs["image"] |= count_pair(env.scanner, env.counts.total, other_total)
+    docs["image"] |= count_pair(env.scanner, docs["scan_event"]["total"], other_total)
     await bulk_write(client, [{"index": {"_index": img, "_id": docs["image_id"]}}, docs["image"]])
     # 1b) history append: the per-scan occurrence snapshot (M8a/FR-5b) — BEFORE the catalog doc,
     #     so a partial bulk failure (bulk_write raises) leaves the snapshot uncommitted and it is
