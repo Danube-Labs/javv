@@ -3573,6 +3573,10 @@ permissions of the user who opens the dashboard.</p>
 <td><code>filters</code></td>
 <td>The filters of <code>GET /api/v1/findings</code>, with the fields and checks of the <code>preset</code> of a saved view. Only on the panels that read findings counts: <code>findings-summary</code>, <code>package-type</code>, <code>findings-by-namespace</code>, <code>riskiest-images</code>, <code>top-components</code> and <code>triage-progress</code>.</td>
 </tr>
+<tr>
+<td><code>audit_filters</code></td>
+<td>The Action and User filters of <code>GET /api/v1/audit</code>: <code>action</code>, <code>actor</code>, <code>exclude_action</code> and <code>exclude_actor</code>, each a list of at most 32 values. An action is one of the ten triage actions, in lower case: <code>acknowledge</code>, <code>not_affected</code>, <code>risk_accept</code>, <code>resolve</code>, <code>reopen</code>, <code>assign</code>, <code>note</code>, <code>bulk_triage</code>, <code>decision_create</code> and <code>decision_revoke</code>. A user has at most 128 characters. Only on <code>triage-activity</code>. The panel sets the Entity filter itself.</td>
+</tr>
 </tbody>
 </table>
 <p>The backend refuses with 422:</p>
@@ -3582,6 +3586,9 @@ permissions of the user who opens the dashboard.</p>
 <li><code>filters</code> on a panel that does not read findings counts</li>
 <li><code>scanner</code> or <code>exclude_scanner</code> in <code>filters</code>. The <code>scanner</code> field of the panel does this.</li>
 <li><code>state</code> or <code>exclude_state</code> in the <code>filters</code> of <code>triage-progress</code>. This panel shows each state.</li>
+<li><code>audit_filters</code> on a panel other than <code>triage-activity</code>, or <code>entity_type</code> in <code>audit_filters</code></li>
+<li>a field and its <code>exclude_</code> form in <code>audit_filters</code>, as the Audit log refuses them</li>
+<li>an action in <code>audit_filters</code> that is not a triage action. The panel counts only the triage rows.</li>
 <li>a panel outside the two columns, or two panels that start on the same cell. A panel holds
   only the cells of its top row: one cell for a width of 1, and both cells for a width of 2. The
   height takes no part in this check, because the page makes each panel as tall as its content.</li>
