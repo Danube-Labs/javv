@@ -116,7 +116,7 @@ Each scanner then runs on its `schedule`. To start a cycle now, follow the safe 
 | grype.enabled | bool | `true` | Run the Grype CronJob. |
 | grype.extraEnv | list | `[]` | More environment variables for the refresh and the scan, in the form of Kubernetes. |
 | grype.image.digest | string | `""` | `sha256:...`: run exactly that image. It replaces `tag`. It is empty in the repository. The chart of a release sets it to the digest that the tag named at the release. |
-| grype.image.tag | string | `"0.120.1"` | The Grype version, from versions.yaml (`scanners.grype.current`). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image. |
+| grype.image.tag | string | `"0.121.1"` | The Grype version, from versions.yaml (`scanners.grype.current`). JAVV publishes the tag again when it changes the image for that version. Thus each run pulls the image. |
 | grype.registryAuth | object | `{"existingSecret":""}` | A registry login for the images from private registries, as for Trivy. It can be the same Secret. |
 | grype.schedule | string | `"30 */6 * * *"` | When a cycle starts, in the time zone of the CronJob. |
 | grype.timeZone | string | `""` | The time zone of `schedule`. When it is empty, the zone of the cluster applies, which is UTC on most clusters. |
