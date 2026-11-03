@@ -142,7 +142,7 @@ describe('the audit filters of Triage activity (issue 1063)', () => {
   it('are the triage actions that the backend stores on a panel, no more and no fewer', () => {
     const source = readFileSync(resolve(process.cwd(), '..', 'backend/src/backend/query/contributors.py'), 'utf8')
     const block = /^TRIAGE_ACTIONS = frozenset\(([\s\S]*?)^\)/m.exec(source)?.[1] ?? ''
-    const backend = [...block.matchAll(/"([a-z_]+)"/g)].map((m) => m[1])
+    const backend = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1])
     expect(backend.length).toBeGreaterThan(0)
     expect([...backend].sort()).toEqual([...TRIAGE_ACTIONS].sort())
   })

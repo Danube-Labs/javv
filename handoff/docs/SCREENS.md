@@ -1241,8 +1241,9 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   the panel sets it. Action lists only the ten triage actions (`TRIAGE_ACTIONS`), because the
   other actions always count 0 on these rows. The backend stores only these ten (422 for another
   action). The menu counts at the dashboard cluster and T, on the same two entities. As on the
-  Audit log, these counts take all the changes up to T, not only the time range of the panel. The help line says "The panel counts only the changes that match these
-  filters." The corner button is the same `PanelFiltersButton`. Its popover says "changes", and
+  Audit log, these counts take all the changes up to T, not only the time range of the panel.
+  The help line says "The panel counts only the changes that match these filters." The corner
+  button is the same `PanelFiltersButton`. Its popover says "changes", and
   **Open in Audit log** opens `/audit` with the two entities and the filters of the panel. The
   activity chart of that page counts in the same time range as the panel. Its table shows all the
   changes up to the end of the range (§10).
