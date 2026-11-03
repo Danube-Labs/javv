@@ -3,7 +3,7 @@
  * The newest query owns the counts, and a failed read says so and logs it.
  */
 import { flushPromises } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest'
 import { ref } from 'vue'
 
 vi.mock('@/api/generated', () => ({
@@ -22,7 +22,7 @@ import { auditFacetsApiV1AuditFacetsGet } from '@/api/generated'
 import { useAuditFacets } from '@/composables/useAuditFacets'
 import { logger } from '@/lib/logger'
 
-const read = vi.mocked(auditFacetsApiV1AuditFacetsGet)
+const read = auditFacetsApiV1AuditFacetsGet as unknown as Mock<(...args: unknown[]) => Promise<unknown>>
 const answer = (status: number, data?: unknown) => ({ response: { ok: status < 400, status }, data })
 const counts = (key: string) => ({ facets: { action: [{ key, count: 1 }] } })
 

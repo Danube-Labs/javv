@@ -309,7 +309,7 @@ describe('settings a panel takes from the dashboard', () => {
       { panel: 'triage-activity', x: 0, y: 0, w: 2, h: 'short', audit_filters: audit },
       { panel: 'handled-findings', x: 0, y: 1, w: 2, h: 'short', audit_filters: audit },
     ])
-    const seen = vi.fn(handled!.panel.props)
+    const seen = vi.fn<NonNullable<typeof handled>['panel']['props']>(handled!.panel.props)
     const props = panelPropsCache()
     const dash = { clusterId: CLUSTER, t: null, windowDays: 30, scanner: 'all' as const }
     expect((props('0-0', triage!, dash).query as Record<string, unknown>).action).toEqual(['resolve'])
