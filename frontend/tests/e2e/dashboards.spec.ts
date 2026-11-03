@@ -264,6 +264,33 @@ test('a dashboard is made, moved, shared and removed; the viewer cannot change i
   }
 })
 
+test('Add panel puts the new panel under the others, and the others keep their places (issue 1090)', async ({ page }) => {
+  await login(page)
+  await withDashboard(page, [], async (id) => {
+    await page.goto(`${BASE}/dashboards/${id}?edit=1`)
+    // the bug needs content taller than the 7 catalog rows of Findings summary; how tall the real
+    // content is depends on the width and the data, so the test makes it tall on any store
+    await page.addStyleTag({ content: '.grid-stack-item[data-panel="findings-summary"] .dash-fit { min-height: 400px }' })
+    await addPanel(page, 'findings-summary', 'Findings summary')
+    const summary = page.locator('.grid-stack-item[data-panel="findings-summary"]')
+    await expect(page.locator('.grid-stack .skel')).toHaveCount(0, { timeout: 20_000 })
+    await expect
+      .poll(() => summary.evaluate((item) => {
+        const fit = item.querySelector('.dash-fit')!.getBoundingClientRect()
+        return Math.round(Math.max(0, fit.bottom - item.querySelector('.grid-stack-item-content')!.getBoundingClientRect().bottom))
+      }))
+      .toBe(0)
+    const rows = await summary.getAttribute('gs-h')
+    expect(Number(rows), 'Findings summary takes more rows than its catalog height').toBeGreaterThan(7)
+
+    await addPanel(page, 'findings-by-namespace', 'Findings by namespace')
+    const added = page.locator('.grid-stack-item[data-panel="findings-by-namespace"]')
+    await expect(summary).toHaveAttribute('gs-y', '0')
+    await expect(added).toHaveAttribute('gs-y', rows!)
+    await expect(added).toHaveAttribute('gs-x', '0')
+  })
+})
+
 test('a panel added next to a taller one is saved where edit mode shows it', async ({ page }) => {
   await login(page)
   const made = await page.request.post(`${BASE}/api/v1/dashboards`, {
