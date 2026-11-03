@@ -127,6 +127,7 @@ def test_each_value_is_the_code_default(field: str) -> None:
     assert match["op"] == ":-", f"{key} is a setting with a default, not a required value"
     info = Settings.model_fields[field]
     # pydantic's own coercion, as for a real environment variable: "24" and "24.0" both read 24.0
+    assert info.annotation is not None
     assert TypeAdapter(info.annotation).validate_python(match["rest"]) == info.default
 
 
@@ -177,6 +178,7 @@ def test_every_javv_key_in_the_chart_is_read_by_the_code() -> None:
 def test_each_chart_value_is_the_code_default(field: str) -> None:
     info = Settings.model_fields[field]
     value = _chart("backend")[_env_name(field)]
+    assert info.annotation is not None
     assert TypeAdapter(info.annotation).validate_python(value) == info.default
 
 
