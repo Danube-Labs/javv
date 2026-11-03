@@ -66,7 +66,7 @@ const fit = new ResizeObserver((entries) => {
 const observePanels = () => gridEl.value?.querySelectorAll('.dash-fit').forEach((el) => fit.observe(el))
 
 const placesOf = (nodes: readonly GridStackNode[]): PanelPlace[] =>
-  nodes.map((n) => ({ key: String(n.id), x: n.x ?? 0, y: n.y ?? 0 }))
+  nodes.map((n) => ({ key: String(n.id), x: n.x ?? 0, y: n.y ?? 0, rows: n.h ?? 1 }))
 
 onMounted(() => {
   if (!gridEl.value) return

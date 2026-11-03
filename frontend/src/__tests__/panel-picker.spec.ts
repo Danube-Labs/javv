@@ -127,6 +127,15 @@ describe('the place of a new panel', () => {
     })
     expect(addedPanel([], { panel: 'scan-ingest', w: 1, h: 'short', scanner: null })).toMatchObject({ x: 0, y: 0 })
   })
+  it('takes the bottom from the rows that the grid gave each panel, not the catalog rows (issue 1090)', () => {
+    // Findings summary has 7 rows in the catalog, and its content takes 8 rows in the grid
+    const measured: DraftPanel[] = [{ key: 'a', panel: 'findings-summary', x: 0, y: 0, w: 2, h: 'short', rows: 8 }]
+    expect(addedPanel(measured, { panel: 'scan-ingest', w: 1, h: 'short', scanner: null })).toMatchObject({ x: 0, y: 8 })
+    // a panel that the grid has not measured yet has its catalog rows
+    const { rows: _rows, ...unmeasured } = measured[0]!
+    expect(addedPanel([unmeasured], { panel: 'scan-ingest', w: 1, h: 'short', scanner: null })).toMatchObject({ y: 7 })
+    expect('rows' in addedPanel(measured, { panel: 'scan-ingest', w: 1, h: 'short', scanner: null })).toBe(false)
+  })
   it('keeps a scanner only for a panel with scanner data, and gets a new key each time', () => {
     const a = addedPanel(draft, { panel: 'top-components', w: 1, h: 'tall', scanner: 'trivy' })
     const b = addedPanel(draft, { panel: 'scan-ingest', w: 1, h: 'short', scanner: null })
@@ -285,6 +294,27 @@ describe('Add panel in edit mode', () => {
     await flushPromises()
     expect(patchedPanels()).toContainEqual({ panel: 'scan-ingest', x: 0, y: 20, w: 2, h: 'short' })
     expect(patchedPanels()).toHaveLength(3)
+  })
+
+  it('a panel taller than its catalog rows keeps its place, and the new one goes under it (issue 1090)', async () => {
+    const w = await mountView([PANELS[0]!])
+    // the resize observer gave Findings summary the 8 rows of its content, and gridstack tells the page
+    const summary = gs.nodes[0]!
+    summary.h = 8
+    gs.onChange!({}, [summary])
+    await flushPromises()
+    await button(w, 'Add panel').trigger('click')
+    await flushPromises()
+    const dialog = w.find('[role="dialog"]')
+    await dialog.find('[data-panel="scan-ingest"]').trigger('click')
+    await button(dialog, 'Add panel').trigger('click')
+    await flushPromises()
+    expect(w.find('.grid-stack-item[data-panel="scan-ingest"]').attributes('gs-y')).toBe('8')
+
+    await button(w, 'Save changes').trigger('click')
+    await flushPromises()
+    // the rows of the grid stay in the page: the save sends the stored fields only
+    expect(patchedPanels()).toEqual([PANELS[0], { panel: 'scan-ingest', x: 0, y: 8, w: 2, h: 'short' }])
   })
 
   it('a new panel is saved where top mode puts it, not where it was added', async () => {

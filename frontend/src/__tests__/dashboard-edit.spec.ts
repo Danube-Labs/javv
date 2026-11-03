@@ -95,6 +95,7 @@ import {
 } from '@/api/generated'
 import {
   editRefusal,
+  fromDraft,
   NO_EDIT_NOTE,
   NO_EDIT_ROLE_NOTE,
   sameLayout,
@@ -255,14 +256,16 @@ describe('the edit rules', () => {
   it('places go to the panels by key, and an unknown key changes nothing', () => {
     const draft: DraftPanel[] = PANELS.map((p, i) => ({ ...p, key: `k${i}` }))
     const out = withPlaces(draft, [
-      { key: 'k2', x: 0, y: 20 },
-      { key: 'gone', x: 1, y: 1 },
+      { key: 'k2', x: 0, y: 20, rows: 12 },
+      { key: 'gone', x: 1, y: 1, rows: 3 },
     ])
-    expect(out.map((p) => [p.x, p.y])).toEqual([
-      [0, 0],
-      [0, 7],
-      [0, 20],
+    expect(out.map((p) => [p.x, p.y, p.rows])).toEqual([
+      [0, 0, undefined],
+      [0, 7, undefined],
+      [0, 20, 12],
     ])
+    // the rows are the grid's, not a stored field (issue 1090)
+    expect(fromDraft(out).some((p) => 'rows' in p)).toBe(false)
   })
 
   it('each refused save says why, and a lost answer does not say that nothing changed', () => {

@@ -14,13 +14,16 @@ export const PANEL_CAP_NOTE = `A dashboard holds at most ${MAX_PANELS} panels.`
 /** A panel in edit mode: the stored panel and a key that stays the same while it moves. */
 export interface DraftPanel extends DashboardPanel {
   key: string
+  /** the rows that gridstack gave the panel, which its content sets; not stored */
+  rows?: number
 }
 
-/** Where gridstack put a panel. */
+/** Where gridstack put a panel, and how many rows it has there. */
 export interface PanelPlace {
   key: string
   x: number
   y: number
+  rows: number
 }
 
 /** The draft with the places gridstack gave; a place for a key the draft does not have is
@@ -29,7 +32,7 @@ export function withPlaces(draft: readonly DraftPanel[], places: readonly PanelP
   const at = new Map(places.map((p) => [p.key, p]))
   return draft.map((p) => {
     const place = at.get(p.key)
-    return place ? { ...p, x: place.x, y: place.y } : p
+    return place ? { ...p, x: place.x, y: place.y, rows: place.rows } : p
   })
 }
 
@@ -79,7 +82,7 @@ export function toDraft(panels: readonly DashboardPanel[]): DraftPanel[] {
 }
 
 export function fromDraft(draft: readonly DraftPanel[]): DashboardPanel[] {
-  return draft.map(({ key: _key, ...p }) => p)
+  return draft.map(({ key: _key, rows: _rows, ...p }) => p)
 }
 
 /** The filters as a value key. `present: true` is the stored default and no filter, and the days
@@ -110,12 +113,15 @@ export function sameLayout(a: readonly DashboardPanel[], b: readonly DashboardPa
   return mine.length === sigs.length && mine.every((s, i) => s === sigs[i])
 }
 
-/** A panel from the catalog window, at the left edge under all the others (the kickoff of S8b). */
+/** A panel from the catalog window, at the left edge under all the others (the kickoff of S8b).
+ * The bottom comes from the rows of the grid: content can be taller than its catalog rows, and a
+ * new panel that starts inside the last panel makes gridstack push that panel down under it
+ * (issue 1090). A panel that the grid has not measured yet counts its catalog rows. */
 export function addedPanel(
   draft: readonly DraftPanel[],
   choice: { panel: DashboardPanel['panel'] } & PanelSettings,
 ): DraftPanel {
-  const bottom = Math.max(0, ...draft.map((p) => p.y + (placeOne(p)?.rows ?? 0)))
+  const bottom = Math.max(0, ...draft.map((p) => p.y + (p.rows ?? placeOne(p)?.rows ?? 0)))
   return {
     key: draftKey(),
     panel: choice.panel,
