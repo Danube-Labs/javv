@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Starts the video stack from nothing: a new store, the backend, the users `admin` and `lead`
-# (security lead), two made-up clusters, and the built app. Each start makes new passwords.
+# Starts the video stack from nothing: a new store, the backend, the users `admin`, `lead`
+# (security lead) and `viewer`, two made-up clusters, and the built app. Each start makes new
+# passwords.
 set -euo pipefail
 # shellcheck source=SCRIPTDIR/env.sh
 source "$(dirname "$0")/env.sh"
@@ -14,7 +15,7 @@ docker run -d --name "$STORE_NAME" -p "127.0.0.1:$STORE_PORT:9200" -e discovery.
 mkdir -p "$SECRETS"
 chmod 700 "$SECRETS"
 umask 077
-for f in secret_key admin_boot_pass admin_pass lead_pass; do
+for f in secret_key admin_boot_pass admin_pass lead_pass viewer_pass; do
   python3 -c "import secrets; print(secrets.token_urlsafe(24), end='')" > "$SECRETS/$f"
 done
 
