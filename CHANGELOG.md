@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.9.5](https://github.com/Danube-Labs/javv/compare/v0.9.4...v0.9.5) (2026-11-03)
+
+
+### Features
+
+* a riskiest images panel takes findings filters ([#1082](https://github.com/Danube-Labs/javv/issues/1082)) ([7368267](https://github.com/Danube-Labs/javv/commit/7368267bd04ca77da65e171a29c487ad4f96a156)), closes [#1063](https://github.com/Danube-Labs/javv/issues/1063)
+* a triage activity panel takes audit log filters ([#1083](https://github.com/Danube-Labs/javv/issues/1083)) ([39d73cf](https://github.com/Danube-Labs/javv/commit/39d73cfacd9a2d3b09cb6103b293ae682171080d))
+* dashboard panels read with their own filters and show them in a corner button ([#1068](https://github.com/Danube-Labs/javv/issues/1068)) ([22a5b5b](https://github.com/Danube-Labs/javv/commit/22a5b5b2789f5fde330479dcca2f2d2c535be935))
+* dashboard panels store findings filters, and facets count under all filters ([#1065](https://github.com/Danube-Labs/javv/issues/1065)) ([11eda1f](https://github.com/Danube-Labs/javv/commit/11eda1f6b15ad7c799c0190e1dc0875cafeb4d3e)), closes [#999](https://github.com/Danube-Labs/javv/issues/999)
+* the audit log and approvals filters find a user or approver past the top 32 ([#1073](https://github.com/Danube-Labs/javv/issues/1073)) ([b8cd6da](https://github.com/Danube-Labs/javv/commit/b8cd6dad9995ca5eb54a2c910be1461e274b01fa))
+* the filter menu finds a value past the top 32 ([#1072](https://github.com/Danube-Labs/javv/issues/1072)) ([b1dae43](https://github.com/Danube-Labs/javv/commit/b1dae4333da53aab44c36a9c7fddc61866682fe4)), closes [#1064](https://github.com/Danube-Labs/javv/issues/1064)
+* the panel settings set the findings filters of a panel ([#1071](https://github.com/Danube-Labs/javv/issues/1071)) ([bfe583a](https://github.com/Danube-Labs/javv/commit/bfe583a62dcf130601cf28caf008bc54e90998ac))
+
+
+### Bug Fixes
+
+* **deps:** update dependency fastapi to &gt;=0.162,&lt;0.163 ([#1078](https://github.com/Danube-Labs/javv/issues/1078)) ([38993fd](https://github.com/Danube-Labs/javv/commit/38993fd189505dec952dd38c32fad91d44a5e138))
+* **deps:** update dependency zensical to v0.0.74 ([#1069](https://github.com/Danube-Labs/javv/issues/1069)) ([dae3ac2](https://github.com/Danube-Labs/javv/commit/dae3ac2b19f2b2aade957b9e6f99a8ed6d001f90))
+* ingest counts findings, not the entries of the scanner report ([#1080](https://github.com/Danube-Labs/javv/issues/1080)) ([25612c9](https://github.com/Danube-Labs/javv/commit/25612c9b44a002d483ede681c3cbd8a8b9f8379d))
+
 ## [0.9.4](https://github.com/Danube-Labs/javv/compare/v0.9.3...v0.9.4) (2026-10-30)
 
 
