@@ -55,13 +55,20 @@ let grid: GridStack | null = null
 const fit = new ResizeObserver((entries) => {
   if (!grid) return
   const nodes = grid.engine.nodes
+  let resized = false
   grid.batchUpdate()
   for (const e of entries) {
     const node = nodes.find((n) => n.el === e.target.closest('.grid-stack-item'))
     const rows = Math.max(1, Math.ceil((e.contentRect.height + 2 * MARGIN) / CELL_HEIGHT))
-    if (node?.el && node.h !== rows) grid.update(node.el, { h: rows })
+    if (node?.el && node.h !== rows) {
+      grid.update(node.el, { h: rows })
+      resized = true
+    }
   }
   grid.batchUpdate(false)
+  // the change event leaves out a node that update() changed (gridstack drops its start place),
+  // and the add rule needs the rows of each panel (issue 1090), so the page takes every place here
+  if (resized) emit('moved', placesOf(grid.engine.nodes))
 })
 const observePanels = () => gridEl.value?.querySelectorAll('.dash-fit').forEach((el) => fit.observe(el))
 

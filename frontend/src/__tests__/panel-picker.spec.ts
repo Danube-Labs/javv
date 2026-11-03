@@ -101,7 +101,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import DashboardView from '@/views/DashboardView.vue'
 
-import { FakeResizeObserver, gs, resetGridstack } from './helpers/fakeGridstack'
+import { FakeResizeObserver, gs, resetGridstack, resize } from './helpers/fakeGridstack'
 
 vi.stubGlobal('ResizeObserver', FakeResizeObserver)
 
@@ -298,10 +298,10 @@ describe('Add panel in edit mode', () => {
 
   it('a panel taller than its catalog rows keeps its place, and the new one goes under it (issue 1090)', async () => {
     const w = await mountView([PANELS[0]!])
-    // the resize observer gave Findings summary the 8 rows of its content, and gridstack tells the page
-    const summary = gs.nodes[0]!
-    summary.h = 8
-    gs.onChange!({}, [summary])
+    // the content of Findings summary needs 8 rows (2 x 15 px of margin, rows of 40 px). gridstack
+    // sends no change event for the panel that it resized, so the event of the fake stays unused
+    resize(w.find('[data-panel="findings-summary"] .dash-fit').element, 290)
+    expect(gs.updates).toEqual([{ id: gs.nodes[0]!.id, opts: { h: 8 } }])
     await flushPromises()
     await button(w, 'Add panel').trigger('click')
     await flushPromises()
