@@ -304,14 +304,17 @@ describe('settings a panel takes from the dashboard', () => {
 
   it('the dashboard gives the stored audit filters only to a panel that takes them', () => {
     const audit = { action: ['resolve'] }
-    const [triage, summary] = placePanels([
+    // a stored panel that does not take them still carries them here: the dashboard is the guard
+    const [triage, handled] = placePanels([
       { panel: 'triage-activity', x: 0, y: 0, w: 2, h: 'short', audit_filters: audit },
-      { panel: 'handled-findings', x: 0, y: 1, w: 2, h: 'short' },
+      { panel: 'handled-findings', x: 0, y: 1, w: 2, h: 'short', audit_filters: audit },
     ])
+    const seen = vi.fn(handled!.panel.props)
     const props = panelPropsCache()
     const dash = { clusterId: CLUSTER, t: null, windowDays: 30, scanner: 'all' as const }
     expect((props('0-0', triage!, dash).query as Record<string, unknown>).action).toEqual(['resolve'])
-    expect(JSON.stringify(props('0-1', summary!, dash))).not.toContain('resolve')
+    props('0-1', { ...handled!, panel: { ...handled!.panel, props: seen } }, dash)
+    expect(seen.mock.calls[0]![0].auditFilters).toBeNull()
   })
 
   it('sends the dashboard time to a panel that reads at a past time', async () => {

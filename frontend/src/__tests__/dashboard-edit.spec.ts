@@ -106,6 +106,7 @@ import {
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
+import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import DashboardView from '@/views/DashboardView.vue'
 
@@ -696,6 +697,16 @@ describe('edit mode', () => {
         const saved = patchBody().body.panels!.find((p) => p.panel === 'triage-activity')!
         expect(saved).toMatchObject({ audit_filters: { action: ['risk_accept'] } })
         expect(saved).not.toHaveProperty('filters')
+      })
+
+      it('counts the menu at the T of the time picker', async () => {
+        useTimeTravelStore().t = '2026-10-01T00:00:00Z'
+        vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, withTriage()))
+        const { w } = await mountView('?edit=1')
+        await openSettings(w, 'Triage activity')
+        expect(vi.mocked(auditFacetsApiV1AuditFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+          query: { cluster_id: 'c1', as_of: '2026-10-01T00:00:00Z' },
+        })
       })
 
       it('shows the filters button of the panel in edit mode', async () => {
