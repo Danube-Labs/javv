@@ -118,6 +118,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.5 | 2026-11-03 | Dashboard panels have their own filters (issues 999 and 1063). A filter list finds a value past the top 32 (issue 1064). Scan and image counts count findings, not the entries of a scanner report (issue 1076). The scanner chart uses Grype 0.121.1 |
 | 0.9.4 | 2026-10-30 | Each window has the dark blue head of the tables (issue 1049). Text boxes, dropdowns, search boxes and window footer buttons have one look on every screen (issues 1050 and 1053). Checks and a lint rule keep them the same (issue 1055). Dashboard panels are as tall as their content (issue 1045). The release PR gets a What's new section (issue 1061) |
 | 0.9.3 | 2026-10-29 | Role names show in words on every screen, and the id stays the value. Every control in a screen head is 30px high, with a 1px edge under it (issue 1039) |
 | 0.9.2 | 2026-10-29 | A saved card opens its item from a click anywhere on the card, and its hover keeps the card white. The badge of a dashboard card has a color for each audience, and role names show with spaces. The primary button is slate, not coral (issue 1004) |
