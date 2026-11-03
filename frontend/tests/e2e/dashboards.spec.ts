@@ -265,12 +265,12 @@ test('a dashboard is made, moved, shared and removed; the viewer cannot change i
 })
 
 test('Add panel puts the new panel under the others, and the others keep their places (issue 1090)', async ({ page }) => {
-  // at this width the content of Findings summary needs more rows than the 7 of its catalog
-  // height, the case where the add rule went wrong; at the 1920 px of the config it fits in 7
-  await page.setViewportSize({ width: 1440, height: 1000 })
   await login(page)
   await withDashboard(page, [], async (id) => {
     await page.goto(`${BASE}/dashboards/${id}?edit=1`)
+    // the bug needs content taller than the 7 catalog rows of Findings summary; how tall the real
+    // content is depends on the width and the data, so the test makes it tall on any store
+    await page.addStyleTag({ content: '.grid-stack-item[data-panel="findings-summary"] .dash-fit { min-height: 400px }' })
     await addPanel(page, 'findings-summary', 'Findings summary')
     const summary = page.locator('.grid-stack-item[data-panel="findings-summary"]')
     await expect(page.locator('.grid-stack .skel')).toHaveCount(0, { timeout: 20_000 })
