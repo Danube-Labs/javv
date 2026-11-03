@@ -2,13 +2,15 @@
  * The filters of a dashboard panel (issue 999). A panel stores them in the shape of a saved
  * view's preset, so the saved-view helpers give their words and their Findings link.
  */
-import type { ViewPreset } from '@/api/generated'
+import type { PanelAuditFilters, ViewPreset } from '@/api/generated'
+import { AUDIT_FIELDS, TRIAGE_ACTIONS, TRIAGE_ENTITY_TYPES } from '@/audit/fields.config'
 import { daysFromWindow } from '@/contributors/viewModel'
 import type { CatalogPanel } from '@/dashboards/catalog'
 import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 import { presetParts, presetToRouteQuery } from '@/findings/savedViews'
 
 type Filters = ViewPreset | null | undefined
+type AuditFilters = PanelAuditFilters | null | undefined
 
 /** The filters a panel reads with. "New in range" counts in the range of the dashboard, as on
  * Findings, and not in the days stored when the filter was applied (operator, 2026-10-31). */
@@ -59,4 +61,31 @@ export function panelFindingsQuery(filters: Filters, row: Record<string, string>
     }
   }
   return query
+}
+
+/** The audit Filters of a panel that counts audit-log rows (issue 1063, decision D2 A): Action and
+ * User. The panel sets Entity itself, and Action lists only the triage actions, the only ones
+ * that its rows have. */
+export const PANEL_AUDIT_FIELDS: readonly FilterField[] = AUDIT_FIELDS.filter((f) => f.key !== 'entity').map((f) =>
+  f.key === 'action' && f.type === 'terms' ? { ...f, values: TRIAGE_ACTIONS } : f,
+)
+
+/** The audit filters of a panel in words, one text for each. */
+export function panelAuditFilterParts(filters: AuditFilters): string[] {
+  return filters ? presetParts(PANEL_AUDIT_FIELDS, filters as ViewPreset) : []
+}
+
+/** The audit read of a panel: its query with its audit filters. A panel with none sends its query
+ * as it is. */
+export function panelAuditQuery<Q extends { cluster_id: string }>(base: Q, filters: AuditFilters): Q & Record<string, unknown> {
+  if (panelAuditFilterParts(filters).length === 0) return base
+  const params = Object.fromEntries(
+    Object.entries(filters as Record<string, unknown>).filter(([, v]) => v !== null && v !== undefined),
+  )
+  return { ...params, ...base }
+}
+
+/** The Audit log link of a panel: its audit filters, and the entities that the panel counts. */
+export function panelAuditLogQuery(filters: AuditFilters): Record<string, string> {
+  return presetToRouteQuery(AUDIT_FIELDS, { ...filters, entity_type: [...TRIAGE_ENTITY_TYPES] } as ViewPreset)
 }

@@ -54,3 +54,7 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "top-components": (),
     "triage-progress": ("state",),
 }
+
+# the panels that count audit-log rows take the Action and User filters of the Audit log
+# (issue 1063, decision D2 A); Entity is the panel's own query, so no panel takes it
+AUDIT_FILTER_PANELS: frozenset[str] = frozenset({"triage-activity"})

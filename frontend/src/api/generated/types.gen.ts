@@ -222,6 +222,7 @@ export type DashboardFields = {
  * One panel: a catalog ID, its cell, its width in columns and the NAME of its height.
  */
 export type DashboardPanel = {
+    audit_filters?: PanelAuditFilters | null;
     filters?: ViewPreset | null;
     /**
      * H
@@ -579,6 +580,31 @@ export type MintRequest = {
      * Scanner
      */
     scanner: string;
+};
+
+/**
+ * PanelAuditFilters
+ *
+ * The Audit log filters of a panel (issue 1063, decision D2 A), with the caps of the audit
+ * route. No Entity: the panel sets it, so a stored one is a 422 (extra=forbid).
+ */
+export type PanelAuditFilters = {
+    /**
+     * Action
+     */
+    action?: Array<string> | null;
+    /**
+     * Actor
+     */
+    actor?: Array<string> | null;
+    /**
+     * Exclude Action
+     */
+    exclude_action?: Array<string> | null;
+    /**
+     * Exclude Actor
+     */
+    exclude_actor?: Array<string> | null;
 };
 
 /**

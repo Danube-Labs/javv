@@ -47,6 +47,19 @@ vi.mock('@/dashboards/catalog', () => {
         pageSize: ctx.height === 'tall' ? 25 : 10,
       }),
     },
+    // the panel with audit filters (issue 1063); no test of the three above reads this entry
+    'triage-activity': {
+      id: 'triage-activity',
+      name: 'Triage activity',
+      line: 'Triage changes that people made in the time range.',
+      component: Probe,
+      heights: { short: 5 },
+      usesScanner: false,
+      framed: false,
+      takesFilters: false,
+      takesAuditFilters: true,
+      props: () => ({}),
+    },
     'triage-progress': {
       id: 'triage-progress',
       name: 'Triage progress',
@@ -68,11 +81,14 @@ vi.mock('@/api/generated', () => ({
   updateDashboardApiV1DashboardsDashboardIdPatch: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   // the counts of the Add filter menu in the panel settings (issue 999)
   facetFindingsApiV1FindingsFacetsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  // the counts of the audit Filters of Triage activity (issue 1063)
+  auditFacetsApiV1AuditFacetsGet: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 }))
 vi.mock('@/api/client', () => ({ client: {} }))
 
 import type { DashboardPanel } from '@/api/generated'
 import {
+  auditFacetsApiV1AuditFacetsGet,
   facetFindingsApiV1FindingsFacetsGet,
   getDashboardApiV1DashboardsDashboardIdGet,
   updateDashboardApiV1DashboardsDashboardIdPatch,
@@ -90,6 +106,7 @@ import {
 import { logger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
+import { useTimeTravelStore } from '@/stores/timeTravel'
 import { useToastStore } from '@/stores/toast'
 import DashboardView from '@/views/DashboardView.vue'
 
@@ -218,6 +235,21 @@ describe('the edit rules', () => {
     expect(withSettings(p, { ...s, filters: { fixable: true } }).filters).toEqual({ fixable: true })
     expect('filters' in withSettings(p, { ...s, filters: null })).toBe(false)
     expect(withSettings(p, s).filters).toEqual({ kev: true })
+  })
+
+  it('a change of the audit filters is a change, and the settings set or clear them (issue 1063)', () => {
+    // the catalog mock of this spec has no triage-activity, and placePanels drops a panel it does
+    // not know: the rule reads audit_filters on any panel, so the test sets them on one it knows
+    const at = (audit_filters?: Record<string, unknown>) => [PANELS[0]!, PANELS[1]!, { ...PANELS[2]!, ...(audit_filters ? { audit_filters } : {}) }]
+    expect(sameLayout(at(), at({ action: ['resolve'] }))).toBe(false)
+    expect(sameLayout(at({ action: ['resolve'] }), at({ action: ['note'] }))).toBe(false)
+    expect(sameLayout(at({ action: ['resolve'], actor: ['ana'] }), at({ actor: ['ana'], action: ['resolve'] }))).toBe(true)
+
+    const p: DraftPanel = { ...PANELS[2]!, key: 'k', audit_filters: { action: ['resolve'] } }
+    const s = { w: 2, h: 'short', scanner: null } as const
+    expect(withSettings(p, { ...s, auditFilters: { actor: ['ana'] } }).audit_filters).toEqual({ actor: ['ana'] })
+    expect('audit_filters' in withSettings(p, { ...s, auditFilters: null })).toBe(false)
+    expect(withSettings(p, s).audit_filters).toEqual({ action: ['resolve'] })
   })
 
   it('places go to the panels by key, and an unknown key changes nothing', () => {
@@ -624,6 +656,78 @@ describe('edit mode', () => {
       await button(w, 'Save changes').trigger('click')
       await flushPromises()
       expect(patchBody().body.panels![0]).not.toHaveProperty('filters')
+    })
+
+    describe('the audit Filters of Triage activity (issue 1063)', () => {
+      const TRIAGE = { panel: 'triage-activity', x: 0, y: 20, w: 2, h: 'short' } as const
+      const withTriage = (over: Record<string, unknown> = {}) => doc({ panels: [...PANELS, { ...TRIAGE, ...over }] })
+      beforeEach(() => {
+        vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValue(
+          answer(200, { facets: { action: [{ key: 'risk_accept', count: 4 }], actor: [{ key: 'ana', count: 2 }] } }),
+        )
+      })
+
+      it('takes Action and User, lists only the triage actions, and counts from the Audit log', async () => {
+        vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, withTriage()))
+        const { w } = await mountView('?edit=1')
+        const pop = await openSettings(w, 'Triage activity')
+        expect(labels(w)).toContain('Filters')
+        expect(vi.mocked(auditFacetsApiV1AuditFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+          query: { cluster_id: 'c1', entity_type: ['finding', 'decision'] },
+        })
+        expect(vi.mocked(facetFindingsApiV1FindingsFacetsGet)).not.toHaveBeenCalled()
+        await pop.find('.add-filter').trigger('click')
+        expect(pop.findAll('.filter-field').map((b) => b.text().replace(/\d+$/, '').trim())).toEqual(['Action', 'User'])
+        await pop.findAll('.filter-field').find((b) => b.text().includes('Action'))!.trigger('click')
+        const rows = pop.findAll('.facet-row .facet-label').map((r) => r.text())
+        expect(rows).toContain('Risk accepted')
+        expect(rows).toHaveLength(10)
+        expect(rows).not.toContain('Login')
+        await pop.findAll('.facet-row').find((r) => r.text().includes('Risk accepted'))!.trigger('click')
+        await flushPromises()
+        expect(vi.mocked(auditFacetsApiV1AuditFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+          query: { entity_type: ['finding', 'decision'], action: ['risk_accept'] },
+        })
+
+        await button(w, 'Apply').trigger('click')
+        await flushPromises()
+        expect(w.find('.save-msg').text()).toBe('You have unsaved changes')
+        await button(w, 'Save changes').trigger('click')
+        await flushPromises()
+        const saved = patchBody().body.panels!.find((p) => p.panel === 'triage-activity')!
+        expect(saved).toMatchObject({ audit_filters: { action: ['risk_accept'] } })
+        expect(saved).not.toHaveProperty('filters')
+      })
+
+      it('counts the menu at the T of the time picker', async () => {
+        useTimeTravelStore().t = '2026-10-01T00:00:00Z'
+        vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, withTriage()))
+        const { w } = await mountView('?edit=1')
+        await openSettings(w, 'Triage activity')
+        expect(vi.mocked(auditFacetsApiV1AuditFacetsGet).mock.calls.at(-1)![0]).toMatchObject({
+          query: { cluster_id: 'c1', as_of: '2026-10-01T00:00:00Z' },
+        })
+      })
+
+      it('shows the filters button of the panel in edit mode', async () => {
+        vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+          answer(200, withTriage({ audit_filters: { action: ['resolve'], actor: ['ana'] } })),
+        )
+        const { w } = await mountView('?edit=1')
+        expect(w.find('[aria-label="2 filters on Triage activity"]').exists()).toBe(true)
+      })
+
+      it('shows the stored audit filters, and Apply with no change is no change', async () => {
+        vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+          answer(200, withTriage({ audit_filters: { exclude_actor: ['bot'] } })),
+        )
+        const { w } = await mountView('?edit=1')
+        const pop = await openSettings(w, 'Triage activity')
+        expect(pop.find('.fpill').text()).toContain('User')
+        await button(w, 'Apply').trigger('click')
+        await flushPromises()
+        expect(w.find('.save-msg').text()).toBe('All changes saved')
+      })
     })
 
     it('a panel that takes no filters has no Filters field', async () => {

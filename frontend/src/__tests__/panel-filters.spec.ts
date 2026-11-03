@@ -2,11 +2,18 @@
  * The filters of a dashboard panel (issue 999): their words, the facets read that carries them,
  * and the Findings link of a click in a filtered panel.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import type { ViewPreset } from '@/api/generated'
 import { panelById } from '@/dashboards/catalog'
+import { TRIAGE_ACTIONS } from '@/audit/fields.config'
 import {
+  PANEL_AUDIT_FIELDS,
+  panelAuditFilterParts,
+  panelAuditLogQuery,
+  panelAuditQuery,
   panelFilterFields,
   panelFilterParts,
   panelFiltersAt,
@@ -113,5 +120,60 @@ describe('the fields of the Filters field in the panel settings', () => {
     expect(keys('triage-progress')).not.toContain('state')
     expect(keys('triage-progress')).not.toContain('scanner')
     expect(keys('findings-summary')).toContain('state')
+  })
+})
+
+describe('the audit filters of Triage activity (issue 1063)', () => {
+  const triageBase = { cluster_id: 'c-k3d-0001', entity_type: ['finding', 'decision'] }
+
+  it('are Action and User: the panel sets Entity itself', () => {
+    expect(PANEL_AUDIT_FIELDS.map((f) => f.key)).toEqual(['action', 'actor'])
+  })
+
+  it('list only the triage actions, since the panel counts only finding and decision rows', () => {
+    const action = PANEL_AUDIT_FIELDS.find((f) => f.key === 'action')!
+    expect(action.type === 'terms' && action.values).toEqual([...TRIAGE_ACTIONS])
+    expect(TRIAGE_ACTIONS).toContain('risk_accept')
+    expect(TRIAGE_ACTIONS).toContain('decision_revoke')
+    expect(TRIAGE_ACTIONS).not.toContain('login')
+    expect(TRIAGE_ACTIONS).not.toContain('dashboard_update')
+  })
+
+  it('are the triage actions that the backend stores on a panel, no more and no fewer', () => {
+    const source = readFileSync(resolve(process.cwd(), '..', 'backend/src/backend/query/contributors.py'), 'utf8')
+    const block = /^TRIAGE_ACTIONS = frozenset\(([\s\S]*?)^\)/m.exec(source)?.[1] ?? ''
+    const backend = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1])
+    expect(backend.length).toBeGreaterThan(0)
+    expect([...backend].sort()).toEqual([...TRIAGE_ACTIONS].sort())
+  })
+
+  it('give one text for each filter, with the words of the Audit log', () => {
+    expect(panelAuditFilterParts({ action: ['risk_accept', 'not_affected'], exclude_actor: ['bot'] })).toEqual([
+      'Action is one of Risk accepted, Not affected',
+      'User is not bot',
+    ])
+    expect(panelAuditFilterParts(null)).toEqual([])
+    expect(panelAuditFilterParts({})).toEqual([])
+  })
+
+  it('go into the read of the panel, and leave a null param out', () => {
+    expect(panelAuditQuery(triageBase, { action: ['resolve'], actor: null })).toEqual({
+      ...triageBase,
+      action: ['resolve'],
+    })
+  })
+
+  it('keep the query of the panel as it is when there are none', () => {
+    expect(panelAuditQuery(triageBase, null)).toBe(triageBase)
+    expect(panelAuditQuery(triageBase, {})).toBe(triageBase)
+  })
+
+  it('open the Audit log with the same filters and the entities that the panel counts', () => {
+    expect(panelAuditLogQuery({ action: ['risk_accept'], exclude_actor: ['bot'] })).toEqual({
+      entity: 'finding,decision',
+      action: 'risk_accept',
+      actor: '!bot',
+    })
+    expect(panelAuditLogQuery(null)).toEqual({ entity: 'finding,decision' })
   })
 })

@@ -1233,6 +1233,20 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   and a change of filters makes the save bar show unsaved changes. "New in range" counts in the
   range of the dashboard, not in the days that the panel stores with the filter (operator,
   2026-10-31). The popover takes its place again when it grows, so Apply stays on the screen.
+- **Audit log filters (issue 1063, decision D2 A):** Triage activity keeps Audit log filters in
+  its own field, `audit_filters`, and never findings filters. Its counts read
+  `GET /api/v1/audit/facets` with `entity_type` finding and decision and the filters of the
+  panel. In edit mode its panel settings have a second Filters field: the Audit log `FilterBar`
+  with `menu-up`, with Action and User (`PANEL_AUDIT_FIELDS`). Entity is not in the list, because
+  the panel sets it. Action lists only the ten triage actions (`TRIAGE_ACTIONS`), because the
+  other actions always count 0 on these rows. The backend stores only these ten (422 for another
+  action). The menu counts at the dashboard cluster and T, on the same two entities. As on the
+  Audit log, these counts take all the changes up to T, not only the time range of the panel.
+  The help line says "The panel counts only the changes that match these filters." The corner
+  button is the same `PanelFiltersButton`. Its popover says "changes", and
+  **Open in Audit log** opens `/audit` with the two entities and the filters of the panel. The
+  activity chart of that page counts in the same time range as the panel. Its table shows all the
+  changes up to the end of the range (§10).
 - **States:** loading, refused (the G2 alert), no cluster selected, no panels. A dashboard that
   does not exist or that the user cannot see is the "not found" page (§18, decision Q3).
 

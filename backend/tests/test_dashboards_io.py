@@ -368,11 +368,17 @@ async def test_the_same_id_twice_in_one_file_makes_one_dashboard(env) -> None:
 
 
 async def test_an_export_keeps_the_panel_filters_and_imports_them_again(env) -> None:
-    """Issue 999: the filters of a panel travel with the export, and the import stores them."""
+    """Issue 999: the filters of a panel travel with the export, and the import stores them. The
+    audit filters of Triage activity do too (issue 1063)."""
     user, _ = env
     author = await user(EDIT)
     filters = {"exclude_namespace": ["kube-system"], "severity": ["critical"]}
-    made = await _create(author, panels=[_panel("findings-by-namespace", w=1, filters=filters)])
+    audit = {"action": ["risk_accept"], "exclude_actor": ["bot"]}
+    panels = [
+        _panel("findings-by-namespace", w=1, filters=filters),
+        _panel("triage-activity", y=1, audit_filters=audit),
+    ]
+    made = await _create(author, panels=panels)
     exported = (
         await author.get(
             "/api/v1/dashboards/export.ndjson", params={"dashboard_id": made["dashboard_id"]}
@@ -393,6 +399,8 @@ async def test_an_export_keeps_the_panel_filters_and_imports_them_again(env) -> 
         {"panels": [_panel(h="tall")]},
         {"panels": [_panel(filters={"scanner": "trivy"})]},
         {"panels": [_panel("scan-ingest", filters={"kev": True})]},
+        {"panels": [_panel("triage-activity", audit_filters={"entity_type": ["user"]})]},
+        {"panels": [_panel("triage-activity", audit_filters={"action": ["login"]})]},
     ],
 )
 async def test_the_import_uses_the_checks_of_a_create(env, over: dict[str, Any]) -> None:

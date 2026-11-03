@@ -41,8 +41,9 @@ const pinnedOf = (p: PlacedPanel) => (p.panel.usesScanner && isPinned(p.stored) 
               <ScannerTag :name="String(pinnedOf(p))" /> pinned
             </span>
             <PanelFiltersButton
-              v-if="p.panel.takesFilters"
+              v-if="p.panel.takesFilters || p.panel.takesAuditFilters"
               :filters="p.stored.filters"
+              :audit-filters="p.stored.audit_filters"
               :panel-name="p.panel.name"
               :pinned="pinnedOf(p)"
             />

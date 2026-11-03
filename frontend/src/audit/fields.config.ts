@@ -80,6 +80,23 @@ export const AUDIT_ACTIONS = [
   'job_trigger',
 ] as const
 
+/** The rows of triage (issue 1063): a state change, an assignment, a note and a bulk change are
+ * `finding` rows; a decision create or revoke is a `decision` row. Triage activity counts only
+ * these, so it offers only these actions. */
+export const TRIAGE_ENTITY_TYPES = ['finding', 'decision'] as const
+export const TRIAGE_ACTIONS = [
+  'reopen',
+  'acknowledge',
+  'not_affected',
+  'risk_accept',
+  'resolve',
+  'assign',
+  'note',
+  'bulk_triage',
+  'decision_create',
+  'decision_revoke',
+] as const
+
 /** The most buckets the server gives for Entity and Action: backend `query/audit._AUDIT_LIST_TERMS_SIZE`,
  * a fixed size in docs/CONFIGURATION.md ("Fixed aggregation sizes"). It is larger than the
  * Action list, so each action gets a count (issue 983). */

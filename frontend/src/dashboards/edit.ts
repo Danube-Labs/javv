@@ -3,7 +3,7 @@
  * its tests share them. gridstack moves the panels on screen; these functions decide who may
  * change a dashboard, what a save sends and what a failed save says.
  */
-import type { DashboardPanel, ViewPreset } from '@/api/generated'
+import type { DashboardPanel, PanelAuditFilters, ViewPreset } from '@/api/generated'
 import type { PanelHeight, PanelWidth } from '@/dashboards/catalog'
 import { pageBlocks, placeOne, placePanels } from '@/dashboards/layout'
 
@@ -65,6 +65,8 @@ export interface PanelSettings {
   scanner: PanelScannerChoice | null
   /** the findings filters of the panel (issue 999): null clears them, absent leaves them */
   filters?: ViewPreset | null
+  /** the Audit log filters of the panel (issue 1063): null clears them, absent leaves them */
+  auditFilters?: PanelAuditFilters | null
 }
 
 let nextKey = 0
@@ -82,7 +84,7 @@ export function fromDraft(draft: readonly DraftPanel[]): DashboardPanel[] {
 
 /** The filters as a value key. `present: true` is the stored default and no filter, and the days
  * of New in range are not compared: the panel reads with the range of the dashboard. */
-function filtersSig(f: ViewPreset | null | undefined): string {
+function filtersSig(f: ViewPreset | PanelAuditFilters | null | undefined): string {
   if (!f) return ''
   const kept = Object.entries(f)
     .filter(([k, v]) => v !== null && v !== undefined && !(k === 'present' && v === true))
@@ -92,7 +94,7 @@ function filtersSig(f: ViewPreset | null | undefined): string {
 }
 
 const panelSig = (p: DashboardPanel) =>
-  `${p.panel}|${p.x}|${p.w}|${p.h}|${p.scanner ?? ''}|${filtersSig(p.filters)}`
+  `${p.panel}|${p.x}|${p.w}|${p.h}|${p.scanner ?? ''}|${filtersSig(p.filters)}|${filtersSig(p.audit_filters)}`
 const pageSigs = (panels: readonly DashboardPanel[]) =>
   pageBlocks(placePanels(panels)).flatMap((b) => b.columns.flat().map((p) => panelSig(p.stored)))
 
@@ -130,6 +132,8 @@ export function withSettings(p: DraftPanel, s: PanelSettings): DraftPanel {
   const next: DraftPanel = { ...p, w: s.w, h: s.h, x: s.w === 2 ? 0 : p.x, ...(s.scanner ? { scanner: s.scanner } : {}) }
   if (s.filters === null) delete next.filters
   else if (s.filters) next.filters = s.filters
+  if (s.auditFilters === null) delete next.audit_filters
+  else if (s.auditFilters) next.audit_filters = s.auditFilters
   return next
 }
 
