@@ -25,7 +25,7 @@ scanners:
   grype:
     # renovate: datasource=docker depName=anchore/grype extractVersion=^v(?<version>.+)$
     current: "0.120.1"
-    also_supported: ["0.114.0"]
+    also_supported: ["0.121.1", "0.114.0"]
     vuln_db:
       schema: 6  # Grype DB schema v6 (used since grype 0.88.0, Mar 2025).
       # Grype < 0.88.0 speaks schema v5, which upstream EOL'd 2026-03-06 → frozen (no more DB updates),
