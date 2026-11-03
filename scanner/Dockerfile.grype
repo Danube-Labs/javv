@@ -3,7 +3,7 @@
 # our package provides the entrypoint. Build context = the REPO ROOT (the package depends
 # on the shared libs/javv-common, #156).
 #   docker build -f scanner/Dockerfile.grype -t javv-scanner-grype .
-ARG GRYPE_VERSION=0.120.1
+ARG GRYPE_VERSION=0.121.1
 
 FROM anchore/grype:v${GRYPE_VERSION} AS grype
 
