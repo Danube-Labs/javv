@@ -6,11 +6,15 @@
  * The test router has `image-detail`, the route each row links to. Without it, the row link
  * cannot resolve, and the table redraws its columns until Vue stops it ("Maximum recursive
  * updates exceeded in component <DataTable>").
+ *
+ * The three tests read one mounted view. The render of the 40 images is most of the time of a
+ * test, and three renders came near the 5 s limit of a test in a full run (issue 1084). The render
+ * now runs one time, in `beforeAll`, under the limit of a hook. No test changes the view.
  */
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 vi.mock('@/api/generated', async (importOriginal) => {
@@ -70,7 +74,9 @@ async function mountImages() {
   return w
 }
 
-beforeEach(() => {
+let w: VueWrapper
+
+beforeAll(async () => {
   setActivePinia(createPinia())
   const clusters = useClusterStore()
   clusters.clusters = [{ cluster_id: CLUSTER, cluster_name: 'k3d' }] as never
@@ -82,24 +88,24 @@ beforeEach(() => {
     request: {},
     response: { ok: true, status: 200 },
   } as never)
+  w = await mountImages()
 })
+
+afterAll(() => w.unmount())
 
 describe('Running images: a value past the top 32 (issue 1064)', () => {
   it('the filter list gets the search of the menu, and it finds an image past the top 32', async () => {
-    const w = await mountImages()
     const search = w.findComponent({ name: 'FilterBar' }).props('searchValues') as ValueSearchFn
     expect(w.findComponent({ name: 'FacetRail' }).props('searchValues')).toBe(search)
     const found = await search(REPO, 'app-39')
     expect(found?.buckets.map((b) => b.key)).toEqual(['docker.io/team/app-39'])
   })
 
-  it('the table shows the first page of the 40 images', async () => {
-    const w = await mountImages()
+  it('the table shows the first page of the 40 images', () => {
     expect(w.findAll('.tbl tbody tr')).toHaveLength(25)
   })
 
-  it('the Image group, at its cap, has the search box', async () => {
-    const w = await mountImages()
+  it('the Image group, at its cap, has the search box', () => {
     const titles = w.findAll('.facet .facet-title').map((t) => t.text())
     const group = w.findAll('.facet').at(titles.indexOf('Image'))!
     expect(group.find('.facet-vsearch input').attributes('placeholder')).toBe('Find an image…')
