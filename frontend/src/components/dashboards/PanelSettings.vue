@@ -81,8 +81,9 @@ const { facets, failed } = useFindingsFacets(() => undefined, menuQuery)
 // a value past the top 32: the menu asks under the same query (issue 1064)
 const searchValues = findingsValueSearch(menuQuery)
 
-// the Audit log filters of a panel that counts audit-log rows (issue 1063): the menu counts the
-// rows of the panel, so it reads with the entities that the panel reads
+// the Audit log filters of a panel that counts audit-log rows (issue 1063): the menu reads with
+// the entities that the panel reads. As on the Audit log, its counts take all the rows up to T,
+// not only the time range of the panel: the facets route limits only its chart to the range
 const auditFields = entry?.takesAuditFilters ? PANEL_AUDIT_FIELDS : []
 const audit = useSettingsAuditFilters()
 audit.fromQuery(props.panel.audit_filters ? presetToRouteQuery(PANEL_AUDIT_FIELDS, props.panel.audit_filters as ViewPreset) : {})
