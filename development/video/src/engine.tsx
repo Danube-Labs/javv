@@ -47,6 +47,7 @@ export type Beat = {
     to: string // the screen after the click
     page?: boolean // a new page: soft fade; else a quick switch
     via?: string[] // screens between the click and `to`, a few frames each (typing)
+    drag?: string // a box of `to`: the button stays down and the pointer takes it there while `via` shows
   }
 }
 
@@ -79,6 +80,7 @@ const GLIDE_F = 28
 const HOVER_F = 12
 const RESULT_F = 38 // the new screen stays, with no spotlight, before the next beat
 const VIA_F = 7 // each in-between screen (typing)
+const DRAG_F = 48 // the shortest drag, from the press to the release
 const END_F = 84
 const HOLD_W = 960 // the steady zoom for held beats, in page pixels
 /** time to read a caption: about 3.5 words a second, plus time to find it on screen */
@@ -87,6 +89,15 @@ const readFrames = (text: string) => Math.min(150, Math.max(72, text.split(' ').
 const ease = Easing.bezier(0.65, 0, 0.35, 1)
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
 const center = (b: Box) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })
+const union = (a: Box, b: Box): Box => {
+  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y)
+  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y }
+}
+const EDGE = 16 // room around a box that must fit in the frame: the spotlight draws outside it
+const inView = (c: { cx: number; cy: number; w: number }, b: Box) => {
+  const h = (c.w * STAGE.h) / STAGE.w
+  return b.x >= c.cx - c.w / 2 && b.x + b.w <= c.cx + c.w / 2 && b.y >= c.cy - h / 2 && b.y + b.h <= c.cy + h / 2
+}
 
 type Cam = { f: number; cx: number; cy: number; w: number }
 type Point = { f: number; x: number; y: number }
@@ -97,6 +108,7 @@ export type Plan = {
   camera: Cam[]
   pointer: Point[]
   clicks: number[]
+  drags: { from: number; to: number }[] // the button is down
   captions: { from: number; to: number; step: number; text: string }[]
   spots: { from: number; to: number; shot: string; box: string }[]
   introEnd: number
@@ -107,13 +119,26 @@ export type Plan = {
 export function plan(v: Video): Plan {
   const shots: Record<string, Shot> = Object.fromEntries(v.shots.shots.map((s) => [s.name, s]))
   const pageW = v.shots.view.width
-  const p: Plan = { shots, pageW, segments: [], camera: [], pointer: [], clicks: [], captions: [], spots: [], introEnd: TITLE_F, end: 0, duration: 0 }
+  const p: Plan = { shots, pageW, segments: [], camera: [], pointer: [], clicks: [], drags: [], captions: [], spots: [], introEnd: TITLE_F, end: 0, duration: 0 }
 
   const frameBox = (b: Box, pageH: number) => {
     const w = Math.min(pageW, Math.max(800, b.w / 0.55, ((b.h / 0.7) * STAGE.w) / STAGE.h))
     const h = (w * STAGE.h) / STAGE.w
     const c = center(b)
     return { cx: Math.min(pageW - w / 2, Math.max(w / 2, c.x)), cy: Math.min(pageH - h / 2, Math.max(h / 2, c.y)), w }
+  }
+  // the steady zoom of held beats; it widens and moves only when the box `t` would not fit
+  const holdFrame = (hb: Box, t: Box | undefined, pageH: number) => {
+    let w = HOLD_W
+    let cx = center(hb).x - 40
+    let cy = t ? center(t).y : center(hb).y
+    if (t && !inView({ w, cx, cy }, t)) {
+      w = Math.min(pageW, Math.max(HOLD_W, t.w + 2 * EDGE, ((t.h + 2 * EDGE) * STAGE.w) / STAGE.h))
+      cx = Math.min(t.x - EDGE + w / 2, Math.max(t.x + t.w + EDGE - w / 2, cx))
+    }
+    const h = (w * STAGE.h) / STAGE.w
+    cy = Math.min(pageH - h / 2, Math.max(h / 2, cy))
+    return { w, cx: Math.min(pageW - w / 2, Math.max(w / 2, cx)), cy }
   }
 
   let t = TITLE_F
@@ -137,12 +162,19 @@ export function plan(v: Video): Plan {
   t += settleF
   for (const b of v.beats) {
     const shot = shots[b.shot]
-    let next = b.spot ? frameBox(shot.boxes[b.spot], shot.size.h) : cam
+    // a beat on a screen that no click opened (the walk went back, or closed a popover): fade it
+    // in at the start, so the spotlight never lights a box of a screen that is not there yet
+    if (p.segments[p.segments.length - 1].shot !== b.shot) p.segments.push({ shot: b.shot, from: t + 10, fade: 10 })
+    // the camera shows the lit box and the box the pointer clicks: when the click is outside
+    // the frame of the lit box, it frames the two together
+    const sb = b.spot ? shot.boxes[b.spot] : undefined
+    const cb = b.click ? shot.boxes[b.click.box] : undefined
+    let next = sb ? frameBox(sb, shot.size.h) : cam
+    if (sb && cb && !inView(next, cb)) next = frameBox(union(sb, cb), shot.size.h)
     if (b.hold) {
       const hb = shot.boxes[b.hold]
-      const h = (HOLD_W * STAGE.h) / STAGE.w
-      const sy = b.spot ? center(shot.boxes[b.spot]).y : center(hb).y
-      next = { w: HOLD_W, cx: Math.min(pageW - HOLD_W / 2, Math.max(HOLD_W / 2, center(hb).x - 40)), cy: Math.min(shot.size.h - h / 2, Math.max(h / 2, sy)) }
+      next = holdFrame(hb, sb, shot.size.h)
+      if (cb && !inView(next, cb)) next = holdFrame(hb, sb ? union(sb, cb) : cb, shot.size.h)
     }
     if (b.wide) {
       const h = (pageW * STAGE.h) / STAGE.w
@@ -164,15 +196,27 @@ export function plan(v: Video): Plan {
       if (shots[`${b.shot}-hover`]) p.segments.push({ shot: `${b.shot}-hover`, from: hover, fade: 4 })
       const press = hover + HOVER_F
       p.clicks.push(press)
-      const away = { x: target.x + 90, y: target.y + 70 }
-      p.pointer.push({ f: press + 6, ...target }, { f: press + 30, ...away })
-      ptr = away
       // the spotlight leaves at the press: the screen changes under it
       spotTo = press
       let s = press + 6
-      for (const via of b.click.via ?? []) {
-        p.segments.push({ shot: via, from: s, fade: 0 })
-        s += VIA_F
+      const via = b.click.via ?? []
+      if (b.click.drag) {
+        // the in-between screens share the drag time, so the panel moves with the pointer
+        const drop = center(shots[b.click.to].boxes[b.click.drag])
+        const dragF = Math.max(DRAG_F, via.length * VIA_F)
+        p.pointer.push({ f: s, ...target }, { f: s + dragF, ...drop })
+        via.forEach((shot, i) => p.segments.push({ shot, from: s + Math.round((i * dragF) / via.length), fade: 0 }))
+        s += dragF
+        p.drags.push({ from: press, to: s })
+        ptr = { x: drop.x + 90, y: drop.y + 70 }
+        p.pointer.push({ f: s, ...drop }, { f: s + 24, ...ptr })
+      } else {
+        ptr = { x: target.x + 90, y: target.y + 70 }
+        p.pointer.push({ f: s, ...target }, { f: press + 30, ...ptr })
+        for (const shot of via) {
+          p.segments.push({ shot, from: s, fade: 0 })
+          s += VIA_F
+        }
       }
       // a new page fades in; a change inside the page switches fast, as in the app: a slow
       // crossfade between two layouts that shifted shows a double image
@@ -242,7 +286,7 @@ function Screen({ p, dir }: { p: Plan; dir: string }) {
 
   const ptr = toStage(keyed(p.pointer, f, (k) => k.x), keyed(p.pointer, f, (k) => k.y))
   const pointerOn = interpolate(f, [p.pointer[0].f - 10, p.pointer[0].f, p.end, p.end + 14], [0, 1, 1, 0], clamp)
-  const pressing = p.clicks.some((c) => f >= c - 3 && f <= c + 4)
+  const pressing = p.clicks.some((c) => f >= c - 3 && f <= c + 4) || p.drags.some((d) => f >= d.from && f <= d.to)
 
   const spot = p.spots.find((sp) => f >= sp.from && f <= sp.to + 8)
   let spotEl = null

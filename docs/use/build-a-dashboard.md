@@ -1,5 +1,7 @@
 # Build a dashboard
 
+<video controls preload="metadata" width="100%" src="videos/build-a-dashboard.mp4"></video>
+
 A dashboard puts panels of Overview, Contributors and Scanner status on one page. Each panel
 shows the data of the cluster that you select at the top of the page.
 

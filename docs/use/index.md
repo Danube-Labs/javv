@@ -1,7 +1,7 @@
 # Use JAVV
 
 These pages show how to triage the findings in JAVV, from the first scan to a finding with a
-decision. Each page in the table has a short video. The same steps are in text below each video.
+decision, and how to put panels on a dashboard. Each page in the table has a short video. The same steps are in text below each video.
 
 | Video | What it shows |
 |---|---|
@@ -11,10 +11,9 @@ decision. Each page in the table has a short video. The same steps are in text b
 | [Change many findings at once](change-many-findings.md) | How to change the state of all the findings that match your filters |
 | [When a scanner stops sending results](when-a-scanner-stops.md) | What JAVV does when a scanner is silent for too long |
 | [See who changed what](who-changed-what.md) | How to find the changes in the Audit log and on a finding |
+| [Build a dashboard](build-a-dashboard.md) | How to put panels on one page, share the page, and copy it to a different JAVV |
 
 The videos use made-up clusters and data.
-
-[Build a dashboard](build-a-dashboard.md) shows how to put panels on one page and share them.
 
 ## What your role lets you do
 
