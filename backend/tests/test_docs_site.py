@@ -79,11 +79,15 @@ VIDEOS = {
         "change-many-findings",
         "when-a-scanner-stops",
         "who-changed-what",
+        "build-a-dashboard",
     )
 }
 # Each version of the site keeps its own copy of every video, and git keeps every old one: a
-# video stays small. The six are 3.1 to 4.6 MB at 1920 wide, H.264 crf 28.
+# video stays small. The short six are 3.1 to 4.6 MB at 1920 wide, H.264 crf 28.
 VIDEO_LIMIT_BYTES = 6_000_000
+# The dashboard video shows every capability of dashboards in one walk of 6.5 minutes, so it is
+# about 14 MB at the same rate (ruled in issue 1009).
+LONG_VIDEO_LIMIT_BYTES = {"docs/use/videos/build-a-dashboard.mp4": 16_000_000}
 PUBLISHED = PAGES | FILES | VIDEOS
 # The site's own files: real files in src/, not copies of anything in the repository.
 SITE_FILES = {"stylesheets/javv.css"}
@@ -172,7 +176,8 @@ def test_each_video_plays_from_exactly_one_page() -> None:
 @pytest.mark.parametrize("video", sorted(VIDEOS))
 def test_each_video_is_under_the_size_limit(video: str) -> None:
     size = (ROOT / video).stat().st_size
-    assert size <= VIDEO_LIMIT_BYTES, f"{video} is {size} bytes; encode it again for the web"
+    limit = LONG_VIDEO_LIMIT_BYTES.get(video, VIDEO_LIMIT_BYTES)
+    assert size <= limit, f"{video} is {size} bytes; encode it again for the web"
 
 
 def test_the_versions_page_includes_readmes_marked_table() -> None:

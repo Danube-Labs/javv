@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Renders the videos from the screenshots of record.sh, then encodes each one for the docs site
-# into docs/use/videos/. With no argument, all six; else the numbers given (render.sh 3 5).
+# into docs/use/videos/. With no argument, all seven; else the numbers given (render.sh 3 5).
 set -euo pipefail
 # shellcheck source=SCRIPTDIR/stack/env.sh
 source "$(dirname "$0")/stack/env.sh"
@@ -16,8 +16,8 @@ cp "$REPO/frontend/src/assets/brand/icon.svg" public/icon.svg
 [ -d node_modules ] || npm ci
 
 names=(from-a-scan-to-a-finding set-the-state-of-a-finding accept-a-risk change-many-findings
-  when-a-scanner-stops who-changed-what)
-for n in "${@:-1 2 3 4 5 6}"; do
+  when-a-scanner-stops who-changed-what build-a-dashboard)
+for n in "${@:-1 2 3 4 5 6 7}"; do
   for v in $n; do
     npx remotion render src/index.ts "V$v" "out/V$v.mp4" --codec=h264 --crf=20 --log=error
     # for the web: full width, more compression (text stays sharp at crf 28), no sound track,

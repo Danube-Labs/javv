@@ -1,17 +1,17 @@
-# The triage videos
+# The videos of Use JAVV
 
-This folder makes the six videos of Use JAVV, the user section of the docs site
+This folder makes the seven videos of Use JAVV, the user section of the docs site
 (`docs/use/`). A recorder takes a sharp screenshot of each state of the app, with the position
 of each control. Remotion then makes all the motion over the screenshots: the camera, the
 spotlight, the pointer, the clicks and the captions.
 
 | Part | What it does |
 |---|---|
-| `record/` | One walk for each video (`walk-v1.mjs` to `walk-v6.mjs`) and the shared recorder (`common.mjs`). A walk signs in as `lead` and goes through the app. It writes 2x screenshots and `shots.json` to `public/vN/`. |
+| `record/` | One walk for each video (`walk-v1.mjs` to `walk-v7.mjs`) and the shared recorder (`common.mjs`). A walk signs in as `lead` and goes through the app. Walk 7 also opens the app as `viewer`. It writes 2x screenshots and `shots.json` to `public/vN/`. |
 | `src/engine.tsx` | The engine. It calculates the timing and the camera from a list of beats. It draws the window, the spotlight, the pointer, the caption and the title cards. |
 | `src/videos/` | One list of beats for each video. A beat names a screenshot, a caption, the control to show, and the control to click. |
 | `stack/` | The video stack: its own store, backend and app, with made-up data. |
-| `record.sh` | Starts the video stack and runs the six walks in their order. |
+| `record.sh` | Starts the video stack and runs the seven walks in their order. |
 | `render.sh` | Renders the videos and encodes them for the docs site into `docs/use/videos/`. |
 
 ## What you need
@@ -24,13 +24,13 @@ spotlight, the pointer, the clicks and the captions.
 
 ## Make the videos again
 
-1. Record the screenshots. This takes about 15 minutes:
+1. Record the screenshots. This takes about 20 minutes:
 
     ```bash
     development/video/record.sh
     ```
 
-2. Render and encode the videos. With no argument, all six. With numbers, only those videos:
+2. Render and encode the videos. With no argument, all seven. With numbers, only those videos:
 
     ```bash
     development/video/render.sh
@@ -60,7 +60,7 @@ this folder.
 | Store | The container `javv-os-video`, on `127.0.0.1:9203`, with the OpenSearch version from `versions.yaml` |
 | Backend | `127.0.0.1:8010`, log in `out/backend.log` |
 | App | `127.0.0.1:8091`, the built frontend |
-| Users | `admin`, and `lead` with the security lead role |
+| Users | `admin`, `lead` with the security lead role, and `viewer` with the viewer role |
 | Passwords | One 600 file each in `sec/`. Each start makes new passwords. No script prints them. |
 | Data | Two made-up clusters from `development/scripts/replay_waves.py`: `prod-eu-1` and `staging-eu` |
 
@@ -68,8 +68,8 @@ The ports are not the ports of the dev stack, so a recording never changes the d
 
 The walks change triage data, so `record.sh` runs them in this order on one store: walk 2 sets a
 state, walk 3 accepts a risk and revokes it, walk 4 makes a bulk change, and walk 6 shows the
-history of all three. For walk 5, the scanners of `staging-eu` stay silent. Short timers for
-that cluster and a sweep then mark its findings Stale.
+history of all three. Walk 7 shows these changes on a dashboard. For walk 5, the scanners of
+`staging-eu` stay silent. Short timers for that cluster and a sweep then mark its findings Stale.
 
 ## Change a video
 
@@ -80,3 +80,6 @@ that cluster and a sweep then mark its findings Stale.
 - A caption tells only what the screen shows.
 - The engine sets the pace. A caption shows for a time that it calculates from the number of
   words. The spotlight comes after the camera move, and it goes at the click.
+- A beat can start on a screen that no click opened, for example after the walk went back a page.
+  The engine then shows that screen first, and the spotlight comes after it. The camera shows the
+  spotlight and the control to click together. If they do not fit together, use two beats.

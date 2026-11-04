@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Records the screenshots of all six videos on a new video stack. The walks change triage data,
+# Records the screenshots of all seven videos on a new video stack. The walks change triage data,
 # so they run in this order, on one store: 2 sets a state, 3 accepts and revokes a risk, 4 makes a
-# bulk change, and 6 shows the history of all three. Takes about 15 minutes.
+# bulk change, 6 shows the history of all three, and 7 shows the changes on a dashboard. Takes
+# about 20 minutes.
 set -euo pipefail
 # shellcheck source=SCRIPTDIR/stack/env.sh
 source "$(dirname "$0")/stack/env.sh"
@@ -32,5 +33,5 @@ fi
     --set-scanner-down-days 0.005 --cluster staging-eu | tail -1
   uv run python -m backend.jobs.staleness | tail -1
 )
-for v in 5 6; do walk "$v"; done
+for v in 5 6 7; do walk "$v"; done
 echo "all walks done; the screenshots are in $VIDEO_DIR/public"

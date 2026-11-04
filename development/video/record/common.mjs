@@ -1,5 +1,6 @@
 // The recorder of the triage videos (issue 699): signs in as `lead` off camera (the password
-// comes from a 600 file and is never printed), opens the app at 2x, and takes full-page
+// comes from a 600 file and is never printed; a walk can switch to another user of the video
+// stack), opens the app at 2x, and takes full-page
 // screenshots with the boxes of named controls, in page pixels. The engine animates over them:
 // a screen video from Playwright or CDP ignores deviceScaleFactor, so it is never sharp.
 import fs from 'node:fs'
@@ -24,20 +25,29 @@ export async function record(dir, walk, { view: VIEW = DEFAULT_VIEW } = {}) {
   for (const f of fs.readdirSync(out)) if (f.endsWith('.png') || f === 'shots.json') fs.unlinkSync(`${out}/${f}`)
 
   const browser = await chromium.launch()
-  const auth = await browser.newContext({ viewport: VIEW })
-  const ap = await auth.newPage()
-  await ap.goto(`${BASE}/login`)
-  await ap.locator('input[type="text"], input[autocomplete*="username" i]').first().fill('lead')
-  await ap.locator('input[type="password"]').first().fill(fs.readFileSync(path.join(SECRETS, 'lead_pass'), 'utf8'))
-  await ap.locator('input[type="password"]').first().press('Enter')
-  await ap.waitForURL(/overview|findings|clusters/, { timeout: 20000 })
-  const storageState = await auth.storageState()
-  await auth.close()
-
-  const ctx = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 2, storageState })
-  const page = await ctx.newPage()
-  // motion settles before each shot: no half-faded block in a still
-  await page.emulateMedia({ reducedMotion: 'reduce' })
+  async function signIn(user) {
+    const auth = await browser.newContext({ viewport: VIEW })
+    const ap = await auth.newPage()
+    await ap.goto(`${BASE}/login`)
+    await ap.locator('input[type="text"], input[autocomplete*="username" i]').first().fill(user)
+    await ap.locator('input[type="password"]').first().fill(fs.readFileSync(path.join(SECRETS, `${user}_pass`), 'utf8'))
+    await ap.locator('input[type="password"]').first().press('Enter')
+    await ap.waitForURL(/overview|findings|clusters/, { timeout: 20000 })
+    const storageState = await auth.storageState()
+    await auth.close()
+    const ctx = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 2, storageState })
+    const p = await ctx.newPage()
+    // motion settles before each shot: no half-faded block in a still
+    await p.emulateMedia({ reducedMotion: 'reduce' })
+    return p
+  }
+  let page = await signIn('lead')
+  /** the next shots show the app as another user; the walk uses the page that this returns */
+  async function switchUser(user) {
+    await page.context().close()
+    page = await signIn(user)
+    return page
+  }
 
   const shots = []
   async function box(locator) {
@@ -99,7 +109,7 @@ export async function record(dir, walk, { view: VIEW = DEFAULT_VIEW } = {}) {
   }
 
   try {
-    await walk({ page, shot, hoverShot, box, settle, stateRow, pickBothOpen })
+    await walk({ page, shot, hoverShot, box, settle, stateRow, pickBothOpen, switchUser })
   } finally {
     fs.writeFileSync(`${out}/shots.json`, JSON.stringify({ view: VIEW, scale: 2, shots }, null, 2))
     await browser.close()
