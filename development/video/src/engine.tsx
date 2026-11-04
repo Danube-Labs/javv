@@ -89,6 +89,15 @@ const readFrames = (text: string) => Math.min(150, Math.max(72, text.split(' ').
 const ease = Easing.bezier(0.65, 0, 0.35, 1)
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
 const center = (b: Box) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })
+const union = (a: Box, b: Box): Box => {
+  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y)
+  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y }
+}
+const EDGE = 16 // room around a box that must fit in the frame: the spotlight draws outside it
+const inView = (c: { cx: number; cy: number; w: number }, b: Box) => {
+  const h = (c.w * STAGE.h) / STAGE.w
+  return b.x >= c.cx - c.w / 2 && b.x + b.w <= c.cx + c.w / 2 && b.y >= c.cy - h / 2 && b.y + b.h <= c.cy + h / 2
+}
 
 type Cam = { f: number; cx: number; cy: number; w: number }
 type Point = { f: number; x: number; y: number }
@@ -118,6 +127,19 @@ export function plan(v: Video): Plan {
     const c = center(b)
     return { cx: Math.min(pageW - w / 2, Math.max(w / 2, c.x)), cy: Math.min(pageH - h / 2, Math.max(h / 2, c.y)), w }
   }
+  // the steady zoom of held beats; it widens and moves only when the box `t` would not fit
+  const holdFrame = (hb: Box, t: Box | undefined, pageH: number) => {
+    let w = HOLD_W
+    let cx = center(hb).x - 40
+    let cy = t ? center(t).y : center(hb).y
+    if (t && !inView({ w, cx, cy }, t)) {
+      w = Math.min(pageW, Math.max(HOLD_W, t.w + 2 * EDGE, ((t.h + 2 * EDGE) * STAGE.w) / STAGE.h))
+      cx = Math.min(t.x - EDGE + w / 2, Math.max(t.x + t.w + EDGE - w / 2, cx))
+    }
+    const h = (w * STAGE.h) / STAGE.w
+    cy = Math.min(pageH - h / 2, Math.max(h / 2, cy))
+    return { w, cx: Math.min(pageW - w / 2, Math.max(w / 2, cx)), cy }
+  }
 
   let t = TITLE_F
   if (v.intro) {
@@ -140,12 +162,19 @@ export function plan(v: Video): Plan {
   t += settleF
   for (const b of v.beats) {
     const shot = shots[b.shot]
-    let next = b.spot ? frameBox(shot.boxes[b.spot], shot.size.h) : cam
+    // a beat on a screen that no click opened (the walk went back, or closed a popover): fade it
+    // in at the start, so the spotlight never lights a box of a screen that is not there yet
+    if (p.segments[p.segments.length - 1].shot !== b.shot) p.segments.push({ shot: b.shot, from: t + 10, fade: 10 })
+    // the camera shows the lit box and the box the pointer clicks: when the click is outside
+    // the frame of the lit box, it frames the two together
+    const sb = b.spot ? shot.boxes[b.spot] : undefined
+    const cb = b.click ? shot.boxes[b.click.box] : undefined
+    let next = sb ? frameBox(sb, shot.size.h) : cam
+    if (sb && cb && !inView(next, cb)) next = frameBox(union(sb, cb), shot.size.h)
     if (b.hold) {
       const hb = shot.boxes[b.hold]
-      const h = (HOLD_W * STAGE.h) / STAGE.w
-      const sy = b.spot ? center(shot.boxes[b.spot]).y : center(hb).y
-      next = { w: HOLD_W, cx: Math.min(pageW - HOLD_W / 2, Math.max(HOLD_W / 2, center(hb).x - 40)), cy: Math.min(shot.size.h - h / 2, Math.max(h / 2, sy)) }
+      next = holdFrame(hb, sb, shot.size.h)
+      if (cb && !inView(next, cb)) next = holdFrame(hb, sb ? union(sb, cb) : cb, shot.size.h)
     }
     if (b.wide) {
       const h = (pageW * STAGE.h) / STAGE.w
