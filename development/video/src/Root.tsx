@@ -6,8 +6,9 @@ import { v3 } from './videos/v3'
 import { v4 } from './videos/v4'
 import { v5 } from './videos/v5'
 import { v6 } from './videos/v6'
+import { v7 } from './videos/v7'
 
-const videos = { V1: makeVideo(v1), V2: makeVideo(v2), V3: makeVideo(v3), V4: makeVideo(v4), V5: makeVideo(v5), V6: makeVideo(v6) }
+const videos = { V1: makeVideo(v1), V2: makeVideo(v2), V3: makeVideo(v3), V4: makeVideo(v4), V5: makeVideo(v5), V6: makeVideo(v6), V7: makeVideo(v7) }
 
 export const RemotionRoot = () => (
   <>
