@@ -882,7 +882,7 @@ A request that passes the checks is the principal `mcp:<name>` of the token. The
 | `write` | The read tools, `set_triage`, `bulk_triage` and `not_affected_decision` | `can_triage` |
 | `write_risk_accept` | All the tools, also `risk_accept_decision` | `can_triage`, `can_accept_audit_final` |
 
-The tool list of a token (`tools/list`) holds only the tools of its level. A call to another tool is a tool error with `403`, and it also writes its audit row. Read tools have the hint `readOnlyHint`. Write tools have the hint `destructiveHint`, so that the client asks the user before a write.
+The tool list of a token (`tools/list`) holds only the tools of its level. A call to another tool is a tool error with `403`, and it also writes its audit row. Read tools have the hint `readOnlyHint`. Write tools have the hint `destructiveHint`. A client can use this hint to ask the user before a write.
 
 **Each tool call** writes one audit row after the call, and one `mcp tool call` log line:
 
@@ -893,16 +893,16 @@ The tool list of a token (`tools/list`) holds only the tools of its level. A cal
 | `entity_type` | `mcp_tool` |
 | `entity_id` | The tool name and the first 12 characters of a SHA-256 hash of the arguments, for example `list_clusters sha256:1a2b3c4d5e6f`. The row never holds the arguments. An unknown tool name shows as `unknown_tool`. |
 | `field`, `new_value` | `result`. The value is `ok` or `error <status>`. A tool that the level does not allow gets 403. An argument that is not valid gets 422. Another error gets the status of the route. |
-| `cluster_id` | The `cluster_id` argument, when the call has one |
+| `cluster_id` | The `cluster_id` argument, when the call has one. For a write tool, the `cluster_id` of its `body` or its `payload`. |
 
-If JAVV cannot write the row, the call is a tool error and the agent gets no data.
+If JAVV cannot write the row, the call is a tool error and the agent gets no data. After a write, the error tells the agent that the tool made the change, so that the agent does not make it again.
 
 **The answer of a tool** is one text with compact JSON.
 
 - A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
 - An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest top-level list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
 - A page with a next page (`next_cursor`) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller `size`.
-- An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in `trends` can be longer than the cap. Then the agent must ask for fewer `days`.
+- An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in `trends` can be longer than the cap. Then the agent must ask for fewer `days`. After a write, the error tells the agent that the tool made the change.
 
 **The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
 
@@ -943,14 +943,14 @@ These reads have no tool. `test_mcp_read_coverage.py` fails when a new `GET` rou
 | `/api/v1/reports/{report_id}`, `/api/v1/reports/{report_id}/download` | They give the state and the file of an export report. |
 | `/api/v1/findings/export.csv`, `/api/v1/findings/export.vex`, `/api/v1/audit/export.csv`, `/api/v1/contributors/export.csv`, `/api/v1/decisions/approvals/export.csv`, `/api/v1/dashboards/export.ndjson` | They give an export file. The tool of the same list reads the same rows. |
 
-**The write tools.** Each write tool calls the function of one route, with the principal `mcp:<name>` and only the permissions of the token level. Before the call, it runs the permission check of the route. The route then does all its own checks, and it writes its own audit rows with the actor `mcp:<name>`. For example, a `write` token cannot set the state `risk_accepted`, and it cannot change the state of a finding with an accepted risk.
+**The write tools.** Each write tool calls the function of one route, with the principal `mcp:<name>` and only the permissions of the token level. Before the call, it runs the permission check of the route. The route then does all its own checks, and it writes its own audit rows with the actor `mcp:<name>`. For example, a `write` token cannot set the state `risk_accepted`. With `set_triage` and `bulk_triage`, it cannot change the state of a finding with an accepted risk. But a `not_affected` decision for a smaller scope has precedence over a risk accept for a larger scope, as on the screens. For example, a `not_affected` decision for one image has precedence over a risk accept for the cluster.
 
 | Tool | Level | Route |
 |---|---|---|
 | `set_triage` | `write` | `PATCH /api/v1/findings/{finding_key}/triage` |
 | `bulk_triage` | `write` | `POST /api/v1/findings/bulk-triage`, with its limits `JAVV_BULK_MAX_TARGETS` and `JAVV_BULK_INLINE_LIMIT` |
-| `not_affected_decision` | `write` | Kind `make` (`POST /api/v1/decisions`), `change` (`PATCH /api/v1/decisions/{decision_id}`) or `revoke` (`POST /api/v1/decisions/{decision_id}/revoke`). The type of a new or changed decision can only be `not_affected`. |
-| `risk_accept_decision` | `write_risk_accept` | The same three routes. The type of a new or changed decision can only be `risk_accepted` or `ignore_rule`. |
+| `not_affected_decision` | `write` | Kind `make` (`POST /api/v1/decisions`), `change` (`PATCH /api/v1/decisions/{decision_id}`) or `revoke` (`POST /api/v1/decisions/{decision_id}/revoke`). The type of a new or changed decision can only be `not_affected`. Kinds `change` and `revoke` take only a `not_affected` decision. |
+| `risk_accept_decision` | `write_risk_accept` | The same three routes. The type of a new or changed decision can only be `risk_accepted` or `ignore_rule`. Kinds `change` and `revoke` take only a decision of these types. |
 
 A write route that is not in this table has no tool. `test_mcp_read_coverage.py` fails when a write tool uses another route.
 

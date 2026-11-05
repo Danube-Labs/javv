@@ -3,13 +3,18 @@ through `tools.build`, and `needs` the permission that a token level gives. The 
 its own checks: risk accept needs `can_accept_audit_final`, a finding with an accepted risk keeps
 its state (issue 892), an expiry must be in the future (issue 984), a bulk change has its limits.
 
-The two decision tools take the same three routes. Each one makes and changes only its own types
-of decision, so a `write` token never sees a tool that accepts a risk."""
+The two decision tools take the same three routes. Each one makes, changes and revokes only its own
+types of decision, so a `write` token never sees a tool that accepts a risk."""
 
+import functools
 import inspect
-from typing import Literal
+from collections.abc import Callable
+from typing import Any, Literal, cast
 
-from backend.decisions.lifecycle import DecisionPayload
+from fastapi import HTTPException, Request
+from opensearchpy import NotFoundError
+
+from backend.decisions.lifecycle import DECISIONS_INDEX, DecisionPayload
 from backend.mcp.tools import Tool
 from backend.routers import decisions, triage
 from backend.routers.decisions import DecisionEditRequest
@@ -35,7 +40,31 @@ class RiskAcceptEdit(DecisionEditRequest):
     type: RiskAcceptType | None = None  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
-_DECISION_ROUTES = {"make": decisions.create, "change": decisions.edit, "revoke": decisions.revoke}
+def _own_types(route: Callable[..., Any], types: frozenset[str]) -> Callable[..., Any]:
+    """The route, for a decision of these types only. A change keeps the type it does not set,
+    so the type of the old decision decides which tool can change or revoke it."""
+
+    @functools.wraps(route)  # the tool builder reads the signature of the route
+    async def checked(*, request: Request, decision_id: str, **rest: Any) -> dict[str, Any]:
+        client = cast(Any, request.app.state.opensearch)
+        try:
+            old = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
+        except NotFoundError:
+            old = None  # the route gives its 404
+        if old is not None and old["type"] not in types:
+            raise HTTPException(422, f"this tool does not take a {old['type']} decision")
+        return await route(request=request, decision_id=decision_id, **rest)
+
+    return checked
+
+
+def _decision_routes(types: frozenset[str]) -> dict[str, Callable[..., Any]]:
+    return {
+        "make": decisions.create,
+        "change": _own_types(decisions.edit, types),
+        "revoke": _own_types(decisions.revoke, types),
+    }
+
 
 WRITE_TOOLS: tuple[Tool, ...] = (
     Tool(
@@ -63,7 +92,7 @@ WRITE_TOOLS: tuple[Tool, ...] = (
             "A Not affected decision for a CVE: kind make (payload), change (decision_id and "
             "body; a change revokes the decision and makes a new one) or revoke (decision_id)."
         ),
-        routes=_DECISION_ROUTES,
+        routes=_decision_routes(frozenset({"not_affected"})),
         params={"payload": (NotAffected, _REQUIRED), "body": (NotAffectedEdit, _REQUIRED)},
         needs="can_triage",
     ),
@@ -73,7 +102,7 @@ WRITE_TOOLS: tuple[Tool, ...] = (
             "A risk accept decision (type risk_accepted or ignore_rule) for a CVE, with an "
             "expiry: kind make (payload), change (decision_id and body) or revoke (decision_id)."
         ),
-        routes=_DECISION_ROUTES,
+        routes=_decision_routes(decisions.ACCEPT_TYPES),
         params={"payload": (RiskAccept, _REQUIRED), "body": (RiskAcceptEdit, _REQUIRED)},
         needs="can_accept_audit_final",
     ),

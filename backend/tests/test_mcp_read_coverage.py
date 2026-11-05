@@ -3,6 +3,7 @@
 never silently misses a read that the screens have. The write tools use only the write routes
 of D5: an agent never changes users, roles, settings, tokens, retention or jobs."""
 
+import inspect
 from collections.abc import Iterator
 from typing import Any
 
@@ -63,5 +64,6 @@ def _write_routes(app: FastAPI) -> Iterator[tuple[tuple[str, str], Any]]:
 
 def test_the_write_tools_use_only_the_write_routes_of_d5():
     by_fn = {fn: key for key, fn in _write_routes(create_app())}
-    used = {by_fn.get(fn) for tool in WRITE_TOOLS for fn in tool.routes.values()}
+    # a decision tool checks the type of the old decision, then calls the route
+    used = {by_fn.get(inspect.unwrap(fn)) for tool in WRITE_TOOLS for fn in tool.routes.values()}
     assert used == D5_WRITES  # each D5 route has a tool, and no tool uses another route

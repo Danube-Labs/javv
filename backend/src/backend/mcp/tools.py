@@ -25,11 +25,12 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.params import Depends
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_types import ToolAnnotations
 from pydantic.fields import FieldInfo
+from starlette.exceptions import HTTPException  # the base of FastAPI's and TypedHTTPException
 
 from backend.auth.principal import Principal
 from backend.core.settings import get_settings
@@ -311,7 +312,12 @@ def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
             raise RouteError(exc.status_code, exc.detail) from None
         if tool.paged:
             _keep_walk(principal, tool.name, answer)
-        return cut_to_fit(answer, get_settings().mcp_max_answer_chars)
+        try:
+            return cut_to_fit(answer, get_settings().mcp_max_answer_chars)
+        except ToolError as exc:
+            if write:  # so the agent does not make the change again
+                raise ToolError(f"the tool made the change, but {exc}") from None
+            raise
 
     run.__name__ = tool.name
     run.__doc__ = tool.description

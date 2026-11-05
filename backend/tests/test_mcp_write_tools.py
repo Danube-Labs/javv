@@ -13,11 +13,15 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 import pytest
+import structlog
 from fastapi import Depends, FastAPI
+from mcp.server.mcpserver.exceptions import ToolError
 
 from backend.auth.capabilities import require_capability
 from backend.auth.principal import Principal, get_current_principal
+from backend.decisions.lifecycle import DECISIONS_INDEX
 from backend.mcp import server as mcp_server
+from backend.mcp import tools as mcp_tools
 from backend.mcp.auth import LEVEL_CAPABILITIES
 from backend.mcp.tools import READ_ONLY, WRITES, RouteError, Tool, build, current_principal
 from backend.mcp.write_tools import WRITE_TOOLS
@@ -84,6 +88,20 @@ def test_a_write_tool_asks_the_client_before_it_runs():
     assert WRITE.annotations == WRITES
     assert WRITES.destructive_hint is True and WRITES.read_only_hint is False
     assert Tool("r", "d", {"": _triage_route}).annotations == READ_ONLY
+
+
+async def _big_route(
+    principal: Annotated[Principal, Depends(require_capability("can_triage"))],
+) -> dict[str, Any]:
+    return {"decision": {"justification": "x" * 2000}}
+
+
+async def test_a_write_answer_over_the_cap_says_that_the_change_is_made(monkeypatch):
+    monkeypatch.setattr(
+        mcp_tools, "get_settings", lambda: type("S", (), {"mcp_max_answer_chars": 1000})
+    )
+    with pytest.raises(ToolError, match="^the tool made the change, but the answer has"):
+        await _run(Tool("w", "d", {"": _big_route}, needs="can_triage"), _principal("write"))
 
 
 async def test_a_token_lists_and_calls_only_the_tools_of_its_level(mcp_on, monkeypatch):
@@ -219,6 +237,9 @@ async def test_a_bulk_change_writes_the_bulk_row_of_the_route(mcp_on):
         assert not error, text
         assert json.loads(text)["count"] == 3
         assert sorted(await _actions(client, name)) == ["bulk_triage", "mcp_tool_call"]
+        # the row of the call has the cluster of the body, so it shows only in that cluster
+        [call] = [r for r in await _rows(client, f"mcp:{name}") if r["action"] == "mcp_tool_call"]
+        assert call["cluster_id"] == cluster
 
 
 def _payload(cluster: str, kind: str, **extra: Any) -> dict[str, Any]:
@@ -243,6 +264,8 @@ async def test_a_not_affected_decision_is_made_changed_and_revoked(mcp_on):
         assert not error, text
         made = json.loads(text)["decision"]
         assert made["created_by"] == f"mcp:{name}"
+        [call] = [r for r in await _rows(client, f"mcp:{name}") if r["action"] == "mcp_tool_call"]
+        assert call["cluster_id"] == cluster  # from the payload
         change = {
             "kind": "change",
             "decision_id": made["decision_id"],
@@ -287,3 +310,81 @@ async def test_a_risk_accept_needs_the_risk_accept_level(mcp_on):
         make["payload"]["type"] = "not_affected"
         error, text = _answer(await http.post(PATH, **_call("risk_accept_decision", make, accept)))
         assert error and "('payload', 'type')" in text
+
+
+async def test_a_past_expiry_gives_the_reason_of_the_route(mcp_on):
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcpw-{uuid.uuid4().hex[:8]}"
+        name, raw = await _token(client, level="write_risk_accept")
+        payload = _payload(cluster, "risk_accepted", expiry="2020-01-01")
+        make = {"kind": "make", "payload": payload}
+        error, text = _answer(await http.post(PATH, **_call("risk_accept_decision", make, raw)))
+        assert error and "422: expiry must be after today" in text
+        [call] = await _rows(client, f"mcp:{name}")
+        assert call["new_value"] == "error 422"
+
+
+async def _decision(http: Any, raw: str, tool: str, payload: dict[str, Any]) -> str:
+    make = {"kind": "make", "payload": payload}
+    error, text = _answer(await http.post(PATH, **_call(tool, make, raw)))
+    assert not error, text
+    return json.loads(text)["decision"]["decision_id"]
+
+
+async def test_a_decision_tool_changes_and_revokes_only_its_own_types(mcp_on):
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcpw-{uuid.uuid4().hex[:8]}"
+        _, raw = await _token(client, level="write_risk_accept")
+        expiry = (datetime.now(UTC) + timedelta(days=30)).date().isoformat()
+        accepted = await _decision(
+            http, raw, "risk_accept_decision", _payload(cluster, "risk_accepted", expiry=expiry)
+        )
+        not_affected = await _decision(
+            http,
+            raw,
+            "not_affected_decision",
+            _payload(cluster, "not_affected", vex_justification="component_not_present"),
+        )
+        for tool, decision_id, kind in [
+            ("not_affected_decision", accepted, "risk_accepted"),
+            ("risk_accept_decision", not_affected, "not_affected"),
+        ]:
+            change = {"kind": "change", "decision_id": decision_id, "body": {"justification": "x"}}
+            error, text = _answer(await http.post(PATH, **_call(tool, change, raw)))
+            assert error and f"422: this tool does not take a {kind} decision" in text
+            revoke = {"kind": "revoke", "decision_id": decision_id}
+            error, text = _answer(await http.post(PATH, **_call(tool, revoke, raw)))
+            assert error and f"422: this tool does not take a {kind} decision" in text
+            doc = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
+            assert doc.get("revoked_at") is None
+        # an unknown id keeps the 404 of the route
+        revoke = {"kind": "revoke", "decision_id": "no-such-decision"}
+        error, text = _answer(await http.post(PATH, **_call("not_affected_decision", revoke, raw)))
+        assert error and "404: decision not found" in text
+
+
+async def test_a_refused_call_logs_a_warning(mcp_on, monkeypatch):
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(mcp_server, "log", structlog.wrap_logger(None, processors=[capture]))
+    async with _endpoint() as (http, client):
+        _, key = await _finding(client)
+        _, raw = await _token(client, level="read")
+        args = {"finding_key": key, "patch": {"assignee": "bob"}}
+        await http.post(PATH, **_call("set_triage", args, raw))
+        await http.post(PATH, **_call("list_clusters", {}, raw))
+    levels = {e["result"]: e["log_level"] for e in capture.entries if e["event"] == "mcp tool call"}
+    assert levels == {"error 403": "warning", "ok": "info"}
+
+
+async def test_a_write_whose_audit_row_fails_says_that_the_change_is_made(mcp_on, monkeypatch):
+    async def _fails(*_: Any, **__: Any) -> None:
+        raise RuntimeError("store refused the row")
+
+    monkeypatch.setattr(mcp_server, "append_tool_call", _fails)
+    async with _endpoint() as (http, client):
+        _, key = await _finding(client)
+        _, raw = await _token(client, level="write")
+        args = {"finding_key": key, "patch": {"assignee": "bob"}}
+        error, text = _answer(await http.post(PATH, **_call("set_triage", args, raw)))
+        assert error and "the tool made the change" in text
+        assert (await client.get(index="findings", id=key))["_source"]["assignee"] == "bob"
