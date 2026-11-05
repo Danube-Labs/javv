@@ -29,6 +29,8 @@ describe('auditFields', () => {
     const fields = auditFields(false, true)
     expect(values(fields, 'entity')).not.toContain('user')
     expect(values(fields, 'entity')).not.toContain('token')
+    expect(values(fields, 'entity')).not.toContain('mcp_tool') // the tool calls of an MCP token (issue 1096)
+    expect(values(fields, 'action')).not.toContain('mcp_tool_call')
     for (const action of ACCOUNT_ACTIONS) expect(values(fields, 'action')).not.toContain(action)
     expect(values(fields, 'entity')).toContain('finding') // the rest stays
     expect(values(fields, 'action')).toContain('risk_accept')
@@ -56,10 +58,10 @@ describe('auditFields', () => {
     expect(AUDIT_ACTIONS.filter((a) => a.startsWith('dashboard_'))).toEqual([...DASHBOARD_ACTIONS])
   })
 
-  it('the account actions are exactly the actions of the user and token rows', () => {
+  it('the account actions are exactly the actions of the user, token and mcp_tool rows', () => {
     expect([...ACCOUNT_ACTIONS].sort()).toEqual(
       ['login', 'logout', 'pwd_change', 'pwd_reset', 'role_change', 'token_mint', 'token_revoke',
-        'user_create', 'user_disable', 'user_enable'].sort(),
+        'user_create', 'user_disable', 'user_enable', 'mcp_tool_call'].sort(),
     )
   })
 })

@@ -41,6 +41,12 @@ describe('display names for stored values', () => {
     expect(items.find((i) => i.value === 'cluster_delete_recheck')!.label).toBe('Leftover rows deleted')
   })
 
+  it('the Entity rail names the tool calls of an MCP token in words', () => {
+    const items = facetItems(field(AUDIT_FIELDS, 'entity'), {})!
+    expect(items.find((i) => i.value === 'mcp_tool')!.label).toBe('MCP tool')
+    expect(items.find((i) => i.value === 'finding')!.label).toBe('finding') // one word stays as it is
+  })
+
   it('an action with no entry reads as its words, never as snake_case', () => {
     expect(ACTION_LABELS['some_future_action']).toBeUndefined() // the case this fallback exists for
     expect(actionLabel('some_future_action')).toBe('some future action')

@@ -27,13 +27,14 @@ log = structlog.get_logger()
 
 _PATTERN = "system-audit-log-*"
 _SORT_KEY = "@timestamp"  # fixed — the cursor's `s` field must round-trip exactly this
-# The account events: sign-ins and sign-outs, password, user and role changes (`user`), and the
-# ingest tokens (`token`). Only `can_manage_users` reads them (issue 892 ruling 3).
-ACCOUNT_ENTITY_TYPES = ("token", "user")
+# The account events: sign-ins and sign-outs, password, user and role changes (`user`), the
+# ingest tokens (`token`), and the tool calls of the MCP tokens (`mcp_tool`, issue 1096). Only
+# `can_manage_users` reads them (issue 892 ruling 3).
+ACCOUNT_ENTITY_TYPES = ("token", "user", "mcp_tool")
 # A dashboard row carries the whole dashboard, a private one too. Only `can_manage_settings`, who
 # sees every dashboard, reads them (issue 440, ruling of 2026-10-25).
 DASHBOARD_ENTITY_TYPES = ("dashboard",)
-# The Entity and Action lists are fixed lists, and the Action list has 45 values. Each value gets
+# The Entity and Action lists are fixed lists, and the Action list has 46 values. Each value gets
 # a count only when the size is larger than the list (issue 983). The frontend mirrors this size
 # (`AUDIT_LIST_CAP` in `audit/fields.config.ts`), and a spec keeps them equal. The User list has no
 # fixed values and keeps the top `_FACET_TERMS_SIZE`.

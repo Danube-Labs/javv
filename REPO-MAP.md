@@ -60,7 +60,9 @@ remediation bolt, a design brief) move to the matching path under `.deprecated/`
 `core/` (settings - validated at boot, logging shim, metrics) · `auth/` + `tenancy/` (sessions,
 capabilities, the always-applied `cluster_id` filter) · `triage/` · `decisions/` · `sla/` ·
 `export/` · `reports/` (M7) · `snapshots/` (occurrences + inventory runs, M8a) · `audit/` ·
-`admin/` · `jobs/` · `tools/` (`export_openapi`). Tests in `backend/tests/`
+`admin/` · `jobs/` · `mcp/` (the MCP endpoint for AI agents at `/api/v1/mcp`: the token gate, and
+the read tools made from the route functions, issue 1096) · `tools/` (`export_openapi`). Tests in
+`backend/tests/`
 (128 files, about 1,750 tests on 2026-10-14; session-scoped bootstrap in `conftest.py` - new test files must NOT
 re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in app code;
 `tests/security/test_rbac_idor_contract.py` is the **capability registry of record**;

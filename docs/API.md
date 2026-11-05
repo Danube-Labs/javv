@@ -126,12 +126,13 @@ JAVV gives no alert rules. Make alerts from the metrics that apply to your setup
 
 ## Authentication
 
-Each endpoint uses one of three kinds of authentication.
+Each endpoint uses one of four kinds of authentication.
 
 | Kind | What the request sends | Endpoints |
 |---|---|---|
 | None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. Also `POST /auth/login` and `POST /auth/logout`. |
 | Scanner token | `Authorization: Bearer <token>`. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token. | The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner. |
+| MCP token | `Authorization: Bearer <token>`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
 | Session | The `javv_session` cookie from `POST /auth/login` | All other endpoints |
 
 The session cookie has the `HttpOnly` and `SameSite=Lax` flags. It also has the `Secure` flag,
@@ -287,8 +288,9 @@ of the data inspector.
 
 Each signed-in user reads the audit log. Only a user with `can_manage_users` reads the account
 events: the rows with `entity_type` `user` (sign-ins and sign-outs, password, user and role
-changes) and `token` (the scanner tokens). For the other users, the three audit endpoints leave
-these rows out of the list, the counts and the CSV.
+changes), `token` (the scanner tokens) and `mcp_tool` (the tool calls of the MCP tokens). For
+the other users, the three audit endpoints leave these rows out of the list, the counts and the
+CSV.
 
 Only a user with `can_manage_settings` reads the rows with `entity_type` `dashboard`. A dashboard
 row holds the whole dashboard, also a private one, and these users can see each dashboard. For
@@ -301,7 +303,7 @@ the other users, the three audit endpoints leave these rows out in the same way.
 | GET | `/healthz` | none | Liveness. It answers 200 while the process runs. It does not use OpenSearch. |
 | GET | `/readyz` | none | Readiness. It answers 200 `{"status": "ready"}` when OpenSearch answers, else 503 `{"status": "degraded"}`. OpenSearch can answer but refuse writes (its disk is past the flood-stage watermark), or be red (part of its data is not available). Then the answer is 200 with `"checks": {"store": "read-only"}` or `"red"`. Reads still work, so the backend stays in service. |
 | GET | `/metrics` | none | The metrics, in the Prometheus format ([Metrics](#metrics)) |
-| GET | `/api/v1/meta` | session | The versions that the backend runs: `version` (the JAVV release), `mapping_version`, `envelope_versions` (the ingest schema versions that it accepts), `opensearch_version` and `python_version`. If OpenSearch does not answer, `opensearch_version` is `null`. |
+| GET | `/api/v1/meta` | session | The versions that the backend runs: `version` (the JAVV release), `mapping_version`, `envelope_versions` (the ingest schema versions that it accepts), `opensearch_version` and `python_version`. If OpenSearch does not answer, `opensearch_version` is `null`. `mcp_enabled` is `true` when `JAVV_MCP_ENABLED` turns on the MCP endpoint. |
 
 The backend also writes the release and the mapping version in its `bootstrap complete` log line.
 
@@ -853,6 +855,84 @@ The answer to the scanner does not depend on the record. If the backend cannot w
 it logs `ingest failure not recorded` with the `failure_id`. It also increments
 `javv_ingest_failures_unrecorded_total{reason}`.
 
+## The MCP endpoint
+
+An AI agent, for example in Cursor, VS Code or Codex, reads JAVV data through the MCP endpoint at `POST /api/v1/mcp`. The endpoint exists only when `JAVV_MCP_ENABLED` is `true` ([MCP endpoint](CONFIGURATION.md#mcp-endpoint)). An admin makes the token in `POST /api/v1/admin/mcp-tokens` ([Admin](#admin)).
+
+The endpoint takes the MCP protocol versions 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. A client of an older version starts with `initialize`. The endpoint keeps no session: it never sends `Mcp-Session-Id`, and each request carries its token.
+
+Before the MCP server reads a request, the endpoint checks it in this order:
+
+| Check | Answer |
+|---|---|
+| The request has an `Origin` header | 403. A browser always sends this header, and an agent client does not. Thus a web page that a browser opens cannot use the endpoint. |
+| The method is not POST | 405, with `Allow: POST` |
+| The `Authorization` header has no live MCP token | 401 `invalid token`, with `WWW-Authenticate: Bearer`. A missing, unknown, revoked or expired token and a scanner token get the same answer. |
+| The token sent more than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` requests in one minute | 429, with `Retry-After: 60` |
+
+The 401 and the 403 only count in `javv_auth_failures_total`, with no log line: a sender can repeat them with no limit. A 429 also logs `mcp rate limited` with the token.
+
+A request that passes the checks is the principal `mcp:<name>` of the token. The token writes `last_used_at` at most one time a minute.
+
+**Each tool call** writes one audit row after the call, and one `mcp tool call` log line:
+
+| Field | Value |
+|---|---|
+| `actor` | `mcp:<name>` |
+| `action` | `mcp_tool_call` |
+| `entity_type` | `mcp_tool` |
+| `entity_id` | The tool name and the first 12 characters of a SHA-256 hash of the arguments, for example `list_clusters sha256:1a2b3c4d5e6f`. The row never holds the arguments. An unknown tool name shows as `unknown_tool`. |
+| `field`, `new_value` | `result`, and `ok`, `error <status>` for an error of the route, or `error 422` for an argument that is not valid |
+| `cluster_id` | The `cluster_id` argument, when the call has one |
+
+If JAVV cannot write the row, the call is a tool error and the agent gets no data.
+
+**The answer of a tool** is one text with compact JSON.
+
+- A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
+- An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest top-level list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
+- A page with a next page (`next_cursor`) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller `size`.
+- An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in `trends` can be longer than the cap. Then the agent must ask for fewer `days`.
+
+**The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
+
+A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.
+
+| Tool | Route |
+|---|---|
+| `list_clusters` | `GET /api/v1/clusters` |
+| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. |
+| `count_findings` | `GET /api/v1/findings/facets` |
+| `group_findings` | `GET /api/v1/findings/groups` |
+| `top_images` | `GET /api/v1/findings/top-images` |
+| `top_components` | `GET /api/v1/findings/top-components` |
+| `list_images` | `GET /api/v1/images` |
+| `image_timeline` | `GET /api/v1/images/timeline` |
+| `trends` | Kind `findings`, `scans` or `ingest_failures`: `GET /api/v1/trends/findings`, `/scans` or `/ingest-failures` |
+| `scanner_status` | Kind `freshness` or `provenance`: `GET /api/v1/scanners/freshness` or `/provenance` |
+| `scanner_ingest_failures` | `GET /api/v1/scanners/ingest-failures` |
+| `audit_log` | `GET /api/v1/audit`. The tool has no `keep_open`, and a first page closes a search as `search_findings` does. |
+| `count_audit_log` | `GET /api/v1/audit/facets` |
+| `contributors` | `GET /api/v1/contributors` |
+| `list_decisions` | `GET /api/v1/decisions` |
+| `list_approvals` | `GET /api/v1/decisions/approvals` |
+| `list_dashboards` | `GET /api/v1/dashboards` |
+| `get_dashboard` | `GET /api/v1/dashboards/{dashboard_id}` |
+| `read_settings` | Kind `about` (`GET /api/v1/meta`), `scan_scope` (`GET /api/v1/settings/scan-scope`), `sla`, `staleness`, `retirement`, `data` (`GET /api/v1/settings/<kind>`), `snapshots` (`GET /api/v1/admin/snapshots`), `opensearch` (`GET /api/v1/admin/opensearch-runtime`) or `jobs` (`GET /api/v1/admin/jobs`) |
+| `list_accounts` | Kind `users`, `roles`, `scanner_tokens` or `mcp_tokens`: `GET /api/v1/admin/users`, `/roles`, `/tokens` or `/mcp-tokens`. As the routes, the answer holds no password, token or hash. |
+
+These reads have no tool. `test_mcp_read_coverage.py` fails when a new `GET` route has no tool and is not in this list, `NO_TOOL` in `backend/src/backend/mcp/read_tools.py`.
+
+| Route | Why it has no tool |
+|---|---|
+| `/healthz`, `/readyz`, `/metrics` | They tell the state of the platform, not JAVV data. |
+| `/auth/me` | It tells the user of a session. A token has no session. |
+| `/api/v1/notifications`, `/api/v1/views` | They hold the bell and the saved views of one user. |
+| `/api/v1/scan-scope` | It is the route of the scanner token. `read_settings` with kind `scan_scope` reads the same scope. |
+| `/api/v1/dashboards/roles` | It gives the role list of the share dialog of a dashboard. |
+| `/api/v1/reports/{report_id}`, `/api/v1/reports/{report_id}/download` | They give the state and the file of an export report. |
+| `/api/v1/findings/export.csv`, `/api/v1/findings/export.vex`, `/api/v1/audit/export.csv`, `/api/v1/contributors/export.csv`, `/api/v1/decisions/approvals/export.csv`, `/api/v1/dashboards/export.ndjson` | They give an export file. The tool of the same list reads the same rows. |
+
 ## Metrics
 
 `GET /metrics` gives these metrics, in the Prometheus format ([Scrape the metrics](#scrape-the-metrics)).
@@ -868,10 +948,10 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 | `javv_opensearch_backoff_retries_total` | counter | none | Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy. |
 | `javv_sla_clock_missing_total` | counter | none | Pages of findings with a row that has no `sla_clock_at`. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the `rebuild_state` job. |
 | `javv_cas_conflicts_total` | counter | `site` | Writes that lost a race to a different writer: `watermarks`, `scan_orders`, `inventory_orders`, `reconcile`, `reproject`, `merge`, `report_claim` and `retirement`. A high rate means many writers on the same data. |
-| `javv_limit_rejections_total` | counter | `limit` | Requests that a limit refused: `pit_cap`, `export_rows`, `bulk_targets`, `bulk_inline`, `client_events`, `inspect_bytes` and `dashboard_import` |
+| `javv_limit_rejections_total` | counter | `limit` | Requests that a limit refused: `pit_cap`, `export_rows`, `bulk_targets`, `bulk_inline`, `client_events`, `inspect_bytes`, `dashboard_import` and `mcp_rate` |
 | `javv_pits_open` | gauge | none | The cursors and exports that are open now. A cursor that a client stopped using counts until `JAVV_SEARCH_PIT_KEEP_ALIVE` plus 30 seconds after the last page that the client read, and then stops counting. |
 | `javv_export_rows_total` / `javv_export_bytes_total` | counter | `format` | The rows and bytes that the exports sent. If a client stops the download, the count shows what it received. |
-| `javv_auth_failures_total` | counter | `reason` | `bad_credentials`, `locked_out`, `expired_session`, `missing_capability`, `must_change` (a session with a temporary password) or `session_not_minted` (a password change with no new session). The labels never show a username. |
+| `javv_auth_failures_total` | counter | `reason` | `bad_credentials`, `locked_out`, `expired_session`, `missing_capability`, `must_change` (a session with a temporary password) or `session_not_minted` (a password change with no new session). The MCP endpoint adds `mcp_origin` (a request with an `Origin` header) and `mcp_token` (a request with no live MCP token). The labels never show a username. |
 | `javv_config_warnings_total` | counter | `setting` | Starts with a weak connection to OpenSearch: `JAVV_OPENSEARCH_VERIFY_CERTS` (the certificate is not checked on `https`) or `JAVV_OPENSEARCH_URL` (a password over plain `http`). Each one also logs a warning at the start. |
 | `javv_stored_setting_unknown_fields_total` | counter | `setting` | Reads of a runtime setting that had fields this release does not know. The backend ignores these fields. After a rollback, a value larger than 0 means that a newer release saved that setting. `setting` is `sla`, `scan_scope`, `snapshot_repo`, `report_ttl`, `lifecycle`, `findings_cleanup`, `staleness`, `retirement` or `cluster-retirement`. |
 | `javv_job_runs_total` | counter | `kind`, `outcome` | Background jobs that the scheduler started. `outcome` is `done`, `failed` or `skipped`. `skipped` means that a different run held the job. A steady `failed` rate is a job that fails each time. No `done` over the schedule of a job is a job that does not run. |

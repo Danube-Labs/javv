@@ -27,7 +27,14 @@ def _reset_logging():
     structlog.reset_defaults()
     root = logging.getLogger()
     root.handlers.clear()
-    for name in ("opensearch", "opensearchpy.trace", "uvicorn", "uvicorn.access", "test.bridge"):
+    for name in (
+        "opensearch",
+        "opensearchpy.trace",
+        "uvicorn",
+        "uvicorn.access",
+        "test.bridge",
+        "mcp",
+    ):
         lg = logging.getLogger(name)
         lg.handlers.clear()
         lg.filters.clear()
@@ -218,6 +225,35 @@ def test_configuring_twice_adds_the_filter_once() -> None:
     configure_logging(level="info")
     configure_logging(level="info")
     assert len(logging.getLogger("opensearch").filters) == 1
+
+
+# --- the MCP SDK (issue 1096) --------------------------------------------------
+
+
+def test_the_mcp_sdk_info_lines_are_dropped_at_any_level(capsys) -> None:
+    # one "Terminating session" line per request of the old protocol era, in the step 0 probe
+    configure_logging(level="debug")
+    logging.getLogger("mcp.server.streamable_http").info("Terminating session: %s", None)
+    assert _lines(capsys.readouterr().err) == []
+
+
+def test_an_mcp_sdk_warning_keeps_its_level_and_loses_its_text(capsys) -> None:
+    # the SDK writes client values into its messages, for example an Origin header
+    configure_logging(level="info")
+    logging.getLogger("mcp.server.transport_security").warning(
+        "Invalid Origin header: %s", "http://evil.example"
+    )
+    (line,) = _lines(capsys.readouterr().err)
+    assert line["level"] == "warning"
+    assert line["event"] == "mcp sdk message"
+    assert "evil.example" not in json.dumps(line)
+
+
+def test_a_logger_that_only_starts_with_mcp_keeps_its_text(capsys) -> None:
+    configure_logging(level="info")
+    logging.getLogger("mcpx").warning("kept: %s", "value")
+    (line,) = _lines(capsys.readouterr().err)
+    assert line["event"] == "kept: value"
 
 
 # --- exceptions: the traceback is rendered text, and redacted ---------------------

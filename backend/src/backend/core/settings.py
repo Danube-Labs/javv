@@ -120,6 +120,13 @@ class Settings(BaseSettings):
     # the 100 images are exact. False lets OpenSearch split the search into segment slices; each
     # slice keeps only its own top images, which can drop the true top image.
     exact_ranking: bool = True
+    # the MCP endpoint for AI agents (issue 1096): off until an operator turns it on. Each MCP
+    # token has its own budget of requests per minute, and an answer past the cap loses rows
+    # from the end of its list: an agent client refuses a tool answer past its own limit, and
+    # 92,789 characters was over it in the step 0 audit.
+    mcp_enabled: bool = False
+    mcp_rate_limit_per_minute: int = Field(default=60, ge=1)
+    mcp_max_answer_chars: int = Field(default=50_000, ge=1000)
     # cluster retirement (issue 765): the seeds for the fleet-wide retirement window, used until
     # someone saves one in Settings. A cluster with no accepted scan for this many days is retired
     # by the daily sweep (0 = never); the warning banner and the admins' bell start this many

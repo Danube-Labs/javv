@@ -94,6 +94,7 @@ async def test_meta_reports_the_running_versions_to_any_signed_in_user(env) -> N
         # read live from the store, so an OpenSearch upgrade shows without a backend restart
         "opensearch_version": (await client.info())["version"]["number"],
         "python_version": platform.python_version(),
+        "mcp_enabled": False,  # JAVV_MCP_ENABLED is off by default (issue 1096)
     }
 
 

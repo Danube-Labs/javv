@@ -40,6 +40,7 @@ export const ACTION_LABELS: Record<string, string> = {
   session_sweep_run: 'Session sweep ran',
   job_trigger: 'Job started',
   store_inspect: 'Store inspected',
+  mcp_tool_call: 'MCP tool call',
   pwd_change: 'Password changed',
   pwd_reset: 'Password reset',
   role_change: 'Role changed',

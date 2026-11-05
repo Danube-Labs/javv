@@ -693,12 +693,13 @@ Contributors already exposes derived views of it), cursor-paged, ordered `(@time
 (Spec drawn against the D32 doc shape.) **Account events (operator rulings 2026-10-16 and
 2026-10-17, issue 892):** the rows with `entity_type` `user` or `token` reach only
 `can_manage_users`, in the list, the facets and the CSV. For the other users the rail does not offer
-the `user` and `token` values nor their actions (sign-in, password, user, role and token actions),
+the `user`, `token` and `mcp_tool` values nor their actions (sign-in, password, user, role and
+token actions, and the tool calls of an MCP token, issue 1096),
 which could only count 0 there (`auditFields()` in `audit/fields.config.ts`). In the same way, the
 rows with `entity_type` `dashboard` reach only `can_manage_settings` (issue 440, ruling of
 2026-10-25), and for the other users the rail does not offer `dashboard` nor the three dashboard
 actions.
-The Action list has 45 values. The server counts Entity and Action with 64 buckets, so each
+The Action list has 46 values. The server counts Entity and Action with 64 buckets, so each
 action has a count. An action with no events shows 0 (issues 980 and 983). The User list keeps
 the top 32. When it stops at 32, the Add filter menu and a box in the User group of the rail
 ("Find a user…") ask the server for the users that contain the typed text (issue 1064). The

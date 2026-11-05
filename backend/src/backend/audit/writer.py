@@ -123,6 +123,39 @@ async def append_field_change(
         raise
 
 
+async def append_tool_call(
+    client: AsyncOpenSearch,
+    *,
+    actor: str,
+    tool: str,
+    args_hash: str,
+    result: str,
+    cluster_id: str | None,
+    prefix: str = "",
+) -> None:
+    """One row for each MCP tool call (issue 1096): who called which tool, a hash of its
+    arguments, and `ok` or `error <status>`. The arguments themselves never go in the row. Raises
+    on failure, as a strict auth event does: the caller then withholds the answer."""
+    try:
+        await _append(
+            client,
+            {
+                "actor": actor,
+                "action": "mcp_tool_call",
+                "entity_type": "mcp_tool",
+                "entity_id": f"{tool} sha256:{args_hash}",
+                "field": "result",
+                "field_type": "scalar",
+                "new_value": result,
+                "cluster_id": cluster_id,
+            },
+            prefix=prefix,
+        )
+    except Exception:
+        log.error("audit append failed", action="mcp_tool_call", entity_type="mcp_tool")
+        raise
+
+
 async def append_auth_event(
     client: AsyncOpenSearch,
     *,
