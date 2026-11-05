@@ -959,6 +959,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mcp-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        MCP endpoint
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cluster-retirement" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1925,6 +1936,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mcp-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        MCP endpoint
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cluster-retirement" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2670,6 +2692,34 @@ description.</p>
 <td><code>JAVV_EXACT_RANKING</code></td>
 <td><code>true</code></td>
 <td>How OpenSearch ranks the 100 images of a Riskiest images panel with filters. With <code>true</code>, OpenSearch reads each shard in one pass, and the panel shows the 100 images with the highest rank. With <code>false</code>, OpenSearch can divide the search into parts, one for each group of index segments, on a node with 4 CPUs or more. Each part keeps only its own top images. An image with some findings in each part can then be missing from the 100, although it has the most findings. <code>false</code> can be faster on a node with many CPUs. A one-pass read of 10,000 images and 1,000,000 findings took 19 ms.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mcp-endpoint">MCP endpoint<a class="headerlink" href="#mcp-endpoint" title="Permanent link">&para;</a></h3>
+<p>The MCP endpoint lets an AI agent read JAVV data with an MCP token (<a href="../API/#the-mcp-endpoint">The MCP endpoint</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_MCP_ENABLED</code></td>
+<td><code>false</code></td>
+<td>Turns on the MCP endpoint at <code>/api/v1/mcp</code>. With <code>false</code>, the endpoint does not exist and a request to it gets 404. An admin can make MCP tokens in both cases.</td>
+</tr>
+<tr>
+<td><code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code></td>
+<td><code>60</code></td>
+<td>Requests that one MCP token can send in one minute. Above this number, the endpoint replies 429 with <code>Retry-After</code>. The backend also logs a warning and adds one to <code>javv_limit_rejections_total{limit="mcp_rate"}</code>. The backend keeps the count in its memory.</td>
+</tr>
+<tr>
+<td><code>JAVV_MCP_MAX_ANSWER_CHARS</code></td>
+<td><code>50000</code></td>
+<td>The longest answer of a tool, in characters. A longer answer loses rows from the end of its list, and its <code>cut</code> field tells how many rows it kept. An agent client can refuse a longer answer: in one test, a client refused an answer of 92,789 characters. The value must be 1000 or more.</td>
 </tr>
 </tbody>
 </table>
@@ -3734,6 +3784,11 @@ workload?</p>
 <td><strong>Password length:</strong> the rule for each local password</td>
 <td><code>auth/passwords.MIN_LENGTH</code> (12), <code>MAX_LENGTH</code> (256). The frontend has a copy in <code>frontend/src/stores/auth.ts</code>: <code>PASSWORD_MIN_LENGTH</code> and <code>PASSWORD_MAX_LENGTH</code>.</td>
 <td>A security minimum, not a dial. The password form shows the minimum and refuses a shorter password before it sends it, so the frontend keeps a copy. <code>password-change.spec.ts</code> reads the backend file and fails when the two are different. The server makes the decision.</td>
+</tr>
+<tr>
+<td><strong>Findings page of an AI agent:</strong> the rows of one <code>search_findings</code> tool call</td>
+<td><code>mcp/read_tools.FINDINGS_PAGE</code>: 20 by default, 25 at most</td>
+<td>An agent client refused an answer of 96 findings (92,789 characters), and read pages of 25 findings (about 24,500 characters) with no problem. The agent asks for the next page with <code>next_cursor</code>, so the value changes only the number of calls. <code>JAVV_MCP_MAX_ANSWER_CHARS</code> is the setting that limits the length of each answer.</td>
 </tr>
 <tr>
 <td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>

@@ -1574,6 +1574,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-mcp-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The MCP endpoint
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#metrics" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2161,6 +2172,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-mcp-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The MCP endpoint
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#metrics" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2318,7 +2340,7 @@ slots (<a href="#exports-and-reports">Exports and reports</a>):
 </ol>
 <p>JAVV gives no alert rules. Make alerts from the metrics that apply to your setup.</p>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
-<p>Each endpoint uses one of three kinds of authentication.</p>
+<p>Each endpoint uses one of four kinds of authentication.</p>
 <table>
 <thead>
 <tr>
@@ -2337,6 +2359,11 @@ slots (<a href="#exports-and-reports">Exports and reports</a>):
 <td>Scanner token</td>
 <td><code>Authorization: Bearer &lt;token&gt;</code>. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token.</td>
 <td>The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner.</td>
+</tr>
+<tr>
+<td>MCP token</td>
+<td><code>Authorization: Bearer &lt;token&gt;</code>. An admin makes the token for one AI agent. JAVV keeps only a hash of the token.</td>
+<td>The MCP endpoint only (<a href="#the-mcp-endpoint">The MCP endpoint</a>). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check.</td>
 </tr>
 <tr>
 <td>Session</td>
@@ -2608,8 +2635,9 @@ the scan scope, users, tokens, saved views, dashboards, clusters, snapshots and 
 of the data inspector.</p>
 <p>Each signed-in user reads the audit log. Only a user with <code>can_manage_users</code> reads the account
 events: the rows with <code>entity_type</code> <code>user</code> (sign-ins and sign-outs, password, user and role
-changes) and <code>token</code> (the scanner tokens). For the other users, the three audit endpoints leave
-these rows out of the list, the counts and the CSV.</p>
+changes), <code>token</code> (the scanner tokens) and <code>mcp_tool</code> (the tool calls of the MCP tokens). For
+the other users, the three audit endpoints leave these rows out of the list, the counts and the
+CSV.</p>
 <p>Only a user with <code>can_manage_settings</code> reads the rows with <code>entity_type</code> <code>dashboard</code>. A dashboard
 row holds the whole dashboard, also a private one, and these users can see each dashboard. For
 the other users, the three audit endpoints leave these rows out in the same way.</p>
@@ -2646,7 +2674,7 @@ the other users, the three audit endpoints leave these rows out in the same way.
 <td>GET</td>
 <td><code>/api/v1/meta</code></td>
 <td>session</td>
-<td>The versions that the backend runs: <code>version</code> (the JAVV release), <code>mapping_version</code>, <code>envelope_versions</code> (the ingest schema versions that it accepts), <code>opensearch_version</code> and <code>python_version</code>. If OpenSearch does not answer, <code>opensearch_version</code> is <code>null</code>.</td>
+<td>The versions that the backend runs: <code>version</code> (the JAVV release), <code>mapping_version</code>, <code>envelope_versions</code> (the ingest schema versions that it accepts), <code>opensearch_version</code> and <code>python_version</code>. If OpenSearch does not answer, <code>opensearch_version</code> is <code>null</code>. <code>mcp_enabled</code> is <code>true</code> when <code>JAVV_MCP_ENABLED</code> turns on the MCP endpoint.</td>
 </tr>
 </tbody>
 </table>
@@ -3846,6 +3874,212 @@ record.</p>
 <p>The answer to the scanner does not depend on the record. If the backend cannot write the record,
 it logs <code>ingest failure not recorded</code> with the <code>failure_id</code>. It also increments
 <code>javv_ingest_failures_unrecorded_total{reason}</code>.</p>
+<h2 id="the-mcp-endpoint">The MCP endpoint<a class="headerlink" href="#the-mcp-endpoint" title="Permanent link">&para;</a></h2>
+<p>An AI agent, for example in Cursor, VS Code or Codex, reads JAVV data through the MCP endpoint at <code>POST /api/v1/mcp</code>. The endpoint exists only when <code>JAVV_MCP_ENABLED</code> is <code>true</code> (<a href="../CONFIGURATION/#mcp-endpoint">MCP endpoint</a>). An admin makes the token in <code>POST /api/v1/admin/mcp-tokens</code> (<a href="#admin">Admin</a>).</p>
+<p>The endpoint takes the MCP protocol versions 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. A client of an older version starts with <code>initialize</code>. The endpoint keeps no session: it never sends <code>Mcp-Session-Id</code>, and each request carries its token.</p>
+<p>Before the MCP server reads a request, the endpoint checks it in this order:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The request has an <code>Origin</code> header</td>
+<td>403. A browser always sends this header, and an agent client does not. Thus a web page that a browser opens cannot use the endpoint.</td>
+</tr>
+<tr>
+<td>The method is not POST</td>
+<td>405, with <code>Allow: POST</code></td>
+</tr>
+<tr>
+<td>The <code>Authorization</code> header has no live MCP token</td>
+<td>401 <code>invalid token</code>, with <code>WWW-Authenticate: Bearer</code>. A missing, unknown, revoked or expired token and a scanner token get the same answer.</td>
+</tr>
+<tr>
+<td>The token sent more than <code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code> requests in one minute</td>
+<td>429, with <code>Retry-After: 60</code></td>
+</tr>
+</tbody>
+</table>
+<p>The 401 and the 403 only count in <code>javv_auth_failures_total</code>, with no log line: a sender can repeat them with no limit. A 429 also logs <code>mcp rate limited</code> with the token.</p>
+<p>A request that passes the checks is the principal <code>mcp:&lt;name&gt;</code> of the token. The token writes <code>last_used_at</code> at most one time a minute.</p>
+<p><strong>Each tool call</strong> writes one audit row after the call, and one <code>mcp tool call</code> log line:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>actor</code></td>
+<td><code>mcp:&lt;name&gt;</code></td>
+</tr>
+<tr>
+<td><code>action</code></td>
+<td><code>mcp_tool_call</code></td>
+</tr>
+<tr>
+<td><code>entity_type</code></td>
+<td><code>mcp_tool</code></td>
+</tr>
+<tr>
+<td><code>entity_id</code></td>
+<td>The tool name and the first 12 characters of a SHA-256 hash of the arguments, for example <code>list_clusters sha256:1a2b3c4d5e6f</code>. The row never holds the arguments. An unknown tool name shows as <code>unknown_tool</code>.</td>
+</tr>
+<tr>
+<td><code>field</code>, <code>new_value</code></td>
+<td><code>result</code>, and <code>ok</code>, <code>error &lt;status&gt;</code> for an error of the route, or <code>error 422</code> for an argument that is not valid</td>
+</tr>
+<tr>
+<td><code>cluster_id</code></td>
+<td>The <code>cluster_id</code> argument, when the call has one</td>
+</tr>
+</tbody>
+</table>
+<p>If JAVV cannot write the row, the call is a tool error and the agent gets no data.</p>
+<p><strong>The answer of a tool</strong> is one text with compact JSON.</p>
+<ul>
+<li>A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.</li>
+<li>An answer longer than <code>JAVV_MCP_MAX_ANSWER_CHARS</code> loses rows from the end of its longest top-level list. Its <code>cut</code> field then gives the list, the rows that it kept and the rows that it had.</li>
+<li>A page with a next page (<code>next_cursor</code>) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller <code>size</code>.</li>
+<li>An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in <code>trends</code> can be longer than the cap. Then the agent must ask for fewer <code>days</code>.</li>
+</ul>
+<p><strong>The read tools.</strong> Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.</p>
+<p>A tool with more than one kind takes the parameter <code>kind</code>. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>list_clusters</code></td>
+<td><code>GET /api/v1/clusters</code></td>
+</tr>
+<tr>
+<td><code>search_findings</code></td>
+<td><code>GET /api/v1/findings</code>. <code>size</code> is 20 by default and 25 at most. The tool has no <code>keep_open</code>. A first page, with no <code>cursor</code>, closes the open search of the last first page of the same token and tool.</td>
+</tr>
+<tr>
+<td><code>count_findings</code></td>
+<td><code>GET /api/v1/findings/facets</code></td>
+</tr>
+<tr>
+<td><code>group_findings</code></td>
+<td><code>GET /api/v1/findings/groups</code></td>
+</tr>
+<tr>
+<td><code>top_images</code></td>
+<td><code>GET /api/v1/findings/top-images</code></td>
+</tr>
+<tr>
+<td><code>top_components</code></td>
+<td><code>GET /api/v1/findings/top-components</code></td>
+</tr>
+<tr>
+<td><code>list_images</code></td>
+<td><code>GET /api/v1/images</code></td>
+</tr>
+<tr>
+<td><code>image_timeline</code></td>
+<td><code>GET /api/v1/images/timeline</code></td>
+</tr>
+<tr>
+<td><code>trends</code></td>
+<td>Kind <code>findings</code>, <code>scans</code> or <code>ingest_failures</code>: <code>GET /api/v1/trends/findings</code>, <code>/scans</code> or <code>/ingest-failures</code></td>
+</tr>
+<tr>
+<td><code>scanner_status</code></td>
+<td>Kind <code>freshness</code> or <code>provenance</code>: <code>GET /api/v1/scanners/freshness</code> or <code>/provenance</code></td>
+</tr>
+<tr>
+<td><code>scanner_ingest_failures</code></td>
+<td><code>GET /api/v1/scanners/ingest-failures</code></td>
+</tr>
+<tr>
+<td><code>audit_log</code></td>
+<td><code>GET /api/v1/audit</code>. The tool has no <code>keep_open</code>, and a first page closes a search as <code>search_findings</code> does.</td>
+</tr>
+<tr>
+<td><code>count_audit_log</code></td>
+<td><code>GET /api/v1/audit/facets</code></td>
+</tr>
+<tr>
+<td><code>contributors</code></td>
+<td><code>GET /api/v1/contributors</code></td>
+</tr>
+<tr>
+<td><code>list_decisions</code></td>
+<td><code>GET /api/v1/decisions</code></td>
+</tr>
+<tr>
+<td><code>list_approvals</code></td>
+<td><code>GET /api/v1/decisions/approvals</code></td>
+</tr>
+<tr>
+<td><code>list_dashboards</code></td>
+<td><code>GET /api/v1/dashboards</code></td>
+</tr>
+<tr>
+<td><code>get_dashboard</code></td>
+<td><code>GET /api/v1/dashboards/{dashboard_id}</code></td>
+</tr>
+<tr>
+<td><code>read_settings</code></td>
+<td>Kind <code>about</code> (<code>GET /api/v1/meta</code>), <code>scan_scope</code> (<code>GET /api/v1/settings/scan-scope</code>), <code>sla</code>, <code>staleness</code>, <code>retirement</code>, <code>data</code> (<code>GET /api/v1/settings/&lt;kind&gt;</code>), <code>snapshots</code> (<code>GET /api/v1/admin/snapshots</code>), <code>opensearch</code> (<code>GET /api/v1/admin/opensearch-runtime</code>) or <code>jobs</code> (<code>GET /api/v1/admin/jobs</code>)</td>
+</tr>
+<tr>
+<td><code>list_accounts</code></td>
+<td>Kind <code>users</code>, <code>roles</code>, <code>scanner_tokens</code> or <code>mcp_tokens</code>: <code>GET /api/v1/admin/users</code>, <code>/roles</code>, <code>/tokens</code> or <code>/mcp-tokens</code>. As the routes, the answer holds no password, token or hash.</td>
+</tr>
+</tbody>
+</table>
+<p>These reads have no tool. <code>test_mcp_read_coverage.py</code> fails when a new <code>GET</code> route has no tool and is not in this list, <code>NO_TOOL</code> in <code>backend/src/backend/mcp/read_tools.py</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Why it has no tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/healthz</code>, <code>/readyz</code>, <code>/metrics</code></td>
+<td>They tell the state of the platform, not JAVV data.</td>
+</tr>
+<tr>
+<td><code>/auth/me</code></td>
+<td>It tells the user of a session. A token has no session.</td>
+</tr>
+<tr>
+<td><code>/api/v1/notifications</code>, <code>/api/v1/views</code></td>
+<td>They hold the bell and the saved views of one user.</td>
+</tr>
+<tr>
+<td><code>/api/v1/scan-scope</code></td>
+<td>It is the route of the scanner token. <code>read_settings</code> with kind <code>scan_scope</code> reads the same scope.</td>
+</tr>
+<tr>
+<td><code>/api/v1/dashboards/roles</code></td>
+<td>It gives the role list of the share dialog of a dashboard.</td>
+</tr>
+<tr>
+<td><code>/api/v1/reports/{report_id}</code>, <code>/api/v1/reports/{report_id}/download</code></td>
+<td>They give the state and the file of an export report.</td>
+</tr>
+<tr>
+<td><code>/api/v1/findings/export.csv</code>, <code>/api/v1/findings/export.vex</code>, <code>/api/v1/audit/export.csv</code>, <code>/api/v1/contributors/export.csv</code>, <code>/api/v1/decisions/approvals/export.csv</code>, <code>/api/v1/dashboards/export.ndjson</code></td>
+<td>They give an export file. The tool of the same list reads the same rows.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h2>
 <p><code>GET /metrics</code> gives these metrics, in the Prometheus format (<a href="#scrape-the-metrics">Scrape the metrics</a>).</p>
 <table>
@@ -3916,7 +4150,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_limit_rejections_total</code></td>
 <td>counter</td>
 <td><code>limit</code></td>
-<td>Requests that a limit refused: <code>pit_cap</code>, <code>export_rows</code>, <code>bulk_targets</code>, <code>bulk_inline</code>, <code>client_events</code>, <code>inspect_bytes</code> and <code>dashboard_import</code></td>
+<td>Requests that a limit refused: <code>pit_cap</code>, <code>export_rows</code>, <code>bulk_targets</code>, <code>bulk_inline</code>, <code>client_events</code>, <code>inspect_bytes</code>, <code>dashboard_import</code> and <code>mcp_rate</code></td>
 </tr>
 <tr>
 <td><code>javv_pits_open</code></td>
@@ -3934,7 +4168,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_auth_failures_total</code></td>
 <td>counter</td>
 <td><code>reason</code></td>
-<td><code>bad_credentials</code>, <code>locked_out</code>, <code>expired_session</code>, <code>missing_capability</code>, <code>must_change</code> (a session with a temporary password) or <code>session_not_minted</code> (a password change with no new session). The labels never show a username.</td>
+<td><code>bad_credentials</code>, <code>locked_out</code>, <code>expired_session</code>, <code>missing_capability</code>, <code>must_change</code> (a session with a temporary password) or <code>session_not_minted</code> (a password change with no new session). The MCP endpoint adds <code>mcp_origin</code> (a request with an <code>Origin</code> header) and <code>mcp_token</code> (a request with no live MCP token). The labels never show a username.</td>
 </tr>
 <tr>
 <td><code>javv_config_warnings_total</code></td>
