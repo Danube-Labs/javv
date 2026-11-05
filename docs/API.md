@@ -919,6 +919,18 @@ A tool with more than one kind takes the parameter `kind`. A parameter that the 
 | `read_settings` | Kind `about` (`GET /api/v1/meta`), `scan_scope` (`GET /api/v1/settings/scan-scope`), `sla`, `staleness`, `retirement`, `data` (`GET /api/v1/settings/<kind>`), `snapshots` (`GET /api/v1/admin/snapshots`), `opensearch` (`GET /api/v1/admin/opensearch-runtime`) or `jobs` (`GET /api/v1/admin/jobs`) |
 | `list_accounts` | Kind `users`, `roles`, `scanner_tokens` or `mcp_tokens`: `GET /api/v1/admin/users`, `/roles`, `/tokens` or `/mcp-tokens`. As the routes, the answer holds no password, token or hash. |
 
+These reads have no tool. `test_mcp_read_coverage.py` fails when a new `GET` route has no tool and is not in this list, `NO_TOOL` in `backend/src/backend/mcp/read_tools.py`.
+
+| Route | Why it has no tool |
+|---|---|
+| `/healthz`, `/readyz`, `/metrics` | They tell the state of the platform, not JAVV data. |
+| `/auth/me` | It tells the user of a session. A token has no session. |
+| `/api/v1/notifications`, `/api/v1/views` | They hold the bell and the saved views of one user. |
+| `/api/v1/scan-scope` | It is the route of the scanner token. `read_settings` with kind `scan_scope` reads the same scope. |
+| `/api/v1/dashboards/roles` | It gives the role list of the share dialog of a dashboard. |
+| `/api/v1/reports/{report_id}`, `/api/v1/reports/{report_id}/download` | They give the state and the file of an export report. |
+| `/api/v1/findings/export.csv`, `/api/v1/findings/export.vex`, `/api/v1/audit/export.csv`, `/api/v1/contributors/export.csv`, `/api/v1/decisions/approvals/export.csv`, `/api/v1/dashboards/export.ndjson` | They give an export file. The tool of the same list reads the same rows. |
+
 ## Metrics
 
 `GET /metrics` gives these metrics, in the Prometheus format ([Scrape the metrics](#scrape-the-metrics)).
