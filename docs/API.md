@@ -892,6 +892,33 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 - A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
 - An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
 
+**The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
+
+A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.
+
+| Tool | Route |
+|---|---|
+| `list_clusters` | `GET /api/v1/clusters` |
+| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. |
+| `count_findings` | `GET /api/v1/findings/facets` |
+| `group_findings` | `GET /api/v1/findings/groups` |
+| `top_images` | `GET /api/v1/findings/top-images` |
+| `top_components` | `GET /api/v1/findings/top-components` |
+| `list_images` | `GET /api/v1/images` |
+| `image_timeline` | `GET /api/v1/images/timeline` |
+| `trends` | Kind `findings`, `scans` or `ingest_failures`: `GET /api/v1/trends/findings`, `/scans` or `/ingest-failures` |
+| `scanner_status` | Kind `freshness` or `provenance`: `GET /api/v1/scanners/freshness` or `/provenance` |
+| `scanner_ingest_failures` | `GET /api/v1/scanners/ingest-failures` |
+| `audit_log` | `GET /api/v1/audit`. The tool has no `keep_open`, and a first page closes a search as `search_findings` does. |
+| `count_audit_log` | `GET /api/v1/audit/facets` |
+| `contributors` | `GET /api/v1/contributors` |
+| `list_decisions` | `GET /api/v1/decisions` |
+| `list_approvals` | `GET /api/v1/decisions/approvals` |
+| `list_dashboards` | `GET /api/v1/dashboards` |
+| `get_dashboard` | `GET /api/v1/dashboards/{dashboard_id}` |
+| `read_settings` | Kind `about` (`GET /api/v1/meta`), `scan_scope` (`GET /api/v1/settings/scan-scope`), `sla`, `staleness`, `retirement`, `data` (`GET /api/v1/settings/<kind>`), `snapshots` (`GET /api/v1/admin/snapshots`), `opensearch` (`GET /api/v1/admin/opensearch-runtime`) or `jobs` (`GET /api/v1/admin/jobs`) |
+| `list_accounts` | Kind `users`, `roles`, `scanner_tokens` or `mcp_tokens`: `GET /api/v1/admin/users`, `/roles`, `/tokens` or `/mcp-tokens`. As the routes, the answer holds no password, token or hash. |
+
 ## Metrics
 
 `GET /metrics` gives these metrics, in the Prometheus format ([Scrape the metrics](#scrape-the-metrics)).

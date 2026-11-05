@@ -6,8 +6,9 @@ refuses each value that the route refuses. A parameter that the route reads thro
 request is a bare one that carries only the app: the routes behind tools read nothing else from
 it. The principal is the token's, widened for the read (`auth.reader`).
 
-A tool with several routes (`kinds`) takes a `kind` and the parameters of all its routes; a
-parameter that the chosen route does not take is refused, and one that it needs must be there.
+A tool with several routes (`kinds`) takes a `kind` and the parameters of all its routes, each
+one optional with no default of its own; a parameter that the chosen route does not take is
+refused, one that it needs must be there, and one left out takes the route's default.
 
 Each answer goes back as compact JSON text, one time: no structured copy, which doubled the size
 in the step 0 probe. An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` drops rows from the end
@@ -16,6 +17,7 @@ of its longest list and says so in `cut`."""
 import contextvars
 import inspect
 import json
+import types
 import typing
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -25,6 +27,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.params import Depends
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_types import ToolAnnotations
+from pydantic.fields import FieldInfo
 
 from backend.auth.principal import Principal
 from backend.core.settings import get_settings
@@ -51,13 +54,15 @@ class RouteError(ToolError):
 @dataclass(frozen=True)
 class ReadTool:
     """One tool. `routes` maps each `kind` to its route function; a tool with one route has one
-    entry under the key "". `params` replaces a route parameter (annotation, default); `paged`
-    tools hold one open search for each token (Q4)."""
+    entry under the key "". `params` replaces a route parameter (annotation, default); a `hidden`
+    parameter is not offered and the route takes its default; `paged` tools hold one open search
+    for each token (Q4)."""
 
     name: str
     description: str
     routes: dict[str, Callable[..., Any]]
     params: dict[str, tuple[Any, Any]] = field(default_factory=dict)
+    hidden: tuple[str, ...] = ()
     paged: bool = False
 
 
@@ -92,6 +97,38 @@ def _dependency(annotation: Any, default: Any) -> Callable[..., Any] | None:
 def _is_principal(annotation: Any) -> bool:
     base = typing.get_args(annotation)[0] if typing.get_origin(annotation) else annotation
     return base is Principal
+
+
+def _parts(annotation: Any) -> tuple[Any, list[Any]]:
+    if typing.get_origin(annotation) is typing.Annotated:
+        base, *metas = typing.get_args(annotation)
+        return base, metas
+    return annotation, []
+
+
+def _optional(annotation: Any) -> Any:
+    """The annotation that also takes None, with its limits kept on the inner type."""
+    base, metas = _parts(annotation)
+    if isinstance(base, types.UnionType) and type(None) in typing.get_args(base):
+        return annotation
+    if metas:
+        return typing.Annotated[(base | None, *metas)]  # pyright: ignore[reportInvalidTypeArguments]
+    return base | None
+
+
+def _same(where: str, prior: Any, annotation: Any) -> None:
+    """Several routes of a tool take one parameter, so it must have one type and one set of
+    limits. Each route declares its own `Query()`, so the limits are compared, not the objects."""
+
+    def shape(a: Any) -> tuple[Any, str]:
+        base, metas = _parts(a)
+        limits = [
+            (m.metadata, m.default, m.alias) if isinstance(m, FieldInfo) else m for m in metas
+        ]
+        return base, repr(limits)
+
+    if shape(prior) != shape(annotation):
+        raise TypeError(f"{where}: {prior} and {annotation} differ")
 
 
 def _plan(fn: Callable[..., Any]) -> _RoutePlan:
@@ -186,12 +223,19 @@ def build(tool: ReadTool, app: FastAPI) -> Callable[..., Any]:
     params: dict[str, inspect.Parameter] = {}
     for plan in plans.values():
         for name, param in plan.tool_params().items():
+            if name in tool.hidden:
+                # the route is called without it, so its default must be a plain value
+                if param.default is _EMPTY or isinstance(param.default, FieldInfo):
+                    raise TypeError(f"{tool.name}.{name}: hidden without a plain default")
+                continue
             annotation, default = tool.params.get(name, (param.annotation, param.default))
-            if grouped:  # each route checks its own required parameters at the call
-                default = None if default is _EMPTY else default
-            if name in params and params[name].annotation != annotation:
-                prior = params[name].annotation
-                raise TypeError(f"{tool.name}.{name}: {prior} and {annotation} differ")
+            if grouped:
+                # a value means "this kind takes it", so no parameter has a value of its own:
+                # each route checks its required ones at the call and fills in its defaults
+                default = None
+                annotation = _optional(annotation)
+            if name in params:
+                _same(f"{tool.name}.{name}", params[name].annotation, annotation)
             params[name] = inspect.Parameter(
                 name, inspect.Parameter.KEYWORD_ONLY, annotation=annotation, default=default
             )
