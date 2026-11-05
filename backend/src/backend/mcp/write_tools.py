@@ -14,6 +14,7 @@ from typing import Any, Literal, cast
 from fastapi import HTTPException, Request
 from opensearchpy import NotFoundError
 
+from backend.auth.capabilities import holds_accept_final
 from backend.decisions.lifecycle import DECISIONS_INDEX, DecisionPayload
 from backend.mcp.tools import Tool
 from backend.routers import decisions, triage
@@ -51,7 +52,10 @@ def _own_types(route: Callable[..., Any], types: frozenset[str]) -> Callable[...
             old = (await client.get(index=DECISIONS_INDEX, id=decision_id))["_source"]
         except NotFoundError:
             old = None  # the route gives its 404
-        if old is not None and old["type"] not in types:
+        # an undo of a risk accept without the permission keeps the 403 of the route (issue 892)
+        undo_refused = old is not None and old["type"] in decisions.ACCEPT_TYPES
+        undo_refused = undo_refused and not holds_accept_final(rest["principal"])
+        if old is not None and old["type"] not in types and not undo_refused:
             raise HTTPException(422, f"this tool does not take a {old['type']} decision")
         return await route(request=request, decision_id=decision_id, **rest)
 

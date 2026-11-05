@@ -75,6 +75,27 @@ def allowed(name: str, principal: Principal) -> bool:
     return needs is None or needs in principal.capabilities
 
 
+def _cluster(name: str, arguments: dict[str, Any]) -> str | None:
+    """The cluster of the call for its audit row. A read tool takes `cluster_id` as an argument.
+    A write tool has it only in the model of its route (`bulk_triage` and a decision `make`),
+    which a client can also send as a JSON string."""
+    if _NEEDS.get(name) is None:
+        value = arguments.get("cluster_id")
+    else:
+        value = None
+        for key in ("body", "payload"):
+            part = arguments.get(key)
+            if isinstance(part, str):
+                try:
+                    part = json.loads(part)
+                except ValueError:
+                    part = None
+            if isinstance(part, dict) and "cluster_id" in part:
+                value = part["cluster_id"]
+                break
+    return value if isinstance(value, str) and CLUSTER_ID_RE.fullmatch(value) else None
+
+
 def _result(exc: ToolError | None) -> str:
     """`ok`, or `error` with the status of the route or 422 for a bad argument."""
     if exc is None:
@@ -146,9 +167,7 @@ class JavvMCP(MCPServer[Any]):
             args_hash=args_hash,
             duration_ms=round((time.perf_counter() - started) * 1000, 1),
         )
-        # a write tool has it in its body or its payload
-        parts = [arguments, *(v for v in arguments.values() if isinstance(v, dict))]
-        cluster = next((p["cluster_id"] for p in parts if "cluster_id" in p), None)
+        cluster = _cluster(name, arguments)
         try:
             await append_tool_call(
                 self._app.state.opensearch,
@@ -156,9 +175,7 @@ class JavvMCP(MCPServer[Any]):
                 tool=name if known else "unknown_tool",
                 args_hash=args_hash,
                 result=result,
-                cluster_id=cluster
-                if isinstance(cluster, str) and CLUSTER_ID_RE.fullmatch(cluster)
-                else None,
+                cluster_id=cluster,
             )
         except Exception:  # noqa: BLE001  the writer logged it; the agent gets no data
             if failure is None and _NEEDS.get(name) is not None:  # so the agent does not retry

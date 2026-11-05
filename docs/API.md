@@ -893,7 +893,7 @@ The tool list of a token (`tools/list`) holds only the tools of its level. A cal
 | `entity_type` | `mcp_tool` |
 | `entity_id` | The tool name and the first 12 characters of a SHA-256 hash of the arguments, for example `list_clusters sha256:1a2b3c4d5e6f`. The row never holds the arguments. An unknown tool name shows as `unknown_tool`. |
 | `field`, `new_value` | `result`. The value is `ok` or `error <status>`. A tool that the level does not allow gets 403. An argument that is not valid gets 422. Another error gets the status of the route. |
-| `cluster_id` | The `cluster_id` argument, when the call has one. For a write tool, the `cluster_id` of its `body` or its `payload`. |
+| `cluster_id` | The `cluster_id` argument of a read tool, when the call has one. For `bulk_triage` and a decision of kind `make`, the `cluster_id` of the `body` or the `payload`. The other write calls have no cluster on this row, but the audit rows of their route have one. |
 
 If JAVV cannot write the row, the call is a tool error and the agent gets no data. After a write, the error tells the agent that the tool made the change, so that the agent does not make it again.
 

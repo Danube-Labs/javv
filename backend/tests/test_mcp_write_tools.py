@@ -388,3 +388,45 @@ async def test_a_write_whose_audit_row_fails_says_that_the_change_is_made(mcp_on
         error, text = _answer(await http.post(PATH, **_call("set_triage", args, raw)))
         assert error and "the tool made the change" in text
         assert (await client.get(index="findings", id=key))["_source"]["assignee"] == "bob"
+        # a read, and a write that did not happen, never say so
+        _, read = await _token(client, level="read")
+        for token, tool, call_args in [(raw, "list_clusters", {}), (read, "set_triage", args)]:
+            error, text = _answer(await http.post(PATH, **_call(tool, call_args, token)))
+            assert error and "audit row" in text and "made the change" not in text, text
+
+
+def test_the_audit_row_of_a_write_takes_the_cluster_of_its_model():
+    payload = {"cluster_id": "c-real0001", "cve_id": "CVE-2026-0001"}
+    # a key that the tool does not take never names the cluster of the row
+    assert (
+        mcp_server._cluster(
+            "not_affected_decision", {"payload": payload, "cluster_id": "c-other002"}
+        )
+        == "c-real0001"
+    )
+    # a client can send the model as a JSON string
+    assert mcp_server._cluster("bulk_triage", {"body": json.dumps(payload)}) == "c-real0001"
+    assert mcp_server._cluster("set_triage", {"finding_key": "k", "patch": {}}) is None
+    assert mcp_server._cluster("list_images", {"cluster_id": "c-real0001"}) == "c-real0001"
+    assert mcp_server._cluster("list_images", {"cluster_id": "../etc"}) is None
+
+
+async def test_a_write_token_gets_the_403_of_the_route_for_an_undo_of_a_risk_accept(mcp_on):
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcpw-{uuid.uuid4().hex[:8]}"
+        _, accept = await _token(client, level="write_risk_accept")
+        expiry = (datetime.now(UTC) + timedelta(days=30)).date().isoformat()
+        accepted = await _decision(
+            http, accept, "risk_accept_decision", _payload(cluster, "risk_accepted", expiry=expiry)
+        )
+        name, write = await _token(client, level="write")
+        for args in (
+            {"kind": "revoke", "decision_id": accepted},
+            {"kind": "change", "decision_id": accepted, "body": {"justification": "x"}},
+        ):
+            error, text = _answer(
+                await http.post(PATH, **_call("not_affected_decision", args, write))
+            )
+            assert error and "403:" in text, text
+            assert "risk_accepted decision requires can_accept_audit_final" in text
+        assert [r["new_value"] for r in await _rows(client, f"mcp:{name}")] == ["error 403"] * 2
