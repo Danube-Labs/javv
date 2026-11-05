@@ -12,7 +12,7 @@ refused, one that it needs must be there, and one left out takes the route's def
 
 Each answer goes back as compact JSON text, one time: no structured copy, which doubled the size
 in the step 0 probe. An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` drops rows from the end
-of its longest list and says so in `cut`."""
+of its longest list and says so in `cut`; a page with a next page is refused instead."""
 
 import contextvars
 import inspect
@@ -166,32 +166,39 @@ async def _call(plan: _RoutePlan, app: FastAPI, principal: Principal, args: dict
 
 def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
     """The answer as compact JSON of at most `limit` characters: the longest top-level list loses
-    rows from its end until it fits, and `cut` says how many it kept."""
+    rows from its end until it fits, and `cut` says how many it kept. A page with a next page is
+    refused instead, because its cursor goes on after the last row of the full page, so the rows
+    cut here would never be seen."""
     text = json.dumps(answer, separators=(",", ":"), default=str)
     if len(text) <= limit:
         return text
+    if answer.get("next_cursor"):
+        raise ToolError(
+            f"the page has {len(text)} characters, over the cap of {limit}: ask for a smaller size"
+        )
     lists = [k for k, v in answer.items() if isinstance(v, list) and v]
     if not lists:
         raise ToolError(f"the answer has {len(text)} characters, over the cap of {limit}")
     key = max(lists, key=lambda k: len(json.dumps(answer[k], default=str)))
     rows: list[Any] = answer[key]
-    keep = len(rows)
-    while keep > 0:
-        keep -= 1
-        trimmed = {
-            **answer,
-            key: rows[:keep],
-            "cut": {
-                "field": key,
-                "kept": keep,
-                "had": len(rows),
-                "reason": f"the answer was over {limit} characters: ask for fewer rows",
-            },
-        }
-        text = json.dumps(trimmed, separators=(",", ":"), default=str)
-        if len(text) <= limit:
-            return text
-    raise ToolError(f"the answer is over the cap of {limit} characters: narrow the filters")
+
+    def trimmed(keep: int) -> str:
+        cut = {"field": key, "kept": keep, "had": len(rows), "reason": f"over {limit} characters"}
+        return json.dumps(
+            {**answer, key: rows[:keep], "cut": cut}, separators=(",", ":"), default=str
+        )
+
+    # the text grows with each row kept, so the most rows that fit is found by halving
+    low, high = 0, len(rows) - 1
+    if len(trimmed(low)) > limit:
+        raise ToolError(f"the answer is over the cap of {limit} characters: narrow the filters")
+    while low < high:
+        mid = (low + high + 1) // 2
+        if len(trimmed(mid)) <= limit:
+            low = mid
+        else:
+            high = mid - 1
+    return trimmed(low)
 
 
 # Q4: for each (token, tool), the open search of its last first page
@@ -211,9 +218,14 @@ def _keep_walk(principal: Principal, tool: str, answer: Any) -> None:
     if not cursor:
         _walks.pop((principal.user_id, tool), None)
         return
+    try:
+        pit_id = cursor_pit_id(cursor)
+    except ValueError:  # a past-time findings cursor holds a key, not an open search
+        _walks.pop((principal.user_id, tool), None)
+        return
     if len(_walks) >= _MAX_WALKS:
         _walks.clear()  # the slots still free themselves at the PIT horizon
-    _walks[(principal.user_id, tool)] = cursor_pit_id(cursor)
+    _walks[(principal.user_id, tool)] = pit_id
 
 
 def build(tool: ReadTool, app: FastAPI) -> Callable[..., Any]:

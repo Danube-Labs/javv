@@ -890,7 +890,9 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 **The answer of a tool** is one text with compact JSON.
 
 - A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
-- An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
+- An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest top-level list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
+- A page with a next page (`next_cursor`) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller `size`.
+- An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in `trends` can be longer than the cap. Then the agent must ask for fewer `days`.
 
 **The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
 

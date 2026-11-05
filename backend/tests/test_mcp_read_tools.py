@@ -217,6 +217,26 @@ async def test_a_read_token_reads_the_account_rows_of_the_audit_log(mcp_on):
     assert [(r["entity_type"], r["action"]) for r in rows] == [("mcp_tool", "mcp_tool_call")]
 
 
+class _ThreeRowsInThePast(AsOfTQuery):
+    async def findings_snapshot(self, client: Any, **kw: Any) -> list[dict[str, Any]]:
+        return [{"finding_key": f"k{i}"} for i in range(3)]
+
+
+async def test_a_past_time_findings_page_with_a_next_page_pages_on(mcp_on):
+    """A past-time cursor holds the key of the last row, not an open search, so the tool keeps no
+    search for it, and the next page goes on where the first one stopped."""
+    register_as_of_t(_ThreeRowsInThePast())
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client)
+        args = {"cluster_id": f"c-mcp-{uuid.uuid4().hex[:8]}", "as_of": PAST, "size": 2}
+        first = json.loads(_text(await http.post(PATH, **_call("search_findings", args, raw))))
+        assert [r["finding_key"] for r in first["data"]] == ["k0", "k1"]
+        args["cursor"] = first["next_cursor"]
+        last = json.loads(_text(await http.post(PATH, **_call("search_findings", args, raw))))
+    assert [r["finding_key"] for r in last["data"]] == ["k2"]
+    assert last["next_cursor"] is None
+
+
 async def _small(size: Annotated[int, Query(ge=1, le=10)] = 5) -> dict[str, Any]:
     return {"size": size}
 

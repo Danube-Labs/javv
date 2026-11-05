@@ -25,6 +25,7 @@ from backend.core.settings import get_settings
 from backend.main import create_app
 from backend.mcp import auth as mcp_auth
 from backend.mcp import server as mcp_server
+from backend.mcp import tools
 from backend.mcp.tools import ReadTool, RouteError, build, current_principal, cut_to_fit
 from backend.query import pit_guard
 from backend.query.search import cursor_pit_id
@@ -441,6 +442,32 @@ def test_a_long_answer_loses_rows_from_the_end_of_its_longest_list_and_says_so()
     assert [row["i"] for row in cut["data"]] == list(range(kept))  # the first rows stay
     assert cut["cut"]["field"] == "data" and cut["cut"]["had"] == 40
     assert cut["tags"] == ["a"] and cut["total"] == 40
+
+
+def test_a_page_with_a_next_page_is_refused_and_not_cut():
+    """The cursor goes on after the last row of the full page: rows cut here would never show."""
+    answer = {"data": [{"pad": "x" * 50} for _ in range(40)], "next_cursor": "after-row-39"}
+    with pytest.raises(ToolError, match="ask for a smaller size"):
+        cut_to_fit(answer, 1000)
+    assert json.loads(cut_to_fit({**answer, "data": answer["data"][:5]}, 1000))["next_cursor"]
+
+
+def test_a_long_list_keeps_the_most_rows_that_fit_in_few_passes(monkeypatch):
+    """One pass for each row dropped blocked the event loop for 70 s on 10,000 rows."""
+    real = json.dumps
+    calls = 0
+
+    def counted(*a: Any, **kw: Any) -> str:
+        nonlocal calls
+        calls += 1
+        return real(*a, **kw)
+
+    monkeypatch.setattr(tools.json, "dumps", counted)
+    row = {"pad": "x" * 200}
+    text = cut_to_fit({"data": [row] * 10_000}, 50_000)
+    assert len(text) <= 50_000
+    assert 50_000 - len(text) < len(real(row)) + 1  # one more row would not fit
+    assert calls < 30
 
 
 def test_an_answer_with_no_list_to_cut_is_an_error():
