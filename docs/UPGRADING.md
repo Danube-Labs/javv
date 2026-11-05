@@ -344,6 +344,7 @@ applied it automatically on the first start.
 
 | Release | Store schema | Report formats accepted | What to do |
 |---|---|---|---|
+| 0.9.6 | 22 | 3 and 4 | Nothing. The backend makes the new index `system-mcp-tokens` on the first start. The `javv` role of an OpenSearch of your own already has access to it, because its name starts with `system-`. |
 | 0.9.5 | 21 | 3 and 4 | Nothing. The backend adds a field to the store on the first start. From the first scan after the upgrade, the counts of a scan count findings, not the entries of the scanner report. The scans before the upgrade keep their counts. Until both scanners scan an image again, the count pair of the image can compare a findings count with an entries count. |
 | 0.9.1 | 20 | 3 and 4 | Nothing. The backend adds a field to the store on the first start. |
 | 0.8.9 | 19 | 3 and 4 | The notes **A new permission for the export files** and **A new permission for dashboards** below |

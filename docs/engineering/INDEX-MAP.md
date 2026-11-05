@@ -26,6 +26,7 @@
 | `system-users` | mutable | none | **no** | none |
 | `system-roles` | mutable (capability bundles) | none | **no** | none |
 | `system-tokens` | mutable | none | **no** | manual revoke; a deleted cluster's are deleted (issue 765) |
+| `system-mcp-tokens` | mutable (one doc per MCP token, `_id` = its name, issue 1096) | none | **no** | none: manual revoke, and a revoked token stays, disabled, so its name stays taken |
 | `system-sessions` | mutable | none | **no** | refused on lookup once `expires_at` passes; deleted by the session sweep (`jobs/session_sweep.py`) after `JAVV_SESSION_SWEEP_GRACE_HOURS` more (default 24h), revoked rows included |
 | `system-config` | mutable | none | **no** | none, except a deleted cluster's per-cluster docs (issue 765) |
 | `system-tags` | mutable *(planned — not yet created by bootstrap; the tags feature is post-MVP)* | none | **no** | none |
@@ -380,6 +381,22 @@ created_at        date
 expiry            date          nullable
 disabled          boolean
 last_ingest_at    date          scanner-down guard
+```
+
+### `system-mcp-tokens` - the tokens of the MCP endpoint (issue 1096)
+Apart from `system-tokens`, so the ingest token check never reads an MCP token and the MCP check
+never reads a scanner token. `_id` = `name`: the create-only write refuses a name in use, and a name
+stays taken after a revoke, because the token is the principal `mcp:<name>`. A rotate rewrites
+`token_hash` and `expiry` of the same doc. No `cluster_id`: a token reads every cluster (D4).
+```
+token_hash        keyword       peppered SHA-256 of a 256-bit random token (same rule as system-tokens)
+name              keyword       = _id; the username rule (3-64 of a-z 0-9 . _ -)
+level             keyword       read | write | write_risk_accept
+created_by        keyword
+created_at        date
+expiry            date          required, at most 90 days out at make and at rotate
+disabled          boolean       revoked
+last_used_at      date          written by the MCP endpoint (step 2), at most once a minute
 ```
 
 ### `system-sessions` - server-side sessions (Auth & Session bolt - SEC-5)
