@@ -100,13 +100,17 @@ export const TRIAGE_ACTIONS = [
   'decision_revoke',
 ] as const
 
+/** Entity values that are not one word; the others show as they are. */
+const ENTITY_LABELS: Record<string, string> = { mcp_tool: 'MCP tool' }
+const entityLabel = (value: string): string => ENTITY_LABELS[value] ?? value
+
 /** The most buckets the server gives for Entity and Action: backend `query/audit._AUDIT_LIST_TERMS_SIZE`,
  * a fixed size in docs/CONFIGURATION.md ("Fixed aggregation sizes"). It is larger than the
  * Action list, so each action gets a count (issue 983). */
 export const AUDIT_LIST_CAP = 64
 
 export const AUDIT_FIELDS: readonly FilterField[] = [
-  { key: 'entity', label: 'Entity', type: 'terms', param: 'entity_type', multi: true, facetKey: 'entity_type', facetCap: AUDIT_LIST_CAP, values: AUDIT_ENTITY_TYPES, negatable: true },
+  { key: 'entity', label: 'Entity', type: 'terms', param: 'entity_type', multi: true, facetKey: 'entity_type', facetCap: AUDIT_LIST_CAP, values: AUDIT_ENTITY_TYPES, negatable: true, valueLabel: entityLabel },
   { key: 'action', label: 'Action', type: 'terms', param: 'action', multi: true, facetKey: 'action', facetCap: AUDIT_LIST_CAP, values: AUDIT_ACTIONS, negatable: true, valueLabel: actionLabel },
   // data-driven from the facet buckets; the backend counts users without the user filter, so a
   // picked user does not hide the others (issue 952)
