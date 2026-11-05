@@ -2577,7 +2577,7 @@ a hyphen.</p>
 <tr>
 <td>Offset: <code>size</code> and <code>offset</code></td>
 <td><code>{"&lt;name&gt;": [...], "total": N}</code></td>
-<td><code>/decisions</code> (<code>decisions</code>), <code>/decisions/approvals</code> (<code>approvals</code>), <code>/admin/users</code> (<code>users</code>), <code>/admin/tokens</code> (<code>tokens</code>)</td>
+<td><code>/decisions</code> (<code>decisions</code>), <code>/decisions/approvals</code> (<code>approvals</code>), <code>/admin/users</code> (<code>users</code>), <code>/admin/tokens</code> (<code>tokens</code>), <code>/admin/mcp-tokens</code> (<code>tokens</code>)</td>
 </tr>
 <tr>
 <td>None</td>
@@ -2756,6 +2756,24 @@ in a scan cycle.</p>
 <td><code>/api/v1/admin/tokens/{token_id}/rotate</code></td>
 <td><code>can_manage_tokens</code></td>
 <td>Makes a new token, with a new id, for the same cluster, scanner and expiry. Then it disables the old token. A revoked token and an expired token get 409, and nothing changes. Make a new token for them.</td>
+</tr>
+<tr>
+<td>GET/POST</td>
+<td><code>/api/v1/admin/mcp-tokens</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>The tokens of AI agents for the MCP endpoint. GET lists them, newest first, with <code>size</code> (1 to 1000, default 100) and <code>offset</code> (0 to 9000). Each token has <code>name</code>, <code>level</code>, <code>created_by</code>, <code>created_at</code>, <code>expiry</code>, <code>disabled</code> and <code>last_used_at</code>. POST makes a token for <code>{name, level, expiry}</code>. The name has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. The level is <code>read</code> (the default), <code>write</code> or <code>write_risk_accept</code>. The expiry is necessary, in the future and at most 90 days from now. It must have a time zone, for example <code>2026-12-01T00:00:00Z</code>: an expiry with no time zone gets 422. The answer shows the token one time only. A name that a token has, also a revoked token, gets 409.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/mcp-tokens/{name}/revoke</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>Disables a token. A revoked token gets 409. An expired token can be revoked. A revoke also stops a rotate that comes at the same time.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/admin/mcp-tokens/{name}/rotate</code></td>
+<td><code>can_manage_tokens</code></td>
+<td>Gives the token a new secret and the new expiry of <code>{expiry}</code>, with the same rule as a make. The name and the level stay. The old secret stops at once. A revoked token and an expired token get 409, and nothing changes. If a revoke changes the token during the rotate, the rotate gets 409 and the token stays revoked.</td>
 </tr>
 <tr>
 <td>GET/POST</td>
