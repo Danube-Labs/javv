@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from backend.mcp.tools import ReadTool
+from backend.mcp.tools import Tool
 from backend.routers import (
     admin_jobs,
     admin_users,
@@ -32,8 +32,8 @@ from backend.sla import routes as sla_routes
 # read pages of 25 (about 24,500 characters) with no problem
 FINDINGS_PAGE = (Annotated[int, Field(ge=1, le=25)], 20)
 
-READ_TOOLS: tuple[ReadTool, ...] = (
-    ReadTool(
+READ_TOOLS: tuple[Tool, ...] = (
+    Tool(
         name="list_clusters",
         description=(
             "The clusters that JAVV knows, with their id, name and the time of their newest scan. "
@@ -41,7 +41,7 @@ READ_TOOLS: tuple[ReadTool, ...] = (
         ),
         routes={"": clusters.list_clusters},
     ),
-    ReadTool(
+    Tool(
         name="search_findings",
         description=(
             "One page of the findings of one cluster, with the filters of the Findings screen. "
@@ -54,7 +54,7 @@ READ_TOOLS: tuple[ReadTool, ...] = (
         hidden=("keep_open",),
         paged=True,
     ),
-    ReadTool(
+    Tool(
         name="count_findings",
         description=(
             "Counts of the findings of one cluster for each value of a field (severity, state, "
@@ -63,12 +63,12 @@ READ_TOOLS: tuple[ReadTool, ...] = (
         ),
         routes={"": findings.facet_findings},
     ),
-    ReadTool(
+    Tool(
         name="group_findings",
         description="The findings of one cluster in groups of one field, with a count for each.",
         routes={"": findings.group_findings},
     ),
-    ReadTool(
+    Tool(
         name="top_images",
         description=(
             "The running images of one cluster with the most critical, then high, medium and low "
@@ -76,22 +76,22 @@ READ_TOOLS: tuple[ReadTool, ...] = (
         ),
         routes={"": findings.top_images_findings},
     ),
-    ReadTool(
+    Tool(
         name="top_components",
         description="The packages of one cluster with the most findings, with their counts.",
         routes={"": findings.top_components_findings},
     ),
-    ReadTool(
+    Tool(
         name="list_images",
         description="The running images of one cluster, from the newest inventory.",
         routes={"": images.list_running_images},
     ),
-    ReadTool(
+    Tool(
         name="image_timeline",
         description="The history of one image (repository and tag) in one cluster.",
         routes={"": images.image_timeline},
     ),
-    ReadTool(
+    Tool(
         name="trends",
         description=(
             "Changes over time in one cluster: kind findings (open findings per day), scans "
@@ -103,7 +103,7 @@ READ_TOOLS: tuple[ReadTool, ...] = (
             "ingest_failures": trends.ingest_failures_trend,
         },
     ),
-    ReadTool(
+    Tool(
         name="scanner_status",
         description=(
             "The scanners of one cluster: kind freshness (the newest scan of each scanner and if "
@@ -111,14 +111,14 @@ READ_TOOLS: tuple[ReadTool, ...] = (
         ),
         routes={"freshness": scanners.scanner_freshness, "provenance": scanners.scanner_provenance},
     ),
-    ReadTool(
+    Tool(
         name="scanner_ingest_failures",
         description=(
             "One page of the refused pushes of one scanner in one cluster, with the reason."
         ),
         routes={"": scanners.scanner_ingest_failures},
     ),
-    ReadTool(
+    Tool(
         name="audit_log",
         description=(
             "One page of the audit log of one cluster: who changed what and when. Pass "
@@ -128,37 +128,37 @@ READ_TOOLS: tuple[ReadTool, ...] = (
         hidden=("keep_open",),
         paged=True,
     ),
-    ReadTool(
+    Tool(
         name="count_audit_log",
         description="Counts of the audit log of one cluster for each entity, action and user.",
         routes={"": audit.audit_facets},
     ),
-    ReadTool(
+    Tool(
         name="contributors",
         description="Who triaged the findings of one cluster in a time window, with their counts.",
         routes={"": contributors.contributors},
     ),
-    ReadTool(
+    Tool(
         name="list_decisions",
         description="The Not affected and risk accept decisions of one cluster, with the reasons.",
         routes={"": decisions.list_decisions},
     ),
-    ReadTool(
+    Tool(
         name="list_approvals",
         description="The risk acceptances of one cluster with their status and expiry.",
         routes={"": decisions.approval_list},
     ),
-    ReadTool(
+    Tool(
         name="list_dashboards",
         description="The saved dashboards, with their names and panels.",
         routes={"": dashboards.list_dashboards},
     ),
-    ReadTool(
+    Tool(
         name="get_dashboard",
         description="One saved dashboard by its id.",
         routes={"": dashboards.get_dashboard},
     ),
-    ReadTool(
+    Tool(
         name="read_settings",
         description=(
             "A settings page: kind about (the JAVV, schema and OpenSearch versions), scan_scope, "
@@ -177,7 +177,7 @@ READ_TOOLS: tuple[ReadTool, ...] = (
             "jobs": admin_jobs.list_jobs,
         },
     ),
-    ReadTool(
+    Tool(
         name="list_accounts",
         description=(
             "The accounts of JAVV: kind users, roles, scanner_tokens or mcp_tokens. No answer "

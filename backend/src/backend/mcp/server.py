@@ -16,7 +16,10 @@ would let a sender choose the log volume (`.claude/rules/logging.md`).
 
 Each tool call writes one audit row after it, with the tool, a hash of its arguments and how it
 ended. If the row cannot be written, the agent gets a tool error and no data: no read leaves the
-backend without its row, as for the store inspector."""
+backend without its row, as for the store inspector.
+
+A token lists only the tools that its level allows (D5). A call to another tool is refused with a
+tool error of status 403 before the tool runs, and still writes its row."""
 
 import hashlib
 import json
@@ -44,7 +47,8 @@ from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.settings import get_settings
 from backend.mcp import auth
 from backend.mcp.read_tools import READ_TOOLS
-from backend.mcp.tools import READ_ONLY, RouteError, build, current_principal
+from backend.mcp.tools import RouteError, Tool, build, current_principal
+from backend.mcp.write_tools import WRITE_TOOLS
 
 log = structlog.get_logger()
 
@@ -60,12 +64,21 @@ INSTRUCTIONS = (
 
 _limiter = SlidingWindowLimiter()
 
+TOOLS: tuple[Tool, ...] = READ_TOOLS + WRITE_TOOLS
+_NEEDS = {tool.name: tool.needs for tool in TOOLS}
+
+
+def allowed(name: str, principal: Principal) -> bool:
+    """Can this token see and call this tool? An unknown name is the SDK's error to give."""
+    needs = _NEEDS.get(name)
+    return needs is None or needs in principal.capabilities
+
 
 def _result(exc: ToolError | None) -> str:
     """`ok`, or `error` with the status of the route or 422 for a bad argument."""
     if exc is None:
         return "ok"
-    cause = exc.__cause__
+    cause = exc if isinstance(exc, RouteError) else exc.__cause__
     if isinstance(cause, RouteError):
         return f"error {cause.status}"
     if isinstance(cause, ValidationError):
@@ -80,11 +93,22 @@ class JavvMCP(MCPServer[Any]):
         super().__init__(name="javv", instructions=INSTRUCTIONS)
         self._app = app
 
+    async def list_tools(self) -> list[Any]:
+        principal = current_principal.get()
+        if principal is None:  # the gate sets it; a call without it is a wiring error
+            raise ToolError("no principal")
+        return [t for t in await super().list_tools() if allowed(t.name, principal)]
+
     async def call_tool(self, name: str, arguments: dict[str, Any], context: Any = None) -> Any:
         principal = current_principal.get()
         if principal is None:  # the gate sets it; a call without it is a wiring error
             raise ToolError("no principal")
         started = time.perf_counter()
+        if not allowed(name, principal):
+            AUTH_FAILURES.labels("missing_capability").inc()
+            refusal = RouteError(403, "the level of this token does not allow this tool")
+            await self._record(principal, name, arguments, refusal, started)
+            raise refusal
         try:
             answer = await super().call_tool(name, arguments, context)
         except ToolError as exc:
@@ -136,7 +160,7 @@ class JavvMCP(MCPServer[Any]):
 
     @property
     def _tool_names(self) -> set[str]:
-        return {tool.name for tool in READ_TOOLS}
+        return set(_NEEDS)
 
 
 class _Gate:
@@ -172,12 +196,12 @@ def mount(app: FastAPI) -> None:
     """Add the endpoint and run the SDK's request manager inside the app lifespan. The manager
     runs one time only, so each app gets its own server (`app.state.mcp`)."""
     server = JavvMCP(app)
-    for tool in READ_TOOLS:
+    for tool in TOOLS:
         server.add_tool(
             build(tool, app),
             name=tool.name,
             description=tool.description,
-            annotations=READ_ONLY,
+            annotations=tool.annotations,
             structured_output=False,
         )
     server.streamable_http_app(

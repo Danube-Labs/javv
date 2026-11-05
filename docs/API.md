@@ -857,7 +857,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 
 ## The MCP endpoint
 
-An AI agent, for example in Cursor, VS Code or Codex, reads JAVV data through the MCP endpoint at `POST /api/v1/mcp`. The endpoint exists only when `JAVV_MCP_ENABLED` is `true` ([MCP endpoint](CONFIGURATION.md#mcp-endpoint)). An admin makes the token in `POST /api/v1/admin/mcp-tokens` ([Admin](#admin)).
+An AI agent, for example in Cursor, VS Code or Codex, reads and changes JAVV data through the MCP endpoint at `POST /api/v1/mcp`. The endpoint exists only when `JAVV_MCP_ENABLED` is `true` ([MCP endpoint](CONFIGURATION.md#mcp-endpoint)). An admin makes the token in `POST /api/v1/admin/mcp-tokens` ([Admin](#admin)).
 
 The endpoint takes the MCP protocol versions 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. A client of an older version starts with `initialize`. The endpoint keeps no session: it never sends `Mcp-Session-Id`, and each request carries its token.
 
@@ -874,6 +874,16 @@ The 401 and the 403 only count in `javv_auth_failures_total`, with no log line: 
 
 A request that passes the checks is the principal `mcp:<name>` of the token. The token writes `last_used_at` at most one time a minute.
 
+**The level of the token** sets the tools that the token can see and call:
+
+| Level | Tools | Permissions of the principal |
+|---|---|---|
+| `read` | The read tools | None |
+| `write` | The read tools, `set_triage`, `bulk_triage` and `not_affected_decision` | `can_triage` |
+| `write_risk_accept` | All the tools, also `risk_accept_decision` | `can_triage`, `can_accept_audit_final` |
+
+The tool list of a token (`tools/list`) holds only the tools of its level. A call to another tool is a tool error with `403`, and it also writes its audit row. Read tools have the hint `readOnlyHint`. Write tools have the hint `destructiveHint`, so that the client asks the user before a write.
+
 **Each tool call** writes one audit row after the call, and one `mcp tool call` log line:
 
 | Field | Value |
@@ -882,7 +892,7 @@ A request that passes the checks is the principal `mcp:<name>` of the token. The
 | `action` | `mcp_tool_call` |
 | `entity_type` | `mcp_tool` |
 | `entity_id` | The tool name and the first 12 characters of a SHA-256 hash of the arguments, for example `list_clusters sha256:1a2b3c4d5e6f`. The row never holds the arguments. An unknown tool name shows as `unknown_tool`. |
-| `field`, `new_value` | `result`, and `ok`, `error <status>` for an error of the route, or `error 422` for an argument that is not valid |
+| `field`, `new_value` | `result`. The value is `ok` or `error <status>`. A tool that the level does not allow gets 403. An argument that is not valid gets 422. Another error gets the status of the route. |
 | `cluster_id` | The `cluster_id` argument, when the call has one |
 
 If JAVV cannot write the row, the call is a tool error and the agent gets no data.
