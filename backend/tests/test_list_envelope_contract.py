@@ -121,6 +121,13 @@ REGISTRY: tuple[ListEndpoint, ...] = (
         list_key="tokens",
         total=BARE,
     ),
+    ListEndpoint(
+        path="/api/v1/admin/mcp-tokens",
+        route_path="/api/v1/admin/mcp-tokens",
+        family=OFFSET,
+        list_key="tokens",
+        total=BARE,
+    ),
     # unpaged: named key, no total
     ListEndpoint(
         path=f"/api/v1/contributors?cluster_id={EMPTY_CLUSTER}",
