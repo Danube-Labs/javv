@@ -3875,7 +3875,7 @@ record.</p>
 it logs <code>ingest failure not recorded</code> with the <code>failure_id</code>. It also increments
 <code>javv_ingest_failures_unrecorded_total{reason}</code>.</p>
 <h2 id="the-mcp-endpoint">The MCP endpoint<a class="headerlink" href="#the-mcp-endpoint" title="Permanent link">&para;</a></h2>
-<p>An AI agent, for example in Cursor, VS Code or Codex, reads JAVV data through the MCP endpoint at <code>POST /api/v1/mcp</code>. The endpoint exists only when <code>JAVV_MCP_ENABLED</code> is <code>true</code> (<a href="../CONFIGURATION/#mcp-endpoint">MCP endpoint</a>). An admin makes the token in <code>POST /api/v1/admin/mcp-tokens</code> (<a href="#admin">Admin</a>).</p>
+<p>An AI agent, for example in Cursor, VS Code or Codex, reads and changes JAVV data through the MCP endpoint at <code>POST /api/v1/mcp</code>. The endpoint exists only when <code>JAVV_MCP_ENABLED</code> is <code>true</code> (<a href="../CONFIGURATION/#mcp-endpoint">MCP endpoint</a>). An admin makes the token in <code>POST /api/v1/admin/mcp-tokens</code> (<a href="#admin">Admin</a>).</p>
 <p>The endpoint takes the MCP protocol versions 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. A client of an older version starts with <code>initialize</code>. The endpoint keeps no session: it never sends <code>Mcp-Session-Id</code>, and each request carries its token.</p>
 <p>Before the MCP server reads a request, the endpoint checks it in this order:</p>
 <table>
@@ -3906,6 +3906,34 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 </table>
 <p>The 401 and the 403 only count in <code>javv_auth_failures_total</code>, with no log line: a sender can repeat them with no limit. A 429 also logs <code>mcp rate limited</code> with the token.</p>
 <p>A request that passes the checks is the principal <code>mcp:&lt;name&gt;</code> of the token. The token writes <code>last_used_at</code> at most one time a minute.</p>
+<p><strong>The level of the token</strong> sets the tools that the token can see and call:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Tools</th>
+<th>Permissions of the principal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>read</code></td>
+<td>The read tools</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>write</code></td>
+<td>The read tools, <code>set_triage</code>, <code>bulk_triage</code> and <code>not_affected_decision</code></td>
+<td><code>can_triage</code></td>
+</tr>
+<tr>
+<td><code>write_risk_accept</code></td>
+<td>All the tools, also <code>risk_accept_decision</code></td>
+<td><code>can_triage</code>, <code>can_accept_audit_final</code></td>
+</tr>
+</tbody>
+</table>
+<p>The tool list of a token (<code>tools/list</code>) holds only the tools of its level. A call to another tool is a tool error with <code>403</code>, and it also writes its audit row. Read tools have the hint <code>readOnlyHint</code>. Write tools have the hint <code>destructiveHint</code>. A client can use this hint to ask the user before a write.</p>
 <p><strong>Each tool call</strong> writes one audit row after the call, and one <code>mcp tool call</code> log line:</p>
 <table>
 <thead>
@@ -3933,21 +3961,21 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 </tr>
 <tr>
 <td><code>field</code>, <code>new_value</code></td>
-<td><code>result</code>, and <code>ok</code>, <code>error &lt;status&gt;</code> for an error of the route, or <code>error 422</code> for an argument that is not valid</td>
+<td><code>result</code>. The value is <code>ok</code> or <code>error &lt;status&gt;</code>. A tool that the level does not allow gets 403. An argument that is not valid gets 422. Another error gets the status of the route.</td>
 </tr>
 <tr>
 <td><code>cluster_id</code></td>
-<td>The <code>cluster_id</code> argument, when the call has one</td>
+<td>The <code>cluster_id</code> argument of a read tool, when the call has one. For <code>bulk_triage</code> and a decision of kind <code>make</code>, the <code>cluster_id</code> of the <code>body</code> or the <code>payload</code>. The other write calls have no cluster on this row, but the audit rows of their route have one.</td>
 </tr>
 </tbody>
 </table>
-<p>If JAVV cannot write the row, the call is a tool error and the agent gets no data.</p>
+<p>If JAVV cannot write the row, the call is a tool error and the agent gets no data. After a write, the error tells the agent that the tool made the change, so that the agent does not make it again.</p>
 <p><strong>The answer of a tool</strong> is one text with compact JSON.</p>
 <ul>
 <li>A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.</li>
 <li>An answer longer than <code>JAVV_MCP_MAX_ANSWER_CHARS</code> loses rows from the end of its longest top-level list. Its <code>cut</code> field then gives the list, the rows that it kept and the rows that it had.</li>
 <li>A page with a next page (<code>next_cursor</code>) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller <code>size</code>.</li>
-<li>An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in <code>trends</code> can be longer than the cap. Then the agent must ask for fewer <code>days</code>.</li>
+<li>An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in <code>trends</code> can be longer than the cap. Then the agent must ask for fewer <code>days</code>. After a write, the error tells the agent that the tool made the change.</li>
 </ul>
 <p><strong>The read tools.</strong> Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.</p>
 <p>A tool with more than one kind takes the parameter <code>kind</code>. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.</p>
@@ -4080,6 +4108,39 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 </tr>
 </tbody>
 </table>
+<p><strong>The write tools.</strong> Each write tool calls the function of one route, with the principal <code>mcp:&lt;name&gt;</code> and only the permissions of the token level. Before the call, it runs the permission check of the route. The route then does all its own checks, and it writes its own audit rows with the actor <code>mcp:&lt;name&gt;</code>. For example, a <code>write</code> token cannot set the state <code>risk_accepted</code>. With <code>set_triage</code> and <code>bulk_triage</code>, it cannot change the state of a finding with an accepted risk. But a <code>not_affected</code> decision for a smaller scope has precedence over a risk accept for a larger scope, as on the screens. For example, a <code>not_affected</code> decision for one image has precedence over a risk accept for the cluster.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Level</th>
+<th>Route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>set_triage</code></td>
+<td><code>write</code></td>
+<td><code>PATCH /api/v1/findings/{finding_key}/triage</code></td>
+</tr>
+<tr>
+<td><code>bulk_triage</code></td>
+<td><code>write</code></td>
+<td><code>POST /api/v1/findings/bulk-triage</code>, with its limits <code>JAVV_BULK_MAX_TARGETS</code> and <code>JAVV_BULK_INLINE_LIMIT</code></td>
+</tr>
+<tr>
+<td><code>not_affected_decision</code></td>
+<td><code>write</code></td>
+<td>Kind <code>make</code> (<code>POST /api/v1/decisions</code>), <code>change</code> (<code>PATCH /api/v1/decisions/{decision_id}</code>) or <code>revoke</code> (<code>POST /api/v1/decisions/{decision_id}/revoke</code>). The type of a new or changed decision can only be <code>not_affected</code>. Kinds <code>change</code> and <code>revoke</code> take only a <code>not_affected</code> decision.</td>
+</tr>
+<tr>
+<td><code>risk_accept_decision</code></td>
+<td><code>write_risk_accept</code></td>
+<td>The same three routes. The type of a new or changed decision can only be <code>risk_accepted</code> or <code>ignore_rule</code>. Kinds <code>change</code> and <code>revoke</code> take only a decision of these types.</td>
+</tr>
+</tbody>
+</table>
+<p>A write route that is not in this table has no tool. <code>test_mcp_read_coverage.py</code> fails when a write tool uses another route.</p>
 <h2 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h2>
 <p><code>GET /metrics</code> gives these metrics, in the Prometheus format (<a href="#scrape-the-metrics">Scrape the metrics</a>).</p>
 <table>
