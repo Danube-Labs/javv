@@ -83,6 +83,7 @@ Each of these is one index. JAVV makes it at the first start of the backend.
 | `system-decisions` | The decisions, for example the risk acceptances, also the revoked ones | JAVV never deletes them. |
 | `system-users` and `system-roles` | The users and the roles | JAVV never deletes them. An admin can disable a user. |
 | `system-tokens` | The ingest tokens, as a hash | A revoked token stays, disabled. |
+| `system-mcp-tokens` | The tokens of AI agents for the MCP endpoint, as a hash | A revoked token stays, disabled. Its name stays taken. |
 | `system-sessions` | The sign-in sessions | The session sweep deletes a session 24 hours after it ends (`JAVV_SESSION_SWEEP_GRACE_HOURS`). |
 | `system-config` | The runtime settings, the cluster names and the retirement records | Until you change them |
 | `system-views` | The saved views | Until the owner or a user with `can_manage_settings` deletes them |

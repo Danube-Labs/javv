@@ -1262,6 +1262,39 @@
         "title": "LoginCredentials",
         "type": "object"
       },
+      "MakeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expiry": {
+            "format": "date-time",
+            "title": "Expiry",
+            "type": "string"
+          },
+          "level": {
+            "default": "read",
+            "enum": [
+              "read",
+              "write",
+              "write_risk_accept"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 3,
+            "pattern": "^[a-z0-9._-]+$",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "expiry"
+        ],
+        "title": "MakeRequest",
+        "type": "object"
+      },
       "MintRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1553,6 +1586,21 @@
           "max_size_gb"
         ],
         "title": "RolloverPut",
+        "type": "object"
+      },
+      "RotateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expiry": {
+            "format": "date-time",
+            "title": "Expiry",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expiry"
+        ],
+        "title": "RotateRequest",
         "type": "object"
       },
       "ScanScopePut": {
@@ -2483,6 +2531,205 @@
         "summary": "Trigger Job",
         "tags": [
           "admin-jobs"
+        ]
+      }
+    },
+    "/api/v1/admin/mcp-tokens": {
+      "get": {
+        "operationId": "list_tokens_api_v1_admin_mcp_tokens_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 9000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Tokens Api V1 Admin Mcp Tokens Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Tokens",
+        "tags": [
+          "mcp-token-admin"
+        ]
+      },
+      "post": {
+        "operationId": "make_api_v1_admin_mcp_tokens_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MakeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Make Api V1 Admin Mcp Tokens Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Make",
+        "tags": [
+          "mcp-token-admin"
+        ]
+      }
+    },
+    "/api/v1/admin/mcp-tokens/{name}/revoke": {
+      "post": {
+        "operationId": "revoke_api_v1_admin_mcp_tokens__name__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Revoke Api V1 Admin Mcp Tokens  Name  Revoke Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke",
+        "tags": [
+          "mcp-token-admin"
+        ]
+      }
+    },
+    "/api/v1/admin/mcp-tokens/{name}/rotate": {
+      "post": {
+        "description": "A new secret for the same token: the name, the level and the principal stay. The old secret\nstops at once.",
+        "operationId": "rotate_api_v1_admin_mcp_tokens__name__rotate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Rotate Api V1 Admin Mcp Tokens  Name  Rotate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate",
+        "tags": [
+          "mcp-token-admin"
         ]
       }
     },

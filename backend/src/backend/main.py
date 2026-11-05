@@ -28,6 +28,7 @@ from backend.routers import (
     ingest,
     inspect,
     inventory_runs,
+    mcp_tokens,
     meta,
     metrics,
     notifications,
@@ -62,6 +63,7 @@ def create_app() -> FastAPI:
     app.include_router(scan_runs.router)
     app.include_router(inventory_runs.router)
     app.include_router(tokens.router)
+    app.include_router(mcp_tokens.router)
     app.include_router(admin_users.router)
     app.include_router(admin_users.roles_router)
     app.include_router(admin_jobs.router)

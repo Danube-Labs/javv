@@ -25,6 +25,7 @@ grows the cross-tenant case for every registered endpoint.
 import re
 import uuid
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -73,6 +74,26 @@ REGISTRY: tuple[MutatingEndpoint, ...] = (
         path="/api/v1/admin/tokens/t-sample/rotate",
         route_path="/api/v1/admin/tokens/{token_id}/rotate",
         capability="can_manage_tokens",
+    ),
+    MutatingEndpoint(  # issue 1096 step 1 — MCP token admin
+        method="POST",
+        path="/api/v1/admin/mcp-tokens",
+        route_path="/api/v1/admin/mcp-tokens",
+        capability="can_manage_tokens",
+        body={"name": "rbac-suite", "expiry": (datetime.now(UTC) + timedelta(days=30)).isoformat()},
+    ),
+    MutatingEndpoint(
+        method="POST",
+        path="/api/v1/admin/mcp-tokens/rbac-suite/revoke",
+        route_path="/api/v1/admin/mcp-tokens/{name}/revoke",
+        capability="can_manage_tokens",
+    ),
+    MutatingEndpoint(
+        method="POST",
+        path="/api/v1/admin/mcp-tokens/rbac-suite/rotate",
+        route_path="/api/v1/admin/mcp-tokens/{name}/rotate",
+        capability="can_manage_tokens",
+        body={"expiry": (datetime.now(UTC) + timedelta(days=30)).isoformat()},
     ),
     MutatingEndpoint(  # M5b slice 3 — triage (FR-7)
         method="PATCH",

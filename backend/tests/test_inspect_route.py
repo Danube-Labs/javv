@@ -134,6 +134,10 @@ async def test_global_cat_read_lists_only_javv_indices(env, path):
         ("POST", "restored-*/_search", None, "credential indices"),
         ("POST", "res*/_search", None, "credential indices"),
         ("POST", "findings,restored-system-*/_search", None, "credential indices"),
+        # the MCP tokens hold hashes too (issue 1096); these patterns match no other credential
+        ("POST", "system-mcp-tokens/_search", None, "credential indices"),
+        ("GET", "*mcp*/_count", None, "credential indices"),
+        ("GET", "restored-system-mcp-tokens/_mapping", None, "credential indices"),
         (
             "POST",
             "findings/_search",

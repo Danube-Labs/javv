@@ -113,6 +113,18 @@ def test_tokens_index_matches_index_map() -> None:
     assert p["disabled"] == {"type": "boolean"}
 
 
+def test_mcp_tokens_index_matches_index_map() -> None:
+    p = _props(MUTABLE_INDEXES["system-mcp-tokens"])
+    assert p["token_hash"] == {"type": "keyword"}  # peppered SHA-256, never the raw token
+    for f in ("name", "level", "created_by"):
+        assert p[f] == {"type": "keyword"}
+    for f in ("created_at", "expiry", "last_used_at"):
+        assert p[f] == {"type": "date"}
+    assert p["disabled"] == {"type": "boolean"}
+    # its own index: the scanner token check never reads an MCP token, and the other way round
+    assert "cluster_id" not in p and "scanner" not in p
+
+
 def test_bootstrap_scope() -> None:
     # M1: findings + system-tokens + the two append templates. M2 adds system-config (snapshot-repo
     # ref). M3 adds javv-scan-orders (D45 counter) + javv-scan-watermarks (D40 CAS guard); M5a adds
@@ -133,6 +145,7 @@ def test_bootstrap_scope() -> None:
         "system-views",  # M8e/#242 — server-side saved filter views
         "system-jobs",  # issue 406 repair actions — one lease/status doc per job kind
         "system-dashboards",  # issue 440 — saved dashboards
+        "system-mcp-tokens",  # issue 1096 — the tokens of the MCP endpoint
     }
     # + system-audit-log (M5a appender; M5b owns writer/replay) + occurrences + inventory-runs
     # (M8a slices 1–2)

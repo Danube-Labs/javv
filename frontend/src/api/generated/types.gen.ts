@@ -565,6 +565,24 @@ export type LoginCredentials = {
 };
 
 /**
+ * MakeRequest
+ */
+export type MakeRequest = {
+    /**
+     * Expiry
+     */
+    expiry: string;
+    /**
+     * Level
+     */
+    level?: 'read' | 'write' | 'write_risk_accept';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * MintRequest
  */
 export type MintRequest = {
@@ -713,6 +731,16 @@ export type RolloverPut = {
      * Max Size Gb
      */
     max_size_gb: number;
+};
+
+/**
+ * RotateRequest
+ */
+export type RotateRequest = {
+    /**
+     * Expiry
+     */
+    expiry: string;
 };
 
 /**
@@ -1096,6 +1124,141 @@ export type TriggerJobApiV1AdminJobsKindRunPostResponses = {
      */
     202: unknown;
 };
+
+export type ListTokensApiV1AdminMcpTokensGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Size
+         */
+        size?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/api/v1/admin/mcp-tokens';
+};
+
+export type ListTokensApiV1AdminMcpTokensGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListTokensApiV1AdminMcpTokensGetError = ListTokensApiV1AdminMcpTokensGetErrors[keyof ListTokensApiV1AdminMcpTokensGetErrors];
+
+export type ListTokensApiV1AdminMcpTokensGetResponses = {
+    /**
+     * Response List Tokens Api V1 Admin Mcp Tokens Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ListTokensApiV1AdminMcpTokensGetResponse = ListTokensApiV1AdminMcpTokensGetResponses[keyof ListTokensApiV1AdminMcpTokensGetResponses];
+
+export type MakeApiV1AdminMcpTokensPostData = {
+    body: MakeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/mcp-tokens';
+};
+
+export type MakeApiV1AdminMcpTokensPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MakeApiV1AdminMcpTokensPostError = MakeApiV1AdminMcpTokensPostErrors[keyof MakeApiV1AdminMcpTokensPostErrors];
+
+export type MakeApiV1AdminMcpTokensPostResponses = {
+    /**
+     * Response Make Api V1 Admin Mcp Tokens Post
+     *
+     * Successful Response
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type MakeApiV1AdminMcpTokensPostResponse = MakeApiV1AdminMcpTokensPostResponses[keyof MakeApiV1AdminMcpTokensPostResponses];
+
+export type RevokeApiV1AdminMcpTokensNameRevokePostData = {
+    body?: never;
+    path: {
+        /**
+         * Name
+         */
+        name: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/mcp-tokens/{name}/revoke';
+};
+
+export type RevokeApiV1AdminMcpTokensNameRevokePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeApiV1AdminMcpTokensNameRevokePostError = RevokeApiV1AdminMcpTokensNameRevokePostErrors[keyof RevokeApiV1AdminMcpTokensNameRevokePostErrors];
+
+export type RevokeApiV1AdminMcpTokensNameRevokePostResponses = {
+    /**
+     * Response Revoke Api V1 Admin Mcp Tokens  Name  Revoke Post
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type RevokeApiV1AdminMcpTokensNameRevokePostResponse = RevokeApiV1AdminMcpTokensNameRevokePostResponses[keyof RevokeApiV1AdminMcpTokensNameRevokePostResponses];
+
+export type RotateApiV1AdminMcpTokensNameRotatePostData = {
+    body: RotateRequest;
+    path: {
+        /**
+         * Name
+         */
+        name: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/mcp-tokens/{name}/rotate';
+};
+
+export type RotateApiV1AdminMcpTokensNameRotatePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RotateApiV1AdminMcpTokensNameRotatePostError = RotateApiV1AdminMcpTokensNameRotatePostErrors[keyof RotateApiV1AdminMcpTokensNameRotatePostErrors];
+
+export type RotateApiV1AdminMcpTokensNameRotatePostResponses = {
+    /**
+     * Response Rotate Api V1 Admin Mcp Tokens  Name  Rotate Post
+     *
+     * Successful Response
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type RotateApiV1AdminMcpTokensNameRotatePostResponse = RotateApiV1AdminMcpTokensNameRotatePostResponses[keyof RotateApiV1AdminMcpTokensNameRotatePostResponses];
 
 export type GetOpensearchRuntimeApiV1AdminOpensearchRuntimeGetData = {
     body?: never;
