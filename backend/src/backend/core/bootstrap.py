@@ -67,7 +67,9 @@ from opensearchpy import AsyncOpenSearch, RequestError
 #             past-time read gives a KEV finding the KEV deadline, as the live read does)
 #          v21 + report_entries on javv-scan-events (issue 1076 — the counts count findings, and
 #             the run keeps the number of scanner report entries so an audit can match the report)
-MAPPING_VERSION = 21
+#          v22 + system-mcp-tokens (issue 1096 — the tokens of the MCP endpoint, apart from the
+#             scanner tokens so that neither token check can read the other kind)
+MAPPING_VERSION = 22
 
 _KW = {"type": "keyword"}
 _DATE = {"type": "date"}
@@ -156,6 +158,20 @@ _TOKENS_PROPERTIES: dict[str, Any] = {
     "expiry": _DATE,
     "disabled": _BOOL,
     "last_ingest_at": _DATE,  # scanner-down guard
+}
+
+# system-mcp-tokens (issue 1096): one doc per MCP token, `_id` = the token name, so the create-only
+# write refuses a second token with a name in use. Same hash rule as `system-tokens`; no
+# cluster_id or scanner, since an MCP token reads every cluster (D4).
+_MCP_TOKENS_PROPERTIES: dict[str, Any] = {
+    "token_hash": _KW,  # peppered SHA-256 of a 256-bit random token — never the raw value
+    "name": _KW,
+    "level": _KW,  # read|write|write_risk_accept (D5)
+    "created_by": _KW,
+    "created_at": _DATE,
+    "expiry": _DATE,  # required, at most 90 days out (D10)
+    "disabled": _BOOL,
+    "last_used_at": _DATE,
 }
 
 # javv-scan-orders (M3/D45): the AUTHORITATIVE per-(cluster,scanner) scan_order counter —
@@ -396,6 +412,10 @@ MUTABLE_INDEXES: dict[str, dict[str, Any]] = {
     "system-dashboards": {  # issue 440 — saved dashboards
         "settings": {"index": _BASE_SETTINGS},
         "mappings": _mappings(_DASHBOARDS_PROPERTIES),
+    },
+    "system-mcp-tokens": {  # issue 1096 — the tokens of the MCP endpoint
+        "settings": {"index": _BASE_SETTINGS},
+        "mappings": _mappings(_MCP_TOKENS_PROPERTIES),
     },
 }
 
