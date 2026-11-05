@@ -162,6 +162,7 @@ async def test_a_revoked_name_stays_taken(admin_client) -> None:
         {"expiry": None},
         {"expiry": "2020-01-01T00:00:00+00:00"},
         {"expiry": "in-91-days"},
+        {"expiry": "no-time-zone"},
         {"level": "admin"},
         {"name": "Has-Capital"},
         {"name": "ab"},
@@ -176,6 +177,8 @@ async def test_make_refuses_a_bad_field_with_422(admin_client, bad: dict[str, An
     body = {"name": name, "level": "read", "expiry": _in_days(30), **bad}
     if body["expiry"] == "in-91-days":
         body["expiry"] = _in_days(91)
+    if body["expiry"] == "no-time-zone":  # in 30 days, but with no time zone
+        body["expiry"] = (datetime.now(UTC) + timedelta(days=30)).replace(tzinfo=None).isoformat()
     if body["expiry"] is None:
         del body["expiry"]
 
@@ -244,18 +247,49 @@ async def test_list_shows_the_tokens_and_never_a_hash(admin_client) -> None:
     assert (mine[0]["level"], mine[0]["created_by"]) == ("write_risk_accept", username)
 
 
-async def test_list_pages_newest_first(admin_client) -> None:
+async def test_list_is_newest_first_and_pages(admin_client) -> None:
+    """Other xdist workers make tokens at the same time, so the test reads the order of its own
+    tokens inside one page, never their place on the page."""
     http, _, _ = admin_client
     names = [_name() for _ in range(3)]
     for name in names:
         await _make(http, name)
 
-    page1 = await http.get(ROUTE, params={"size": 2, "offset": 0})
-    page2 = await http.get(ROUTE, params={"size": 2, "offset": 2})
+    listed = [t["name"] for t in (await http.get(ROUTE, params={"size": 1000})).json()["tokens"]]
+    page = (await http.get(ROUTE, params={"size": 2, "offset": 1})).json()
 
-    assert page1.json()["total"] == page2.json()["total"] >= 3
-    assert [t["name"] for t in page1.json()["tokens"]] == [names[2], names[1]]
-    assert page2.json()["tokens"][0]["name"] == names[0]
+    assert [n for n in listed if n in names] == [names[2], names[1], names[0]]
+    assert len(page["tokens"]) == 2 and page["total"] >= 3
+
+
+async def test_list_needs_can_manage_tokens(admin_client) -> None:
+    _, client, _ = admin_client
+    app = create_app()
+    app.state.opensearch = client
+    username = f"u-{uuid.uuid4().hex[:12]}"
+    await client.index(
+        index="system-users",
+        id=username,
+        body={
+            "username": username,
+            "password_hash": hash_password(PASSWORD),
+            "role": "viewer",
+            "capabilities": [],
+            "must_change": False,
+            "disabled": False,
+            "auth_source": "local",
+            "external_id": None,
+            "created_at": "2026-07-04T00:00:00+00:00",
+        },
+        params={"refresh": "true"},
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="https://t"
+    ) as viewer:
+        r = await viewer.post("/auth/login", json={"username": username, "password": PASSWORD})
+        assert r.status_code == 200
+
+        assert (await viewer.get(ROUTE)).status_code == 403
 
 
 # --- revoke ----------------------------------------------------------------------------------
@@ -290,6 +324,29 @@ async def test_a_second_revoke_is_409_and_writes_no_row(admin_client) -> None:
         "token_mint",
         "token_revoke",
     ]
+
+
+async def test_a_revoke_that_read_the_token_before_a_rotate_still_revokes(
+    admin_client, monkeypatch
+) -> None:
+    """A revoke wins against a rotate in either order: the new secret of the rotate stops too,
+    and the last audit row says what is true."""
+    http, client, _ = admin_client
+    name = _name()
+    await _make(http, name)
+    stale = await mcp_tokens_router._load(client, name)
+    rotated = await http.post(f"{ROUTE}/{name}/rotate", json={"expiry": _in_days(30)})
+    assert rotated.status_code == 201
+
+    async def load_before_the_rotate(*_args: Any) -> Any:
+        return stale
+
+    monkeypatch.setattr(mcp_tokens_router, "_load", load_before_the_rotate)
+    r = await http.post(f"{ROUTE}/{name}/revoke")
+
+    assert r.status_code == 200
+    assert (await _doc(client, name))["disabled"] is True
+    assert (await _audit_rows(client, entity_id=name))[-1]["action"] == "token_revoke"
 
 
 async def test_an_expired_token_can_be_revoked(admin_client) -> None:
@@ -329,7 +386,16 @@ async def test_rotate_changes_the_secret_and_keeps_the_name_and_level(admin_clie
     assert [row["action"] for row in rows] == ["token_mint", "token_revoke", "token_mint"]
 
 
-@pytest.mark.parametrize("body", [None, {}, {"expiry": "in-91-days"}, {"expiry": "2020-01-01"}])
+@pytest.mark.parametrize(
+    "body",
+    [
+        None,
+        {},
+        {"expiry": "in-91-days"},
+        {"expiry": "2020-01-01T00:00:00+00:00"},
+        {"expiry": "no-time-zone"},
+    ],
+)
 async def test_rotate_needs_a_new_expiry_of_at_most_90_days(admin_client, body) -> None:
     http, client, _ = admin_client
     name = _name()
@@ -337,6 +403,8 @@ async def test_rotate_needs_a_new_expiry_of_at_most_90_days(admin_client, body) 
     before = await _doc(client, name)
     if body and body.get("expiry") == "in-91-days":
         body = {"expiry": _in_days(91)}
+    if body and body.get("expiry") == "no-time-zone":  # in 30 days, but with no time zone
+        body = {"expiry": (datetime.now(UTC) + timedelta(days=30)).replace(tzinfo=None).isoformat()}
 
     r = await http.post(f"{ROUTE}/{name}/rotate", json=body)
 
@@ -372,8 +440,8 @@ async def test_rotate_of_an_expired_token_is_409_and_changes_nothing(admin_clien
 
 
 async def test_a_rotate_that_races_a_revoke_is_409(admin_client, monkeypatch) -> None:
-    """The rotate read the token before a revoke landed: its write must not hand out a secret
-    for the revoked token."""
+    """The rotate read the token before a revoke came: its write must not hand out a secret for
+    the revoked token."""
     http, client, _ = admin_client
     name = _name()
     await _make(http, name)

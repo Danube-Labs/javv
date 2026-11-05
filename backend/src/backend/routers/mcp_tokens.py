@@ -28,7 +28,7 @@ from backend.core.settings import get_settings
 router = APIRouter(prefix="/api/v1/admin/mcp-tokens", tags=["mcp-token-admin"])
 
 MCP_TOKENS_INDEX = "system-mcp-tokens"
-# the cap ruled on issue 1096 (D10) and stated in docs/API.md, not a setting
+# the cap of D10 on issue 1096, stated in docs/API.md, not a setting
 MAX_EXPIRY_DAYS = 90
 _PUBLIC_FIELDS = (  # never token_hash
     "name",
@@ -81,8 +81,8 @@ def _public(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 async def _load(client: Any, name: str) -> tuple[dict[str, Any], dict[str, int]]:
-    """The token doc and the sequence numbers of that read, so a write refuses a doc that changed
-    since (a revoke and a rotate at the same moment)."""
+    """The token doc and the sequence numbers of that read, so a rotate refuses a doc that a
+    revoke changed since."""
     try:
         got = await client.get(index=MCP_TOKENS_INDEX, id=name)
     except NotFoundError:
@@ -155,20 +155,20 @@ async def make(request: Request, body: MakeRequest, principal: ManageTokens) -> 
 @router.post("/{name}/revoke")
 async def revoke(request: Request, name: str, principal: ManageTokens) -> dict[str, Any]:
     client = _os(request)
-    doc, seq = await _load(client, name)
+    doc, _ = await _load(client, name)
     if doc.get("disabled"):
         raise HTTPException(409, "the token is already revoked")
     # an expired token can still be revoked: a revoke only stops a token and makes no secret
     await _journal(client, principal, "token_revoke", name)
-    try:
-        await client.update(
-            index=MCP_TOKENS_INDEX,
-            id=name,
-            body={"doc": {"disabled": True}},
-            params={"refresh": "true", **seq},
-        )
-    except ConflictError:
-        raise HTTPException(409, "the token changed: load it again") from None
+    # no version guard: a revoke wins against a rotate in either order. A rotate that came first
+    # gets disabled too, so its row is never the last word on a live token; one that comes after
+    # refuses the changed doc itself.
+    await client.update(
+        index=MCP_TOKENS_INDEX,
+        id=name,
+        body={"doc": {"disabled": True}},
+        params={"refresh": "true"},
+    )
     return {"name": name, "disabled": True}
 
 
