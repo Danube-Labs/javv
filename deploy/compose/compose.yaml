@@ -203,6 +203,12 @@ services:
       # a Riskiest images panel with filters ranks its 100 images in one pass of the store,
       # so no image with the most findings is left out (false: faster, can leave one out)
       JAVV_EXACT_RANKING: ${JAVV_EXACT_RANKING:-true}
+      # the MCP endpoint for AI agents at /api/v1/mcp: off until you turn it on
+      JAVV_MCP_ENABLED: ${JAVV_MCP_ENABLED:-false}
+      # requests that one MCP token can send in one minute
+      JAVV_MCP_RATE_LIMIT_PER_MINUTE: ${JAVV_MCP_RATE_LIMIT_PER_MINUTE:-60}
+      # longest tool answer, in characters: a longer one loses rows from its end
+      JAVV_MCP_MAX_ANSWER_CHARS: ${JAVV_MCP_MAX_ANSWER_CHARS:-50000}
       # cluster retirement: the fleet defaults until a value is saved at runtime
       # days without an accepted scan before JAVV retires a cluster (0 means never)
       JAVV_CLUSTER_RETIRE_AFTER_DAYS: ${JAVV_CLUSTER_RETIRE_AFTER_DAYS:-45}

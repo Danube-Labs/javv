@@ -141,6 +141,16 @@ The backend reads these environment variables.
 | `JAVV_DASHBOARD_IMPORT_MAX_BYTES` | `4194304` (4 MiB) | The largest dashboard file that an import reads. A larger file gets 413, and the import makes no dashboard. The backend also logs a warning and adds one to `javv_limit_rejections_total{limit="dashboard_import"}`. A dashboard with 24 panels is approximately 3.3 KB, so the default holds 1,000 dashboards. |
 | `JAVV_EXACT_RANKING` | `true` | How OpenSearch ranks the 100 images of a Riskiest images panel with filters. With `true`, OpenSearch reads each shard in one pass, and the panel shows the 100 images with the highest rank. With `false`, OpenSearch can divide the search into parts, one for each group of index segments, on a node with 4 CPUs or more. Each part keeps only its own top images. An image with some findings in each part can then be missing from the 100, although it has the most findings. `false` can be faster on a node with many CPUs. A one-pass read of 10,000 images and 1,000,000 findings took 19 ms. |
 
+### MCP endpoint
+
+The MCP endpoint lets an AI agent read JAVV data with an MCP token ([The MCP endpoint](API.md#the-mcp-endpoint)).
+
+| Setting | Default | What it does |
+|---|---|---|
+| `JAVV_MCP_ENABLED` | `false` | Turns on the MCP endpoint at `/api/v1/mcp`. With `false`, the endpoint does not exist and a request to it gets 404. An admin can make MCP tokens in both cases. |
+| `JAVV_MCP_RATE_LIMIT_PER_MINUTE` | `60` | Requests that one MCP token can send in one minute. Above this number, the endpoint replies 429 with `Retry-After`. The backend also logs a warning and adds one to `javv_limit_rejections_total{limit="mcp_rate"}`. The backend keeps the count in its memory. |
+| `JAVV_MCP_MAX_ANSWER_CHARS` | `50000` | The longest answer of a tool, in characters. A longer answer loses rows from the end of its list, and its `cut` field tells how many rows it kept. An agent client can refuse a longer answer: in one test, a client refused an answer of 92,789 characters. The value must be 1000 or more. |
+
 ### Cluster retirement
 
 | Setting | Default | What it does |

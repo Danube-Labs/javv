@@ -8,6 +8,8 @@ from backend.core.errors import register_error_handlers
 from backend.core.lifespan import lifespan
 from backend.core.logging import configure_logging, install_request_context
 from backend.core.metrics import install_http_metrics
+from backend.core.settings import get_settings
+from backend.mcp import server as mcp_server
 from backend.routers import (
     admin_jobs,
     admin_users,
@@ -90,6 +92,8 @@ def create_app() -> FastAPI:
     app.include_router(data_settings.router)
     app.include_router(inspect.router)
     app.include_router(bulk_routes.router)
+    if get_settings().mcp_enabled:
+        mcp_server.mount(app)
     return app
 
 

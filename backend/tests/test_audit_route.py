@@ -286,7 +286,7 @@ def test_the_freed_user_count_keeps_the_time_limit_the_tenant_and_the_account_ru
     assert top["must"] == [
         {"bool": {"filter": [{"range": {"@timestamp": {"lte": t.isoformat()}}}]}}
     ]
-    assert {"terms": {"entity_type": ["token", "user"]}} in top["must_not"]
+    assert {"terms": {"entity_type": ["token", "user", "mcp_tool"]}} in top["must_not"]
     assert {"terms": {"entity_type": ["dashboard"]}} in top["must_not"]
     assert {"term": {"cluster_id": "c-1"}} in top["filter"][0]["bool"]["should"]
     assert guarded["aggs"]["actor"] == {"terms": {"field": "actor", "size": 32}}

@@ -81,7 +81,7 @@ delete_matching "system-config"       '{"query":{"wildcard":{"key":{"value":"*:c
 delete_matching "findings"            '{"query":{"prefix":{"cluster_id":"c-"}}}'              "c-* findings rows"
 delete_matching "javv-scan-watermarks" '{"query":{"prefix":{"cluster_id":"c-"}}}'             "c-* watermark rows"
 delete_matching "javv-scan-orders"    '{"query":{"prefix":{"cluster_id":"c-"}}}'              "c-* scan-order counters"
-delete_matching "system-audit-log-*"  '{"query":{"bool":{"should":[{"prefix":{"actor":"u-"}},{"prefix":{"actor":"nu-"}},{"prefix":{"actor":"ext-"}},{"prefix":{"actor":"0-list-"}}],"minimum_should_match":1}}}' "test-actor audit rows"
+delete_matching "system-audit-log-*"  '{"query":{"bool":{"should":[{"prefix":{"actor":"u-"}},{"prefix":{"actor":"nu-"}},{"prefix":{"actor":"ext-"}},{"prefix":{"actor":"0-list-"}},{"prefix":{"actor":"mcp:t-"}}],"minimum_should_match":1}}}' "test-actor audit rows"
 
 if [ "$APPLY" = 1 ]; then
   say "sweep applied. users kept: $(curl -s "$OS_URL/system-users/_search?size=10&_source=false" | jq -cr '[.hits.hits[]._id]')"

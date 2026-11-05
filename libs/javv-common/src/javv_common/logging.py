@@ -14,7 +14,8 @@ loggers get special handling: `opensearch` per-request lines are DEBUG-gated (at
 every touch, drowning the stream), and `opensearchpy.trace` — which logs full request BODIES —
 is always off (bodies can carry payload data no redaction regex should be trusted with). The
 `opensearch` logger also drops its failed-request warnings for 404 and 409, which the callers
-expect and handle (issue 831); every other failed request keeps its warning.
+expect and handle (issue 831); every other failed request keeps its warning. The `mcp` SDK
+logger passes only warnings and errors, each with a fixed message (issue 1096).
 """
 
 import logging
@@ -100,6 +101,19 @@ class _ExpectedStoreAnswers(logging.Filter):
         return not expected
 
 
+class _SdkMessageWithoutValues(logging.Filter):
+    """The `mcp` SDK writes values from the client into its messages (an `Origin` header, a tool
+    argument). The record keeps its logger, its level and its traceback; its message becomes one
+    fixed event name, so no client value reaches the log through it. It sits on the handler: a
+    logger's own filter never sees the records of its children (`mcp.server.…`)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.name == "mcp" or record.name.startswith("mcp."):
+            record.msg = "mcp sdk message"
+            record.args = None
+        return True
+
+
 def configure_logging(level: str | None = None) -> None:
     """Configure the process-wide pipeline. Idempotent — safe to call again (tests, reloads)."""
     threshold = _resolve_level(level)
@@ -152,3 +166,9 @@ def configure_logging(level: str | None = None) -> None:
     if not any(isinstance(f, _ExpectedStoreAnswers) for f in client_logger.filters):
         client_logger.addFilter(_ExpectedStoreAnswers())
     logging.getLogger("opensearchpy.trace").setLevel(logging.CRITICAL + 1)
+
+    # the MCP SDK (issue 1096): its info lines are one per request in the old protocol era
+    # ("Terminating session"), and JAVV logs each tool call itself, so only its warnings and
+    # errors pass, at any threshold, without their message text
+    logging.getLogger("mcp").setLevel(logging.WARNING)
+    handler.addFilter(_SdkMessageWithoutValues())

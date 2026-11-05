@@ -42,7 +42,8 @@ describe('the plain names of audit actions', () => {
 
   it('the reader finds the actions of each kind of writer', () => {
     // a triage state, a triage dict entry, a settings change, an account event, a job run
-    for (const a of ['risk_accept', 'note', 'sla_policy_change', 'login', 'session_sweep_run']) {
+    // ... and the row of an MCP tool call (issue 1096)
+    for (const a of ['risk_accept', 'note', 'sla_policy_change', 'login', 'session_sweep_run', 'mcp_tool_call']) {
       expect(actions).toContain(a)
     }
   })
@@ -54,6 +55,10 @@ describe('the plain names of audit actions', () => {
   it('every action the backend writes is in the Action filter', () => {
     const listed: readonly string[] = AUDIT_ACTIONS
     expect([...actions].filter((a) => !listed.includes(a))).toEqual([])
+  })
+
+  it('the tool call of an AI agent has its name', () => {
+    expect(ACTION_LABELS['mcp_tool_call']).toBe('MCP tool call')
   })
 
   it('a settings change is called by its setting', () => {

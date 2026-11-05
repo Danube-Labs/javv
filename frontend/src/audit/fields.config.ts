@@ -20,6 +20,7 @@ export const AUDIT_ENTITY_TYPES = [
   'user',
   'store',
   'job',
+  'mcp_tool',
 ] as const
 
 /** action vocabulary (FR-7 verbs + auth/admin/config events), grouped triage-first. */
@@ -78,6 +79,8 @@ export const AUDIT_ACTIONS = [
   // data inspector + repair actions (issue 406, entity_type=store/job)
   'store_inspect',
   'job_trigger',
+  // the tool calls of an AI agent's MCP token (issue 1096, entity_type=mcp_tool)
+  'mcp_tool_call',
 ] as const
 
 /** The rows of triage (issue 1063): a state change, an assignment, a note and a bulk change are
@@ -110,7 +113,7 @@ export const AUDIT_FIELDS: readonly FilterField[] = [
   { key: 'actor', label: 'User', type: 'terms', param: 'actor', multi: true, facetKey: 'actor', negatable: true },
 ]
 
-/** The actions of the account rows (entity_type `user` and `token`). */
+/** The actions of the account rows (entity_type `user`, `token` and `mcp_tool`). */
 export const ACCOUNT_ACTIONS = [
   'login',
   'logout',
@@ -122,8 +125,9 @@ export const ACCOUNT_ACTIONS = [
   'user_disable',
   'token_mint',
   'token_revoke',
+  'mcp_tool_call',
 ] as const
-const ACCOUNT_ENTITY_TYPES: readonly string[] = ['user', 'token']
+const ACCOUNT_ENTITY_TYPES: readonly string[] = ['user', 'token', 'mcp_tool']
 
 /** The rows of the saved dashboards (entity_type `dashboard`) and their actions. */
 export const DASHBOARD_ENTITY_TYPES = ['dashboard'] as const

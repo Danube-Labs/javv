@@ -17,6 +17,7 @@ from opensearchpy.exceptions import ConnectionTimeout
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.bootstrap import MAPPING_VERSION
 from backend.core.metrics import OS_REQUEST_ERRORS
+from backend.core.settings import get_settings
 from backend.models.envelope import IngestEnvelope
 from backend.version import APP_VERSION
 
@@ -56,4 +57,5 @@ async def get_meta(request: Request, principal: Authenticated) -> dict[str, Any]
         "envelope_versions": ENVELOPE_VERSIONS,
         "opensearch_version": await _opensearch_version(request),
         "python_version": platform.python_version(),
+        "mcp_enabled": get_settings().mcp_enabled,  # the Settings section of issue 1096 reads it
     }
