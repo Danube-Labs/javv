@@ -26,7 +26,7 @@ from backend.main import create_app
 from backend.mcp import auth as mcp_auth
 from backend.mcp import server as mcp_server
 from backend.mcp import tools
-from backend.mcp.tools import ReadTool, RouteError, build, current_principal, cut_to_fit
+from backend.mcp.tools import RouteError, Tool, build, current_principal, cut_to_fit
 from backend.query import pit_guard
 from backend.query.search import cursor_pit_id
 from backend.routers import dashboards, findings
@@ -479,7 +479,7 @@ async def test_a_route_error_becomes_a_tool_error_with_its_status(mcp_on):
     client = AsyncOpenSearch(hosts=[OS_URL])
     app = create_app()
     app.state.opensearch = client
-    tool = build(ReadTool("get", "d", {"": dashboards.get_dashboard}), app)
+    tool = build(Tool("get", "d", {"": dashboards.get_dashboard}), app)
     principal = (await _principal(client))[0]
     reset = current_principal.set(principal)
     try:
@@ -506,7 +506,7 @@ async def test_a_new_first_page_closes_the_open_search_of_the_last_one(mcp_on):
     app.state.opensearch = client
     cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
     await _seed(client, cluster, _findings(3))
-    tool = build(ReadTool("walk", "d", {"": findings.search_findings}, paged=True), app)
+    tool = build(Tool("walk", "d", {"": findings.search_findings}, paged=True), app)
     principal, _ = await _principal(client)
     reset = current_principal.set(principal)
     try:

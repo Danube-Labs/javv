@@ -1,10 +1,12 @@
-"""MCP tools made from route functions (issue 1096 step 2).
+"""MCP tools made from route functions (issue 1096 steps 2 and 3).
 
 A tool takes the parameters of its route, with the route's own types and limits, so the tool
 refuses each value that the route refuses. A parameter that the route reads through a dependency
 (the findings filters, `as_of`) becomes a tool parameter too, and the dependency runs on it. The
 request is a bare one that carries only the app: the routes behind tools read nothing else from
-it. The principal is the token's, widened for the read (`auth.reader`).
+it. A read tool gives the route the token's principal widened for the read (`auth.reader`), and
+skips the route's permission check: a token reads all data (D4). A write tool (`needs`) gives the
+token's principal as it is, and runs the route's permission check on it first, as FastAPI does.
 
 A tool with several routes (`kinds`) takes a `kind` and the parameters of all its routes, each
 one optional with no default of its own; a parameter that the chosen route does not take is
@@ -23,11 +25,12 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.params import Depends
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_types import ToolAnnotations
 from pydantic.fields import FieldInfo
+from starlette.exceptions import HTTPException  # the base of FastAPI's and TypedHTTPException
 
 from backend.auth.principal import Principal
 from backend.core.settings import get_settings
@@ -52,11 +55,12 @@ class RouteError(ToolError):
 
 
 @dataclass(frozen=True)
-class ReadTool:
+class Tool:
     """One tool. `routes` maps each `kind` to its route function; a tool with one route has one
     entry under the key "". `params` replaces a route parameter (annotation, default); a `hidden`
     parameter is not offered and the route takes its default; `paged` tools hold one open search
-    for each token (Q4)."""
+    for each token (Q4). A write tool `needs` a permission: a token without it does not see the
+    tool and cannot call it (D5)."""
 
     name: str
     description: str
@@ -64,6 +68,11 @@ class ReadTool:
     params: dict[str, tuple[Any, Any]] = field(default_factory=dict)
     hidden: tuple[str, ...] = ()
     paged: bool = False
+    needs: str | None = None
+
+    @property
+    def annotations(self) -> ToolAnnotations:
+        return READ_ONLY if self.needs is None else WRITES
 
 
 @dataclass(frozen=True)
@@ -77,6 +86,7 @@ class _RoutePlan:
     fn: Callable[..., Any]
     request: str | None = None
     principal: str | None = None
+    gate: Callable[..., Any] | None = None  # the route's permission check on the principal
     plain: dict[str, inspect.Parameter] = field(default_factory=dict)
     deps: dict[str, _Dep] = field(default_factory=dict)
 
@@ -131,6 +141,15 @@ def _same(where: str, prior: Any, annotation: Any) -> None:
         raise TypeError(f"{where}: {prior} and {annotation} differ")
 
 
+def _checks_permission(gate: Callable[..., Any] | None) -> bool:
+    """Is this the dependency of a permission check (`require_capability`), which takes the
+    principal only? The sign-in dependency also gives a principal, but reads the request."""
+    if gate is None:
+        return False
+    params = list(inspect.signature(gate, eval_str=True).parameters.values())
+    return len(params) == 1 and _is_principal(params[0].annotation)
+
+
 def _plan(fn: Callable[..., Any]) -> _RoutePlan:
     plan = _RoutePlan(fn=fn)
     for name, param in inspect.signature(fn, eval_str=True).parameters.items():
@@ -138,6 +157,7 @@ def _plan(fn: Callable[..., Any]) -> _RoutePlan:
             plan.request = name
         elif _is_principal(param.annotation):
             plan.principal = name
+            plan.gate = _dependency(param.annotation, param.default)
         elif (dep := _dependency(param.annotation, param.default)) is not None:
             sub = inspect.signature(dep, eval_str=True).parameters
             nested = [n for n, p in sub.items() if _dependency(p.annotation, p.default)]
@@ -149,12 +169,17 @@ def _plan(fn: Callable[..., Any]) -> _RoutePlan:
     return plan
 
 
-async def _call(plan: _RoutePlan, app: FastAPI, principal: Principal, args: dict[str, Any]) -> Any:
+async def _call(
+    plan: _RoutePlan, app: FastAPI, principal: Principal, args: dict[str, Any], *, write: bool
+) -> Any:
     call: dict[str, Any] = {}
     if plan.request is not None:
         call[plan.request] = Request({"type": "http", "app": app, "headers": []})
     if plan.principal is not None:
-        call[plan.principal] = reader(principal)
+        if write:  # `build` checked that a write route has its gate
+            call[plan.principal] = await plan.gate(principal)  # type: ignore[misc]
+        else:
+            call[plan.principal] = reader(principal)
     for name in plan.plain:
         if name in args:
             call[name] = args[name]
@@ -228,9 +253,13 @@ def _keep_walk(principal: Principal, tool: str, answer: Any) -> None:
     _walks[(principal.user_id, tool)] = pit_id
 
 
-def build(tool: ReadTool, app: FastAPI) -> Callable[..., Any]:
+def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
     """The tool function that the SDK registers: its signature is the route parameters."""
     plans = {kind: _plan(fn) for kind, fn in tool.routes.items()}
+    write = tool.needs is not None
+    for kind, plan in plans.items():
+        if write and not _checks_permission(plan.gate):
+            raise TypeError(f"{tool.name}.{kind}: a write route with no permission check")
     grouped = len(plans) > 1
     params: dict[str, inspect.Parameter] = {}
     for plan in plans.values():
@@ -278,12 +307,17 @@ def build(tool: ReadTool, app: FastAPI) -> Callable[..., Any]:
         if tool.paged and args.get("cursor") is None:
             await _close_last_walk(app, principal, tool.name)
         try:
-            answer = await _call(plan, app, principal, args)
+            answer = await _call(plan, app, principal, args, write=write)
         except HTTPException as exc:
             raise RouteError(exc.status_code, exc.detail) from None
         if tool.paged:
             _keep_walk(principal, tool.name, answer)
-        return cut_to_fit(answer, get_settings().mcp_max_answer_chars)
+        try:
+            return cut_to_fit(answer, get_settings().mcp_max_answer_chars)
+        except ToolError as exc:
+            if write:  # so the agent does not make the change again
+                raise ToolError(f"the tool made the change, but {exc}") from None
+            raise
 
     run.__name__ = tool.name
     run.__doc__ = tool.description
@@ -292,3 +326,5 @@ def build(tool: ReadTool, app: FastAPI) -> Callable[..., Any]:
 
 
 READ_ONLY = ToolAnnotations(read_only_hint=True)
+# the client asks the user before a write; the server still checks each call (D5)
+WRITES = ToolAnnotations(read_only_hint=False, destructive_hint=True)

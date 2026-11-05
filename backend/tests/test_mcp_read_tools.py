@@ -17,7 +17,7 @@ from fastapi import FastAPI, Query
 
 from backend.main import create_app
 from backend.mcp.read_tools import READ_TOOLS
-from backend.mcp.tools import ReadTool, build
+from backend.mcp.tools import Tool, build
 from backend.query.as_of import register_as_of_t
 from backend.query.as_of_t import AsOfTQuery
 from backend.query.search import cursor_pit_id
@@ -257,7 +257,7 @@ async def _text_size(size: Annotated[str, Query()] = "5") -> dict[str, Any]:
 def test_routes_of_one_tool_give_a_parameter_one_type_and_one_set_of_limits(other, same):
     """Each route keeps its own `Query()`, so the limits are compared, not the objects. A route
     that takes None does not change the type: the tool takes None for every parameter."""
-    tool = ReadTool("t", "d", {"a": _small, "b": other})
+    tool = Tool("t", "d", {"a": _small, "b": other})
     if same:
         assert build(tool, create_app())
     else:
