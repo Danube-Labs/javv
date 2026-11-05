@@ -943,6 +943,17 @@ These reads have no tool. `test_mcp_read_coverage.py` fails when a new `GET` rou
 | `/api/v1/reports/{report_id}`, `/api/v1/reports/{report_id}/download` | They give the state and the file of an export report. |
 | `/api/v1/findings/export.csv`, `/api/v1/findings/export.vex`, `/api/v1/audit/export.csv`, `/api/v1/contributors/export.csv`, `/api/v1/decisions/approvals/export.csv`, `/api/v1/dashboards/export.ndjson` | They give an export file. The tool of the same list reads the same rows. |
 
+**The write tools.** Each write tool calls the function of one route, with the principal `mcp:<name>` and only the permissions of the token level. Before the call, it runs the permission check of the route. The route then does all its own checks, and it writes its own audit rows with the actor `mcp:<name>`. For example, a `write` token cannot set the state `risk_accepted`, and it cannot change the state of a finding with an accepted risk.
+
+| Tool | Level | Route |
+|---|---|---|
+| `set_triage` | `write` | `PATCH /api/v1/findings/{finding_key}/triage` |
+| `bulk_triage` | `write` | `POST /api/v1/findings/bulk-triage`, with its limits `JAVV_BULK_MAX_TARGETS` and `JAVV_BULK_INLINE_LIMIT` |
+| `not_affected_decision` | `write` | Kind `make` (`POST /api/v1/decisions`), `change` (`PATCH /api/v1/decisions/{decision_id}`) or `revoke` (`POST /api/v1/decisions/{decision_id}/revoke`). The type of a new or changed decision can only be `not_affected`. |
+| `risk_accept_decision` | `write_risk_accept` | The same three routes. The type of a new or changed decision can only be `risk_accepted` or `ignore_rule`. |
+
+A write route that is not in this table has no tool. `test_mcp_read_coverage.py` fails when a write tool uses another route.
+
 ## Metrics
 
 `GET /metrics` gives these metrics, in the Prometheus format ([Scrape the metrics](#scrape-the-metrics)).
