@@ -92,9 +92,18 @@ def create_app() -> FastAPI:
     app.include_router(data_settings.router)
     app.include_router(inspect.router)
     app.include_router(bulk_routes.router)
-    if get_settings().mcp_enabled:
+    if _mcp_enabled():
         mcp_server.mount(app)
     return app
+
+
+def _mcp_enabled() -> bool:
+    """Settings that do not load stop the start in the lifespan, with a message that names the
+    variable (`test_settings_validation.py`). Building the app must not raise first."""
+    try:
+        return get_settings().mcp_enabled
+    except RuntimeError:
+        return False
 
 
 app = create_app()
