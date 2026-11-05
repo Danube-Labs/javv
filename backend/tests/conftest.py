@@ -117,6 +117,11 @@ def _sweep_residue() -> None:
             params={"refresh": "true", "conflicts": "proceed", "ignore_unavailable": "true"},
             json={"query": {"prefix": {"owner": _RESIDUE_USER_PREFIX}}},
         )
+        c.post(  # an MCP token holds no cluster either: the test admin who made it marks it
+            "/system-mcp-tokens/_delete_by_query",
+            params={"refresh": "true", "conflicts": "proceed", "ignore_unavailable": "true"},
+            json={"query": {"prefix": {"created_by": _RESIDUE_USER_PREFIX}}},
+        )
         # per-cluster test indices (occurrences / images / scan-events / inventory-runs …)
         for pattern in (
             f"javv-*-{_RESIDUE_CLUSTER_PREFIX}*",
