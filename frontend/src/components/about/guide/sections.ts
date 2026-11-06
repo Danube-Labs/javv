@@ -5,6 +5,7 @@ import type { GuideSectionId } from '@/about/guide'
 
 import GlossarySection from './GlossarySection.vue'
 import ImagesSection from './ImagesSection.vue'
+import McpSection from './McpSection.vue'
 import NowVsNewSection from './NowVsNewSection.vue'
 import ScansSection from './ScansSection.vue'
 import StateOrAcceptanceSection from './StateOrAcceptanceSection.vue'
@@ -20,5 +21,6 @@ export const SECTION_BODY: Record<GuideSectionId, Component> = {
   images: ImagesSection,
   triage: TriageSection,
   'state-or-acceptance': StateOrAcceptanceSection,
+  'ai-agents': McpSection,
   glossary: GlossarySection,
 }
