@@ -139,4 +139,14 @@ describe('settings section registry (§13)', () => {
     ])
     for (const s of SETTINGS_SECTIONS) expect.soft(known.has(s.capability), s.key).toBe(true)
   })
+
+  it('AI agents (MCP) is an organization section for the token admins (issue 1096)', () => {
+    expect(SETTINGS_SECTIONS.find((s) => s.key === 'ai-agents')).toEqual({
+      key: 'ai-agents',
+      label: 'AI agents (MCP)',
+      icon: 'cpu',
+      scope: 'org',
+      capability: 'can_manage_tokens',
+    })
+  })
 })

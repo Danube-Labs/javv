@@ -149,6 +149,12 @@ const router = createRouter({
               meta: { capability: 'can_manage_tokens' },
             },
             {
+              path: 'ai-agents',
+              name: 'settings-ai-agents',
+              component: () => import('@/views/settings/McpTokensView.vue'),
+              meta: { capability: 'can_manage_tokens' },
+            },
+            {
               path: 'users',
               name: 'settings-users',
               component: () => import('@/views/settings/UsersRolesView.vue'),

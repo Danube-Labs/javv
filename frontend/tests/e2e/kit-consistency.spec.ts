@@ -34,10 +34,11 @@ const KEPT_RAW: { selector: string; reason: string }[] = [
 
 /** Each file that draws a window, with how many. A new window changes this count and fails the
  *  test, so it goes into WINDOWS, or into the list of windows the walk does not open, by a decision.
- *  Four are not opened, because the CI store has no data that opens them; the lint rule and
+ *  Six are not opened, because the CI store has no data that opens them; the lint rule and
  *  `window-footer-buttons.spec.ts` still read their source:
  *  - Edit risk-acceptance (EditDecisionDialog): needs a risk-acceptance decision
- *  - Copy this token now (TokensView): needs a newly made token
+ *  - Copy this token now (TokenOnceDialog): needs a newly made token
+ *  - Rotate and Revoke of an MCP token (McpTokensView): need an MCP token
  *  - Restore snapshot (SnapshotsCard): needs a snapshot repository
  *  - Delete a retired cluster (ClusterDeleteDialog): needs a retired cluster */
 const WINDOW_FILES: Record<string, number> = {
@@ -50,11 +51,13 @@ const WINDOW_FILES: Record<string, number> = {
   'components/findings/SaveViewDialog.vue': 1,
   'components/settings/ClusterDeleteDialog.vue': 1,
   'components/settings/SnapshotsCard.vue': 1,
+  'components/settings/TokenOnceDialog.vue': 1,
   'components/system/RepairActionsCard.vue': 1,
   'components/triage/BulkTriageBar.vue': 1,
   'components/triage/RiskAcceptDialog.vue': 1,
   'views/settings/ClusterView.vue': 1,
-  'views/settings/TokensView.vue': 3,
+  'views/settings/McpTokensView.vue': 3,
+  'views/settings/TokensView.vue': 2,
   'views/settings/UsersRolesView.vue': 4,
 }
 
@@ -276,6 +279,7 @@ const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Mint a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Mint token' }).click()],
   ['Rotate this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Rotate', exact: true }).first().click()],
   ['Revoke this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Revoke', exact: true }).first().click()],
+  ['Make an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Make token' }).click()],
   ['Retire', '/settings/cluster', (p) => p.getByRole('button', { name: 'Retire cluster' }).click()],
   [
     'Run the lifecycle sweep?',

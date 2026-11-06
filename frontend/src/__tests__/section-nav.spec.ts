@@ -124,6 +124,7 @@ describe('Settings on the shared menu', () => {
     await router.push('/settings/tokens')
     const w = mount(SettingsLayout, { global: { plugins: [router], stubs: { RouterView: true } } })
     await flushPromises()
-    expect(w.findAll('nav .scope-legend li').map((l) => l.text())).toEqual(['Per cluster'])
+    // Access & tokens is per cluster and AI agents (MCP) is for the organization: no section is per scanner
+    expect(w.findAll('nav .scope-legend li').map((l) => l.text())).toEqual(['Per cluster', 'Organization'])
   })
 })

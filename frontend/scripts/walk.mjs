@@ -40,6 +40,7 @@ export const ROUTES = [
   { name: 'settings-scanning', path: '/settings/scanning', ready: '.set-row' },
   { name: 'settings-sla', path: '/settings/sla', ready: '.set-row' },
   { name: 'settings-tokens', path: '/settings/tokens', ready: DATA_ROW },
+  { name: 'settings-ai-agents', path: '/settings/ai-agents', ready: '.set-row' },
   { name: 'settings-users', path: '/settings/users', ready: DATA_ROW },
   // data panel: the family ledger renders only after GET /settings/data resolved
   { name: 'settings-data', path: '/settings/data-opensearch', ready: '.fam-row' },

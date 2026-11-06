@@ -908,6 +908,11 @@ not reach this page. Rotate it to get a value you can copy.* (operator ruling 20
 Rotate shows on an active token only (issue 984). The new token takes the old expiry, so an
 expired token needs a new token from Mint token. Revoke stays on an expired token. The server
 answers 409 to a rotation of a revoked or an expired token.
+The window "Copy this token now" is `components/settings/TokenOnceDialog.vue`, the same window as on
+AI agents (MCP) (§13.9). When the browser blocks the clipboard (a page on plain http that is not
+localhost), Copy shows a toast: *Couldn't copy: the browser blocked the clipboard. Select the text
+and copy it.* The card subtitle is *one scoped push token per (cluster, scanner)* (issue 1096, Q4 B
+and Q5 B on built pictures, 2026-11-06).
 
 ### 13.6 Users & roles — editable (shipped)
 **Data:** `GET/POST /api/v1/admin/users`, `PATCH …/{username}/role` (revokes their sessions —
@@ -978,6 +983,31 @@ retention/rollover offered **only** for time-partitioned append families; the mu
   "Its delete did not finish. Delete it again." under its name; un-retiring it is refused (409).
   Bringing back a cluster retired by hand (`retirement_mode: manual`) says its tokens were revoked
   and its scanners need a new one; an automatic retire left them working, so its toast does not.
+
+### 13.9 AI agents (MCP) — editable (issue 1096 step 4)
+**Data:** `GET /api/v1/meta` (`mcp_enabled`), `GET/POST /api/v1/admin/mcp-tokens`,
+`POST …/{name}/revoke`, `POST …/{name}/rotate` (gated `can_manage_tokens`). Scope: Organization.
+Menu icon `cpu` (a chip with pins). Built on the parts of Access & tokens (§13.5). Rulings on built
+pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5 B.
+- **Endpoint card:** Status, `on` or `off` (`DotWord`), and when off the line *To turn it on, set
+  JAVV_MCP_ENABLED to true on the backend and start the backend again.* A failed `/meta` read shows
+  *unknown: the status could not be read*. URL: the address of the page plus `/api/v1/mcp`, in the
+  mono box with a Copy button (`components/settings/CopyValue.vue`).
+- **Tokens card:** the table skin with `GridPager` (display pages of one server answer), in
+  `.tbl-scroll-pin` so the name stays when the columns outgrow the card at the 1024 floor. Columns:
+  Name, Level (in words), Created by, Created, Expiry (the UTC day: a token stops at 00:00 UTC),
+  Last used (`never` before the first call), Status (active, expired, revoked; the rule of §13.5).
+  Rotate shows on an active token only. Revoke on active and expired. Loading is a `UiSkeleton`, an
+  empty list says *No MCP tokens yet. Make one for each AI agent that connects.*, a failed read
+  uses `readFailureCopy` (a 429 says the backend is busy).
+- **Make an MCP token:** Name (the username rule: 3 to 64 lower-case letters, digits, dots,
+  underscores or hyphens; the Audit log names the agent `mcp:<name>`), Level (`UiSegControl`:
+  Read, Write, Write and risk accept, with a line that says what the level can do), Expiry (a date
+  box as in the risk accept window: tomorrow to 90 days, the day in 30 days already in it). Make
+  stays off until the name and the day are valid. A name in use (409) is said in the window.
+- **Rotate {name}?:** the old token stops at once, so the window asks for a new expiry (same box).
+- **Revoke this token?:** the agent is refused from now on; the token stays in the list.
+- After a make or a rotate, the shared window *Copy this token now* shows the token one time.
 
 **States (all sections):** loading; 403-capability-hidden (section hidden from sub-nav without
 its capability); save-bar dirty/saved; degraded; 409/422 inline errors as noted.
