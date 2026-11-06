@@ -919,7 +919,7 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 
 **The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
 
-A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.
+A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. The first error also names the parameters that the kind takes. A missing parameter that the kind does not need takes the default of the route.
 
 | Tool | Route |
 |---|---|

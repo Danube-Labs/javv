@@ -319,7 +319,8 @@ def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
             accepted = plan.tool_params()
             given = {k: v for k, v in args.items() if v is not None}
             if extra := sorted(set(given) - set(accepted)):
-                raise ToolError(f"this kind does not take {', '.join(extra)}")
+                takes = ", ".join(sorted(accepted)) or "no parameter"
+                raise ToolError(f"this kind does not take {', '.join(extra)}. It takes {takes}")
             needed = [n for n, p in accepted.items() if p.default is _EMPTY and n not in given]
             if needed:
                 raise ToolError(f"this kind needs {', '.join(needed)}")
