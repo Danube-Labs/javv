@@ -18,7 +18,7 @@ export interface TokenRow {
 
 export type TokenStatus = 'active' | 'expired' | 'revoked'
 
-export function tokenStatus(row: TokenRow, now: Date): TokenStatus {
+export function tokenStatus(row: Pick<TokenRow, 'disabled' | 'expiry'>, now: Date): TokenStatus {
   if (row.disabled) return 'revoked'
   if (row.expiry !== null && new Date(row.expiry) <= now) return 'expired'
   return 'active'

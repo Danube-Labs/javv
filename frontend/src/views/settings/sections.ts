@@ -37,6 +37,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { key: 'scanning', label: 'Scanning', icon: 'shield', scope: 'scanner', capability: 'can_manage_settings' },
   { key: 'sla', label: 'SLA policy', icon: 'alert', scope: 'org', capability: 'can_manage_settings' },
   { key: 'tokens', label: 'Access & tokens', icon: 'key', scope: 'cluster', capability: 'can_manage_tokens' },
+  { key: 'ai-agents', label: 'AI agents (MCP)', icon: 'cpu', scope: 'org', capability: 'can_manage_tokens' },
   { key: 'users', label: 'Users & roles', icon: 'users', scope: 'org', capability: 'can_manage_users' },
   { key: 'data-opensearch', label: 'Data & OpenSearch', icon: 'database', scope: 'cluster', capability: 'can_manage_retention' },
   { key: 'cluster', label: 'Cluster', icon: 'gear', scope: 'cluster', capability: 'can_manage_settings' },

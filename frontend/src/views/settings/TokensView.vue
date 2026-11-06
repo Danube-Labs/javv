@@ -27,6 +27,7 @@ import ScannerTag from '@/components/chips/ScannerTag.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsInput from '@/components/settings/SettingsInput.vue'
+import TokenOnceDialog from '@/components/settings/TokenOnceDialog.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ModalShell from '@/components/ui/ModalShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -140,7 +141,6 @@ function openMint() {
 
 // the raw-token-once modal (mint AND rotate land here)
 const minted = ref<{ id: string; token: string } | null>(null)
-const copied = ref(false)
 
 async function submitMint() {
   const expiry = mintExpiry(mintExpiryParts.value, now())
@@ -166,7 +166,6 @@ async function submitMint() {
     return
   }
   mintOpen.value = false
-  copied.value = false
   showMinted(data)
   await load()
   // the token is what lists a new cluster: show it in the switcher now, not after a reload
@@ -182,12 +181,6 @@ function showMinted(data: unknown) {
   }
   logger.warn('token_value_lost')
   toast.error('The token was created, but its value did not reach this page. Rotate it to get a value you can copy.')
-}
-
-async function copyToken() {
-  if (minted.value === null) return
-  await navigator.clipboard.writeText(minted.value.token)
-  copied.value = true
 }
 
 // ── rotate / revoke (confirm-first — both are destructive to the OLD token) ────────────
@@ -208,7 +201,6 @@ async function runConfirmed() {
     return
   }
   if (action.kind === 'rotate') {
-    copied.value = false
     showMinted(data)
   } else {
     toast.success('Token revoked. Its next push will be rejected')
@@ -226,7 +218,7 @@ const fmt = (iso: string | null) =>
   <div class="stack">
     <SettingsCard
       title="Access & tokens"
-      subtitle="one scoped push token per (cluster, scanner). HTTPS ingest is the only credential surface"
+      subtitle="one scoped push token per (cluster, scanner)"
     >
       <template #action>
         <UiButton :disabled="busy" @click="openMint"><AppIcon name="plus" :size="13" />Mint token</UiButton>
@@ -353,18 +345,12 @@ const fmt = (iso: string | null) =>
     </ModalShell>
 
     <!-- the raw-token-once modal -->
-    <ModalShell
+    <TokenOnceDialog
       v-if="minted"
-      title="Copy this token now"
+      :token="minted.token"
       subtitle="it is shown once and cannot be recovered: a lost token is a rotate"
       @close="minted = null"
-    >
-      <div class="raw-token mono-cell sm">{{ minted.token }}</div>
-      <template #actions>
-        <UiButton variant="primary" @click="copyToken">{{ copied ? 'Copied ✓' : 'Copy token' }}</UiButton>
-        <UiButton variant="ghost" @click="minted = null">Done</UiButton>
-      </template>
-    </ModalShell>
+    />
 
     <!-- rotate/revoke confirm -->
     <ModalShell
