@@ -258,6 +258,8 @@ change most frequently:
 - `TZ`: the time zone of the job schedules (default `UTC`).
 - `OPENSEARCH_JAVA_OPTS`: the OpenSearch heap (default `-Xms1g -Xmx1g`).
 - `JAVV_JOB_<KIND>_CRON` and `JAVV_SCHEDULER_ENABLED`: when the background jobs run.
+- `JAVV_MCP_ENABLED`: turns on the MCP endpoint for AI agents (default `false`). See
+  [Connect an AI agent](use/connect-an-ai-agent.md).
 
 ### Scheduled jobs
 
@@ -460,6 +462,7 @@ To upgrade, or to go back to a previous release, see
 Each backend setting is under `backend.config` in `deploy/helm/javv/values.yaml`, with the same
 default and comment as in the compose file. To change a setting, use
 `--set backend.config.TZ=Europe/Bucharest`, or your own values file.
+To let AI agents connect to JAVV, see [Connect an AI agent](use/connect-an-ai-agent.md).
 
 **Access:** only what you put in front of the `javv` Service.
 

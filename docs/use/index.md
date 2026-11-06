@@ -15,6 +15,11 @@ decision, and how to put panels on a dashboard. Each page in the table has a sho
 
 The videos use made-up clusters and data.
 
+One page has no video:
+
+- [Connect an AI agent](connect-an-ai-agent.md) tells how to turn on the MCP endpoint, how to make
+  an MCP token, and how to connect Codex, VS Code or Cursor.
+
 ## What your role lets you do
 
 Your role sets what you can change:
