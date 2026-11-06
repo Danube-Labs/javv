@@ -18,6 +18,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-10 | Each issue open on 2026-10-10 is in the 1.0.0 milestone, unless the operator moves it out. | 555 |
 | 2026-10-14 | The release after 0.7.2 is 0.8.0, not the planned 0.7.3. | PR 853 |
 | 2026-10-26 | 0.8.9 stays released. Release 0.9.0 follows with `Release-As: 0.9.0` and marks the changes of 0.8.9 as a minor release. | 1012 |
+| 2026-11-05 | Release 0.9.6 waits until we build and test all steps of the MCP endpoint. Thus 0.9.6 ships the MCP tokens and the endpoint together. | 1096 |
 | 2026-10-14 | Nobody uses an older release of JAVV. A change needs no tool, no data migration and no "check your data" note for what an older release wrote. The same applies to stored shapes such as saved views (2026-10-20). | 854, 949 |
 | standing | A release PR merges only on an explicit word from the operator. | 992 |
 
@@ -58,6 +59,13 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-31 | A stored panel keeps its Audit log filters in a second field, `audit_filters`. Only Triage activity takes it (D2 A). | 1063 |
 | 2026-10-30 | A dashboard panel takes a filter on the field that it lists. Its facets read asks with `all_filters=true`, so "Namespace is not kube-system" takes that row out. The Findings filter list keeps the rule of issue 949 (decision 4 B). | 999 |
 | 2026-11-02 | JAVV counts findings: one CVE in one package version, in one image, from one scanner. Ingest keeps one finding for each finding key, and the last entry of a repeated finding wins. The scan event keeps the number of report entries in `report_entries`. Runs stored before 0.9.5 keep their counts. The rule "Send each finding one time" of the ingest contract stays as advice. | 1076 |
+| 2026-11-05 | MCP endpoint for AI agents: an admin with `can_manage_tokens` makes a static MCP token. Each token is its own principal `mcp:<name>`, reads all clusters, and has a level: read, write (`can_triage`) or write and risk accept (`can_accept_audit_final` too). Each token has an expiry, 90 days at most. The endpoint is off by default (`JAVV_MCP_ENABLED`). OAuth comes later, with issue 131. | 1096 |
+| 2026-11-05 | The read tools cover each read route, and a test keeps the cover complete. There are four write tools, and a token sees only the tools of its level. No tool takes query DSL or index names. No tool for the queued bulk change: the agent makes the selection smaller. | 1096 |
+| 2026-11-05 | The endpoint is `/api/v1/mcp`, with no session. It takes 2026-07-28 and an `initialize` of 2025-11-25, 2025-06-18, 2025-03-26 or 2024-11-05. It does not check `Host`. A request with an `Origin` header gets 403. Each paged tool keeps one open search for each token. | 1096 |
+| 2026-11-05 | A page of findings in a tool has 20 rows by default and 25 at most: an agent client refused an answer of 92,789 characters. The defaults are 60 requests a minute and 50,000 characters an answer. | 1096 |
+| 2026-11-05 | A revoke of an expired MCP token works. A revoke of a revoked token gets 409. A rotate of a revoked or expired token gets 409, and a revoke wins against a rotate. | 1096 |
+| 2026-11-05 | Each tool call writes one audit row, "MCP tool call", that only a user with `can_manage_users` sees. The `token_mint` row and `created_by` of the token name the admin who made it. The operator accepts store text in the log line of a tool error, as for a backend 500. | 1096 |
+| 2026-11-05 | A `not_affected` decision for a smaller scope has precedence over a risk accept for a larger scope, for an agent as on the screens. | 1096 |
 
 ## UI copy and look
 
@@ -81,6 +89,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-30 | The rows-per-page list of the pager is the small kit dropdown. It keeps the size and the mono text of the pager. It takes the kit corner and focus ring (B3 option A, on built pictures). | 1055 |
 | 2026-10-30 | A filtered panel shows a "N filters" button on the corner of its card. A click opens a popover with the filters and "Open in Findings" (decision 2 C). | 999 |
 | 2026-10-30 | The panel settings show the filter bar of Findings for the filters of the panel (decision 3 B). | 999 |
+| 2026-11-06 | The Settings section "AI agents (MCP)" has two cards (Endpoint, Tokens), a date box for the expiry and the `cpu` icon. It uses the token window of Access & tokens. Both token sections show a toast when the browser blocks the clipboard. | 1096 |
+| 2026-11-06 | The Guide section "AI agents (MCP)" shows for every user, with the URL in the copy box. The docs page gives the settings of VS Code and Cursor from their own documentation, with a line that says we did not test them. The text of `can_manage_tokens` names scanner tokens and MCP tokens. | 1096 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process
