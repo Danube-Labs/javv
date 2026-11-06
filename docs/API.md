@@ -881,7 +881,7 @@ Before the MCP server reads a request, the endpoint checks it in this order:
 | The request has an `Origin` header | 403. A browser always sends this header, and an agent client does not. Thus a web page that a browser opens cannot use the endpoint. |
 | The method is not POST | 405, with `Allow: POST` |
 | The `Authorization` header has no live MCP token | 401 `invalid token`, with `WWW-Authenticate: Bearer`. A missing, unknown, revoked or expired token and a scanner token get the same answer. |
-| The token sent more than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` requests in one minute | 429, with `Retry-After: 60` |
+| The token sent more than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` requests in one minute | 429, with `Retry-After: 60`. The `detail` tells the limit and the wait. An example is `60 requests in one minute for each token. Wait 60 seconds, then send the request again.` An agent client can give the agent only the body, so the agent gets the wait from the `detail`. |
 
 The 401 and the 403 only count in `javv_auth_failures_total`, with no log line: a sender can repeat them with no limit. A 429 also logs `mcp rate limited` with the token.
 
