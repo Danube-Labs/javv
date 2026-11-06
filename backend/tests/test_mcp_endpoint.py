@@ -475,6 +475,36 @@ def test_an_answer_with_no_list_to_cut_is_an_error():
         cut_to_fit({"text": "x" * 2000}, 1000)
 
 
+# issue 1114: at the lowest cap, a page of one finding (about 1400 characters) was refused, and no
+# smaller page exists; a finding with a long note has about 11,500. One row always goes out.
+_LONG_ROW = {"finding_key": "fk-1", "notes": "n" * 10_000}
+
+
+def test_a_page_of_one_row_with_a_next_page_goes_out_whole_over_the_cap():
+    answer = {"data": [_LONG_ROW], "next_cursor": "after-row-0", "total": 2}
+    text = cut_to_fit(answer, 1000)
+    assert json.loads(text) == answer  # no cut field: the row is whole
+    assert len(text) > 1000
+
+
+def test_a_last_page_of_one_row_goes_out_whole_over_the_cap():
+    answer = {"data": [_LONG_ROW], "next_cursor": None, "total": 1}
+    assert json.loads(cut_to_fit(answer, 1000)) == answer
+
+
+def test_a_cut_answer_keeps_its_first_row_when_that_row_is_over_the_cap():
+    answer = {"data": [_LONG_ROW, {"finding_key": "fk-2"}], "total": 2}
+    cut = json.loads(cut_to_fit(answer, 1000))
+    assert cut["data"] == [_LONG_ROW]
+    assert cut["cut"]["kept"] == 1 and cut["cut"]["had"] == 2
+
+
+def test_a_page_of_two_rows_with_a_next_page_over_the_cap_is_still_refused():
+    answer = {"data": [_LONG_ROW, _LONG_ROW], "next_cursor": "after-row-1"}
+    with pytest.raises(ToolError, match="ask for a smaller size"):
+        cut_to_fit(answer, 1000)
+
+
 async def test_a_route_error_becomes_a_tool_error_with_its_status(mcp_on):
     client = AsyncOpenSearch(hosts=[OS_URL])
     app = create_app()
