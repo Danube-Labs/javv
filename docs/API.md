@@ -870,7 +870,7 @@ it logs `ingest failure not recorded` with the `failure_id`. It also increments
 
 ## The MCP endpoint
 
-An AI agent, for example in Cursor, VS Code or Codex, reads and changes JAVV data through the MCP endpoint at `POST /api/v1/mcp`. The endpoint exists only when `JAVV_MCP_ENABLED` is `true` ([MCP endpoint](CONFIGURATION.md#mcp-endpoint)). An admin makes the token in `POST /api/v1/admin/mcp-tokens` ([Admin](#admin)).
+An AI agent, for example in Claude Code, Codex, VS Code or Cursor, reads and changes JAVV data through the MCP endpoint at `POST /api/v1/mcp`. The endpoint exists only when `JAVV_MCP_ENABLED` is `true` ([MCP endpoint](CONFIGURATION.md#mcp-endpoint)). An admin makes the token in `POST /api/v1/admin/mcp-tokens` ([Admin](#admin)).
 
 The endpoint takes the MCP protocol versions 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. A client of an older version starts with `initialize`. The endpoint keeps no session: it never sends `Mcp-Session-Id`, and each request carries its token.
 

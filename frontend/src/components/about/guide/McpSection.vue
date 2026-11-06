@@ -57,7 +57,7 @@ const DOCS = onMain('docs/use/use-the-mcp-server.md')
       <li>Each request sends the token in the header <code class="mono">Authorization: Bearer &lt;token&gt;</code>.</li>
       <li>
         The page <a class="docs-link" :href="DOCS" target="_blank" rel="noopener noreferrer">Use the MCP server</a>
-        gives the settings for Codex, VS Code and Cursor.
+        gives the settings for Claude Code, Codex, VS Code and Cursor.
       </li>
     </ul>
   </GuideProse>

@@ -3,7 +3,7 @@
 JAVV has an MCP server for AI agents. An agent can read the findings of JAVV for you, and with a
 token of a higher level it can also triage them. The agent connects to the MCP endpoint of JAVV,
 `/api/v1/mcp`, with an MCP token. This page tells how to turn on the endpoint, how to make a
-token, and how to connect Codex, VS Code or Cursor.
+token, and how to connect Claude Code, Codex, VS Code or Cursor.
 
 !!! tip "For AI agents"
     Obey these rules when you call the tools of JAVV:
@@ -12,7 +12,8 @@ token, and how to connect Codex, VS Code or Cursor.
     - A finding is one CVE in one package version for one scanner. The results of Trivy and
       Grype stay apart. Do not add them together, and do not merge them.
     - To get the next page of `search_findings` or `audit_log`, send `next_cursor` back as
-      `cursor`.
+      `cursor`. A new search with the same tool closes the cursor of your last search. Read all
+      the pages that you need before you start the next search.
     - An answer with a `cut` field does not have all the rows. Ask for fewer rows. When a tool
       error tells you to ask for a smaller size, send a smaller `size`.
     - Each write tool has the hint `destructiveHint`. Ask the user before each write.
@@ -80,6 +81,29 @@ and the URL of the endpoint.
 
 To stop a token, select **Revoke** on its row. To get a new token for the same name, select
 **Rotate** and pick a new expiry. The old token then stops at once.
+
+## Connect Claude Code
+
+We tested these settings with Claude Code 2.1.319.
+
+1. Put the token in the variable `JAVV_MCP_TOKEN`, in the shell that starts Claude Code.
+2. Add the server. Use single quotes, so that the config keeps the name of the variable and not
+   the token:
+
+    ```bash
+    claude mcp add --transport http --scope user javv https://javv.example.com/api/v1/mcp \
+      --header 'Authorization: Bearer ${JAVV_MCP_TOKEN}'
+    ```
+
+3. Run `claude mcp list`. The list shows `javv` with "Connected".
+
+With `--scope project`, the command writes the server to `.mcp.json` in your project. Claude Code
+then asks you to approve the server the next time that it starts in that folder.
+
+When `claude mcp list` shows "Server rejected the configured Authorization header (HTTP 401)",
+the token is wrong, revoked or expired, or `JAVV_MCP_TOKEN` is empty. Make a token, or rotate the
+token. Claude Code can tell you to use OAuth in place of the header. JAVV has no OAuth, so keep
+the header.
 
 ## Connect Codex
 

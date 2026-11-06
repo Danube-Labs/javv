@@ -18,7 +18,7 @@ The videos use made-up clusters and data.
 One page has no video:
 
 - [Use the MCP server](use-the-mcp-server.md) tells how to turn on the MCP endpoint, how to make
-  an MCP token, and how to connect Codex, VS Code or Cursor.
+  an MCP token, and how to connect Claude Code, Codex, VS Code or Cursor.
 
 !!! tip "For AI agents"
     An AI agent can do most of these tasks through the MCP server of JAVV. With a `read` token, it
