@@ -193,7 +193,7 @@ change the state of a finding with an accepted risk.
 | 404 | The endpoint is off. | [Turn on the endpoint](#turn-on-the-endpoint). |
 | 401 `invalid token` | The token is wrong, revoked or expired. A scanner token also gets 401. | Make a token, or rotate the token. |
 | 403 | The request has an `Origin` header. A browser sends this header, so a web page cannot use the endpoint. | Use an agent client. |
-| 429 | The token sent more requests in one minute than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` allows (60 by default). | Wait one minute. |
+| 429 | The token sent more requests in one minute than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` allows (60 by default). Each connection of the client also uses requests: Claude Code sends 5 when it connects. The `detail` of the answer tells the wait. | Wait one minute. Keep `JAVV_MCP_RATE_LIMIT_PER_MINUTE` at 30 or more. |
 | A tool error: the level of this token does not allow this tool | The tool needs a higher level. | Make a token with a higher level. |
 | An answer with a `cut` field | The answer was longer than `JAVV_MCP_MAX_ANSWER_CHARS` (50,000 characters by default). JAVV kept the first rows, and `cut` gives the number. | Ask for fewer rows. |
 | A tool error: ask for a smaller size | A page of rows with a next page was longer than `JAVV_MCP_MAX_ANSWER_CHARS`. | Ask for a smaller page. |
