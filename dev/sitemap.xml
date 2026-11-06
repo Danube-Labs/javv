@@ -58,13 +58,13 @@
         <loc>https://danube-labs.github.io/javv/dev/docs/use/change-many-findings/</loc>
       </url>
       <url>
-        <loc>https://danube-labs.github.io/javv/dev/docs/use/connect-an-ai-agent/</loc>
-      </url>
-      <url>
         <loc>https://danube-labs.github.io/javv/dev/docs/use/from-a-scan-to-a-finding/</loc>
       </url>
       <url>
         <loc>https://danube-labs.github.io/javv/dev/docs/use/set-the-state-of-a-finding/</loc>
+      </url>
+      <url>
+        <loc>https://danube-labs.github.io/javv/dev/docs/use/use-the-mcp-server/</loc>
       </url>
       <url>
         <loc>https://danube-labs.github.io/javv/dev/docs/use/when-a-scanner-stops/</loc>

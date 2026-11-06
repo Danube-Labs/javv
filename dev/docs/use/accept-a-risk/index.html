@@ -619,14 +619,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../connect-an-ai-agent/" class="md-nav__link">
+      <a href="../use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1357,6 +1357,12 @@
 
 <p>A risk acceptance applies to one CVE in a scope. It also covers the new findings of that CVE in
 the scope.</p>
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>Only an agent with a <code>write_risk_accept</code> token can accept a risk. It uses the tool
+<code>risk_accept_decision</code> with the kind <code>make</code>, and the decision must have an expiry. A <code>write</code>
+token cannot see this tool. Ask the user before each risk acceptance.</p>
+</div>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A role that allows risk acceptance: <code>security_lead</code> or <code>admin</code>

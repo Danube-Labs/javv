@@ -608,14 +608,14 @@
   
   
     <li class="md-nav__item">
-      <a href="./connect-an-ai-agent/" class="md-nav__link">
+      <a href="./use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1374,9 +1374,17 @@ decision, and how to put panels on a dashboard. Each page in the table has a sho
 <p>The videos use made-up clusters and data.</p>
 <p>One page has no video:</p>
 <ul>
-<li><a href="connect-an-ai-agent/">Connect an AI agent</a> tells how to turn on the MCP endpoint, how to make
+<li><a href="use-the-mcp-server/">Use the MCP server</a> tells how to turn on the MCP endpoint, how to make
   an MCP token, and how to connect Codex, VS Code or Cursor.</li>
 </ul>
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>An AI agent can do most of these tasks through the MCP server of JAVV. With a <code>read</code> token, it
+finds and counts findings, and reads the audit log, the scanner status and the dashboards. With
+a <code>write</code> token, it also sets the state of findings and makes "Not affected" decisions. Only a
+<code>write_risk_accept</code> token can accept a risk. No token can make a dashboard. Each page tells the
+tool for its task. <a href="use-the-mcp-server/">Use the MCP server</a> tells how to connect.</p>
+</div>
 <h2 id="what-your-role-lets-you-do">What your role lets you do<a class="headerlink" href="#what-your-role-lets-you-do" title="Permanent link">&para;</a></h2>
 <p>Your role sets what you can change:</p>
 <ul>

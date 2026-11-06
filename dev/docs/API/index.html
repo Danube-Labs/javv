@@ -537,14 +537,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../use/connect-an-ai-agent/" class="md-nav__link">
+      <a href="../use/use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -2270,6 +2270,20 @@ it. The tasks come first. Then the reference tables give each endpoint, error an
 to the backend.</p>
 <p>To push scan results from your own tools, read <a href="../INGEST-CONTRACT/">Push from your own script</a>. To
 connect the JAVV scanners, read <a href="../DEPLOYING/#connect-the-scanners">Connect the scanners</a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>To read or triage the findings for a user, use the MCP server, not these routes:
+<a href="../use/use-the-mcp-server/">Use the MCP server</a>. Its tools take the parameters of the routes,
+with the same names and limits.</p>
+<p>To write a script, obey these rules:</p>
+<ul>
+<li>Use only the parameter names in <code>/openapi.json</code>. The backend ignores a query parameter that
+  it does not know, and then the answer is not filtered.</li>
+<li>Each read of findings, images, trends, scanners or the audit log needs a <code>cluster_id</code>. Get
+  it from <code>GET /api/v1/clusters</code>.</li>
+<li>The results of Trivy and Grype stay apart. Do not add them together, and do not merge them.</li>
+</ul>
+</div>
 <h2 id="sign-in-from-a-script">Sign in from a script<a class="headerlink" href="#sign-in-from-a-script" title="Permanent link">&para;</a></h2>
 <p>A script uses the same address as a browser. The frontend sends <code>/api</code>, <code>/auth</code> and <code>/readyz</code> to
 the backend.</p>

@@ -535,14 +535,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../docs/use/connect-an-ai-agent/" class="md-nav__link">
+      <a href="../docs/use/use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1455,7 +1455,9 @@ helps teams to apply. Thank you for your report.</p>
 <ul>
 <li>The FastAPI backend, and specially the <strong>ingest endpoint</strong>. This endpoint reads scanner output
   that JAVV cannot trust.</li>
-<li>Sign-in, sessions, ingest tokens, and the access model that uses capabilities.</li>
+<li>Sign-in, sessions, ingest tokens, MCP tokens, and the access model that uses capabilities.</li>
+<li>The <strong>MCP endpoint</strong> for AI agents (<code>/api/v1/mcp</code>). This includes the checks on each request, the
+  tools that each token level can call, and the audit row of each tool call.</li>
 <li>The queries that JAVV sends to OpenSearch. This includes the isolation of each cluster by
   <code>cluster_id</code>, and injection into the query DSL.</li>
 <li>The Vue frontend. This includes all problems that can show the data of a different cluster in a
@@ -1485,6 +1487,12 @@ helps teams to apply. Thank you for your report.</p>
   bearer token for one cluster and one scanner. JAVV keeps only a keyed hash of each token, and it
   compares hashes in constant time. A token for one cluster cannot push the data of a different
   cluster.</li>
+<li><strong>An MCP token has one level, and the endpoint is off by default.</strong> A <code>read</code> token can call
+  only the read tools. A <code>write</code> token can also triage findings and make "Not affected"
+  decisions. Only a <code>write_risk_accept</code> token can accept a risk. No token can change users, roles,
+  settings or tokens, or delete data. JAVV keeps only a keyed hash of each MCP token. The endpoint
+  refuses each request with an <code>Origin</code> header, thus a web page in a browser cannot use it. If a
+  token can call a tool that is not in its level, that is a real finding.</li>
 <li><strong>The data inspector can only read.</strong> It permits only a fixed list of read requests. It refuses
   the indices that hold credentials. JAVV writes each query to the audit log. A write through the
   data inspector is a real finding.</li>

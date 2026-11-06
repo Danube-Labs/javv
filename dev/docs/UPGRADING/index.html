@@ -537,14 +537,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../use/connect-an-ai-agent/" class="md-nav__link">
+      <a href="../use/use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1754,6 +1754,18 @@
 </table>
 <p>JAVV never changes a version in a cluster that you scan. You set each version as a tag in your
 own deployment. To install JAVV, see <a href="../DEPLOYING/"><code>DEPLOYING.md</code></a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>Obey these rules when you upgrade JAVV for a user:</p>
+<ul>
+<li>Get the version that runs now from <code>GET /api/v1/meta</code> → <code>version</code>.</li>
+<li>Read each row of <a href="#version-notes">Version notes</a> after that version, up to the new version.
+  Do what each row tells, in the sequence of this page.</li>
+<li>Upgrade the backend first, then the frontend, then the scanner images.</li>
+<li>Before you start, read
+  <a href="#go-back-to-a-previous-release">Go back to a previous release</a>.</li>
+</ul>
+</div>
 <h2 id="before-you-upgrade">Before you upgrade<a class="headerlink" href="#before-you-upgrade" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Read the release notes.</strong> Each release has a GitHub Release and an entry in

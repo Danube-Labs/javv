@@ -608,14 +608,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../connect-an-ai-agent/" class="md-nav__link">
+      <a href="../use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1333,6 +1333,12 @@
 <h1 id="set-the-state-of-a-finding">Set the state of a finding<a class="headerlink" href="#set-the-state-of-a-finding" title="Permanent link">&para;</a></h1>
 <video controls preload="metadata" width="100%" src="../videos/set-the-state-of-a-finding.mp4"></video>
 
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>An agent with a <code>write</code> or <code>write_risk_accept</code> token sets the state of one finding with the
+tool <code>set_triage</code>. The tool takes the <code>finding_key</code> of the finding from <code>search_findings</code>. A
+finding with an accepted risk keeps its state. <a href="../use-the-mcp-server/">Use the MCP server</a> tells how to connect.</p>
+</div>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A role that allows triage: <code>triager</code>, <code>security_lead</code> or <code>admin</code>

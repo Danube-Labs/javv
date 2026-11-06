@@ -608,14 +608,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../connect-an-ai-agent/" class="md-nav__link">
+      <a href="../use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1333,6 +1333,12 @@
 <h1 id="see-who-changed-what">See who changed what<a class="headerlink" href="#see-who-changed-what" title="Permanent link">&para;</a></h1>
 <video controls preload="metadata" width="100%" src="../videos/who-changed-what.mp4"></video>
 
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>An agent reads the audit log of one cluster with the tool <code>audit_log</code>, and counts its rows with
+<code>count_audit_log</code>. A change by an agent has the user <code>mcp:&lt;name&gt;</code>, and each tool call has a row
+with the action <strong>MCP tool call</strong>. <a href="../use-the-mcp-server/">Use the MCP server</a> tells more.</p>
+</div>
 <h2 id="the-audit-log">The Audit log<a class="headerlink" href="#the-audit-log" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Open the Audit log from the side menu. It lists each change: when, who, what and the target.

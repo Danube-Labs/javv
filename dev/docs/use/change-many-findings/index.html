@@ -619,14 +619,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../connect-an-ai-agent/" class="md-nav__link">
+      <a href="../use-the-mcp-server/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Connect an AI agent
+  Use the MCP server
 
     
   </span>
@@ -1356,6 +1356,14 @@
 <video controls preload="metadata" width="100%" src="../videos/change-many-findings.mp4"></video>
 
 <p>Bulk triage changes many findings at once. First, filter the findings.</p>
+<div class="admonition tip">
+<p class="admonition-title">For AI agents</p>
+<p>An agent with a <code>write</code> or <code>write_risk_accept</code> token changes many findings with the tool
+<code>bulk_triage</code>. The tool changes all the present findings of one cluster that its selector
+finds. The selector needs one or more of <code>cve_id</code>, <code>image_digest</code>, <code>severity</code>, <code>state</code> and
+<code>assignee</code>. JAVV refuses a selection that is too large. Then make the selector narrower, and
+ask the user before each change.</p>
+</div>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A role that allows triage: <code>triager</code>, <code>security_lead</code> or <code>admin</code>
