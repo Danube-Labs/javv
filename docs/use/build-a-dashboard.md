@@ -5,6 +5,10 @@
 A dashboard puts panels of Overview, Contributors and Scanner status on one page. Each panel
 shows the data of the cluster that you select at the top of the page.
 
+!!! tip "For AI agents"
+    An agent can read the dashboards with the tools `list_dashboards` and `get_dashboard`. No MCP
+    token can make or change a dashboard.
+
 ## Prerequisites
 
 - A role that allows dashboards: `triager`, `security_lead` or `admin`

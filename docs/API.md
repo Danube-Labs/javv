@@ -10,6 +10,19 @@ to the backend.
 To push scan results from your own tools, read [Push from your own script](INGEST-CONTRACT.md). To
 connect the JAVV scanners, read [Connect the scanners](DEPLOYING.md#connect-the-scanners).
 
+!!! tip "For AI agents"
+    To read or triage the findings for a user, use the MCP server, not these routes:
+    [Use the MCP server](use/use-the-mcp-server.md). Its tools take the parameters of the routes,
+    with the same names and limits.
+
+    To write a script, obey these rules:
+
+    - Use only the parameter names in `/openapi.json`. The backend ignores a query parameter that
+      it does not know, and then the answer is not filtered.
+    - Each read of findings, images, trends, scanners or the audit log needs a `cluster_id`. Get
+      it from `GET /api/v1/clusters`.
+    - The results of Trivy and Grype stay apart. Do not add them together, and do not merge them.
+
 ## Sign in from a script
 
 A script uses the same address as a browser. The frontend sends `/api`, `/auth` and `/readyz` to

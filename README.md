@@ -71,7 +71,7 @@ Three things it does differently:
 - **Server-side everything**: every count and page comes from an OpenSearch aggregation, never computed on the client.
 - **Screens & exports**: overview, running-images inventory, scanner status, contributors, approvals, SLA tracking, one-click CSV.
 - **Dashboards**: make your own dashboards from a catalog of panels. Share each one with everyone or with some roles, and copy dashboards to a different JAVV as a file.
-- **AI agents (MCP)**: connect an agent such as Codex, VS Code or Cursor to the MCP endpoint of JAVV. Each MCP token has one level: read, write, or write and risk accept. No token can change users, roles, settings or tokens, or delete data. Each tool call writes a row in the audit log. The endpoint is off by default ([Connect an AI agent](docs/use/connect-an-ai-agent.md)).
+- **AI agents (MCP)**: connect an agent such as Codex, VS Code or Cursor to the MCP endpoint of JAVV. Each MCP token has one level: read, write, or write and risk accept. No token can change users, roles, settings or tokens, or delete data. Each tool call writes a row in the audit log. The endpoint is off by default ([Use the MCP server](docs/use/use-the-mcp-server.md)).
 - **Data inspector + repair actions**: a read-only OpenSearch console and a small set of sanctioned, journaled maintenance jobs.
 - **No external broker**: coordination is OpenSearch, and the backend runs its own background jobs on cron schedules. No Redis/Kafka/RabbitMQ, and no CronJob per job: one backend container and one frontend container.
 

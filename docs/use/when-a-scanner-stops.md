@@ -2,6 +2,10 @@
 
 <video controls preload="metadata" width="100%" src="videos/when-a-scanner-stops.mp4"></video>
 
+!!! tip "For AI agents"
+    An agent sees if a scanner is late with the tool `scanner_status` and the kind `freshness`. The
+    answer gives the newest scan of each scanner of one cluster.
+
 ## What JAVV does
 
 Each scan refreshes the findings that the scanner sees. If a scanner sends no results for too
