@@ -7,6 +7,11 @@ setting, it gives:
 - What the setting does.
 - Where you set it.
 
+!!! tip "For AI agents"
+    Use only the setting names and the values in the tables of this page. Put a credential only in
+    a secret store, as [Credentials](#where-the-settings-are) tells. The backend checks its
+    settings when it starts, and an error names the setting that is not valid.
+
 ## Where the settings are
 
 | Kind | Where you set it | When a change applies |

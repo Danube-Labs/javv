@@ -2,6 +2,11 @@
 
 <video controls preload="metadata" width="100%" src="videos/who-changed-what.mp4"></video>
 
+!!! tip "For AI agents"
+    An agent reads the audit log of one cluster with the tool `audit_log`, and counts its rows with
+    `count_audit_log`. A change by an agent has the user `mcp:<name>`, and each tool call has a row
+    with the action **MCP tool call**. [Use the MCP server](use-the-mcp-server.md) tells more.
+
 ## The Audit log
 
 1. Open the Audit log from the side menu. It lists each change: when, who, what and the target.

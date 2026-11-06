@@ -109,7 +109,7 @@ describe('section bodies', () => {
 
   it('AI agents links the docs page and has no semicolon (Simplified Technical English)', () => {
     const w = mount(McpSection)
-    expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/connect-an-ai-agent\.md$/)
+    expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/use-the-mcp-server\.md$/)
     expect(w.text()).not.toContain(';')
   })
 })

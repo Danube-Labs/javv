@@ -5,6 +5,11 @@
 A risk acceptance applies to one CVE in a scope. It also covers the new findings of that CVE in
 the scope.
 
+!!! tip "For AI agents"
+    Only an agent with a `write_risk_accept` token can accept a risk. It uses the tool
+    `risk_accept_decision` with the kind `make`, and the decision must have an expiry. A `write`
+    token cannot see this tool. Ask the user before each risk acceptance.
+
 ## Prerequisites
 
 - A role that allows risk acceptance: `security_lead` or `admin`

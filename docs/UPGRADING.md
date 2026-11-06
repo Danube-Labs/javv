@@ -17,6 +17,16 @@ JAVV has three parts. You upgrade each part separately:
 JAVV never changes a version in a cluster that you scan. You set each version as a tag in your
 own deployment. To install JAVV, see [`DEPLOYING.md`](DEPLOYING.md).
 
+!!! tip "For AI agents"
+    Obey these rules when you upgrade JAVV for a user:
+
+    - Get the version that runs now from `GET /api/v1/meta` → `version`.
+    - Read each row of [Version notes](#version-notes) after that version, up to the new version.
+      Do what each row tells, in the sequence of this page.
+    - Upgrade the backend first, then the frontend, then the scanner images.
+    - Before you start, read
+      [Go back to a previous release](#go-back-to-a-previous-release).
+
 ## Before you upgrade
 
 1. **Read the release notes.** Each release has a GitHub Release and an entry in
