@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.6](https://github.com/Danube-Labs/javv/compare/v0.9.5...v0.9.6) (2026-11-06)
+
+
+### Features
+
+* admin routes and store for MCP tokens (issue 1096 step 1) ([#1099](https://github.com/Danube-Labs/javv/issues/1099)) ([3ce6dc1](https://github.com/Danube-Labs/javv/commit/3ce6dc13865cc995fa42b685a712d26ab6b9222b))
+* guide section and docs page for ai agents (issue 1096 step 5) ([#1103](https://github.com/Danube-Labs/javv/issues/1103)) ([10b9c6c](https://github.com/Danube-Labs/javv/commit/10b9c6c76063f7f5b245c017af05fd023245e14e))
+* mcp endpoint with its token gate and 20 read tools (issue 1096 step 2) ([#1100](https://github.com/Danube-Labs/javv/issues/1100)) ([d4bfb48](https://github.com/Danube-Labs/javv/commit/d4bfb48689e7c26fe763524144ee5629fc9fe83d))
+* mcp write tools for triage and decisions (issue 1096 step 3) ([#1101](https://github.com/Danube-Labs/javv/issues/1101)) ([e81b7ff](https://github.com/Danube-Labs/javv/commit/e81b7ff00037cd2316cb15fdd928645eff0399b8))
+* settings section ai agents (mcp) (issue 1096 step 4) ([#1102](https://github.com/Danube-Labs/javv/issues/1102)) ([2858eaa](https://github.com/Danube-Labs/javv/commit/2858eaa93a21ae5a0260fa916d536dc66f1090d0))
+
+
+### Bug Fixes
+
+* add panel puts the new panel under the others ([#1091](https://github.com/Danube-Labs/javv/issues/1091)) ([6018365](https://github.com/Danube-Labs/javv/commit/6018365451157abf49ec0e2c3e4dc78f2479fa0f)), closes [#1090](https://github.com/Danube-Labs/javv/issues/1090)
+
 ## [0.9.5](https://github.com/Danube-Labs/javv/compare/v0.9.4...v0.9.5) (2026-11-03)
 
 
