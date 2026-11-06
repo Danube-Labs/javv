@@ -3916,7 +3916,7 @@ record.</p>
 it logs <code>ingest failure not recorded</code> with the <code>failure_id</code>. It also increments
 <code>javv_ingest_failures_unrecorded_total{reason}</code>.</p>
 <h2 id="the-mcp-endpoint">The MCP endpoint<a class="headerlink" href="#the-mcp-endpoint" title="Permanent link">&para;</a></h2>
-<p>An AI agent, for example in Cursor, VS Code or Codex, reads and changes JAVV data through the MCP endpoint at <code>POST /api/v1/mcp</code>. The endpoint exists only when <code>JAVV_MCP_ENABLED</code> is <code>true</code> (<a href="../CONFIGURATION/#mcp-endpoint">MCP endpoint</a>). An admin makes the token in <code>POST /api/v1/admin/mcp-tokens</code> (<a href="#admin">Admin</a>).</p>
+<p>An AI agent, for example in Claude Code, Codex, VS Code or Cursor, reads and changes JAVV data through the MCP endpoint at <code>POST /api/v1/mcp</code>. The endpoint exists only when <code>JAVV_MCP_ENABLED</code> is <code>true</code> (<a href="../CONFIGURATION/#mcp-endpoint">MCP endpoint</a>). An admin makes the token in <code>POST /api/v1/admin/mcp-tokens</code> (<a href="#admin">Admin</a>).</p>
 <p>The endpoint takes the MCP protocol versions 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. A client of an older version starts with <code>initialize</code>. The endpoint keeps no session: it never sends <code>Mcp-Session-Id</code>, and each request carries its token.</p>
 <p>Before the MCP server reads a request, the endpoint checks it in this order:</p>
 <table>

@@ -631,6 +631,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#connect-claude-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Connect Claude Code
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#connect-codex" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1399,6 +1410,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#connect-claude-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Connect Claude Code
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#connect-codex" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1488,7 +1510,7 @@
 <p>JAVV has an MCP server for AI agents. An agent can read the findings of JAVV for you, and with a
 token of a higher level it can also triage them. The agent connects to the MCP endpoint of JAVV,
 <code>/api/v1/mcp</code>, with an MCP token. This page tells how to turn on the endpoint, how to make a
-token, and how to connect Codex, VS Code or Cursor.</p>
+token, and how to connect Claude Code, Codex, VS Code or Cursor.</p>
 <div class="admonition tip">
 <p class="admonition-title">For AI agents</p>
 <p>Obey these rules when you call the tools of JAVV:</p>
@@ -1497,7 +1519,8 @@ token, and how to connect Codex, VS Code or Cursor.</p>
 <li>A finding is one CVE in one package version for one scanner. The results of Trivy and
   Grype stay apart. Do not add them together, and do not merge them.</li>
 <li>To get the next page of <code>search_findings</code> or <code>audit_log</code>, send <code>next_cursor</code> back as
-  <code>cursor</code>.</li>
+  <code>cursor</code>. A new search with the same tool closes the cursor of your last search. Read all
+  the pages that you need before you start the next search.</li>
 <li>An answer with a <code>cut</code> field does not have all the rows. Ask for fewer rows. When a tool
   error tells you to ask for a smaller size, send a smaller <code>size</code>.</li>
 <li>Each write tool has the hint <code>destructiveHint</code>. Ask the user before each write.</li>
@@ -1562,6 +1585,27 @@ and the URL of the endpoint.</p>
 </ol>
 <p>To stop a token, select <strong>Revoke</strong> on its row. To get a new token for the same name, select
 <strong>Rotate</strong> and pick a new expiry. The old token then stops at once.</p>
+<h2 id="connect-claude-code">Connect Claude Code<a class="headerlink" href="#connect-claude-code" title="Permanent link">&para;</a></h2>
+<p>We tested these settings with Claude Code 2.1.319.</p>
+<ol>
+<li>Put the token in the variable <code>JAVV_MCP_TOKEN</code>, in the shell that starts Claude Code.</li>
+<li>
+<p>Add the server. Use single quotes, so that the config keeps the name of the variable and not
+   the token:</p>
+<div class="highlight"><pre><span></span><code>claude<span class="w"> </span>mcp<span class="w"> </span>add<span class="w"> </span>--transport<span class="w"> </span>http<span class="w"> </span>--scope<span class="w"> </span>user<span class="w"> </span>javv<span class="w"> </span>https://javv.example.com/api/v1/mcp<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--header<span class="w"> </span><span class="s1">'Authorization: Bearer ${JAVV_MCP_TOKEN}'</span>
+</code></pre></div>
+</li>
+<li>
+<p>Run <code>claude mcp list</code>. The list shows <code>javv</code> with "Connected".</p>
+</li>
+</ol>
+<p>With <code>--scope project</code>, the command writes the server to <code>.mcp.json</code> in your project. Claude Code
+then asks you to approve the server the next time that it starts in that folder.</p>
+<p>When <code>claude mcp list</code> shows "Server rejected the configured Authorization header (HTTP 401)",
+the token is wrong, revoked or expired, or <code>JAVV_MCP_TOKEN</code> is empty. Make a token, or rotate the
+token. Claude Code can tell you to use OAuth in place of the header. JAVV has no OAuth, so keep
+the header.</p>
 <h2 id="connect-codex">Connect Codex<a class="headerlink" href="#connect-codex" title="Permanent link">&para;</a></h2>
 <p>We tested these settings with Codex 0.144.1.</p>
 <ol>
