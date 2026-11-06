@@ -49,7 +49,9 @@ A small team maintains JAVV. These times are our targets. They are not a service
 
 - The FastAPI backend, and specially the **ingest endpoint**. This endpoint reads scanner output
   that JAVV cannot trust.
-- Sign-in, sessions, ingest tokens, and the access model that uses capabilities.
+- Sign-in, sessions, ingest tokens, MCP tokens, and the access model that uses capabilities.
+- The **MCP endpoint** for AI agents (`/api/v1/mcp`). This includes the checks on each request, the
+  tools that each token level can call, and the audit row of each tool call.
 - The queries that JAVV sends to OpenSearch. This includes the isolation of each cluster by
   `cluster_id`, and injection into the query DSL.
 - The Vue frontend. This includes all problems that can show the data of a different cluster in a
@@ -80,6 +82,12 @@ We made these decisions on purpose. If you can break one of them, tell us.
   bearer token for one cluster and one scanner. JAVV keeps only a keyed hash of each token, and it
   compares hashes in constant time. A token for one cluster cannot push the data of a different
   cluster.
+- **An MCP token has one level, and the endpoint is off by default.** A `read` token can call
+  only the read tools. A `write` token can also triage findings and make "Not affected"
+  decisions. Only a `write_risk_accept` token can accept a risk. No token can change users, roles,
+  settings or tokens, or delete data. JAVV keeps only a keyed hash of each MCP token. The endpoint
+  refuses each request with an `Origin` header, thus a web page in a browser cannot use it. If a
+  token can call a tool that is not in its level, that is a real finding.
 - **The data inspector can only read.** It permits only a fixed list of read requests. It refuses
   the indices that hold credentials. JAVV writes each query to the audit log. A write through the
   data inspector is a real finding.

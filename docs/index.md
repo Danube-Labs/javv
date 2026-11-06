@@ -20,6 +20,7 @@ JAVV, read [Use JAVV](use/index.md). It has a short video for each task.
 | Learn which indices JAVV uses, how long it keeps the data, and what a snapshot holds | [Indices and data](runbooks/indices-and-data.md) |
 | Upgrade JAVV, or go back to the previous release | [Upgrading](UPGRADING.md) and the [release notes](../CHANGELOG.md) |
 | Verify the published images and charts | [Deploying: verify the images and charts](DEPLOYING.md#verify-the-images-and-charts) |
+| Connect an AI agent to JAVV through the MCP endpoint | [Connect an AI agent](use/connect-an-ai-agent.md) |
 | Send requests to JAVV from a script, or push results from your own tools | [API](API.md) and [Push from your own script](INGEST-CONTRACT.md) |
 | Report a security problem | [Security](../SECURITY.md) |
 
