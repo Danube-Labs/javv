@@ -145,7 +145,7 @@ Each endpoint uses one of four kinds of authentication.
 |---|---|---|
 | None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. Also `POST /auth/login` and `POST /auth/logout`. |
 | Scanner token | `Authorization: Bearer <token>`. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token. | The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner. |
-| MCP token | `Authorization: Bearer <token>`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
+| MCP token | `Authorization: Bearer <token>`. The scheme name `Bearer` can have each case, for example `bearer`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
 | Session | The `javv_session` cookie from `POST /auth/login` | All other endpoints |
 
 The session cookie has the `HttpOnly` and `SameSite=Lax` flags. It also has the `Secure` flag,

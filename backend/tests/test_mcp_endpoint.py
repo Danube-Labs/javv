@@ -650,3 +650,47 @@ def test_the_strict_tool_changes_only_what_it_does_with_other_arguments():
     assert loose.parameters.get("additionalProperties") is None  # the SDK's own tool is unchanged
     args = {"cluster_id": "c-strict-1", "severity": ["critical"]}
     assert tight.fn_metadata.validate_arguments(args) == loose.fn_metadata.validate_arguments(args)
+
+
+async def test_the_scheme_name_of_the_header_has_any_case(mcp_on):
+    """RFC 7235, section 2.1: the case of a scheme name has no effect (issue 1111)."""
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client)
+        for scheme in ("Bearer", "bearer", "BEARER"):
+            r = await http.post(PATH, **_modern("tools/list", authorization=f"{scheme} {raw}"))
+            assert r.status_code == 200, scheme
+        for header in (f"Bearer{raw}", f"Basic {raw}", f"bearer: {raw}", "bearer "):
+            r = await http.post(PATH, **_modern("tools/list", authorization=header))
+            assert r.status_code == 401, header.split(" ")[0]
+
+
+class _Store:
+    """A store that matches each token, so that only the header check can refuse."""
+
+    def __init__(self) -> None:
+        self.searches = 0
+
+    async def search(self, *, index: str, body: dict[str, Any]) -> dict[str, Any]:
+        self.searches += 1
+        found = {"token_hash": body["query"]["term"]["token_hash"], "name": "t", "level": "read"}
+        return {"hits": {"hits": [{"_source": found}]}}
+
+    async def update(self, **_: Any) -> None:
+        return None
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["", "Basic abc", "Bearerabc", "Bearer:abc", "Bearer ", "bearer ", f"Bearer {'a' * 506}"],
+)
+async def test_a_header_that_is_not_a_bearer_token_is_refused_before_the_store(header):
+    store = _Store()
+    assert await mcp_auth.resolve(store, header) is None
+    assert store.searches == 0
+
+
+async def test_a_bearer_token_of_each_case_reaches_the_store():
+    store = _Store()
+    for header in ("Bearer abc", "bearer abc", "BeArEr abc", f"Bearer {'a' * 505}"):
+        assert await mcp_auth.resolve(store, header) is not None, header[:10]
+    assert store.searches == 4
