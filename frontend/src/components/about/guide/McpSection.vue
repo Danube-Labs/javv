@@ -11,7 +11,7 @@ import GuideProse from './GuideProse.vue'
 
 const url = endpointUrl(window.location.origin)
 const TOOL_CALL = ACTION_LABELS.mcp_tool_call
-const DOCS = onMain('docs/use/connect-an-ai-agent.md')
+const DOCS = onMain('docs/use/use-the-mcp-server.md')
 </script>
 
 <template>
@@ -56,7 +56,7 @@ const DOCS = onMain('docs/use/connect-an-ai-agent.md')
       </li>
       <li>Each request sends the token in the header <code class="mono">Authorization: Bearer &lt;token&gt;</code>.</li>
       <li>
-        The page <a class="docs-link" :href="DOCS" target="_blank" rel="noopener noreferrer">Connect an AI agent</a>
+        The page <a class="docs-link" :href="DOCS" target="_blank" rel="noopener noreferrer">Use the MCP server</a>
         gives the settings for Codex, VS Code and Cursor.
       </li>
     </ul>

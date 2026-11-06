@@ -25,6 +25,8 @@ and rigid triage tools (no flexible reporting).
 - **Admin** - every capability: users/roles, per-(cluster,scanner) tokens, settings,
   **retention/rollover/snapshots**, the data inspector and the jobs.
 - **Scanner module** - automated client: discover → scan → push.
+- **AI agent** - automated client of the MCP endpoint (FR-26), with an MCP token of one level: `read`
+  (no capability), `write` (`can_triage`) or `write_risk_accept` (also `can_accept_audit_final`).
 
 (RBAC: four seeded roles, each a bundle of capabilities (D33): `viewer` (none), `triager` (`can_triage`,
 `can_export`, `can_edit_dashboards`), `security_lead` (`can_triage`, `can_accept_audit_final`,
@@ -214,6 +216,17 @@ change the password on first login - FR-18.)
   the scanner's effective **tuning** flags (per-scanner shape) + the **scope** applied that cycle;
   persisted on **scan-events** only. Read-only - feeds the M9e per-scanner cards and the audit trail;
   no write-back. Envelope stays current-only: v2→v3 is a flag-day (scanner + backend upgrade together).
+- **FR-26 MCP endpoint for AI agents (issue 1096).** `POST /api/v1/mcp` (stateless, streamable HTTP),
+  off by default (`JAVV_MCP_ENABLED`). `can_manage_tokens` makes an MCP token with a name, a level and
+  an expiry of at most 90 days; the token shows once, and rotate and revoke act at once. The principal
+  is `mcp:<name>`. Read tools cover the GET routes (a coverage test fails on a new route with no tool
+  and no `NO_TOOL` reason) and answer as the route answers an admin; write tools (`set_triage`,
+  `bulk_triage`, `not_affected_decision`, `risk_accept_decision`) go through the same checks and audit
+  rows as the screens. No token manages users, roles, settings or tokens, or deletes data. A request
+  with an `Origin` header gets 403; a per-token rate limit gives 429; each tool call writes one
+  `mcp_tool_call` audit row with a hash of its arguments, never the arguments; an answer over
+  `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from its longest list (a `cut` field) or is a tool error.
+  Reference: `docs/API.md` "The MCP endpoint".
 
 ## Non-functional requirements
 
@@ -251,7 +264,8 @@ change the password on first login - FR-18.)
   (~50 MB) caps** → 413 (gzip-bomb guard); Pydantic v2 `extra="forbid"` + per-field `max_length` + bounded
   arrays; **structured query bodies, never string-concat**; **do not sanitize field values** (UTF-8/emoji
   safe - risk is field-names/`query_string`/`script`); bearer tokens 256-bit random, **peppered
-  SHA-256**-hashed, `hmac.compare_digest`, rotatable (D38/M14).
+  SHA-256**-hashed, `hmac.compare_digest`, rotatable (D38/M14). MCP tokens (FR-26) are minted and
+  hashed the same way.
 - **NFR-8 Observability first** (FR-20) - M1.
 - **NFR-9 No extra infrastructure.** **No Redis/Kafka/RabbitMQ/broker** (hard constraint). The backend
   runs its own background jobs on cron schedules (issue 691: no CronJob per job, one backend container and

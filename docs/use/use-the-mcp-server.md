@@ -1,9 +1,24 @@
-# Connect an AI agent
+# Use the MCP server
 
-An AI agent can read the findings of JAVV for you, and with a token of a higher level it can
-also triage them. The agent connects to the MCP endpoint of JAVV with an MCP token. This page
-tells how to turn on the endpoint, how to make a token, and how to connect Codex, VS Code or
-Cursor.
+JAVV has an MCP server for AI agents. An agent can read the findings of JAVV for you, and with a
+token of a higher level it can also triage them. The agent connects to the MCP endpoint of JAVV,
+`/api/v1/mcp`, with an MCP token. This page tells how to turn on the endpoint, how to make a
+token, and how to connect Codex, VS Code or Cursor.
+
+!!! tip "For AI agents"
+    Obey these rules when you call the tools of JAVV:
+
+    - Call `list_clusters` first. Most other tools need a `cluster_id` from its answer.
+    - A finding is one CVE in one package version for one scanner. The results of Trivy and
+      Grype stay apart. Do not add them together, and do not merge them.
+    - To get the next page of `search_findings` or `audit_log`, send `next_cursor` back as
+      `cursor`.
+    - An answer with a `cut` field does not have all the rows. Ask for fewer rows. When a tool
+      error tells you to ask for a smaller size, send a smaller `size`.
+    - Each write tool has the hint `destructiveHint`. Ask the user before each write.
+    - When a tool error has the words "the tool made the change", do not call the tool again.
+    - A tool error with `403` tells you that the level of the token does not allow the tool. Tell
+      the user that the token needs a higher level.
 
 ## Before you start
 

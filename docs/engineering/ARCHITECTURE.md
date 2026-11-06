@@ -15,6 +15,7 @@
 flowchart TB
     Triager["Triager / Security Lead"]
     Admin["Admin"]
+    Agent["AI agent (MCP client)"]
 
     subgraph CLUSTER["k8s cluster - one per cluster_id; runs the drop-in scanner"]
         direction TB
@@ -48,6 +49,7 @@ flowchart TB
             CSV["Streaming CSV (sanitized) → now | scheduled"]
             AUTH["Auth/RBAC · local users (argon2id) · bootstrap admin<br/>get_current_principal · IDOR · tenant filter"]
             RET["Retention/rollover/snapshot settings (per cluster_id)"]
+            MCP["MCP endpoint /api/v1/mcp (off by default, JAVV_MCP_ENABLED)<br/>MCP token (256-bit, peppered SHA-256) · level read / write / write_risk_accept<br/>Origin → 403 · per-token rate limit (in-proc) · one audit row per tool call<br/>read tools call the route functions · write tools take the checks of the screens"]
             OBS["/healthz /readyz /metrics · structlog"]
             BOOT["Index bootstrap · mappings (normalizer) · templates · versioned"]
         end
@@ -132,6 +134,11 @@ flowchart TB
     Triager --> FE
     Admin --> FE
     Admin --> AUTH
+    Agent -->|"POST /api/v1/mcp · bearer MCP token"| MCP
+    MCP --> SEARCH
+    MCP --> TRIAGE
+    MCP --> SU
+    MCP --> SA
 
     style CLUSTER fill:#fff7ed,stroke:#F18F01
     style SCAN fill:#fef3c7,stroke:#F18F01

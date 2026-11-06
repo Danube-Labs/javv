@@ -17,8 +17,15 @@ The videos use made-up clusters and data.
 
 One page has no video:
 
-- [Connect an AI agent](connect-an-ai-agent.md) tells how to turn on the MCP endpoint, how to make
+- [Use the MCP server](use-the-mcp-server.md) tells how to turn on the MCP endpoint, how to make
   an MCP token, and how to connect Codex, VS Code or Cursor.
+
+!!! tip "For AI agents"
+    An AI agent can do most of these tasks through the MCP server of JAVV. With a `read` token, it
+    finds and counts findings, and reads the audit log, the scanner status and the dashboards. With
+    a `write` token, it also sets the state of findings and makes "Not affected" decisions. Only a
+    `write_risk_accept` token can accept a risk. No token can make a dashboard. Each page tells the
+    tool for its task. [Use the MCP server](use-the-mcp-server.md) tells how to connect.
 
 ## What your role lets you do
 
