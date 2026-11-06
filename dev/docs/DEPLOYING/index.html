@@ -14,7 +14,7 @@
       
       
       
-        <link rel="prev" href="../use/build-a-dashboard/">
+        <link rel="prev" href="../use/connect-an-ai-agent/">
       
       
         <link rel="next" href="../supported-versions/">
@@ -518,6 +518,33 @@
     
   
   Build a dashboard
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/connect-an-ai-agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Connect an AI agent
 
     
   </span>
@@ -2382,6 +2409,8 @@ change most frequently:</p>
 <li><code>TZ</code>: the time zone of the job schedules (default <code>UTC</code>).</li>
 <li><code>OPENSEARCH_JAVA_OPTS</code>: the OpenSearch heap (default <code>-Xms1g -Xmx1g</code>).</li>
 <li><code>JAVV_JOB_&lt;KIND&gt;_CRON</code> and <code>JAVV_SCHEDULER_ENABLED</code>: when the background jobs run.</li>
+<li><code>JAVV_MCP_ENABLED</code>: turns on the MCP endpoint for AI agents (default <code>false</code>). See
+  <a href="../use/connect-an-ai-agent/">Connect an AI agent</a>.</li>
 </ul>
 <h3 id="scheduled-jobs">Scheduled jobs<a class="headerlink" href="#scheduled-jobs" title="Permanent link">&para;</a></h3>
 <p>The backend runs its background jobs on its own schedules:</p>
@@ -2625,7 +2654,8 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 </ul>
 <p>Each backend setting is under <code>backend.config</code> in <code>deploy/helm/javv/values.yaml</code>, with the same
 default and comment as in the compose file. To change a setting, use
-<code>--set backend.config.TZ=Europe/Bucharest</code>, or your own values file.</p>
+<code>--set backend.config.TZ=Europe/Bucharest</code>, or your own values file.
+To let AI agents connect to JAVV, see <a href="../use/connect-an-ai-agent/">Connect an AI agent</a>.</p>
 <p><strong>Access:</strong> only what you put in front of the <code>javv</code> Service.</p>
 <ul>
 <li>The backend Service and the OpenSearch Service are ClusterIP.</li>
