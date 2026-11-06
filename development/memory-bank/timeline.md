@@ -111,6 +111,10 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   `can_edit_dashboards` permission, list, read, export and import, then edit mode on a gridstack
   grid with a popover for panel settings. PRs 996, 1001, 1002, 1003, 1007, 1008, 1010.
   These changes shipped in 0.8.9 (2026-10-26). Release 0.9.0 marks them as a minor release.
+- **An MCP server for AI agents** (issue 1096, 2026-11-04 to 2026-11-06): a probe with live
+  clients, then MCP tokens, the endpoint with read tools, write tools for triage and decisions, the
+  Settings section "AI agents (MCP)", the Guide section and the docs page. The PRs are 1099 to
+  1103, then 1105. These changes shipped in 0.9.6 (2026-11-06).
 
 ## 6. Releases
 
@@ -118,6 +122,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.6 | 2026-11-06 | An MCP server for AI agents at `/api/v1/mcp`, off by default. MCP tokens have one of three levels, and each tool call writes an audit row (issue 1096). Add panel puts the new panel under the others (issue 1090). A video for the page "Build a dashboard" (issue 1009) |
 | 0.9.5 | 2026-11-03 | Dashboard panels have their own filters (issues 999 and 1063). A filter list finds a value past the top 32 (issue 1064). Scan and image counts count findings, not the entries of a scanner report (issue 1076). The scanner chart uses Grype 0.121.1 |
 | 0.9.4 | 2026-10-30 | Each window has the dark blue head of the tables (issue 1049). Text boxes, dropdowns, search boxes and window footer buttons have one look on every screen (issues 1050 and 1053). Checks and a lint rule keep them the same (issue 1055). Dashboard panels are as tall as their content (issue 1045). The release PR gets a What's new section (issue 1061) |
 | 0.9.3 | 2026-10-29 | Role names show in words on every screen, and the id stays the value. Every control in a screen head is 30px high, with a 1px edge under it (issue 1039) |
