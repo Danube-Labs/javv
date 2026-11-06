@@ -33,6 +33,12 @@ Lightweight rules for a small team. Full rationale in the `git-workflow-and-vers
   plus the issue: **`Closes #<n>`** in the PR that finishes it, `Refs #<n>` in the PRs before it.
 - CI must be green (ruff + pyright + pytest, ESLint + Vitest) before merge.
 - `code-review-and-quality` pass on the diff.
+- **Pictures in a PR body or an issue comment** live on the one branch `visual-assets`, in a folder
+  for the issue: `visual-assets/<issue>/<file>.png`. Link them as
+  `https://github.com/Danube-Labs/javv/blob/visual-assets/<issue>/<file>.png?raw=true`. Add a
+  commit to that branch. Never make a branch for each issue. The branch never merges, and it
+  holds only pictures. Before 2026-11-06, each issue had a branch `visual-assets/<issue>`. Those
+  branches are now the folders of the same names, so the old links still work.
 
 ## Handing a PR to review (implementer → reviewer)
 
