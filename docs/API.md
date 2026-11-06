@@ -924,7 +924,7 @@ A tool with more than one kind takes the parameter `kind`. A parameter that the 
 | Tool | Route |
 |---|---|
 | `list_clusters` | `GET /api/v1/clusters` |
-| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. |
+| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text `cursor closed`, which tells this cause. A search that ended after its keep-alive gets 410 with the text `cursor expired`. |
 | `count_findings` | `GET /api/v1/findings/facets` |
 | `group_findings` | `GET /api/v1/findings/groups` |
 | `top_images` | `GET /api/v1/findings/top-images` |

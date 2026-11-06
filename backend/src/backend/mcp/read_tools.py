@@ -47,7 +47,8 @@ READ_TOOLS: tuple[Tool, ...] = (
             "One page of the findings of one cluster, with the filters of the Findings screen. "
             "Each finding is one CVE in one package version for one scanner: the scanners stay "
             "apart. Pass next_cursor back as cursor for the next page. A first page starts a new "
-            "search. as_of reads a past time."
+            "search and closes the cursor of your last search with this tool: read all the pages "
+            "that you need first. as_of reads a past time."
         ),
         routes={"": findings.search_findings},
         params={"size": FINDINGS_PAGE},
@@ -122,7 +123,9 @@ READ_TOOLS: tuple[Tool, ...] = (
         name="audit_log",
         description=(
             "One page of the audit log of one cluster: who changed what and when. Pass "
-            "next_cursor back as cursor for the next page. as_of reads a past time."
+            "next_cursor back as cursor for the next page. A first page starts a new search and "
+            "closes the cursor of your last search with this tool: read all the pages that you "
+            "need first. as_of reads a past time."
         ),
         routes={"": audit.read_audit_log},
         hidden=("keep_open",),

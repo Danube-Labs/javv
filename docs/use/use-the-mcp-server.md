@@ -196,6 +196,7 @@ change the state of a finding with an accepted risk.
 | 429 | The token sent more requests in one minute than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` allows (60 by default). | Wait one minute. |
 | A tool error: the level of this token does not allow this tool | The tool needs a higher level. | Make a token with a higher level. |
 | An answer with a `cut` field | The answer was longer than `JAVV_MCP_MAX_ANSWER_CHARS` (50,000 characters by default). JAVV kept the first rows, and `cut` gives the number. | Ask for fewer rows. |
+| A tool error: 410 `cursor closed` | The agent started a new search with the same tool, and that search closed the cursor of the last search. | Tell the agent to read all the pages that it needs before it starts a new search. |
 | A tool error: ask for a smaller size | A page of rows with a next page was longer than `JAVV_MCP_MAX_ANSWER_CHARS`. | Ask for a smaller page. |
 
 The settings of the endpoint are in [MCP endpoint](../CONFIGURATION.md#mcp-endpoint). The tools of

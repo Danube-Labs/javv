@@ -229,6 +229,14 @@ def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
 # Q4: for each (token, tool), the open search of its last first page
 _walks: dict[tuple[str, str], str] = {}
 _MAX_WALKS = 100_000
+# (token, open search) of each search that a new first page closed. Its cursor would get the 410
+# of an expired keep-alive, and an agent then reads that it waited too long (issue 1112).
+_closed: set[tuple[str, str]] = set()
+
+CLOSED_BY_NEW_SEARCH = (
+    "cursor closed: a new search with this tool closed this search. Read all the pages that you "
+    "need before you start a new search, or start this search again"
+)
 
 
 async def _close_last_walk(app: FastAPI, principal: Principal, tool: str) -> None:
@@ -236,6 +244,18 @@ async def _close_last_walk(app: FastAPI, principal: Principal, tool: str) -> Non
     if pit_id is not None and pit_guard.holds(principal.user_id, pit_id):
         await app.state.opensearch.delete_pit(body={"pit_id": [pit_id]})
         pit_guard.release_pit(principal.user_id, pit_id)
+        if len(_closed) >= _MAX_WALKS:
+            _closed.clear()  # such a cursor then gets the keep-alive text of the route again
+        _closed.add((principal.user_id, pit_id))
+
+
+def _refuse_closed(principal: Principal, cursor: str) -> None:
+    try:
+        pit_id = cursor_pit_id(cursor)
+    except ValueError:  # a past-time cursor holds no open search; a bad one is the route's 422
+        return
+    if (principal.user_id, pit_id) in _closed:
+        raise RouteError(410, CLOSED_BY_NEW_SEARCH)
 
 
 def _keep_walk(principal: Principal, tool: str, answer: Any) -> None:
@@ -306,6 +326,8 @@ def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
             args = given
         if tool.paged and args.get("cursor") is None:
             await _close_last_walk(app, principal, tool.name)
+        elif tool.paged:
+            _refuse_closed(principal, args["cursor"])
         try:
             answer = await _call(plan, app, principal, args, write=write)
         except HTTPException as exc:
