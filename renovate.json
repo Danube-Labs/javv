@@ -43,6 +43,11 @@
       "groupName": "dev-dependencies (non-major)"
     },
     {
+      "description": "oxlint and eslint-plugin-oxlint move as one PR, apart from the dev group: the plugin takes only its own oxlint minor as a peer, so an oxlint bump alone cannot update the lockfile. Until the plugin has the new minor, only this PR fails",
+      "matchPackageNames": ["oxlint", "eslint-plugin-oxlint"],
+      "groupName": "oxlint"
+    },
+    {
       "description": "uv moves as one PR: versions.yaml (GitHub release) plus the uv image the scanner Dockerfiles copy from, which check-versions.sh holds equal",
       "matchPackageNames": ["astral-sh/uv", "ghcr.io/astral-sh/uv"],
       "groupName": "uv"
