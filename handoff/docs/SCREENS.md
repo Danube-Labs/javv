@@ -1105,7 +1105,7 @@ every user, also when the endpoint is off. It tells what each level can do (the 
 action name from `ACTION_LABELS`, the tool call rows only for `can_manage_users`), and how to
 connect: the URL of this JAVV in the `CopyValue` box with Copy (the Guide is the only screen that
 gives a user who is not an admin the URL), the `Authorization: Bearer` header, and a link to the
-docs page *Connect an AI agent*. Written in Simplified Technical English.
+docs page *Use the MCP server*. Written in Simplified Technical English.
 **Links in:** `/guide#<section>`. The shell's URL re-stamp keeps the hash, and the router
 scrolls only on arriving at a section, so changing the range or cluster on the page doesn't jump.
 Two screens point in through the shared `GuideLink` (operator rulings, 2026-10-01: words on the

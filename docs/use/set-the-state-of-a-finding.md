@@ -2,6 +2,11 @@
 
 <video controls preload="metadata" width="100%" src="videos/set-the-state-of-a-finding.mp4"></video>
 
+!!! tip "For AI agents"
+    An agent with a `write` or `write_risk_accept` token sets the state of one finding with the
+    tool `set_triage`. The tool takes the `finding_key` of the finding from `search_findings`. A
+    finding with an accepted risk keeps its state. [Use the MCP server](use-the-mcp-server.md) tells how to connect.
+
 ## Prerequisites
 
 - A role that allows triage: `triager`, `security_lead` or `admin`

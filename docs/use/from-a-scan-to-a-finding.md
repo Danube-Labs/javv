@@ -2,6 +2,11 @@
 
 <video controls preload="metadata" width="100%" src="videos/from-a-scan-to-a-finding.mp4"></video>
 
+!!! tip "For AI agents"
+    An agent finds the findings of one cluster with the tool `search_findings`, and counts them with
+    `count_findings`. Each finding is for one scanner. Do not add the results of Trivy and Grype
+    together, and do not merge them.
+
 ## How the results get to JAVV
 
 Trivy and Grype run in your cluster. They scan each running image. Each scanner sends its results

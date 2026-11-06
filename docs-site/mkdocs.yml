@@ -78,7 +78,7 @@ nav:
       - When a scanner stops: docs/use/when-a-scanner-stops.md
       - See who changed what: docs/use/who-changed-what.md
       - Build a dashboard: docs/use/build-a-dashboard.md
-      - Connect an AI agent: docs/use/connect-an-ai-agent.md
+      - Use the MCP server: docs/use/use-the-mcp-server.md
   - Install:
       - Deploying: docs/DEPLOYING.md
       - Supported versions: docs/supported-versions.md

@@ -14,6 +14,8 @@ links to other files, nor that the tree publishes only the listed files. These t
 - a release publishes its docs as a version of its own with the script that chooses the aliases
   (`major.minor`, `latest`), and the backfill workflow publishes older releases the same way;
 - no published page carries an em dash;
+- the only box on the site is the tip "For AI agents", and the pages that tell an agent what to
+  do keep theirs;
 - each published page of `docs/` passes the STE linter (issue 1061);
 - the pages carry no engineering references (milestones, decisions, audit ids, issue
   numbers), except links to issues that track a limit an operator meets today;
@@ -67,7 +69,7 @@ PAGES = {
     "docs/use/when-a-scanner-stops.md",
     "docs/use/who-changed-what.md",
     "docs/use/build-a-dashboard.md",
-    "docs/use/connect-an-ai-agent.md",
+    "docs/use/use-the-mcp-server.md",
 }
 # Files the pages link to, published as they are.
 FILES = {"docs/ingest-envelope.schema.json", "versions.yaml", "deploy/compose/compose.yaml"}
@@ -299,6 +301,34 @@ def test_published_pages_carry_no_em_dash(page: str) -> None:
     lines = (ROOT / page).read_text().splitlines()
     found = [n for n, line in enumerate(lines, 1) if "\u2014" in line]
     assert not found, f"{page} has an em dash on lines {found}"
+
+
+_BOX = re.compile(r'^\s*(?:!!!|\?\?\?\+?)\s*(\w+)(?:\s+"([^"]*)")?', re.MULTILINE)
+# the box has a color of its own, so an agent and its user see where the rules for an agent are
+AGENT_BOX = ("tip", "For AI agents")
+AGENT_PAGES = {
+    "docs/index.md",
+    "docs/API.md",
+    "docs/INGEST-CONTRACT.md",
+    "docs/CONFIGURATION.md",
+    "docs/UPGRADING.md",
+    "docs/use/index.md",
+    "docs/use/use-the-mcp-server.md",
+    "docs/use/from-a-scan-to-a-finding.md",
+    "docs/use/set-the-state-of-a-finding.md",
+    "docs/use/accept-a-risk.md",
+    "docs/use/change-many-findings.md",
+    "docs/use/when-a-scanner-stops.md",
+    "docs/use/who-changed-what.md",
+    "docs/use/build-a-dashboard.md",
+}
+
+
+@pytest.mark.parametrize("page", sorted(PAGES))
+def test_the_only_box_is_the_one_for_ai_agents(page: str) -> None:
+    boxes = _BOX.findall((ROOT / page).read_text())
+    assert all(box == AGENT_BOX for box in boxes), f"{page} has another box: {boxes}"
+    assert (page in AGENT_PAGES) == bool(boxes), f"{page}: AGENT_PAGES and its box disagree"
 
 
 def _ste_lint() -> Any:

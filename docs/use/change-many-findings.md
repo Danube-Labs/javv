@@ -4,6 +4,13 @@
 
 Bulk triage changes many findings at once. First, filter the findings.
 
+!!! tip "For AI agents"
+    An agent with a `write` or `write_risk_accept` token changes many findings with the tool
+    `bulk_triage`. The tool changes all the present findings of one cluster that its selector
+    finds. The selector needs one or more of `cve_id`, `image_digest`, `severity`, `state` and
+    `assignee`. JAVV refuses a selection that is too large. Then make the selector narrower, and
+    ask the user before each change.
+
 ## Prerequisites
 
 - A role that allows triage: `triager`, `security_lead` or `admin`
