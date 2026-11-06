@@ -1092,12 +1092,20 @@ is the shared `SectionNav` (Settings' left menu, moved into the kit so both scre
 component), sticky on the left; one card per section beside it. **Width: wide.** **Nav:**
 *Help → Guide* (`book` icon, an open book drawn for JAVV by operator ruling 2026-10-01: no
 licensed icon sets), before *About*.
-**Content:** eight sections: the time range, now vs new, two scanners never merged, scans and
+**Content:** nine sections: the time range, now vs new, two scanners never merged, scans and
 freshness, images are digests, triage, a state or a risk acceptance (issue 698: the two side by
 side, what the Approval list shows, and two worked examples, written in Simplified Technical
 English), and a glossary that carries the data dictionary (#351 §6). Written for the people using the app: plain words, no internal decision codes, no
 diagrams, no em dashes (operator rulings, 2026-10-01). Filter labels, the states a person can
 set and the VEX reasons are read from the app's own definitions, not retyped.
+**AI agents (MCP)** (issue 1096 step 5, operator decisions 2026-11-06: Q1 A, Q4 A on built
+pictures): a ninth section, before the glossary, with the `cpu` icon of Settings. It shows for
+every user, also when the endpoint is off. It tells what each level can do (the words of
+`MCP_LEVELS`, the Make window of §13.9), how the Audit log names an agent (`mcp:<name>`, the
+action name from `ACTION_LABELS`, the tool call rows only for `can_manage_users`), and how to
+connect: the URL of this JAVV in the `CopyValue` box with Copy (the Guide is the only screen that
+gives a user who is not an admin the URL), the `Authorization: Bearer` header, and a link to the
+docs page *Connect an AI agent*. Written in Simplified Technical English.
 **Links in:** `/guide#<section>`. The shell's URL re-stamp keeps the hash, and the router
 scrolls only on arriving at a section, so changing the range or cluster on the page doesn't jump.
 Two screens point in through the shared `GuideLink` (operator rulings, 2026-10-01: words on the

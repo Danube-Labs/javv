@@ -12,7 +12,7 @@ export interface AboutLink {
   href: string
 }
 
-const onMain = (path: string) => `${REPO_URL}/blob/main/${path}`
+export const onMain = (path: string) => `${REPO_URL}/blob/main/${path}`
 
 export const ABOUT_LINKS: AboutLink[] = [
   {

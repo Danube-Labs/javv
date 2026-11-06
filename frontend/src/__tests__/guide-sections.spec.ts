@@ -8,6 +8,8 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import { GUIDE_SECTIONS } from '@/about/guide'
+import { ACTION_LABELS } from '@/audit/actionLabels'
+import McpSection from '@/components/about/guide/McpSection.vue'
 import NowVsNewSection from '@/components/about/guide/NowVsNewSection.vue'
 import { SECTION_BODY } from '@/components/about/guide/sections'
 import StateOrAcceptanceSection from '@/components/about/guide/StateOrAcceptanceSection.vue'
@@ -15,6 +17,7 @@ import TriageSection from '@/components/about/guide/TriageSection.vue'
 import TwoScannersSection from '@/components/about/guide/TwoScannersSection.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { CISA_JUSTIFICATIONS, PANEL_TARGETS } from '@/findings/triageRules'
+import { endpointUrl, MCP_LEVELS } from '@/views/settings/mcpTokensForm'
 
 describe('GUIDE_SECTIONS', () => {
   it('has unique ids', () => {
@@ -86,5 +89,27 @@ describe('section bodies', () => {
 
   it('A state or a risk acceptance has no semicolon (Simplified Technical English)', () => {
     expect(mount(StateOrAcceptanceSection).text()).not.toContain(';')
+  })
+
+  it('AI agents gives each level in the words of the Settings section', () => {
+    const items = mount(McpSection).findAll('.levels li').map((li) => li.text())
+    MCP_LEVELS.forEach((level, i) => expect(items[i]).toBe(`${level.label}. ${level.note}`))
+  })
+
+  it('AI agents names the tool call row by the action name of the Audit log', () => {
+    const names = mount(McpSection).findAll('.ui-name').map((n) => n.text())
+    expect(names).toContain(ACTION_LABELS.mcp_tool_call)
+  })
+
+  it('AI agents gives the URL of this JAVV in the copy box of the Settings section', () => {
+    const w = mount(McpSection)
+    expect(w.find('.copy-box').text()).toBe(endpointUrl(window.location.origin))
+    expect(w.find('button[aria-label="Copy the URL"]').exists()).toBe(true)
+  })
+
+  it('AI agents links the docs page and has no semicolon (Simplified Technical English)', () => {
+    const w = mount(McpSection)
+    expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/connect-an-ai-agent\.md$/)
+    expect(w.text()).not.toContain(';')
   })
 })

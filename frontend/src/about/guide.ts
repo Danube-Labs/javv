@@ -56,6 +56,12 @@ export const GUIDE_SECTIONS = [
     icon: 'layers',
   },
   {
+    id: 'ai-agents',
+    title: 'AI agents (MCP)',
+    summary: 'What an agent can read and change, how the Audit log names it, and how to connect it.',
+    icon: 'cpu',
+  },
+  {
     id: 'glossary',
     title: 'Glossary',
     summary: 'The short labels in tables and filters.',
