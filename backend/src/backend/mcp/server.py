@@ -32,6 +32,7 @@ import structlog
 from fastapi import FastAPI, HTTPException
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp.server.streamable_http_manager import StreamableHTTPASGIApp
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import ValidationError
@@ -47,7 +48,7 @@ from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.settings import get_settings
 from backend.mcp import auth
 from backend.mcp.read_tools import READ_TOOLS
-from backend.mcp.tools import RouteError, Tool, build, current_principal
+from backend.mcp.tools import RouteError, Tool, build, current_principal, strict
 from backend.mcp.write_tools import WRITE_TOOLS
 
 log = structlog.get_logger()
@@ -111,8 +112,8 @@ def _result(exc: ToolError | None) -> str:
 class JavvMCP(MCPServer[Any]):
     """The SDK server with the JAVV frame around each tool call."""
 
-    def __init__(self, app: FastAPI) -> None:
-        super().__init__(name="javv", instructions=INSTRUCTIONS)
+    def __init__(self, app: FastAPI, tools: list[SdkTool]) -> None:
+        super().__init__(name="javv", instructions=INSTRUCTIONS, tools=tools)
         self._app = app
 
     async def list_tools(self) -> list[Any]:
@@ -221,15 +222,21 @@ class _Gate:
 def mount(app: FastAPI) -> None:
     """Add the endpoint and run the SDK's request manager inside the app lifespan. The manager
     runs one time only, so each app gets its own server (`app.state.mcp`)."""
-    server = JavvMCP(app)
-    for tool in TOOLS:
-        server.add_tool(
-            build(tool, app),
-            name=tool.name,
-            description=tool.description,
-            annotations=tool.annotations,
-            structured_output=False,
-        )
+    server = JavvMCP(
+        app,
+        [
+            strict(
+                SdkTool.from_function(
+                    build(tool, app),
+                    name=tool.name,
+                    description=tool.description,
+                    annotations=tool.annotations,
+                    structured_output=False,
+                )
+            )
+            for tool in TOOLS
+        ],
+    )
     server.streamable_http_app(
         stateless_http=True,
         json_response=True,

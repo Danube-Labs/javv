@@ -15,7 +15,9 @@ from typing import Any
 import httpx
 import pytest
 import structlog
+from fastapi import FastAPI
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp_types import CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY
 from opensearchpy import AsyncOpenSearch
 
@@ -564,3 +566,87 @@ async def test_only_can_manage_users_reads_the_rows_of_the_tool_calls(mcp_on):
             seen[admin] = [row["action"] for row in r.json()["data"]]
     assert seen[False] == []
     assert seen[True] == ["mcp_tool_call"]
+
+
+# --- an argument that a tool does not take (issue 1111) ------------------------------------
+
+
+def _text(r: httpx.Response) -> tuple[bool, str]:
+    assert r.status_code == 200, r.text
+    result = r.json()["result"]
+    return result.get("isError") is True, result["content"][0]["text"]
+
+
+async def test_each_tool_refuses_an_argument_that_it_does_not_take(mcp_on):
+    """The SDK's argument model drops an argument that it does not know, so the tool answered as
+    if the agent had not sent it. Each tool refuses it by its name, never by its value."""
+    marker = "SECRET-VALUE-1111"
+    async with _endpoint() as (http, client):
+        name, raw = await _token(client, level="write_risk_accept")
+        refused = {}
+        for tool in mcp_server.TOOLS:
+            r = await http.post(PATH, **_call(tool.name, {"no_such_argument": marker}, raw))
+            error, text = _text(r)
+            refused[tool.name] = error and "no_such_argument" in text and "extra_forbidden" in text
+            assert marker not in r.text, tool.name
+        rows = await _rows(client, f"mcp:{name}")
+    assert refused == dict.fromkeys(refused, True)
+    assert len(refused) == 24
+    assert [row["new_value"] for row in rows] == ["error 422"] * len(refused)
+
+
+async def test_a_filter_with_a_typo_is_refused_and_not_read_as_no_filter(mcp_on):
+    cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+    async with _endpoint() as (http, client):
+        await _seed(client, cluster, _findings(2) + _findings(1, severity="CRITICAL"))
+        name, raw = await _token(client)
+        answers = {}
+        for key in ("severity", "severty"):
+            args = {"cluster_id": cluster, key: ["critical"]}
+            answers[key] = _text(await http.post(PATH, **_call("search_findings", args, raw)))
+        rows = await _rows(client, f"mcp:{name}")
+    error, text = answers["severity"]
+    assert not error, text
+    assert len(json.loads(text)["data"]) == 1
+    error, text = answers["severty"]
+    assert error and "severty" in text
+    assert '"data"' not in text
+    assert [row["new_value"] for row in rows] == ["ok", "error 422"]
+
+
+async def test_a_write_tool_with_an_argument_that_it_does_not_take_changes_nothing(mcp_on):
+    cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+    [doc] = _findings(1)
+    async with _endpoint() as (http, client):
+        await _seed(client, cluster, [doc])
+        name, raw = await _token(client, level="write")
+        args = {"finding_key": doc["finding_key"], "patch": {"assignee": "bob"}, "reason": "x"}
+        error, text = _text(await http.post(PATH, **_call("set_triage", args, raw)))
+        source = (await client.get(index="findings", id=doc["finding_key"]))["_source"]
+        rows = await _rows(client, f"mcp:{name}")
+    assert error and "reason" in text
+    assert source["assignee"] is None
+    assert [(row["action"], row["new_value"]) for row in rows] == [("mcp_tool_call", "error 422")]
+
+
+async def test_the_input_schema_of_each_tool_refuses_other_arguments(mcp_on):
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client, level="write_risk_accept")
+        r = await http.post(PATH, **_modern("tools/list", **_bearer(raw)))
+    schemas = {t["name"]: t["inputSchema"] for t in r.json()["result"]["tools"]}
+    assert set(schemas) == {tool.name for tool in mcp_server.TOOLS}
+    assert {n: s.get("additionalProperties") for n, s in schemas.items()} == dict.fromkeys(
+        schemas, False
+    )
+
+
+def test_the_strict_tool_changes_only_what_it_does_with_other_arguments():
+    [search] = [t for t in mcp_server.TOOLS if t.name == "search_findings"]
+    loose = SdkTool.from_function(
+        build(search, FastAPI()), name=search.name, structured_output=False
+    )
+    tight = tools.strict(loose)
+    assert tight.parameters == {**loose.parameters, "additionalProperties": False}
+    assert loose.parameters.get("additionalProperties") is None  # the SDK's own tool is unchanged
+    args = {"cluster_id": "c-strict-1", "severity": ["critical"]}
+    assert tight.fn_metadata.validate_arguments(args) == loose.fn_metadata.validate_arguments(args)

@@ -10,7 +10,8 @@ token's principal as it is, and runs the route's permission check on it first, a
 
 A tool with several routes (`kinds`) takes a `kind` and the parameters of all its routes, each
 one optional with no default of its own; a parameter that the chosen route does not take is
-refused, one that it needs must be there, and one left out takes the route's default.
+refused, one that it needs must be there, and one left out takes the route's default. An argument
+that no route of the tool takes is refused too (`strict`).
 
 Each answer goes back as compact JSON text, one time: no structured copy, which doubled the size
 in the step 0 probe. An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` drops rows from the end
@@ -23,12 +24,14 @@ import types
 import typing
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from fastapi import FastAPI, Request
 from fastapi.params import Depends
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp_types import ToolAnnotations
+from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
 from starlette.exceptions import HTTPException  # the base of FastAPI's and TypedHTTPException
 
@@ -323,6 +326,28 @@ def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
     run.__doc__ = tool.description
     run.__signature__ = inspect.Signature(ordered, return_annotation=str)  # type: ignore[attr-defined]
     return run
+
+
+def strict(tool: SdkTool) -> SdkTool:
+    """The SDK tool, with an argument model that refuses an argument the tool does not take. The
+    SDK's own model drops it before the tool runs, so a filter with a typo read as no filter
+    (issue 1111). The refusal is a validation error, which `JavvMCP.call_tool` gives by name,
+    never by value. The input schema then has `additionalProperties: false` for the client."""
+    loose = tool.fn_metadata.arg_model
+    model = cast(
+        type[BaseModel],
+        type(
+            loose.__name__,
+            (loose,),
+            {"model_config": ConfigDict(extra="forbid"), "__module__": loose.__module__},
+        ),
+    )
+    return tool.model_copy(
+        update={
+            "fn_metadata": tool.fn_metadata.model_copy(update={"arg_model": model}),
+            "parameters": model.model_json_schema(by_alias=True),
+        }
+    )
 
 
 READ_ONLY = ToolAnnotations(read_only_hint=True)
