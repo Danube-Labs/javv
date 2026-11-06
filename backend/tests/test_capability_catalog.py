@@ -41,3 +41,13 @@ def test_the_list_has_each_permission_of_a_default_role() -> None:
 def test_the_list_agrees_with_the_permission_table_in_api_md() -> None:
     rows = re.findall(r"^\| `(can_[a-z_]+)` \|", API_MD.read_text(), flags=re.MULTILINE)
     assert rows == _ids()
+
+
+def test_the_token_permission_names_both_kinds_of_token() -> None:
+    # can_manage_tokens guards the scanner token routes and the MCP token routes (issue 1096),
+    # so the Roles card and docs/API.md must not say "scanner tokens" only
+    text = next(p for p in PERMISSIONS if p.id == "can_manage_tokens").description
+    row = re.search(r"^\| `can_manage_tokens` \| (.+?) \|$", API_MD.read_text(), re.M)
+    assert row, "docs/API.md has no row for can_manage_tokens"
+    for words in (text, row.group(1)):
+        assert "scanner tokens" in words and "MCP tokens" in words, words

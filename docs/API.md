@@ -198,7 +198,7 @@ At its first start, JAVV creates four roles:
 | `can_accept_audit_final` | Accept a risk, in a decision or in triage. Make, change and revoke `risk_accepted` and `ignore_rule` decisions. Change the state of a risk-accepted finding, also in a bulk triage. Read and export the approvals queue. |
 | `can_export` | Download the export files: the findings CSV and VEX, the audit log CSV, the contributors CSV and the approvals CSV. Make an export report and download it. |
 | `can_edit_dashboards` | Make dashboards. Change, share and delete your own dashboards. |
-| `can_manage_tokens` | Make, revoke and rotate scanner tokens |
+| `can_manage_tokens` | Make, revoke and rotate scanner tokens and MCP tokens |
 | `can_manage_users` | Make users. Change their role, their status and their password. Read the account events in the audit log. |
 | `can_manage_settings` | Change the SLA, staleness, retirement and scan scope settings, and the cluster names. Retire a cluster, and bring it back. Read the OpenSearch facts. Start the staleness sweep. Change or delete the saved views of other users. See, change and delete the dashboards of other users, with `can_edit_dashboards`. Read the dashboard rows in the audit log. |
 | `can_manage_retention` | Read and change the data settings: retention, rollover, export lifetime and findings cleanup. Read and take snapshots. Delete a retired cluster. |

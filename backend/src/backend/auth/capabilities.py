@@ -69,7 +69,9 @@ PERMISSIONS: tuple[Permission, ...] = (
         "Make dashboards. Change, share and delete your own dashboards.",
     ),
     Permission(
-        "can_manage_tokens", "Manage scanner tokens", "Make, revoke and rotate scanner tokens."
+        "can_manage_tokens",
+        "Manage tokens",
+        "Make, revoke and rotate scanner tokens and MCP tokens.",
     ),
     Permission(
         "can_manage_users",
