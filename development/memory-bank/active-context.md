@@ -1,20 +1,20 @@
 # Active context
 
-As of: 2026-11-03
+As of: 2026-11-06
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
 
 ## Where the project is
 
-- The last release is 0.9.5 (2026-11-03): filters on dashboard panels, a search for filter values
-  past the top 32, and counts of findings, not of the entries of a scanner report (issues 999,
-  1063, 1064, 1076).
+- The last release is 0.9.6 (2026-11-06): an MCP server for AI agents, with MCP tokens of three
+  levels, an audit row for each tool call, and a docs page "Use the MCP server" (issue 1096).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
 
-- Issue 1009: a video for the page "Build a dashboard" (operator, 2026-11-03).
+- Issue 1108: install 0.9.6 from zero by the published docs, with docker compose and with Helm,
+  and scanners in a Kubernetes cluster. It starts on the word of the operator.
 
 ## Held
 
