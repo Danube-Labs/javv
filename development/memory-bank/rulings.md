@@ -104,3 +104,4 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-26 | The bolts M0 to M10 are frozen as history. New work is one issue for each feature. This memory bank is in the repository. | 1012 |
 | standing | No stacked PRs. Each PR bases on `main`. | `development/standards/git-workflow.md` |
 | standing | No tool attribution and no session links in commits, PRs or issues. | `development/standards/git-workflow.md` |
+| 2026-11-06 | The docs and the issues can name an agent client that a user connects to JAVV, for example Claude Code, Codex, VS Code or Cursor. They still name no model, and no tool as the author or the reviewer of the work. | 1110 |
