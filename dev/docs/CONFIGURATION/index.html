@@ -2747,7 +2747,7 @@ description.</p>
 <tr>
 <td><code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code></td>
 <td><code>60</code></td>
-<td>Requests that one MCP token can send in one minute. Above this number, the endpoint replies 429 with <code>Retry-After</code>. The backend also logs a warning and adds one to <code>javv_limit_rejections_total{limit="mcp_rate"}</code>. The backend keeps the count in its memory.</td>
+<td>Requests that one MCP token can send in one minute. Above this number, the endpoint replies 429 with <code>Retry-After</code>, and a <code>detail</code> that tells the limit and the wait. The backend also logs a warning and adds one to <code>javv_limit_rejections_total{limit="mcp_rate"}</code>. The backend keeps the count in its memory. Each connection of an agent client also uses requests. In a test, Claude Code 2.1.319 sent 5 requests before its first tool call. Keep the value at 30 or more. In the same test, a short audit sent 25 requests in 84 seconds: 5 for the connection and 20 tool calls.</td>
 </tr>
 <tr>
 <td><code>JAVV_MCP_MAX_ANSWER_CHARS</code></td>

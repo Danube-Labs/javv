@@ -3941,7 +3941,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 </tr>
 <tr>
 <td>The token sent more than <code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code> requests in one minute</td>
-<td>429, with <code>Retry-After: 60</code></td>
+<td>429, with <code>Retry-After: 60</code>. The <code>detail</code> tells the limit and the wait. An example is <code>60 requests in one minute for each token. Wait 60 seconds, then send the request again.</code> An agent client can give the agent only the body, so the agent gets the wait from the <code>detail</code>.</td>
 </tr>
 </tbody>
 </table>

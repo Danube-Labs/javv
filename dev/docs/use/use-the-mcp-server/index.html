@@ -1729,8 +1729,8 @@ change the state of a finding with an accepted risk.</p>
 </tr>
 <tr>
 <td>429</td>
-<td>The token sent more requests in one minute than <code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code> allows (60 by default).</td>
-<td>Wait one minute.</td>
+<td>The token sent more requests in one minute than <code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code> allows (60 by default). Each connection of the client also uses requests: Claude Code sends 5 when it connects. The <code>detail</code> of the answer tells the wait.</td>
+<td>Wait one minute. Keep <code>JAVV_MCP_RATE_LIMIT_PER_MINUTE</code> at 30 or more.</td>
 </tr>
 <tr>
 <td>A tool error: the level of this token does not allow this tool</td>
