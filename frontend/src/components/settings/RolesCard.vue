@@ -42,29 +42,31 @@ const has = (r: RoleRow, id: string) => holdsAll(r) || r.capabilities.includes(i
 
 <template>
   <SettingsCard title="Roles" subtitle="What each role can do. Every role can read the findings, images and dashboards.">
-    <div v-if="ready" class="tbl-wrap roles-wrap">
-      <table class="tbl tbl-dense tbl-hover">
-        <thead>
-          <tr>
-            <th>Permission</th>
-            <th v-for="r in columns" :key="r.role" class="c">{{ roleLabel(r.role) }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in rows" :key="p.id">
-            <td>
-              <div class="perm-name">{{ p.name }}</div>
-              <div v-if="p.description" class="perm-does">{{ p.description }}</div>
-            </td>
-            <td v-for="r in columns" :key="r.role" class="c">
-              <span v-if="has(r, p.id)" role="img" class="perm-yes" :aria-label="`${roleLabel(r.role)}: yes`">
-                <AppIcon name="check" :size="15" />
-              </span>
-              <span v-else role="img" class="perm-no" :aria-label="`${roleLabel(r.role)}: no`">–</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="ready" class="set-flush">
+      <div class="tbl-wrap roles-wrap">
+        <table class="tbl tbl-dense tbl-hover">
+          <thead>
+            <tr>
+              <th>Permission</th>
+              <th v-for="r in columns" :key="r.role" class="c">{{ roleLabel(r.role) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in rows" :key="p.id">
+              <td>
+                <div class="perm-name">{{ p.name }}</div>
+                <div v-if="p.description" class="perm-does">{{ p.description }}</div>
+              </td>
+              <td v-for="r in columns" :key="r.role" class="c">
+                <span v-if="has(r, p.id)" role="img" class="perm-yes" :aria-label="`${roleLabel(r.role)}: yes`">
+                  <AppIcon name="check" :size="15" />
+                </span>
+                <span v-else role="img" class="perm-no" :aria-label="`${roleLabel(r.role)}: no`">–</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <p class="roles-note">
       The admin role has every permission, also the permissions of later releases. To remove a person's access,
@@ -92,8 +94,10 @@ const has = (r: RoleRow, id: string) => holdsAll(r) || r.capabilities.includes(i
 .perm-no {
   color: var(--soft);
 }
+/* a 12px gap under the table, plus the 14px that .set-flush takes back at its bottom (it is made
+   for a table that ends the card) */
 .roles-note {
-  margin: 12px 0 0;
+  margin: 26px 0 0;
   font-size: var(--text-sm);
   color: var(--soft);
   line-height: 1.5;
