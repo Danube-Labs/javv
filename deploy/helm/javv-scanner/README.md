@@ -1,6 +1,6 @@
 # javv-scanner
 
-![Version: 0.9.7](https://img.shields.io/badge/Version-0.9.7-informational?style=flat-square) ![AppVersion: 0.9.7](https://img.shields.io/badge/AppVersion-0.9.7-informational?style=flat-square)
+![Version: 0.9.8](https://img.shields.io/badge/Version-0.9.8-informational?style=flat-square) ![AppVersion: 0.9.8](https://img.shields.io/badge/AppVersion-0.9.8-informational?style=flat-square)
 
 This chart installs the JAVV scanners in one cluster that you scan: a Trivy CronJob and a Grype
 CronJob.
@@ -32,7 +32,7 @@ CronJob.
     ([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)). Put
     each token in its own Secret, and install the chart:
     ```bash
-    VERSION=0.9.7
+    VERSION=0.9.8
     kubectl create namespace javv-scanner
     # asks for each token, so it is not in your shell history or the process list
     for s in trivy grype; do

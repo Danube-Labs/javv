@@ -122,6 +122,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.7 | 2026-11-07 | A test with a live agent client found five errors of the MCP server (issue 1110). Each tool refuses an argument that it does not take. The tool texts tell a closed cursor. A 429 tells the limit and the wait. One row of an answer always goes out. The MCP token table fits its card (issues 1111 to 1115). A docs page connects Claude Code to the MCP server |
 | 0.9.6 | 2026-11-06 | An MCP server for AI agents at `/api/v1/mcp`, off by default. MCP tokens have one of three levels, and each tool call writes an audit row (issue 1096). Add panel puts the new panel under the others (issue 1090). A video for the page "Build a dashboard" (issue 1009) |
 | 0.9.5 | 2026-11-03 | Dashboard panels have their own filters (issues 999 and 1063). A filter list finds a value past the top 32 (issue 1064). Scan and image counts count findings, not the entries of a scanner report (issue 1076). The scanner chart uses Grype 0.121.1 |
 | 0.9.4 | 2026-10-30 | Each window has the dark blue head of the tables (issue 1049). Text boxes, dropdowns, search boxes and window footer buttons have one look on every screen (issues 1050 and 1053). Checks and a lint rule keep them the same (issue 1055). Dashboard panels are as tall as their content (issue 1045). The release PR gets a What's new section (issue 1061) |
