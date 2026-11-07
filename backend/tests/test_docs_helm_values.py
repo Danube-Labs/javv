@@ -106,3 +106,20 @@ def test_each_set_key_is_a_value_of_its_chart(page: str) -> None:
     found = commands((ROOT / page).read_text())
     assert found, f"{page} has no helm install or upgrade"
     assert {command: unknown_keys(command) for command in found} == dict.fromkeys(found, [])
+
+
+def test_an_upgrade_without_a_full_values_file_keeps_the_values_of_the_install() -> None:
+    # the install sets the two required values with --set; an upgrade with only a small values
+    # file loses them, and validate.yaml stops it (H6 of issue 1126). UPGRADING writes the full
+    # file with helm get values first, so it needs no --reuse-values
+    upgrades = {
+        page: [c for c in commands((ROOT / page).read_text()) if c.startswith("helm upgrade")]
+        for page in ("docs/use/use-the-mcp-server.md", "docs/DEPLOYING.md")
+    }
+    assert all(upgrades.values())
+    for found in upgrades.values():
+        assert all("--reuse-values" in command for command in found), found
+    assert (
+        "helm get values javv -o yaml > my-javv-values.yaml"
+        in (ROOT / "docs" / "UPGRADING.md").read_text()
+    )
