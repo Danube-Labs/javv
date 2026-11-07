@@ -121,11 +121,12 @@ Sign in as admin with this password. JAVV asks you for a new one at the first si
 
     $admin_password
 
-This script does not show it again. Until the first sign-in, it is also in .env
-(JAVV_BOOTSTRAP_ADMIN_PASSWORD). Keep .env for the life of this install.
+This script does not show it again. It stays in .env (JAVV_BOOTSTRAP_ADMIN_PASSWORD), but
+it works only for the first sign-in. Keep .env for the life of this install.
 
 Browsers: $cookie.
-Next: docker compose up -d
+Next: docker compose pull, then verify the images (docs/DEPLOYING.md, "Verify the images and
+charts"), then docker compose up -d
 EOF
 
 max_map_count_file=/proc/sys/vm/max_map_count

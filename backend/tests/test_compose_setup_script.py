@@ -128,6 +128,24 @@ def test_the_admin_password_shows_one_time_and_no_other_secret_shows(folder: Pat
         assert values[key] not in shown, key
 
 
+def test_the_next_step_verifies_the_images_before_they_start(folder: Path) -> None:
+    # compose.yaml names each image by its tag, and a signature is for a digest (issue 1125)
+    nxt = " ".join(_run(folder).stdout.split("Next:")[1].split())
+    assert (
+        nxt.index("docker compose pull") < nxt.index("verify") < nxt.index("docker compose up -d")
+    )
+    assert "Verify the images and charts" in nxt
+
+
+def test_the_password_line_tells_that_it_stays_and_works_one_time(folder: Path) -> None:
+    # the backend makes the admin one time and never writes it again, so the line stays in .env
+    # after the first sign-in but the password in it stops working (issue 1125)
+    shown = " ".join(_run(folder).stdout.split())
+    assert "Until the first sign-in" not in shown
+    assert "It stays in .env" in shown
+    assert "it works only for the first sign-in" in shown
+
+
 def test_only_the_owner_can_read_the_env_file(folder: Path) -> None:
     assert _run(folder).returncode == 0
     assert stat.S_IMODE((folder / ".env").stat().st_mode) == 0o600

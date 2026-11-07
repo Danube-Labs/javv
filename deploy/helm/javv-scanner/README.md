@@ -28,7 +28,9 @@ CronJob.
 2. Make one ingest token for each scanner, in JAVV: **Settings › Access & tokens › Mint token**.
     - For the first token, select **New cluster…** and enter the cluster id.
     - Select the name of the scanner.
-3. Put each token in its own Secret, and install the chart:
+3. Verify the chart
+    ([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)). Put
+    each token in its own Secret, and install the chart:
     ```bash
     VERSION=0.9.7
     kubectl create namespace javv-scanner
@@ -40,13 +42,14 @@ CronJob.
     done; unset token
     helm install scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version "$VERSION" \
       -n javv-scanner \
-      --set backendUrl=http://<JAVV's address>:8080 \
+      --set backendUrl=http://<the address and port of JAVV> \
       --set trivy.token.existingSecret=javv-trivy-token \
-      --set grype.token.existingSecret=javv-grype-token
+      --set grype.token.existingSecret=javv-grype-token \
+      --wait
     helm test scanner -n javv-scanner
     ```
-    `helm test` verifies that JAVV replies at `backendUrl` and accepts each token. It does not
-    scan.
+    `--wait` waits until the volumes of the vulnerability databases are bound. `helm test` verifies
+    that JAVV replies at `backendUrl` and accepts each token. It does not scan.
 
 Each scanner then runs on its `schedule`. To start a cycle now, follow the safe sequence in
 `NOTES`:
@@ -55,6 +58,9 @@ Each scanner then runs on its `schedule`. To start a cycle now, follow the safe 
 2. Wait until no Job of that scanner runs.
 3. Make a Job from the CronJob.
 4. Start the CronJob again.
+
+When the schedule comes during the pause, Kubernetes starts that cycle at step 4. Thus a
+second cycle runs right after yours, and scans the same images again.
 
 ### Where the chart comes from
 

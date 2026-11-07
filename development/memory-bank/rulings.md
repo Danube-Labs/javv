@@ -66,6 +66,10 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-05 | A revoke of an expired MCP token works. A revoke of a revoked token gets 409. A rotate of a revoked or expired token gets 409, and a revoke wins against a rotate. | 1096 |
 | 2026-11-05 | Each tool call writes one audit row, "MCP tool call", that only a user with `can_manage_users` sees. The `token_mint` row and `created_by` of the token name the admin who made it. The operator accepts store text in the log line of a tool error, as for a backend 500. | 1096 |
 | 2026-11-05 | A `not_affected` decision for a smaller scope has precedence over a risk accept for a larger scope, for an agent as on the screens. | 1096 |
+| 2026-11-07 | `compose.yaml` names the JAVV images by tag, with no digest. The compose steps pull, check the signature of the digest that the pull got, then start (D2). | 1125 |
+| 2026-11-07 | `helm install scanner` uses `--wait`, so a cache volume that does not bind stops the install (D3). | 1125 |
+| 2026-11-07 | The scanner CronJobs get no `startingDeadlineSeconds`. The docs and the NOTES tell that a schedule during the pause of a manual cycle runs a second cycle at the resume (D2). | 1126 |
+| 2026-11-07 | The docs give no Ingress example. The `javv` chart makes no Ingress, and the docs tell the user to put one in front (D3). | 1126 |
 
 ## UI copy and look
 
