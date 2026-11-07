@@ -21,6 +21,7 @@ from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp_types import CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY
 from opensearchpy import AsyncOpenSearch
 
+from backend.audit.writer import append_field_change
 from backend.auth.passwords import hash_password
 from backend.core.security import hash_token, mint_token
 from backend.core.settings import get_settings
@@ -28,6 +29,7 @@ from backend.main import create_app
 from backend.mcp import auth as mcp_auth
 from backend.mcp import server as mcp_server
 from backend.mcp import tools
+from backend.mcp.read_tools import READ_TOOLS
 from backend.mcp.tools import RouteError, Tool, build, current_principal, cut_to_fit
 from backend.query import pit_guard
 from backend.query.search import cursor_pit_id
@@ -520,6 +522,59 @@ async def test_a_new_first_page_closes_the_open_search_of_the_last_one(mcp_on):
         assert not pit_guard.holds(principal.user_id, pit)  # the last walk is closed
         assert pit_guard.holds(principal.user_id, cursor_pit_id(again["next_cursor"]))
         assert len(pit_guard._slots.get(principal.user_id, [])) == 1
+    finally:
+        current_principal.reset(reset)
+        pit_guard._slots.pop(principal.user_id, None)
+        await client.close()
+
+
+async def _audit_rows(client: AsyncOpenSearch, cluster: str, n: int) -> None:
+    for i in range(n):
+        await append_field_change(
+            client,
+            actor="u-mcp-walk",
+            action="note",
+            entity_type="finding",
+            entity_id=f"fk-{uuid.uuid4().hex[:10]}",
+            field="notes",
+            old_value=None,
+            new_value=f"note {i}",
+            revision=1,
+            cluster_id=cluster,
+        )
+    await client.indices.refresh(index="system-audit-log-*")
+
+
+@pytest.mark.parametrize("name", ["search_findings", "audit_log"])
+async def test_the_cursor_of_a_search_that_a_new_search_closed_tells_that_cause(mcp_on, name):
+    """Issue 1112: the old cursor got the 410 of an expired keep-alive, so an agent reported that
+    it had waited too long. A cursor whose search ended for another reason keeps that text."""
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    app = create_app()
+    app.state.opensearch = client
+    cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+    if name == "search_findings":
+        await _seed(client, cluster, _findings(3))
+    else:
+        await _audit_rows(client, cluster, 3)
+    [spec] = [t for t in READ_TOOLS if t.name == name]
+    assert "closes the cursor of your last search with this tool" in spec.description
+    tool = build(spec, app)
+    principal, _ = await _principal(client)
+    reset = current_principal.set(principal)
+    try:
+        closed = json.loads(await tool(cluster_id=cluster, size=1))["next_cursor"]
+        current = json.loads(await tool(cluster_id=cluster, size=1))["next_cursor"]
+        with pytest.raises(RouteError) as refused:
+            await tool(cluster_id=cluster, size=1, cursor=closed)
+        assert refused.value.status == 410
+        assert "a new search with this tool closed this search" in str(refused.value)
+        pit = cursor_pit_id(current)
+        await client.delete_pit(body={"pit_id": [pit]})  # gone, but not by a new search
+        with pytest.raises(RouteError) as expired:
+            await tool(cluster_id=cluster, size=1, cursor=current)
+        assert expired.value.status == 410
+        assert "keep-alive" in str(expired.value)
     finally:
         current_principal.reset(reset)
         pit_guard._slots.pop(principal.user_id, None)

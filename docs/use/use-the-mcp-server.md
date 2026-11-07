@@ -199,6 +199,7 @@ change the state of a finding with an accepted risk.
 | A tool error: the level of this token does not allow this tool | The tool needs a higher level. | Make a token with a higher level. |
 | A tool error: `extra_forbidden` | The agent sent an argument that the tool does not take, for example a filter with a typo. The tool did not run. | Tell the agent to use the arguments of the input schema of the tool. |
 | An answer with a `cut` field | The answer was longer than `JAVV_MCP_MAX_ANSWER_CHARS` (50,000 characters by default). JAVV kept the first rows, and `cut` gives the number. | Ask for fewer rows. |
+| A tool error: 410 `cursor closed` | The agent started a new search with the same tool, and that search closed the cursor of the last search. | Tell the agent to read all the pages that it needs before it starts a new search. |
 | A tool error: ask for a smaller size | A page of rows with a next page was longer than `JAVV_MCP_MAX_ANSWER_CHARS`. | Ask for a smaller page. |
 
 The settings of the endpoint are in [MCP endpoint](../CONFIGURATION.md#mcp-endpoint). The tools of

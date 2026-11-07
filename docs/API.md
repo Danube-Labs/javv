@@ -920,12 +920,12 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 
 **The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
 
-A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.
+A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. The first error also names the parameters that the kind takes. A missing parameter that the kind does not need takes the default of the route.
 
 | Tool | Route |
 |---|---|
 | `list_clusters` | `GET /api/v1/clusters` |
-| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. |
+| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text `cursor closed`, which tells this cause. A search that ended after its keep-alive gets 410 with the text `cursor expired`. |
 | `count_findings` | `GET /api/v1/findings/facets` |
 | `group_findings` | `GET /api/v1/findings/groups` |
 | `top_images` | `GET /api/v1/findings/top-images` |
