@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.7](https://github.com/Danube-Labs/javv/compare/v0.9.6...v0.9.7) (2026-11-07)
+
+
+### Bug Fixes
+
+* each mcp tool refuses an argument that it does not take (issue 1111) ([#1117](https://github.com/Danube-Labs/javv/issues/1117)) ([adeb723](https://github.com/Danube-Labs/javv/commit/adeb723be9e9b446022ab61bbbcabdd2cfe767d1))
+* mcp tool texts tell a closed cursor and the values of each tool (issue 1112) ([#1118](https://github.com/Danube-Labs/javv/issues/1118)) ([8e3fb5e](https://github.com/Danube-Labs/javv/commit/8e3fb5eaf89deffbbc73b16e5504c75a16e72526))
+* one row of an mcp answer always goes out, also over the cap (issue 1114) ([#1120](https://github.com/Danube-Labs/javv/issues/1120)) ([8113710](https://github.com/Danube-Labs/javv/commit/8113710e9661436cde39f2a838f810c224c8e8f6))
+* the mcp 429 tells the limit and the wait, docs give a lowest useful limit (issue 1113) ([#1119](https://github.com/Danube-Labs/javv/issues/1119)) ([752e4cd](https://github.com/Danube-Labs/javv/commit/752e4cd02aedbb5640f900149ff0c0ba546513ee))
+* the mcp token table fits its card at 1366, 1440 and 1920 px (issue 1115) ([#1121](https://github.com/Danube-Labs/javv/issues/1121)) ([b0ac53c](https://github.com/Danube-Labs/javv/commit/b0ac53ceefc64343ea81dc0640cdacb1d33e6eb0))
+
 ## [0.9.6](https://github.com/Danube-Labs/javv/compare/v0.9.5...v0.9.6) (2026-11-06)
 
 
