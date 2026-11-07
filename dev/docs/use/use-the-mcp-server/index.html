@@ -1527,6 +1527,8 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.</p>
 <li>When a tool error has the words "the tool made the change", do not call the tool again.</li>
 <li>A tool error with <code>403</code> tells you that the level of the token does not allow the tool. Tell
   the user that the token needs a higher level.</li>
+<li>A tool error with <code>extra_forbidden</code> tells you that the tool does not take an argument that
+  you sent. Use only the arguments of the input schema of the tool.</li>
 </ul>
 </div>
 <h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
@@ -1734,6 +1736,11 @@ change the state of a finding with an accepted risk.</p>
 <td>A tool error: the level of this token does not allow this tool</td>
 <td>The tool needs a higher level.</td>
 <td>Make a token with a higher level.</td>
+</tr>
+<tr>
+<td>A tool error: <code>extra_forbidden</code></td>
+<td>The agent sent an argument that the tool does not take, for example a filter with a typo. The tool did not run.</td>
+<td>Tell the agent to use the arguments of the input schema of the tool.</td>
 </tr>
 <tr>
 <td>An answer with a <code>cut</code> field</td>

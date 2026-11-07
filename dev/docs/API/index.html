@@ -2403,7 +2403,7 @@ slots (<a href="#exports-and-reports">Exports and reports</a>):
 </tr>
 <tr>
 <td>MCP token</td>
-<td><code>Authorization: Bearer &lt;token&gt;</code>. An admin makes the token for one AI agent. JAVV keeps only a hash of the token.</td>
+<td><code>Authorization: Bearer &lt;token&gt;</code>. The scheme name <code>Bearer</code> can have each case, for example <code>bearer</code>. An admin makes the token for one AI agent. JAVV keeps only a hash of the token.</td>
 <td>The MCP endpoint only (<a href="#the-mcp-endpoint">The MCP endpoint</a>). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check.</td>
 </tr>
 <tr>
@@ -4014,6 +4014,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <p><strong>The answer of a tool</strong> is one text with compact JSON.</p>
 <ul>
 <li>A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.</li>
+<li>A tool refuses an argument that it does not take, with the reason <code>extra_forbidden</code>, and the tool does not run. The input schema of each tool has <code>additionalProperties: false</code>. Thus a filter with a wrong name, for example <code>severty</code>, does not give the rows with no filter.</li>
 <li>An answer longer than <code>JAVV_MCP_MAX_ANSWER_CHARS</code> loses rows from the end of its longest top-level list. Its <code>cut</code> field then gives the list, the rows that it kept and the rows that it had.</li>
 <li>A page with a next page (<code>next_cursor</code>) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller <code>size</code>.</li>
 <li>An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in <code>trends</code> can be longer than the cap. Then the agent must ask for fewer <code>days</code>. After a write, the error tells the agent that the tool made the change.</li>
