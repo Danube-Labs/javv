@@ -1,0 +1,463 @@
+{
+  "$defs": {
+    "GrypeTuning": {
+      "additionalProperties": false,
+      "description": "Mirror of the scanner's `GrypeConfig`.",
+      "properties": {
+        "only_fixed": {
+          "title": "Only Fixed",
+          "type": "boolean"
+        },
+        "scan_timeout": {
+          "minimum": 1,
+          "title": "Scan Timeout",
+          "type": "integer"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        }
+      },
+      "required": [
+        "only_fixed",
+        "scan_timeout"
+      ],
+      "title": "GrypeTuning",
+      "type": "object"
+    },
+    "IngestCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "crit": {
+          "minimum": 0,
+          "title": "Crit",
+          "type": "integer"
+        },
+        "fixable": {
+          "minimum": 0,
+          "title": "Fixable",
+          "type": "integer"
+        },
+        "high": {
+          "minimum": 0,
+          "title": "High",
+          "type": "integer"
+        },
+        "low": {
+          "minimum": 0,
+          "title": "Low",
+          "type": "integer"
+        },
+        "med": {
+          "minimum": 0,
+          "title": "Med",
+          "type": "integer"
+        },
+        "negligible": {
+          "minimum": 0,
+          "title": "Negligible",
+          "type": "integer"
+        },
+        "total": {
+          "minimum": 0,
+          "title": "Total",
+          "type": "integer"
+        },
+        "unknown": {
+          "minimum": 0,
+          "title": "Unknown",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "crit",
+        "high",
+        "med",
+        "low",
+        "negligible",
+        "unknown",
+        "total",
+        "fixable"
+      ],
+      "title": "IngestCounts",
+      "type": "object"
+    },
+    "IngestEffectiveConfig": {
+      "additionalProperties": false,
+      "description": "What the cycle ran with (D44/FR-25) \u2014 display/audit only, never a control surface.",
+      "properties": {
+        "scope": {
+          "$ref": "#/$defs/IngestScope"
+        },
+        "tuning": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrivyTuning"
+            },
+            {
+              "$ref": "#/$defs/GrypeTuning"
+            }
+          ],
+          "title": "Tuning"
+        }
+      },
+      "required": [
+        "tuning",
+        "scope"
+      ],
+      "title": "IngestEffectiveConfig",
+      "type": "object"
+    },
+    "IngestFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "cvss": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cvss"
+        },
+        "epss": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Epss"
+        },
+        "fixable": {
+          "default": false,
+          "title": "Fixable",
+          "type": "boolean"
+        },
+        "fixed_version": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fixed Version"
+        },
+        "kev": {
+          "default": false,
+          "title": "Kev",
+          "type": "boolean"
+        },
+        "package_name": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Package Name",
+          "type": "string"
+        },
+        "package_version": {
+          "maxLength": 256,
+          "title": "Package Version",
+          "type": "string"
+        },
+        "ptype": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9+._-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ptype"
+        },
+        "severity": {
+          "maxLength": 64,
+          "title": "Severity",
+          "type": "string"
+        },
+        "severity_canonical": {
+          "title": "Severity Canonical",
+          "type": "string"
+        },
+        "vuln_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Vuln Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vuln_id",
+        "package_name",
+        "package_version",
+        "severity",
+        "severity_canonical"
+      ],
+      "title": "IngestFinding",
+      "type": "object"
+    },
+    "IngestScope": {
+      "additionalProperties": false,
+      "description": "Mirror of the D43 `ScanScope` the scanner applied this cycle.",
+      "properties": {
+        "exclude_images": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "title": "Exclude Images",
+          "type": "array"
+        },
+        "ignore_kinds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Ignore Kinds",
+          "type": "array"
+        },
+        "ignore_namespaces": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "title": "Ignore Namespaces",
+          "type": "array"
+        },
+        "include_namespaces": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "title": "Include Namespaces",
+          "type": "array"
+        }
+      },
+      "title": "IngestScope",
+      "type": "object"
+    },
+    "TrivyTuning": {
+      "additionalProperties": false,
+      "description": "Mirror of the scanner's `TrivyConfig` \u2014 disjoint from `GrypeTuning`, so the union below\nis unambiguous and a mismatched shape fails validation.",
+      "properties": {
+        "ignore_unfixed": {
+          "title": "Ignore Unfixed",
+          "type": "boolean"
+        },
+        "pkg_types": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pkg Types"
+        },
+        "scanners": {
+          "maxLength": 128,
+          "title": "Scanners",
+          "type": "string"
+        },
+        "severities": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severities"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        }
+      },
+      "required": [
+        "scanners",
+        "ignore_unfixed"
+      ],
+      "title": "TrivyTuning",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cluster_id": {
+      "title": "Cluster Id",
+      "type": "string"
+    },
+    "counts": {
+      "$ref": "#/$defs/IngestCounts"
+    },
+    "effective_config": {
+      "$ref": "#/$defs/IngestEffectiveConfig"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/IngestFinding"
+      },
+      "maxItems": 100000,
+      "title": "Findings",
+      "type": "array"
+    },
+    "image_digest": {
+      "maxLength": 128,
+      "pattern": "^sha256:[a-fA-F0-9]{6,64}$",
+      "title": "Image Digest",
+      "type": "string"
+    },
+    "image_ref": {
+      "maxLength": 512,
+      "title": "Image Ref",
+      "type": "string"
+    },
+    "last_seen_at": {
+      "format": "date-time",
+      "title": "Last Seen At",
+      "type": "string"
+    },
+    "namespaces": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 1024,
+      "title": "Namespaces",
+      "type": "array"
+    },
+    "replicas": {
+      "minimum": 0,
+      "title": "Replicas",
+      "type": "integer"
+    },
+    "scan_order": {
+      "minimum": 0,
+      "title": "Scan Order",
+      "type": "integer"
+    },
+    "scan_run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Scan Run Id",
+      "type": "string"
+    },
+    "scanner": {
+      "enum": [
+        "trivy",
+        "grype"
+      ],
+      "title": "Scanner",
+      "type": "string"
+    },
+    "scanner_db_built": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scanner Db Built"
+    },
+    "scanner_db_version": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scanner Db Version"
+    },
+    "scanner_version": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scanner Version"
+    },
+    "schema_version": {
+      "enum": [
+        3,
+        4
+      ],
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "cluster_id",
+    "scanner",
+    "image_digest",
+    "image_ref",
+    "namespaces",
+    "replicas",
+    "scan_run_id",
+    "scan_order",
+    "last_seen_at",
+    "effective_config",
+    "counts",
+    "findings"
+  ],
+  "title": "IngestEnvelope",
+  "type": "object"
+}

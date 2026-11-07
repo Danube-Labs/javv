@@ -1,0 +1,17 @@
+/* The reference pages are wide tables (env vars, routes, capabilities), and the theme's page grid
+   holds the text column near 760px whatever the screen. A wider grid gives them room. */
+.md-grid {
+  max-width: 100rem;
+}
+
+/* The theme lets code break at any character, so the prose columns squeezed identifiers until
+   /api/v1/admin/tokens wrapped every few letters. The identifier a row is about stays on one
+   line: the first two columns (env var and default, method and route, metric), and in the
+   reference tables a third-column cell that is one identifier (a capability, a label). The charts'
+   values tables are left out of that (no code in their second column): their third column is JSON
+   defaults past a hundred characters. On a narrow screen a table scrolls sideways. */
+.md-typeset table:not([class]) td:nth-child(-n + 2) code,
+.md-typeset table:not([class]):has(td:nth-child(2) > code) td:nth-child(3) > code:only-child {
+  white-space: nowrap;
+  word-break: normal;
+}
