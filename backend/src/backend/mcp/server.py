@@ -41,7 +41,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from backend.audit.writer import append_tool_call
 from backend.auth.principal import Principal
-from backend.core.errors import validation_detail
+from backend.core.errors import DetailedHTTPException, validation_detail
 from backend.core.identifiers import CLUSTER_ID_RE
 from backend.core.metrics import AUTH_FAILURES, LIMIT_REJECTIONS
 from backend.core.rate_limit import SlidingWindowLimiter
@@ -65,6 +65,7 @@ INSTRUCTIONS = (
 )
 
 _limiter = SlidingWindowLimiter()
+RETRY_AFTER_S = 60  # the window of the limiter: by then each request of the window has left it
 
 TOOLS: tuple[Tool, ...] = READ_TOOLS + WRITE_TOOLS
 _NEEDS = {tool.name: tool.needs for tool in TOOLS}
@@ -208,10 +209,19 @@ class _Gate:
         if principal is None:
             AUTH_FAILURES.labels("mcp_token").inc()
             raise HTTPException(401, "invalid token", headers={"WWW-Authenticate": "Bearer"})
-        if _limiter.is_limited(principal.user_id, get_settings().mcp_rate_limit_per_minute):
+        limit = get_settings().mcp_rate_limit_per_minute
+        if _limiter.is_limited(principal.user_id, limit):
             LIMIT_REJECTIONS.labels("mcp_rate").inc()
             log.warning("mcp rate limited", principal=principal.user_id)
-            raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": "60"})
+            raise DetailedHTTPException(
+                429,
+                "rate limit exceeded",
+                detail=(
+                    f"{limit} requests in one minute for each token. Wait {RETRY_AFTER_S} "
+                    "seconds, then send the request again."
+                ),
+                headers={"Retry-After": str(RETRY_AFTER_S)},
+            )
         reset = current_principal.set(principal)
         try:
             await self.inner(scope, receive, send)

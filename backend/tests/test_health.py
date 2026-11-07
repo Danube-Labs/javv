@@ -9,11 +9,12 @@ from typing import Any
 import httpx
 import pytest
 import structlog
+from fastapi import HTTPException
 from opensearchpy import AsyncOpenSearch
 from opensearchpy.exceptions import TransportError
 from prometheus_client import REGISTRY
 
-from backend.core.errors import DELETE_UNFINISHED_TYPE, delete_unfinished
+from backend.core.errors import DELETE_UNFINISHED_TYPE, DetailedHTTPException, delete_unfinished
 from backend.main import create_app
 from os_env import OS_URL, requires_opensearch
 
@@ -59,6 +60,32 @@ async def test_a_typed_refusal_carries_its_problem_type() -> None:
         DELETE_UNFINISHED_TYPE,
         "its delete did not finish: delete it again",
     )
+
+
+async def test_a_detailed_refusal_carries_its_detail_and_a_plain_one_does_not() -> None:
+    """Issue 1113: an agent client gives the agent the body of a 429, not its `Retry-After`."""
+    app = create_app()
+
+    async def detailed() -> None:
+        raise DetailedHTTPException(
+            429, "rate limit exceeded", detail="wait 60 seconds", headers={"Retry-After": "60"}
+        )
+
+    async def plain() -> None:
+        raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": "60"})
+
+    app.add_api_route("/detailed", detailed)
+    app.add_api_route("/plain", plain)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://t") as client:
+        answers = {path: await client.get(f"/{path}") for path in ("detailed", "plain")}
+    for path, detail in (("detailed", "wait 60 seconds"), ("plain", None)):
+        resp = answers[path]
+        assert resp.status_code == 429
+        assert resp.headers["content-type"] == "application/problem+json"
+        assert resp.headers["retry-after"] == "60"
+        body = resp.json()
+        assert (body["title"], body["detail"]) == ("rate limit exceeded", detail), path
 
 
 # --- /readyz: a read-only or red store stays in service (issue 832) ------------------------

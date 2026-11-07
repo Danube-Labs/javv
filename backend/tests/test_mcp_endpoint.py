@@ -300,6 +300,12 @@ async def test_a_token_past_its_rate_gets_429(mcp_on, monkeypatch):
         ]
         assert [r.status_code for r in statuses] == [200, 200, 429]
         assert statuses[2].headers["retry-after"] == "60"
+        body = statuses[2].json()
+        assert body["title"] == "rate limit exceeded"
+        # issue 1113: an agent client gives the agent this body, and not the header
+        assert body["detail"] == (
+            "2 requests in one minute for each token. Wait 60 seconds, then send the request again."
+        )
         _, other = await _token(client)  # each token has its own budget
         assert (await http.post(PATH, **_modern("tools/list", **_bearer(other)))).status_code == 200
 

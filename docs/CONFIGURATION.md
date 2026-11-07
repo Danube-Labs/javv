@@ -153,7 +153,7 @@ The MCP endpoint lets an AI agent read JAVV data with an MCP token ([The MCP end
 | Setting | Default | What it does |
 |---|---|---|
 | `JAVV_MCP_ENABLED` | `false` | Turns on the MCP endpoint at `/api/v1/mcp`. With `false`, the endpoint does not exist and a request to it gets 404. An admin can make MCP tokens in both cases. |
-| `JAVV_MCP_RATE_LIMIT_PER_MINUTE` | `60` | Requests that one MCP token can send in one minute. Above this number, the endpoint replies 429 with `Retry-After`. The backend also logs a warning and adds one to `javv_limit_rejections_total{limit="mcp_rate"}`. The backend keeps the count in its memory. |
+| `JAVV_MCP_RATE_LIMIT_PER_MINUTE` | `60` | Requests that one MCP token can send in one minute. Above this number, the endpoint replies 429 with `Retry-After`, and a `detail` that tells the limit and the wait. The backend also logs a warning and adds one to `javv_limit_rejections_total{limit="mcp_rate"}`. The backend keeps the count in its memory. Each connection of an agent client also uses requests. In a test, Claude Code 2.1.319 sent 5 requests before its first tool call. Keep the value at 30 or more. In the same test, a short audit sent 25 requests in 84 seconds: 5 for the connection and 20 tool calls. |
 | `JAVV_MCP_MAX_ANSWER_CHARS` | `50000` | The longest answer of a tool, in characters. A longer answer loses rows from the end of its list, and its `cut` field tells how many rows it kept. An agent client can refuse a longer answer: in one test, a client refused an answer of 92,789 characters. The value must be 1000 or more. |
 
 ### Cluster retirement
