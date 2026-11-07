@@ -2752,7 +2752,7 @@ description.</p>
 <tr>
 <td><code>JAVV_MCP_MAX_ANSWER_CHARS</code></td>
 <td><code>50000</code></td>
-<td>The longest answer of a tool, in characters. A longer answer loses rows from the end of its list, and its <code>cut</code> field tells how many rows it kept. An agent client can refuse a longer answer: in one test, a client refused an answer of 92,789 characters. The value must be 1000 or more.</td>
+<td>The longest answer of a tool, in characters. A longer answer loses rows from the end of its list, and its <code>cut</code> field tells how many rows it kept. An agent client can refuse a longer answer: in one test, a client refused an answer of 92,789 characters. The value must be 1000 or more. One row always goes out, also when it is longer than this value. A finding with a long note has about 11,500 characters.</td>
 </tr>
 </tbody>
 </table>
