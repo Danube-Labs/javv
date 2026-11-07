@@ -196,15 +196,21 @@ def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
     """The answer as compact JSON of at most `limit` characters: the longest top-level list loses
     rows from its end until it fits, and `cut` says how many it kept. A page with a next page is
     refused instead, because its cursor goes on after the last row of the full page, so the rows
-    cut here would never be seen."""
+    cut here would never be seen.
+
+    One row always goes out, also over the cap, as Kafka returns a first batch larger than
+    `fetch.max.bytes`: else no smaller page exists, and the agent can never read that row (issue
+    1114). A note alone can have 10,000 characters."""
     text = json.dumps(answer, separators=(",", ":"), default=str)
     if len(text) <= limit:
+        return text
+    lists = [k for k, v in answer.items() if isinstance(v, list) and v]
+    if lists and all(len(answer[k]) == 1 for k in lists):
         return text
     if answer.get("next_cursor"):
         raise ToolError(
             f"the page has {len(text)} characters, over the cap of {limit}: ask for a smaller size"
         )
-    lists = [k for k, v in answer.items() if isinstance(v, list) and v]
     if not lists:
         raise ToolError(f"the answer has {len(text)} characters, over the cap of {limit}")
     key = max(lists, key=lambda k: len(json.dumps(answer[k], default=str)))
@@ -226,7 +232,7 @@ def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
             low = mid
         else:
             high = mid - 1
-    return trimmed(low)
+    return trimmed(max(low, 1))
 
 
 # Q4: for each (token, tool), the open search of its last first page
