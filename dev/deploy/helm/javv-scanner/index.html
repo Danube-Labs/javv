@@ -1480,7 +1480,9 @@ CronJob.</p>
 <li>Select the name of the scanner.</li>
 </ul>
 </li>
-<li>Put each token in its own Secret, and install the chart:
+<li>Verify the chart
+    (<a href="../../../docs/DEPLOYING/#verify-the-images-and-charts">Verify the images and charts</a>). Put
+    each token in its own Secret, and install the chart:
     <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.7
 kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>javv-scanner
 <span class="c1"># asks for each token, so it is not in your shell history or the process list</span>
@@ -1491,13 +1493,14 @@ kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span clas
 <span class="k">done</span><span class="p">;</span><span class="w"> </span><span class="nb">unset</span><span class="w"> </span>token
 helm<span class="w"> </span>install<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span><span class="nv">backendUrl</span><span class="o">=</span>http://&lt;JAVV<span class="err">'</span>s<span class="w"> </span>address&gt;:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">backendUrl</span><span class="o">=</span>http://&lt;the<span class="w"> </span>address<span class="w"> </span>and<span class="w"> </span>port<span class="w"> </span>of<span class="w"> </span>JAVV&gt;<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>trivy.token.existingSecret<span class="o">=</span>javv-trivy-token<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>grype.token.existingSecret<span class="o">=</span>javv-grype-token
+<span class="w">  </span>--set<span class="w"> </span>grype.token.existingSecret<span class="o">=</span>javv-grype-token<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--wait
 helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>scanner<span class="w"> </span>-n<span class="w"> </span>javv-scanner
 </code></pre></div>
-    <code>helm test</code> verifies that JAVV replies at <code>backendUrl</code> and accepts each token. It does not
-    scan.</li>
+    <code>--wait</code> waits until the volumes of the vulnerability databases are bound. <code>helm test</code> verifies
+    that JAVV replies at <code>backendUrl</code> and accepts each token. It does not scan.</li>
 </ol>
 <p>Each scanner then runs on its <code>schedule</code>. To start a cycle now, follow the safe sequence in
 <code>NOTES</code>:</p>
@@ -1507,6 +1510,8 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 <li>Make a Job from the CronJob.</li>
 <li>Start the CronJob again.</li>
 </ol>
+<p>When the schedule comes during the pause, Kubernetes starts that cycle at step 4. Thus a
+second cycle runs right after yours, and scans the same images again.</p>
 <h3 id="where-the-chart-comes-from">Where the chart comes from<a class="headerlink" href="#where-the-chart-comes-from" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Each JAVV release publishes this chart at <code>oci://ghcr.io/danube-labs/charts</code>, and signs it

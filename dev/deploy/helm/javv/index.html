@@ -1478,6 +1478,8 @@
 <li>One namespace for this chart and the <a href="../javv-opensearch/"><code>javv-opensearch</code></a> chart.</li>
 </ul>
 <h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
+<p>Verify the two charts before you install them
+(<a href="../../../docs/DEPLOYING/#verify-the-images-and-charts">Verify the images and charts</a>).</p>
 <ol>
 <li>Install OpenSearch, with the password of <code>admin</code> and the password of <code>javv</code> in Secrets:
     <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.7
@@ -1488,7 +1490,10 @@ kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="
 <span class="w">  </span>--from-file<span class="o">=</span><span class="nv">password</span><span class="o">=</span>&lt;<span class="o">(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s1">'\n'</span><span class="o">)</span>
 helm<span class="w"> </span>install<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>opensearch.javv.auth.existingSecret<span class="o">=</span>javv-opensearch-admin<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>opensearch.javv.backend.existingSecret<span class="o">=</span>javv-opensearch-backend
+<span class="w">  </span>--set<span class="w"> </span>opensearch.javv.backend.existingSecret<span class="o">=</span>javv-opensearch-backend<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>opensearch.resources.requests.memory<span class="o">=</span>2Gi<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--wait<span class="w"> </span>--timeout<span class="w"> </span>10m
+helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>store
 </code></pre></div></li>
 <li>Make the two JAVV secrets:
     <div class="highlight"><pre><span></span><code><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'First JAVV admin password (12 characters or more): '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>

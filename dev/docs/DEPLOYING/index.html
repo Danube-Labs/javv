@@ -917,6 +917,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scanners-in-other-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanners in other clusters
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-javv-chart-runs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1938,6 +1949,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scanners-in-other-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scanners in other clusters
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-javv-chart-runs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2192,6 +2214,7 @@ the published images and how to use an OpenSearch that you operate.</p>
 <ul>
 <li>Docker Engine with the compose plugin 2.23.1 or later.</li>
 <li>A POSIX shell (Linux or macOS).</li>
+<li>cosign 3.x, to verify the images (<a href="#verify-the-images-and-charts">Verify the images and charts</a>).</li>
 <li>These three files, in one folder:<ul>
 <li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.7/deploy/compose/compose.yaml"><code>compose.yaml</code></a> <!-- x-release-please-version --></li>
 <li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.7/deploy/compose/.env.example"><code>.env.example</code></a> <!-- x-release-please-version --></li>
@@ -2228,7 +2251,7 @@ chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
 <li>Copies <code>.env.example</code> to <code>.env</code>. Only you can read <code>.env</code>.</li>
 <li>Sets the four secrets to long random values that compose does not change. The OpenSearch
   admin password obeys the rules of OpenSearch.</li>
-<li>Shows the password of the first JAVV admin one time. Keep it for step 4.</li>
+<li>Shows the password of the first JAVV admin one time. Keep it for step 5.</li>
 <li>Shows the <code>sysctl</code> command again if the limit of step 1 is too low.</li>
 <li>Does not change an <code>.env</code> that exists. Thus it cannot change the secret key of an
   installation.</li>
@@ -2236,12 +2259,31 @@ chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
 <p>To set the secrets yourself, see <a href="#your-own-secrets">Your own secrets</a>.</p>
 </li>
 <li>
-<p><strong>Start JAVV:</strong>
-    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w">   </span><span class="c1"># pulls the images of the release the first time</span>
+<p><strong>Get the images, and verify them.</strong> <code>compose.yaml</code> names each JAVV image by its tag, but the
+    signature is for the digest of the image. Thus verify the digest that the pull got:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.7
+<span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
+<span class="nv">ISSUER</span><span class="o">=</span>https://token.actions.githubusercontent.com
+docker<span class="w"> </span>compose<span class="w"> </span>pull
+<span class="k">for</span><span class="w"> </span>image<span class="w"> </span><span class="k">in</span><span class="w"> </span>javv-backend<span class="w"> </span>javv-frontend<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nv">ref</span><span class="o">=</span><span class="k">$(</span>docker<span class="w"> </span>image<span class="w"> </span>inspect<span class="w"> </span>--format<span class="w"> </span><span class="s1">'{{index .RepoDigests 0}}'</span><span class="w"> </span><span class="s2">"ghcr.io/danube-labs/</span><span class="nv">$image</span><span class="s2">:</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="k">)</span>
+<span class="w">  </span>cosign<span class="w"> </span>verify<span class="w"> </span><span class="s2">"</span><span class="nv">$ref</span><span class="s2">"</span><span class="w"> </span>--certificate-identity-regexp<span class="w"> </span><span class="s2">"</span><span class="nv">$IDENTITY</span><span class="s2">"</span><span class="w"> </span>--certificate-oidc-issuer<span class="w"> </span><span class="s2">"</span><span class="nv">$ISSUER</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">    </span>cosign<span class="w"> </span>verify-attestation<span class="w"> </span><span class="s2">"</span><span class="nv">$ref</span><span class="s2">"</span><span class="w"> </span>--type<span class="w"> </span>spdxjson<span class="w"> </span>--certificate-identity-regexp<span class="w"> </span><span class="s2">"</span><span class="nv">$IDENTITY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">      </span>--certificate-oidc-issuer<span class="w"> </span><span class="s2">"</span><span class="nv">$ISSUER</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"OK: </span><span class="nv">$ref</span><span class="s2">"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"FAILED: </span><span class="nv">$ref</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+    <!-- x-release-please-end -->
+    Do not start JAVV when a line shows <code>FAILED</code>.
+    <a href="#verify-the-images-and-charts">Verify the images and charts</a> tells what the verification
+    proves. The OpenSearch image comes from Docker Hub. JAVV does not sign it.</p>
+</li>
+<li><strong>Start JAVV:</strong>
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w">   </span><span class="c1"># runs the images that you verified</span>
 docker<span class="w"> </span>compose<span class="w"> </span>ps<span class="w">      </span><span class="c1"># wait until opensearch, backend and frontend all show "healthy"</span>
 </code></pre></div>
-    The backend makes its indices at its first start.</p>
-</li>
+    The backend makes its indices at its first start.</li>
 <li><strong>Sign in</strong> at <code>http://&lt;this machine&gt;:8080</code> as <code>admin</code>, with the password that <code>setup.sh</code> showed.
     JAVV then asks for a new password (12 characters or more). You must set it before you can do
     other work.</li>
@@ -2314,8 +2356,10 @@ correct both. It also tells you how to change a password later.</p>
 <li>Use the three files in <code>deploy/compose/</code> of the checkout.</li>
 <li>Make the images with <code>development/scripts/build-app-images.sh</code>. The script gives the images the
     names that the compose file uses.</li>
-<li>Do the <a href="#steps">steps</a> above. <code>docker compose up -d</code> then runs these images, and it pulls
-    nothing.</li>
+<li>Do the <a href="#steps">steps</a> above, but not <code>docker compose pull</code> and the verification of step 3.
+    These images have no signature. The compose file names them with the tag of its release. Thus
+    a pull puts the published images of that release in their place. <code>docker compose up -d</code> then
+    runs your images, and it pulls nothing.</li>
 </ol>
 <h3 id="two-installations-on-one-machine">Two installations on one machine<a class="headerlink" href="#two-installations-on-one-machine" title="Permanent link">&para;</a></h3>
 <p>The compose file gives each installation the project name <code>javv</code>. Docker Compose puts this name on
@@ -2503,7 +2547,7 @@ of its values.</p>
 </tr>
 <tr>
 <td>Certificates</td>
-<td>By default, OpenSearch uses its demo certificates. With them, the demo admin certificate of the public image has full access to OpenSearch. With your own certificates (<a href="#steps">Steps</a>, step 1), it has no access. Use your own certificates for each installation that is not a trial.</td>
+<td>By default, OpenSearch uses its demo certificates. With them, the demo admin certificate of the public image has full access to OpenSearch. With your own certificates (step 2 of the <a href="#install-on-kubernetes-with-helm">Helm steps</a>), it has no access. Use your own certificates for each installation that is not a trial.</td>
 </tr>
 <tr>
 <td>Storage</td>
@@ -2511,7 +2555,7 @@ of its values.</p>
 </tr>
 <tr>
 <td>CPU and memory requests</td>
-<td>Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (<code>opensearch.opensearchJavaOpts</code>), more than the request. Thus Kubernetes can put OpenSearch on a node without the memory for it. Set <code>opensearch.resources.requests.memory</code> to 2Gi or more. The OpenSearch docs recommend a heap of half the memory or less.</td>
+<td>Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (<code>opensearch.opensearchJavaOpts</code>), more than the request. Thus Kubernetes can put OpenSearch on a node without the memory for it. Step 2 of the <a href="#install-on-kubernetes-with-helm">Helm steps</a> sets <code>opensearch.resources.requests.memory</code> to 2Gi. The OpenSearch docs recommend a heap of half the memory or less.</td>
 </tr>
 <tr>
 <td>NetworkPolicy</td>
@@ -2551,6 +2595,9 @@ of its values.</p>
 <li><code>javv</code> and <code>javv-scanner</code>: each container runs as user 65532, with <code>runAsNonRoot</code>,
   <code>seccompProfile: RuntimeDefault</code>, <code>allowPrivilegeEscalation: false</code>, no capabilities and a
   read-only root file system.</li>
+<li>On 2026-11-07, we installed <code>javv</code> in a namespace that enforces <code>restricted</code>, on Kubernetes
+  v1.35. Its pods started. For the Jobs, CronJobs and test pods of <code>javv-scanner</code>, Kubernetes gave
+  no warning in a dry run on the server.</li>
 <li><code>javv-opensearch</code>: each container runs as user 1000, with <code>runAsNonRoot</code> and no capabilities. The
   official chart does not set <code>seccompProfile</code> or <code>allowPrivilegeEscalation: false</code>.</li>
 <li>To make the OpenSearch pod meet <code>restricted</code>, add these values:
@@ -2579,6 +2626,21 @@ to the backend.</p>
 <h3 id="steps_1">Steps<a class="headerlink" href="#steps_1" title="Permanent link">&para;</a></h3>
 <p>Install <code>javv-opensearch</code> and <code>javv</code> in the same namespace, in this sequence.</p>
 <ol>
+<li><strong>Verify the three charts.</strong> Each <code>helm install</code> of this page gets its chart from the registry.
+    Verify each chart before you install it:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.7
+<span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
+<span class="nv">ISSUER</span><span class="o">=</span>https://token.actions.githubusercontent.com
+<span class="k">for</span><span class="w"> </span>chart<span class="w"> </span><span class="k">in</span><span class="w"> </span>javv-opensearch<span class="w"> </span>javv<span class="w"> </span>javv-scanner<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>cosign<span class="w"> </span>verify<span class="w"> </span><span class="s2">"ghcr.io/danube-labs/charts/</span><span class="nv">$chart</span><span class="s2">:</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--certificate-identity-regexp<span class="w"> </span><span class="s2">"</span><span class="nv">$IDENTITY</span><span class="s2">"</span><span class="w"> </span>--certificate-oidc-issuer<span class="w"> </span><span class="s2">"</span><span class="nv">$ISSUER</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"OK: </span><span class="nv">$chart</span><span class="s2">"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"FAILED: </span><span class="nv">$chart</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+    <!-- x-release-please-end -->
+    Do not install a chart when its line shows <code>FAILED</code>. <code>javv-scanner</code> is for the
+    <a href="#connect-the-scanners">scanners</a>.</li>
 <li>
 <p><strong>Install OpenSearch, with its two passwords in Secrets:</strong></p>
 <ul>
@@ -2596,9 +2658,17 @@ kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="
 <span class="w">  </span>--from-file<span class="o">=</span><span class="nv">password</span><span class="o">=</span>&lt;<span class="o">(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s1">'\n'</span><span class="o">)</span>
 helm<span class="w"> </span>install<span class="w"> </span>store<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-opensearch<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>opensearch.javv.auth.existingSecret<span class="o">=</span>javv-opensearch-admin<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>opensearch.javv.backend.existingSecret<span class="o">=</span>javv-opensearch-backend
+<span class="w">  </span>--set<span class="w"> </span>opensearch.javv.backend.existingSecret<span class="o">=</span>javv-opensearch-backend<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>opensearch.resources.requests.memory<span class="o">=</span>2Gi<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--wait<span class="w"> </span>--timeout<span class="w"> </span>10m
+helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>store
 </code></pre></div>
 <!-- x-release-please-end --></p>
+<ul>
+<li><code>--wait</code> waits until OpenSearch is ready. Then <code>helm test store</code> can sign in to it.</li>
+<li>The heap of OpenSearch is 1 GB. The OpenSearch docs recommend a heap of half the memory or
+  less. Thus the memory request is 2Gi. For a larger heap, request more memory.</li>
+</ul>
 <p>This uses the demo certificates of OpenSearch, as compose does. For your own certificates, set
 one of these values. The <a href="../../deploy/helm/javv-opensearch/">chart README</a> describes
 both.</p>
@@ -2644,6 +2714,50 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
 </ol>
 <p>To upgrade, or to go back to a previous release, see
 <a href="../UPGRADING/#on-kubernetes-helm"><code>UPGRADING.md</code> § On Kubernetes (Helm)</a>.</p>
+<h3 id="scanners-in-other-clusters">Scanners in other clusters<a class="headerlink" href="#scanners-in-other-clusters" title="Permanent link">&para;</a></h3>
+<p>The <code>javv</code> Service is <code>ClusterIP</code>. Thus only the cluster of JAVV can connect to it. A scanner in a
+different cluster needs an address and a port of JAVV that it can connect to. Use one of these:</p>
+<ul>
+<li>Your own Ingress, gateway or load balancer in front of the <code>javv</code> Service. Its address goes into
+  <code>backendUrl</code> of the scanners.</li>
+<li>
+<p>The chart value <code>frontend.service.type</code>, set to <code>LoadBalancer</code> or <code>NodePort</code>. <code>VERSION</code> is the
+  release that runs now:
+    <!-- x-release-please-start-version -->
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.7
+helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span>--reuse-values<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>frontend.service.type<span class="o">=</span>LoadBalancer<span class="w">   </span><span class="c1"># or NodePort</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>javv
+</code></pre></div>
+    <!-- x-release-please-end --></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>The address</th>
+<th>The port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LoadBalancer</code></td>
+<td><code>EXTERNAL-IP</code> in <code>kubectl get svc javv</code></td>
+<td>8080</td>
+</tr>
+<tr>
+<td><code>NodePort</code></td>
+<td>The address of a node, in <code>kubectl get nodes -o wide</code></td>
+<td>The second number in <code>PORT(S)</code> of <code>kubectl get svc javv</code>: <code>8080:31911/TCP</code> gives 31911</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Each system that can connect to this address can open JAVV over http, as at the Service.</li>
+<li>We tested <code>NodePort</code> between two k3d clusters on one Docker network, and <code>LoadBalancer</code> with
+  the load balancer of k3s. We did not test the load balancer of a cloud.</li>
+</ul>
+</li>
+</ul>
 <h3 id="what-the-javv-chart-runs">What the <code>javv</code> chart runs<a class="headerlink" href="#what-the-javv-chart-runs" title="Permanent link">&para;</a></h3>
 <ul>
 <li>One backend, with <code>strategy: Recreate</code>. The backend runs the background jobs itself. A rolling
@@ -2659,7 +2773,7 @@ To let AI agents connect to JAVV, see <a href="../use/use-the-mcp-server/">Use t
 <p><strong>Access:</strong> only what you put in front of the <code>javv</code> Service.</p>
 <ul>
 <li>The backend Service and the OpenSearch Service are ClusterIP.</li>
-<li>The sign-in and the certificates of OpenSearch are as in step 1.</li>
+<li>The sign-in and the certificates of OpenSearch are as in step 2 of the Steps.</li>
 <li>With the demo certificates, each system in the cluster that can connect to the OpenSearch Service
   can read its traffic and use the demo admin certificate of the image. This is the same as on the
   compose network.</li>
@@ -2669,7 +2783,8 @@ To let AI agents connect to JAVV, see <a href="../use/use-the-mcp-server/">Use t
 network. Each pair of a cluster and a scanner has its own token.</p>
 <h3 id="prerequisites_2">Prerequisites<a class="headerlink" href="#prerequisites_2" title="Permanent link">&para;</a></h3>
 <ul>
-<li>A running JAVV, and an address of JAVV that the scanned cluster can connect to.</li>
+<li>A running JAVV, and an address of JAVV that the scanned cluster can connect to
+  (<a href="#scanners-in-other-clusters">Scanners in other clusters</a>).</li>
 <li>An admin sign-in to JAVV.</li>
 <li><code>kubectl</code> and Helm for the scanned cluster, and bash.</li>
 </ul>
@@ -2688,7 +2803,8 @@ network. Each pair of a cluster and a scanner has its own token.</p>
 </ul>
 </li>
 <li>
-<p>Install the <code>javv-scanner</code> chart in that cluster. Put each token in its own Secret, and set the
+<p>Install the <code>javv-scanner</code> chart in that cluster. First verify the chart, as in step 1 of the
+    <a href="#install-on-kubernetes-with-helm">Helm steps</a>. Put each token in its own Secret, and set the
     address of JAVV:
     <!-- x-release-please-start-version -->
     <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.7
@@ -2701,16 +2817,45 @@ kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span clas
 <span class="k">done</span><span class="p">;</span><span class="w"> </span><span class="nb">unset</span><span class="w"> </span>token
 helm<span class="w"> </span>install<span class="w"> </span>scanner<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv-scanner<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span><span class="nv">backendUrl</span><span class="o">=</span>http://&lt;JAVV<span class="err">'</span>s<span class="w"> </span>address&gt;:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">backendUrl</span><span class="o">=</span>http://&lt;the<span class="w"> </span>address<span class="w"> </span>and<span class="w"> </span>port<span class="w"> </span>of<span class="w"> </span>JAVV&gt;<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>trivy.token.existingSecret<span class="o">=</span>javv-trivy-token<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>grype.token.existingSecret<span class="o">=</span>javv-grype-token
+<span class="w">  </span>--set<span class="w"> </span>grype.token.existingSecret<span class="o">=</span>javv-grype-token<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--wait
 helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>scanner<span class="w"> </span>-n<span class="w"> </span>javv-scanner
 </code></pre></div>
-    <!-- x-release-please-end -->
-    <code>helm test</code> verifies that JAVV replies at that address, and that it accepts each token.</p>
+    <!-- x-release-please-end --></p>
+<ul>
+<li><code>backendUrl</code>: with compose, <code>http://&lt;the machine of JAVV&gt;:8080</code>. With Helm, see
+  <a href="#scanners-in-other-clusters">Scanners in other clusters</a>.</li>
+<li><code>--wait</code> waits until the volumes of the vulnerability databases are bound.</li>
+<li><code>helm test</code> verifies that JAVV replies at that address, and that it accepts each token.</li>
+</ul>
+</li>
+<li>
+<p><strong>Start the first cycle.</strong> Each CronJob runs every 6 hours. Thus the first findings can come up
+    to 6 hours after the install. To start a cycle now, do these commands for <code>s=trivy</code>, then for
+    <code>s=grype</code>. They are the commands of the <code>NOTES</code> of the chart:
+    <div class="highlight"><pre><span></span><code><span class="nv">s</span><span class="o">=</span>trivy<span class="w">   </span><span class="c1"># then grype</span>
+<span class="nv">cj</span><span class="o">=</span>scanner-javv-scanner-<span class="nv">$s</span>
+kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>patch<span class="w"> </span>cronjob<span class="w"> </span><span class="nv">$cj</span><span class="w"> </span>-p<span class="w"> </span><span class="s1">'{"spec":{"suspend":true}}'</span>
+kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>get<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>-l<span class="w"> </span>app.kubernetes.io/instance<span class="o">=</span>scanner,app.kubernetes.io/component<span class="o">=</span><span class="nv">$s</span>
+</code></pre></div>
+    Wait until no Job shows <code>Running</code>. After the install, a Job updates the vulnerability database
+    for some minutes. Then:
+    <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>create<span class="w"> </span>job<span class="w"> </span><span class="nv">$s</span>-now<span class="w"> </span>--from<span class="o">=</span>cronjob/<span class="nv">$cj</span>
+kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span><span class="nb">complete</span><span class="w"> </span>job/<span class="nv">$s</span>-now<span class="w"> </span>--timeout<span class="o">=</span>6h
+kubectl<span class="w"> </span>-n<span class="w"> </span>javv-scanner<span class="w"> </span>patch<span class="w"> </span>cronjob<span class="w"> </span><span class="nv">$cj</span><span class="w"> </span>-p<span class="w"> </span><span class="s1">'{"spec":{"suspend":false}}'</span>
+</code></pre></div></p>
+<ul>
+<li>If a command fails, still do the last <code>patch</code>. A paused CronJob starts no cycle.</li>
+<li>When the schedule comes during the pause, Kubernetes starts that cycle at the
+  resume. Thus a second cycle runs right after yours, and scans the same images again.</li>
+</ul>
 </li>
 </ol>
 <p>The first push shows in <strong>Scanner status</strong>. Its findings show when the scan is complete.</p>
+<p>JAVV shows the cluster ID as the name of the cluster. To give the cluster a name, go to
+<strong>Settings › Cluster</strong>.</p>
 <p>Without Kubernetes, run the scanner image with <code>JAVV_BACKEND_URL</code>, <code>JAVV_TOKEN</code> and
 <code>JAVV_CLUSTER_ID</code> (<a href="../CONFIGURATION/#scanner-settings">Scanner settings</a>).</p>
 <h3 id="scan-images-from-private-registries">Scan images from private registries<a class="headerlink" href="#scan-images-from-private-registries" title="Permanent link">&para;</a></h3>

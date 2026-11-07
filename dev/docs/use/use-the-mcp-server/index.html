@@ -1566,9 +1566,11 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.</p>
 <li>
 <p>Set <code>VERSION</code> to the version of JAVV that you run now, and upgrade the release:</p>
 <div class="highlight"><pre><span></span><code>helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-f<span class="w"> </span>my-javv-values.yaml
+<span class="w">  </span>--reuse-values<span class="w"> </span>-f<span class="w"> </span>my-javv-values.yaml
 </code></pre></div>
-<p>The chart starts the backend again with the new value.</p>
+<p>The chart starts the backend again with the new value. <code>--reuse-values</code> keeps the values of
+the install, for example the Secrets. Without it, the upgrade stops with an error about
+<code>existingSecret</code>.</p>
 </li>
 </ol>
 <p>To see the result, open <strong>Settings › AI agents (MCP)</strong> in JAVV. The Endpoint card shows <strong>on</strong>
