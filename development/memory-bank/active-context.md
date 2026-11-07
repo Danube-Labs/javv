@@ -1,20 +1,20 @@
 # Active context
 
-As of: 2026-11-06
+As of: 2026-11-07
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
 
 ## Where the project is
 
-- The last release is 0.9.6 (2026-11-06): an MCP server for AI agents, with MCP tokens of three
-  levels, an audit row for each tool call, and a docs page "Use the MCP server" (issue 1096).
+- The last release is 0.9.8 (2026-11-07): the fixes from the install test of 0.9.7 (issue 1108).
+  The Images CSV has the counts of each scanner, Settings is easier to read, and the install docs
+  verify the images and charts before they run them (issues 1125, 1126 and 1127).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
 
-- Issue 1108: install 0.9.6 from zero by the published docs, with docker compose and with Helm,
-  and scanners in a Kubernetes cluster. It starts on the word of the operator.
+- Nothing. The next issue starts on the word of the operator.
 
 ## Held
 

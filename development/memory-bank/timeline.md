@@ -115,6 +115,11 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   clients, then MCP tokens, the endpoint with read tools, write tools for triage and decisions, the
   Settings section "AI agents (MCP)", the Guide section and the docs page. The PRs are 1099 to
   1103, then 1105. These changes shipped in 0.9.6 (2026-11-06).
+- **The install test of 0.9.7** (issue 1108, 2026-11-07): a test installed 0.9.7 two times by the
+  published docs, with docker compose and with Helm, and with scanners in a k3d cluster. Both
+  installs passed. The changes after the test: the UI of Settings, the windows and the Images CSV (issue 1127, PRs
+  1128 and 1130 to 1134), and the install docs (issues 1125 and 1126, PR 1135). These changes
+  shipped in 0.9.8 (2026-11-07).
 
 ## 6. Releases
 
@@ -122,6 +127,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.8 | 2026-11-07 | The Images CSV has the counts of each scanner (issue 1127). The Settings menu, the scope bar and the Roles table are easier to read. Windows have no border line. The install docs check the signatures of the images and charts before they run them. They tell how scanners in a different cluster get to JAVV (issues 1125 and 1126) |
 | 0.9.7 | 2026-11-07 | A test with a live agent client found five errors of the MCP server (issue 1110). Each tool refuses an argument that it does not take. The tool texts tell a closed cursor. A 429 tells the limit and the wait. One row of an answer always goes out. The MCP token table fits its card (issues 1111 to 1115). A docs page connects Claude Code to the MCP server |
 | 0.9.6 | 2026-11-06 | An MCP server for AI agents at `/api/v1/mcp`, off by default. MCP tokens have one of three levels, and each tool call writes an audit row (issue 1096). Add panel puts the new panel under the others (issue 1090). A video for the page "Build a dashboard" (issue 1009) |
 | 0.9.5 | 2026-11-03 | Dashboard panels have their own filters (issues 999 and 1063). A filter list finds a value past the top 32 (issue 1064). Scan and image counts count findings, not the entries of a scanner report (issue 1076). The scanner chart uses Grype 0.121.1 |
