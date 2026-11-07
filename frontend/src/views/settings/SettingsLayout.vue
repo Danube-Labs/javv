@@ -131,6 +131,8 @@ const scopeNote = computed(() => {
   background: var(--sc);
   flex: none;
 }
+/* a white card, as the other Settings cards (operator 2026-11-07 on built pictures, issue 1127,
+   D6 C): on --panel it read as too muted. The scope color stays on the badge alone (issue 652) */
 .scope-strip {
   display: flex;
   align-items: center;
@@ -138,8 +140,9 @@ const scopeNote = computed(() => {
   padding: 9px 13px;
   border-radius: 10px;
   margin-bottom: 14px;
-  border: 1px solid var(--line2);
-  background: var(--panel);
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: var(--shadow);
 }
 .scope-badge {
   font-family: var(--font-mono);
