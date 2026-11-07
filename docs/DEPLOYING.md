@@ -572,7 +572,8 @@ network. Each pair of a cluster and a scanner has its own token.
     - JAVV shows the token only one time.
     - For the second scanner's token, select the cluster in the list.
 
-3. Install the `javv-scanner` chart in that cluster. Put each token in its own Secret, and set the
+3. Install the `javv-scanner` chart in that cluster. First verify the chart, as in step 1 of the
+    [Helm steps](#install-on-kubernetes-with-helm). Put each token in its own Secret, and set the
     address of JAVV:
     <!-- x-release-please-start-version -->
     ```bash

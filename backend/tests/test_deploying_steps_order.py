@@ -147,5 +147,11 @@ def test_the_scanner_steps_start_the_first_cycle_with_the_commands_of_the_notes(
     assert "a second cycle" in cycle
 
 
+def test_the_scanner_steps_verify_the_chart_before_its_install() -> None:
+    # a compose install does not do the Helm steps, so this step names the verification itself
+    steps = _scanner_steps()
+    assert steps.index("First verify the chart") < steps.index("helm install scanner")
+
+
 def test_the_scanner_steps_tell_where_to_name_the_cluster() -> None:
     assert "**Settings › Cluster**" in _scanner_steps()

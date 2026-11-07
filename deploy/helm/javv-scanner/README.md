@@ -28,7 +28,9 @@ CronJob.
 2. Make one ingest token for each scanner, in JAVV: **Settings › Access & tokens › Mint token**.
     - For the first token, select **New cluster…** and enter the cluster id.
     - Select the name of the scanner.
-3. Put each token in its own Secret, and install the chart:
+3. Verify the chart
+    ([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)). Put
+    each token in its own Secret, and install the chart:
     ```bash
     VERSION=0.9.7
     kubectl create namespace javv-scanner
