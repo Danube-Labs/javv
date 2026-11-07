@@ -20,6 +20,8 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.
     - When a tool error has the words "the tool made the change", do not call the tool again.
     - A tool error with `403` tells you that the level of the token does not allow the tool. Tell
       the user that the token needs a higher level.
+    - A tool error with `extra_forbidden` tells you that the tool does not take an argument that
+      you sent. Use only the arguments of the input schema of the tool.
 
 ## Before you start
 
@@ -195,6 +197,7 @@ change the state of a finding with an accepted risk.
 | 403 | The request has an `Origin` header. A browser sends this header, so a web page cannot use the endpoint. | Use an agent client. |
 | 429 | The token sent more requests in one minute than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` allows (60 by default). | Wait one minute. |
 | A tool error: the level of this token does not allow this tool | The tool needs a higher level. | Make a token with a higher level. |
+| A tool error: `extra_forbidden` | The agent sent an argument that the tool does not take, for example a filter with a typo. The tool did not run. | Tell the agent to use the arguments of the input schema of the tool. |
 | An answer with a `cut` field | The answer was longer than `JAVV_MCP_MAX_ANSWER_CHARS` (50,000 characters by default). JAVV kept the first rows, and `cut` gives the number. | Ask for fewer rows. |
 | A tool error: ask for a smaller size | A page of rows with a next page was longer than `JAVV_MCP_MAX_ANSWER_CHARS`. | Ask for a smaller page. |
 
