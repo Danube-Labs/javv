@@ -63,7 +63,10 @@ hover/pressed/focus states; reviews reject "border-shift-only" or feedback-less 
   only for critical-grade emphasis. Side-stripe accents (the prototype's 4px `border-left`)
   stay banned — severity on a panel is carried by the chip, not a stripe. The same holds for
   the Settings scope strip: its 3px scope-coloured stripe is gone and the coloured badge carries
-  the scope alone (operator ruling on A/B specimens, 2026-10-01, issue 652).
+  the scope alone (operator ruling on A/B specimens, 2026-10-01, issue 652). The strip itself is a
+  white card (`--card`, `--line`, `--shadow`), as the other Settings cards: on `--panel` it read as
+  too muted, and a tint of the scope color made the Organization strip beige (operator ruling on
+  built pictures, 2026-11-07, issue 1127, D6 option C).
 
 **Interaction & spacing rulings (operator, 2026-07-10 — issue #306):**
 - **Arrow cursor everywhere** — never `cursor: pointer` (desktop-app convention: Linear/Notion;
