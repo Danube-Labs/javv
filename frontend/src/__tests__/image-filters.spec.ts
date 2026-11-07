@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { emptySelections } from '@/filters/fields.config'
 import { IMAGES_FIELDS } from '@/images/fields.config'
-import { filterImages, imagesCsv, imagesFacets, searchImageValues } from '@/images/imageFilters'
+import { scannerCountsOf, filterImages, imagesCsv, imagesFacets, searchImageValues } from '@/images/imageFilters'
 import { makeFiltersStore } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
 
@@ -140,6 +140,94 @@ describe('imagesCsv', () => {
     const line = imagesCsv([row({ count_delta: -15 })]).split('\n')[1]
     expect(line).toContain(',-15,')
     expect(line).not.toContain("'-15")
+  })
+
+  /** The API row of nginx 1.21.0 from the install test of issue 1108: the doc's own scanner is
+   * grype, and Trivy scanned the same digest too (394 findings against Grype's 522). */
+  const nginx = row({
+    image_digest: 'sha256:47ae43cdfc7064d28800bc42e79a429540c7c80168e8c8952778c0d5af1c09db',
+    tag: '1.21.0',
+    namespaces: ['t1108-apps'],
+    scanners: ['grype'],
+    crit: 27,
+    high: 148,
+    med: 190,
+    low: 35,
+    negligible: 118,
+    unknown: 4,
+    total: 522,
+    fixable: 292,
+    trivy_count: 394,
+    grype_count: 522,
+    count_delta: -128,
+    severity_by_scanner: {
+      grype: { crit: 27, high: 148, med: 190, low: 35, negligible: 118, unknown: 4, total: 522, fixable: 292 },
+      trivy: { crit: 27, high: 138, med: 176, low: 44, negligible: 0, unknown: 9, total: 394, fixable: 309 },
+    },
+    '@timestamp': '2026-11-07T10:19:31.159520+00:00',
+  })
+  const cells = (csv: string) => {
+    const [head, line] = csv.split('\n')
+    const names = head!.split(',')
+    const values = line!.split(',')
+    expect(values).toHaveLength(names.length)
+    return Object.fromEntries(names.map((n, i) => [n, values[i]]))
+  }
+  const SEVS = ['critical', 'high', 'medium', 'low', 'negligible', 'unknown', 'total', 'fixable']
+
+  it('writes one set of severity columns for each scanner, never one merged set', () => {
+    expect(imagesCsv([nginx]).split('\n')[0]!.split(',')).toEqual([
+      'image_repo', 'tag', 'image_digest', 'namespaces', 'scanners',
+      ...SEVS.map((s) => `trivy_${s}`),
+      ...SEVS.map((s) => `grype_${s}`),
+      'trivy_count', 'grype_count', 'count_delta', 'replicas', 'last_seen',
+    ])
+    const c = cells(imagesCsv([nginx]))
+    expect(c.scanners).toBe('trivy grype')
+    expect(SEVS.map((s) => c[`trivy_${s}`])).toEqual(['27', '138', '176', '44', '0', '9', '394', '309'])
+    expect(SEVS.map((s) => c[`grype_${s}`])).toEqual(['27', '148', '190', '35', '118', '4', '522', '292'])
+    expect([c.trivy_count, c.grype_count, c.count_delta]).toEqual(['394', '522', '-128'])
+  })
+
+  it('leaves the cells of a scanner with no committed scan empty, not 0', () => {
+    const trivyOnly = row({
+      scanners: ['trivy'],
+      severity_by_scanner: {
+        trivy: { crit: 0, high: 0, med: 0, low: 0, negligible: 0, unknown: 0, total: 0, fixable: 0 },
+      },
+    })
+    const c = cells(imagesCsv([trivyOnly]))
+    expect(c.scanners).toBe('trivy')
+    expect(SEVS.map((s) => c[`trivy_${s}`])).toEqual(['0', '0', '0', '0', '0', '0', '0', '0'])
+    expect(SEVS.map((s) => c[`grype_${s}`])).toEqual(['', '', '', '', '', '', '', ''])
+  })
+
+  it("without severity_by_scanner, the doc's own counts go to its own scanner only", () => {
+    const bare = row({ scanners: ['grype'], crit: 1, high: 2, total: 3, fixable: 1 })
+    const c = cells(imagesCsv([bare]))
+    expect(c.scanners).toBe('grype')
+    expect(SEVS.map((s) => c[`grype_${s}`])).toEqual(['1', '2', '0', '0', '0', '0', '3', '1'])
+    expect(SEVS.map((s) => c[`trivy_${s}`])).toEqual(['', '', '', '', '', '', '', ''])
+  })
+})
+
+describe('scannerCountsOf (the counts of one scanner, the rule of the Images table and its CSV)', () => {
+  const nginxCounts = { crit: 27, high: 138, med: 176, low: 44, negligible: 0, unknown: 9, total: 394, fixable: 309 }
+
+  it('reads severity_by_scanner, also for a scanner that is not the doc’s own', () => {
+    const r = row({ scanners: ['grype'], severity_by_scanner: { trivy: nginxCounts } })
+    expect(scannerCountsOf(r, 'trivy')).toEqual(nginxCounts)
+    expect(scannerCountsOf(r, 'grype')).toBeNull()
+  })
+
+  it("falls back to the doc's own counts for its own scanner when the server sent no decoration", () => {
+    const r = row({ scanners: ['trivy'], crit: 2, total: 2, fixable: 1 })
+    expect(scannerCountsOf(r, 'trivy')).toEqual({ crit: 2, high: 0, med: 0, low: 0, negligible: 0, unknown: 0, total: 2, fixable: 1 })
+    expect(scannerCountsOf(r, 'grype')).toBeNull()
+  })
+
+  it('an empty decoration means no committed scan, even for the doc’s own scanner', () => {
+    expect(scannerCountsOf(row({ scanners: ['trivy'], severity_by_scanner: {} }), 'trivy')).toBeNull()
   })
 })
 

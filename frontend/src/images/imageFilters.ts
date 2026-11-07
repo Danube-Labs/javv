@@ -3,6 +3,7 @@
  * counts). Severity buckets use the canonical vocabulary mapped from the doc's short keys. */
 import { FACET_CAP, type ValueSearch } from '@/filters/facets'
 import type { Selections } from '@/filters/fields.config'
+import { SCANNER_ORDER } from '@/findings/detailViewModel'
 import type { FilterMode, Modes } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
 import type { Severity } from '@/styles/tokens'
@@ -30,6 +31,19 @@ export function scannersOf(row: ImageRow): string[] {
   if (row.trivy_count != null) out.add('trivy')
   if (row.grype_count != null) out.add('grype')
   return [...out]
+}
+
+export type ScannerCounts = NonNullable<ImageRow['severity_by_scanner']>[string]
+
+/** One scanner's latest committed counts for this digest, or null when it has no committed scan.
+ * The server's `severity_by_scanner` decides; only a row without it falls back to the doc's own
+ * buckets, which belong to the doc's own scanner alone. The Images table and its CSV both read
+ * through here, so the file shows the numbers of the screen. */
+export function scannerCountsOf(row: ImageRow, scanner: string): ScannerCounts | null {
+  if (row.severity_by_scanner) return row.severity_by_scanner[scanner] ?? null
+  if (!row.scanners.includes(scanner)) return null
+  const { crit, high, med, low, negligible, unknown, total, fixable } = row
+  return { crit, high, med, low, negligible, unknown, total, fixable }
 }
 
 interface Bucket {
@@ -138,18 +152,34 @@ export function imagesCsv(rows: ImageRow[]): string {
     if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`
     return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s
   }
+  // one set of columns for each scanner, never one merged set; a scanner with no committed scan
+  // leaves its cells empty, because 0 says it scanned and found nothing
   const header = [
-    'image_repo', 'tag', 'image_digest', 'namespaces', 'scanners', 'critical', 'high', 'medium',
-    'low', 'negligible', 'unknown', 'total', 'fixable', 'trivy_count', 'grype_count',
-    'count_delta', 'replicas', 'last_seen',
+    'image_repo', 'tag', 'image_digest', 'namespaces', 'scanners',
+    ...SCANNER_ORDER.flatMap((sc) => CSV_COUNTS.map(([name]) => `${sc}_${name}`)),
+    'trivy_count', 'grype_count', 'count_delta', 'replicas', 'last_seen',
   ]
-  const line = (r: ImageRow) =>
-    [
-      r.image_repo, r.tag, r.image_digest, r.namespaces.join(' '), r.scanners.join(' '), r.crit,
-      r.high, r.med, r.low, r.negligible, r.unknown, r.total, r.fixable, r.trivy_count ?? '',
-      r.grype_count ?? '', r.count_delta ?? '', r.replicas, r['@timestamp'],
+  const line = (r: ImageRow) => {
+    const per = SCANNER_ORDER.map((sc) => scannerCountsOf(r, sc))
+    return [
+      r.image_repo, r.tag, r.image_digest, r.namespaces.join(' '),
+      SCANNER_ORDER.filter((_, i) => per[i]).join(' '),
+      ...per.flatMap((c) => CSV_COUNTS.map(([, key]) => c?.[key] ?? '')),
+      r.trivy_count ?? '', r.grype_count ?? '', r.count_delta ?? '', r.replicas, r['@timestamp'],
     ]
       .map(esc)
       .join(',')
+  }
   return [header.join(','), ...rows.map(line)].join('\n')
 }
+
+const CSV_COUNTS: readonly [string, keyof ScannerCounts][] = [
+  ['critical', 'crit'],
+  ['high', 'high'],
+  ['medium', 'med'],
+  ['low', 'low'],
+  ['negligible', 'negligible'],
+  ['unknown', 'unknown'],
+  ['total', 'total'],
+  ['fixable', 'fixable'],
+]
