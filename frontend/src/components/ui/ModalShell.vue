@@ -46,9 +46,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   z-index: 80;
   padding: 24px;
 }
+/* no border line: the shadow alone sets the window off the backdrop (operator 2026-11-07 on
+   built pictures, issue 1127, D3 G). A beige line on the dark backdrop read as cheap. */
 .modal {
   background: var(--card);
-  border: 1px solid var(--line);
   border-radius: var(--r);
   box-shadow: var(--shadow);
   max-height: 90vh;
@@ -65,10 +66,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   padding: 16px 18px 12px;
   background: var(--table-head-bg);
   color: var(--table-head-fg);
-  /* nested radius (outer minus border), as on the side panel head: a square corner shows a
-     light seam under the card edge */
-  border-top-left-radius: calc(var(--r) - 1px);
-  border-top-right-radius: calc(var(--r) - 1px);
+  /* the card's own radius, since the card has no border: a square corner shows a light seam */
+  border-top-left-radius: var(--r);
+  border-top-right-radius: var(--r);
 }
 .modal-head h3 {
   margin: 0;

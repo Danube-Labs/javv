@@ -9,6 +9,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as sdk from '@/api/generated'
+import CopyValue from '@/components/settings/CopyValue.vue'
 import TokenOnceDialog from '@/components/settings/TokenOnceDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -333,15 +334,29 @@ describe('the window that shows a token one time', () => {
     document.body.innerHTML = ''
   })
 
+  /** the Copy button next to the token (issue 1127, D3 G): the main action, not a footer button */
+  const copyButton = () => document.querySelector<HTMLButtonElement>('.modal .copy-value button')!
+
+  it('puts the primary Copy button next to the token, and leaves only Done in the footer', () => {
+    const w = mount(TokenOnceDialog, { props: { token: 'raw', subtitle: 'once' }, attachTo: document.body })
+    expect(document.querySelector('.modal .copy-box')?.textContent).toBe('raw')
+    expect(copyButton().classList).toContain('ui-btn--primary')
+    expect(copyButton().getAttribute('aria-label')).toBe('Copy token')
+    const actions = [...document.querySelectorAll<HTMLButtonElement>('.modal-actions button')]
+    expect(actions.map((b) => b.textContent?.trim())).toEqual(['Done'])
+    expect(actions[0]!.classList).toContain('ui-btn--ghost')
+    w.unmount()
+  })
+
   it('says with a toast when the browser blocks the clipboard', async () => {
     vi.stubGlobal('navigator', { clipboard: undefined })
     const w = mount(TokenOnceDialog, { props: { token: 'raw', subtitle: 'once' }, attachTo: document.body })
-    footer('Copy token').click()
+    copyButton().click()
     await flushPromises()
     expect(useToastStore().toasts.map((t) => t.message)).toEqual([
       "Couldn't copy: the browser blocked the clipboard. Select the text and copy it.",
     ])
-    expect(footer('Copy token')).toBeDefined() // not "Copied"
+    expect(copyButton().textContent?.trim()).toBe('Copy') // not "Copied"
     w.unmount()
     vi.unstubAllGlobals()
   })
@@ -350,11 +365,27 @@ describe('the window that shows a token one time', () => {
     const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve())
     vi.stubGlobal('navigator', { clipboard: { writeText } })
     const w = mount(TokenOnceDialog, { props: { token: 'raw', subtitle: 'once' }, attachTo: document.body })
-    footer('Copy token').click()
+    copyButton().click()
     await flushPromises()
     expect(writeText).toHaveBeenCalledWith('raw')
-    expect(footer('Copied ✓')).toBeDefined()
+    expect(copyButton().textContent?.trim()).toBe('Copied ✓')
     w.unmount()
     vi.unstubAllGlobals()
+  })
+})
+
+describe('the copy box of a value (CopyValue)', () => {
+  it('keeps the small Copy button and the row box by default, as for the MCP endpoint address', () => {
+    const w = mount(CopyValue, { props: { value: 'http://x/api/v1/mcp', copy: 'Copy the URL' } })
+    expect(w.get('button').classes()).toContain('ui-btn--mini')
+    expect(w.get('.copy-box').classes()).toContain('copy-box--row')
+    expect(w.get('.copy-value').classes()).not.toContain('copy-value--primary')
+  })
+
+  it('makes the Copy button primary and as tall as the box with primary', () => {
+    const w = mount(CopyValue, { props: { value: 'raw', copy: 'Copy token', primary: true } })
+    expect(w.get('button').classes()).toContain('ui-btn--primary')
+    expect(w.get('.copy-box').classes()).not.toContain('copy-box--row')
+    expect(w.get('.copy-value').classes()).toContain('copy-value--primary')
   })
 })
