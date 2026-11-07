@@ -26,6 +26,7 @@ from backend.mcp.auth import LEVEL_CAPABILITIES
 from backend.mcp.tools import READ_ONLY, WRITES, RouteError, Tool, build, current_principal
 from backend.mcp.write_tools import WRITE_TOOLS
 from backend.triage.service import _STATE_ACTIONS
+from backend.triage.state_machine import HUMAN_TARGET_STATES
 from os_env import requires_opensearch
 from test_findings_route import _rows as _findings
 from test_findings_route import _seed
@@ -430,3 +431,9 @@ async def test_a_write_token_gets_the_403_of_the_route_for_an_undo_of_a_risk_acc
             assert error and "403:" in text, text
             assert "risk_accepted decision requires can_accept_audit_final" in text
         assert [r["new_value"] for r in await _rows(client, f"mcp:{name}")] == ["error 403"] * 2
+
+
+def test_set_triage_names_the_states_that_it_sets():
+    """Issue 1112: an agent sent under_investigation, and the 422 did not list the states."""
+    [tool] = [t for t in WRITE_TOOLS if t.name == "set_triage"]
+    assert f"state: {', '.join(sorted(HUMAN_TARGET_STATES))}" in tool.description

@@ -6,6 +6,7 @@ from typing import Annotated
 from pydantic import Field
 
 from backend.mcp.tools import Tool
+from backend.query.aggs import FACET_FIELDS, GROUP_FIELDS
 from backend.routers import (
     admin_jobs,
     admin_users,
@@ -47,7 +48,10 @@ READ_TOOLS: tuple[Tool, ...] = (
             "One page of the findings of one cluster, with the filters of the Findings screen. "
             "Each finding is one CVE in one package version for one scanner: the scanners stay "
             "apart. Pass next_cursor back as cursor for the next page. A first page starts a new "
-            "search. as_of reads a past time."
+            "search and closes the cursor of your last search with this tool: read all the pages "
+            "that you need first. as_of reads a past time. With as_of, image_repo, tag, app, "
+            "epss, kev and disagree are null: the history does not record them, and a filter or "
+            "a sort on them is refused."
         ),
         routes={"": findings.search_findings},
         params={"size": FINDINGS_PAGE},
@@ -57,15 +61,19 @@ READ_TOOLS: tuple[Tool, ...] = (
     Tool(
         name="count_findings",
         description=(
-            "Counts of the findings of one cluster for each value of a field (severity, state, "
-            "scanner, namespace, package type, assignee and more), with the same filters as "
-            "search_findings. Use it before you read rows."
+            "Counts of the findings of one cluster for each value of a field, with the same "
+            f"filters as search_findings. fields: {', '.join(FACET_FIELDS)}. With as_of, not "
+            "namespaces or assignee. Use it before you read rows."
         ),
         routes={"": findings.facet_findings},
     ),
     Tool(
         name="group_findings",
-        description="The findings of one cluster in groups of one field, with a count for each.",
+        description=(
+            "The findings of one cluster in groups of one field, with a count for each. "
+            f"by: {', '.join(GROUP_FIELDS)}. With as_of, not image_repo or app. To count by "
+            "severity, state or scanner, use count_findings."
+        ),
         routes={"": findings.group_findings},
     ),
     Tool(
@@ -106,8 +114,10 @@ READ_TOOLS: tuple[Tool, ...] = (
     Tool(
         name="scanner_status",
         description=(
-            "The scanners of one cluster: kind freshness (the newest scan of each scanner and if "
-            "it is late) or provenance (the scanner and database versions of recent runs)."
+            "The scanners of one cluster: kind freshness (the newest scan of each scanner, and "
+            "silent_for_seconds since it) or provenance (the scanner and database versions of "
+            "recent runs). A scanner is late when silent_for_seconds is more than the "
+            "freshness_days of read_settings kind staleness."
         ),
         routes={"freshness": scanners.scanner_freshness, "provenance": scanners.scanner_provenance},
     ),
@@ -122,7 +132,9 @@ READ_TOOLS: tuple[Tool, ...] = (
         name="audit_log",
         description=(
             "One page of the audit log of one cluster: who changed what and when. Pass "
-            "next_cursor back as cursor for the next page. as_of reads a past time."
+            "next_cursor back as cursor for the next page. A first page starts a new search and "
+            "closes the cursor of your last search with this tool: read all the pages that you "
+            "need first. as_of reads a past time."
         ),
         routes={"": audit.read_audit_log},
         hidden=("keep_open",),
@@ -163,7 +175,9 @@ READ_TOOLS: tuple[Tool, ...] = (
         description=(
             "A settings page: kind about (the JAVV, schema and OpenSearch versions), scan_scope, "
             "sla, staleness, retirement, data (retention and rollover), snapshots, opensearch "
-            "(the store runtime) or jobs (the background jobs and their last runs)."
+            "(the store runtime) or jobs (the background jobs and their last runs). Kinds "
+            "scan_scope, staleness, retirement and data take a cluster_id for the values of one "
+            "cluster; the other kinds take no parameter."
         ),
         routes={
             "about": meta.get_meta,

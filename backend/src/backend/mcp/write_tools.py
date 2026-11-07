@@ -20,6 +20,7 @@ from backend.mcp.tools import Tool
 from backend.routers import decisions, triage
 from backend.routers.decisions import DecisionEditRequest
 from backend.triage import bulk_routes
+from backend.triage.state_machine import HUMAN_TARGET_STATES
 
 _REQUIRED = inspect.Parameter.empty
 RiskAcceptType = Literal["risk_accepted", "ignore_rule"]  # both project state=risk_accepted
@@ -75,7 +76,8 @@ WRITE_TOOLS: tuple[Tool, ...] = (
         name="set_triage",
         description=(
             "Set the state, the assignee or the note of one finding (finding_key from "
-            "search_findings). A finding with an accepted risk keeps its state."
+            f"search_findings). state: {', '.join(sorted(HUMAN_TARGET_STATES))}. A finding with "
+            "an accepted risk keeps its state."
         ),
         routes={"": triage.triage},
         needs="can_triage",

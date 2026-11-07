@@ -15,9 +15,12 @@ import httpx
 import pytest
 from fastapi import FastAPI, Query
 
+from backend.jobs.staleness import StalenessTimers
 from backend.main import create_app
 from backend.mcp.read_tools import READ_TOOLS
-from backend.mcp.tools import Tool, build
+from backend.mcp.tools import Tool, _plan, build
+from backend.query import as_of_t
+from backend.query.aggs import FACET_FIELDS, GROUP_FIELDS
 from backend.query.as_of import register_as_of_t
 from backend.query.as_of_t import AsOfTQuery
 from backend.query.search import cursor_pit_id
@@ -263,3 +266,103 @@ def test_routes_of_one_tool_give_a_parameter_one_type_and_one_set_of_limits(othe
     else:
         with pytest.raises(TypeError, match=r"t\.size: .* differ"):
             build(tool, create_app())
+
+
+# --- what each tool takes and gives (issue 1112) --------------------------------------------
+
+
+def _description(name: str) -> str:
+    return next(t for t in READ_TOOLS if t.name == name).description
+
+
+def _and(names: list[str]) -> str:
+    return ", ".join(names[:-1]) + f" and {names[-1]}" if len(names) > 1 else names[0]
+
+
+def test_group_findings_names_the_fields_that_it_groups_by_also_at_a_past_time():
+    text = _description("group_findings")
+    assert f"by: {', '.join(GROUP_FIELDS)}" in text
+    past = [f for f in GROUP_FIELDS if f not in as_of_t._GROUP_FIELDS]
+    assert past and f"With as_of, not {' or '.join(past)}" in text
+
+
+def test_count_findings_names_the_fields_that_it_counts_also_at_a_past_time():
+    text = _description("count_findings")
+    assert f"fields: {', '.join(FACET_FIELDS)}" in text
+    past = [f for f in FACET_FIELDS if f not in as_of_t._FACET_FIELDS]
+    assert past and f"With as_of, not {' or '.join(past)}" in text
+
+
+def test_search_findings_names_the_fields_that_a_past_time_does_not_record():
+    """A past-time row from values for each field of the history: what stays null is what the
+    history does not record. `pre_stale_status` is not a field that an agent filters on."""
+    occurrence = {
+        "finding_key": "fk-1",
+        "cluster_id": "c-past-1",
+        "scanner": "trivy",
+        "image_digest": "sha256:aa",
+        "namespaces": ["default"],
+        "vuln_id": "CVE-2024-1",
+        "package_name": "openssl",
+        "package_version": "1.0",
+        "severity": "HIGH",
+        "cvss": 7.5,
+        "fixable": True,
+        "fixed_version": "1.1",
+        "ptype": "os",
+        "@timestamp": "2026-01-01T00:00:00Z",
+        "scan_run_id": "r-1",
+        "scan_order": 1,
+        "schema_version": 4,
+    }
+    raw = {
+        "occurrence": occurrence,
+        "first_seen_at": "2026-01-01T00:00:00Z",
+        "present": True,
+        "resolved_at": "2026-01-02T00:00:00Z",
+    }
+    human = {
+        "state": "open",
+        "vex_justification": "none",
+        "assignee": "bob",
+        "notes": "n",
+        "state_decision_id": "d-1",
+    }
+    row = as_of_t._finding_row(raw, human)
+    nulls = [k for k, v in row.items() if v is None and k != "pre_stale_status"]
+    assert f"With as_of, {_and(nulls)} are null" in _description("search_findings")
+
+
+def test_scanner_status_tells_when_a_scanner_is_late():
+    text = _description("scanner_status")
+    assert "silent_for_seconds" in text
+    assert "freshness_days of read_settings kind staleness" in text
+    assert "freshness_days" in StalenessTimers.model_fields
+
+
+def test_read_settings_names_the_kinds_that_take_a_cluster():
+    [tool] = [t for t in READ_TOOLS if t.name == "read_settings"]
+    takes = {kind: set(_plan(fn).tool_params()) for kind, fn in tool.routes.items()}
+    with_cluster = [kind for kind, params in takes.items() if params == {"cluster_id"}]
+    assert {kind for kind, params in takes.items() if params} == set(with_cluster)
+    assert f"Kinds {_and(with_cluster)} take a cluster_id" in tool.description
+    assert "the other kinds take no parameter" in tool.description
+
+
+async def test_the_error_of_a_kind_names_the_parameters_that_the_kind_takes(mcp_on):
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client)
+        for name, args, refusal in (
+            (
+                "read_settings",
+                {"kind": "about", "cluster_id": "c-mcp-x"},
+                "this kind does not take cluster_id. It takes no parameter",
+            ),
+            (
+                "list_accounts",
+                {"kind": "users", "cluster_id": "c-mcp-x"},
+                "this kind does not take cluster_id. It takes offset, size",
+            ),
+        ):
+            result = (await http.post(PATH, **_call(name, args, raw))).json()["result"]
+            assert result["isError"] and refusal in result["content"][0]["text"], name

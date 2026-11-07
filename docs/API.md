@@ -145,7 +145,7 @@ Each endpoint uses one of four kinds of authentication.
 |---|---|---|
 | None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. Also `POST /auth/login` and `POST /auth/logout`. |
 | Scanner token | `Authorization: Bearer <token>`. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token. | The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner. |
-| MCP token | `Authorization: Bearer <token>`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
+| MCP token | `Authorization: Bearer <token>`. The scheme name `Bearer` can have each case, for example `bearer`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
 | Session | The `javv_session` cookie from `POST /auth/login` | All other endpoints |
 
 The session cookie has the `HttpOnly` and `SameSite=Lax` flags. It also has the `Secure` flag,
@@ -913,18 +913,19 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 **The answer of a tool** is one text with compact JSON.
 
 - A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
+- A tool refuses an argument that it does not take, with the reason `extra_forbidden`, and the tool does not run. The input schema of each tool has `additionalProperties: false`. Thus a filter with a wrong name, for example `severty`, does not give the rows with no filter.
 - An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest top-level list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
 - A page with a next page (`next_cursor`) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller `size`.
 - An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in `trends` can be longer than the cap. Then the agent must ask for fewer `days`. After a write, the error tells the agent that the tool made the change.
 
 **The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
 
-A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.
+A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. The first error also names the parameters that the kind takes. A missing parameter that the kind does not need takes the default of the route.
 
 | Tool | Route |
 |---|---|
 | `list_clusters` | `GET /api/v1/clusters` |
-| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. |
+| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text `cursor closed`, which tells this cause. A search that ended after its keep-alive gets 410 with the text `cursor expired`. |
 | `count_findings` | `GET /api/v1/findings/facets` |
 | `group_findings` | `GET /api/v1/findings/groups` |
 | `top_images` | `GET /api/v1/findings/top-images` |
