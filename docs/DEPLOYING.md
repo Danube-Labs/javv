@@ -84,7 +84,7 @@ chmod +x setup.sh
     signature is for the digest of the image. Thus verify the digest that the pull got:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.7
+    VERSION=0.9.8
     IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
     ISSUER=https://token.actions.githubusercontent.com
     docker compose pull
@@ -418,7 +418,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
     Verify each chart before you install it:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.7
+    VERSION=0.9.8
     IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
     ISSUER=https://token.actions.githubusercontent.com
     for chart in javv-opensearch javv javv-scanner; do
@@ -511,7 +511,7 @@ different cluster needs an address and a port of JAVV that it can connect to. Us
   release that runs now:
     <!-- x-release-please-start-version -->
     ```bash
-    VERSION=0.9.7
+    VERSION=0.9.8
     helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" --reuse-values \
       --set frontend.service.type=LoadBalancer   # or NodePort
     kubectl get svc javv
