@@ -134,6 +134,10 @@ describe('contrast gate — every text pair computed ≥4.5:1 (AA)', () => {
     expect
       .soft(ratio('coral-text', 'dd-on-bg', tokens['card']), 'coral-text on dd wash')
       .toBeGreaterThanOrEqual(AA)
+    // the selected row of the section menu (issue 1127, D4 B): 4.6:1, a thin margin
+    expect.soft(ratio('coral-text', 'control-active-bg'), 'coral-text on the selected menu row').toBeGreaterThanOrEqual(AA)
+    // a pressed menu row: its text is ink, because --soft on this fill is 4.39:1
+    expect.soft(ratio('ink', 'control-active-bg'), 'ink on a pressed menu row').toBeGreaterThanOrEqual(AA)
     expect.soft(ratio('ver-none-fg', 'card'), 'no-fix italic').toBeGreaterThanOrEqual(AA)
     expect.soft(ratio('sla-tight-fg', 'card'), 'sla tight').toBeGreaterThanOrEqual(AA)
   })
