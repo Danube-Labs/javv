@@ -1748,6 +1748,11 @@ change the state of a finding with an accepted risk.</p>
 <td>Ask for fewer rows.</td>
 </tr>
 <tr>
+<td>A tool error: 410 <code>cursor closed</code></td>
+<td>The agent started a new search with the same tool, and that search closed the cursor of the last search.</td>
+<td>Tell the agent to read all the pages that it needs before it starts a new search.</td>
+</tr>
+<tr>
 <td>A tool error: ask for a smaller size</td>
 <td>A page of rows with a next page was longer than <code>JAVV_MCP_MAX_ANSWER_CHARS</code>.</td>
 <td>Ask for a smaller page.</td>

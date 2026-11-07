@@ -4020,7 +4020,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <li>An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in <code>trends</code> can be longer than the cap. Then the agent must ask for fewer <code>days</code>. After a write, the error tells the agent that the tool made the change.</li>
 </ul>
 <p><strong>The read tools.</strong> Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.</p>
-<p>A tool with more than one kind takes the parameter <code>kind</code>. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.</p>
+<p>A tool with more than one kind takes the parameter <code>kind</code>. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. The first error also names the parameters that the kind takes. A missing parameter that the kind does not need takes the default of the route.</p>
 <table>
 <thead>
 <tr>
@@ -4035,7 +4035,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 </tr>
 <tr>
 <td><code>search_findings</code></td>
-<td><code>GET /api/v1/findings</code>. <code>size</code> is 20 by default and 25 at most. The tool has no <code>keep_open</code>. A first page, with no <code>cursor</code>, closes the open search of the last first page of the same token and tool.</td>
+<td><code>GET /api/v1/findings</code>. <code>size</code> is 20 by default and 25 at most. The tool has no <code>keep_open</code>. A first page, with no <code>cursor</code>, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text <code>cursor closed</code>, which tells this cause. A search that ended after its keep-alive gets 410 with the text <code>cursor expired</code>.</td>
 </tr>
 <tr>
 <td><code>count_findings</code></td>
