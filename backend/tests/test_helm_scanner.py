@@ -121,6 +121,15 @@ def test_a_cycle_started_by_hand_waits_for_the_running_one() -> None:
     assert '{{- $cj := printf "%s-%s" (include "javv-scanner.fullname" $) $name }}' in notes
 
 
+def test_the_notes_tell_that_a_schedule_in_the_pause_runs_at_the_resume() -> None:
+    # a CronJob with no startingDeadlineSeconds starts its newest missed schedule when it is
+    # resumed: a schedule in the pause makes a second cycle after the one started by hand (H7 of
+    # issue 1126; the operator ruled to tell it, not to change the CronJob)
+    notes = (CHART / "templates" / "NOTES.txt").read_text()
+    resume = notes.index("""-p '{"spec":{"suspend":false}}'""")
+    assert notes.index("a second cycle runs right after yours") > resume
+
+
 @pytest.mark.parametrize("off", SCANNERS)
 def test_a_disabled_scanner_renders_nothing(off: str) -> None:
     on = next(s for s in SCANNERS if s != off)

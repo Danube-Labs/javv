@@ -90,3 +90,62 @@ def test_the_helm_page_tells_how_scanners_in_other_clusters_reach_javv() -> None
     assert "--set frontend.service.type=LoadBalancer" in part
     assert "kubectl get svc javv" in part
     assert "kubectl get nodes -o wide" in part
+
+
+SCANNER_README = (ROOT / "deploy" / "helm" / "javv-scanner" / "README.md.gotmpl").read_text()
+NOTES = (ROOT / "deploy" / "helm" / "javv-scanner" / "templates" / "NOTES.txt").read_text()
+
+
+def _scanner_steps() -> str:
+    return section(GUIDE, "## Connect the scanners", "### Steps")
+
+
+def _scanner_install(steps: str) -> str:
+    start = steps.index("helm install scanner")
+    return steps[start : steps.index("```", start)]
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [_scanner_steps(), section(SCANNER_README, "## Install", "### Steps")],
+    ids=["DEPLOYING", "javv-scanner chart README"],
+)
+def test_the_scanner_install_waits_for_its_volumes_and_names_no_port(steps: str) -> None:
+    # the install's vuln-DB Jobs bind the cache volumes, which --wait waits for; the port of
+    # JAVV is 8080 only on the Service, a NodePort or a load balancer has its own (issue 1126)
+    install = _scanner_install(steps)
+    assert "--wait" in install
+    assert "--set backendUrl=http://<the address and port of JAVV>" in install
+
+
+def _notes_commands() -> list[str]:
+    """The kubectl commands of the NOTES that start a cycle, for the release `scanner` in the
+    namespace `javv-scanner`, with `$s` for the scanner."""
+    lines = [line.strip() for line in NOTES.splitlines() if line.strip().startswith("kubectl")]
+    names = {
+        "{{ $.Release.Namespace }}": "javv-scanner",
+        "{{ $.Release.Name }}": "scanner",
+        "{{ $cj }}": "$cj",
+        "{{ $name }}": "$s",
+    }
+    out = []
+    for line in lines:
+        for template, value in names.items():
+            line = line.replace(template, value)
+        out.append(line)
+    return out
+
+
+def test_the_scanner_steps_start_the_first_cycle_with_the_commands_of_the_notes() -> None:
+    steps = _scanner_steps()
+    cycle = steps[steps.index("helm test scanner") :]
+    where = [cycle.index(command) for command in _notes_commands()]
+    assert len(where) == 5
+    assert where == sorted(where)
+    assert "cj=scanner-javv-scanner-$s" in cycle
+    # a schedule in the pause starts that cycle at the resume (issue 1126, H7)
+    assert "a second cycle" in cycle
+
+
+def test_the_scanner_steps_tell_where_to_name_the_cluster() -> None:
+    assert "**Settings › Cluster**" in _scanner_steps()

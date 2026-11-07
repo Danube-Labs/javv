@@ -586,15 +586,43 @@ network. Each pair of a cluster and a scanner has its own token.
     done; unset token
     helm install scanner oci://ghcr.io/danube-labs/charts/javv-scanner --version "$VERSION" \
       -n javv-scanner \
-      --set backendUrl=http://<JAVV's address>:8080 \
+      --set backendUrl=http://<the address and port of JAVV> \
       --set trivy.token.existingSecret=javv-trivy-token \
-      --set grype.token.existingSecret=javv-grype-token
+      --set grype.token.existingSecret=javv-grype-token \
+      --wait
     helm test scanner -n javv-scanner
     ```
     <!-- x-release-please-end -->
-    `helm test` verifies that JAVV replies at that address, and that it accepts each token.
+    - `backendUrl`: with compose, `http://<the machine of JAVV>:8080`. With Helm, see
+      [Scanners in other clusters](#scanners-in-other-clusters).
+    - `--wait` waits until the volumes of the vulnerability databases are bound.
+    - `helm test` verifies that JAVV replies at that address, and that it accepts each token.
+
+4. **Start the first cycle.** Each CronJob runs every 6 hours. Thus the first findings can come up
+    to 6 hours after the install. To start a cycle now, do these commands for `s=trivy`, then for
+    `s=grype`. They are the commands of the `NOTES` of the chart:
+    ```bash
+    s=trivy   # then grype
+    cj=scanner-javv-scanner-$s
+    kubectl -n javv-scanner patch cronjob $cj -p '{"spec":{"suspend":true}}'
+    kubectl -n javv-scanner get jobs -l app.kubernetes.io/instance=scanner,app.kubernetes.io/component=$s
+    ```
+    Wait until no Job shows `Running`. After the install, a Job updates the vulnerability database
+    for some minutes. Then:
+    ```bash
+    kubectl -n javv-scanner create job $s-now --from=cronjob/$cj
+    kubectl -n javv-scanner wait --for=condition=complete job/$s-now --timeout=6h
+    kubectl -n javv-scanner patch cronjob $cj -p '{"spec":{"suspend":false}}'
+    ```
+
+    - If a command fails, still do the last `patch`. A paused CronJob starts no cycle.
+    - When the schedule comes during the pause, Kubernetes starts that cycle at the
+      resume. Thus a second cycle runs right after yours, and scans the same images again.
 
 The first push shows in **Scanner status**. Its findings show when the scan is complete.
+
+JAVV shows the cluster ID as the name of the cluster. To give the cluster a name, go to
+**Settings › Cluster**.
 
 Without Kubernetes, run the scanner image with `JAVV_BACKEND_URL`, `JAVV_TOKEN` and
 `JAVV_CLUSTER_ID` ([Scanner settings](CONFIGURATION.md#scanner-settings)).
