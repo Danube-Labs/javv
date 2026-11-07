@@ -29,6 +29,9 @@ Other charts:
 
 ### Steps
 
+Verify the two charts before you install them
+([Verify the images and charts](../../../docs/DEPLOYING.md#verify-the-images-and-charts)).
+
 1. Install OpenSearch, with the password of `admin` and the password of `javv` in Secrets:
     ```bash
     VERSION=0.9.7
@@ -39,7 +42,10 @@ Other charts:
       --from-file=password=<(openssl rand -hex 24 | tr -d '\n')
     helm install store oci://ghcr.io/danube-labs/charts/javv-opensearch --version "$VERSION" \
       --set opensearch.javv.auth.existingSecret=javv-opensearch-admin \
-      --set opensearch.javv.backend.existingSecret=javv-opensearch-backend
+      --set opensearch.javv.backend.existingSecret=javv-opensearch-backend \
+      --set opensearch.resources.requests.memory=2Gi \
+      --wait --timeout 10m
+    helm test store
     ```
 2. Make the two JAVV secrets:
     ```bash

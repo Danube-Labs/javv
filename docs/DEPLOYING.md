@@ -351,9 +351,9 @@ The answers are for the default values of the three charts.
 | Images | `ghcr.io/danube-labs/javv-backend`, `javv-frontend`, `javv-scanner-trivy` and `javv-scanner-grype`, and `opensearchproject/opensearch` from Docker Hub. For a mirror, set the `image.repository` value of each image in its chart. Docker Hub limits the pulls of anonymous users, so a mirror of the OpenSearch image also prevents refused pulls. |
 | Connections out | The frontend connects to the backend, and the backend to OpenSearch. The scanners connect to the registries of the images that they scan, to the sources of the vulnerability databases and to the JAVV address. The default database hosts are `mirror.gcr.io`, then `ghcr.io` and `pkg-containers.githubusercontent.com` for Trivy, and `grype.anchore.io` for Grype ([mirrors](#what-the-scanner-chart-runs)). |
 | Ports and sign-in | 8080: the frontend Service. Each API call needs a session or a scanner token, except the sign-in, the sign-out and `/readyz`. 8000: the backend, `ClusterIP` only ([Open routes on port 8000](#open-routes-on-port-8000)). 9200: OpenSearch, `ClusterIP` only, with a password or a client certificate. |
-| Certificates | By default, OpenSearch uses its demo certificates. With them, the demo admin certificate of the public image has full access to OpenSearch. With your own certificates ([Steps](#steps), step 1), it has no access. Use your own certificates for each installation that is not a trial. |
+| Certificates | By default, OpenSearch uses its demo certificates. With them, the demo admin certificate of the public image has full access to OpenSearch. With your own certificates (step 2 of the [Helm steps](#install-on-kubernetes-with-helm)), it has no access. Use your own certificates for each installation that is not a trial. |
 | Storage | OpenSearch: one 8Gi `ReadWriteOnce` volume, the default of the official chart. `javv-scanner`: one 10Gi `ReadWriteOnce` volume for each scanner. Both use the default StorageClass. |
-| CPU and memory requests | Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (`opensearch.opensearchJavaOpts`), more than the request. Thus Kubernetes can put OpenSearch on a node without the memory for it. Set `opensearch.resources.requests.memory` to 2Gi or more. The OpenSearch docs recommend a heap of half the memory or less. |
+| CPU and memory requests | Only OpenSearch has requests: 1 CPU and 100Mi, from the official chart. Its heap is 1 GB (`opensearch.opensearchJavaOpts`), more than the request. Thus Kubernetes can put OpenSearch on a node without the memory for it. Step 2 of the [Helm steps](#install-on-kubernetes-with-helm) sets `opensearch.resources.requests.memory` to 2Gi. The OpenSearch docs recommend a heap of half the memory or less. |
 | NetworkPolicy | The charts make none. To limit the connections, allow port 8000 only from the frontend pods, and port 9200 only from the backend pods. |
 | Tested on | The CI installs the charts in kind. On 2026-10-20, this was kind v0.33.0 with Kubernetes v1.37.0. |
 | Uninstall | `helm uninstall` keeps the volume of OpenSearch, because a StatefulSet makes it. To delete the data, also delete that PersistentVolumeClaim. |
@@ -380,6 +380,9 @@ The answers are for the default values of the three charts.
 - `javv` and `javv-scanner`: each container runs as user 65532, with `runAsNonRoot`,
   `seccompProfile: RuntimeDefault`, `allowPrivilegeEscalation: false`, no capabilities and a
   read-only root file system.
+- On 2026-11-07, we installed `javv` in a namespace that enforces `restricted`, on Kubernetes
+  v1.35. Its pods started. For the Jobs, CronJobs and test pods of `javv-scanner`, Kubernetes gave
+  no warning in a dry run on the server.
 - `javv-opensearch`: each container runs as user 1000, with `runAsNonRoot` and no capabilities. The
   official chart does not set `seccompProfile` or `allowPrivilegeEscalation: false`.
 - To make the OpenSearch pod meet `restricted`, add these values:
@@ -411,7 +414,23 @@ to the backend.
 
 Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
 
-1. **Install OpenSearch, with its two passwords in Secrets:**
+1. **Verify the three charts.** Each `helm install` of this page gets its chart from the registry.
+    Verify each chart before you install it:
+    <!-- x-release-please-start-version -->
+    ```bash
+    VERSION=0.9.7
+    IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
+    ISSUER=https://token.actions.githubusercontent.com
+    for chart in javv-opensearch javv javv-scanner; do
+      cosign verify "ghcr.io/danube-labs/charts/$chart:$VERSION" \
+        --certificate-identity-regexp "$IDENTITY" --certificate-oidc-issuer "$ISSUER" > /dev/null &&
+        echo "OK: $chart" || echo "FAILED: $chart"
+    done
+    ```
+    <!-- x-release-please-end -->
+    Do not install a chart when its line shows `FAILED`. `javv-scanner` is for the
+    [scanners](#connect-the-scanners).
+2. **Install OpenSearch, with its two passwords in Secrets:**
     - `admin`: only OpenSearch uses it. OpenSearch refuses a weak password, with the same rules as
       for compose ([Your own secrets](#your-own-secrets)).
     - `javv`: the user of the JAVV backend, with only the `javv` role
@@ -427,9 +446,16 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
       --from-file=password=<(openssl rand -hex 24 | tr -d '\n')
     helm install store oci://ghcr.io/danube-labs/charts/javv-opensearch --version "$VERSION" \
       --set opensearch.javv.auth.existingSecret=javv-opensearch-admin \
-      --set opensearch.javv.backend.existingSecret=javv-opensearch-backend
+      --set opensearch.javv.backend.existingSecret=javv-opensearch-backend \
+      --set opensearch.resources.requests.memory=2Gi \
+      --wait --timeout 10m
+    helm test store
     ```
     <!-- x-release-please-end -->
+
+    - `--wait` waits until OpenSearch is ready. Then `helm test store` can sign in to it.
+    - The heap of OpenSearch is 1 GB. The OpenSearch docs recommend a heap of half the memory or
+      less. Thus the memory request is 2Gi. For a larger heap, request more memory.
 
     This uses the demo certificates of OpenSearch, as compose does. For your own certificates, set
     one of these values. The [chart README](../deploy/helm/javv-opensearch/README.md) describes
@@ -439,7 +465,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
       `ca.crt`.
     - `opensearch.javv.tls.certManager`: the chart asks your cert-manager Issuer for a certificate.
 
-2. **Make the two JAVV secrets.** They are the same two secrets as in the `.env` of compose.
+3. **Make the two JAVV secrets.** They are the same two secrets as in the `.env` of compose.
     ```bash
     read -rs -p 'First JAVV admin password (12 characters or more): ' pw && echo
     kubectl create secret generic javv-secrets \
@@ -449,7 +475,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
     ```
     `secret-key` is `JAVV_SECRET_KEY`, the secret key of the backend. Do not change it
     ([Your own secrets](#your-own-secrets) gives the reason).
-3. **Install JAVV.** The backend signs in to OpenSearch as `javv`, with the Secret of `javv`:
+4. **Install JAVV.** The backend signs in to OpenSearch as `javv`, with the Secret of `javv`:
     <!-- x-release-please-start-version -->
     ```bash
     VERSION=0.9.7
@@ -462,7 +488,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
     If OpenSearch uses its own certificate, also add `--set opensearch.caSecret.name=<the Secret with
     its ca.crt>`. With cert-manager, this Secret is `store-javv-opensearch-tls`. The backend then
     verifies the certificate.
-4. **Sign in** through the `javv` Service on port 8080, as `admin`, with the bootstrap password.
+5. **Sign in** through the `javv` Service on port 8080, as `admin`, with the bootstrap password.
     - Nothing is in front of the Service. For `https`, put your own Ingress, gateway or load
       balancer in front of it, and keep the session cookie `Secure`
       ([http or https](#http-or-https)).
@@ -473,6 +499,33 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
 
 To upgrade, or to go back to a previous release, see
 [`UPGRADING.md` § On Kubernetes (Helm)](UPGRADING.md#on-kubernetes-helm).
+
+### Scanners in other clusters
+
+The `javv` Service is `ClusterIP`. Thus only the cluster of JAVV can connect to it. A scanner in a
+different cluster needs an address and a port of JAVV that it can connect to. Use one of these:
+
+- Your own Ingress, gateway or load balancer in front of the `javv` Service. Its address goes into
+  `backendUrl` of the scanners.
+- The chart value `frontend.service.type`, set to `LoadBalancer` or `NodePort`. `VERSION` is the
+  release that runs now:
+    <!-- x-release-please-start-version -->
+    ```bash
+    VERSION=0.9.7
+    helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" --reuse-values \
+      --set frontend.service.type=LoadBalancer   # or NodePort
+    kubectl get svc javv
+    ```
+    <!-- x-release-please-end -->
+
+    | Type | The address | The port |
+    |---|---|---|
+    | `LoadBalancer` | `EXTERNAL-IP` in `kubectl get svc javv` | 8080 |
+    | `NodePort` | The address of a node, in `kubectl get nodes -o wide` | The second number in `PORT(S)` of `kubectl get svc javv`: `8080:31911/TCP` gives 31911 |
+
+    - Each system that can connect to this address can open JAVV over http, as at the Service.
+    - We tested `NodePort` between two k3d clusters on one Docker network, and `LoadBalancer` with
+      the load balancer of k3s. We did not test the load balancer of a cloud.
 
 ### What the `javv` chart runs
 
@@ -490,7 +543,7 @@ To let AI agents connect to JAVV, see [Use the MCP server](use/use-the-mcp-serve
 **Access:** only what you put in front of the `javv` Service.
 
 - The backend Service and the OpenSearch Service are ClusterIP.
-- The sign-in and the certificates of OpenSearch are as in step 1.
+- The sign-in and the certificates of OpenSearch are as in step 2 of the Steps.
 - With the demo certificates, each system in the cluster that can connect to the OpenSearch Service
   can read its traffic and use the demo admin certificate of the image. This is the same as on the
   compose network.
@@ -502,7 +555,8 @@ network. Each pair of a cluster and a scanner has its own token.
 
 ### Prerequisites
 
-- A running JAVV, and an address of JAVV that the scanned cluster can connect to.
+- A running JAVV, and an address of JAVV that the scanned cluster can connect to
+  ([Scanners in other clusters](#scanners-in-other-clusters)).
 - An admin sign-in to JAVV.
 - `kubectl` and Helm for the scanned cluster, and bash.
 
