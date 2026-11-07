@@ -997,6 +997,9 @@ pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5
   `.tbl-scroll-pin` so the name stays when the columns outgrow the card at the 1024 floor. Columns:
   Name, Level (in words), Created by, Created, Expiry (the UTC day: a token stops at 00:00 UTC),
   Last used (`never` before the first call), Status (active, expired, revoked; the rule of §13.5).
+  The Name column cuts a long name with "…" and shows the full name on hover. Created and Last used
+  show the time on a line under the day, so the table fits its card at 1366, 1440 and 1920 px with
+  both buttons in view (issue 1115, option A on built pictures, 2026-11-06).
   Rotate shows on an active token only. Revoke on active and expired. Loading is a `UiSkeleton`, an
   empty list says *No MCP tokens yet. Make one for each AI agent that connects.*, a failed read
   uses `readFailureCopy` (a 429 says the backend is busy).

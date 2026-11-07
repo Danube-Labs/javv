@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import McpTokensView from '@/views/settings/McpTokensView.vue'
 import {
+  dayAndTime,
   defaultExpiryDay,
   endpointUrl,
   expiryIso,
@@ -94,6 +95,17 @@ describe('endpointUrl', () => {
   it('is the address of the page plus the path of the endpoint', () => {
     expect(endpointUrl('https://javv.example.org')).toBe('https://javv.example.org/api/v1/mcp')
     expect(endpointUrl('http://localhost:5173/')).toBe('http://localhost:5173/api/v1/mcp')
+  })
+})
+
+describe('dayAndTime', () => {
+  it('is the time of one line, cut into its day and its time for a line under it (issue 1115)', () => {
+    const iso = '2026-11-03T23:31:00Z'
+    const { day, time } = dayAndTime(iso)
+    expect(`${day}, ${time}`).toBe(
+      new Date(iso).toLocaleString('en-GB', { hour12: false, dateStyle: 'medium', timeStyle: 'short' }),
+    )
+    expect(time).toMatch(/^\d{2}:\d{2}$/)
   })
 })
 
@@ -218,6 +230,22 @@ describe('the AI agents section', () => {
       ['Revoke'],
       [],
     ])
+  })
+
+  it('cuts a long name with the full name on hover, and puts each time under its day (issue 1115)', async () => {
+    const long = 'a'.repeat(64)
+    const made = '2026-11-03T23:31:00Z'
+    const used = '2026-11-06T21:02:00Z'
+    answer([token(long, { created_at: made, last_used_at: used }), token('idle', { created_at: made })])
+    const w = await mountView()
+    const [first, second] = w.findAll('tbody tr')
+    const name = first!.get('.name-cell')
+    expect(name.text()).toBe(long)
+    expect(name.attributes('title')).toBe(long)
+    expect(first!.findAll('.when-time').map((t) => t.text())).toEqual([dayAndTime(made).time, dayAndTime(used).time])
+    expect(first!.text()).toContain(dayAndTime(used).day)
+    expect(second!.text()).toContain('never')
+    expect(second!.findAll('.when-time')).toHaveLength(1) // the time it was made; never used has none
   })
 
   it('makes a token with the name, the level and the expiry, then shows it one time', async () => {

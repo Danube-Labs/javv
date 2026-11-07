@@ -70,3 +70,14 @@ export const EXPIRY_PROBLEM = `Pick a day after today and at most ${MAX_EXPIRY_D
  *  backend, so the address of this page plus the path is the URL an agent uses. */
 export const MCP_PATH = '/api/v1/mcp'
 export const endpointUrl = (origin: string): string => `${origin.replace(/\/+$/, '')}${MCP_PATH}`
+
+/** A time of the token table as its day, and its time for a line under it: on one line, Created
+ *  and Last used pushed the table wider than its card at 1366 and 1440 px (issue 1115). Local
+ *  time, as the one line before. */
+export function dayAndTime(iso: string): { day: string; time: string } {
+  const at = new Date(iso)
+  return {
+    day: at.toLocaleDateString('en-GB', { dateStyle: 'medium' }),
+    time: at.toLocaleTimeString('en-GB', { hour12: false, timeStyle: 'short' }),
+  }
+}
