@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.8](https://github.com/Danube-Labs/javv/compare/v0.9.7...v0.9.8) (2026-11-07)
+
+
+### Bug Fixes
+
+* a window has no border line, and the token window puts copy next to the token ([#1130](https://github.com/Danube-Labs/javv/issues/1130)) ([c601ff3](https://github.com/Danube-Labs/javv/commit/c601ff3c267480216a3cb23249490a4ce8dc6ae3))
+* the images csv has one set of severity columns for each scanner ([#1128](https://github.com/Danube-Labs/javv/issues/1128)) ([caa835b](https://github.com/Danube-Labs/javv/commit/caa835be26fd615de276edf69dd406b030d73b7b))
+* the roles table is flush in its card, as the other settings tables ([#1131](https://github.com/Danube-Labs/javv/issues/1131)) ([7cef554](https://github.com/Danube-Labs/javv/commit/7cef554833297b10bc4222b53335bac0619593dd))
+* the scope strip above each settings page is a white card ([#1133](https://github.com/Danube-Labs/javv/issues/1133)) ([5599ba0](https://github.com/Danube-Labs/javv/commit/5599ba053892c70a3c92b81ea4f9caf02537abc0))
+* the section menu takes the kit hover and press fills, and keeps the press on the selected row ([#1132](https://github.com/Danube-Labs/javv/issues/1132)) ([ec5afe7](https://github.com/Danube-Labs/javv/commit/ec5afe7736e5dbfafb8829a0d412ca172ae629d3))
+
 ## [0.9.7](https://github.com/Danube-Labs/javv/compare/v0.9.6...v0.9.7) (2026-11-07)
 
 
