@@ -20,6 +20,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import { activeMode, type Selections } from '@/filters/fields.config'
 import { IMAGES_COLUMNS, type ImagesColumnKey } from '@/images/fields.config'
+import { scannerCountsOf } from '@/images/imageFilters'
 import type { FilterMode, Modes } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
 import type { Severity } from '@/styles/tokens'
@@ -104,31 +105,18 @@ async function onColReorder(e: DataTableColumnReorderEvent) {
 const shortRepo = (r: ImageRow) => r.image_repo.split('/').at(-1) ?? r.image_repo
 const registryOf = (r: ImageRow) =>
   r.image_repo.includes('/') ? r.image_repo.slice(0, r.image_repo.lastIndexOf('/')) : null
-/** One scanner's mix from the server decoration (never merged); the doc's own buckets are
- * the fallback for its committing scanner; null = no committed scan by that scanner. */
+/** One scanner's mix (never merged), by the rule the CSV uses too; null = no committed scan. */
 function mixFor(r: ImageRow, sc: 'trivy' | 'grype'): Partial<Record<Severity, number>> | null {
-  const c = r.severity_by_scanner?.[sc]
-  if (c) {
-    return {
-      critical: c.crit ?? 0,
-      high: c.high ?? 0,
-      medium: c.med ?? 0,
-      low: c.low ?? 0,
-      negligible: c.negligible ?? 0,
-      unknown: c.unknown ?? 0,
-    }
+  const c = scannerCountsOf(r, sc)
+  if (!c) return null
+  return {
+    critical: c.crit ?? 0,
+    high: c.high ?? 0,
+    medium: c.med ?? 0,
+    low: c.low ?? 0,
+    negligible: c.negligible ?? 0,
+    unknown: c.unknown ?? 0,
   }
-  if (!r.severity_by_scanner && r.scanners.includes(sc)) {
-    return {
-      critical: r.crit,
-      high: r.high,
-      medium: r.med,
-      low: r.low,
-      negligible: r.negligible,
-      unknown: r.unknown,
-    }
-  }
-  return null
 }
 /** Who has a committed scan of this digest: the server decoration when present, else the doc's
  * own scanner — the same precedence `mixFor` uses. */
