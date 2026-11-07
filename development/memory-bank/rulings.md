@@ -92,6 +92,9 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-06 | The Settings section "AI agents (MCP)" has two cards (Endpoint, Tokens), a date box for the expiry and the `cpu` icon. It uses the token window of Access & tokens. Both token sections show a toast when the browser blocks the clipboard. | 1096 |
 | 2026-11-06 | The Guide section "AI agents (MCP)" shows for every user, with the URL in the copy box. The docs page gives the settings of VS Code and Cursor from their own documentation, with a line that says we did not test them. The text of `can_manage_tokens` names scanner tokens and MCP tokens. | 1096 |
 | 2026-11-07 | A window has no border line, only its shadow. The token window has the primary Copy button next to the token and only Done in the footer. The beige box of a value to copy stays (D3 option G). | 1127 |
+| 2026-11-07 | The table of the Roles card is flush in its card (`.set-flush`), as the other 7 tables of Settings (D2 option B). | 1127 |
+| 2026-11-07 | The section menu of Settings and the Guide takes the hover and press fills of the kit. The selected row keeps the press fill, with coral text (D4 option B). | 1127 |
+| 2026-11-07 | The scope strip above each Settings page is a white card, as the other Settings cards. The scope color stays on the badge (D6 option C). | 1127 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process
