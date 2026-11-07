@@ -41,10 +41,12 @@ _MAX_KEYS = 100_000
 
 
 async def resolve(client: Any, header: str) -> Principal | None:
-    """The principal of a live MCP token in `Authorization: Bearer <token>`, else None."""
-    if not header.startswith("Bearer ") or len(header) > 512:
+    """The principal of a live MCP token in `Authorization: Bearer <token>`, else None. The scheme
+    name can have any case (RFC 7235, section 2.1): a client sends it as its config writes it."""
+    scheme, _, raw = header.partition(" ")
+    if scheme.lower() != "bearer" or not raw or len(header) > 512:
         return None
-    candidate = hash_token(header.removeprefix("Bearer "), pepper=get_settings().secret_key)
+    candidate = hash_token(raw, pepper=get_settings().secret_key)
     hits = await client.search(
         index=MCP_TOKENS_INDEX,
         body={"query": {"term": {"token_hash": candidate}}, "size": 1},

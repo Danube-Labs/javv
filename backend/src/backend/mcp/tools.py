@@ -10,7 +10,8 @@ token's principal as it is, and runs the route's permission check on it first, a
 
 A tool with several routes (`kinds`) takes a `kind` and the parameters of all its routes, each
 one optional with no default of its own; a parameter that the chosen route does not take is
-refused, one that it needs must be there, and one left out takes the route's default.
+refused, one that it needs must be there, and one left out takes the route's default. An argument
+that no route of the tool takes is refused too (`strict`).
 
 Each answer goes back as compact JSON text, one time: no structured copy, which doubled the size
 in the step 0 probe. An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` drops rows from the end
@@ -23,12 +24,14 @@ import types
 import typing
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from fastapi import FastAPI, Request
 from fastapi.params import Depends
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp_types import ToolAnnotations
+from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
 from starlette.exceptions import HTTPException  # the base of FastAPI's and TypedHTTPException
 
@@ -235,6 +238,14 @@ def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
 # Q4: for each (token, tool), the open search of its last first page
 _walks: dict[tuple[str, str], str] = {}
 _MAX_WALKS = 100_000
+# (token, open search) of each search that a new first page closed. Its cursor would get the 410
+# of an expired keep-alive, and an agent then reads that it waited too long (issue 1112).
+_closed: set[tuple[str, str]] = set()
+
+CLOSED_BY_NEW_SEARCH = (
+    "cursor closed: a new search with this tool closed this search. Read all the pages that you "
+    "need before you start a new search, or start this search again"
+)
 
 
 async def _close_last_walk(app: FastAPI, principal: Principal, tool: str) -> None:
@@ -242,6 +253,18 @@ async def _close_last_walk(app: FastAPI, principal: Principal, tool: str) -> Non
     if pit_id is not None and pit_guard.holds(principal.user_id, pit_id):
         await app.state.opensearch.delete_pit(body={"pit_id": [pit_id]})
         pit_guard.release_pit(principal.user_id, pit_id)
+        if len(_closed) >= _MAX_WALKS:
+            _closed.clear()  # such a cursor then gets the keep-alive text of the route again
+        _closed.add((principal.user_id, pit_id))
+
+
+def _refuse_closed(principal: Principal, cursor: str) -> None:
+    try:
+        pit_id = cursor_pit_id(cursor)
+    except ValueError:  # a past-time cursor holds no open search; a bad one is the route's 422
+        return
+    if (principal.user_id, pit_id) in _closed:
+        raise RouteError(410, CLOSED_BY_NEW_SEARCH)
 
 
 def _keep_walk(principal: Principal, tool: str, answer: Any) -> None:
@@ -305,13 +328,16 @@ def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
             accepted = plan.tool_params()
             given = {k: v for k, v in args.items() if v is not None}
             if extra := sorted(set(given) - set(accepted)):
-                raise ToolError(f"this kind does not take {', '.join(extra)}")
+                takes = ", ".join(sorted(accepted)) or "no parameter"
+                raise ToolError(f"this kind does not take {', '.join(extra)}. It takes {takes}")
             needed = [n for n, p in accepted.items() if p.default is _EMPTY and n not in given]
             if needed:
                 raise ToolError(f"this kind needs {', '.join(needed)}")
             args = given
         if tool.paged and args.get("cursor") is None:
             await _close_last_walk(app, principal, tool.name)
+        elif tool.paged:
+            _refuse_closed(principal, args["cursor"])
         try:
             answer = await _call(plan, app, principal, args, write=write)
         except HTTPException as exc:
@@ -329,6 +355,28 @@ def build(tool: Tool, app: FastAPI) -> Callable[..., Any]:
     run.__doc__ = tool.description
     run.__signature__ = inspect.Signature(ordered, return_annotation=str)  # type: ignore[attr-defined]
     return run
+
+
+def strict(tool: SdkTool) -> SdkTool:
+    """The SDK tool, with an argument model that refuses an argument the tool does not take. The
+    SDK's own model drops it before the tool runs, so a filter with a typo read as no filter
+    (issue 1111). The refusal is a validation error, which `JavvMCP.call_tool` gives by name,
+    never by value. The input schema then has `additionalProperties: false` for the client."""
+    loose = tool.fn_metadata.arg_model
+    model = cast(
+        type[BaseModel],
+        type(
+            loose.__name__,
+            (loose,),
+            {"model_config": ConfigDict(extra="forbid"), "__module__": loose.__module__},
+        ),
+    )
+    return tool.model_copy(
+        update={
+            "fn_metadata": tool.fn_metadata.model_copy(update={"arg_model": model}),
+            "parameters": model.model_json_schema(by_alias=True),
+        }
+    )
 
 
 READ_ONLY = ToolAnnotations(read_only_hint=True)

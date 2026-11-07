@@ -15,10 +15,13 @@ from typing import Any
 import httpx
 import pytest
 import structlog
+from fastapi import FastAPI
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp_types import CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY
 from opensearchpy import AsyncOpenSearch
 
+from backend.audit.writer import append_field_change
 from backend.auth.passwords import hash_password
 from backend.core.security import hash_token, mint_token
 from backend.core.settings import get_settings
@@ -26,6 +29,7 @@ from backend.main import create_app
 from backend.mcp import auth as mcp_auth
 from backend.mcp import server as mcp_server
 from backend.mcp import tools
+from backend.mcp.read_tools import READ_TOOLS
 from backend.mcp.tools import RouteError, Tool, build, current_principal, cut_to_fit
 from backend.query import pit_guard
 from backend.query.search import cursor_pit_id
@@ -296,6 +300,12 @@ async def test_a_token_past_its_rate_gets_429(mcp_on, monkeypatch):
         ]
         assert [r.status_code for r in statuses] == [200, 200, 429]
         assert statuses[2].headers["retry-after"] == "60"
+        body = statuses[2].json()
+        assert body["title"] == "rate limit exceeded"
+        # issue 1113: an agent client gives the agent this body, and not the header
+        assert body["detail"] == (
+            "2 requests in one minute for each token. Wait 60 seconds, then send the request again."
+        )
         _, other = await _token(client)  # each token has its own budget
         assert (await http.post(PATH, **_modern("tools/list", **_bearer(other)))).status_code == 200
 
@@ -554,6 +564,59 @@ async def test_a_new_first_page_closes_the_open_search_of_the_last_one(mcp_on):
         await client.close()
 
 
+async def _audit_rows(client: AsyncOpenSearch, cluster: str, n: int) -> None:
+    for i in range(n):
+        await append_field_change(
+            client,
+            actor="u-mcp-walk",
+            action="note",
+            entity_type="finding",
+            entity_id=f"fk-{uuid.uuid4().hex[:10]}",
+            field="notes",
+            old_value=None,
+            new_value=f"note {i}",
+            revision=1,
+            cluster_id=cluster,
+        )
+    await client.indices.refresh(index="system-audit-log-*")
+
+
+@pytest.mark.parametrize("name", ["search_findings", "audit_log"])
+async def test_the_cursor_of_a_search_that_a_new_search_closed_tells_that_cause(mcp_on, name):
+    """Issue 1112: the old cursor got the 410 of an expired keep-alive, so an agent reported that
+    it had waited too long. A cursor whose search ended for another reason keeps that text."""
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    app = create_app()
+    app.state.opensearch = client
+    cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+    if name == "search_findings":
+        await _seed(client, cluster, _findings(3))
+    else:
+        await _audit_rows(client, cluster, 3)
+    [spec] = [t for t in READ_TOOLS if t.name == name]
+    assert "closes the cursor of your last search with this tool" in spec.description
+    tool = build(spec, app)
+    principal, _ = await _principal(client)
+    reset = current_principal.set(principal)
+    try:
+        closed = json.loads(await tool(cluster_id=cluster, size=1))["next_cursor"]
+        current = json.loads(await tool(cluster_id=cluster, size=1))["next_cursor"]
+        with pytest.raises(RouteError) as refused:
+            await tool(cluster_id=cluster, size=1, cursor=closed)
+        assert refused.value.status == 410
+        assert "a new search with this tool closed this search" in str(refused.value)
+        pit = cursor_pit_id(current)
+        await client.delete_pit(body={"pit_id": [pit]})  # gone, but not by a new search
+        with pytest.raises(RouteError) as expired:
+            await tool(cluster_id=cluster, size=1, cursor=current)
+        assert expired.value.status == 410
+        assert "keep-alive" in str(expired.value)
+    finally:
+        current_principal.reset(reset)
+        pit_guard._slots.pop(principal.user_id, None)
+        await client.close()
+
+
 async def _session(http: httpx.AsyncClient, client: AsyncOpenSearch, *, admin: bool) -> None:
     username = f"u-{uuid.uuid4().hex[:12]}"
     await client.index(
@@ -594,3 +657,131 @@ async def test_only_can_manage_users_reads_the_rows_of_the_tool_calls(mcp_on):
             seen[admin] = [row["action"] for row in r.json()["data"]]
     assert seen[False] == []
     assert seen[True] == ["mcp_tool_call"]
+
+
+# --- an argument that a tool does not take (issue 1111) ------------------------------------
+
+
+def _text(r: httpx.Response) -> tuple[bool, str]:
+    assert r.status_code == 200, r.text
+    result = r.json()["result"]
+    return result.get("isError") is True, result["content"][0]["text"]
+
+
+async def test_each_tool_refuses_an_argument_that_it_does_not_take(mcp_on):
+    """The SDK's argument model drops an argument that it does not know, so the tool answered as
+    if the agent had not sent it. Each tool refuses it by its name, never by its value."""
+    marker = "SECRET-VALUE-1111"
+    async with _endpoint() as (http, client):
+        name, raw = await _token(client, level="write_risk_accept")
+        refused = {}
+        for tool in mcp_server.TOOLS:
+            r = await http.post(PATH, **_call(tool.name, {"no_such_argument": marker}, raw))
+            error, text = _text(r)
+            refused[tool.name] = error and "no_such_argument" in text and "extra_forbidden" in text
+            assert marker not in r.text, tool.name
+        rows = await _rows(client, f"mcp:{name}")
+    assert refused == dict.fromkeys(refused, True)
+    assert len(refused) == 24
+    assert [row["new_value"] for row in rows] == ["error 422"] * len(refused)
+
+
+async def test_a_filter_with_a_typo_is_refused_and_not_read_as_no_filter(mcp_on):
+    cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+    async with _endpoint() as (http, client):
+        await _seed(client, cluster, _findings(2) + _findings(1, severity="CRITICAL"))
+        name, raw = await _token(client)
+        answers = {}
+        for key in ("severity", "severty"):
+            args = {"cluster_id": cluster, key: ["critical"]}
+            answers[key] = _text(await http.post(PATH, **_call("search_findings", args, raw)))
+        rows = await _rows(client, f"mcp:{name}")
+    error, text = answers["severity"]
+    assert not error, text
+    assert len(json.loads(text)["data"]) == 1
+    error, text = answers["severty"]
+    assert error and "severty" in text
+    assert '"data"' not in text
+    assert [row["new_value"] for row in rows] == ["ok", "error 422"]
+
+
+async def test_a_write_tool_with_an_argument_that_it_does_not_take_changes_nothing(mcp_on):
+    cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+    [doc] = _findings(1)
+    async with _endpoint() as (http, client):
+        await _seed(client, cluster, [doc])
+        name, raw = await _token(client, level="write")
+        args = {"finding_key": doc["finding_key"], "patch": {"assignee": "bob"}, "reason": "x"}
+        error, text = _text(await http.post(PATH, **_call("set_triage", args, raw)))
+        source = (await client.get(index="findings", id=doc["finding_key"]))["_source"]
+        rows = await _rows(client, f"mcp:{name}")
+    assert error and "reason" in text
+    assert source["assignee"] is None
+    assert [(row["action"], row["new_value"]) for row in rows] == [("mcp_tool_call", "error 422")]
+
+
+async def test_the_input_schema_of_each_tool_refuses_other_arguments(mcp_on):
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client, level="write_risk_accept")
+        r = await http.post(PATH, **_modern("tools/list", **_bearer(raw)))
+    schemas = {t["name"]: t["inputSchema"] for t in r.json()["result"]["tools"]}
+    assert set(schemas) == {tool.name for tool in mcp_server.TOOLS}
+    assert {n: s.get("additionalProperties") for n, s in schemas.items()} == dict.fromkeys(
+        schemas, False
+    )
+
+
+def test_the_strict_tool_changes_only_what_it_does_with_other_arguments():
+    [search] = [t for t in mcp_server.TOOLS if t.name == "search_findings"]
+    loose = SdkTool.from_function(
+        build(search, FastAPI()), name=search.name, structured_output=False
+    )
+    tight = tools.strict(loose)
+    assert tight.parameters == {**loose.parameters, "additionalProperties": False}
+    assert loose.parameters.get("additionalProperties") is None  # the SDK's own tool is unchanged
+    args = {"cluster_id": "c-strict-1", "severity": ["critical"]}
+    assert tight.fn_metadata.validate_arguments(args) == loose.fn_metadata.validate_arguments(args)
+
+
+async def test_the_scheme_name_of_the_header_has_any_case(mcp_on):
+    """RFC 7235, section 2.1: the case of a scheme name has no effect (issue 1111)."""
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client)
+        for scheme in ("Bearer", "bearer", "BEARER"):
+            r = await http.post(PATH, **_modern("tools/list", authorization=f"{scheme} {raw}"))
+            assert r.status_code == 200, scheme
+        for header in (f"Bearer{raw}", f"Basic {raw}", f"bearer: {raw}", "bearer "):
+            r = await http.post(PATH, **_modern("tools/list", authorization=header))
+            assert r.status_code == 401, header.split(" ")[0]
+
+
+class _Store:
+    """A store that matches each token, so that only the header check can refuse."""
+
+    def __init__(self) -> None:
+        self.searches = 0
+
+    async def search(self, *, index: str, body: dict[str, Any]) -> dict[str, Any]:
+        self.searches += 1
+        found = {"token_hash": body["query"]["term"]["token_hash"], "name": "t", "level": "read"}
+        return {"hits": {"hits": [{"_source": found}]}}
+
+    async def update(self, **_: Any) -> None:
+        return None
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["", "Basic abc", "Bearerabc", "Bearer:abc", "Bearer ", "bearer ", f"Bearer {'a' * 506}"],
+)
+async def test_a_header_that_is_not_a_bearer_token_is_refused_before_the_store(header):
+    store = _Store()
+    assert await mcp_auth.resolve(store, header) is None
+    assert store.searches == 0
+
+
+async def test_a_bearer_token_of_each_case_reaches_the_store():
+    store = _Store()
+    for header in ("Bearer abc", "bearer abc", "BeArEr abc", f"Bearer {'a' * 505}"):
+        assert await mcp_auth.resolve(store, header) is not None, header[:10]
+    assert store.searches == 4

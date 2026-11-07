@@ -104,6 +104,22 @@ class TypedHTTPException(StarletteHTTPException):
         self.problem_type = problem_type
 
 
+class DetailedHTTPException(StarletteHTTPException):
+    """An HTTPException with a problem `detail` under its title, for a client that shows only the
+    body: an agent client gives the agent the body of a 429, not its `Retry-After` (issue 1113)."""
+
+    def __init__(
+        self,
+        status_code: int,
+        title: str,
+        *,
+        detail: str,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(status_code, title, headers=headers)
+        self.problem_detail = detail
+
+
 def delete_unfinished() -> TypedHTTPException:
     return TypedHTTPException(
         409, "its delete did not finish: delete it again", problem_type=DELETE_UNFINISHED_TYPE
@@ -158,6 +174,7 @@ def register_error_handlers(app: FastAPI) -> None:
         return problem_response(
             exc.status_code,
             title=str(exc.detail),
+            detail=getattr(exc, "problem_detail", None),
             request_id=_request_id(request),
             headers=exc.headers,
             type_=getattr(exc, "problem_type", "about:blank"),

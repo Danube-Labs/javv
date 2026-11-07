@@ -145,7 +145,7 @@ Each endpoint uses one of four kinds of authentication.
 |---|---|---|
 | None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. Also `POST /auth/login` and `POST /auth/logout`. |
 | Scanner token | `Authorization: Bearer <token>`. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token. | The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner. |
-| MCP token | `Authorization: Bearer <token>`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
+| MCP token | `Authorization: Bearer <token>`. The scheme name `Bearer` can have each case, for example `bearer`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
 | Session | The `javv_session` cookie from `POST /auth/login` | All other endpoints |
 
 The session cookie has the `HttpOnly` and `SameSite=Lax` flags. It also has the `Secure` flag,
@@ -881,7 +881,7 @@ Before the MCP server reads a request, the endpoint checks it in this order:
 | The request has an `Origin` header | 403. A browser always sends this header, and an agent client does not. Thus a web page that a browser opens cannot use the endpoint. |
 | The method is not POST | 405, with `Allow: POST` |
 | The `Authorization` header has no live MCP token | 401 `invalid token`, with `WWW-Authenticate: Bearer`. A missing, unknown, revoked or expired token and a scanner token get the same answer. |
-| The token sent more than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` requests in one minute | 429, with `Retry-After: 60` |
+| The token sent more than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` requests in one minute | 429, with `Retry-After: 60`. The `detail` tells the limit and the wait. An example is `60 requests in one minute for each token. Wait 60 seconds, then send the request again.` An agent client can give the agent only the body, so the agent gets the wait from the `detail`. |
 
 The 401 and the 403 only count in `javv_auth_failures_total`, with no log line: a sender can repeat them with no limit. A 429 also logs `mcp rate limited` with the token.
 
@@ -913,6 +913,7 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 **The answer of a tool** is one text with compact JSON.
 
 - A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
+- A tool refuses an argument that it does not take, with the reason `extra_forbidden`, and the tool does not run. The input schema of each tool has `additionalProperties: false`. Thus a filter with a wrong name, for example `severty`, does not give the rows with no filter.
 - An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest top-level list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
 - A page with a next page (`next_cursor`) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller `size`.
 - One row always goes out, also when it is longer than the cap. An answer whose lists have one row each goes out whole, and a cut answer keeps at least its first row. Thus an agent can read a long finding with `size` 1. A note of a finding alone can have 10,000 characters.
@@ -920,12 +921,12 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 
 **The read tools.** Each read tool calls the function of one route. It takes the parameters of that route, with the same names, types and limits. It gives the answer that the route gives to an admin, for each level of token. Thus the agent also sees the account rows of the audit log and each dashboard.
 
-A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. A missing parameter that the kind does not need takes the default of the route.
+A tool with more than one kind takes the parameter `kind`. A parameter that the kind does not take is an error, and a missing parameter that the kind needs is an error. The first error also names the parameters that the kind takes. A missing parameter that the kind does not need takes the default of the route.
 
 | Tool | Route |
 |---|---|
 | `list_clusters` | `GET /api/v1/clusters` |
-| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. |
+| `search_findings` | `GET /api/v1/findings`. `size` is 20 by default and 25 at most. The tool has no `keep_open`. A first page, with no `cursor`, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text `cursor closed`, which tells this cause. A search that ended after its keep-alive gets 410 with the text `cursor expired`. |
 | `count_findings` | `GET /api/v1/findings/facets` |
 | `group_findings` | `GET /api/v1/findings/groups` |
 | `top_images` | `GET /api/v1/findings/top-images` |

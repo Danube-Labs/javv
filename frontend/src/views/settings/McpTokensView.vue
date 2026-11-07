@@ -34,6 +34,7 @@ import { logger } from '@/lib/logger'
 import { useToastStore } from '@/stores/toast'
 
 import {
+  dayAndTime,
   defaultExpiryDay,
   endpointUrl,
   EXPIRY_HINT,
@@ -105,8 +106,6 @@ function setSize(next: number) {
   page.value = 0
 }
 
-const fmt = (iso: string | null) =>
-  iso === null ? '-' : new Date(iso).toLocaleString('en-GB', { hour12: false, dateStyle: 'medium', timeStyle: 'short' })
 // an expiry is 00:00 UTC of its day, so the day is read in UTC: a local zone would show the day before
 const fmtDay = (iso: string | null) =>
   iso === null ? '-' : new Date(iso).toLocaleDateString('en-GB', { dateStyle: 'medium', timeZone: 'UTC' })
@@ -280,12 +279,22 @@ async function submitRevoke() {
             </thead>
             <tbody>
               <tr v-for="row in shown" :key="row.name">
-                <td class="mono-cell sm nowrap">{{ row.name }}</td>
+                <td><span class="mono-cell sm name-cell" :title="row.name">{{ row.name }}</span></td>
                 <td class="fit nowrap">{{ levelLabel(row.level) }}</td>
                 <td class="fit mono-cell sm">{{ row.created_by ?? '-' }}</td>
-                <td class="fit mono-cell sm nowrap" :title="row.created_at ?? undefined">{{ fmt(row.created_at) }}</td>
+                <td class="fit mono-cell sm nowrap" :title="row.created_at ?? undefined">
+                  <template v-if="row.created_at === null">-</template>
+                  <template v-else>
+                    {{ dayAndTime(row.created_at).day }}<span class="when-time">{{ dayAndTime(row.created_at).time }}</span>
+                  </template>
+                </td>
                 <td class="fit mono-cell sm nowrap" :title="row.expiry ?? undefined">{{ fmtDay(row.expiry) }}</td>
-                <td class="fit mono-cell sm nowrap">{{ row.last_used_at === null ? 'never' : fmt(row.last_used_at) }}</td>
+                <td class="fit mono-cell sm nowrap">
+                  <template v-if="row.last_used_at === null">never</template>
+                  <template v-else>
+                    {{ dayAndTime(row.last_used_at).day }}<span class="when-time">{{ dayAndTime(row.last_used_at).time }}</span>
+                  </template>
+                </td>
                 <td class="fit">
                   <DotWord :tone="TOKEN_STATUS_TONE[tokenStatus(row, now())]" :label="tokenStatus(row, now())" />
                 </td>
@@ -409,6 +418,19 @@ async function submitRevoke() {
 .row-actions {
   display: inline-flex;
   gap: 6px;
+}
+/* the one column that gives way: a name has up to 64 characters (issue 1115) */
+.name-cell {
+  display: block;
+  max-width: 0;
+  min-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.when-time {
+  display: block;
+  color: var(--soft);
 }
 .fld-hint {
   margin: 8px 0 0;

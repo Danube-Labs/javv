@@ -32,6 +32,7 @@ import structlog
 from fastapi import FastAPI, HTTPException
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.tools.base import Tool as SdkTool
 from mcp.server.streamable_http_manager import StreamableHTTPASGIApp
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import ValidationError
@@ -40,14 +41,14 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from backend.audit.writer import append_tool_call
 from backend.auth.principal import Principal
-from backend.core.errors import validation_detail
+from backend.core.errors import DetailedHTTPException, validation_detail
 from backend.core.identifiers import CLUSTER_ID_RE
 from backend.core.metrics import AUTH_FAILURES, LIMIT_REJECTIONS
 from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.settings import get_settings
 from backend.mcp import auth
 from backend.mcp.read_tools import READ_TOOLS
-from backend.mcp.tools import RouteError, Tool, build, current_principal
+from backend.mcp.tools import RouteError, Tool, build, current_principal, strict
 from backend.mcp.write_tools import WRITE_TOOLS
 
 log = structlog.get_logger()
@@ -64,6 +65,7 @@ INSTRUCTIONS = (
 )
 
 _limiter = SlidingWindowLimiter()
+RETRY_AFTER_S = 60  # the window of the limiter: by then each request of the window has left it
 
 TOOLS: tuple[Tool, ...] = READ_TOOLS + WRITE_TOOLS
 _NEEDS = {tool.name: tool.needs for tool in TOOLS}
@@ -111,8 +113,8 @@ def _result(exc: ToolError | None) -> str:
 class JavvMCP(MCPServer[Any]):
     """The SDK server with the JAVV frame around each tool call."""
 
-    def __init__(self, app: FastAPI) -> None:
-        super().__init__(name="javv", instructions=INSTRUCTIONS)
+    def __init__(self, app: FastAPI, tools: list[SdkTool]) -> None:
+        super().__init__(name="javv", instructions=INSTRUCTIONS, tools=tools)
         self._app = app
 
     async def list_tools(self) -> list[Any]:
@@ -207,10 +209,19 @@ class _Gate:
         if principal is None:
             AUTH_FAILURES.labels("mcp_token").inc()
             raise HTTPException(401, "invalid token", headers={"WWW-Authenticate": "Bearer"})
-        if _limiter.is_limited(principal.user_id, get_settings().mcp_rate_limit_per_minute):
+        limit = get_settings().mcp_rate_limit_per_minute
+        if _limiter.is_limited(principal.user_id, limit):
             LIMIT_REJECTIONS.labels("mcp_rate").inc()
             log.warning("mcp rate limited", principal=principal.user_id)
-            raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": "60"})
+            raise DetailedHTTPException(
+                429,
+                "rate limit exceeded",
+                detail=(
+                    f"{limit} requests in one minute for each token. Wait {RETRY_AFTER_S} "
+                    "seconds, then send the request again."
+                ),
+                headers={"Retry-After": str(RETRY_AFTER_S)},
+            )
         reset = current_principal.set(principal)
         try:
             await self.inner(scope, receive, send)
@@ -221,15 +232,21 @@ class _Gate:
 def mount(app: FastAPI) -> None:
     """Add the endpoint and run the SDK's request manager inside the app lifespan. The manager
     runs one time only, so each app gets its own server (`app.state.mcp`)."""
-    server = JavvMCP(app)
-    for tool in TOOLS:
-        server.add_tool(
-            build(tool, app),
-            name=tool.name,
-            description=tool.description,
-            annotations=tool.annotations,
-            structured_output=False,
-        )
+    server = JavvMCP(
+        app,
+        [
+            strict(
+                SdkTool.from_function(
+                    build(tool, app),
+                    name=tool.name,
+                    description=tool.description,
+                    annotations=tool.annotations,
+                    structured_output=False,
+                )
+            )
+            for tool in TOOLS
+        ],
+    )
     server.streamable_http_app(
         stateless_http=True,
         json_response=True,
