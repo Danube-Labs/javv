@@ -145,7 +145,7 @@ Each endpoint uses one of four kinds of authentication.
 |---|---|---|
 | None | Nothing | `/healthz`, `/readyz` and `/metrics`. Control the access to these with your network. Also `POST /auth/login` and `POST /auth/logout`. |
 | Scanner token | `Authorization: Bearer <token>`. Each token is for one cluster and one scanner. JAVV keeps only a hash of the token. | The scanner endpoints: ingest, scan scope, scan runs and inventory runs. A token can send data only for its own cluster and scanner. |
-| MCP token | `Authorization: Bearer <token>`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
+| MCP token | `Authorization: Bearer <token>`. The scheme name `Bearer` can have each case, for example `bearer`. An admin makes the token for one AI agent. JAVV keeps only a hash of the token. | The MCP endpoint only ([The MCP endpoint](#the-mcp-endpoint)). An MCP token never passes the check for scanner tokens, and a scanner token never passes the MCP check. |
 | Session | The `javv_session` cookie from `POST /auth/login` | All other endpoints |
 
 The session cookie has the `HttpOnly` and `SameSite=Lax` flags. It also has the `Secure` flag,
@@ -913,6 +913,7 @@ If JAVV cannot write the row, the call is a tool error and the agent gets no dat
 **The answer of a tool** is one text with compact JSON.
 
 - A tool error gives the status and the text of the route. For an argument that is not valid, it gives the name of the argument and the reason. It never holds the value of an argument.
+- A tool refuses an argument that it does not take, with the reason `extra_forbidden`, and the tool does not run. The input schema of each tool has `additionalProperties: false`. Thus a filter with a wrong name, for example `severty`, does not give the rows with no filter.
 - An answer longer than `JAVV_MCP_MAX_ANSWER_CHARS` loses rows from the end of its longest top-level list. Its `cut` field then gives the list, the rows that it kept and the rows that it had.
 - A page with a next page (`next_cursor`) is not cut, because the next page starts after the last row of the full page. If the page is longer than the cap, the call is a tool error that tells the agent to ask for a smaller `size`.
 - An answer with no top-level list that is longer than the cap is a tool error. For example, a trend over many days in `trends` can be longer than the cap. Then the agent must ask for fewer `days`. After a write, the error tells the agent that the tool made the change.
