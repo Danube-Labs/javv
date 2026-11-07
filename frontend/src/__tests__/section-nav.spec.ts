@@ -4,6 +4,8 @@
  * place in the trail slot after the move out of SettingsLayout.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -126,5 +128,33 @@ describe('Settings on the shared menu', () => {
     await flushPromises()
     // Access & tokens is per cluster and AI agents (MCP) is for the organization: no section is per scanner
     expect(w.findAll('nav .scope-legend li').map((l) => l.text())).toEqual(['Per cluster', 'Organization'])
+  })
+})
+
+/** the declarations of one rule in SectionNav's CSS, by its exact selector */
+function rule(selector: string): string {
+  const css = readFileSync(join(__dirname, '..', 'components/ui/SectionNav.vue'), 'utf8')
+  const at = css.indexOf(`\n${selector} {`)
+  expect(at, `${selector} is in the CSS`).toBeGreaterThan(-1)
+  return css.slice(at, css.indexOf('}', at))
+}
+
+describe('the colors of a SectionNav row (issue 1127, D4 B)', () => {
+  it('washes a row on hover with the kit hover fill and line', () => {
+    const hover = rule('.snav-item:hover')
+    expect(hover).toContain('background: var(--control-hover-bg);')
+    expect(hover).toContain('border-color: var(--control-hover-line);')
+  })
+
+  it('presses a row with the kit press fill, and its text is ink there', () => {
+    const press = rule('.snav-item:active')
+    expect(press).toContain('background: var(--control-active-bg);')
+    expect(press).toContain('color: var(--ink);')
+  })
+
+  it('shows the selected row on the press fill with coral text, so a click ends on the color of the press', () => {
+    const on = rule('.snav-on,\n.snav-on:hover')
+    expect(on).toContain('background: var(--control-active-bg);')
+    expect(on).toContain('color: var(--coral-text);')
   })
 })

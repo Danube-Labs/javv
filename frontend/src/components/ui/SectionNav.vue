@@ -49,8 +49,10 @@ withDefaults(
 </template>
 
 <style scoped>
-/* the nav rides in a card track (Nuxt UI pill-tabs grammar, inverted for our darker canvas:
-   the container is the card, selection takes the coral wash, the time-preset idiom) */
+/* the nav rides in a card track (Nuxt UI pill-tabs grammar, inverted for our darker canvas: the
+   container is the card). Hover, press and the selected row take the kit fills (operator
+   2026-11-07 on built pictures, issue 1127, D4 B): the selected row keeps the press fill, so a
+   click ends on the color of the press, not on a near-white wash */
 .snav {
   position: sticky;
   top: 0;
@@ -84,12 +86,14 @@ withDefaults(
     color var(--dur-quick) var(--ease-out);
 }
 .snav-item:hover {
-  background: var(--panel);
+  background: var(--control-hover-bg);
   border-color: var(--control-hover-line);
   color: var(--ink);
 }
+/* ink, because --soft on the press fill is under AA */
 .snav-item:active {
   background: var(--control-active-bg);
+  color: var(--ink);
 }
 .snav-item:focus-visible {
   outline: var(--focus-ring);
@@ -97,7 +101,7 @@ withDefaults(
 }
 .snav-on,
 .snav-on:hover {
-  background: var(--dd-on-bg);
+  background: var(--control-active-bg);
   border-color: transparent;
   color: var(--coral-text);
   font-weight: 600;

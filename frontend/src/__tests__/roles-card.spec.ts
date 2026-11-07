@@ -120,6 +120,14 @@ describe('RolesCard (issue 990)', () => {
     expect(w.find('table').exists()).toBe(false)
     expect(w.text()).toContain('To remove a person')
   })
+
+  it('lays the table flush in the card, as the other tables of Settings, with no frame of its own (issue 1127)', () => {
+    const w = mountCard()
+    expect(w.find('.set-flush > .tbl-wrap.roles-wrap > table').exists()).toBe(true)
+    // the note stays under the table, outside the flush part
+    expect(w.find('.set-flush .roles-note').exists()).toBe(false)
+    expect(w.find('.roles-note').exists()).toBe(true)
+  })
 })
 
 describe('Settings > Users and roles (issue 990)', () => {

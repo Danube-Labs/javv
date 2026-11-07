@@ -231,6 +231,12 @@ every outside host unanswered. Neither face is on the vendored detector's overus
   the side panel head. The ✕ is a control on the slate, so it takes the sidebar collapse button's
   ramp (`--side-control-bg` / `-hover-bg` / `-active-bg`, a `--table-head-line` edge that turns
   `--side-label` on hover). No window restyles the head (`window-head.spec.ts`).
+- **A window has no border line** (operator ruling 2026-11-07 on built pictures, issue 1127, D3
+  option G): `--shadow` alone sets it off the backdrop, as Primer does, and its head takes the card
+  radius. The `--line` border read as a beige frame on the dark backdrop, and a thin border with a
+  wide shadow is a known template tell. The token window puts its primary Copy button next to the
+  token (`CopyValue` with `primary`) and keeps only Done in the footer. The beige box of a value to
+  copy stays: it says that the value is read-only, and the MCP endpoint address uses it too.
 - **A table card never clips its columns** (issue 652). A hand-built `.tbl` card whose
   columns can outgrow it at the 1024 floor opts into `.tbl-scroll-pin` (base.css): the table
   scrolls sideways inside the card and its first, identity column stays pinned (All clusters,
@@ -336,7 +342,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiSearchBox` | the `.search-box` row with the magnifier, `card` for the search card over a filter list (`.facet-search`). The class of the screen goes on the row, the other attributes on the input. `v-model` is optional, so a search that applies on Enter can give the value only | every search box |
 | `UiField` | mono uppercase micro-label + parenthesized `hint`, 14px band / 6px label gap (`first` zeroes the top) | any labeled control |
 | `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
-| `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049) | every dialog |
+| `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049); the card has no border line, only `--shadow` (issue 1127) | every dialog |
 | `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, `t-pop` motion | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard) |
 | `UiLoadingBar` | the 2px coral loading bar on the bottom edge of its positioned parent. It shows only after 250 ms of work and grows more slowly near the end. When the work ends, it fills and fades. It has `role="progressbar"`. The parent owns `busy` | the top bar's sign that the app works, fed by `system/pendingWork.ts` (open page changes and API requests). Also a panel that needs its own sign |
 | `UiSkeleton` | the one loading pulse (`.skel` + `skel-shimmer` in base.css) and its reduced-motion off-switch; `height` is a prop because a skeleton mirrors the panel it stands in for, `label` only when it is its own loading region | every loading placeholder. The style rules test fails any view that grows its own shimmer |
@@ -344,7 +350,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `RowLink` | the identifier of a row that opens something, as a real `<a>`: focusable, the focus ring, Enter and plain click hand off to the row's own open handler, modified clicks left to the browser | the identifier cell of every clickable row (the grids take a `rowTo` prop; hand-built rows wrap the cell) |
 | `ToastStack` + `useToastStore` | the confirmation channel: `success/error/info` from ANY component/store, auto-dismiss, capped stack, t-toast motion, ink text + hue on the icon | every action outcome the user would otherwise hunt for; inline contextual errors stay inline |
 | `UiRoleNote` | the reason next to a control that the user's role cannot use: a key icon (`--hist-fg`) and one short sentence in `--soft`, with an `id` that the disabled control names in `aria-describedby` (a browser shows no tooltip on a disabled button) | every control that a role cannot use and that stays on the screen; the five export controls (issue 243, option A on built pictures) |
-| `SectionNav` | a screen's left section menu: the sticky card, icon + label rows, hover wash + border, the coral active row, `aria-current`; a `trail` slot for a row's extra mark | Settings' sub-pages and the Guide's in-page sections; any future screen with a section list |
+| `SectionNav` | a screen's left section menu: the sticky card, icon + label rows, the kit hover wash + border, the kit press fill, the active row on the press fill with coral text (issue 1127, D4 B), `aria-current`; a `trail` slot for a row's extra mark | Settings' sub-pages and the Guide's in-page sections; any future screen with a section list |
 
 One layout lives outside the kit folder and is owned once the same way:
 `components/system/ErrorPage.vue`, the page for anything that cannot be shown (not found, a page

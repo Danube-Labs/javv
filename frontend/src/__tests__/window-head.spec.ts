@@ -55,6 +55,15 @@ describe('the window head (issue 1049)', () => {
     expect(rule(shell, '.modal-close:focus-visible')).toContain('outline: var(--focus-ring);')
   })
 
+  it('has no border line on the window, only its shadow, and the head takes the card corner (issue 1127)', () => {
+    const card = rule(shell, '.modal')
+    expect(card).not.toMatch(/\bborder\s*:/)
+    expect(card).toContain('box-shadow: var(--shadow);')
+    const head = rule(shell, '.modal-head')
+    expect(head).toContain('border-top-left-radius: var(--r);')
+    expect(head).toContain('border-top-right-radius: var(--r);')
+  })
+
   it('has no restyle in any window, so all of them look the same', () => {
     const restyles = vueFiles('.')
       .filter((f) => !f.endsWith('ModalShell.vue'))
