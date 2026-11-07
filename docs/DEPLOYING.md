@@ -33,6 +33,7 @@ There are two installation methods. They use the same images, settings and defau
 
 - Docker Engine with the compose plugin 2.23.1 or later.
 - A POSIX shell (Linux or macOS).
+- cosign 3.x, to verify the images ([Verify the images and charts](#verify-the-images-and-charts)).
 - These three files, in one folder:
     - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.7/deploy/compose/compose.yaml) <!-- x-release-please-version -->
     - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.7/deploy/compose/.env.example) <!-- x-release-please-version -->
@@ -72,20 +73,40 @@ chmod +x setup.sh
     - Copies `.env.example` to `.env`. Only you can read `.env`.
     - Sets the four secrets to long random values that compose does not change. The OpenSearch
       admin password obeys the rules of OpenSearch.
-    - Shows the password of the first JAVV admin one time. Keep it for step 4.
+    - Shows the password of the first JAVV admin one time. Keep it for step 5.
     - Shows the `sysctl` command again if the limit of step 1 is too low.
     - Does not change an `.env` that exists. Thus it cannot change the secret key of an
       installation.
 
     To set the secrets yourself, see [Your own secrets](#your-own-secrets).
 
-3. **Start JAVV:**
+3. **Get the images, and verify them.** `compose.yaml` names each JAVV image by its tag, but the
+    signature is for the digest of the image. Thus verify the digest that the pull got:
+    <!-- x-release-please-start-version -->
     ```bash
-    docker compose up -d   # pulls the images of the release the first time
+    VERSION=0.9.7
+    IDENTITY='^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'
+    ISSUER=https://token.actions.githubusercontent.com
+    docker compose pull
+    for image in javv-backend javv-frontend; do
+      ref=$(docker image inspect --format '{{index .RepoDigests 0}}' "ghcr.io/danube-labs/$image:$VERSION")
+      cosign verify "$ref" --certificate-identity-regexp "$IDENTITY" --certificate-oidc-issuer "$ISSUER" > /dev/null &&
+        cosign verify-attestation "$ref" --type spdxjson --certificate-identity-regexp "$IDENTITY" \
+          --certificate-oidc-issuer "$ISSUER" > /dev/null &&
+        echo "OK: $ref" || echo "FAILED: $ref"
+    done
+    ```
+    <!-- x-release-please-end -->
+    Do not start JAVV when a line shows `FAILED`.
+    [Verify the images and charts](#verify-the-images-and-charts) tells what the verification
+    proves. The OpenSearch image comes from Docker Hub. JAVV does not sign it.
+4. **Start JAVV:**
+    ```bash
+    docker compose up -d   # runs the images that you verified
     docker compose ps      # wait until opensearch, backend and frontend all show "healthy"
     ```
     The backend makes its indices at its first start.
-4. **Sign in** at `http://<this machine>:8080` as `admin`, with the password that `setup.sh` showed.
+5. **Sign in** at `http://<this machine>:8080` as `admin`, with the password that `setup.sh` showed.
     JAVV then asks for a new password (12 characters or more). You must set it before you can do
     other work.
 
@@ -152,8 +173,10 @@ To install a checkout that is not a release (`main`, or a commit between two rel
 1. Use the three files in `deploy/compose/` of the checkout.
 2. Make the images with `development/scripts/build-app-images.sh`. The script gives the images the
     names that the compose file uses.
-3. Do the [steps](#steps) above. `docker compose up -d` then runs these images, and it pulls
-    nothing.
+3. Do the [steps](#steps) above, but not `docker compose pull` and the verification of step 3.
+    These images have no signature. The compose file names them with the tag of its release. Thus
+    a pull puts the published images of that release in their place. `docker compose up -d` then
+    runs your images, and it pulls nothing.
 
 ### Two installations on one machine
 
