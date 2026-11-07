@@ -61,10 +61,12 @@ The endpoint is off by default. When it is off, a request to it gets 404.
 
     ```bash
     helm upgrade javv oci://ghcr.io/danube-labs/charts/javv --version "$VERSION" \
-      -f my-javv-values.yaml
+      --reuse-values -f my-javv-values.yaml
     ```
 
-    The chart starts the backend again with the new value.
+    The chart starts the backend again with the new value. `--reuse-values` keeps the values of
+    the install, for example the Secrets. Without it, the upgrade stops with an error about
+    `existingSecret`.
 
 To see the result, open **Settings › AI agents (MCP)** in JAVV. The Endpoint card shows **on**
 and the URL of the endpoint.
