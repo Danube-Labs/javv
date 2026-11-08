@@ -121,7 +121,7 @@ Never an icon font / emoji / other icon library in app chrome.
 ### Filter chrome (promoted from the prototype's filters CSS)
 ```
 facet checkbox   var(--facet-check-line)      pill border   var(--fpill-line)
-pill × hover     var(--fpill-x-hover-bg)      add-filter    var(--add-filter-line) / var(--add-filter-hover-bg)
+pill op hover    var(--fpill-x-hover-bg)      add-filter    var(--add-filter-line) / var(--add-filter-hover-bg)
 dropdown         shadow var(--dd-shadow)      active item   var(--dd-on-bg)
 value actions    chip var(--slate3), mark var(--table-head-fg), exclude var(--val-act-not-fg)
 actionable cell  var(--cell-act-wash) + inset var(--cell-act-line)
@@ -342,6 +342,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiSearchBox` | the `.search-box` row with the magnifier, `card` for the search card over a filter list (`.facet-search`). The class of the screen goes on the row, the other attributes on the input. `v-model` is optional, so a search that applies on Enter can give the value only | every search box |
 | `UiField` | mono uppercase micro-label + parenthesized `hint`, 14px band / 6px label gap (`first` zeroes the top) | any labeled control |
 | `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
+| `UiCloseButton` | the one "✕" (issue 1140, R2, operator ruling on built pictures): at rest no fill and no line; on hover the kit wash and line with coral text; the press fill and the focus ring. A required `label` is the name for a screen reader and the hover text. `dark` is the look on a slate head (the colors of the sidebar collapse button, issue 1049); `small` fits a chip or a filter pill. `close-buttons-guard.spec.ts` fails a "×" in any template and a "✕" outside this piece | every control that closes something (a window, the side panel, a popover, a toast, a banner, a notification) or clears one value (a chip, a filter). A text button that clears takes the `close` icon of `AppIcon` (Clear all in the bell) |
 | `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049); the card has no border line, only `--shadow` (issue 1127) | every dialog |
 | `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, `t-pop` motion | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard) |
 | `UiLoadingBar` | the 2px coral loading bar on the bottom edge of its positioned parent. It shows only after 250 ms of work and grows more slowly near the end. When the work ends, it fills and fades. It has `role="progressbar"`. The parent owns `busy` | the top bar's sign that the app works, fed by `system/pendingWork.ts` (open page changes and API requests). Also a panel that needs its own sign |

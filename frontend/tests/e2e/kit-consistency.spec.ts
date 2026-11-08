@@ -3,7 +3,7 @@
  * walk reads the rendered page. On the sign-in page, each listed route, the two detail pages, two
  * menus and the windows, every visible text box, dropdown, search box and window footer button
  * must wear the kit's line, corner and fill, and under the pointer both its fill and its line must
- * change (ui-design.md: hover is a wash and a border, never the border alone). A field is found by
+ * change. Each close button (`UiCloseButton`, issue 1140) must change its fill and its line too (ui-design.md: hover is a wash and a border, never the border alone). A field is found by
  * its tag, not by a kit class, so a copy with its own class is read too.
  */
 import type { Page } from '@playwright/test'
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 
 import { BASE, DATA_ROW, expect, login, test } from './helpers'
 
-type Kind = 'text box' | 'dropdown' | 'search box' | 'footer button'
+type Kind = 'text box' | 'dropdown' | 'search box' | 'footer button' | 'close button'
 interface Control {
   i: number
   kind: Kind
@@ -108,6 +108,9 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
       for (const b of base.querySelectorAll<HTMLElement>('.modal-actions button')) {
         if (visible(b)) found.push({ kind: 'footer button', el: b, field: null })
       }
+      for (const b of base.querySelectorAll<HTMLElement>('.ui-close')) {
+        if (visible(b) && (scope || !b.closest('.modal-backdrop'))) found.push({ kind: 'close button', el: b, field: null })
+      }
 
       return found.map(({ kind, el, field }, i) => {
         el.setAttribute('data-kit-walk', String(i))
@@ -119,8 +122,11 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
         want('line width', cs.borderWidth, ['1px'])
         want('line style', cs.borderStyle, ['solid'])
         const disabled = (field ?? el).matches(':disabled')
-        const primary = el.classList.contains('ui-btn--primary')
-        if (kind === 'footer button') {
+        // a primary button and a close button change to their own fill and line under the pointer
+        const primary = el.classList.contains('ui-btn--primary') || kind === 'close button'
+        if (kind === 'close button') {
+          // at rest a light close has no line; its look is the hover, read in the pointer pass
+        } else if (kind === 'footer button') {
           want('corner', cs.borderRadius, [kit.rSm])
           if (!primary && !el.classList.contains('ui-btn--ghost')) problems.push('not a ghost or primary kit button')
           if (/^(Cancel|Close|Done)$/.test(el.textContent!.trim()) && primary) problems.push('a way out is ghost, not primary')
