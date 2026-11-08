@@ -566,7 +566,7 @@ network. Each pair of a cluster and a scanner has its own token.
     ```bash
     kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'
     ```
-2. In JAVV, go to **Settings › Access & tokens › Mint token**.
+2. In JAVV, go to **Settings › Access & tokens › Create token**.
     - In **Cluster**, select **New cluster…** and enter the cluster ID.
     - Select the scanner (`trivy` or `grype`).
     - JAVV shows the token only one time.

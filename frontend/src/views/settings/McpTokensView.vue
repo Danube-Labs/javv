@@ -162,8 +162,8 @@ async function submitMake() {
       response?.status === 409
         ? 'A token with this name exists. Choose another name.'
         : response?.status === 403
-          ? 'Making a token needs the can_manage_tokens permission.'
-          : 'The token was not made.'
+          ? 'Creating a token needs the can_manage_tokens permission.'
+          : 'The token was not created.'
     return
   }
   makeOpen.value = false
@@ -199,7 +199,7 @@ async function submitRotate() {
     logger.warn('mcp_token_rotate_failed', { status: response?.status })
     toast.error(
       response?.status === 409
-        ? 'The token is revoked or has expired. Make a new token.'
+        ? 'The token is revoked or has expired. Create a new token.'
         : 'The rotate failed. The old token still works.',
     )
     await load()
@@ -241,20 +241,20 @@ async function submitRevoke() {
         <DotWord v-else-if="metaFailed" tone="warn" label="unknown: the status could not be read" />
         <DotWord v-else :tone="enabled ? 'ok' : 'muted'" :label="enabled ? 'on' : 'off'" />
       </SettingsRow>
-      <SettingsRow label="URL" hint="The address of this page, plus /api/v1/mcp." stack>
+      <SettingsRow label="Endpoint URL" hint="AI agents connect to this address." stack>
         <CopyValue :value="url" copy="Copy the URL" />
       </SettingsRow>
     </SettingsCard>
 
     <SettingsCard title="Tokens" subtitle="one token for each AI agent, with a level and an expiry">
       <template #action>
-        <UiButton :disabled="busy" @click="openMake"><AppIcon name="plus" :size="13" />Make token</UiButton>
+        <UiButton variant="control" :disabled="busy" @click="openMake"><AppIcon name="plus" :size="13" />Create token</UiButton>
       </template>
 
       <UiSkeleton v-if="loading" :height="120" radius="sm" label="Loading tokens" class="skel-gap" />
       <p v-else-if="failed" class="load-error" role="alert">{{ failed }}</p>
       <p v-else-if="rows.length === 0" class="empty-note" role="status">
-        No MCP tokens yet. Make one for each AI agent that connects.
+        No MCP tokens yet. Create one for each AI agent that connects.
       </p>
       <p v-else-if="total > rows.length" class="cap-note">
         Showing the {{ rows.length }} newest of {{ total }} tokens.
@@ -326,7 +326,7 @@ async function submitRevoke() {
       </div>
     </SettingsCard>
 
-    <ModalShell v-if="makeOpen" title="Make an MCP token" subtitle="for one AI agent" @close="makeOpen = false">
+    <ModalShell v-if="makeOpen" title="Create an MCP token" subtitle="for one AI agent" @close="makeOpen = false">
       <UiField label="Name" first :hint="MCP_NAME_HINT" for="mcp-name">
         <UiTextBox id="mcp-name" v-model="makeName" :invalid="nameProblem !== null" />
       </UiField>
@@ -355,7 +355,7 @@ async function submitRevoke() {
           :disabled="busy || !MCP_NAME.test(makeName) || makeExpiry === null"
           @click="submitMake"
         >
-          {{ busy ? 'Making…' : 'Make token' }}
+          {{ busy ? 'Creating…' : 'Create token' }}
         </UiButton>
       </template>
     </ModalShell>

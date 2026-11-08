@@ -22,7 +22,7 @@ function commit() {
 </script>
 
 <template>
-  <div class="chips">
+  <div class="chips set-input">
     <span v-for="chip in items" :key="chip" class="chip mono-cell">
       {{ chip }}
       <UiCloseButton class="chip-x" small :label="`Remove ${chip}`" @click="emit('remove', chip)" />
@@ -41,16 +41,13 @@ function commit() {
 </template>
 
 <style scoped>
-/* prototype .chips/.chip/.chip-input ported onto tokens */
+/* prototype .chips/.chip/.chip-input ported onto tokens; the box itself is the kit's .set-input */
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   align-items: center;
   padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--card);
 }
 .chip {
   display: inline-flex;

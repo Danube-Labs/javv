@@ -11,6 +11,6 @@ import EmptyState from '@/components/ui/EmptyState.vue'
   <EmptyState
     icon="layers"
     title="Settings for a cluster appear once it has a scanner token."
-    hint="Mint one under Access & tokens."
+    hint="Create one under Access & tokens."
   />
 </template>

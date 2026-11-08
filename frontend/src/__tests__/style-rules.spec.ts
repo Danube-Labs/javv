@@ -158,6 +158,13 @@ describe('style rules: one shared set of skins', () => {
       .filter((rel) => skin.test(withoutCssComments(styles(rel))))
     expect(hits, `skin(s) redefined outside base.css: ${hits.join(', ')}`).toEqual([])
   })
+
+  it('a kit box that holds its own input takes the coral line while that input has focus (issue 1140)', () => {
+    const css = readFileSync(join(SRC, 'styles/base.css'), 'utf8')
+    const at = css.indexOf('\n.set-input:focus-within {')
+    expect(at).toBeGreaterThan(-1)
+    expect(css.slice(at, css.indexOf('}', at))).toContain('border-color: var(--coral);')
+  })
 })
 
 /**

@@ -149,8 +149,10 @@ function discard() {
   <div class="stack">
     <div class="scanner-banner">
       <AppIcon name="layers" :size="14" />
-      Both scanners run every cycle, results kept <b>per-scanner</b> and never merged:
-      dashboards facet by scanner to avoid double-counting.
+      <span>
+        Both scanners run every cycle, and JAVV keeps the results of each scanner apart.
+        <b>All scanners</b> shows Trivy and Grype together: a CVE that both report counts once for each.
+      </span>
     </div>
 
     <SettingsCard

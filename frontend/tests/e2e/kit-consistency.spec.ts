@@ -26,7 +26,8 @@ interface Control {
   problems: string[]
 }
 
-/** The places that keep a raw field on purpose, as in `raw-form-fields.spec.ts`. */
+/** The places that keep a raw field on purpose, as in `raw-form-fields.spec.ts`. The chip input is
+ *  read as its row, which wears the kit box (issue 1140). */
 const KEPT_RAW: { selector: string; reason: string }[] = [
   { selector: 'textarea.editor', reason: 'the Inspect request body is a code panel, not a form field' },
   { selector: '.chip-input', reason: 'the chip row is the box, and this input inside it has no border of its own' },
@@ -99,10 +100,11 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
       const found: { kind: string; el: HTMLElement; field: HTMLElement | null }[] = []
       for (const f of base.querySelectorAll<HTMLElement>('input, select, textarea')) {
         if (!visible(f) || (!scope && f.closest('.modal-backdrop'))) continue
-        if (kept.some((k) => f.matches(k))) continue
-        const row = f.closest<HTMLElement>('.search-box, .facet-search')
+        const chips = f.matches('.chip-input') ? f.closest<HTMLElement>('.chips') : null
+        if (!chips && kept.some((k) => f.matches(k))) continue
+        const row = chips ?? f.closest<HTMLElement>('.search-box, .facet-search')
         if (row && found.some((c) => c.el === row)) continue
-        const kind = row ? 'search box' : f.tagName === 'SELECT' ? 'dropdown' : 'text box'
+        const kind = chips ? 'text box' : row ? 'search box' : f.tagName === 'SELECT' ? 'dropdown' : 'text box'
         found.push({ kind, el: row ?? f, field: f })
       }
       for (const b of base.querySelectorAll<HTMLElement>('.modal-actions button')) {
@@ -268,7 +270,7 @@ const viewerRow = (p: Page) => p.locator('tr', { hasText: 'smoke-viewer' })
 const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Save this view', '/findings', (p) => p.getByRole('button', { name: 'Save view' }).first().click()],
   ['Bulk triage', '/findings', (p) => p.getByRole('button', { name: 'Bulk triage' }).first().click()],
-  ['Export', '/findings', (p) => p.getByRole('button', { name: 'Export CSV' }).click()],
+  ['Export', '/findings', (p) => p.getByRole('button', { name: 'Export', exact: true }).click()],
   [
     'Risk-accept this CVE',
     '/findings',
@@ -282,10 +284,10 @@ const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Change role?', '/settings/users', (p) => p.getByRole('combobox', { name: 'Role for smoke-viewer' }).selectOption('triager')],
   ['Disable this user?', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Disable', exact: true }).click()],
   ['Reset smoke-viewer\'s password', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Reset password' }).click()],
-  ['Mint a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Mint token' }).click()],
+  ['Create a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Create token' }).click()],
   ['Rotate this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Rotate', exact: true }).first().click()],
   ['Revoke this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Revoke', exact: true }).first().click()],
-  ['Make an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Make token' }).click()],
+  ['Create an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Create token' }).click()],
   ['Retire', '/settings/cluster', (p) => p.getByRole('button', { name: 'Retire cluster' }).click()],
   [
     'Run the lifecycle sweep?',

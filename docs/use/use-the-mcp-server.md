@@ -73,14 +73,14 @@ and the URL of the endpoint.
 
 ## Make a token
 
-1. Open **Settings › AI agents (MCP)**, and select **Make token**.
+1. Open **Settings › AI agents (MCP)**, and select **Create token**.
 2. Type a name. The name has 3 to 64 lower-case letters, digits, dots, underscores or hyphens.
    The Audit log names the agent `mcp:` and this name, for example `mcp:weekly-report`.
 3. Select the level of the token. The table in [The levels of a token](#the-levels-of-a-token)
    tells what each level can do.
 4. Select the expiry. It is a day from tomorrow to 90 days from today. The token stops at 00:00
    UTC on that day.
-5. Select **Make token**. JAVV shows the token one time only. Copy it, and keep it in a safe
+5. Select **Create token**. JAVV shows the token one time only. Copy it, and keep it in a safe
    place, for example a password manager.
 
 To stop a token, select **Revoke** on its row. To get a new token for the same name, select
