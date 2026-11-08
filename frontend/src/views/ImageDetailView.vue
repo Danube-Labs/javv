@@ -24,7 +24,7 @@ import IngestLens from '@/components/dashboards/IngestLens.vue'
 import DigestSubTimeline from '@/components/images/DigestSubTimeline.vue'
 import ImageFindingsPanel from '@/components/images/ImageFindingsPanel.vue'
 import { buildImageAtTQuery } from '@/images/buildImageAtTQuery'
-import { notYetScannedAt, type TimelineEvent } from '@/images/subTimeline'
+import { historySummary, notYetScannedAt, type TimelineEvent } from '@/images/subTimeline'
 import type { ImageRow } from '@/stores/images'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -155,6 +155,16 @@ const lastScanAt = computed(() => {
     )
 })
 
+/* ---- the band (issue 1140, R5 to R7): the Findings column opens Findings on this digest and
+ * scanner; the Build history column opens the card under the band, closed when the page opens ---- */
+const history = computed(() => historySummary(timeline.value, scanner.value, timeTravel.t))
+const historyOpen = ref(false)
+function openFindings() {
+  void router.push({ path: '/findings', query: { digest: digest.value, scanner: scanner.value } })
+}
+const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'}`
+
 const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
@@ -172,10 +182,6 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           <p class="digest-line mono-cell" :title="digest">
             <AppIcon name="key" :size="11" />{{ digest }}
           </p>
-          <div v-if="inventoryRow" class="img-meta">
-            <span class="mono-cell"><b>{{ fmt(inventoryRow.replicas ?? 0) }}</b> replica{{ (inventoryRow.replicas ?? 0) === 1 ? '' : 's' }} at last sweep</span>
-            <span class="mono-cell">{{ inventoryRow.namespaces.join(', ') }}</span>
-          </div>
         </div>
       </div>
       <div class="head-actions">
@@ -184,10 +190,10 @@ const fmt = (n: number) => n.toLocaleString('en-US')
       </div>
     </div>
 
-    <!-- two distinct questions, two answers — never conflated (D38/H6) -->
+    <!-- distinct questions, distinct answers — never conflated (D38/H6) -->
     <div class="stat-band two-q">
       <div class="stat-cell">
-        <span class="stat-label"><i class="stat-dot" style="background: var(--teal)" />running {{ timeTravel.isNow ? 'now' : 'at T' }}?</span>
+        <span class="stat-label"><i class="stat-dot" style="background: var(--teal)" />running {{ timeTravel.isNow ? 'now' : 'at T' }}</span>
         <span class="stat-num tq-ans">
           <span v-if="inventoryKnown === null" class="muted-dash">-</span>
           <template v-else-if="inventoryKnown === false">unknown</template>
@@ -199,27 +205,60 @@ const fmt = (n: number) => n.toLocaleString('en-US')
           <template v-else>no</template>
         </span>
         <span class="stat-sub"
-          >runtime inventory<template v-if="inventoryKnown === false">
-            · none committed at this T</template
-          ><template v-else-if="inventoryAt"> · committed {{ lastDataAt(inventoryAt) }}</template></span
+          ><template v-if="inventoryRow?.namespaces.length">{{ inventoryRow.namespaces.join(', ') }} · </template
+          ><template v-if="inventoryKnown === false">no inventory at this T</template
+          ><template v-else-if="inventoryAt">from the inventory of {{ lastDataAt(inventoryAt) }}</template
+          ><template v-else>runtime inventory</template></span
         >
       </div>
-      <div class="stat-cell">
-        <span class="stat-label"><i class="stat-dot" style="background: var(--slate)" />what did {{ scanner }} find?</span>
+      <button
+        type="button"
+        class="stat-cell"
+        :title="`Open Findings for this digest, ${scanner} only`"
+        @click="openFindings"
+      >
+        <span class="stat-label"
+          ><i class="stat-dot" style="background: var(--slate)" />findings of {{ scanner
+          }}<AppIcon class="cell-go" name="chevron" :size="11"
+        /></span>
         <span class="stat-num tq-ans">
           <template v-if="notYetScanned">not yet scanned</template>
           <template v-else>{{ fmt(presentTotal) }} findings</template>
         </span>
         <span class="stat-sub"
-          >as-scanned, not as-running<template v-if="lastScanAt">
-            · last scan {{ lastDataAt(lastScanAt) }}</template
-          ></span
+          >as scanned<template v-if="lastScanAt"> · last scan {{ lastDataAt(lastScanAt) }}</template></span
         >
-      </div>
+      </button>
+      <button
+        type="button"
+        class="stat-cell"
+        :aria-expanded="historyOpen"
+        aria-controls="build-history"
+        @click="historyOpen = !historyOpen"
+      >
+        <span class="stat-label"
+          ><i class="stat-dot" style="background: var(--slate)" />build history<AppIcon
+            class="cell-go hist-go"
+            :class="{ 'hist-go--open': historyOpen }"
+            name="chevron"
+            :size="11"
+        /></span>
+        <span class="stat-num tq-ans">
+          <span v-if="timelineFailed" class="muted-dash">-</span>
+          <template v-else>{{ plural(history.digests, 'digest') }} · {{ plural(history.scans, 'scan') }}</template>
+        </span>
+        <span class="stat-sub">
+          <template v-if="timelineFailed">not available</template>
+          <template v-else-if="history.firstAt && history.lastAt"
+            >{{ scanner }}, {{ day(history.firstAt) }} to {{ day(history.lastAt) }}</template
+          >
+          <template v-else>{{ scanner }} has no scan of this tag</template>
+        </span>
+      </button>
     </div>
 
     <!-- per-digest build history: a rebuilt tag is a NEW digest — never a silent gap -->
-    <section class="card tl-card">
+    <section v-show="historyOpen" id="build-history" class="card tl-card">
       <div class="card-head">
         <div>
           <h2>Build history</h2>
@@ -330,16 +369,23 @@ const fmt = (n: number) => n.toLocaleString('en-US')
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.img-meta {
-  display: flex;
-  gap: 14px;
-  margin-top: 6px;
-  font-size: var(--text-sm);
-  color: var(--ink);
-}
 .two-q {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   margin-bottom: 16px;
+}
+/* the chevron of the Build history column points down while the card is open */
+.hist-go {
+  transition:
+    color var(--dur-quick),
+    transform var(--dur-quick) var(--ease-out);
+}
+.hist-go--open {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hist-go {
+    transition: none;
+  }
 }
 .stat-dot-inv {
   background: var(--teal);
