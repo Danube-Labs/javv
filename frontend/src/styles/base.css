@@ -1050,6 +1050,11 @@ button.stat-cell:hover .cell-go,
   outline: var(--focus-ring);
   outline-offset: 1px;
 }
+/* a box that holds its own input (the namespace chips): the coral line while that input has focus */
+.set-input:focus-within {
+  border-color: var(--coral);
+  background: var(--card);
+}
 .set-input--invalid {
   border-color: var(--coral-d);
 }
