@@ -168,7 +168,12 @@ watch(
           <UiButton variant="mini" :aria-label="`Settings of ${p.panel.name}`" @click="emit('settings', p.stored.key, $event.currentTarget as HTMLElement)">
             <AppIcon name="gear" :size="12" />Settings
           </UiButton>
-          <UiButton variant="mini" :aria-label="`Remove ${p.panel.name}`" @click="emit('remove', p.stored.key)">
+          <UiButton
+            variant="mini"
+            :aria-label="`Delete ${p.panel.name}`"
+            :title="`Delete ${p.panel.name}`"
+            @click="emit('remove', p.stored.key)"
+          >
             <AppIcon name="trash" :size="12" />
           </UiButton>
         </div>

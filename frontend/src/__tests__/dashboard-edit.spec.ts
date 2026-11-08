@@ -320,7 +320,7 @@ describe('edit mode', () => {
       'Move Triage progress',
     ])
     expect(w.findAll('[aria-label^="Settings of"]')).toHaveLength(3)
-    expect(w.findAll('[aria-label^="Remove"]')).toHaveLength(3)
+    expect(w.findAll('[aria-label^="Delete"]')).toHaveLength(3)
   })
 
   it('gridstack is imported only by the edit grid, which the page loads on demand', () => {
@@ -497,7 +497,7 @@ describe('edit mode', () => {
   it('the page stops measuring a removed panel, and every panel when edit mode closes', async () => {
     const { w } = await mountView('?edit=1')
     const fit = w.find('[data-panel="triage-progress"] .dash-fit').element
-    await w.find('[aria-label="Remove Triage progress"]').trigger('click')
+    await w.find('[aria-label="Delete Triage progress"]').trigger('click')
     await flushPromises()
     expect(gs.observed.has(fit)).toBe(false)
     expect(gs.observed.size).toBe(2)
@@ -754,7 +754,7 @@ describe('edit mode', () => {
   it('remove takes the panel out of gridstack and of the save', async () => {
     const { w } = await mountView('?edit=1')
     const id = w.find('[data-panel="triage-progress"]').attributes('gs-id')
-    await w.find('[aria-label="Remove Triage progress"]').trigger('click')
+    await w.find('[aria-label="Delete Triage progress"]').trigger('click')
     await flushPromises()
     expect(gs.removed).toEqual([id])
     expect(w.find('[data-panel="triage-progress"]').exists()).toBe(false)
@@ -765,7 +765,7 @@ describe('edit mode', () => {
 
   it('discard starts gridstack again from the saved panels', async () => {
     const { w } = await mountView('?edit=1')
-    await w.find('[aria-label="Remove Triage progress"]').trigger('click')
+    await w.find('[aria-label="Delete Triage progress"]').trigger('click')
     await drop({ 'top-components': { x: 1, y: 7 } })
     await button(w, 'Discard').trigger('click')
     await settle()
