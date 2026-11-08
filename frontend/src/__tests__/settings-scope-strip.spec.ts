@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import { SETTINGS_SECTIONS } from '@/views/settings/sections'
+
 const css = readFileSync(join(__dirname, '..', 'views/settings/SettingsLayout.vue'), 'utf8')
 
 function rule(selector: string): string {
@@ -26,5 +28,15 @@ describe('the scope strip of Settings (issue 1127)', () => {
   it('keeps the scope color on the badge only, with no stripe', () => {
     expect(rule('.scope-strip')).not.toMatch(/border-left|var\(--sc\)/)
     expect(rule('.scope-badge')).toContain('background: var(--sc);')
+  })
+})
+
+// One push token list shows the tokens of every cluster (D38), so the strip says Organization,
+// not Per cluster (issue 1140, R1).
+describe('the scope of the token sections', () => {
+  const scopeOf = (key: string) => SETTINGS_SECTIONS.find((s) => s.key === key)?.scope
+  it('Access & tokens and AI agents (MCP) are Organization', () => {
+    expect(scopeOf('tokens')).toBe('org')
+    expect(scopeOf('ai-agents')).toBe('org')
   })
 })

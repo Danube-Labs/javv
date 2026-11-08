@@ -59,3 +59,22 @@ describe('lensToSelector (bulk never widens the lens)', () => {
     expect(r.blocked).toMatch(/^Add a filter first\./)
   })
 })
+
+// The image page opens Findings on one digest (issue 1140). The bulk selector of the backend
+// takes image_digest, so a digest filter narrows a bulk change instead of blocking it.
+describe('lensToSelector with the Digest filter', () => {
+  it('maps the digest to image_digest, next to a severity', () => {
+    const r = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical'], digest: ['sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1'] }))
+    expect(r).toEqual({ selector: { severity: 'critical', image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1' }, blocked: null })
+  })
+
+  it('a digest alone is a selector', () => {
+    expect(lensToSelector(FINDINGS_FIELDS, sel({ digest: ['sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1'] })).selector).toEqual({ image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1' })
+  })
+
+  it('still blocks with a scanner filter next to the digest, since the selector has no scanner', () => {
+    const r = lensToSelector(FINDINGS_FIELDS, sel({ digest: ['sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1'], scanner: ['trivy'] }))
+    expect(r.selector).toBeNull()
+    expect(r.blocked).toContain('Scanner')
+  })
+})

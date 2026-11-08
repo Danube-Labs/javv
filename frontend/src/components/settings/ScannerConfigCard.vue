@@ -9,6 +9,7 @@
 import { computed } from 'vue'
 
 import ScannerTag from '@/components/chips/ScannerTag.vue'
+import { scannerSettingLabel } from '@/lib/scannerSettingLabel'
 
 export interface EffectiveConfig {
   tuning: Record<string, unknown>
@@ -57,18 +58,18 @@ const SCOPE_LABEL: Record<string, string> = {
     <div class="card-body">
       <template v-if="config !== null">
         <div class="cfg-row">
-          <span class="cfg-key mono-cell">vuln DB</span>
+          <span class="cfg-key">Vulnerability database schema</span>
           <span class="mono-cell sm"><template v-if="dbVersion != null">{{ dbVersion }}</template><span v-else class="muted-dash">-</span> · built {{ fmtWhen(dbBuilt) }}</span>
         </div>
         <div v-for="(value, key) in config.tuning" :key="key" class="cfg-row">
-          <span class="cfg-key mono-cell">{{ key }}</span>
+          <span class="cfg-key" :title="String(key)">{{ scannerSettingLabel(String(key)) }}</span>
           <span class="mono-cell sm">{{ fmtValue(value) }}</span>
         </div>
         <div class="cfg-scope">
           <span class="cfg-scope-title">applied scope</span>
           <template v-for="(label, key) in SCOPE_LABEL" :key="key">
             <div v-if="(config.scope[key] ?? []).length" class="cfg-row">
-              <span class="cfg-key mono-cell">{{ label }}</span>
+              <span class="cfg-key">{{ label }}</span>
               <span class="cfg-chips">
                 <code v-for="item in config.scope[key]" :key="item" class="cfg-chip mono-cell">{{ item }}</code>
               </span>
@@ -138,7 +139,7 @@ const SCOPE_LABEL: Record<string, string> = {
 }
 .cfg-key {
   flex: none;
-  width: 170px;
+  width: 200px;
   font-size: var(--text-sm);
   color: var(--soft);
 }

@@ -58,3 +58,23 @@ export function notYetScannedAt(events: TimelineEvent[], scanner: string, t: str
     .reduce<string | null>((min, e) => (min === null || e['@timestamp'] < min ? e['@timestamp'] : min), null)
   return first !== null ? t < first : true
 }
+
+export interface HistorySummary {
+  digests: number
+  scans: number
+  firstAt: string | null
+  lastAt: string | null
+}
+
+/** The Build history column of the image page (issue 1140, R6): one scanner's committed scans
+ * of this repo:tag at or before T, as the card under the band draws them. */
+export function historySummary(events: TimelineEvent[], scanner: string, t: string | null): HistorySummary {
+  const own = events.filter((e) => e.scanner === scanner && (t === null || e['@timestamp'] <= t))
+  const times = own.map((e) => e['@timestamp']).sort()
+  return {
+    digests: new Set(own.map((e) => e.image_digest)).size,
+    scans: own.length,
+    firstAt: times[0] ?? null,
+    lastAt: times.at(-1) ?? null,
+  }
+}

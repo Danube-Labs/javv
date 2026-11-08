@@ -12,6 +12,7 @@ export interface BulkSelector {
   severity?: string
   state?: string
   assignee?: string
+  image_digest?: string
 }
 
 export interface LensResult {
@@ -25,6 +26,7 @@ const EXPRESSIBLE: Record<string, keyof BulkSelector> = {
   severity: 'severity',
   state: 'state',
   assignee: 'assignee',
+  digest: 'image_digest',
 }
 
 export function lensToSelector(
@@ -58,7 +60,7 @@ export function lensToSelector(
       selector: null,
       blocked:
         `Remove ${inexpressible.length === 1 ? 'this filter' : 'these filters'} first: ` +
-        `${inexpressible.join(', ')}. Bulk triage only follows Severity, State and Assignee, ` +
+        `${inexpressible.join(', ')}. Bulk triage only follows Severity, State, Assignee and Digest, ` +
         'so it would change more findings than you see.',
     }
   }
@@ -73,7 +75,7 @@ export function lensToSelector(
       selector: null,
       blocked:
         'Add a filter first. Bulk triage changes every finding that matches your filters, ' +
-        'so it needs a severity, a state or an assignee to work on.',
+        'so it needs a severity, a state, an assignee or a digest to work on.',
     }
   }
   return { selector, blocked: null }

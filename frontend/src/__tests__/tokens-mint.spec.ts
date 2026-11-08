@@ -79,16 +79,24 @@ describe('the mint dialog', () => {
     await useClusterStore().fetchClusters(null)
     const w = mount(TokensView)
     await flushPromises()
-    await w.findAll('button').find((b) => b.text().startsWith('Mint token'))!.trigger('click')
+    await w.findAll('button').find((b) => b.text().startsWith('Create token'))!.trigger('click')
     await flushPromises()
     return w
   }
   const mintButton = (w: ReturnType<typeof mount>) =>
-    w.findAll('.modal-actions button').find((b) => b.text().startsWith('Mint'))!
+    w.findAll('.modal-actions button').find((b) => b.text().startsWith('Create'))!
 
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+  })
+
+  it('the button has the control size and says Create token, and the window says create (issue 1140)', async () => {
+    const w = await mountTokens([])
+    const open = w.findAll('button').find((b) => b.text() === 'Create token' && !b.element.closest('.modal'))!
+    expect(open.classes()).toContain('ui-btn--control')
+    expect(w.get('[role="dialog"]').attributes('aria-label')).toBe('Create a push token')
+    expect(w.text()).not.toMatch(/\bMint/)
   })
 
   it('on a fresh install, opens on a new cluster with the ID field and the command', async () => {

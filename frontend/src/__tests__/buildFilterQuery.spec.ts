@@ -229,3 +229,15 @@ describe('the case of a picked value', () => {
     expect(termQueryValues(assignee, ['Alice'])).toEqual(['Alice'])
   })
 })
+
+describe('the Digest filter (issue 1140)', () => {
+  it('sends one image_digest, as the API takes', () => {
+    const q = buildFilterQuery(FINDINGS_FIELDS, sel({ digest: ['sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1'] }), { cluster_id: CID })
+    expect(q).toEqual({ cluster_id: CID, image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1' })
+  })
+
+  it('has no exclude side', () => {
+    const q = buildFilterQuery(FINDINGS_FIELDS, sel({ digest: ['sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1'] }), { cluster_id: CID }, { digest: 'not' })
+    expect(q).toEqual({ cluster_id: CID, image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1' })
+  })
+})

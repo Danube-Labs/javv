@@ -40,7 +40,7 @@ flowchart TB
             PROJECT["Decision projection → state<br/>new findings only · precedence · scope × apply_both"]
             SWEEP["Two-timer staleness sweep + expiry re-project<br/>per-finding (N) + scanner-down escalation (M)"]
             REBUILD["Rebuild-state job (safety net)<br/>re-project cache from decisions + audit_log"]
-            EXPORT["Export drain (scheduled in the backend)<br/>system-reports · off-peak · throttled"]
+            EXPORT["Export drain (scheduled in the backend)<br/>system-reports · on its schedule · throttled"]
             LIFE["Lifecycle sweep (scheduled in the backend)<br/>rollover + drop-whole-index retention, per cluster"]
             CLEAN["Findings cleanup (scheduled in the backend)<br/>deletes rows gone longer than cleanup_days"]
             TTL["Report + session sweeps (scheduled in the backend)<br/>report TTL + orphan chunks · expired sessions"]
@@ -296,7 +296,7 @@ reconcile** flips `present=false` on `findings` the run omitted (cache only - hi
 7. **Maintain (jobs the backend runs on cron schedules, idempotent; `jobs/scheduler.py`, issue 691)** - daily **two-timer staleness sweep** (per-finding N + scanner-down
    escalation M, banner between) + **decision-expiry re-projection**; the **lifecycle sweep** (rollover +
    per-cluster retention for the append series, D8/D26 - see step 8); **findings cleanup** (deletes `findings`
-   rows whose image has been gone longer than `cleanup_days`, D37/M12); **export drain** (off-peak, throttled,
+   rows whose image has been gone longer than `cleanup_days`, D37/M12); **export drain** (on its own schedule, throttled,
    D24, fencing `attempt_id`) + the **report sweep** (report TTL + orphan chunks - D40/I-r3); the **session
    sweep** (expired `system-sessions` rows, issue 532); **rebuild-state** on demand (**human cache** from
    decisions+audit-log **and scanner-presence cache** from the catalog - D40/D-r3); optional **rollup** (v1.1). *(No close-event job - occurrences are full
@@ -359,4 +359,4 @@ OpenSearch nodes / a coordinating node. Never a second datastore (D11).
 - The frontend recreates `handoff/v4/` in Vue 3 - keep the `fields`-config pattern verbatim; treat
   the JSX prototype as executable spec. Expected UI extensions beyond the handoff: `not_affected`+
   justification pickers, the scoped risk-accept dialog, the inventory staleness banner, the export
-  now/off-peak dialog (see `PLAN` M9).
+  dialog with `Run now` and `In the background` (see `PLAN` M9).

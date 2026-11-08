@@ -170,6 +170,9 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   // `image_repo` is an exact `term` server-side, so the grid's image cell can filter on the
   // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2)
   { key: 'image', label: 'Image', type: 'text', param: 'image_repo', multi: true, negatable: true },
+  // one exact image (issue 1140): the image page opens Findings on its digest. The API takes one
+  // `image_digest` and has no exclude side, so the field is single and not negatable
+  { key: 'digest', label: 'Digest', type: 'text', param: 'image_digest', multi: false },
   // issue 492 completes the negation family. Both are exact `term`s server-side and neither
   // is a facet — package cardinality is unbounded, and one CVE per bucket is not a rail dim —
   // so they are bar-and-cell fields, like `image` above.
