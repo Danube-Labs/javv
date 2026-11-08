@@ -41,4 +41,17 @@ describe('ScannerConfigCard', () => {
     expect(w.text()).toContain('Vulnerability database schema')
     expect(w.text()).not.toContain('vuln DB')
   })
+
+  it('says where the version and the settings are set, with no words of one deploy tool', () => {
+    const w = mount(ScannerConfigCard, {
+      props: { scanner: 'trivy', version: '0.76.2', dbVersion: '2', dbBuilt: null, config: null },
+    })
+    const tag = w.find('.gitops-tag')
+    expect(tag.text()).toBe('set where it runs')
+    expect(tag.attributes('title')).toBe(
+      'The version and the settings of the scanner are set where it runs: its image tag and its ' +
+        'environment variables. JAVV does not change them, and each scan records the scanner version.',
+    )
+    expect(w.html()).not.toMatch(/GitOps|operator-managed/)
+  })
 })

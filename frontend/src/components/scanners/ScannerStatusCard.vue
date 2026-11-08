@@ -106,7 +106,7 @@ const dbAgeLabel = computed(() =>
           <span class="mono-cell">{{ provenance.scanner_db_version ?? '-' }}</span></span
         >
         <span
-          ><em>DB built</em>
+          ><em>Database built</em>
           <span class="mono-cell" :title="provenance.scanner_db_built ?? ''">{{
             lastDataAt(provenance.scanner_db_built ?? null)
           }}</span>
@@ -118,7 +118,7 @@ const dbAgeLabel = computed(() =>
           ></span
         >
         <span class="scan-gitops"
-          >operator-managed (GitOps): versions change by swapping the published image tag</span
+          >The version is set where the scanner runs, by its image tag. JAVV does not change it.</span
         >
       </div>
     </template>

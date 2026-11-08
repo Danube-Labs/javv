@@ -144,7 +144,7 @@ function discard() {
       <template v-else>
         <SettingsRow
           label="Running workloads only"
-          hint="Only running images are scanned. Discovery lists running pods through the Kubernetes API and scans each image digest once, however many pods run it."
+          hint="Only running images are scanned. The scanner lists what runs now: the pods in Kubernetes, the allocations in Nomad or the containers of a Docker host. It scans each image digest once, however many copies run it."
         >
           <span class="static-fact mono-cell">always on</span>
         </SettingsRow>

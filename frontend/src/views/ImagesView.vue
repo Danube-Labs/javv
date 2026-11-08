@@ -176,7 +176,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
             · {{ fmt(totalReplicas) }}<span class="head-unit"> replicas</span>
           </p>
           <p class="head-note">
-            <template v-if="inventoryAt">inventory as of <span class="mono-cell">{{ inventoryAt }}</span> · </template>digest-deduped
+            <template v-if="inventoryAt">inventory as of <span class="mono-cell">{{ inventoryAt }}</span> · </template>one row for each image digest
           </p>
         </template>
         <p v-else class="head-note">the latest committed inventory, per digest</p>
