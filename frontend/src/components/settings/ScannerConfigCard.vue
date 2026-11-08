@@ -53,7 +53,7 @@ const SCOPE_LABEL: Record<string, string> = {
         <ScannerTag :name="scanner" />
         <span v-if="version" class="mono-cell ver">v{{ version }}</span>
       </div>
-      <span class="gitops-tag" title="Version and tuning change by swapping the published image tag or its environment variables, never in the app, because JAVV never changes the clusters it monitors, and every scan records the scanner version that produced it.">operator-managed (GitOps)</span>
+      <span class="gitops-tag" title="The version and the settings of the scanner are set where it runs: its image tag and its environment variables. JAVV does not change them, and each scan records the scanner version.">set where it runs</span>
     </div>
     <div class="card-body">
       <template v-if="config !== null">

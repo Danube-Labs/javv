@@ -816,8 +816,10 @@ The v4 per-file ingest feed is gone. New composition per C-3:
 - **Freshness:** `GET /api/v1/scanners/freshness?cluster_id=…` — `last_ingest_at`,
   `silent_for_seconds` → health chip (ok / silent-N / never-ingested nulls → "no data yet").
 - **Provenance (read-only, D41):** `scanner_version` · `scanner_db_version` · `scanner_db_built`
-  from the latest committed scan-event — displayed as mono provenance lines with an
-  "operator-managed (GitOps): change by swapping the image tag" affordance. **Never a control.**
+  from the latest committed scan-event — displayed as mono provenance lines with the note
+  "The version is set where the scanner runs, by its image tag. JAVV does not change it." (issue
+  1152: true for the chart, a Nomad job and a Compose file; it was "operator-managed (GitOps)").
+  **Never a control.**
   **Scheduled — M8c** provenance read (latest *committed* scan-event via the commit catalog;
   M9e's ScanningView shares the same read).
 - **Last-N scan runs** (counts, durations): same M8c read. The count of a run counts findings, not
@@ -871,8 +873,10 @@ shows "last ingest -" when its freshness read is refused, never the previous rea
 
 Left sub-nav + panel + sticky save bar preserved — but the save bar appears **only on editable
 sections**. Editable in MVP (C-4): **SLA policy · Users/Roles · Tokens · Scan scope · Data &
-OpenSearch (retention) · Staleness timers**. Everything else is read-only display with an
-**"operator-managed (GitOps)"** affordance.
+OpenSearch (retention) · Staleness timers**. Everything else is read-only display that says
+where it is set (issue 1152; it was **"operator-managed (GitOps)"**): the tag **"set where it
+runs"** on the scanner cards, and "the install of JAVV sets these settings" on the OpenSearch
+runtime card.
 
 **Before any cluster is listed** (a fresh install): Scan scope, the Scanning page's staleness
 timers and the settings of Data & OpenSearch read per cluster, so they have nothing to read. Each

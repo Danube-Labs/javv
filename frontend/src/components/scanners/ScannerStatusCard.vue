@@ -102,11 +102,11 @@ const dbAgeLabel = computed(() =>
 
       <div class="scan-meta">
         <span
-          ><em>Vuln DB</em>
+          ><em>Vulnerability database</em>
           <span class="mono-cell">{{ provenance.scanner_db_version ?? '-' }}</span></span
         >
         <span
-          ><em>DB built</em>
+          ><em>Database built</em>
           <span class="mono-cell" :title="provenance.scanner_db_built ?? ''">{{
             lastDataAt(provenance.scanner_db_built ?? null)
           }}</span>
@@ -118,7 +118,7 @@ const dbAgeLabel = computed(() =>
           ></span
         >
         <span class="scan-gitops"
-          >operator-managed (GitOps): versions change by swapping the published image tag</span
+          >The version is set where the scanner runs, by its image tag. JAVV does not change it.</span
         >
       </div>
     </template>
@@ -184,12 +184,14 @@ const dbAgeLabel = computed(() =>
 }
 .scan-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 22px;
+  gap: 6px 22px;
   border-top: 1px solid var(--line2);
   padding-top: 12px;
 }
-/* the provenance facts never wrap mid-label — the gitops note is the flexible one */
+/* the provenance facts never wrap mid-label; the note is the flexible one, and it moves to a line
+   of its own before it gets narrower than a short sentence */
 .scan-meta > span:not(.scan-gitops) {
   white-space: nowrap;
 }
@@ -206,6 +208,7 @@ const dbAgeLabel = computed(() =>
 .scan-gitops {
   /* the one explanatory clause — stays soft (il-sub ruling) */
   margin-left: auto;
+  min-width: 16rem;
   font-size: var(--text-sm);
   color: var(--soft);
   text-align: right;

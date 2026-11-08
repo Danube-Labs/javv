@@ -161,7 +161,7 @@ async function copyDiagnostics() {
           <div class="stack-scanner-value">
             <span class="stack-value">{{ s.scanner_version ? `v${s.scanner_version}` : 'unknown' }}</span>
             <span class="stack-db"
-              >vuln DB {{ s.scanner_db_version ?? 'unknown' }} · built
+              >vulnerability database {{ s.scanner_db_version ?? 'unknown' }} · built
               <span :title="s.scanner_db_built ?? ''">{{ lastDataAt(s.scanner_db_built ?? null) }}</span></span
             >
           </div>

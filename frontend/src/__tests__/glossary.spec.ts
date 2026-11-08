@@ -45,6 +45,14 @@ describe('GLOSSARY', () => {
     expect(terms).toContain('New in range')
   })
 
+  it('tells what Namespace is for each source of scans (issue 1152)', () => {
+    const entry = GLOSSARY.find((e) => glossaryTerm(e) === 'Namespace')
+    expect(entry?.body).toBe(
+      'Where the image runs. For a Kubernetes cluster, the namespace. For a Nomad cluster, the ' +
+        'Nomad job. For a Docker host, the Compose project, or the name of a container with no project.',
+    )
+  })
+
   it('has no duplicate terms', () => {
     const terms = GLOSSARY.map(glossaryTerm)
     expect(new Set(terms).size).toBe(terms.length)
