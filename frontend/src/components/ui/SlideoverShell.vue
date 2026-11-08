@@ -7,6 +7,8 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
+
 defineProps<{ title: string; subtitle?: string; width?: number }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -32,7 +34,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
             <h3>{{ title }}</h3>
             <p v-if="subtitle" class="so-sub">{{ subtitle }}</p>
           </div>
-          <button type="button" class="so-close" aria-label="Close" @click="emit('close')">✕</button>
+          <UiCloseButton class="so-close" dark label="Close" @click="emit('close')" />
         </div>
         <div class="so-body"><slot /></div>
       </div>
@@ -91,18 +93,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   margin: 2px 0 0;
   font-size: var(--text-sm);
   opacity: 0.75;
-}
-.so-close {
-  border: 0;
-  background: transparent;
-  color: var(--table-head-fg);
-  font-size: var(--text-body);
-  cursor: default;
-  padding: 2px 6px;
-  border-radius: var(--r-sm);
-}
-.so-close:hover {
-  background: var(--table-head-line);
 }
 .so-body {
   overflow-y: auto;

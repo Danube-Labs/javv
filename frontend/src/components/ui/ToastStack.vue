@@ -5,6 +5,7 @@
  * announce assertively, the rest politely.
  */
 import AppIcon, { type IconName } from '@/components/ui/AppIcon.vue'
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 import { useToastStore, type ToastKind } from '@/stores/toast'
 
 const toast = useToastStore()
@@ -22,9 +23,7 @@ const ICON: Record<ToastKind, IconName> = { success: 'check', error: 'alert', in
       >
         <AppIcon :name="ICON[t.kind]" :size="15" :class="`toast-ic-${t.kind}`" />
         <span class="toast-msg">{{ t.message }}</span>
-        <button type="button" class="toast-x" aria-label="Dismiss" @click="toast.dismiss(t.id)">
-          ×
-        </button>
+        <UiCloseButton class="toast-x" label="Dismiss" @click="toast.dismiss(t.id)" />
       </div>
     </TransitionGroup>
   </div>
@@ -67,21 +66,5 @@ const ICON: Record<ToastKind, IconName> = { success: 'check', error: 'alert', in
 }
 .toast-msg {
   flex: 1;
-}
-.toast-x {
-  border: none;
-  background: none;
-  color: var(--soft);
-  font-size: var(--text-body);
-  padding: 0 2px;
-  border-radius: 4px;
-}
-.toast-x:hover {
-  color: var(--ink);
-  background: var(--control-hover-bg);
-}
-.toast-x:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
 }
 </style>

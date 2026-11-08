@@ -44,15 +44,19 @@ describe('the window head (issue 1049)', () => {
   })
 
   it('gives the close button the ramp of a control on the slate: rest, hover, pressed and focus', () => {
-    const rest = rule(shell, '.modal-close')
+    // the window and the side panel both take the dark close of the kit (issue 1140, R2)
+    expect(shell).toMatch(/<UiCloseButton class="modal-close" dark /)
+    expect(read('components/ui/SlideoverShell.vue')).toMatch(/<UiCloseButton class="so-close" dark /)
+    const close = read('components/ui/UiCloseButton.vue')
+    const rest = rule(close, '.ui-close--dark')
     expect(rest).toContain('background: var(--side-control-bg);')
-    expect(rest).toContain('border: 1px solid var(--table-head-line);')
+    expect(rest).toContain('border-color: var(--table-head-line);')
     expect(rest).toContain('color: var(--table-head-fg);')
-    const hover = rule(shell, '.modal-close:hover')
+    const hover = rule(close, '.ui-close--dark:hover')
     expect(hover).toContain('background: var(--side-control-hover-bg);')
     expect(hover).toContain('border-color: var(--side-label);')
-    expect(rule(shell, '.modal-close:active')).toContain('background: var(--side-control-active-bg);')
-    expect(rule(shell, '.modal-close:focus-visible')).toContain('outline: var(--focus-ring);')
+    expect(rule(close, '.ui-close--dark:active')).toContain('background: var(--side-control-active-bg);')
+    expect(rule(close, '.ui-close:focus-visible')).toContain('outline: var(--focus-ring);')
   })
 
   it('has no border line on the window, only its shadow, and the head takes the card corner (issue 1127)', () => {

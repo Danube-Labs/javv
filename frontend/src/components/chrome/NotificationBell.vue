@@ -18,6 +18,7 @@ import { getReportApiV1ReportsReportIdGet } from '@/api/generated'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import SlideoverShell from '@/components/ui/SlideoverShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 import { useNotifications, type NotificationItem } from '@/composables/useNotifications'
 import { fmtAt } from '@/findings/format'
 import { logger } from '@/lib/logger'
@@ -159,7 +160,7 @@ function onRowClick(item: NotificationItem) {
           <UiButton v-if="bell.unread.value" variant="mini" @click="bell.markAllRead()">
             <AppIcon name="check" :size="12" />Mark all read
           </UiButton>
-          <UiButton variant="mini" @click="bell.clearAll()">× Clear all</UiButton>
+          <UiButton variant="mini" @click="bell.clearAll()"><AppIcon name="close" :size="12" />Clear all</UiButton>
         </div>
         <p v-if="bell.failed.value" class="bell-degraded" role="alert">
           Notifications unavailable. The badge is paused, nothing here is stale.
@@ -195,14 +196,11 @@ function onRowClick(item: NotificationItem) {
             :size="11"
           />
           <span v-if="!item.read" class="bell-dot" aria-label="unread" />
-          <button
-            type="button"
+          <UiCloseButton
             class="bell-x"
-            :aria-label="`Dismiss ${meta(item).label}`"
+            :label="`Dismiss ${meta(item).label}`"
             @click.stop="bell.dismiss(item.notification_id)"
-          >
-            ×
-          </button>
+          />
         </div>
       </div>
     </SlideoverShell>
@@ -357,22 +355,6 @@ function onRowClick(item: NotificationItem) {
   margin-bottom: 4px;
 }
 .bell-x {
-  flex: none;
   align-self: center;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: var(--r-chip);
-  background: transparent;
-  color: var(--soft);
-  font-size: var(--text-card-title);
-  line-height: 1;
-  cursor: default;
-}
-.bell-x:hover {
-  background: var(--fpill-x-hover-bg);
-  color: var(--coral-text);
 }
 </style>
