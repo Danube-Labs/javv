@@ -2,10 +2,14 @@
 /**
  * One active filter in the filter bar (prototype filters.jsx `.fpill`): the field, the op words
  * and the values. A click opens the field's edit box; on a negatable field the op words switch
- * include and exclude; the × clears the field.
+ * include and exclude; the ✕ clears the field. The pill is a frame of separate buttons, since a
+ * button inside a button is not valid HTML and the keyboard could not reach the inner ones: the
+ * field button covers the pill with its ::after, as a clickable card does (DESIGN.md § 5), and
+ * the op toggle and the ✕ sit above that layer (issue 1140).
  */
 import { computed } from 'vue'
 
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 import { isNegatable, valueLabel, type FilterField } from '@/filters/fields.config'
 import type { FilterMode } from '@/stores/filters'
 
@@ -25,30 +29,37 @@ const shown = computed(() =>
 </script>
 
 <template>
-  <button class="fpill" :class="{ 'fpill-not': mode === 'not' }" @click="emit('open')">
-    <span class="fpill-field">{{ field.label }}</span>
+  <div class="fpill" :class="{ 'fpill-not': mode === 'not' }">
+    <button
+      type="button"
+      class="fpill-open fpill-field"
+      :aria-label="`Edit the filter ${field.label}: ${opText} ${labels.join(', ')}`"
+      @click="emit('open')"
+    >
+      {{ field.label }}
+    </button>
     <!-- ruled NOT-pill (issue 349, operator 2026-07-17): hollow body, ONLY the op words in
          red; on a negatable field the op word is the include⇄exclude toggle -->
-    <span
+    <button
       v-if="isNegatable(field)"
+      type="button"
       class="fpill-op fpill-op-btn"
-      role="button"
       :aria-label="`Switch to ${mode === 'not' ? 'include' : 'exclude'}`"
       :title="mode === 'not' ? 'Click to include' : 'Click to exclude'"
-      @click.stop="emit('toggleMode')"
-      >{{ opText }}</span
+      @click="emit('toggleMode')"
     >
+      {{ opText }}
+    </button>
     <span v-else class="fpill-op">{{ opText }}</span>
     <!-- a long image repo hides the "+N"; the title holds every value -->
     <span class="fpill-vals" :title="labels.join(', ')">{{ shown }}</span>
-    <span class="fpill-x" role="button" :aria-label="`Clear ${field.label}`" @click.stop="emit('clear')"
-      >×</span
-    >
-  </button>
+    <UiCloseButton class="fpill-x" small :label="`Clear ${field.label}`" @click="emit('clear')" />
+  </div>
 </template>
 
 <style scoped>
 .fpill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -67,9 +78,32 @@ const shown = computed(() =>
 .fpill:hover {
   border-color: var(--coral);
 }
-.fpill:focus-visible {
+.fpill-open {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+/* the whole pill opens the field; the ring goes round the pill, not round the label */
+.fpill-open::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--r-sm);
+}
+.fpill-open:focus-visible {
+  outline: none;
+}
+.fpill-open:focus-visible::after {
   outline: var(--focus-ring);
   outline-offset: 1px;
+}
+.fpill-op-btn,
+.fpill-x {
+  position: relative;
+  z-index: 1;
 }
 .fpill-field {
   font-weight: 600;
@@ -88,20 +122,6 @@ const shown = computed(() =>
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.fpill-x {
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 5px;
-  color: var(--soft);
-  font-size: var(--text-card-title);
-  line-height: 1;
-}
-.fpill-x:hover {
-  background: var(--fpill-x-hover-bg);
-  color: var(--coral-text);
-}
 /* the NOT-pill (issue 349, ruled 2026-07-17 on built specimens): the include pill is FILLED
    (card on beige), the exclude pill is HOLLOW — fill/outline duality — and ONLY the op words
    carry the red; the rest of the pill stays in the quiet register */
@@ -116,9 +136,13 @@ const shown = computed(() =>
 }
 /* the op word doubles as the include⇄exclude toggle on negatable fields */
 .fpill-op-btn {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
   border-radius: 4px;
   padding: 1px 3px;
   margin: -1px -3px;
+  cursor: default;
 }
 .fpill-op-btn:hover {
   background: var(--fpill-x-hover-bg);
