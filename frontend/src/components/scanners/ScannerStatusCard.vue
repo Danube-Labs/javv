@@ -102,7 +102,7 @@ const dbAgeLabel = computed(() =>
 
       <div class="scan-meta">
         <span
-          ><em>Vuln DB</em>
+          ><em>Vulnerability database</em>
           <span class="mono-cell">{{ provenance.scanner_db_version ?? '-' }}</span></span
         >
         <span

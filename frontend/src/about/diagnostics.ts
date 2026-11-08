@@ -30,7 +30,7 @@ function scannerLine(row: ProvenanceRow): string {
   const built = row.scanner_db_built ? formatUtc(new Date(row.scanner_db_built)) : 'unknown'
   return (
     `${row.scanner}: ${row.scanner_version ?? UNAVAILABLE} · ` +
-    `vuln DB ${row.scanner_db_version ?? 'unknown'}, built ${built}`
+    `vulnerability database ${row.scanner_db_version ?? 'unknown'}, built ${built}`
   )
 }
 

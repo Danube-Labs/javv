@@ -51,8 +51,8 @@ describe('buildDiagnostics', () => {
       'OpenSearch: 3.8.0',
       'Python: 3.12.13',
       'Cluster: prod-eu (c-prod-eu-1)',
-      'trivy: 0.74.0 · vuln DB 2, built 2026-09-29 12:00 UTC',
-      'grype: 0.119.0 · vuln DB unknown, built unknown',
+      'trivy: 0.74.0 · vulnerability database 2, built 2026-09-29 12:00 UTC',
+      'grype: 0.119.0 · vulnerability database unknown, built unknown',
       'Browser: Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0',
     ])
   })

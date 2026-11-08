@@ -129,7 +129,7 @@ describe('loading', () => {
 })
 
 describe('Scanners', () => {
-  it('reads the selected cluster only and shows each scanner with its vuln DB', async () => {
+  it('reads the selected cluster only and shows each scanner with its vulnerability database', async () => {
     metaMock.mockResolvedValue(ok(META))
     provMock.mockResolvedValue(ok({ scanners: [TRIVY] }))
     const w = await mountCard()
@@ -139,7 +139,8 @@ describe('Scanners', () => {
     expect(w.find('.stack-scanners .stack-group-title').text()).toContain('prod-eu')
     const row = w.find('.stack-scanners .stack-row')
     expect(row.find('.stack-value').text()).toBe('v0.74.0')
-    expect(row.text()).toContain('vuln DB 2')
+    expect(row.text()).toContain('vulnerability database 2')
+    expect(row.text()).not.toContain('vuln DB')
   })
 
   it('re-reads when the selected cluster changes, never showing the old cluster\'s rows', async () => {
