@@ -27,8 +27,8 @@ export const GUIDE_SECTIONS = [
   },
   {
     id: 'two-scanners',
-    title: 'Two scanners, never merged',
-    summary: 'Trivy and Grype report side by side; JAVV never picks a winner.',
+    title: 'Trivy and Grype side by side',
+    summary: 'Each finding belongs to one scanner, and JAVV never picks a winner.',
     icon: 'columns',
   },
   {

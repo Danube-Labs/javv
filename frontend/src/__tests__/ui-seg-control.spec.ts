@@ -10,6 +10,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 
 import UiSegControl from '@/components/ui/UiSegControl.vue'
+import { SCANNER_SWITCH_OPTS } from '@/lib/scannerLens'
 
 const OPTIONS = [
   { value: 'half', label: 'Half' },
@@ -20,6 +21,21 @@ const mountBar = (modelValue: 'half' | 'full') =>
   mount(UiSegControl, { props: { options: OPTIONS, modelValue, label: 'Width' } })
 
 describe('UiSegControl', () => {
+  it('gives an option its hover text when the option has a title, and no title otherwise', () => {
+    const w = mount(UiSegControl, {
+      props: { options: [{ value: 'a', label: 'A', title: 'More about A' }, { value: 'b', label: 'B' }], modelValue: 'a', label: 'Pick' },
+    })
+    const [a, b] = w.findAll('button')
+    expect(a!.attributes('title')).toBe('More about A')
+    expect(b!.attributes('title')).toBeUndefined()
+  })
+
+  it('the All scanners option of the scanner switch says that it adds the two scanners (issue 1140, R4)', () => {
+    const all = SCANNER_SWITCH_OPTS.find((o) => o.value === 'all')!
+    expect(all.title).toBe('Trivy and Grype together. A CVE that both report counts once for each.')
+    expect(SCANNER_SWITCH_OPTS.filter((o) => 'title' in o)).toHaveLength(1)
+  })
+
   it('is a group named by its label, with one button for each option, in order', () => {
     const w = mountBar('half')
     expect(w.attributes('role')).toBe('group')
