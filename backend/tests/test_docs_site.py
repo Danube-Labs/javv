@@ -79,17 +79,6 @@ FILES = {
     "docs/ingest-envelope.schema.json",
     "versions.yaml",
     "deploy/compose/compose.yaml",
-    *(
-        f"deploy/nomad/{f}"
-        for f in (
-            "javv-scan-trivy.nomad.hcl",
-            "javv-scan-grype.nomad.hcl",
-            "javv-scan.policy.hcl",
-            "javv-trivy-cache.volume.hcl",
-            "javv-grype-cache.volume.hcl",
-            "javv_nomad_push.py",
-        )
-    ),
 }
 VIDEOS = {
     f"docs/use/videos/{name}.mp4"

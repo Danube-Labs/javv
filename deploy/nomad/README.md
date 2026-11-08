@@ -4,6 +4,10 @@ Two Nomad jobs scan the running Docker images of a Nomad cluster and push the re
 `javv-scan-trivy` uses Trivy. `javv-scan-grype` uses Grype. JAVV then shows the Nomad cluster as it
 shows a Kubernetes cluster.
 
+The two jobs are examples. Change them for your cluster: for example, the source of the JAVV
+token, the cache volumes or the schedule. The script `javv_nomad_push.py` does the work. It reads
+the running images from the Nomad API, scans them and pushes the results to JAVV.
+
 **Tested with:** Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the images
 `javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
 
@@ -32,12 +36,13 @@ JAVV shows each Nomad job as a namespace:
 - You need a Nomad token that can apply ACL policies, write variables and create volumes.
 - The clients need the Docker task driver.
 - The clients must reach `ghcr.io`, the registries of your images, and JAVV.
-- You need the files of this folder: [`javv-scan-trivy.nomad.hcl`](javv-scan-trivy.nomad.hcl),
-  [`javv-scan-grype.nomad.hcl`](javv-scan-grype.nomad.hcl),
-  [`javv-scan.policy.hcl`](javv-scan.policy.hcl),
-  [`javv-trivy-cache.volume.hcl`](javv-trivy-cache.volume.hcl),
-  [`javv-grype-cache.volume.hcl`](javv-grype-cache.volume.hcl) and
-  [`javv_nomad_push.py`](javv_nomad_push.py).
+- You need the files of the folder [`deploy/nomad`](https://github.com/Danube-Labs/javv/tree/main/deploy/nomad):
+  [`javv-scan-trivy.nomad.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan-trivy.nomad.hcl),
+  [`javv-scan-grype.nomad.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan-grype.nomad.hcl),
+  [`javv-scan.policy.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan.policy.hcl),
+  [`javv-trivy-cache.volume.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-trivy-cache.volume.hcl),
+  [`javv-grype-cache.volume.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-grype-cache.volume.hcl) and
+  [`javv_nomad_push.py`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv_nomad_push.py).
 
 ## Install the jobs
 

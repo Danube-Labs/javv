@@ -1,1 +1,0 @@
-../../../../deploy/nomad/javv-scan.policy.hcl
