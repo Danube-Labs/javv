@@ -21,7 +21,7 @@ import GuideProse from './GuideProse.vue'
         scanned at that moment, triage included. Clicking a day on the ingest strip does the same for
         the end of that day. A banner says you're viewing history, and
         <span class="ui-name">Back to now</span> returns. The few screens that only make sense now, like
-        the approvals queue, tell you so.
+        the <span class="ui-name">Approval list</span>, tell you so.
       </li>
     </ul>
   </GuideProse>
