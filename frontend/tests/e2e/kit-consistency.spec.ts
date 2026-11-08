@@ -262,7 +262,7 @@ const viewerRow = (p: Page) => p.locator('tr', { hasText: 'smoke-viewer' })
 const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Save this view', '/findings', (p) => p.getByRole('button', { name: 'Save view' }).first().click()],
   ['Bulk triage', '/findings', (p) => p.getByRole('button', { name: 'Bulk triage' }).first().click()],
-  ['Export', '/findings', (p) => p.getByRole('button', { name: 'Export CSV' }).click()],
+  ['Export', '/findings', (p) => p.getByRole('button', { name: 'Export', exact: true }).click()],
   [
     'Risk-accept this CVE',
     '/findings',

@@ -134,6 +134,12 @@ D15 scanner casing lowercase *(now via normalizer - see D16)*.
   `heartbeat_at` + `lease_expires_at` + `retry_count`, plus a **fencing `attempt_id`** (D39/M7-r2) - heartbeat
   and the `done` transition CAS on the current `attempt_id` and the result object path includes it, so a slow
   worker whose lease expired and was reclaimed cannot double-publish. (§6; `SPEC` FR-13.)
+  *As built (2026-11-08, issue 1140): JAVV has no off-peak window. The export window sends
+  `run_mode: offpeak`. The backend stores it and does not read it. The report drain builds each queued
+  export when it runs (`JAVV_JOB_REPORT_DRAIN_CRON`, every 5 minutes by default), with a pause between
+  pages (`JAVV_REPORT_DRAIN_SLEEP_MS`).
+  The backend runs the drain itself (issue 691), with no CronJob, and keeps the files in OpenSearch
+  (`system-report-chunks`), not in object storage.*
 - **D25 - Envelope versioning & schema-skew policy.** The ingest envelope is versioned; the backend
   **accepts the current envelope only** and **rejects older** with a clear 4xx telling the operator to upgrade
   the scanner (current-only per D35/D38 - the earlier "N, N-1 dual-parse" is dropped; the versioning *policy*

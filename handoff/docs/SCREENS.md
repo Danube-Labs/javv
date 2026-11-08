@@ -491,7 +491,9 @@ B-2/B-3 (metadata cuts), B-5 (server SLA), V4-DELTA-1 (old triage fields removed
 
 ## 5. Export dialog + scheduled reports (bolt: **M9b** integration; download/bell states **M9f**)
 
-Reachable from Findings/Overview/Images "Export".
+Reachable from the `Export` button of Findings. The two tabs are `Run now` and `In the background`.
+JAVV has no off-peak window: the report drain builds a queued export when it runs
+(`JAVV_JOB_REPORT_DRAIN_CRON`, every 5 minutes by default), with a pause between pages.
 
 **Data**
 - Run now: `GET /api/v1/findings/export.csv?<current lens params>` (streaming, CSV-injection
@@ -503,7 +505,8 @@ Reachable from Findings/Overview/Images "Export".
   openapi.json (`export-params.spec.ts`, issue 962).
 
 **States (C-2 — all drawn):** run-now streaming progress · **413 over
-`JAVV_EXPORT_MAX_ROWS` (50k)** → "narrow the lens or **schedule off-peak**" (switch tab) ·
+`JAVV_EXPORT_MAX_ROWS` (50k)** → "Too many rows to download now. Narrow the filters, or make the file in the background."
+(switch to the In the background tab) ·
 scheduled-pending → bell on done · **"expires in Xh"** on the bell item and the download row
 (`JAVV_EXPORT_TTL_HOURS`, default 24 h) · **410 expired** → "download expired — re-run the
 export" · 429 PIT cap with `Retry-After` · **export blocked** (issue 962; `exportBlockMessage`
