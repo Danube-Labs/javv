@@ -4,8 +4,8 @@ Two Nomad jobs scan the running Docker images of a Nomad cluster and push the re
 `javv-scan-trivy` uses Trivy. `javv-scan-grype` uses Grype. JAVV then shows the Nomad cluster as it
 shows a Kubernetes cluster.
 
-**We tested these files with Nomad 2.1.1:** one agent, ACLs on, the Docker task driver. The jobs
-ran the images `javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
+**Tested with:** Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the images
+`javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
 
 ## How the jobs work
 
@@ -132,7 +132,7 @@ If JAVV does not send the scope, the job does not scan in this run.
 
 ## Known gaps
 
-- We tested the jobs with Nomad 2.1.1 only, with one agent in dev mode.
+- Tested only with Nomad 2.1.1, with one agent in dev mode.
 - The jobs scan tasks of the Docker driver only. They do not scan tasks of other drivers.
 - The jobs do not scan an image that Nomad sets when the task starts, for example
   `${meta.connect.sidecar_image}` of a Consul Connect sidecar. The log shows these images as a
@@ -142,11 +142,11 @@ If JAVV does not send the scope, the job does not scan in this run.
 - A batch job that does not run at the time of the scan is not in the scan.
 - When an image stops, its findings stay open until the staleness sweep marks them stale (3 days by
   default).
-- The job reads the Nomad API at `http://127.0.0.1:4646`, on the network of the host. We did not
-  test a Nomad API with TLS.
-- A private registry needs its credentials in the job, in the variables of Trivy or Grype. We did
-  not test this.
-- We did not test a mirror of the scanner databases (`TRIVY_DB_REPOSITORY`, `GRYPE_DB_UPDATE_URL`).
+- The job reads the Nomad API at `http://127.0.0.1:4646`, on the network of the host. A Nomad
+  API with TLS is not tested.
+- A private registry needs its credentials in the job, in the variables of Trivy or Grype. This
+  is not tested.
+- A mirror of the scanner databases (`TRIVY_DB_REPOSITORY`, `GRYPE_DB_UPDATE_URL`) is not tested.
 - Each cache volume is on one client. Nomad runs the job only on the client with its volume.
 - The owner of a job can add the meta `javv_scan = "true"` to the job. Then the scan jobs skip it.
   The log names it.
