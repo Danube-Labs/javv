@@ -110,8 +110,16 @@ def nomad(monkeypatch):
     return asked
 
 
+def running_images(s, scope):
+    """running_images with the allocations of each image as their count: the replicas."""
+    images, skipped = push.running_images(s, scope)
+    return {
+        ref: {"places": e["places"], "replicas": len(e["allocations"])} for ref, e in images.items()
+    }, skipped
+
+
 def test_place_is_the_job_in_default_and_namespace_slash_job_elsewhere(settings, nomad):
-    images, _ = push.running_images(settings(), {})
+    images, _ = running_images(settings(), {})
     assert images["nginx:1.27-alpine"] == {
         "places": {"web", "billing/web", "billing/billing-api"},
         "replicas": 4,
@@ -120,40 +128,41 @@ def test_place_is_the_job_in_default_and_namespace_slash_job_elsewhere(settings,
 
 
 def test_a_periodic_run_counts_as_its_parent_job(settings, nomad):
-    images, _ = push.running_images(settings(), {})
+    images, _ = running_images(settings(), {})
     assert images["busybox:1.36"]["places"] == {"nightly"}
 
 
 def test_the_scan_jobs_skip_themselves_and_each_other(settings, nomad):
-    images, _ = push.running_images(settings(), {})
+    images, skipped = running_images(settings(), {})
     assert not any("javv-scanner" in ref for ref in images)
+    assert skipped["scan_job"] == ["default/javv-scan-grype", "default/javv-scan-trivy"]
     # a job with the same ID in another namespace, and with no meta, is not the job itself
     assert images["lookalike:1"]["places"] == {"other/javv-scan-trivy"}
 
 
 def test_all_namespaces_go_to_nomad_quoted(settings, nomad):
-    push.running_images(settings(), {})
+    running_images(settings(), {})
     assert nomad == ["%2A"]
 
 
 def test_only_running_docker_tasks_count(settings, nomad):
-    images, _ = push.running_images(settings(), {})
+    images, _ = running_images(settings(), {})
     assert not {"done:1", "raw:1", "starting:1"} & set(images)
 
 
 def test_an_image_that_nomad_sets_at_start_is_skipped(settings, nomad):
-    images, skipped = push.running_images(settings(), {})
+    images, skipped = running_images(settings(), {})
     assert skipped["unresolved"] == ["${meta.connect.sidecar_image}"]
     assert images["app:1"] == {"places": {"mesh"}, "replicas": 1}
 
 
 def test_replicas_count_allocations_as_the_scanners_count_pods(settings, nomad):
-    images, _ = push.running_images(settings(), {})
+    images, _ = running_images(settings(), {})
     assert images["alpine:3.20"] == {"places": {"pair"}, "replicas": 1}
 
 
 def test_skip_jobs_takes_patterns_on_the_job_id(settings, nomad):
-    images, skipped = push.running_images(settings(JAVV_NOMAD_SKIP_JOBS="billing-*, nightly"), {})
+    images, skipped = running_images(settings(JAVV_NOMAD_SKIP_JOBS="billing-*, nightly"), {})
     assert skipped["job"] == ["billing-api", "nightly"]
     # the job "web" of the namespace billing has a job ID that the pattern does not match
     assert images["nginx:1.27-alpine"]["places"] == {"web", "billing/web"}
@@ -161,24 +170,24 @@ def test_skip_jobs_takes_patterns_on_the_job_id(settings, nomad):
 
 
 def test_namespaces_limits_the_api_calls(settings, nomad):
-    images, _ = push.running_images(settings(JAVV_NOMAD_NAMESPACES="default"), {})
+    images, _ = running_images(settings(JAVV_NOMAD_NAMESPACES="default"), {})
     assert nomad == ["default"]
     assert images["nginx:1.27-alpine"] == {"places": {"web"}, "replicas": 2}
 
 
 def test_the_scope_of_javv_applies_to_places_kinds_and_images(settings, nomad):
     s = settings()
-    images, skipped = push.running_images(s, {"ignore_namespaces": ["billing/*"]})
+    images, skipped = running_images(s, {"ignore_namespaces": ["billing/*"]})
     assert skipped["namespace"] == ["billing/billing-api", "billing/web"]
     assert images["nginx:1.27-alpine"]["places"] == {"web"}
 
-    images, skipped = push.running_images(s, {"include_namespaces": ["billing/*"]})
+    images, skipped = running_images(s, {"include_namespaces": ["billing/*"]})
     assert set(images) == {"nginx:1.27-alpine", "redis:7-alpine"}
 
-    images, skipped = push.running_images(s, {"ignore_kinds": ["batch"]})
+    images, skipped = running_images(s, {"ignore_kinds": ["batch"]})
     assert skipped["kind"] == ["nightly"]
 
-    images, skipped = push.running_images(s, {"exclude_images": ["redis:*"]})
+    images, skipped = running_images(s, {"exclude_images": ["redis:*"]})
     assert skipped["image"] == ["redis:7-alpine"]
     assert "redis:7-alpine" not in images
 
@@ -366,21 +375,32 @@ def test_javv_does_not_retry_a_refusal(settings, monkeypatch):
     assert body == {"text": "<html>not json</html>"}
 
 
-def test_javv_has_one_retry_budget_for_the_cycle(settings, monkeypatch):
+def test_javv_charges_the_retry_budget_only_while_a_call_fails(settings, monkeypatch):
     clock = [0.0]
     monkeypatch.setattr(push.time, "monotonic", lambda: clock[0])
     monkeypatch.setattr(push.time, "sleep", lambda s: clock.__setitem__(0, clock[0] + s))
+    answers: list = []
 
     def urlopen(_req, timeout):
-        raise http_error(503, b"")
+        a = answers.pop(0)
+        if isinstance(a, Exception):
+            raise a
+        return a
 
     monkeypatch.setattr(push.urllib.request, "urlopen", urlopen)
     api = push.Javv(settings(JAVV_PUSH_RETRY_BUDGET_SECONDS="40"))
-    assert api.call("GET", "/api/v1/scan-scope")[0] is None
-    used = clock[0]
-    assert 0 < used <= 40
-    assert api.call("POST", "/api/v1/scan-runs")[0] is None
-    assert clock[0] - used < 30  # the second call gets only what is left of the 40 s
+    # 400 s of scans before the first push do not use the budget
+    clock[0] += 400
+    answers[:] = [http_error(429, b""), Reply(202, b'{"accepted": true}')]
+    assert api.call("POST", "/api/v1/ingest/scan", {}, gz=True) == (202, {"accepted": True})
+    assert api.spent == 1.0
+    # the calls share what is left of the 40 s
+    answers[:] = [http_error(503, b"")] * 20
+    assert api.call("POST", "/api/v1/ingest/scan", {}, gz=True)[0] is None
+    assert api.spent >= 40
+    answers[:] = [http_error(503, b"")]
+    assert api.call("POST", "/api/v1/inventory-runs", {})[0] is None
+    assert answers == []  # one try, no wait: the budget is spent
 
 
 def test_grype_sends_only_a_repository_digest(settings, monkeypatch):
@@ -395,3 +415,39 @@ def test_grype_sends_only_a_repository_digest(settings, monkeypatch):
     assert (
         push.scan_grype(settings(JAVV_SCANNER="grype"), "nginx:1.27-alpine")[0] == "sha256:65645c"
     )
+
+
+def test_a_scope_reply_that_is_not_json_means_no_scan(cycle):
+    code, calls = cycle(replies=GOOD | {"/api/v1/scan-scope": (200, {"text": "<html>"})})
+    assert code == 1
+    assert [p for _, p, _, _ in calls] == ["/api/v1/scan-scope"]
+
+
+def test_no_answer_from_nomad_stops_the_run(cycle, monkeypatch):
+    import urllib.error
+
+    def down(_s, _path):
+        raise urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr(push, "nomad_get", down)
+    code, calls = cycle()
+    assert code == 1
+    assert [p for _, p, _, _ in calls] == ["/api/v1/scan-scope"]
+
+
+def test_two_names_of_one_digest_in_one_allocation_count_once(cycle, monkeypatch):
+    monkeypatch.setattr(
+        push,
+        "running_images",
+        lambda _s, _scope: (
+            {
+                "nginx:1.27-alpine": {"places": {"web"}, "allocations": {"a1", "a2"}},
+                "nginx@sha256:65645c": {"places": {"web"}, "allocations": {"a1"}},
+            },
+            {},
+        ),
+    )
+    code, calls = cycle(digest=lambda ref: "sha256:65645c")
+    assert code == 0
+    pushes = [b for _, p, b, _ in calls if p == "/api/v1/ingest/scan"]
+    assert [b["replicas"] for b in pushes] == [2]

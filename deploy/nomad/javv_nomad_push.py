@@ -168,12 +168,13 @@ def body_of(raw: bytes):
 
 
 class Javv:
-    """The calls to JAVV. As the JAVV scanners: send again after 429, a 5xx or no reply, with one
-    retry budget for the whole cycle and waits of at most 30 s."""
+    """The calls to JAVV. As the JAVV scanners: send again after 429, a 5xx or no reply, with waits
+    of at most 30 s. One retry budget for the whole cycle, charged only for the time that a call
+    keeps failing: the scans before the first push do not use it."""
 
     def __init__(self, s: Settings) -> None:
         self.s = s
-        self.deadline = time.monotonic() + s.retry_budget
+        self.spent = 0.0
 
     def call(self, method: str, path: str, body=None, gz: bool = False):
         data, headers = None, {"Authorization": f"Bearer {self.s.token}"}
@@ -183,24 +184,33 @@ class Javv:
             if gz:  # only the push of an envelope accepts a compressed body
                 data = gzip.compress(data)
                 headers["Content-Encoding"] = "gzip"
-        wait = 1.0
+        wait, failing_since = 1.0, None
         while True:
             req = urllib.request.Request(
                 self.s.javv + path, data=data, headers=headers, method=method
             )
+            answer = None
             try:
                 with urllib.request.urlopen(req, timeout=120) as r:
-                    return r.status, body_of(r.read())
+                    answer = r.status, body_of(r.read())
             except urllib.error.HTTPError as e:
                 if e.code != 429 and e.code < 500:
-                    return e.code, body_of(e.read())
+                    answer = e.code, body_of(e.read())
                 reason = f"HTTP {e.code}"
             except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
                 reason = str(getattr(e, "reason", e))
-            if time.monotonic() + wait > self.deadline:
+            now = time.monotonic()
+            if failing_since is not None:
+                self.spent += now - failing_since
+            if answer is not None:
+                return answer
+            failing_since = now
+            left = self.s.retry_budget - self.spent
+            if left <= 0:
                 return None, {
-                    "error": f"no answer in {self.s.retry_budget} s: {reason}"
+                    "error": f"no answer in the retry budget of {self.s.retry_budget} s: {reason}"
                 }
+            wait = min(wait, left)
             log.warning(
                 "JAVV did not accept %s %s (%s); again in %.0f s",
                 method,
@@ -225,8 +235,8 @@ def match(value: str, patterns) -> bool:
 
 
 def running_images(s: Settings, scope: dict):
-    """{image ref: {places, replicas}} of the running docker tasks that the settings and the scope
-    allow, and what they skipped."""
+    """{image ref: {places, allocations}} of the running docker tasks that the settings and the
+    scope allow, and what they skipped."""
     out: dict[str, dict] = {}
     skipped = {
         "job": set(),
@@ -234,6 +244,7 @@ def running_images(s: Settings, scope: dict):
         "kind": set(),
         "image": set(),
         "unresolved": set(),
+        "scan_job": set(),
     }
     allocs = []
     for ns in s.namespaces:
@@ -250,6 +261,7 @@ def running_images(s: Settings, scope: dict):
         job = alloc["Job"].get("ParentID") or a["JobID"]
         # this job, and the other JAVV scan jobs: they have the meta javv_scan = "true"
         if (alloc["Job"].get("Meta") or {}).get("javv_scan") == "true":
+            skipped["scan_job"].add(f"{a['Namespace']}/{job}")
             continue
         if job == s.self_job and a["Namespace"] == (s.self_namespace or a["Namespace"]):
             continue
@@ -286,13 +298,7 @@ def running_images(s: Settings, scope: dict):
             e = out.setdefault(ref, {"places": set(), "allocations": set()})
             e["places"].add(place)
             e["allocations"].add(a["ID"])
-    # an allocation is the Nomad form of a pod: replicas counts allocations, as the JAVV scanners
-    # count pods
-    images = {
-        ref: {"places": e["places"], "replicas": len(e["allocations"])}
-        for ref, e in out.items()
-    }
-    return images, {k: sorted(v) for k, v in skipped.items() if v}
+    return out, {k: sorted(v) for k, v in skipped.items() if v}
 
 
 def repo_digest(ref_digests: list[str]) -> str | None:
@@ -446,19 +452,27 @@ def main() -> int:
     started = now()
     # The scope of the cluster in JAVV. Without it, the cycle does not scan (as the JAVV scanners).
     status, scope = api.call("GET", "/api/v1/scan-scope")
-    if status != 200:
+    if status != 200 or not isinstance(scope, dict) or "text" in scope:
         log.error(
             "no scan scope from JAVV (%s %s): no scan in this cycle", status, scope
         )
         return 1
-    images, skipped = running_images(s, scope)
+    try:
+        images, skipped = running_images(s, scope)
+    except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        log.error("the Nomad API did not answer: %s", getattr(e, "reason", e))
+        return 1
     log.info(
         "%d images to scan: %s",
         len(images),
         "; ".join(
-            f"{r} in {sorted(e['places'])} x{e['replicas']}" for r, e in images.items()
+            f"{r} in {sorted(e['places'])} x{len(e['allocations'])}"
+            for r, e in images.items()
         ),
     )
+    unresolved = skipped.pop("unresolved", [])
+    if unresolved:
+        log.warning("not scanned, Nomad sets the image at start: %s", unresolved)
     if skipped:
         log.info("skipped: %s", skipped)
     if s.dry_run:
@@ -489,10 +503,11 @@ def main() -> int:
             failed += 1
             continue
         d = by_digest.setdefault(
-            digest, {"ref": ref, "places": set(), "replicas": 0, "result": result}
+            digest,
+            {"ref": ref, "places": set(), "allocations": set(), "result": result},
         )
         d["places"] |= e["places"]
-        d["replicas"] += e["replicas"]
+        d["allocations"] |= e["allocations"]
     pushed = 0
     for digest, e in sorted(by_digest.items()):
         findings, ver, dbv, built = e["result"]
@@ -503,7 +518,8 @@ def main() -> int:
             "image_digest": digest,
             "image_ref": e["ref"],
             "namespaces": sorted(e["places"]),
-            "replicas": e["replicas"],
+            # an allocation is the Nomad form of a pod: the JAVV scanners count pods
+            "replicas": len(e["allocations"]),
             "scan_run_id": run_id,
             "scan_order": order,
             "last_seen_at": started,
