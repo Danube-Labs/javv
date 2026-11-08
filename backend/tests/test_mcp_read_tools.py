@@ -116,7 +116,7 @@ def test_each_tool_has_a_case():
 
 
 def _shares_the_store(name: str, args: dict[str, Any]) -> bool:
-    """A read of the audit log until now also gives the rows with no cluster, such as the
+    """A read of the audit log with no as_of also gives the rows with no cluster, such as the
     sign-ins of every test (issue 1137)."""
     if name in ("audit_log", "count_audit_log") and "as_of" not in args:
         return True
@@ -137,9 +137,9 @@ def _params() -> list[Any]:
     ]
 
 
-def test_the_audit_reads_until_now_run_serial():
+def test_the_audit_reads_with_no_as_of_run_serial():
     serial = {
-        (p.values[0], "as_of" in p.values[1]): bool(p.marks)
+        (p.values[0], "as_of" in p.values[1]): any(m.name == "serial" for m in p.marks)
         for p in _params()
         if p.values[0] in ("audit_log", "count_audit_log")
     }
