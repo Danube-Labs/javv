@@ -15,7 +15,7 @@ ran the images `javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
 - It gets the digest of each image from the output of the scanner.
 - It pushes one scan cycle to JAVV, as [Push from your own script](../../docs/INGEST-CONTRACT.md)
   tells.
-- It does not scan itself.
+- It does not scan the JAVV scan jobs. Each scan job has the meta `javv_scan = "true"`.
 
 JAVV shows each Nomad job as a namespace:
 
@@ -23,7 +23,8 @@ JAVV shows each Nomad job as a namespace:
 |---|---|---|
 | `default` | `web` | `web` |
 | `billing` | `web` | `billing/web` |
-| Each | A run of a periodic job, for example `nightly/periodic-1794157382` | `nightly` |
+| `default` | A run of the periodic job `nightly`, for example `nightly/periodic-1794157382` | `nightly` |
+| `billing` | A run of the periodic job `nightly` | `billing/nightly` |
 
 ## Before you start
 
@@ -43,7 +44,8 @@ Run the commands in the folder that holds the files.
 
 1. In JAVV, make two tokens for the cluster: one for `trivy`, one for `grype`. See
    [Before you start](../../docs/INGEST-CONTRACT.md#before-you-start) of the push page.
-2. Put each token in the Nomad variable of its job. Only that job can read it:
+2. Put each token in the Nomad variable of its job. The job can read its variable. Other tokens
+   need a policy that gives them access to `nomad/jobs`:
 
     ```bash
     nomad var put nomad/jobs/javv-scan-trivy javv_token=<the Trivy token>
@@ -119,7 +121,8 @@ If JAVV does not send the scope, the job does not scan in this run.
 
 ## When a run fails
 
-- Exit code `1`: JAVV did not reply, or a scan or a push failed.
+- Exit code `1`: JAVV did not reply, a scan failed, a scanner gave no repository digest, or JAVV
+  refused a push.
 - Exit code `2`: a setting is not valid. The log tells the correct values.
 - Nomad does not start a failed run again. The next run of the schedule tries again.
 - If no image scanned, the cycle stays `partial`. JAVV keeps the images of the last good cycle.
@@ -128,6 +131,8 @@ If JAVV does not send the scope, the job does not scan in this run.
 
 - We tested the jobs with Nomad 2.1.1 only, with one agent in dev mode.
 - The jobs scan tasks of the Docker driver only. They do not scan tasks of other drivers.
+- The jobs do not scan an image that Nomad sets when the task starts, for example
+  `${meta.connect.sidecar_image}` of a Consul Connect sidecar. The log shows these images.
 - The scanner gets the image by its tag at the time of the scan. If the tag moved after the task
   started, JAVV shows the new image. Use images by digest (`image@sha256:…`) to prevent this.
 - A batch job that does not run at the time of the scan is not in the scan.

@@ -46,6 +46,8 @@ TRIVY_SCANNERS = ("vuln", "misconfig", "secret", "license")
 TRIVY_SEVERITIES = ("UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL")
 TRIVY_PKG_TYPES = ("os", "library")
 GRYPE_SCOPES = ("squashed", "all-layers", "deep-squashed")
+CLUSTER_ID = re.compile(r"^[a-z0-9][a-z0-9-]{7,63}$")
+LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
 GO_DURATION = re.compile(r"^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$")
 
 
@@ -102,8 +104,17 @@ def positive_int(name: str, default: int) -> int:
 class Settings:
     def __init__(self) -> None:
         self.javv = required("JAVV_BACKEND_URL").rstrip("/")
+        if not self.javv.startswith(("http://", "https://")):
+            raise SettingError(
+                f"JAVV_BACKEND_URL={self.javv!r}: start it with https://"
+            )
         self.token = required("JAVV_TOKEN")
         self.cluster = required("JAVV_CLUSTER_ID")
+        if not CLUSTER_ID.match(self.cluster):
+            raise SettingError(
+                f"JAVV_CLUSTER_ID={self.cluster!r}: use 8 to 64 lowercase letters, digits and"
+                " hyphens, not a hyphen first"
+            )
         self.scanner = required("JAVV_SCANNER")
         if self.scanner not in ("trivy", "grype"):
             raise SettingError(f"JAVV_SCANNER={self.scanner!r}: use trivy or grype")
@@ -113,6 +124,7 @@ class Settings:
         self.skip_jobs = csv("JAVV_NOMAD_SKIP_JOBS")
         # the job that runs this script: a periodic run has its own ID, the parent is the job
         self.self_job = env("NOMAD_JOB_PARENT_ID") or env("NOMAD_JOB_ID")
+        self.self_namespace = env("NOMAD_NAMESPACE")
         self.dry_run = flag("JAVV_DRY_RUN")
         self.retry_budget = positive_int("JAVV_PUSH_RETRY_BUDGET_SECONDS", 360)
         if self.scanner == "trivy":
@@ -147,11 +159,21 @@ def now() -> str:
     )
 
 
+def body_of(raw: bytes):
+    """The JSON of a reply, or its start as text: a proxy in front of JAVV answers with HTML."""
+    try:
+        return json.loads(raw or b"null")
+    except ValueError:
+        return {"text": raw[:300].decode("utf-8", "replace")}
+
+
 class Javv:
-    """The calls to JAVV. Sends again after 429, 503 or no reply, until the retry budget ends."""
+    """The calls to JAVV. As the JAVV scanners: send again after 429, a 5xx or no reply, with one
+    retry budget for the whole cycle and waits of at most 30 s."""
 
     def __init__(self, s: Settings) -> None:
         self.s = s
+        self.deadline = time.monotonic() + s.retry_budget
 
     def call(self, method: str, path: str, body=None, gz: bool = False):
         data, headers = None, {"Authorization": f"Bearer {self.s.token}"}
@@ -161,21 +183,21 @@ class Javv:
             if gz:  # only the push of an envelope accepts a compressed body
                 data = gzip.compress(data)
                 headers["Content-Encoding"] = "gzip"
-        deadline, wait = time.monotonic() + self.s.retry_budget, 2.0
+        wait = 1.0
         while True:
             req = urllib.request.Request(
                 self.s.javv + path, data=data, headers=headers, method=method
             )
             try:
                 with urllib.request.urlopen(req, timeout=120) as r:
-                    return r.status, json.loads(r.read() or b"null")
+                    return r.status, body_of(r.read())
             except urllib.error.HTTPError as e:
-                if e.code not in (429, 503):
-                    return e.code, json.loads(e.read() or b"null")
+                if e.code != 429 and e.code < 500:
+                    return e.code, body_of(e.read())
                 reason = f"HTTP {e.code}"
             except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
                 reason = str(getattr(e, "reason", e))
-            if time.monotonic() + wait > deadline:
+            if time.monotonic() + wait > self.deadline:
                 return None, {
                     "error": f"no answer in {self.s.retry_budget} s: {reason}"
                 }
@@ -187,7 +209,7 @@ class Javv:
                 wait,
             )
             time.sleep(wait)
-            wait = min(wait * 2, 60)
+            wait = min(wait * 2, 30)
 
 
 def nomad_get(s: Settings, path: str):
@@ -206,7 +228,13 @@ def running_images(s: Settings, scope: dict):
     """{image ref: {places, replicas}} of the running docker tasks that the settings and the scope
     allow, and what they skipped."""
     out: dict[str, dict] = {}
-    skipped = {"job": set(), "namespace": set(), "kind": set(), "image": set()}
+    skipped = {
+        "job": set(),
+        "namespace": set(),
+        "kind": set(),
+        "image": set(),
+        "unresolved": set(),
+    }
     allocs = []
     for ns in s.namespaces:
         allocs += nomad_get(s, f"/v1/allocations?namespace={urllib.parse.quote(ns)}")
@@ -220,7 +248,10 @@ def running_images(s: Settings, scope: dict):
             f"/v1/allocation/{a['ID']}?namespace={urllib.parse.quote(a['Namespace'])}",
         )
         job = alloc["Job"].get("ParentID") or a["JobID"]
-        if job == s.self_job:
+        # this job, and the other JAVV scan jobs: they have the meta javv_scan = "true"
+        if (alloc["Job"].get("Meta") or {}).get("javv_scan") == "true":
+            continue
+        if job == s.self_job and a["Namespace"] == (s.self_namespace or a["Namespace"]):
             continue
         if match(job, s.skip_jobs):
             skipped["job"].add(job)
@@ -244,13 +275,24 @@ def running_images(s: Settings, scope: dict):
             if task["Driver"] != "docker" or state.get("State") != "running":
                 continue
             ref = task["Config"]["image"]
+            # Nomad fills in ${...} when the task starts, and the API gives the job as written,
+            # for example the Consul Connect sidecar "${meta.connect.sidecar_image}".
+            if "${" in ref:
+                skipped["unresolved"].add(ref)
+                continue
             if match(ref, scope.get("exclude_images") or []):
                 skipped["image"].add(ref)
                 continue
-            e = out.setdefault(ref, {"places": set(), "replicas": 0})
+            e = out.setdefault(ref, {"places": set(), "allocations": set()})
             e["places"].add(place)
-            e["replicas"] += 1
-    return out, {k: sorted(v) for k, v in skipped.items() if v}
+            e["allocations"].add(a["ID"])
+    # an allocation is the Nomad form of a pod: replicas counts allocations, as the JAVV scanners
+    # count pods
+    images = {
+        ref: {"places": e["places"], "replicas": len(e["allocations"])}
+        for ref, e in out.items()
+    }
+    return images, {k: sorted(v) for k, v in skipped.items() if v}
 
 
 def repo_digest(ref_digests: list[str]) -> str | None:
@@ -357,9 +399,8 @@ def scan_grype(s: Settings, ref: str):
     d = rep.get("descriptor") or {}
     st = (d.get("db") or {}).get("status") or {}
     target = (rep.get("source") or {}).get("target") or {}
-    digest = repo_digest(target.get("repoDigests") or []) or target.get(
-        "manifestDigest"
-    )
+    # the repository digest only: the manifest digest of one platform names another image in JAVV
+    digest = repo_digest(target.get("repoDigests") or [])
     return (
         digest,
         findings,
@@ -386,10 +427,16 @@ def counts(findings):
 
 
 def main() -> int:
+    level = (env("JAVV_LOG_LEVEL", "info") or "info").upper()
     logging.basicConfig(
-        level=(env("JAVV_LOG_LEVEL", "info") or "info").upper(),
+        level=level if level in LOG_LEVELS else "INFO",
         format="%(asctime)s %(levelname)s %(message)s",
     )
+    if level not in LOG_LEVELS:
+        log.error(
+            "setting not valid: JAVV_LOG_LEVEL=%r: use one of %s", level, LOG_LEVELS
+        )
+        return 2
     try:
         s = Settings()
     except SettingError as e:
@@ -438,7 +485,8 @@ def main() -> int:
             failed += 1
             continue
         if not digest:
-            log.warning("skip %s: the scanner gave no repository digest", ref)
+            log.error("skip %s: the scanner gave no repository digest", ref)
+            failed += 1
             continue
         d = by_digest.setdefault(
             digest, {"ref": ref, "places": set(), "replicas": 0, "result": result}
@@ -485,6 +533,7 @@ def main() -> int:
             pushed += 1
         else:
             log.error("push refused: %s %s", status, body)
+            failed += 1
     expected = expected_count(len(by_digest), len(images))
     status, body = api.call(
         "POST",

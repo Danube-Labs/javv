@@ -19,6 +19,11 @@ variable "image" {
 job "javv-scan-trivy" {
   type = "batch"
 
+  # The scan jobs skip each job with this meta: themselves and each other.
+  meta {
+    javv_scan = "true"
+  }
+
   # One scan cycle every 6 hours. Two runs never overlap.
   periodic {
     crons            = ["0 */6 * * *"]
