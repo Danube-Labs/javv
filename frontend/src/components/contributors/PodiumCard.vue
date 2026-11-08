@@ -72,7 +72,7 @@ const sla = computed(() =>
   outline-offset: 2px;
 }
 .podium-first {
-  border-color: var(--coral);
+  border-color: var(--slate2);
   padding-top: 24px;
   box-shadow: var(--shadow);
 }
@@ -91,7 +91,7 @@ const sla = computed(() =>
   font-family: var(--font-mono);
 }
 .podium-first .podium-rank {
-  background: var(--coral);
+  background: var(--slate2);
   width: 28px;
   height: 28px;
   top: -13px;

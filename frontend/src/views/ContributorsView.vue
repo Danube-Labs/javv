@@ -197,7 +197,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           <span class="stat-sub">pooled across the team</span>
         </div>
         <div class="stat-cell">
-          <span class="stat-label"><i class="stat-dot" style="background: var(--coral)" />SLA met</span>
+          <span class="stat-label"><i class="stat-dot" style="background: var(--slate2)" />SLA met</span>
           <span class="stat-num">{{ teamSla }}</span>
           <span class="stat-sub">of SLA-bearing handled findings</span>
         </div>
