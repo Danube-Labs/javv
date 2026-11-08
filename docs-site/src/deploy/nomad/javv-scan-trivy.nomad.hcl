@@ -1,0 +1,1 @@
+../../../../deploy/nomad/javv-scan-trivy.nomad.hcl

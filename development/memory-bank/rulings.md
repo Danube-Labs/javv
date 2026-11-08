@@ -107,6 +107,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-08 | "All scanners" adds the counts of the two scanners, as a finding includes its scanner (issue 1076). The words say so: `Trivy and Grype together. A CVE that both report counts once for each.` The UI does not say "never merged" (R4, decision 1 option a). | 1140 |
 | 2026-11-08 | Access & tokens is an Organization section: its table shows the tokens of every cluster (R1). The two token buttons have the `control` size and say `Create token`, and the token pages say "create", not "mint" or "make" (R11). | 1140 |
 | 2026-11-08 | JAVV has no off-peak window. The tabs of the export window are `Run now` and `In the background`, and the button on Findings says `Export`. PLAN D24 and SPEC FR-13 keep their text, with an "as built" note. | 1140 |
+| 2026-11-08 | Nomad clusters push with two periodic jobs in `deploy/nomad/` (issue 1155), one for each scanner, on the JAVV scanner images. The place in JAVV is the Nomad job ID in the namespace `default`, else `<namespace>/<job ID>`, and a periodic run counts as its parent job. The job skips itself and takes the digest from the scanner output. Its Nomad token comes from workload identity, and its JAVV token from a Nomad variable. `expected_count` follows the rule of the JAVV scanners. The page names the Nomad version of the test. | 1155 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process

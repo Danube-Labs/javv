@@ -348,6 +348,24 @@ Thus a cycle reads one database and does not connect to the vendor during the sc
   runs it again when the refresh container changes: the image, the database source, `extraEnv`,
   `resources` or `pullPolicy`.
 
+### The Nomad scan jobs
+
+The jobs of [Scan a Nomad cluster](../deploy/nomad/README.md) push the images of a Nomad cluster.
+
+- They use the [Trivy](#trivy-settings) and [Grype](#grype-settings) settings,
+  `JAVV_LOG_LEVEL` and `JAVV_PUSH_RETRY_BUDGET_SECONDS`, with the same names and defaults.
+- Set each setting in the `env` block of the job.
+- The scanners update their databases in the cache volume of the job. The jobs do not have a
+  separate refresh.
+
+These settings are for the Nomad jobs only:
+
+| Setting | Default | What it does |
+|---|---|---|
+| `JAVV_NOMAD_SKIP_JOBS` | empty | The Nomad job IDs to skip, separated by commas. A `*` is a pattern. Example: `batch-*,legacy-api`. |
+| `JAVV_NOMAD_NAMESPACES` | `*` | The Nomad namespaces to read. Example: `default,billing`. |
+| `JAVV_DRY_RUN` | `false` | `true`: the job writes the images to its log, and pushes nothing. |
+
 ## Trivy settings
 
 The scanner reads these environment variables.
