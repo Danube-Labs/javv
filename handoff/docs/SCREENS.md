@@ -559,7 +559,7 @@ or admin). The head count shows "-" until the list read answers, and after a ref
 The card and the grid are `components/saved/SavedCard.vue` and `SavedGrid.vue`, shared with
 Dashboards (§20, issue 440). **The card (issue 1004, operator rulings 2026-10-29 on A/B pictures
 of the real app):** the title is a link whose layer covers the card, so a click anywhere on the
-card opens the item. The badge, × and the buttons sit above that layer and keep their own clicks.
+card opens the item. The badge and the buttons sit above that layer and keep their own clicks.
 On hover and on keyboard focus the card stays white, its border turns coral and it rises 1px (the
 prototype card, DESIGN.md §5). A line separates the footer, and the buttons in the card have the
 darker border (`UiButton` `bordered`). The page color stays the warm paper (DESIGN.md §9). The
@@ -567,6 +567,13 @@ footer shows the owner as "Owner <name>" at the size of the other card text, and
 dark (operator, 2026-10-29). The badge that says who can see the item takes a color (operator,
 2026-10-29, `--share-*` tokens). Only the owner is a quiet gray fill, everyone is teal, and a
 role list is blue. Role ids show as words: security_lead reads "security lead".
+**Delete (issue 1140, R3, operator ruling on built pictures):** the owner of a view or an admin
+sees a `Delete` button in the footer of the card (`UiButton` `mini` `bordered`, the bin icon).
+It opens a window (`components/saved/DeleteViewDialog.vue`): *Delete <name>?*, *You cannot undo
+this.*, then Cancel and **Delete view**. Only that button sends the delete. A view that is gone
+already counts as deleted. A refused delete stays in the window with the reason: no permission,
+somebody changed it (409), the store is busy or read-only, or no answer. The audit log keeps a
+copy of the view. Before, the "×" of the card deleted the view at the first click.
 
 ---
 
@@ -1297,7 +1304,7 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
 dashboard** stays, off, with the reason in `UiRoleNote`, and `?edit=1` in a link opens the read
 page.
 - **Head:** `Editing <name>`. The scanner switch stays, so the panels show what they will show.
-  **Add panel**, **Name and sharing**, **Remove** and **Exit edit** replace Export and Edit
+  **Add panel**, **Name and sharing**, **Delete** and **Exit edit** replace Export and Edit
   dashboard. Every control of the head is a screen head control, 30px high with the 1px edge
   (issue 1039): before, Exit edit was 34px and the scanner switch 36px. Exit edit is off while the page has changes to save: the save bar under the head
   card, Discard or Save changes, is the way out. Next to a long name, the controls go to a second row, on the
@@ -1312,10 +1319,10 @@ page.
   the reason shows under the fields. Apply changes the draft, as the panel settings do: the save
   bar saves the details with the panels. If the list of roles does not load, an alert says so,
   and the other fields still work.
-- **Remove (`ModalShell`, `components/dashboards/RemoveDashboardDialog.vue`):** asks first. It
-  says that the data of the panels stays and that the audit log keeps a copy. **Remove dashboard**
+- **Delete (`ModalShell`, `components/dashboards/RemoveDashboardDialog.vue`):** asks first. It
+  says that the data of the panels stays and that the audit log keeps a copy. **Delete dashboard**
   sends the revision that the page read, then goes to the list with a toast. A dashboard that is
-  gone already counts as removed. A refused remove stays in the window with the reason: no
+  gone already counts as deleted. A refused delete stays in the window with the reason: no
   permission, somebody changed it (409), the store is busy or read-only, or no answer.
 - **Panels:** gridstack (`components/dashboards/DashboardEditGrid.vue`, its own chunk that only
   edit mode loads) in `top` mode: two columns, rows of 40 px, a 15 px margin, no resize (R10).
