@@ -26,7 +26,8 @@ interface Control {
   problems: string[]
 }
 
-/** The places that keep a raw field on purpose, as in `raw-form-fields.spec.ts`. */
+/** The places that keep a raw field on purpose, as in `raw-form-fields.spec.ts`. The chip input is
+ *  read as its row, which wears the kit box (issue 1140). */
 const KEPT_RAW: { selector: string; reason: string }[] = [
   { selector: 'textarea.editor', reason: 'the Inspect request body is a code panel, not a form field' },
   { selector: '.chip-input', reason: 'the chip row is the box, and this input inside it has no border of its own' },
@@ -99,10 +100,11 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
       const found: { kind: string; el: HTMLElement; field: HTMLElement | null }[] = []
       for (const f of base.querySelectorAll<HTMLElement>('input, select, textarea')) {
         if (!visible(f) || (!scope && f.closest('.modal-backdrop'))) continue
-        if (kept.some((k) => f.matches(k))) continue
-        const row = f.closest<HTMLElement>('.search-box, .facet-search')
+        const chips = f.matches('.chip-input') ? f.closest<HTMLElement>('.chips') : null
+        if (!chips && kept.some((k) => f.matches(k))) continue
+        const row = chips ?? f.closest<HTMLElement>('.search-box, .facet-search')
         if (row && found.some((c) => c.el === row)) continue
-        const kind = row ? 'search box' : f.tagName === 'SELECT' ? 'dropdown' : 'text box'
+        const kind = chips ? 'text box' : row ? 'search box' : f.tagName === 'SELECT' ? 'dropdown' : 'text box'
         found.push({ kind, el: row ?? f, field: f })
       }
       for (const b of base.querySelectorAll<HTMLElement>('.modal-actions button')) {
