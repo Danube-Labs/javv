@@ -14,7 +14,7 @@
       
       
       
-        <link rel="prev" href="../../deploy/nomad/">
+        <link rel="prev" href="../../deploy/docker/">
       
       
         <link rel="next" href="../runbooks/opensearch-sizing/">
@@ -778,6 +778,33 @@
 
                 
               
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scan a Docker Compose host
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
             </ul>
           </nav>
         
@@ -1133,6 +1160,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The Nomad scan jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-docker-scan-containers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Docker scan containers
       </span>
     </span>
   </a>
@@ -2121,6 +2159,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The Nomad scan jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-docker-scan-containers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Docker scan containers
       </span>
     </span>
   </a>
@@ -3229,6 +3278,43 @@ next.</p>
 <td><code>JAVV_DRY_RUN</code></td>
 <td><code>false</code></td>
 <td><code>true</code>: the job writes the images to its log, and pushes nothing.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-docker-scan-containers">The Docker scan containers<a class="headerlink" href="#the-docker-scan-containers" title="Permanent link">&para;</a></h3>
+<p>The containers of <a href="../../deploy/docker/">Scan a Docker Compose host</a> push the images of a
+Docker host.</p>
+<ul>
+<li>They use the <a href="#trivy-settings">Trivy</a> and <a href="#grype-settings">Grype</a> settings,
+  <code>JAVV_LOG_LEVEL</code> and <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code>, with the same names and defaults.</li>
+<li>Set each setting in the <code>environment</code> of the service in <code>compose.yaml</code>.</li>
+<li>The scanners update their databases in the cache volume of the container. The containers do not
+  have a separate refresh.</li>
+</ul>
+<p>These settings are for the Docker containers only:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_DOCKER_SKIP_PROJECTS</code></td>
+<td>empty</td>
+<td>The namespaces in JAVV to skip: Compose projects, or names of containers with no project. Separate them with commas. A <code>*</code> is a pattern. Example: <code>test-*,legacy</code>.</td>
+</tr>
+<tr>
+<td><code>DOCKER_HOST</code></td>
+<td><code>unix:///var/run/docker.sock</code></td>
+<td>The Docker socket. The script and the scanners read it.</td>
+</tr>
+<tr>
+<td><code>JAVV_DRY_RUN</code></td>
+<td><code>false</code></td>
+<td><code>true</code>: the cycle writes the images to its log, and pushes nothing.</td>
 </tr>
 </tbody>
 </table>

@@ -7,6 +7,9 @@
         <loc>https://danube-labs.github.io/javv/dev/SECURITY/</loc>
       </url>
       <url>
+        <loc>https://danube-labs.github.io/javv/dev/deploy/docker/</loc>
+      </url>
+      <url>
         <loc>https://danube-labs.github.io/javv/dev/deploy/helm/javv-opensearch/</loc>
       </url>
       <url>

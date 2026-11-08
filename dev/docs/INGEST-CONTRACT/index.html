@@ -778,6 +778,33 @@
 
                 
               
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scan a Docker Compose host
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
             </ul>
           </nav>
         
@@ -1640,6 +1667,8 @@ Nomad, Docker hosts or CI pipelines.</p>
 <p>The page gives the sequence of calls, the rules for the script, and a reference for each field.</p>
 <ul>
 <li>For a Nomad cluster, use the tested jobs of <a href="../../deploy/nomad/">Scan a Nomad cluster</a>.</li>
+<li>For a Docker host, use the tested containers of
+  <a href="../../deploy/docker/">Scan a Docker Compose host</a>.</li>
 <li>The machine-readable schema is <strong><a href="../ingest-envelope.schema.json"><code>ingest-envelope.schema.json</code></a></strong>.</li>
 <li>JAVV makes the schema from the model that the backend uses to validate each push.</li>
 <li>A CI test compares the two, and a second CI test compares the field tables on this page with the
@@ -1797,14 +1826,14 @@ The column <strong>Type</strong> uses JSON types. "or null" means that <code>nul
 <td>required</td>
 <td>array of strings</td>
 <td>1,024 items at most</td>
-<td>The places where the image runs. For Kubernetes, these are namespaces. You can also use Nomad jobs, compose project names or host groups. A Nomad job ID is unique only in its Nomad namespace: <a href="../../deploy/nomad/">Scan a Nomad cluster</a> tells the names to use. Example: <code>["billing-job"]</code>.</td>
+<td>The places where the image runs. For Kubernetes, these are namespaces. You can also use Nomad jobs, compose project names or host groups. A Nomad job ID is unique only in its Nomad namespace: <a href="../../deploy/nomad/">Scan a Nomad cluster</a> tells the names to use. For a Docker host, see <a href="../../deploy/docker/">Scan a Docker Compose host</a>. Example: <code>["billing-job"]</code>.</td>
 </tr>
 <tr>
 <td><code>replicas</code></td>
 <td>required</td>
 <td>integer</td>
 <td>0 or more</td>
-<td>The number of instances of the image that run. The JAVV scanners count the pods that run the image. For Nomad, count the allocations.</td>
+<td>The number of instances of the image that run. The JAVV scanners count the pods that run the image. For Nomad, count the allocations. For Docker, count the containers.</td>
 </tr>
 <tr>
 <td><code>scan_run_id</code></td>
