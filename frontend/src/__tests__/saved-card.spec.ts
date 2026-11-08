@@ -59,8 +59,8 @@ describe('the whole card opens the item', () => {
 
   it('a button in the card does its own work and does not open the item', () => {
     const { w, open, exported, remove } = mountCard({ removeLabel: 'Delete Weekly risk review' })
-    click(w.get('.vc-foot button').element)
-    click(w.get('.vc-x').element)
+    click(w.findAll('.vc-foot button').find((b) => b.text().includes('Export'))!.element)
+    click(w.get('.vc-del').element)
     expect(exported).toHaveBeenCalledTimes(1)
     expect(remove).toHaveBeenCalledTimes(1)
     expect(open).not.toHaveBeenCalled()
@@ -75,6 +75,24 @@ describe('the whole card opens the item', () => {
     expect(cue.attributes('aria-hidden')).toBe('true')
     // Dashboards gives no label: its card opens the dashboard and needs no sign (operator, 2026-10-29)
     expect(mountCard().w.find('.vc-open').exists()).toBe(false)
+  })
+})
+
+// issue 1140, R3 (operator ruling on built pictures): no "×" in the head; a Delete button of the
+// kit in the footer, for a user who may delete the item
+describe('the Delete button of a card', () => {
+  it('is a mini bordered kit button with the bin icon, in the footer, named for the item', () => {
+    const { w } = mountCard({ removeLabel: 'Delete Weekly risk review' })
+    expect(w.find('.vc-head button').exists()).toBe(false)
+    const del = w.get('.vc-foot .vc-del')
+    expect(del.classes()).toEqual(expect.arrayContaining(['ui-btn--mini', 'ui-btn--bordered']))
+    expect(del.text()).toBe('Delete')
+    expect(del.attributes('aria-label')).toBe('Delete Weekly risk review')
+    expect(del.find('svg').exists()).toBe(true)
+  })
+
+  it('does not show for a user who may not delete the item', () => {
+    expect(mountCard().w.find('.vc-del').exists()).toBe(false)
   })
 })
 
@@ -96,7 +114,7 @@ describe('the look of the card (rulings 1 and 2)', () => {
   it('the link covers the card, and the controls in the card sit on top of it', () => {
     expect(rule('.vc-link::after')).toContain('inset: 0')
     expect(rule('.view-card')).toContain('position: relative')
-    const above = rule('.vc-badge,\n.vc-x,\n.vc-foot :slotted(.ui-btn)')
+    const above = rule('.vc-badge,\n.vc-del,\n.vc-foot :slotted(.ui-btn)')
     expect(above).toContain('position: relative')
     expect(above).toContain('z-index: 1')
   })

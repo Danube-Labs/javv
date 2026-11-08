@@ -11,11 +11,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
-  deleteViewApiV1ViewsViewIdDelete,
   facetFindingsApiV1FindingsFacetsGet,
   listViewsApiV1ViewsGet,
 } from '@/api/generated'
 import GridPager from '@/components/findings/GridPager.vue'
+import DeleteViewDialog from '@/components/saved/DeleteViewDialog.vue'
 import SavedCard from '@/components/saved/SavedCard.vue'
 import SavedGrid from '@/components/saved/SavedGrid.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -138,15 +138,12 @@ function apply(v: ViewDoc) {
   void router.push({ path: '/findings', query: presetToRouteQuery(FINDINGS_FIELDS, v.preset) })
 }
 
-async function remove(v: ViewDoc) {
-  const { response } = await deleteViewApiV1ViewsViewIdDelete({ path: { view_id: v.view_id } })
-  if (response?.ok || response?.status === 404) {
-    views.value = views.value.filter((x) => x.view_id !== v.view_id)
-    toast.success(`View “${v.name}” deleted`)
-  } else {
-    logger.warn('view_delete_failed', { view_id: v.view_id, status: response?.status })
-    toast.error('Deleting the view failed. Try again.')
-  }
+// the view in the Delete window; the window sends the request (issue 1140, R3)
+const deleting = ref<ViewDoc | null>(null)
+function onDeleted(v: ViewDoc) {
+  views.value = views.value.filter((x) => x.view_id !== v.view_id)
+  deleting.value = null
+  toast.success(`View “${v.name}” deleted`)
 }
 
 function summary(v: ViewDoc): string {
@@ -193,7 +190,7 @@ function summary(v: ViewDoc): string {
         :owner="v.owner"
         :remove-label="mayDelete(v) ? `Delete ${v.name}` : undefined"
         @open="apply(v)"
-        @remove="remove(v)"
+        @remove="deleting = v"
       >
         <template #stat>
           <template v-if="counts[v.view_id] === undefined">…</template>
@@ -215,5 +212,13 @@ function summary(v: ViewDoc): string {
         />
       </template>
     </SavedGrid>
+
+    <DeleteViewDialog
+      v-if="deleting"
+      :view-id="deleting.view_id"
+      :name="deleting.name"
+      @close="deleting = null"
+      @deleted="onDeleted(deleting)"
+    />
   </div>
 </template>

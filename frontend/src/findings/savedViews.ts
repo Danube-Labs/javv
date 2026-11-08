@@ -176,3 +176,14 @@ export function isExcluded(field: TermsField, preset: ViewPreset): boolean {
 }
 
 export type { ViewPreset, ViewWorkbench }
+
+/** The message of a view delete that the backend did not do (issue 1140, R3). */
+export function viewDeleteFailureCopy(status: number, readOnly: boolean): string {
+  if (readOnly) return 'The store is read-only: its disk is full. JAVV did not delete the view.'
+  if (status === 403) return 'Only the owner or an admin can delete this view.'
+  if (status === 409)
+    return 'Somebody changed this view after you opened the page. JAVV did not delete it. Reload the page, then try again.'
+  if (status === 429) return 'The store is busy. JAVV did not delete the view. Try again in a few seconds.'
+  if (status === 0 || status === 504) return 'JAVV did not answer. The view is possibly deleted. Reload the page to see.'
+  return 'JAVV did not delete the view. Check the backend, then try again.'
+}
