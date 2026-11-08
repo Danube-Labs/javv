@@ -99,6 +99,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-07 | The table of the Roles card is flush in its card (`.set-flush`), as the other 7 tables of Settings (D2 option B). | 1127 |
 | 2026-11-07 | The section menu of Settings and the Guide takes the hover and press fills of the kit. The selected row keeps the press fill, with coral text (D4 option B). | 1127 |
 | 2026-11-07 | The scope strip above each Settings page is a white card, as the other Settings cards. The scope color stays on the badge (D6 option C). | 1127 |
+| 2026-11-08 | "All scanners" adds the counts of the two scanners, as a finding includes its scanner (issue 1076). The words say so: `Trivy and Grype together. A CVE that both report counts once for each.` The UI does not say "never merged" (R4, decision 1 option a). | 1140 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 
 ## Process

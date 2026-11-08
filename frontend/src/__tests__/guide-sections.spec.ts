@@ -13,6 +13,7 @@ import McpSection from '@/components/about/guide/McpSection.vue'
 import NowVsNewSection from '@/components/about/guide/NowVsNewSection.vue'
 import { SECTION_BODY } from '@/components/about/guide/sections'
 import StateOrAcceptanceSection from '@/components/about/guide/StateOrAcceptanceSection.vue'
+import TimeRangeSection from '@/components/about/guide/TimeRangeSection.vue'
 import TriageSection from '@/components/about/guide/TriageSection.vue'
 import TwoScannersSection from '@/components/about/guide/TwoScannersSection.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
@@ -50,6 +51,20 @@ describe('section bodies', () => {
   it('Two scanners shows both scanner tags', () => {
     const tags = mount(TwoScannersSection).findAll('.scanner-tag').map((t) => t.text())
     expect(tags).toEqual(['trivy', 'grype'])
+  })
+
+  it('Trivy and Grype: the title and the text say what All scanners counts (issue 1140, R4)', () => {
+    expect(GUIDE_SECTIONS.find((g) => g.id === 'two-scanners')!.title).toBe('Trivy and Grype side by side')
+    const text = mount(TwoScannersSection).text()
+    expect(text).toContain('All scanners shows Trivy and Grype together: a CVE that both report counts once for each.')
+    expect(text).not.toContain('never added together')
+    expect(GUIDE_SECTIONS.map((g) => `${g.title} ${g.summary}`).join(' ')).not.toContain('never merged')
+  })
+
+  it('The time range names the Approval list by its menu name', () => {
+    const names = mount(TimeRangeSection).findAll('.ui-name').map((n) => n.text())
+    expect(names).toContain('Approval list')
+    expect(mount(TimeRangeSection).text()).not.toContain('approvals queue')
   })
 
   it('Two scanners says that JAVV counts findings, not the entries of a scanner report', () => {

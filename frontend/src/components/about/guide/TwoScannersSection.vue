@@ -10,7 +10,8 @@ import GuideProse from './GuideProse.vue'
     <p>
       JAVV runs two scanners, <ScannerTag name="trivy" /> and <ScannerTag name="grype" />, and keeps
       their results apart. Every finding belongs to one scanner, and counts are shown per scanner, side
-      by side. They're never added together, averaged or merged.
+      by side. <span class="ui-name">All scanners</span> shows Trivy and Grype together: a CVE that both
+      report counts once for each. JAVV never averages or merges their results.
     </p>
     <p>
       The two often differ, because each uses its own vulnerability data. One may report a CVE the other

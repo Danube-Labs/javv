@@ -22,7 +22,7 @@ export const SCOPE_COPY: Record<SettingsScope, { label: string; note: string }> 
   },
   scanner: {
     label: 'Per scanner',
-    note: 'Shown independently for each scanner (Trivy and Grype). Results stay per-scanner, never merged.',
+    note: 'Shown for each scanner, Trivy and Grype, on its own.',
   },
   org: {
     label: 'Organization',
