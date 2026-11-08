@@ -1471,6 +1471,9 @@
 <p>Two Nomad jobs scan the running Docker images of a Nomad cluster and push the results to JAVV.
 <code>javv-scan-trivy</code> uses Trivy. <code>javv-scan-grype</code> uses Grype. JAVV then shows the Nomad cluster as it
 shows a Kubernetes cluster.</p>
+<p>The two jobs are examples. Change them for your cluster: for example, the source of the JAVV
+token, the cache volumes or the schedule. The script <code>javv_nomad_push.py</code> does the work. It reads
+the running images from the Nomad API, scans them and pushes the results to JAVV.</p>
 <p><strong>Tested with:</strong> Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the images
 <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.1</code>.</p>
 <h2 id="how-the-jobs-work">How the jobs work<a class="headerlink" href="#how-the-jobs-work" title="Permanent link">&para;</a></h2>
@@ -1521,12 +1524,13 @@ shows a Kubernetes cluster.</p>
 <li>You need a Nomad token that can apply ACL policies, write variables and create volumes.</li>
 <li>The clients need the Docker task driver.</li>
 <li>The clients must reach <code>ghcr.io</code>, the registries of your images, and JAVV.</li>
-<li>You need the files of this folder: <a href="javv-scan-trivy.nomad.hcl"><code>javv-scan-trivy.nomad.hcl</code></a>,
-  <a href="javv-scan-grype.nomad.hcl"><code>javv-scan-grype.nomad.hcl</code></a>,
-  <a href="javv-scan.policy.hcl"><code>javv-scan.policy.hcl</code></a>,
-  <a href="javv-trivy-cache.volume.hcl"><code>javv-trivy-cache.volume.hcl</code></a>,
-  <a href="javv-grype-cache.volume.hcl"><code>javv-grype-cache.volume.hcl</code></a> and
-  <a href="javv_nomad_push.py"><code>javv_nomad_push.py</code></a>.</li>
+<li>You need the files of the folder <a href="https://github.com/Danube-Labs/javv/tree/main/deploy/nomad"><code>deploy/nomad</code></a>:
+  <a href="https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan-trivy.nomad.hcl"><code>javv-scan-trivy.nomad.hcl</code></a>,
+  <a href="https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan-grype.nomad.hcl"><code>javv-scan-grype.nomad.hcl</code></a>,
+  <a href="https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan.policy.hcl"><code>javv-scan.policy.hcl</code></a>,
+  <a href="https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-trivy-cache.volume.hcl"><code>javv-trivy-cache.volume.hcl</code></a>,
+  <a href="https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-grype-cache.volume.hcl"><code>javv-grype-cache.volume.hcl</code></a> and
+  <a href="https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv_nomad_push.py"><code>javv_nomad_push.py</code></a>.</li>
 </ul>
 <h2 id="install-the-jobs">Install the jobs<a class="headerlink" href="#install-the-jobs" title="Permanent link">&para;</a></h2>
 <p>Run the commands in the folder that holds the files.</p>
