@@ -210,10 +210,10 @@ describe('a mint or rotate whose OK reply has a body that could not be read', ()
 
   it('a mint says the value was lost and points to Rotate', async () => {
     const w = await tokensWithOneRow()
-    await w.findAll('button').find((b) => b.text().includes('Mint token'))!.trigger('click')
+    await w.findAll('button').find((b) => b.text().includes('Create token'))!.trigger('click')
     await flushPromises()
     // the dialog's submit carries the same label as the button that opened it
-    const submit = w.findAll('button').filter((b) => b.text().includes('Mint token')).at(-1)!
+    const submit = w.findAll('button').filter((b) => b.text().includes('Create token')).at(-1)!
     await submit.trigger('click')
     await flushPromises()
     expect(vi.mocked(mintApiV1AdminTokensPost)).toHaveBeenCalled()

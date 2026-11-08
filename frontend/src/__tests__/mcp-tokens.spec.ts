@@ -190,6 +190,18 @@ describe('the AI agents section', () => {
     expect(w.text()).toContain('off')
     expect(w.text()).toContain('set JAVV_MCP_ENABLED to true on the backend')
     expect(w.get('.copy-box').text()).toBe(`${window.location.origin}/api/v1/mcp`)
+    // the row names the endpoint, not "this page" (issue 1140, step 2.1)
+    expect(w.text()).toContain('Endpoint URL')
+    expect(w.text()).toContain('AI agents connect to this address.')
+    expect(w.text()).not.toContain('The address of this page')
+  })
+
+  it('the token button has the control size and says Create token (issue 1140, R11)', async () => {
+    answer([])
+    const w = await mountView()
+    const create = w.findAll('button').find((b) => b.text() === 'Create token')!
+    expect(create.classes()).toContain('ui-btn--control')
+    expect(w.text()).not.toMatch(/\bMake\b/)
   })
 
   it('shows on, without the turn-on line, when the endpoint is on', async () => {
@@ -256,17 +268,17 @@ describe('the AI agents section', () => {
       data: { name: 'cursor-anna', token: 'raw-secret' },
     } as never)
     const w = await mountView()
-    await button(w, 'Make token').trigger('click')
-    expect(footer('Make token').disabled).toBe(true) // no name yet
+    await button(w, 'Create token').trigger('click')
+    expect(footer('Create token').disabled).toBe(true) // no name yet
     await w.get('#mcp-name').setValue('Cursor Anna')
     expect(w.get('#mcp-name').attributes('aria-invalid')).toBe('true')
-    expect(footer('Make token').disabled).toBe(true)
+    expect(footer('Create token').disabled).toBe(true)
     await w.get('#mcp-name').setValue('cursor-anna')
     await button(w, 'Write').trigger('click')
     expect(w.text()).toContain('Also sets the triage of findings')
     const day = (w.get('#mcp-expiry').element as HTMLInputElement).value
     expect(expiryIso(day, Date.now())).not.toBeNull() // 30 days is in the box
-    footer('Make token').click()
+    footer('Create token').click()
     await flushPromises()
     expect(sdk.makeApiV1AdminMcpTokensPost).toHaveBeenCalledWith(
       expect.objectContaining({ body: { name: 'cursor-anna', level: 'write', expiry: `${day}T00:00:00.000Z` } }),
@@ -279,9 +291,9 @@ describe('the AI agents section', () => {
     answer([])
     vi.mocked(sdk.makeApiV1AdminMcpTokensPost).mockResolvedValue({ response: { ok: false, status: 409 } } as never)
     const w = await mountView()
-    await button(w, 'Make token').trigger('click')
+    await button(w, 'Create token').trigger('click')
     await w.get('#mcp-name').setValue('cursor-anna')
-    footer('Make token').click()
+    footer('Create token').click()
     await flushPromises()
     expect(w.get('.modal-error').text()).toBe('A token with this name exists. Choose another name.')
   })
@@ -289,11 +301,11 @@ describe('the AI agents section', () => {
   it('refuses an expiry after 90 days and keeps Make off', async () => {
     answer([])
     const w = await mountView()
-    await button(w, 'Make token').trigger('click')
+    await button(w, 'Create token').trigger('click')
     await w.get('#mcp-name').setValue('cursor-anna')
     await w.get('#mcp-expiry').setValue(new Date(Date.now() + 120 * 86_400_000).toISOString().slice(0, 10))
     expect(w.get('#mcp-expiry').attributes('aria-invalid')).toBe('true')
-    expect(footer('Make token').disabled).toBe(true)
+    expect(footer('Create token').disabled).toBe(true)
   })
 
   it('rotates with a new expiry and shows the new token one time', async () => {
