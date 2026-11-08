@@ -15,6 +15,7 @@
 import type { RouteLocationRaw } from 'vue-router'
 
 import RowLink from '@/components/ui/RowLink.vue'
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 
 defineProps<{
   title: string
@@ -36,9 +37,7 @@ defineEmits<{ open: []; remove: [] }>()
         <RowLink class="vc-link" :to="to" @open="$emit('open')">{{ title }}</RowLink>
       </h2>
       <span v-if="$slots.badge" class="vc-badge" :data-tone="badgeTone"><slot name="badge" /></span>
-      <button v-if="removeLabel" type="button" class="vc-x" :aria-label="removeLabel" @click="$emit('remove')">
-        ×
-      </button>
+      <UiCloseButton v-if="removeLabel" class="vc-x" :label="removeLabel" @click="$emit('remove')" />
     </div>
     <p v-if="description" class="vc-desc">{{ description }}</p>
     <p class="vc-summary"><slot name="summary">{{ summary }}</slot></p>
@@ -135,20 +134,6 @@ defineEmits<{ open: []; remove: [] }>()
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.vc-x {
-  border: 0;
-  background: transparent;
-  color: var(--soft);
-  font-size: var(--text-body);
-  line-height: 1;
-  padding: 2px 6px;
-  border-radius: var(--r-sm);
-  cursor: default;
-}
-.vc-x:hover {
-  background: var(--fpill-x-hover-bg);
-  color: var(--coral-text);
 }
 .vc-desc {
   margin: 0;

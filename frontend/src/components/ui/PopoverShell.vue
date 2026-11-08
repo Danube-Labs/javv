@@ -9,6 +9,7 @@
  */
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 import { placeBeside, type Placed } from '@/lib/placeBeside'
 
 const props = defineProps<{
@@ -88,7 +89,7 @@ onUnmounted(() => {
           <h3>{{ title }}</h3>
           <p v-if="subtitle" class="pop-sub">{{ subtitle }}</p>
         </div>
-        <button type="button" class="modal-close" aria-label="Close" @click="emit('close')">✕</button>
+        <UiCloseButton class="modal-close" label="Close" @click="emit('close')" />
       </div>
       <div class="pop-body"><slot /></div>
     </div>

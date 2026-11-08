@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import AppIcon from '@/components/ui/AppIcon.vue'
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 import { useHealthStore } from '@/stores/health'
 
 const health = useHealthStore()
@@ -23,9 +24,7 @@ const partial = computed(() => health.reason === 'read-only' || health.reason ==
       <span v-else-if="health.reason === 'red'">Part of the store is not available. Some screens and changes can fail until it recovers.</span>
       <span v-else-if="health.reason === 'backend'">The backend is not answering. Screens cannot load until it is back.</span>
       <span v-else>Search backend unavailable. Check OpenSearch health.</span>
-      <button class="dismiss" aria-label="Dismiss" @click="health.dismiss()">
-        ×
-      </button>
+      <UiCloseButton class="dismiss" label="Dismiss" @click="health.dismiss()" />
     </div>
   </Transition>
 </template>
@@ -33,10 +32,5 @@ const partial = computed(() => health.reason === 'read-only' || health.reason ==
 <style scoped>
 .dismiss {
   margin-left: auto;
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: default;
-  padding: 4px;
 }
 </style>

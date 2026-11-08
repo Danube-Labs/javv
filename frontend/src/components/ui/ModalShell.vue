@@ -6,6 +6,8 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
+
 defineProps<{ title: string; subtitle?: string; width?: number }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -27,7 +29,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           <h3>{{ title }}</h3>
           <p v-if="subtitle" class="modal-sub">{{ subtitle }}</p>
         </div>
-        <button type="button" class="modal-close" aria-label="Close" @click="emit('close')">✕</button>
+        <UiCloseButton class="modal-close" dark label="Close" @click="emit('close')" />
       </div>
       <div class="modal-body"><slot /></div>
       <div class="modal-actions"><slot name="actions" /></div>
@@ -77,28 +79,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   margin: 2px 0 0;
   font-size: var(--text-sm);
   opacity: 0.75;
-}
-/* a control on the slate takes the sidebar collapse button's ramp: the beige hover wash of the
-   light surfaces would flash a pale chip on the band */
-.modal-close {
-  border: 1px solid var(--table-head-line);
-  background: var(--side-control-bg);
-  border-radius: var(--r-sm);
-  padding: 3px 8px;
-  font-size: var(--text-sm);
-  color: var(--table-head-fg);
-  cursor: default;
-}
-.modal-close:hover {
-  background: var(--side-control-hover-bg);
-  border-color: var(--side-label);
-}
-.modal-close:active {
-  background: var(--side-control-active-bg);
-}
-.modal-close:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
 }
 .modal-body {
   padding: 14px 18px;
