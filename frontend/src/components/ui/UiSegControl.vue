@@ -7,7 +7,8 @@
  */
 withDefaults(
   defineProps<{
-    options: readonly { value: T; label: string; accent?: string }[]
+    /** `title`: the hover text of one option, when its label needs a word more */
+    options: readonly { value: T; label: string; accent?: string; title?: string }[]
     modelValue: T
     // the group's name for a screen reader: a label above the control does not name a div (issue 1011)
     label: string
@@ -28,6 +29,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
       class="ui-seg-opt"
       :class="{ 'ui-seg-on': modelValue === opt.value }"
       :aria-pressed="modelValue === opt.value"
+      :title="opt.title"
       @click="emit('update:modelValue', opt.value)"
     >
       <i v-if="opt.accent" class="ui-seg-dot" :style="{ background: opt.accent }" aria-hidden="true" />{{ opt.label }}

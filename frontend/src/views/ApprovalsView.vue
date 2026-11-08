@@ -240,9 +240,9 @@ const fmt = (n: number) => n.toLocaleString('en-US')
 
     <LimitedHistoricalNotice
       v-if="!timeTravel.isNow"
-      title="The approvals queue answers for now"
-      body="Standing acceptances are current state: the endpoint has no historical seam yet.
-        The decision-activity lens above still rewinds; return to now to review the queue."
+      title="The Approval list shows now only"
+      body="JAVV keeps no history of the standing acceptances. The chart of decisions above shows the
+        past time. Go back to now to review the list."
     />
 
     <div v-else class="findings-layout">

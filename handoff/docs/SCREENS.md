@@ -491,7 +491,9 @@ B-2/B-3 (metadata cuts), B-5 (server SLA), V4-DELTA-1 (old triage fields removed
 
 ## 5. Export dialog + scheduled reports (bolt: **M9b** integration; download/bell states **M9f**)
 
-Reachable from Findings/Overview/Images "Export".
+Reachable from the `Export` button of Findings. The two tabs are `Run now` and `In the background`.
+JAVV has no off-peak window: the report drain builds a queued export when it runs
+(`JAVV_JOB_REPORT_DRAIN_CRON`, every 5 minutes by default), with a pause between pages.
 
 **Data**
 - Run now: `GET /api/v1/findings/export.csv?<current lens params>` (streaming, CSV-injection
@@ -503,7 +505,8 @@ Reachable from Findings/Overview/Images "Export".
   openapi.json (`export-params.spec.ts`, issue 962).
 
 **States (C-2 — all drawn):** run-now streaming progress · **413 over
-`JAVV_EXPORT_MAX_ROWS` (50k)** → "narrow the lens or **schedule off-peak**" (switch tab) ·
+`JAVV_EXPORT_MAX_ROWS` (50k)** → "Too many rows to download now. Narrow the filters, or make the file in the background."
+(switch to the In the background tab) ·
 scheduled-pending → bell on done · **"expires in Xh"** on the bell item and the download row
 (`JAVV_EXPORT_TTL_HOURS`, default 24 h) · **410 expired** → "download expired — re-run the
 export" · 429 PIT cap with `Retry-After` · **export blocked** (issue 962; `exportBlockMessage`
@@ -853,7 +856,7 @@ OpenSearch (retention) · Staleness timers**. Everything else is read-only displ
 **Before any cluster is listed** (a fresh install): Scan scope, the Scanning page's staleness
 timers and the settings of Data & OpenSearch read per cluster, so they have nothing to read. Each
 shows an empty state instead of its loading placeholder: *Settings for a cluster appear once it has
-a scanner token. Mint one under Access & tokens.* A failed cluster list is not this state; the
+a scanner token. Create one under Access & tokens.* A failed cluster list is not this state; the
 shell reports that failure (issue 817).
 
 ### 13.1 Scan scope — editable (D43/FR-24)
@@ -881,6 +884,10 @@ screen 12. Banner kept: "results kept per-scanner, never merged".
 `PUT /settings/staleness` is the M9e deliverable — planned): `freshness_days` /
 `scanner_down_days` + a banner-behavior preview.
 
+Each tuning key shows as a label (`lib/scannerSettingLabel.ts`, for example `scan_timeout` as
+*Scan time limit (seconds)*), with the key in the hover text; an unknown key shows as it is. The
+database row is *Vulnerability database schema* (issue 1140, step 2.4).
+
 ### 13.3 SLA policy — editable (shipped)
 **Data:** `GET /api/v1/settings/sla` · `PUT /api/v1/settings/sla` (gated `can_manage_settings`).
 Days per severity (lowercase keys, incl. how negligible/unknown map — display note) + KEV
@@ -897,6 +904,8 @@ to the Decisions queue (screen 9) — decisions carry scope/justification/expiry
 Retired clusters (issue 765, `GET /api/v1/clusters?include_retired=true`) are named in the table
 and listed apart in the mint picker under **Retired**; picking one says its first scan on the new
 token brings it back to the cluster list (operator ruling 2026-10-07).
+The scope strip says **Organization**: the table shows the tokens of every cluster (D38). The
+**Create token** button has the `control` size, as on AI agents (MCP) (issue 1140, R1 and R11).
 The mint picker always ends with **New cluster…**, which opens a Cluster ID field (the UID of the
 cluster's `kube-system` namespace, with the `kubectl` command that prints it) checked against the
 backend's ID rule. On a fresh install it is the only choice. A cluster is listed once its first
@@ -906,7 +915,7 @@ If a mint or rotate succeeds but its reply arrives with a body that could not be
 exists and its value is lost. An error toast then says: *The token was created, but its value did
 not reach this page. Rotate it to get a value you can copy.* (operator ruling 2026-10-10, issue 749).
 Rotate shows on an active token only (issue 984). The new token takes the old expiry, so an
-expired token needs a new token from Mint token. Revoke stays on an expired token. The server
+expired token needs a new token from Create token. Revoke stays on an expired token. The server
 answers 409 to a rotation of a revoked or an expired token.
 The window "Copy this token now" is `components/settings/TokenOnceDialog.vue`, the same window as on
 AI agents (MCP) (§13.9). When the browser blocks the clipboard (a page on plain http that is not
@@ -991,8 +1000,9 @@ Menu icon `cpu` (a chip with pins). Built on the parts of Access & tokens (§13.
 pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5 B.
 - **Endpoint card:** Status, `on` or `off` (`DotWord`), and when off the line *To turn it on, set
   JAVV_MCP_ENABLED to true on the backend and start the backend again.* A failed `/meta` read shows
-  *unknown: the status could not be read*. URL: the address of the page plus `/api/v1/mcp`, in the
-  mono box with a Copy button (`components/settings/CopyValue.vue`).
+  *unknown: the status could not be read*. **Endpoint URL** (hint *AI agents connect to this
+  address.*): the address of the page plus `/api/v1/mcp`, in the mono box with a Copy button
+  (`components/settings/CopyValue.vue`).
 - **Tokens card:** the table skin with `GridPager` (display pages of one server answer), in
   `.tbl-scroll-pin` so the name stays when the columns outgrow the card at the 1024 floor. Columns:
   Name, Level (in words), Created by, Created, Expiry (the UTC day: a token stops at 00:00 UTC),
@@ -1003,7 +1013,7 @@ pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5
   Rotate shows on an active token only. Revoke on active and expired. Loading is a `UiSkeleton`, an
   empty list says *No MCP tokens yet. Make one for each AI agent that connects.*, a failed read
   uses `readFailureCopy` (a 429 says the backend is busy).
-- **Make an MCP token:** Name (the username rule: 3 to 64 lower-case letters, digits, dots,
+- **Create an MCP token:** Name (the username rule: 3 to 64 lower-case letters, digits, dots,
   underscores or hyphens; the Audit log names the agent `mcp:<name>`), Level (`UiSegControl`:
   Read, Write, Write and risk accept, with a line that says what the level can do), Expiry (a date
   box as in the risk accept window: tomorrow to 90 days, the day in 30 days already in it). Make

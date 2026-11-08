@@ -3,6 +3,8 @@
  * (never stored — expiry itself is immutable, D39); the warn window is the documented setting's
  * default; scope/scanner labels compact the D22 subject accurately.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { APPROVAL_FIELDS } from '@/approvals/fields.config'
@@ -111,5 +113,15 @@ describe('firstExpiryDate (issue 984)', () => {
     const at = new Date('2026-07-14T00:30:00Z').getTime()
     expect(expiryStatus('2026-07-14', at)).toBe('expired')
     expect(expiryStatus(firstExpiryDate(at), at)).not.toBe('expired')
+  })
+})
+
+// At a past time, the page names itself by its menu name and uses no internal words (issue 1140).
+describe('the past-time notice of the Approval list', () => {
+  it('says Approval list, with no queue, endpoint, seam or lens', () => {
+    const src = readFileSync(join(__dirname, '..', 'views/ApprovalsView.vue'), 'utf8')
+    const notice = src.slice(src.indexOf('<LimitedHistoricalNotice'), src.indexOf('/>', src.indexOf('<LimitedHistoricalNotice')))
+    expect(notice).toContain('title="The Approval list shows now only"')
+    expect(notice).not.toMatch(/queue|endpoint|seam|lens/)
   })
 })
