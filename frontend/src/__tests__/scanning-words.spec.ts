@@ -24,6 +24,14 @@ describe('the words about the two scanners', () => {
     expect(banner).not.toMatch(/never merged|double-counting/)
   })
 
+  it('the head note of Findings says how the two scanners count, in plain words (issue 1152)', () => {
+    const src = read('views/FindingsView.vue').split('<template>')[1]!
+    expect(src).toContain(
+      '<p class="head-note">Trivy and Grype count apart: a CVE that both report counts once for each</p>',
+    )
+    expect(src).not.toMatch(/cross-merge|per-scanner/)
+  })
+
   it('the Affected card of a finding does not say never merged', () => {
     const src = read('components/finding/AffectedCard.vue').split('<template>')[1]!
     expect(src).toContain('sub="across the last committed inventory · one row for each image and package, with its scanners"')
