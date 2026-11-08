@@ -61,6 +61,7 @@ PAGES = {
     "deploy/helm/javv/README.md",
     "deploy/helm/javv-opensearch/README.md",
     "deploy/helm/javv-scanner/README.md",
+    "deploy/nomad/README.md",
     "docs/use/index.md",
     "docs/use/from-a-scan-to-a-finding.md",
     "docs/use/set-the-state-of-a-finding.md",
@@ -72,7 +73,22 @@ PAGES = {
     "docs/use/use-the-mcp-server.md",
 }
 # Files the pages link to, published as they are.
-FILES = {"docs/ingest-envelope.schema.json", "versions.yaml", "deploy/compose/compose.yaml"}
+FILES = {
+    "docs/ingest-envelope.schema.json",
+    "versions.yaml",
+    "deploy/compose/compose.yaml",
+    *(
+        f"deploy/nomad/{f}"
+        for f in (
+            "javv-scan-trivy.nomad.hcl",
+            "javv-scan-grype.nomad.hcl",
+            "javv-scan.policy.hcl",
+            "javv-trivy-cache.volume.hcl",
+            "javv-grype-cache.volume.hcl",
+            "javv_nomad_push.py",
+        )
+    ),
+}
 VIDEOS = {
     f"docs/use/videos/{name}.mp4"
     for name in (

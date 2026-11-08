@@ -85,6 +85,7 @@ nav:
       - "Chart: javv": deploy/helm/javv/README.md
       - "Chart: javv-opensearch": deploy/helm/javv-opensearch/README.md
       - "Chart: javv-scanner": deploy/helm/javv-scanner/README.md
+      - Scan a Nomad cluster: deploy/nomad/README.md
   - Configure: docs/CONFIGURATION.md
   - Operate:
       - Sizing OpenSearch: docs/runbooks/opensearch-sizing.md

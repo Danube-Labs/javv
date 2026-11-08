@@ -21,6 +21,7 @@ on:
       - versions.yaml
       - deploy/compose/compose.yaml
       - deploy/helm/*/README.md
+      - deploy/nomad/**
   workflow_dispatch:
 
 permissions:

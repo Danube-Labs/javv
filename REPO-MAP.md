@@ -189,3 +189,8 @@ of every cycle (and once at install); its settings are held to the code by
 `scanner/tests/test_helm_config.py`. `ct.yaml` configures chart-testing for all of them.
 `backend/tests/test_helm_opensearch.py`, `test_helm_javv.py` and `test_helm_scanner.py` hold the
 rendered charts.
+`nomad/` (issue 1155): two periodic Nomad jobs, `javv-scan-trivy` and `javv-scan-grype`, run
+`javv_nomad_push.py` on the JAVV scanner images. They read the running allocations from the Nomad
+API and push them as a cluster. With them: the ACL policy, the two cache volumes and a `README.md`,
+the page "Scan a Nomad cluster". `check-versions.sh` holds the image tags to `versions.yaml`, and
+`scanner/tests/test_nomad_push.py` holds the rules of the script.
