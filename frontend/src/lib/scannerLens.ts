@@ -6,9 +6,13 @@
 
 export type ScannerLens = 'all' | 'trivy' | 'grype'
 
+/** The help text of All scanners: the sum of the two scanners, as a finding includes its scanner
+ * (issue 1076). The words say so (issue 1140, R4). */
+export const ALL_SCANNERS_HELP = 'Trivy and Grype together. A CVE that both report counts once for each.'
+
 /** The scanner switch of a page that shows both scanners (Overview, All clusters, a dashboard). */
 export const SCANNER_SWITCH_OPTS = [
-  { value: 'all', label: 'All scanners' },
+  { value: 'all', label: 'All scanners', title: ALL_SCANNERS_HELP },
   { value: 'trivy', label: 'trivy', accent: 'var(--scanner-trivy-fg)' },
   { value: 'grype', label: 'grype', accent: 'var(--scanner-grype-fg)' },
 ] as const

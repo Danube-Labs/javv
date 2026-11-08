@@ -68,8 +68,9 @@ export const CHART_SCANNER: Record<'trivy' | 'grype', string> = {
 }
 
 /** The one-series accent for non-severity, non-scanner activity charts (the audit lens) —
- * same hex as --coral (pinned by the tokens test). Severity charts stay on CHART_SEV. */
-export const CHART_ACCENT = '#ec7e54'
+ * same hex as --slate2 (pinned by the tokens test). Coral is in the red-orange of critical, so a
+ * bar of triage activity read as a severity (issue 1140, R8). Severity charts stay on CHART_SEV. */
+export const CHART_ACCENT = '#21384a'
 
 /** Chart chrome literals — same hexes as the named tokens (pinned by the tokens test).
  * ECharts canvas can't resolve CSS vars, so charts read these instead of raw hexes. */

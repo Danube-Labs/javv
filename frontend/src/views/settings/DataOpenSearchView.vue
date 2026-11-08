@@ -182,8 +182,9 @@ function discard() {
   <div class="stack">
     <div class="scanner-banner">
       <AppIcon name="database" :size="14" />
-      Retention retires whole time-partitioned indices at the horizon, never single documents.
-      The daily lifecycle sweep reads these settings live, so an edit applies at its next run.
+      JAVV deletes history one whole index at a time, when the newest data in the index is older
+      than the retention. The lifecycle sweep runs once a day by default and reads these settings
+      each time, so a change applies at its next run.
     </div>
 
     <NoClusterState v-if="clusterStore.none" />
@@ -239,8 +240,7 @@ function discard() {
           <b>Why one window, not per-family?</b> Time-travel rebuilds any past moment from
           occurrences, images and inventory runs <em>together</em>, so the app only reaches as
           far back as the <em>shortest</em> window. Separate per-family windows would silently
-          truncate reach to the minimum while still paying storage for the rest. They are
-          planned post-MVP. Protected families take no retention window at all: hover a
+          truncate reach to the minimum while still paying storage for the rest. Protected families take no retention window at all: hover a
           <em>protected</em> tag for why.
         </p>
         <p class="scope-src">

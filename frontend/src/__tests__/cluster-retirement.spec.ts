@@ -197,7 +197,7 @@ describe('RetiredClustersCard, issue 778', () => {
     await buttons(w, 'Bring back')[0]!.trigger('click')
     await flushPromises()
     expect(await toasts()).toContain(
-      'beta is back on the cluster list. Its tokens were revoked when it was retired: mint a new one for its scanners.',
+      'beta is back on the cluster list. Its tokens were revoked when it was retired: create a new one for its scanners.',
     )
   })
 
@@ -566,7 +566,7 @@ describe('minting for a retired cluster', () => {
 
   it('does not offer a cluster whose delete did not finish (issue 778)', async () => {
     const w = await mountTokens([fleetRow('c-half-01', true, 'half', { delete_started: true })])
-    await buttons(w, 'Mint token')[0]!.trigger('click')
+    await buttons(w, 'Create token')[0]!.trigger('click')
     await flushPromises()
     const retired = w.findAll('select#mint-cluster optgroup option').map((o) => o.text())
     expect(retired).toEqual(['old (retired)'])
@@ -583,7 +583,7 @@ describe('minting for a retired cluster', () => {
       data: { id: 't2', token: 'raw' },
     } as never)
     const w = await mountTokens()
-    await buttons(w, 'Mint token')[0]!.trigger('click')
+    await buttons(w, 'Create token')[0]!.trigger('click')
     await flushPromises()
     // both groups come from the one fresh listing, never the app-load list
     const active = w.findAll('select#mint-cluster > option').map((o) => o.text())
@@ -595,7 +595,7 @@ describe('minting for a retired cluster', () => {
 
     await w.find('select#mint-cluster').setValue('c-old-01')
     expect(w.text()).toContain('old is retired. Its first scan on this token brings it back')
-    await buttons(w, 'Mint token').at(-1)!.trigger('click')
+    await buttons(w, 'Create token').at(-1)!.trigger('click')
     await flushPromises()
     expect(sdk.mintApiV1AdminTokensPost).toHaveBeenCalledWith(
       expect.objectContaining({ body: expect.objectContaining({ cluster_id: 'c-old-01' }) }),

@@ -22,7 +22,7 @@ export const SCOPE_COPY: Record<SettingsScope, { label: string; note: string }> 
   },
   scanner: {
     label: 'Per scanner',
-    note: 'Shown independently for each scanner (Trivy and Grype). Results stay per-scanner, never merged.',
+    note: 'Shown for each scanner, Trivy and Grype, on its own.',
   },
   org: {
     label: 'Organization',
@@ -36,7 +36,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { key: 'scan-scope', label: 'Scan scope', icon: 'filter', scope: 'cluster', capability: 'can_manage_settings' },
   { key: 'scanning', label: 'Scanning', icon: 'shield', scope: 'scanner', capability: 'can_manage_settings' },
   { key: 'sla', label: 'SLA policy', icon: 'alert', scope: 'org', capability: 'can_manage_settings' },
-  { key: 'tokens', label: 'Access & tokens', icon: 'key', scope: 'cluster', capability: 'can_manage_tokens' },
+  { key: 'tokens', label: 'Access & tokens', icon: 'key', scope: 'org', capability: 'can_manage_tokens' },
   { key: 'ai-agents', label: 'AI agents (MCP)', icon: 'cpu', scope: 'org', capability: 'can_manage_tokens' },
   { key: 'users', label: 'Users & roles', icon: 'users', scope: 'org', capability: 'can_manage_users' },
   { key: 'data-opensearch', label: 'Data & OpenSearch', icon: 'database', scope: 'cluster', capability: 'can_manage_retention' },

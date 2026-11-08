@@ -1,6 +1,8 @@
 /** M9d slice 3 — the Contributors pure view-model: ordering, identity derivations, formats.
  * Every number stays the server's; these pins guard the presentation math only. */
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -145,5 +147,15 @@ describe('fillTransform', () => {
     for (const p of [0, 1, 50, 99, 100]) {
       expect(fillTransform(p)).toMatch(/^translateX\(-?\d+%\)$/)
     }
+  })
+})
+
+// The subtitle of Triage progress fits at 1440 px and says that it adds the two scanners (issue 1140).
+describe('the subtitle of Triage progress', () => {
+  it('is short and says Trivy and Grype together', () => {
+    const src = readFileSync(join(__dirname, '..', 'views/ContributorsView.vue'), 'utf8')
+    const at = src.indexOf('<h2>Triage progress</h2>')
+    const sub = /<p class="card-sub">([^<]*)<\/p>/.exec(src.slice(at))![1]!
+    expect(sub).toBe('now · Trivy and Grype together')
   })
 })
