@@ -115,18 +115,39 @@ def test_each_tool_has_a_case():
     assert kinds == {(t.name, kind) for t in READ_TOOLS for kind in t.routes}
 
 
+def _shares_the_store(name: str, args: dict[str, Any]) -> bool:
+    """A read of the audit log until now also gives the rows with no cluster, such as the
+    sign-ins of every test (issue 1137)."""
+    if name in ("audit_log", "count_audit_log") and "as_of" not in args:
+        return True
+    return not args.get("cluster_id") or name == "list_accounts"
+
+
 def _params() -> list[Any]:
-    """A read of data that the whole store shares (users, tokens, dashboards, settings) runs
-    serial: a test in another worker could change it between the two reads."""
+    """A read of data that the whole store shares (users, tokens, dashboards, settings, the audit
+    log) runs serial: a test in another worker could change it between the two reads."""
     return [
         pytest.param(
             name,
             args,
             id=f"{name}-{i}",
-            marks=() if args.get("cluster_id") and name != "list_accounts" else pytest.mark.serial,
+            marks=pytest.mark.serial if _shares_the_store(name, args) else (),
         )
         for i, (name, args) in enumerate(CASES)
     ]
+
+
+def test_the_audit_reads_until_now_run_serial():
+    serial = {
+        (p.values[0], "as_of" in p.values[1]): bool(p.marks)
+        for p in _params()
+        if p.values[0] in ("audit_log", "count_audit_log")
+    }
+    assert serial == {
+        ("audit_log", False): True,
+        ("audit_log", True): False,
+        ("count_audit_log", False): True,
+    }
 
 
 @pytest.mark.parametrize(("name", "args"), _params())
