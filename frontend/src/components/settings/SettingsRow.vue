@@ -46,6 +46,10 @@ provide(SETTINGS_ROW_LABEL, { labelId, hintId: () => (props.hint ? hintId : unde
   align-items: stretch;
   gap: 10px;
 }
+/* over a wide box the hint keeps a line that people can read (issue 1140, R10) */
+.set-row-stack .set-row-label {
+  max-width: 75ch;
+}
 .set-row-label {
   display: flex;
   flex-direction: column;
