@@ -194,3 +194,9 @@ rendered charts.
 API and push them as a cluster. With them: the ACL policy, the two cache volumes and a `README.md`,
 the page "Scan a Nomad cluster". `check-versions.sh` holds the image tags to `versions.yaml`, and
 `scanner/tests/test_nomad_push.py` holds the rules of the script.
+`docker/` (issue 1155): a `compose.yaml` with two scan containers, `trivy` and `grype`, that run
+`javv_docker_push.py` on the JAVV scanner images every 6 hours. They read the running containers
+from the Docker socket, scan each image from the Docker daemon by its image ID and push the host as
+a cluster, with each Compose project as a namespace. With them: `.env.example` and a `README.md`,
+the page "Scan a Docker Compose host". The scan and push parts of the script are the same as in the
+Nomad script; `scanner/tests/test_docker_push.py` keeps them equal and holds the rules of the script.

@@ -1,0 +1,50 @@
+# Two containers scan the images of the running containers of this Docker host and push them to
+# JAVV, one for each scanner. They are an example: change them for your host. The page: README.md.
+# Put javv_docker_push.py and a .env made from .env.example next to this file.
+name: javv-scan
+
+x-scan: &scan
+  restart: unless-stopped
+  init: true
+  labels:
+    javv.scan: "true"
+  # the socket gives the Docker API and the images to scan
+  group_add:
+    - ${DOCKER_GID:?set DOCKER_GID in .env to the group ID of /var/run/docker.sock}
+  entrypoint: ["sh", "-c"]
+  # one cycle at the start, then one cycle every 6 hours
+  command: ["while :; do python3 /javv/javv_docker_push.py; sleep 21600; done"]
+
+x-javv: &javv
+  JAVV_BACKEND_URL: ${JAVV_BACKEND_URL:?set JAVV_BACKEND_URL in .env}
+  JAVV_CLUSTER_ID: ${JAVV_CLUSTER_ID:?set JAVV_CLUSTER_ID in .env}
+
+services:
+  trivy:
+    <<: *scan
+    image: ghcr.io/danube-labs/javv-scanner-trivy:0.76.2
+    environment:
+      <<: *javv
+      JAVV_SCANNER: trivy
+      JAVV_TOKEN: ${JAVV_TRIVY_TOKEN:?set JAVV_TRIVY_TOKEN in .env}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./javv_docker_push.py:/javv/javv_docker_push.py:ro
+      - trivy-cache:/var/cache/javv/trivy
+
+  grype:
+    <<: *scan
+    image: ghcr.io/danube-labs/javv-scanner-grype:0.121.1
+    environment:
+      <<: *javv
+      JAVV_SCANNER: grype
+      JAVV_TOKEN: ${JAVV_GRYPE_TOKEN:?set JAVV_GRYPE_TOKEN in .env}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./javv_docker_push.py:/javv/javv_docker_push.py:ro
+      - grype-cache:/var/cache/javv/grype
+
+# the databases of the scanners, kept between the cycles
+volumes:
+  trivy-cache:
+  grype-cache:

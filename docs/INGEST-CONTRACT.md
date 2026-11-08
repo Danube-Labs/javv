@@ -7,6 +7,8 @@ Nomad, Docker hosts or CI pipelines.
 The page gives the sequence of calls, the rules for the script, and a reference for each field.
 
 - For a Nomad cluster, use the tested jobs of [Scan a Nomad cluster](../deploy/nomad/README.md).
+- For a Docker host, use the tested containers of
+  [Scan a Docker Compose host](../deploy/docker/README.md).
 - The machine-readable schema is **[`ingest-envelope.schema.json`](ingest-envelope.schema.json)**.
 - JAVV makes the schema from the model that the backend uses to validate each push.
 - A CI test compares the two, and a second CI test compares the field tables on this page with the
@@ -125,8 +127,8 @@ The column **Type** uses JSON types. "or null" means that `null` is a correct va
 | `scanner` | required | string | `trivy` or `grype` | The scanner that made the findings. It must be the scanner of the token. |
 | `image_digest` | required | string | `sha256:` and 6 to 64 hexadecimal digits | The repository digest of the image: the part after `@` in `repo@sha256:…`. Docker shows it in `RepoDigests`, and Trivy and Grype write it in their output. Do not send the image ID of the classic Docker image store. With that ID, JAVV shows one image as two images: one from Kubernetes, one from Docker. JAVV identifies each image by this value. |
 | `image_ref` | required | string | 512 characters at most | The name of the image that JAVV shows. Example: `python:3.9.16-slim`. |
-| `namespaces` | required | array of strings | 1,024 items at most | The places where the image runs. For Kubernetes, these are namespaces. You can also use Nomad jobs, compose project names or host groups. A Nomad job ID is unique only in its Nomad namespace: [Scan a Nomad cluster](../deploy/nomad/README.md) tells the names to use. Example: `["billing-job"]`. |
-| `replicas` | required | integer | 0 or more | The number of instances of the image that run. The JAVV scanners count the pods that run the image. For Nomad, count the allocations. |
+| `namespaces` | required | array of strings | 1,024 items at most | The places where the image runs. For Kubernetes, these are namespaces. You can also use Nomad jobs, compose project names or host groups. A Nomad job ID is unique only in its Nomad namespace: [Scan a Nomad cluster](../deploy/nomad/README.md) tells the names to use. For a Docker host, see [Scan a Docker Compose host](../deploy/docker/README.md). Example: `["billing-job"]`. |
+| `replicas` | required | integer | 0 or more | The number of instances of the image that run. The JAVV scanners count the pods that run the image. For Nomad, count the allocations. For Docker, count the containers. |
 | `scan_run_id` | required | string | 1 to 128 characters | The ID of the cycle. It is the same in each envelope of the cycle. |
 | `scan_order` | required | integer | 0 or more. Not larger than the last value from `POST /api/v1/scan-runs`. | The number from step 1. It is the same in each envelope of the cycle. |
 | `last_seen_at` | required | string | A date and time with a time zone | The time of the scan. The JAVV scanners send the start time of the cycle. |

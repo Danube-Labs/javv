@@ -49,6 +49,8 @@ GRYPE_SCOPES = ("squashed", "all-layers", "deep-squashed")
 CLUSTER_ID = re.compile(r"^[a-z0-9][a-z0-9-]{7,63}$")
 LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
 GO_DURATION = re.compile(r"^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$")
+# Grype pulls the image from its registry: the job has no Docker access
+GRYPE_SOURCE = "registry"
 
 
 class SettingError(Exception):
@@ -369,7 +371,7 @@ def scan_trivy(s: Settings, ref: str):
 
 def scan_grype(s: Settings, ref: str):
     t = s.tuning
-    cmd = ["grype", f"registry:{ref}", "-o", "json"]
+    cmd = ["grype", f"{GRYPE_SOURCE}:{ref}", "-o", "json"]
     if t["only_fixed"]:
         cmd.append("--only-fixed")
     if t["scope"]:
