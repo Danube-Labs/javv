@@ -136,7 +136,7 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
           want('fill', cs.backgroundColor, disabled ? [kit.panel] : [kit.card])
           want('type face', getComputedStyle(field!).fontFamily.split(',')[0]!.trim().replace(/["']/g, ''), kit.fonts)
         }
-        const name = (field?.getAttribute('aria-label') || field?.id || el.textContent || field?.getAttribute('placeholder') || '').trim()
+        const name = (field?.getAttribute('aria-label') || field?.id || el.getAttribute('aria-label') || el.textContent || field?.getAttribute('placeholder') || '').trim()
         return { i, kind: kind as Kind, name: name.slice(0, 40), disabled, primary, problems }
       })
     },
