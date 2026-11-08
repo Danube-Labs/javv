@@ -2,8 +2,9 @@
 /**
  * Export the current lens (M9b slice 4, C-2 states; lens fidelity + past-T per audit
  * F-07/F-08). Run-now streams inline (413 past JAVV_EXPORT_MAX_ROWS → offer the schedule
- * path); Schedule enqueues an off-peak report and polls to the signed download link with its
- * expiry. VEX is per-scanner by contract (one scanner per file — per-scanner sacred).
+ * path); Schedule enqueues a report and polls to the signed download link with its expiry.
+ * There is no off-peak window: the backend stores `run_mode` and never reads it, and the report
+ * drain builds each queued export on its own schedule (issue 1140). VEX is per-scanner by contract (one scanner per file — per-scanner sacred).
  * Scheduling carries the COMPLETE lens (every ExportParams field). An export the backend would
  * refuse, or one with other rows than the screen, is BLOCKED on either tab with the reason
  * (`exportBlockMessage`, issue 962), never sent and never silently widened. At
@@ -46,7 +47,7 @@ const format = ref<'csv' | 'vex'>('csv')
 const vexScanner = ref<'trivy' | 'grype'>('trivy')
 const TAB_OPTS = [
   { value: 'now', label: 'Run now' },
-  { value: 'schedule', label: 'Schedule off-peak' },
+  { value: 'schedule', label: 'In the background' },
 ] as const
 const FORMAT_OPTS = [
   { value: 'csv', label: 'CSV' },
@@ -107,7 +108,7 @@ const { exporting, run: runExport } = useCsvExport({
   filename: (stamp) => `javv-findings-${stamp}.${format.value === 'csv' ? 'csv' : 'openvex.json'}`,
   event: 'export_failed',
   onCapped: () => {
-    error.value = 'Too many rows for a direct export. Narrow the filters, or schedule it for a quiet time.'
+    error.value = 'Too many rows to download now. Narrow the filters, or make the file in the background.'
     tab.value = 'schedule'
   },
   onFailed: (status) => {
@@ -211,21 +212,23 @@ const downloadHref = computed(() =>
 <template>
   <div class="export-wrap">
     <UiButton variant="control" :disabled="!canExport" :aria-describedby="canExport ? undefined : 'no-export-note'" @click="openDialog">
-      <AppIcon name="download" :size="13" />Export CSV
+      <AppIcon name="download" :size="13" />Export
     </UiButton>
     <UiRoleNote v-if="!canExport" id="no-export-note">{{ NO_EXPORT_NOTE }}</UiRoleNote>
 
     <ModalShell
       v-if="open"
       title="Export"
-      subtitle="what you are looking at now · scanners are never merged (a VEX file holds one scanner)"
+      subtitle="what you are looking at now · a VEX file holds the results of one scanner"
       :width="480"
       @close="close"
     >
-          <p v-if="historical" class="ex-blocked">
+          <p v-if="historical" class="ex-blocked ex-past">
             <AppIcon name="clock" :size="13" />
-            Rewound lens: the export is queued off-peak and reconstructs the rows
-            <strong>as they stood at T</strong> (Run now streams current state only).
+            <span>
+              You look at a past time. JAVV makes the file in the background, with the rows
+              <strong>as they were at that time</strong>.
+            </span>
           </p>
             <UiSegControl v-if="!historical" v-model="tab" class="tabs" :options="TAB_OPTS" label="When to run" />
 
@@ -240,11 +243,14 @@ const downloadHref = computed(() =>
 
             <template v-if="tab === 'now'">
               <p v-if="blocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ blocked }}</p>
-              <p v-else class="ex-note">Streams up to the inline cap; a bigger lens gets a 413 and the schedule path.</p>
+              <p v-else class="ex-note">Downloads the file now. For more rows than the limit, use In the background.</p>
             </template>
             <template v-else>
               <p v-if="blocked" class="ex-blocked"><AppIcon name="alert" :size="13" /> {{ blocked }}</p>
-              <p v-else class="ex-note">Runs in the off-peak window; the result keeps for ~24h after completion.</p>
+              <p v-else class="ex-note">
+                JAVV makes the file in the background. When it is ready, the download link shows here
+                with its expiry, and the bell tells you.
+              </p>
               <div v-if="report" class="report-status">
                 <template v-if="report.status === 'done' && downloadHref">
                   <AppIcon name="check" :size="13" />
