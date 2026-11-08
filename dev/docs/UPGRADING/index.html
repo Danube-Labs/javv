@@ -1882,7 +1882,7 @@ Before step 3, add these two values to your <code>.env</code>:</p>
 <li>You can also go back to a 0.5.x <code>compose.yaml</code> with the same data. Then OpenSearch runs without
   its sign-in again.</li>
 </ul>
-<p>We did these steps on the real compose files, from a 0.5.1 installation with data.</p>
+<p><strong>Tested on:</strong> the real compose files, from a 0.5.1 installation with data.</p>
 <h4 id="change-an-opensearch-password">Change an OpenSearch password<a class="headerlink" href="#change-an-opensearch-password" title="Permanent link">&para;</a></h4>
 <p>OpenSearch reads <code>JAVV_OPENSEARCH_ADMIN_PASSWORD</code> and <code>JAVV_OPENSEARCH_PASSWORD</code> only on its first
 start with its sign-in on. It keeps the two passwords in its data. Thus OpenSearch ignores a new
@@ -1934,8 +1934,8 @@ roles and role mappings only on its first start with its sign-in on.</p>
     when it closes, after the load. You can ignore it.</li>
 <li>Run <code>docker compose up -d</code>.</li>
 </ol>
-<p>The same loop loads a changed <code>javv</code> role. If a release changes the role, its notes tell you. We did
-these steps on the real compose files, from an OpenSearch that a <code>main</code> checkout started.</p>
+<p>The same loop loads a changed <code>javv</code> role. If a release changes the role, its notes tell you.
+<strong>Tested on:</strong> the real compose files, from an OpenSearch that a <code>main</code> checkout started.</p>
 <h3 id="on-kubernetes-helm">On Kubernetes (Helm)<a class="headerlink" href="#on-kubernetes-helm" title="Permanent link">&para;</a></h3>
 <p>Each release publishes the JAVV chart and the OpenSearch chart
 (<a href="../DEPLOYING/#install-on-kubernetes-with-helm"><code>DEPLOYING.md</code></a>) at <code>oci://ghcr.io/danube-labs/charts</code>,
@@ -2243,7 +2243,7 @@ does. Thus the password is not in your shell history or in the arguments of a pr
 do not sign in again: JAVV reads the permissions of a user on each request.</p>
 <p>On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
 its admin.</p>
-<p>We did these steps on the compose files of 0.8.8, with a triager and a security lead.</p>
+<p><strong>Tested on:</strong> the compose files of 0.8.8, with a triager and a security lead.</p>
 <h3 id="089-a-new-permission-for-dashboards">0.8.9: a new permission for dashboards<a class="headerlink" href="#089-a-new-permission-for-dashboards" title="Permanent link">&para;</a></h3>
 <p>A user needs the permission <code>can_edit_dashboards</code> to make a dashboard. The <code>viewer</code> role does not
 get it.</p>
@@ -2277,8 +2277,8 @@ curl<span class="w"> </span>-sSk<span class="w"> </span>-K<span class="w"> </spa
 <p>The users do not sign in again: JAVV reads the permissions of a user on each request.</p>
 <p>On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
 its admin.</p>
-<p>We sent the request of the script two times to OpenSearch 3.9.0, with the roles and users of
-0.8.8. The first time changed the two roles and their users. The second time changed nothing.</p>
+<p><strong>Tested on:</strong> OpenSearch 3.9.0, with the roles and users of 0.8.8. The request of the script went
+to it two times. The first time changed the two roles and their users. The second time changed nothing.</p>
 <h3 id="087-javv-refuses-a-username-with-a-capital-letter">0.8.7: JAVV refuses a username with a capital letter<a class="headerlink" href="#087-javv-refuses-a-username-with-a-capital-letter" title="Permanent link">&para;</a></h3>
 <p>A new username must be in lower case. Before 0.8.7, <code>Alice</code> and <code>alice</code> could be two different
 users. Users that exist keep their names.</p>

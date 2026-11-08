@@ -1617,7 +1617,7 @@ and the URL of the endpoint.</p>
 <p>To stop a token, select <strong>Revoke</strong> on its row. To get a new token for the same name, select
 <strong>Rotate</strong> and pick a new expiry. The old token then stops at once.</p>
 <h2 id="connect-claude-code">Connect Claude Code<a class="headerlink" href="#connect-claude-code" title="Permanent link">&para;</a></h2>
-<p>We tested these settings with Claude Code 2.1.319.</p>
+<p><strong>Tested with:</strong> Claude Code 2.1.319.</p>
 <ol>
 <li>Put the token in the variable <code>JAVV_MCP_TOKEN</code>, in the shell that starts Claude Code.</li>
 <li>
@@ -1638,7 +1638,7 @@ the token is wrong, revoked or expired, or <code>JAVV_MCP_TOKEN</code> is empty.
 token. Claude Code can tell you to use OAuth in place of the header. JAVV has no OAuth, so keep
 the header.</p>
 <h2 id="connect-codex">Connect Codex<a class="headerlink" href="#connect-codex" title="Permanent link">&para;</a></h2>
-<p>We tested these settings with Codex 0.144.1.</p>
+<p><strong>Tested with:</strong> Codex 0.144.1.</p>
 <ol>
 <li>
 <p>Add the server to <code>~/.codex/config.toml</code>:</p>
@@ -1653,7 +1653,7 @@ the header.</p>
 <li>Run <code>codex mcp list</code>. The list shows <code>javv</code> with the auth "Bearer token".</li>
 </ol>
 <h2 id="connect-vs-code">Connect VS Code<a class="headerlink" href="#connect-vs-code" title="Permanent link">&para;</a></h2>
-<p>We did not test this client with JAVV. Its settings come from its own documentation.</p>
+<p>This client is not tested with JAVV. Its settings come from its own documentation.</p>
 <ol>
 <li>
 <p>Add the server to <code>.vscode/mcp.json</code> in your workspace. VS Code asks for the token when the
@@ -1679,7 +1679,7 @@ the header.</p>
 </li>
 </ol>
 <h2 id="connect-cursor">Connect Cursor<a class="headerlink" href="#connect-cursor" title="Permanent link">&para;</a></h2>
-<p>We did not test this client with JAVV. Its settings come from its own documentation.</p>
+<p>This client is not tested with JAVV. Its settings come from its own documentation.</p>
 <ol>
 <li>
 <p>Add the server to <code>~/.cursor/mcp.json</code>, or to <code>.cursor/mcp.json</code> in your project:</p>

@@ -2601,7 +2601,7 @@ of its values.</p>
 <h4 id="the-memory-map-limit">The memory map limit<a class="headerlink" href="#the-memory-map-limit" title="Permanent link">&para;</a></h4>
 <ul>
 <li>The charts do not set <code>vm.max_map_count</code>, and no container changes the node.</li>
-<li>On 2026-10-20, our development OpenSearch (one node, 42 indices, 1.74 million documents) used 1118
+<li>On 2026-10-20, a development OpenSearch (one node, 42 indices, 1.74 million documents) used 1118
   memory maps. The default limit of Linux is 65530. This is a measurement of one store, not a load
   test. The CI does not run the charts on a node at 65530.</li>
 <li>To get a higher limit, use one of these:<ul>
@@ -2622,8 +2622,8 @@ of its values.</p>
 <li><code>javv</code> and <code>javv-scanner</code>: each container runs as user 65532, with <code>runAsNonRoot</code>,
   <code>seccompProfile: RuntimeDefault</code>, <code>allowPrivilegeEscalation: false</code>, no capabilities and a
   read-only root file system.</li>
-<li>On 2026-11-07, we installed <code>javv</code> in a namespace that enforces <code>restricted</code>, on Kubernetes
-  v1.35. Its pods started. For the Jobs, CronJobs and test pods of <code>javv-scanner</code>, Kubernetes gave
+<li>Tested on 2026-11-07: <code>javv</code> in a namespace that enforces <code>restricted</code>, on Kubernetes v1.35. Its
+  pods started. For the Jobs, CronJobs and test pods of <code>javv-scanner</code>, Kubernetes gave
   no warning in a dry run on the server.</li>
 <li><code>javv-opensearch</code>: each container runs as user 1000, with <code>runAsNonRoot</code> and no capabilities. The
   official chart does not set <code>seccompProfile</code> or <code>allowPrivilegeEscalation: false</code>.</li>
@@ -2635,8 +2635,8 @@ of its values.</p>
 <span class="w">    </span><span class="nt">seccompProfile</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RuntimeDefault</span>
 </code></pre></div>
-    We examined the pod that <code>helm template</code> makes with these values. The CI does not start
-    OpenSearch with them.</li>
+    Tested: the pod that <code>helm template</code> makes with these values. The CI does not start OpenSearch
+    with them.</li>
 <li>The <code>helm test</code> Pod of <code>javv-opensearch</code> meets <code>restricted</code> with the default values.</li>
 </ul>
 <h4 id="open-routes-on-port-8000">Open routes on port 8000<a class="headerlink" href="#open-routes-on-port-8000" title="Permanent link">&para;</a></h4>
@@ -2734,7 +2734,7 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
   (<a href="#http-or-https">http or https</a>).</li>
 <li>To look at JAVV before you do this, run <code>kubectl port-forward svc/javv 8080</code>, and open
   <code>http://localhost:8080</code>. Chromium (Chrome) and Firefox keep the <code>Secure</code> cookie from
-  <code>localhost</code>. We did not test Safari. If Safari does not keep you signed in, set
+  <code>localhost</code>. Safari is not tested. If Safari does not keep you signed in, set
   <code>backend.config.JAVV_SESSION_COOKIE_SECURE=false</code>.</li>
 </ul>
 </li>
@@ -2780,8 +2780,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </
 </table>
 <ul>
 <li>Each system that can connect to this address can open JAVV over http, as at the Service.</li>
-<li>We tested <code>NodePort</code> between two k3d clusters on one Docker network, and <code>LoadBalancer</code> with
-  the load balancer of k3s. We did not test the load balancer of a cloud.</li>
+<li>Tested: <code>NodePort</code> between two k3d clusters on one Docker network, and <code>LoadBalancer</code> with the
+  load balancer of k3s. The load balancer of a cloud is not tested.</li>
 </ul>
 </li>
 </ul>
@@ -3025,7 +3025,7 @@ level:</p>
 <li>The bulk, multi-get and scroll calls. OpenSearch still verifies their documents against the index
   permissions.</li>
 </ul>
-<p>We showed that JAVV needs each permission: the role test fails without it.</p>
+<p>JAVV needs each permission: the role test fails without it.</p>
 <h3 id="prerequisites_4">Prerequisites<a class="headerlink" href="#prerequisites_4" title="Permanent link">&para;</a></h3>
 <ul>
 <li>A user that can change the security configuration of OpenSearch (its <code>admin</code>).</li>
