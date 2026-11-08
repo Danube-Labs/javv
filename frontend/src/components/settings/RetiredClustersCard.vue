@@ -43,7 +43,7 @@ async function bringBack(row: FleetCluster) {
     // issue 778)
     toast.success(
       row.retirement_mode === 'manual'
-        ? `${row.cluster_name} is back on the cluster list. Its tokens were revoked when it was retired: mint a new one for its scanners.`
+        ? `${row.cluster_name} is back on the cluster list. Its tokens were revoked when it was retired: create a new one for its scanners.`
         : `${row.cluster_name} is back on the cluster list`,
     )
     await clusterStore.refresh()

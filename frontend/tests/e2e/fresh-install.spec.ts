@@ -38,12 +38,12 @@ test('the cold-start button is one keyboard stop and opens Access & tokens', asy
 
 test('the mint dialog opens on a new cluster with its ID field', async ({ page }) => {
   await page.goto(`${BASE}/settings/tokens`)
-  await page.getByRole('button', { name: 'Mint token' }).click()
+  await page.getByRole('button', { name: 'Create token' }).click()
   await expect(page.locator('select#mint-cluster')).toHaveValue('+new')
   await expect(page.locator('#mint-cluster-id')).toBeVisible()
   await page.locator('#mint-cluster-id').fill('My-Cluster')
   await expect(page.getByRole('alert')).toContainText('8 to 64 characters')
-  await expect(page.locator('.modal-actions').getByRole('button', { name: 'Mint token' })).toBeDisabled()
+  await expect(page.locator('.modal-actions').getByRole('button', { name: 'Create token' })).toBeDisabled()
 })
 
 for (const path of ['scan-scope', 'scanning', 'data-opensearch']) {

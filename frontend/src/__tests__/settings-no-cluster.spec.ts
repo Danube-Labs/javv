@@ -54,7 +54,7 @@ describe.each(VIEWS)('%s with no cluster listed', (_name, view, read) => {
     const w = mount(view)
     await flushPromises()
     expect(w.text()).toContain('Settings for a cluster appear once it has a scanner token.')
-    expect(w.text()).toContain('Mint one under Access & tokens.')
+    expect(w.text()).toContain('Create one under Access & tokens.')
     expect(w.find('.skel').exists()).toBe(false)
     expect(read()).not.toHaveBeenCalled()
   })
