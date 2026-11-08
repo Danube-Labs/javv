@@ -1,0 +1,1 @@
+../../../../deploy/nomad/javv-scan-grype.nomad.hcl

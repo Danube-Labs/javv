@@ -98,6 +98,10 @@ check "CONFIGURATION grype row" "$grype" docs/CONFIGURATION.md \
   '\*\*Grype version\*\* \| .\K[0-9.]+' "s/(\*\*Grype version\*\* \| .)[0-9.]+/\1$grype/"
 check "CONFIGURATION opensearch" "$opensearch" docs/CONFIGURATION.md \
   'opensearchproject/opensearch:\K[0-9.]+' "s#opensearchproject/opensearch:[0-9.]+#opensearchproject/opensearch:$opensearch#"
+check "nomad trivy job" "$trivy" deploy/nomad/javv-scan-trivy.nomad.hcl \
+  'javv-scanner-trivy:\K[0-9.]+' "s#javv-scanner-trivy:[0-9.]+#javv-scanner-trivy:$trivy#"
+check "nomad grype job" "$grype" deploy/nomad/javv-scan-grype.nomad.hcl \
+  'javv-scanner-grype:\K[0-9.]+' "s#javv-scanner-grype:[0-9.]+#javv-scanner-grype:$grype#"
 check "scanner README verify" "$trivy" scanner/README.md \
   'javv-scanner-trivy:\K[0-9.]+' "s#javv-scanner-trivy:[0-9.]+#javv-scanner-trivy:$trivy#"
 check "bake trivy defaults" "$trivy,${trivy_also//, /,}" scanner/docker-bake.hcl \

@@ -55,9 +55,10 @@ fields = set(re.findall(r'^\s{4}(\w+): \S', src, re.M))
 conf = open('docs/CONFIGURATION.md').read()
 import subprocess
 code_literals = set(subprocess.run(
-    # deploy/compose: a variable compose reads from .env is real even if no code does (issue 729)
+    # deploy/compose: a variable compose reads from .env is real even if no code does (issue 729).
+    # deploy/nomad: the script of the Nomad scan jobs reads its own settings (issue 1155).
     ['git', 'grep', '-rho', r'JAVV_[A-Z0-9_]*', '--', 'backend/src', 'scanner/src', 'libs', 'frontend',
-     'deploy/compose'],
+     'deploy/compose', 'deploy/nomad'],
     capture_output=True, text=True).stdout.split())
 # not the tail of a longer name: OPENSEARCH_JAVV_PASSWORD is not JAVV_PASSWORD
 doc_vars = set(re.findall(r'(?<![A-Z0-9_])JAVV_[A-Z0-9_]+', conf))
