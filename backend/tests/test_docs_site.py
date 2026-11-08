@@ -14,6 +14,8 @@ links to other files, nor that the tree publishes only the listed files. These t
 - a release publishes its docs as a version of its own with the script that chooses the aliases
   (`major.minor`, `latest`), and the backfill workflow publishes older releases the same way;
 - no published page carries an em dash;
+- no published page tells a test or an action in the first person ("we tested", "our store"),
+  except SECURITY.md, where the maintainers make promises to a reporter;
 - the only box on the site is the tip "For AI agents", and the pages that tell an agent what to
   do keep theirs;
 - each published page of `docs/` passes the STE linter (issue 1061);
@@ -306,6 +308,27 @@ def test_published_pages_carry_no_em_dash(page: str) -> None:
     lines = (ROOT / page).read_text().splitlines()
     found = [n for n, line in enumerate(lines, 1) if "\u2014" in line]
     assert not found, f"{page} has an em dash on lines {found}"
+
+
+_FIRST_PERSON = re.compile(r"\b(?:(?i:we|our|us)|I)\b")
+# the maintainers' promises to a reporter (reply times, advisories) use "we" on purpose
+FIRST_PERSON_PAGES = {"SECURITY.md"}
+
+
+@pytest.mark.parametrize("page", sorted(PAGES))
+def test_published_pages_tell_tests_without_the_first_person(page: str) -> None:
+    """A test is stated as a fact: "Tested with: Nomad 2.1.1", "Safari is not tested"."""
+    if page in FIRST_PERSON_PAGES:
+        return
+    found, fence = [], False
+    for n, line in enumerate((ROOT / page).read_text().splitlines(), 1):
+        if line.lstrip().startswith("```"):
+            fence = not fence
+            continue
+        prose = re.sub(r"`[^`]*`", "", line)
+        if not fence and _FIRST_PERSON.search(prose):
+            found.append(n)
+    assert not found, f"{page} uses the first person on lines {found}"
 
 
 _BOX = re.compile(r'^\s*(?:!!!|\?\?\?\+?)\s*(\w+)(?:\s+"([^"]*)")?', re.MULTILINE)

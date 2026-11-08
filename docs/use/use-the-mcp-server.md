@@ -88,7 +88,7 @@ To stop a token, select **Revoke** on its row. To get a new token for the same n
 
 ## Connect Claude Code
 
-We tested these settings with Claude Code 2.1.319.
+**Tested with:** Claude Code 2.1.319.
 
 1. Put the token in the variable `JAVV_MCP_TOKEN`, in the shell that starts Claude Code.
 2. Add the server. Use single quotes, so that the config keeps the name of the variable and not
@@ -111,7 +111,7 @@ the header.
 
 ## Connect Codex
 
-We tested these settings with Codex 0.144.1.
+**Tested with:** Codex 0.144.1.
 
 1. Add the server to `~/.codex/config.toml`:
 
@@ -126,7 +126,7 @@ We tested these settings with Codex 0.144.1.
 
 ## Connect VS Code
 
-We did not test this client with JAVV. Its settings come from its own documentation.
+This client is not tested with JAVV. Its settings come from its own documentation.
 
 1. Add the server to `.vscode/mcp.json` in your workspace. VS Code asks for the token when the
    server starts for the first time, and it hides what you type:
@@ -153,7 +153,7 @@ We did not test this client with JAVV. Its settings come from its own documentat
 
 ## Connect Cursor
 
-We did not test this client with JAVV. Its settings come from its own documentation.
+This client is not tested with JAVV. Its settings come from its own documentation.
 
 1. Add the server to `~/.cursor/mcp.json`, or to `.cursor/mcp.json` in your project:
 
