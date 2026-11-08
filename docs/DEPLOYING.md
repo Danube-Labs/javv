@@ -361,7 +361,7 @@ The answers are for the default values of the three charts.
 #### The memory map limit
 
 - The charts do not set `vm.max_map_count`, and no container changes the node.
-- On 2026-10-20, our development OpenSearch (one node, 42 indices, 1.74 million documents) used 1118
+- On 2026-10-20, a development OpenSearch (one node, 42 indices, 1.74 million documents) used 1118
   memory maps. The default limit of Linux is 65530. This is a measurement of one store, not a load
   test. The CI does not run the charts on a node at 65530.
 - To get a higher limit, use one of these:
@@ -380,8 +380,8 @@ The answers are for the default values of the three charts.
 - `javv` and `javv-scanner`: each container runs as user 65532, with `runAsNonRoot`,
   `seccompProfile: RuntimeDefault`, `allowPrivilegeEscalation: false`, no capabilities and a
   read-only root file system.
-- On 2026-11-07, we installed `javv` in a namespace that enforces `restricted`, on Kubernetes
-  v1.35. Its pods started. For the Jobs, CronJobs and test pods of `javv-scanner`, Kubernetes gave
+- Tested on 2026-11-07: `javv` in a namespace that enforces `restricted`, on Kubernetes v1.35. Its
+  pods started. For the Jobs, CronJobs and test pods of `javv-scanner`, Kubernetes gave
   no warning in a dry run on the server.
 - `javv-opensearch`: each container runs as user 1000, with `runAsNonRoot` and no capabilities. The
   official chart does not set `seccompProfile` or `allowPrivilegeEscalation: false`.
@@ -394,8 +394,8 @@ The answers are for the default values of the three charts.
         seccompProfile:
           type: RuntimeDefault
     ```
-    We examined the pod that `helm template` makes with these values. The CI does not start
-    OpenSearch with them.
+    Tested: the pod that `helm template` makes with these values. The CI does not start OpenSearch
+    with them.
 - The `helm test` Pod of `javv-opensearch` meets `restricted` with the default values.
 
 #### Open routes on port 8000
@@ -494,7 +494,7 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
       ([http or https](#http-or-https)).
     - To look at JAVV before you do this, run `kubectl port-forward svc/javv 8080`, and open
       `http://localhost:8080`. Chromium (Chrome) and Firefox keep the `Secure` cookie from
-      `localhost`. We did not test Safari. If Safari does not keep you signed in, set
+      `localhost`. Safari is not tested. If Safari does not keep you signed in, set
       `backend.config.JAVV_SESSION_COOKIE_SECURE=false`.
 
 To upgrade, or to go back to a previous release, see
@@ -524,8 +524,8 @@ different cluster needs an address and a port of JAVV that it can connect to. Us
     | `NodePort` | The address of a node, in `kubectl get nodes -o wide` | The second number in `PORT(S)` of `kubectl get svc javv`: `8080:31911/TCP` gives 31911 |
 
     - Each system that can connect to this address can open JAVV over http, as at the Service.
-    - We tested `NodePort` between two k3d clusters on one Docker network, and `LoadBalancer` with
-      the load balancer of k3s. We did not test the load balancer of a cloud.
+    - Tested: `NodePort` between two k3d clusters on one Docker network, and `LoadBalancer` with the
+      load balancer of k3s. The load balancer of a cloud is not tested.
 
 ### What the `javv` chart runs
 
@@ -779,7 +779,7 @@ level:
 - The bulk, multi-get and scroll calls. OpenSearch still verifies their documents against the index
   permissions.
 
-We showed that JAVV needs each permission: the role test fails without it.
+JAVV needs each permission: the role test fails without it.
 
 ### Prerequisites
 

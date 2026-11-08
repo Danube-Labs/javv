@@ -672,7 +672,7 @@ To decide, ask this question: does an operator have a reason to change the value
 workload?
 
 - If yes, the value is a setting.
-- If the only reason is "a bug makes us get to the limit", the value stays in the code: fix the
+- If the only reason is "a bug reaches the limit", the value stays in the code: fix the
   bug.
 - For example, the bulk limit is a setting (`JAVV_BULK_MAX_TARGETS`), but the page size of a bulk
   selection (`_FREEZE_PAGE`) stays in the code.
