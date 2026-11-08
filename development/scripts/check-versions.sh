@@ -102,6 +102,10 @@ check "nomad trivy job" "$trivy" deploy/nomad/javv-scan-trivy.nomad.hcl \
   'javv-scanner-trivy:\K[0-9.]+' "s#javv-scanner-trivy:[0-9.]+#javv-scanner-trivy:$trivy#"
 check "nomad grype job" "$grype" deploy/nomad/javv-scan-grype.nomad.hcl \
   'javv-scanner-grype:\K[0-9.]+' "s#javv-scanner-grype:[0-9.]+#javv-scanner-grype:$grype#"
+check "docker trivy service" "$trivy" deploy/docker/compose.yaml \
+  'javv-scanner-trivy:\K[0-9.]+' "s#javv-scanner-trivy:[0-9.]+#javv-scanner-trivy:$trivy#"
+check "docker grype service" "$grype" deploy/docker/compose.yaml \
+  'javv-scanner-grype:\K[0-9.]+' "s#javv-scanner-grype:[0-9.]+#javv-scanner-grype:$grype#"
 check "scanner README verify" "$trivy" scanner/README.md \
   'javv-scanner-trivy:\K[0-9.]+' "s#javv-scanner-trivy:[0-9.]+#javv-scanner-trivy:$trivy#"
 check "bake trivy defaults" "$trivy,${trivy_also//, /,}" scanner/docker-bake.hcl \

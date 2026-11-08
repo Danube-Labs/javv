@@ -366,6 +366,25 @@ These settings are for the Nomad jobs only:
 | `JAVV_NOMAD_NAMESPACES` | `*` | The Nomad namespaces to read. Example: `default,billing`. |
 | `JAVV_DRY_RUN` | `false` | `true`: the job writes the images to its log, and pushes nothing. |
 
+### The Docker scan containers
+
+The containers of [Scan a Docker Compose host](../deploy/docker/README.md) push the images of a
+Docker host.
+
+- They use the [Trivy](#trivy-settings) and [Grype](#grype-settings) settings,
+  `JAVV_LOG_LEVEL` and `JAVV_PUSH_RETRY_BUDGET_SECONDS`, with the same names and defaults.
+- Set each setting in the `environment` of the service in `compose.yaml`.
+- The scanners update their databases in the cache volume of the container. The containers do not
+  have a separate refresh.
+
+These settings are for the Docker containers only:
+
+| Setting | Default | What it does |
+|---|---|---|
+| `JAVV_DOCKER_SKIP_PROJECTS` | empty | The namespaces in JAVV to skip: Compose projects, or names of containers with no project. Separate them with commas. A `*` is a pattern. Example: `test-*,legacy`. |
+| `DOCKER_HOST` | `unix:///var/run/docker.sock` | The Docker socket. The script and the scanners read it. |
+| `JAVV_DRY_RUN` | `false` | `true`: the cycle writes the images to its log, and pushes nothing. |
+
 ## Trivy settings
 
 The scanner reads these environment variables.

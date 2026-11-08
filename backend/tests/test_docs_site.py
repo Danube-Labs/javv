@@ -64,6 +64,7 @@ PAGES = {
     "deploy/helm/javv-opensearch/README.md",
     "deploy/helm/javv-scanner/README.md",
     "deploy/nomad/README.md",
+    "deploy/docker/README.md",
     "docs/use/index.md",
     "docs/use/from-a-scan-to-a-finding.md",
     "docs/use/set-the-state-of-a-finding.md",
