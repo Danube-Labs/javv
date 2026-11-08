@@ -1,1 +1,0 @@
-../../../../deploy/nomad/javv-trivy-cache.volume.hcl

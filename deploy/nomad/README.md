@@ -32,12 +32,13 @@ JAVV shows each Nomad job as a namespace:
 - You need a Nomad token that can apply ACL policies, write variables and create volumes.
 - The clients need the Docker task driver.
 - The clients must reach `ghcr.io`, the registries of your images, and JAVV.
-- You need the files of this folder: [`javv-scan-trivy.nomad.hcl`](javv-scan-trivy.nomad.hcl),
-  [`javv-scan-grype.nomad.hcl`](javv-scan-grype.nomad.hcl),
-  [`javv-scan.policy.hcl`](javv-scan.policy.hcl),
-  [`javv-trivy-cache.volume.hcl`](javv-trivy-cache.volume.hcl),
-  [`javv-grype-cache.volume.hcl`](javv-grype-cache.volume.hcl) and
-  [`javv_nomad_push.py`](javv_nomad_push.py).
+- You need the files of the folder [`deploy/nomad`](https://github.com/Danube-Labs/javv/tree/main/deploy/nomad):
+  [`javv-scan-trivy.nomad.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan-trivy.nomad.hcl),
+  [`javv-scan-grype.nomad.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan-grype.nomad.hcl),
+  [`javv-scan.policy.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-scan.policy.hcl),
+  [`javv-trivy-cache.volume.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-trivy-cache.volume.hcl),
+  [`javv-grype-cache.volume.hcl`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv-grype-cache.volume.hcl) and
+  [`javv_nomad_push.py`](https://github.com/Danube-Labs/javv/blob/main/deploy/nomad/javv_nomad_push.py).
 
 ## Install the jobs
 
