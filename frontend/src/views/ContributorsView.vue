@@ -245,7 +245,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           <section class="card-section">
             <div class="card-head">
               <h2>Triage progress</h2>
-              <p class="card-sub">triaged vs open · current state, not the trend window</p>
+              <p class="card-sub">now · Trivy and Grype together</p>
             </div>
             <ProgressPanel :query="query" />
           </section>
