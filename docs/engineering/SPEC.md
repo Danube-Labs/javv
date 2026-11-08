@@ -141,6 +141,10 @@ change the password on first login - FR-18.)
   expired-then-reclaimed slow worker can double-run or double-publish (the bell reads only the `done` doc);
   **orphan chunks from failed/stale attempts are TTL-swept** (D40/I-r3). Retires the reporting-vs-ingest
   contention risk.
+  *As built (2026-11-08, issue 1140): JAVV has no off-peak window. The export window sends
+  `run_mode: offpeak`. The backend stores it and does not read it. The report drain builds each queued
+  export when it runs (`JAVV_JOB_REPORT_DRAIN_CRON`, every 5 minutes by default), with a pause between
+  pages (`JAVV_REPORT_DRAIN_SLEEP_MS`).*
 - **FR-14 Per-image report.** Image drill-down with Trivy/Grype **scanner dropdown**; severity-summary +
   per-scanner finding table (verbatim scanner severity from `_source`). Fully **time-travelable** via the
   global picker (FR-23): at a past T it shows the image's exact CVE list + as-of-then severities from
