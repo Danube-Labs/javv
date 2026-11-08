@@ -16,6 +16,9 @@
         <loc>https://danube-labs.github.io/javv/dev/deploy/helm/javv/</loc>
       </url>
       <url>
+        <loc>https://danube-labs.github.io/javv/dev/deploy/nomad/</loc>
+      </url>
+      <url>
         <loc>https://danube-labs.github.io/javv/dev/docs/</loc>
       </url>
       <url>

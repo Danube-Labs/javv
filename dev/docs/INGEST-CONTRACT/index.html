@@ -751,6 +751,33 @@
 
                 
               
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/nomad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scan a Nomad cluster
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
             </ul>
           </nav>
         
@@ -1612,6 +1639,7 @@ scanners. Use it from each environment that can make JSON and send HTTP requests
 Nomad, Docker hosts or CI pipelines.</p>
 <p>The page gives the sequence of calls, the rules for the script, and a reference for each field.</p>
 <ul>
+<li>For a Nomad cluster, use the tested jobs of <a href="../../deploy/nomad/">Scan a Nomad cluster</a>.</li>
 <li>The machine-readable schema is <strong><a href="../ingest-envelope.schema.json"><code>ingest-envelope.schema.json</code></a></strong>.</li>
 <li>JAVV makes the schema from the model that the backend uses to validate each push.</li>
 <li>A CI test compares the two, and a second CI test compares the field tables on this page with the
@@ -1632,6 +1660,10 @@ Use the <a href="#example">example</a> as the template.</p>
    <code>cluster_id</code>. Select the scanner, and then make the token. JAVV shows the token one time only.
    To use the API, send <code>POST /api/v1/admin/tokens</code> with <code>{"cluster_id", "scanner", "expiry"}</code> as
    a user with <code>can_manage_tokens</code>. When you make the token for a new <code>cluster_id</code>, JAVV adds the cluster.</li>
+<li>The API call needs a session: sign in with <code>POST /auth/login</code>. At the first sign-in, change the
+     password with <code>POST /auth/password</code>.</li>
+<li>Send <code>expiry</code> with a time zone, for example <code>2026-12-01T00:00:00Z</code>.</li>
+<li>The token is in the key <code>token</code> of the reply.</li>
 <li><strong>Choose the <code>cluster_id</code>.</strong> It is the ID of your environment in JAVV, and it <strong>never changes</strong>.
    It has lowercase letters, digits and hyphens, 8 to 64 characters, and not a hyphen first. JAVV
    stores the data under this ID. The name that the web app shows is a different value, and you can
@@ -1673,6 +1705,8 @@ JAVV.</p>
   in <code>namespaces</code> of one envelope, and the total number of instances in <code>replicas</code>.</li>
 <li><strong>Push an envelope also for an image with no findings.</strong> Send <code>findings: []</code> and set each count
   to 0. This push tells JAVV that the image is clean.</li>
+<li><strong>Do not push an image that stopped.</strong> After the next committed cycle, the image is not in
+  <strong>Running images</strong>. Its findings stay open until the staleness sweep marks them stale.</li>
 <li><strong>Send each finding one time.</strong> JAVV identifies a finding by the cluster, the image digest, the
   scanner, <code>vuln_id</code>, <code>package_name</code> and <code>package_version</code>. If an envelope has two entries with
   the same values, JAVV keeps one finding and counts it one time. It keeps the values of the last
@@ -1688,8 +1722,12 @@ JAVV.</p>
 <li><strong>Put a time zone in each time.</strong> Use ISO 8601 with <code>Z</code> or an offset, for example
   <code>2026-07-10T12:00:00Z</code>.</li>
 <li><strong>Complete each cycle with step 4.</strong> Set <code>expected_count</code> to the number of images that you
-  scanned and pushed in the cycle. Without step 4, JAVV does not use the cycle when it shows the
-  images that run at a given time.</li>
+  scanned and pushed in the cycle. Count a push that JAVV refused too. Without step 4, JAVV does not
+  use the cycle when it shows the images that run at a given time.</li>
+<li><strong>If no image scanned in a cycle, send the number of images that you found.</strong> For example, the
+  registry did not reply. With <code>expected_count: 0</code>, JAVV marks the empty cycle <code>committed</code> and
+  shows no images for the cluster. With the number of images found, the cycle stays <code>partial</code>, and
+  JAVV keeps the images of the last good cycle.</li>
 <li><strong>Push at least one time in each staleness period.</strong> When a cluster sends no push for this
   period, JAVV marks its findings as stale.</li>
 <li><strong>Send again only after a temporary error.</strong> After <code>429</code> or <code>503</code>, or when JAVV does not reply,
@@ -1699,6 +1737,8 @@ JAVV.</p>
 <li><strong>Keep each push in the size limits.</strong> The limit is 10 MiB as it arrives (still compressed) and
   60 MiB after decompression, by default. To send a large envelope, compress it and send the
   header <code>Content-Encoding: gzip</code>. The limit is 100,000 findings for each envelope.</li>
+<li><strong>Compress only the envelopes.</strong> Only <code>POST /api/v1/ingest/scan</code> accepts <code>Content-Encoding: gzip</code>.
+  <code>POST /api/v1/inventory-runs</code> gets <code>400</code> for a compressed body.</li>
 <li><strong>Keep the token secret.</strong> Do not write the token in a log or in the envelope.</li>
 </ul>
 <h2 id="field-reference">Field reference<a class="headerlink" href="#field-reference" title="Permanent link">&para;</a></h2>
@@ -1743,7 +1783,7 @@ The column <strong>Type</strong> uses JSON types. "or null" means that <code>nul
 <td>required</td>
 <td>string</td>
 <td><code>sha256:</code> and 6 to 64 hexadecimal digits</td>
-<td>The digest of the image. JAVV identifies each image by this value.</td>
+<td>The repository digest of the image: the part after <code>@</code> in <code>repo@sha256:…</code>. Docker shows it in <code>RepoDigests</code>, and Trivy and Grype write it in their output. Do not send the image ID of the classic Docker image store. With that ID, JAVV shows one image as two images: one from Kubernetes, one from Docker. JAVV identifies each image by this value.</td>
 </tr>
 <tr>
 <td><code>image_ref</code></td>
@@ -1757,14 +1797,14 @@ The column <strong>Type</strong> uses JSON types. "or null" means that <code>nul
 <td>required</td>
 <td>array of strings</td>
 <td>1,024 items at most</td>
-<td>The places where the image runs. For Kubernetes, these are namespaces. You can also use Nomad job names, compose project names or host groups. Example: <code>["billing-job"]</code>.</td>
+<td>The places where the image runs. For Kubernetes, these are namespaces. You can also use Nomad jobs, compose project names or host groups. A Nomad job ID is unique only in its Nomad namespace: <a href="../../deploy/nomad/">Scan a Nomad cluster</a> tells the names to use. Example: <code>["billing-job"]</code>.</td>
 </tr>
 <tr>
 <td><code>replicas</code></td>
 <td>required</td>
 <td>integer</td>
 <td>0 or more</td>
-<td>The number of instances of the image that run.</td>
+<td>The number of instances of the image that run. The JAVV scanners count the pods that run the image. For Nomad, count the allocations.</td>
 </tr>
 <tr>
 <td><code>scan_run_id</code></td>
@@ -1958,7 +1998,7 @@ of <code>tuning</code> must agree with <code>scanner</code>. If your script does
 <td>optional</td>
 <td>array of strings</td>
 <td>64 items at most</td>
-<td>The kinds of workload that the cycle skipped. Default: <code>[]</code>.</td>
+<td>The kinds of workload that the cycle skipped. For Kubernetes, the kinds of the owners of the pods, for example <code>Job</code>. For Nomad, the job types, for example <code>batch</code>. Default: <code>[]</code>.</td>
 </tr>
 </tbody>
 </table>

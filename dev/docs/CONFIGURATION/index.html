@@ -14,7 +14,7 @@
       
       
       
-        <link rel="prev" href="../../deploy/helm/javv-scanner/">
+        <link rel="prev" href="../../deploy/nomad/">
       
       
         <link rel="next" href="../runbooks/opensearch-sizing/">
@@ -751,6 +751,33 @@
 
                 
               
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/nomad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Scan a Nomad cluster
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
             </ul>
           </nav>
         
@@ -1095,6 +1122,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The database refresh
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-nomad-scan-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Nomad scan jobs
       </span>
     </span>
   </a>
@@ -2072,6 +2110,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The database refresh
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-nomad-scan-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Nomad scan jobs
       </span>
     </span>
   </a>
@@ -3147,6 +3196,42 @@ next.</p>
   runs it again when the refresh container changes: the image, the database source, <code>extraEnv</code>,
   <code>resources</code> or <code>pullPolicy</code>.</li>
 </ul>
+<h3 id="the-nomad-scan-jobs">The Nomad scan jobs<a class="headerlink" href="#the-nomad-scan-jobs" title="Permanent link">&para;</a></h3>
+<p>The jobs of <a href="../../deploy/nomad/">Scan a Nomad cluster</a> push the images of a Nomad cluster.</p>
+<ul>
+<li>They use the <a href="#trivy-settings">Trivy</a> and <a href="#grype-settings">Grype</a> settings,
+  <code>JAVV_LOG_LEVEL</code> and <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code>, with the same names and defaults.</li>
+<li>Set each setting in the <code>env</code> block of the job.</li>
+<li>The scanners update their databases in the cache volume of the job. The jobs do not have a
+  separate refresh.</li>
+</ul>
+<p>These settings are for the Nomad jobs only:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_NOMAD_SKIP_JOBS</code></td>
+<td>empty</td>
+<td>The Nomad job IDs to skip, separated by commas. A <code>*</code> is a pattern. Example: <code>batch-*,legacy-api</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_NOMAD_NAMESPACES</code></td>
+<td><code>*</code></td>
+<td>The Nomad namespaces to read. Example: <code>default,billing</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_DRY_RUN</code></td>
+<td><code>false</code></td>
+<td><code>true</code>: the job writes the images to its log, and pushes nothing.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="trivy-settings">Trivy settings<a class="headerlink" href="#trivy-settings" title="Permanent link">&para;</a></h2>
 <p>The scanner reads these environment variables.</p>
 <ul>
