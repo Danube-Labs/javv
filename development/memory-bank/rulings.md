@@ -99,6 +99,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-07 | The table of the Roles card is flush in its card (`.set-flush`), as the other 7 tables of Settings (D2 option B). | 1127 |
 | 2026-11-07 | The section menu of Settings and the Guide takes the hover and press fills of the kit. The selected row keeps the press fill, with coral text (D4 option B). | 1127 |
 | 2026-11-07 | The scope strip above each Settings page is a white card, as the other Settings cards. The scope color stays on the badge (D6 option C). | 1127 |
+| 2026-11-08 | The verb is Delete: a saved view (a `Delete` button in the card footer and a window that asks first), a dashboard and the bin icon of a panel. A delete window keeps the slate primary button, with no danger color (R3, R9). | 1140 |
 | 2026-11-08 | Each control that closes something or clears a value is the kit's `UiCloseButton`: "✕", the hover wash and line with coral text. A slate head takes its dark look (R2). | 1140 |
 | 2026-11-08 | The hint of a Settings row with a wide box stops at 75 characters, not at the full width (R10). The namespace boxes wear the kit box, with its hover and focus. | 1140 |
 | 2026-11-08 | The image page has one band of three columns: Running now, Findings of the scanner and Build history (option B1). Findings opens Findings on the digest and the scanner, with a new Digest filter. Build history opens the card under the band, closed when the page opens (R5 to R7). | 1140 |

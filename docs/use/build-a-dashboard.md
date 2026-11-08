@@ -32,7 +32,7 @@ shows the data of the cluster that you select at the top of the page.
 4. Select Add panel. The panel goes under the other panels.
 5. To move a panel, drag its Move tab with the mouse. A dashed box shows where the panel goes.
    You cannot move a panel with the keyboard.
-6. To change a panel, select Settings on the panel. To remove a panel, select the bin icon on it.
+6. To change a panel, select Settings on the panel. To delete a panel, select the bin icon on it.
 7. Select Save changes. Discard puts back the dashboard as it was at the last save.
 
 A dashboard has at most 24 panels.
@@ -58,7 +58,7 @@ see the filters. Open in Findings shows the same findings on the Findings page.
 - Triage progress shows each state, so its list has no State filter.
 - New in range counts the findings first seen in the time range at the top of the page.
 
-To remove the filters of a panel, select Clear all in Filters. Then select Apply and Save changes.
+To clear the filters of a panel, select Clear all in Filters. Then select Apply and Save changes.
 
 Triage activity can count only some changes. Its Filters list has Action and User. Action shows
 only the triage actions, because the panel counts only these. The numbers in the list count all
@@ -76,10 +76,10 @@ also the changes before the range.
 
 Only the owner of a dashboard and an admin can change it. An admin can see each dashboard.
 
-## Remove a dashboard
+## Delete a dashboard
 
 1. Open the dashboard, then select Edit dashboard.
-2. Select Remove, then select Remove dashboard. The data of the panels stays. The audit log keeps
+2. Select Delete, then select Delete dashboard. The data of the panels stays. The audit log keeps
    a copy of the dashboard.
 
 ## Copy dashboards to a different JAVV

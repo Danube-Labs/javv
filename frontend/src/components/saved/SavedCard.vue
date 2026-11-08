@@ -1,21 +1,22 @@
 <script setup lang="ts">
 /**
- * One card of a saved-items grid (SCREENS §6): Saved views and Dashboards share it. The title,
- * a badge or a remove button (the remove button only for a user who may remove the item), a
- * description and a summary line, then a footer: the item's number, its owner, its actions and,
- * when the screen gives an `openLabel`, a quiet "<label> ›" that says where the card goes.
+ * One card of a saved-items grid (SCREENS §6): Saved views and Dashboards share it. The title
+ * and a badge, a description and a summary line, then a footer: the item's number, its owner, a
+ * Delete button (only for a user who may delete the item, issue 1140 R3), its actions and, when
+ * the screen gives an `openLabel`, a quiet "<label> ›" that says where the card goes.
  *
  * The whole card opens the item (issue 1004): the title is a RowLink whose ::after covers the
  * card, so a click anywhere opens it, Tab reaches it once, and a ctrl click opens a new tab. The
- * badge, the remove button and the actions sit above that layer and keep their own clicks.
+ * badge, the Delete button and the actions sit above that layer and keep their own clicks.
  *
  * `badgeTone` colors the badge by who can see the item (issue 1004): only the owner a quiet gray,
  * everyone teal, a role list blue. With no tone the badge keeps its gray outline.
  */
 import type { RouteLocationRaw } from 'vue-router'
 
+import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
-import UiCloseButton from '@/components/ui/UiCloseButton.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 
 defineProps<{
   title: string
@@ -37,13 +38,15 @@ defineEmits<{ open: []; remove: [] }>()
         <RowLink class="vc-link" :to="to" @open="$emit('open')">{{ title }}</RowLink>
       </h2>
       <span v-if="$slots.badge" class="vc-badge" :data-tone="badgeTone"><slot name="badge" /></span>
-      <UiCloseButton v-if="removeLabel" class="vc-x" :label="removeLabel" @click="$emit('remove')" />
     </div>
     <p v-if="description" class="vc-desc">{{ description }}</p>
     <p class="vc-summary"><slot name="summary">{{ summary }}</slot></p>
     <div class="vc-foot">
       <span class="vc-count"><slot name="stat" /></span>
       <span class="vc-owner">Owner <b class="vc-owner-name">{{ owner }}</b></span>
+      <UiButton v-if="removeLabel" variant="mini" bordered class="vc-del" :aria-label="removeLabel" @click="$emit('remove')">
+        <AppIcon name="trash" :size="12" />Delete
+      </UiButton>
       <slot name="actions" />
       <span v-if="openLabel" class="vc-open" aria-hidden="true">{{ openLabel }} <span class="vc-open-mark">›</span></span>
     </div>
@@ -82,7 +85,7 @@ defineEmits<{ open: []; remove: [] }>()
   border-radius: inherit;
 }
 .vc-badge,
-.vc-x,
+.vc-del,
 .vc-foot :slotted(.ui-btn) {
   position: relative;
   z-index: 1;

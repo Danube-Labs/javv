@@ -17,10 +17,11 @@ vi.mock('@/api/generated', () => ({
 }))
 vi.mock('@/api/client', () => ({ client: {} }))
 
-import { listViewsApiV1ViewsGet } from '@/api/generated'
+import { deleteViewApiV1ViewsViewIdDelete, listViewsApiV1ViewsGet } from '@/api/generated'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { FINDINGS_DENSE_KEY, presetToRouteQuery } from '@/findings/savedViews'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import SavedViewsView from '@/views/SavedViewsView.vue'
 
 const PRESET = { severity: ['critical', 'high'], namespace: ['payments'] }
@@ -84,5 +85,38 @@ describe('the Saved views card', () => {
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/views')
     expect(localStorage.getItem(FINDINGS_DENSE_KEY)).toBeNull()
+  })
+})
+
+// issue 1140, R3: the Delete button of a card opens a window; only its "Delete view" sends the delete
+describe('deleting a saved view', () => {
+  beforeEach(() => {
+    useAuthStore().user = { username: 'lead', role: 'x', capabilities: [], must_change: false } as never
+  })
+  it('asks first, and sends nothing on Cancel', async () => {
+    const { w } = await mountList()
+    await w.get('.vc-del').trigger('click')
+    await flushPromises()
+    expect(w.find('[role="dialog"] h3').text()).toBe('Delete Prod backlog?')
+    expect(deleteViewApiV1ViewsViewIdDelete).not.toHaveBeenCalled()
+    await w.findAll('[role="dialog"] button').find((b) => b.text() === 'Cancel')!.trigger('click')
+    expect(w.find('[role="dialog"]').exists()).toBe(false)
+    expect(deleteViewApiV1ViewsViewIdDelete).not.toHaveBeenCalled()
+    w.unmount()
+  })
+
+  it('deletes on Delete view, takes the card off the list and says so', async () => {
+    vi.mocked(deleteViewApiV1ViewsViewIdDelete).mockResolvedValue({ response: { ok: true, status: 204 } } as never)
+    const { w } = await mountList()
+    await w.get('.vc-del').trigger('click')
+    await flushPromises()
+    await w.findAll('[role="dialog"] button').find((b) => b.text() === 'Delete view')!.trigger('click')
+    await flushPromises()
+    expect(deleteViewApiV1ViewsViewIdDelete).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(deleteViewApiV1ViewsViewIdDelete).mock.calls[0]![0]).toMatchObject({ path: { view_id: VIEW.view_id } })
+    expect(w.find('.view-card').exists()).toBe(false)
+    expect(w.find('[role="dialog"]').exists()).toBe(false)
+    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['View “Prod backlog” deleted'])
+    w.unmount()
   })
 })

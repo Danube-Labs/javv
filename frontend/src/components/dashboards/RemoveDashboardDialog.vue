@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Remove a dashboard, after a confirmation (issue 440, S8c). The delete sends the revision the
- * page read, so a dashboard that somebody changed since is not removed (409, D4). The audit log
- * keeps a copy of the removed dashboard.
+ * Delete a dashboard, after a confirmation (issue 440, S8c). The delete sends the revision the
+ * page read, so a dashboard that somebody changed since is not deleted (409, D4). The audit log
+ * keeps a copy of the deleted dashboard. The verb is Delete, as for a saved view (issue 1140, R3).
  */
 import { ref } from 'vue'
 
@@ -45,16 +45,16 @@ async function confirm() {
 </script>
 
 <template>
-  <ModalShell :title="`Remove ${name}?`" subtitle="You cannot undo this." :width="480" @close="close">
+  <ModalShell :title="`Delete ${name}?`" subtitle="You cannot undo this." :width="480" @close="close">
     <p class="rd-copy">
-      This removes the dashboard for each user who can see it. The data of its panels stays. The audit log keeps a
+      This deletes the dashboard for each user who can see it. The data of its panels stays. The audit log keeps a
       copy of the dashboard.
     </p>
     <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     <template #actions>
       <UiButton variant="ghost" :disabled="busy" @click="close">Cancel</UiButton>
       <UiButton variant="primary" :disabled="busy" @click="confirm">
-        {{ busy ? 'Removing…' : 'Remove dashboard' }}
+        {{ busy ? 'Deleting…' : 'Delete dashboard' }}
       </UiButton>
     </template>
   </ModalShell>

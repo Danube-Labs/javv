@@ -50,6 +50,7 @@ const WINDOW_FILES: Record<string, number> = {
   'components/dashboards/RemoveDashboardDialog.vue': 1,
   'components/findings/ExportDialog.vue': 1,
   'components/findings/SaveViewDialog.vue': 1,
+  'components/saved/DeleteViewDialog.vue': 1,
   'components/settings/ClusterDeleteDialog.vue': 1,
   'components/settings/SnapshotsCard.vue': 1,
   'components/settings/TokenOnceDialog.vue': 1,
@@ -329,7 +330,7 @@ test('each window wears the kit', async ({ page }) => {
   const { dashboard_id: id } = await made.json()
   try {
     const edit = `/dashboards/${id}?edit=1`
-    for (const [title, button] of [['Add a panel', 'Add panel'], ['Name and sharing', 'Name and sharing'], ['Remove', 'Remove']]) {
+    for (const [title, button] of [['Add a panel', 'Add panel'], ['Name and sharing', 'Name and sharing'], ['Delete', 'Delete']]) {
       const r = await checkWindow(page, title!, edit, (p) => p.getByRole('button', { name: button, exact: true }).first().click())
       problems.push(...r.problems)
       expect(r.count, `controls read in "${title}"`).toBeGreaterThanOrEqual(1)
@@ -340,6 +341,20 @@ test('each window wears the kit', async ({ page }) => {
       const { revision } = await left.json()
       await page.request.delete(`${BASE}/api/v1/dashboards/${id}?revision=${revision}`)
     }
+  }
+  // the Delete window of a saved view, on a view the walk makes and deletes (issue 1140)
+  const name = `e2e kit view ${Date.now()}`
+  const view = await page.request.post(`${BASE}/api/v1/views`, { data: { name } })
+  expect(view.status()).toBe(201)
+  const { view_id: viewId } = await view.json()
+  try {
+    const r = await checkWindow(page, 'Delete', '/views', (p) =>
+      p.locator('.view-card', { hasText: name }).getByRole('button', { name: `Delete ${name}` }).click(),
+    )
+    problems.push(...r.problems)
+    expect(r.count, 'controls read in "Delete <view>?"').toBeGreaterThanOrEqual(1)
+  } finally {
+    await page.request.delete(`${BASE}/api/v1/views/${viewId}`)
   }
   expect(problems).toEqual([])
 })

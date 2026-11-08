@@ -103,16 +103,16 @@ export function roleOptions(listed: readonly string[], chosen: readonly string[]
   return [...new Set([...listed, ...chosen])].map((r) => ({ value: r, label: roleLabel(r) }))
 }
 
-/** The message of a remove that the backend did not do. */
+/** The message of a delete that the backend did not do. */
 export function removeFailureCopy(status: number, readOnly: boolean): string {
-  if (readOnly) return 'The store is read-only: its disk is full. JAVV did not remove the dashboard.'
-  if (status === 403) return 'Only the owner or an admin can remove this dashboard.'
+  if (readOnly) return 'The store is read-only: its disk is full. JAVV did not delete the dashboard.'
+  if (status === 403) return 'Only the owner or an admin can delete this dashboard.'
   if (status === 409)
-    return 'Somebody changed this dashboard after you opened it. JAVV did not remove it. Reload the page, then try again.'
-  if (status === 429) return 'The store is busy. JAVV did not remove the dashboard. Try again in a few seconds.'
+    return 'Somebody changed this dashboard after you opened it. JAVV did not delete it. Reload the page, then try again.'
+  if (status === 429) return 'The store is busy. JAVV did not delete the dashboard. Try again in a few seconds.'
   if (status === 0 || status === 504)
-    return 'JAVV did not answer. The dashboard is possibly removed. Reload the page to see.'
-  return 'JAVV did not remove the dashboard. Check the backend, then try again.'
+    return 'JAVV did not answer. The dashboard is possibly deleted. Reload the page to see.'
+  return 'JAVV did not delete the dashboard. Check the backend, then try again.'
 }
 
 /** The message of a new dashboard that the backend did not make. */

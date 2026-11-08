@@ -224,7 +224,7 @@ function applyDetails(next: DashboardDetails) {
   detailsOpen.value = false
 }
 function onRemoved() {
-  toast.success(`Dashboard “${dash.value?.name ?? ''}” removed`)
+  toast.success(`Dashboard “${dash.value?.name ?? ''}” deleted`)
   void router.push('/dashboards')
 }
 
@@ -302,7 +302,7 @@ async function save() {
           <UiButton variant="control" head @click="detailsOpen = true">
             <AppIcon name="users" :size="13" />Name and sharing
           </UiButton>
-          <UiButton variant="control" head @click="removing = true"><AppIcon name="trash" :size="13" />Remove</UiButton>
+          <UiButton variant="control" head @click="removing = true"><AppIcon name="trash" :size="13" />Delete</UiButton>
           <UiButton variant="ghost" head :disabled="dirty" @click="setEditing(false)">Exit edit</UiButton>
         </template>
         <template v-else>

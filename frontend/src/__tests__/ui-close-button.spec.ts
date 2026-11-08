@@ -57,7 +57,6 @@ describe('the close sites use it', () => {
     ['components/chrome/NotificationBell.vue', 'class="bell-x"'],
     ['components/settings/ChipsInput.vue', '<UiCloseButton class="chip-x" small '],
     ['components/filters/FilterPill.vue', '<UiCloseButton class="fpill-x" small '],
-    ['components/saved/SavedCard.vue', '<UiCloseButton v-if="removeLabel" class="vc-x" '],
   ])('%s', (file, use) => {
     expect(read(file)).toContain(use)
   })

@@ -353,7 +353,7 @@ describe('Add panel in edit mode', () => {
     expect(w.find('#panel-cap-note path').attributes('d')).not.toBe(keyIcon)
 
     // one panel less and it is on again
-    await w.find('[aria-label="Remove Scan ingest"]').trigger('click')
+    await w.find('[aria-label="Delete Scan ingest"]').trigger('click')
     await flushPromises()
     expect(button(w, 'Add panel').attributes('disabled')).toBeUndefined()
     expect(w.find('#panel-cap-note').exists()).toBe(false)

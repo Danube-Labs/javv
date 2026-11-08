@@ -4,6 +4,8 @@
  * tested as units. The window reads the roles from the server (ruling of 2026-10-26), and edit
  * mode saves the details with the panels, sending only what changed.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
@@ -188,6 +190,15 @@ describe('the details rules', () => {
     }
     expect(removeFailureCopy(409, false)).toMatch(/changed this dashboard after you opened it/)
   })
+
+  it('the verb is delete, as for a saved view (issue 1140, R3)', () => {
+    for (const status of [403, 409, 429, 500, 0]) expect(removeFailureCopy(status, false)).not.toMatch(/remov/i)
+    expect(removeFailureCopy(0, true)).not.toMatch(/remov/i)
+    // the bin icon of a panel says Delete to a screen reader and in its hover text
+    const grid = readFileSync(resolve(__dirname, '../components/dashboards/DashboardEditGrid.vue'), 'utf8')
+    expect(grid).toContain(':aria-label="`Delete ${p.panel.name}`"')
+    expect(grid).toContain(':title="`Delete ${p.panel.name}`"')
+  })
 })
 
 describe('the details window', () => {
@@ -356,31 +367,31 @@ describe('the details in edit mode, and the remove', () => {
     expect(w.find('.save-msg').text()).toBe('All changes saved')
   })
 
-  it('Remove asks first, sends the revision it read, and goes to the list', async () => {
+  it('Delete asks first, sends the revision it read, and goes to the list', async () => {
     vi.mocked(deleteDashboardApiV1DashboardsDashboardIdDelete).mockResolvedValue(answer(204))
     vi.mocked(listDashboardsApiV1DashboardsGet).mockResolvedValue(answer(200, { dashboards: [] }))
     const { w, router } = await mountAt(`/dashboards/${ID}?edit=1`)
-    await button(w, 'Remove').trigger('click')
+    await button(w, 'Delete').trigger('click')
     await flushPromises()
-    expect(w.find('[role="dialog"] h3').text()).toBe('Remove Weekly risk review?')
+    expect(w.find('[role="dialog"] h3').text()).toBe('Delete Weekly risk review?')
     expect(deleteDashboardApiV1DashboardsDashboardIdDelete).not.toHaveBeenCalled()
 
-    await dialogButton(w, 'Remove dashboard').trigger('click')
+    await dialogButton(w, 'Delete dashboard').trigger('click')
     await flushPromises()
     expect(vi.mocked(deleteDashboardApiV1DashboardsDashboardIdDelete).mock.calls[0]![0]).toMatchObject({
       path: { dashboard_id: ID },
       query: { revision: 4 },
     })
     expect(router.currentRoute.value.path).toBe('/dashboards')
-    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['Dashboard “Weekly risk review” removed'])
+    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['Dashboard “Weekly risk review” deleted'])
   })
 
   it('a refused remove stays in the window and says why', async () => {
     vi.mocked(deleteDashboardApiV1DashboardsDashboardIdDelete).mockResolvedValue(answer(409))
     const { w, router } = await mountAt(`/dashboards/${ID}?edit=1`)
-    await button(w, 'Remove').trigger('click')
+    await button(w, 'Delete').trigger('click')
     await flushPromises()
-    await dialogButton(w, 'Remove dashboard').trigger('click')
+    await dialogButton(w, 'Delete dashboard').trigger('click')
     await flushPromises()
     expect(w.find('[role="dialog"] [role="alert"]').text()).toBe(removeFailureCopy(409, false))
     expect(router.currentRoute.value.path).toBe(`/dashboards/${ID}`)
@@ -390,9 +401,9 @@ describe('the details in edit mode, and the remove', () => {
     vi.mocked(deleteDashboardApiV1DashboardsDashboardIdDelete).mockResolvedValue(answer(404))
     vi.mocked(listDashboardsApiV1DashboardsGet).mockResolvedValue(answer(200, { dashboards: [] }))
     const { w, router } = await mountAt(`/dashboards/${ID}?edit=1`)
-    await button(w, 'Remove').trigger('click')
+    await button(w, 'Delete').trigger('click')
     await flushPromises()
-    await dialogButton(w, 'Remove dashboard').trigger('click')
+    await dialogButton(w, 'Delete dashboard').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/dashboards')
   })

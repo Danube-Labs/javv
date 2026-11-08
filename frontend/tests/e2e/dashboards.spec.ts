@@ -250,8 +250,8 @@ test('a dashboard is made, moved, shared and removed; the viewer cannot change i
     }
 
     // remove it, after the confirmation
-    await page.getByRole('button', { name: 'Remove', exact: true }).click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Remove dashboard' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete dashboard' }).click()
     await expect(page).toHaveURL(/\/dashboards(\?|$)/)
     expect((await page.request.get(`${BASE}/api/v1/dashboards/${id}`)).status()).toBe(404)
   } finally {
