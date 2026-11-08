@@ -166,7 +166,13 @@ async def _findings(client: AsyncOpenSearch, cluster_id: str) -> list[dict]:
     await client.indices.refresh(index="findings")
     r = await client.search(
         index="findings",
-        body={"query": {"term": {"cluster_id": cluster_id}}, "size": 10_000},
+        body={
+            "query": {"term": {"cluster_id": cluster_id}},
+            "size": 10_000,
+            # with no sort, the writes of other tests to the index change the order of rows that
+            # did not change (issue 1137)
+            "sort": [{"finding_key": "asc"}],
+        },
     )
     return [h["_source"] for h in r["hits"]["hits"]]
 
