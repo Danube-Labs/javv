@@ -177,3 +177,18 @@ describe('the audit filters of Triage activity (issue 1063)', () => {
     expect(panelAuditLogQuery(null)).toEqual({ entity: 'finding,decision' })
   })
 })
+
+// The Digest filter (issue 1140) is one more Findings field: a panel stores it as image_digest,
+// reads with it, says it in words and carries it to Findings.
+describe('the Digest filter in a panel', () => {
+  const f = stored({ image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1' })
+  it('says it in words, as the other text fields do', () => {
+    expect(panelFilterParts(f)).toEqual(['Digest "sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1"'])
+  })
+  it('reads with it', () => {
+    expect(panelQuery(base, f)).toMatchObject({ image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1', all_filters: true })
+  })
+  it('carries it to Findings with the value of the row', () => {
+    expect(panelFindingsQuery(f, { severity: 'critical' })).toEqual({ digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1', severity: 'critical' })
+  })
+})

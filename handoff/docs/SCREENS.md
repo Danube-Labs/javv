@@ -633,10 +633,24 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
 The "Showing results from" switch in the head is a screen head control: 30px high, with the 1px
 edge (issue 1039).
 
+**The band under the head (issue 1140, R5 to R7, operator ruling on built pictures, option B1):**
+three columns, each with a label, the value and its source with a date. The head keeps the name,
+the repository, the digest and the switch; the replicas and the namespaces moved into the band.
+- *Running now* (*at T* at a past time): `yes · N replicas`, `no` or `unknown`; under it the
+  namespaces and "from the inventory of <date>".
+- *Findings of <scanner>*: the count, "as scanned · last scan <date>". A clickable stat cell
+  (`button.stat-cell` + `.cell-go`): it opens Findings with `digest=<this digest>` and
+  `scanner=<scanner>`. Findings has a Digest filter for this (`image_digest`, one value, no
+  exclude side).
+- *Build history*: `N digests · N scans`, "<scanner>, <first day> to <last day>". A clickable stat
+  cell with `aria-expanded`: it opens and closes the Build history card under the band. The card
+  is closed when the page opens; its chevron points down while it is open.
+
 **States:** loading; **"Not yet scanned then"** (T before the first committed scan); build-changed
 marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`. A
-refused build-history read says so in the Build history card and is never read as "not yet
-scanned": neither the stat nor the "Not yet scanned then" card shows (issue 833 F5).
+refused build-history read says so in the Build history card (and as "not available" in its
+column) and is never read as "not yet scanned": neither the stat nor the "Not yet scanned then"
+card shows (issue 833 F5).
 
 **Changed vs SCREENS.md:** scanner dropdown is a **read** lens only (no version anything — D41);
 EPSS/KEV null on Trivy rows enforced here too (V4-DELTA-5); M8b dependency made explicit (C-1).

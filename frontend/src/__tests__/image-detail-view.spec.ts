@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { useClusterStore } from '@/stores/cluster'
 import { useTimeTravelStore } from '@/stores/timeTravel'
+import { historySummary } from '@/images/subTimeline'
 import ImageDetailView from '@/views/ImageDetailView.vue'
 
 const ok = (data: unknown) => ({ data, response: { ok: true, status: 200 } })
@@ -63,6 +64,7 @@ const router = createRouter({
     { path: '/images/:digest', name: 'image-detail', component: ImageDetailView },
     { path: '/images', name: 'images', component: { template: '<div />' } },
     { path: '/findings/:cveId', name: 'finding', component: { template: '<div />' } },
+    { path: '/findings', name: 'findings', component: { template: '<div />' } },
   ],
 })
 
@@ -136,5 +138,80 @@ describe('ImageDetailView (M9c slice 3)', () => {
     expect(w.findAll('.tq-ans')[1]!.text() === 'not yet scanned').toBe(notYet)
     expect(w.findAll('h2').some((h) => h.text() === 'Not yet scanned then')).toBe(notYet)
     expect(w.find('.tl-card .load-error').exists()).toBe(!notYet)
+  })
+
+  // issue 1140, R5 to R7 (operator ruling on built pictures, option B1)
+  describe('the band of three columns', () => {
+    const ev = (at: string, digest: string, scanner = 'trivy', order = 1) =>
+      ({ scan_order: order, '@timestamp': at, scanner, image_digest: digest, total: 3 }) as never
+    async function mountImage() {
+      facetsMock.mockResolvedValue(ok({ facets: { present: [{ key: 'true', count: 1167 }] } }) as never)
+      searchMock.mockResolvedValue(ok({ data: [], total: { value: 0 }, next_cursor: null }) as never)
+      inventoryMock.mockResolvedValue(
+        ok({
+          inventory: { inventory_run_id: 'r1', completed_at: '2026-11-02T12:46:00Z' },
+          images: [{ image_digest: 'sha256:abc', replicas: 1, namespaces: ['data'] }],
+        }) as never,
+      )
+      timelineMock.mockResolvedValue(
+        ok({ events: [ev('2026-10-06T12:00:00Z', 'sha256:abc', 'trivy', 1), ev('2026-11-02T12:35:00Z', 'sha256:abc', 'trivy', 2), ev('2026-11-02T12:40:00Z', 'sha256:abc', 'grype', 1)] }) as never,
+      )
+      await router.push('/images/sha256:abc?repo=docker.io/library/postgres&tag=13.4')
+      const w = mount(ImageDetailView, { global: { plugins: [router] }, attachTo: document.body })
+      await flushPromises()
+      return w
+    }
+
+    it('shows Running now, Findings of the scanner and Build history, and the head lost its meta line', async () => {
+      const w = await mountImage()
+      const cells = w.findAll('.two-q .stat-cell')
+      expect(cells.map((c) => c.find('.stat-label').text())).toEqual(['running now', 'findings of trivy', 'build history'])
+      expect(cells[0]!.text()).toContain('yes · 1 replica')
+      expect(cells[0]!.find('.stat-sub').text()).toContain('data · from the inventory of')
+      expect(cells[1]!.text()).toContain('1,167 findings')
+      expect(cells[2]!.find('.stat-num').text()).toBe('1 digest · 2 scans')
+      expect(cells[2]!.find('.stat-sub').text()).toBe('trivy, 6 Oct to 2 Nov')
+      expect(w.find('.img-meta').exists()).toBe(false)
+      w.unmount()
+    })
+
+    it('Build history opens and closes the card, closed when the page opens', async () => {
+      const w = await mountImage()
+      const btn = w.findAll('.two-q button.stat-cell').find((b) => b.text().includes('build history'))!
+      const card = w.get('#build-history')
+      expect(btn.attributes('aria-expanded')).toBe('false')
+      expect(btn.attributes('aria-controls')).toBe('build-history')
+      expect(card.isVisible()).toBe(false)
+      await btn.trigger('click')
+      expect(btn.attributes('aria-expanded')).toBe('true')
+      expect(card.isVisible()).toBe(true)
+      await btn.trigger('click')
+      expect(card.isVisible()).toBe(false)
+      w.unmount()
+    })
+
+    it('Findings opens Findings on this digest and scanner', async () => {
+      const w = await mountImage()
+      await w.findAll('.two-q button')[0]!.trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/findings')
+      expect(router.currentRoute.value.query).toEqual({ digest: 'sha256:abc', scanner: 'trivy' })
+      w.unmount()
+    })
+  })
+})
+
+describe('historySummary', () => {
+  const ev = (at: string, digest: string, scanner = 'trivy') =>
+    ({ scan_order: 1, '@timestamp': at, scanner, image_digest: digest, total: 1 }) as never
+  const events = [ev('2026-10-01T00:00:00Z', 'a'), ev('2026-10-05T00:00:00Z', 'b'), ev('2026-10-09T00:00:00Z', 'b'), ev('2026-10-02T00:00:00Z', 'a', 'grype')]
+
+  it('counts one scanner\'s digests and scans, with the first and last date', () => {
+    expect(historySummary(events, 'trivy', null)).toEqual({ digests: 2, scans: 3, firstAt: '2026-10-01T00:00:00Z', lastAt: '2026-10-09T00:00:00Z' })
+  })
+
+  it('stops at T, and gives nothing for a scanner with no scan', () => {
+    expect(historySummary(events, 'trivy', '2026-10-06T00:00:00Z')).toEqual({ digests: 2, scans: 2, firstAt: '2026-10-01T00:00:00Z', lastAt: '2026-10-05T00:00:00Z' })
+    expect(historySummary([], 'grype', null)).toEqual({ digests: 0, scans: 0, firstAt: null, lastAt: null })
   })
 })

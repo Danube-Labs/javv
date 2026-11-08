@@ -176,3 +176,12 @@ describe('a schedule at a past time', () => {
     expect([...PAST_TIME_UNRECORDED_KEYS].sort()).toEqual(backend)
   })
 })
+
+describe('the Digest filter in an export (issue 1140)', () => {
+  it('both kinds of export carry it, now and at a past time', () => {
+    const lens = { cluster_id: 'c-1', image_digest: 'sha256:1adb50e5c24f550a9e68457a2ce60e9e4103dfc43c3b36e98310168165b443a1', scanner: 'trivy' }
+    expect(unrepresentableKeys(lens)).toEqual([])
+    expect(exportBlockMessage(FINDINGS_FIELDS, lens, { schedule: true, historical: true, format: 'csv', vexScanner: 'trivy' })).toBeNull()
+    expect(exportBlockMessage(FINDINGS_FIELDS, lens, { schedule: false, historical: false, format: 'csv', vexScanner: 'trivy' })).toBeNull()
+  })
+})
