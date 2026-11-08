@@ -25,9 +25,7 @@ const button = (text: string) =>
   [...document.body.querySelectorAll('button')].find((b) => b.textContent!.trim() === text)!
 // the past-time note shares the .ex-blocked style; the block message is the other one
 const blockText = () =>
-  [...document.body.querySelectorAll('.ex-blocked')]
-    .map((p) => p.textContent!.trim())
-    .find((text) => !text.startsWith('Rewound'))
+  [...document.body.querySelectorAll('.ex-blocked:not(.ex-past)')].map((p) => p.textContent!.trim())[0]
 
 async function openWith(
   selections: Record<string, string[]>,
@@ -38,7 +36,7 @@ async function openWith(
     props: { fields: FINDINGS_FIELDS, selections, modes, historical },
     attachTo: document.body,
   })
-  button('Export CSV').click()
+  button('Export').click()
   await flushPromises()
 }
 
@@ -57,7 +55,7 @@ describe('ExportDialog blocks what the backend refuses', () => {
     const message = 'An export cannot use Assignee and Unassigned together. Clear one of them.'
     expect(blockText()).toBe(message)
     expect(button('Download').disabled).toBe(true)
-    button('Schedule off-peak').click()
+    button('In the background').click()
     await flushPromises()
     expect(blockText()).toBe(message)
     expect(button('Schedule').disabled).toBe(true)
@@ -88,5 +86,52 @@ describe('ExportDialog blocks what the backend refuses', () => {
     await openWith({ q: ['openssl'] }, {}, true)
     expect(blockText()).toBe('At a past time, a schedule cannot use these filters: Search. Clear them.')
     expect(button('Schedule').disabled).toBe(true)
+  })
+})
+
+// JAVV has no off-peak window: the report drain builds a queued export on its own schedule, so the
+// window tells what happens and uses no internal words (issue 1140).
+describe('ExportDialog words', () => {
+  const dialogText = () => document.body.querySelector('[role="dialog"]')!.textContent!
+  const STALE = /off-peak|413|inline cap|lens|~24h|never merged|quiet time/i
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    document.body.innerHTML = ''
+    useClusterStore().clusters = [{ cluster_id: 'c-1', cluster_name: 'c-1' }] as never
+    useClusterStore().selectedId = 'c-1'
+    useAuthStore().user = { username: 'u', role: 'triager', capabilities: ['can_export'], must_change: false } as never
+  })
+
+  it('the two tabs say Run now and In the background, and no note uses the old words', async () => {
+    await openWith({})
+    expect(button('Run now')).toBeTruthy()
+    expect(dialogText()).toContain('a VEX file holds the results of one scanner')
+    expect(dialogText()).not.toMatch(STALE)
+    button('In the background').click()
+    await flushPromises()
+    expect(dialogText()).toContain('JAVV makes the file in the background.')
+    expect(dialogText()).not.toMatch(STALE)
+  })
+
+  it('too many rows for Run now: the window says so and goes to In the background', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 413 })))
+    await openWith({})
+    button('Download').click()
+    await flushPromises()
+    expect(dialogText()).toContain('Too many rows to download now.')
+    expect(dialogText()).not.toMatch(STALE)
+    expect(button('Schedule')).toBeTruthy()
+    vi.unstubAllGlobals()
+  })
+
+  it('at a past time, the note tells that the file has the rows of that time', async () => {
+    await openWith({}, {}, true)
+    const note = document.body.querySelector('.ex-past')!.textContent!.replace(/\s+/g, ' ').trim()
+    expect(note).toBe(
+      'You look at a past time. JAVV makes the file in the background, with the rows as they were at that time.',
+    )
+    expect(button('Run now')).toBeUndefined()
+    expect(dialogText()).not.toMatch(STALE)
   })
 })
