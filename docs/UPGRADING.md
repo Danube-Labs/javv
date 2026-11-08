@@ -121,7 +121,7 @@ Your data stays:
 - You can also go back to a 0.5.x `compose.yaml` with the same data. Then OpenSearch runs without
   its sign-in again.
 
-We did these steps on the real compose files, from a 0.5.1 installation with data.
+**Tested on:** the real compose files, from a 0.5.1 installation with data.
 
 #### Change an OpenSearch password
 
@@ -178,8 +178,8 @@ roles and role mappings only on its first start with its sign-in on.
     when it closes, after the load. You can ignore it.
 5. Run `docker compose up -d`.
 
-The same loop loads a changed `javv` role. If a release changes the role, its notes tell you. We did
-these steps on the real compose files, from an OpenSearch that a `main` checkout started.
+The same loop loads a changed `javv` role. If a release changes the role, its notes tell you.
+**Tested on:** the real compose files, from an OpenSearch that a `main` checkout started.
 
 ### On Kubernetes (Helm)
 
@@ -422,7 +422,7 @@ do not sign in again: JAVV reads the permissions of a user on each request.
 On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
 its admin.
 
-We did these steps on the compose files of 0.8.8, with a triager and a security lead.
+**Tested on:** the compose files of 0.8.8, with a triager and a security lead.
 
 ### 0.8.9: a new permission for dashboards
 
@@ -465,8 +465,8 @@ The users do not sign in again: JAVV reads the permissions of a user on each req
 On Kubernetes, or with an OpenSearch of your own, send the same request to your OpenSearch, with
 its admin.
 
-We sent the request of the script two times to OpenSearch 3.9.0, with the roles and users of
-0.8.8. The first time changed the two roles and their users. The second time changed nothing.
+**Tested on:** OpenSearch 3.9.0, with the roles and users of 0.8.8. The request of the script went
+to it two times. The first time changed the two roles and their users. The second time changed nothing.
 
 ### 0.8.7: JAVV refuses a username with a capital letter
 
