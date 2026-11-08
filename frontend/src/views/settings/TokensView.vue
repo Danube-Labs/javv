@@ -161,8 +161,8 @@ async function submitMint() {
     logger.warn('token_mint_failed', { status: response?.status })
     mintError.value =
       response?.status === 403
-        ? 'Minting needs the can_manage_tokens capability.'
-        : 'Minting failed. No token was created.'
+        ? 'Creating a token needs the can_manage_tokens capability.'
+        : 'The token was not created.'
     return
   }
   mintOpen.value = false
@@ -221,7 +221,7 @@ const fmt = (iso: string | null) =>
       subtitle="one scoped push token per (cluster, scanner)"
     >
       <template #action>
-        <UiButton :disabled="busy" @click="openMint"><AppIcon name="plus" :size="13" />Mint token</UiButton>
+        <UiButton variant="control" :disabled="busy" @click="openMint"><AppIcon name="plus" :size="13" />Create token</UiButton>
       </template>
 
       <UiSkeleton
@@ -235,7 +235,7 @@ const fmt = (iso: string | null) =>
         Token list unavailable. Check the backend connection.
       </p>
       <p v-else-if="rows.length === 0" class="empty-note" role="status">
-        No push tokens yet. Mint one per scanner so the cluster can start pushing scans.
+        No push tokens yet. Create one for each scanner, so that the cluster can push its scans.
       </p>
       <p v-else-if="total > rows.length" class="cap-note">
         Showing the {{ rows.length }} newest of {{ total }} tokens.
@@ -299,7 +299,7 @@ const fmt = (iso: string | null) =>
     </SettingsCard>
 
     <!-- mint dialog -->
-    <ModalShell v-if="mintOpen" title="Mint a push token" subtitle="scoped to one (cluster, scanner) pair" @close="mintOpen = false">
+    <ModalShell v-if="mintOpen" title="Create a push token" subtitle="scoped to one (cluster, scanner) pair" @close="mintOpen = false">
       <UiField label="Cluster" first for="mint-cluster">
         <UiSelect id="mint-cluster" v-model="mintCluster">
           <option v-for="c in activeClusters" :key="c.cluster_id" :value="c.cluster_id">
@@ -339,7 +339,7 @@ const fmt = (iso: string | null) =>
       <template #actions>
         <UiButton variant="ghost" @click="mintOpen = false">Cancel</UiButton>
         <UiButton variant="primary" :disabled="busy || mintTarget === null || mintExpiryInvalid" @click="submitMint">
-          {{ busy ? 'Minting…' : 'Mint token' }}
+          {{ busy ? 'Creating…' : 'Create token' }}
         </UiButton>
       </template>
     </ModalShell>

@@ -60,8 +60,8 @@ describe('chart literals stay pinned to the CSS tokens (M9c)', () => {
     expect(CHART_SCANNER.grype.toLowerCase()).toBe(cssHex('--scanner-grype-fg'))
   })
 
-  it('the activity-lens accent equals --coral (M9d audit lens)', () => {
-    expect(CHART_ACCENT.toLowerCase()).toBe(cssHex('--coral'))
+  it('the activity-lens accent equals --slate2, not --coral (issue 1140, R8)', () => {
+    expect(CHART_ACCENT.toLowerCase()).toBe(cssHex('--slate2'))
   })
 
   it('chart chrome literals equal their named tokens', () => {

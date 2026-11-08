@@ -24,7 +24,7 @@ const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.affect
 <template>
   <DetailCard
     title="Affected components"
-    sub="across the last committed inventory · one row per image + package, scanners listed, never merged"
+    sub="across the last committed inventory · one row for each image and package, with its scanners"
     flush
   >
     <template #title>

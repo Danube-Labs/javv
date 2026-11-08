@@ -6,6 +6,8 @@
  */
 import { ref } from 'vue'
 
+import UiCloseButton from '@/components/ui/UiCloseButton.vue'
+
 defineProps<{ items: string[]; placeholder?: string; inputId?: string }>()
 const emit = defineEmits<{ add: [value: string]; remove: [value: string] }>()
 
@@ -20,12 +22,10 @@ function commit() {
 </script>
 
 <template>
-  <div class="chips">
+  <div class="chips set-input">
     <span v-for="chip in items" :key="chip" class="chip mono-cell">
       {{ chip }}
-      <button type="button" class="chip-x" :aria-label="`Remove ${chip}`" @click="emit('remove', chip)">
-        ×
-      </button>
+      <UiCloseButton class="chip-x" small :label="`Remove ${chip}`" @click="emit('remove', chip)" />
     </span>
     <!-- eslint-disable-next-line vue/no-restricted-html-elements -- the chip row is the box, and this input inside it has no border of its own -->
     <input
@@ -41,16 +41,13 @@ function commit() {
 </template>
 
 <style scoped>
-/* prototype .chips/.chip/.chip-input ported onto tokens */
+/* prototype .chips/.chip/.chip-input ported onto tokens; the box itself is the kit's .set-input */
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   align-items: center;
   padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--card);
 }
 .chip {
   display: inline-flex;
@@ -62,24 +59,6 @@ function commit() {
   border: 1px solid var(--line2);
   border-radius: var(--r-chip);
   padding: 3px 5px 3px 8px;
-}
-.chip-x {
-  border: 0;
-  background: transparent;
-  color: var(--soft);
-  font-size: var(--text-body);
-  line-height: 1;
-  padding: 0 3px;
-  border-radius: 4px;
-  transition: background var(--dur-quick) var(--ease-out);
-}
-.chip-x:hover {
-  background: var(--fpill-x-hover-bg);
-  color: var(--ink);
-}
-.chip-x:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
 }
 .chip-input {
   flex: 1;

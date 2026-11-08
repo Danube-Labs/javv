@@ -3,7 +3,7 @@
  * walk reads the rendered page. On the sign-in page, each listed route, the two detail pages, two
  * menus and the windows, every visible text box, dropdown, search box and window footer button
  * must wear the kit's line, corner and fill, and under the pointer both its fill and its line must
- * change (ui-design.md: hover is a wash and a border, never the border alone). A field is found by
+ * change. Each close button (`UiCloseButton`, issue 1140) must change its fill and its line too (ui-design.md: hover is a wash and a border, never the border alone). A field is found by
  * its tag, not by a kit class, so a copy with its own class is read too.
  */
 import type { Page } from '@playwright/test'
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 
 import { BASE, DATA_ROW, expect, login, test } from './helpers'
 
-type Kind = 'text box' | 'dropdown' | 'search box' | 'footer button'
+type Kind = 'text box' | 'dropdown' | 'search box' | 'footer button' | 'close button'
 interface Control {
   i: number
   kind: Kind
@@ -26,7 +26,8 @@ interface Control {
   problems: string[]
 }
 
-/** The places that keep a raw field on purpose, as in `raw-form-fields.spec.ts`. */
+/** The places that keep a raw field on purpose, as in `raw-form-fields.spec.ts`. The chip input is
+ *  read as its row, which wears the kit box (issue 1140). */
 const KEPT_RAW: { selector: string; reason: string }[] = [
   { selector: 'textarea.editor', reason: 'the Inspect request body is a code panel, not a form field' },
   { selector: '.chip-input', reason: 'the chip row is the box, and this input inside it has no border of its own' },
@@ -100,14 +101,18 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
       const found: { kind: string; el: HTMLElement; field: HTMLElement | null }[] = []
       for (const f of base.querySelectorAll<HTMLElement>('input, select, textarea')) {
         if (!visible(f) || (!scope && f.closest('.modal-backdrop'))) continue
-        if (kept.some((k) => f.matches(k))) continue
-        const row = f.closest<HTMLElement>('.search-box, .facet-search')
+        const chips = f.matches('.chip-input') ? f.closest<HTMLElement>('.chips') : null
+        if (!chips && kept.some((k) => f.matches(k))) continue
+        const row = chips ?? f.closest<HTMLElement>('.search-box, .facet-search')
         if (row && found.some((c) => c.el === row)) continue
-        const kind = row ? 'search box' : f.tagName === 'SELECT' ? 'dropdown' : 'text box'
+        const kind = chips ? 'text box' : row ? 'search box' : f.tagName === 'SELECT' ? 'dropdown' : 'text box'
         found.push({ kind, el: row ?? f, field: f })
       }
       for (const b of base.querySelectorAll<HTMLElement>('.modal-actions button')) {
         if (visible(b)) found.push({ kind: 'footer button', el: b, field: null })
+      }
+      for (const b of base.querySelectorAll<HTMLElement>('.ui-close')) {
+        if (visible(b) && (scope || !b.closest('.modal-backdrop'))) found.push({ kind: 'close button', el: b, field: null })
       }
 
       return found.map(({ kind, el, field }, i) => {
@@ -120,8 +125,11 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
         want('line width', cs.borderWidth, ['1px'])
         want('line style', cs.borderStyle, ['solid'])
         const disabled = (field ?? el).matches(':disabled')
-        const primary = el.classList.contains('ui-btn--primary')
-        if (kind === 'footer button') {
+        // a primary button and a close button change to their own fill and line under the pointer
+        const primary = el.classList.contains('ui-btn--primary') || kind === 'close button'
+        if (kind === 'close button') {
+          // at rest a light close has no line; its look is the hover, read in the pointer pass
+        } else if (kind === 'footer button') {
           want('corner', cs.borderRadius, [kit.rSm])
           if (!primary && !el.classList.contains('ui-btn--ghost')) problems.push('not a ghost or primary kit button')
           if (/^(Cancel|Close|Done)$/.test(el.textContent!.trim()) && primary) problems.push('a way out is ghost, not primary')
@@ -131,7 +139,7 @@ async function readControls(page: Page, scope: string | null): Promise<Control[]
           want('fill', cs.backgroundColor, disabled ? [kit.panel] : [kit.card])
           want('type face', getComputedStyle(field!).fontFamily.split(',')[0]!.trim().replace(/["']/g, ''), kit.fonts)
         }
-        const name = (field?.getAttribute('aria-label') || field?.id || el.textContent || field?.getAttribute('placeholder') || '').trim()
+        const name = (field?.getAttribute('aria-label') || field?.id || el.getAttribute('aria-label') || el.textContent || field?.getAttribute('placeholder') || '').trim()
         return { i, kind: kind as Kind, name: name.slice(0, 40), disabled, primary, problems }
       })
     },
@@ -263,7 +271,7 @@ const viewerRow = (p: Page) => p.locator('tr', { hasText: 'smoke-viewer' })
 const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Save this view', '/findings', (p) => p.getByRole('button', { name: 'Save view' }).first().click()],
   ['Bulk triage', '/findings', (p) => p.getByRole('button', { name: 'Bulk triage' }).first().click()],
-  ['Export', '/findings', (p) => p.getByRole('button', { name: 'Export CSV' }).click()],
+  ['Export', '/findings', (p) => p.getByRole('button', { name: 'Export', exact: true }).click()],
   [
     'Risk-accept this CVE',
     '/findings',
@@ -277,10 +285,10 @@ const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Change role?', '/settings/users', (p) => p.getByRole('combobox', { name: 'Role for smoke-viewer' }).selectOption('triager')],
   ['Disable this user?', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Disable', exact: true }).click()],
   ['Reset smoke-viewer\'s password', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Reset password' }).click()],
-  ['Mint a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Mint token' }).click()],
+  ['Create a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Create token' }).click()],
   ['Rotate this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Rotate', exact: true }).first().click()],
   ['Revoke this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Revoke', exact: true }).first().click()],
-  ['Make an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Make token' }).click()],
+  ['Create an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Create token' }).click()],
   ['Retire', '/settings/cluster', (p) => p.getByRole('button', { name: 'Retire cluster' }).click()],
   [
     'Run the lifecycle sweep?',
