@@ -23,6 +23,7 @@ canonical document is correct, and the bank must change. The canonical documents
 | [`system-patterns.md`](system-patterns.md) | The architecture and the decisions that still apply |
 | [`rulings.md`](rulings.md) | The operator rulings that still apply |
 | [`lessons.md`](lessons.md) | The lessons from incidents, and the rule that each lesson made |
+| [`docs-voice.md`](docs-voice.md) | The voice rules for the text that a reader sees, with the style guides that they come from |
 | [`active-context.md`](active-context.md) | Open, held and next work, on a given date |
 
 ## How the bank stays current
