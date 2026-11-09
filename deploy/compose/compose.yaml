@@ -255,7 +255,7 @@ services:
       # debug | info | warning | error
       JAVV_LOG_LEVEL: ${JAVV_LOG_LEVEL:-info}
     # browsers and scanners both use this port: scanners push to /api/v1/ingest/scan through it.
-    # To serve on another host port, change the left side ("80:8080").
+    # To serve on another host port, change the left side: for example "80:8080" serves on port 80.
     ports:
       - "8080:8080"
 
