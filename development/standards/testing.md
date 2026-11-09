@@ -139,10 +139,13 @@ from Playwright directly.
     itself) with the clock shifted forward — backend `+90d`, frontend `+365d` — so a date bomb
     inside that horizon fails there instead of on `main`. A red run is a finding, not a flake:
     fix the test per this rule. Reproduce locally with libfaketime:
-    `faketime -f '+90d' uv run pytest …` (the `-f` is required). **Never against the shared dev
-    store:** the admin-jobs tests run the real staleness sweep over it, and at a shifted clock
-    every scanner looks silent, so every real finding goes `stale` (it happened 2026-09-26: 60,355
-    findings). Point `JAVV_OPENSEARCH_URL` at a throwaway OpenSearch (tests and app both read it).
+    `uv sync --all-extras --dev` on the real clock, then `faketime -f '+90d' uv run --no-sync
+    pytest …`. The `-f` is required. Without `--no-sync`, uv can build the local packages again
+    under the shifted clock, and the fetch from pypi.org then fails (issue 1182). **Never against
+    the shared dev store:** the admin-jobs tests run the real staleness sweep over it, and at a
+    shifted clock every scanner looks silent, so every real finding goes `stale` (it happened
+    2026-09-26: 60,355 findings). Point `JAVV_OPENSEARCH_URL` at a throwaway OpenSearch (tests
+    and app both read it).
     If a shifted run did hit the dev store, run `uv run python -m backend.jobs.staleness` on the
     real clock — it reverts re-seen findings to their `pre_stale_status`.
 - **Concurrency tests are required** where the design relies on it: concurrent ingest+triage (`retry_on_conflict`),

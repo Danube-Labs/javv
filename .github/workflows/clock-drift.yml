@@ -81,8 +81,8 @@ jobs:
         working-directory: backend
         run: |
           faketime -f '+90d' date -u
-          faketime -f '+90d' uv run pytest -n 2 -m "not serial"
-          faketime -f '+90d' uv run pytest -m serial
+          faketime -f '+90d' uv run --no-sync pytest -n 2 -m "not serial"
+          faketime -f '+90d' uv run --no-sync pytest -m serial
 
   frontend:
     name: Frontend at +365 days
