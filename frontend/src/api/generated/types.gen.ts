@@ -231,7 +231,7 @@ export type DashboardPanel = {
     /**
      * Panel
      */
-    panel: 'findings-summary' | 'findings-over-time' | 'package-type' | 'findings-by-namespace' | 'riskiest-images' | 'top-components' | 'scan-ingest' | 'failed-ingests' | 'triage-activity' | 'handled-findings' | 'triage-progress';
+    panel: 'findings-summary' | 'findings-over-time' | 'package-type' | 'findings-by-namespace' | 'riskiest-images' | 'top-components' | 'top-cves' | 'scan-ingest' | 'failed-ingests' | 'triage-activity' | 'handled-findings' | 'triage-progress';
     /**
      * Scanner
      */
@@ -3828,6 +3828,156 @@ export type TopImagesFindingsApiV1FindingsTopImagesGetResponses = {
 };
 
 export type TopImagesFindingsApiV1FindingsTopImagesGetResponse = TopImagesFindingsApiV1FindingsTopImagesGetResponses[keyof TopImagesFindingsApiV1FindingsTopImagesGetResponses];
+
+export type TopValuesFindingsApiV1FindingsTopValuesGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Cluster Id
+         */
+        cluster_id: string;
+        /**
+         * By
+         */
+        by: 'cve_id';
+        /**
+         * Severity
+         */
+        severity?: Array<string> | null;
+        /**
+         * State
+         */
+        state?: Array<string> | null;
+        /**
+         * Scanner
+         */
+        scanner?: string | null;
+        /**
+         * Assignee
+         */
+        assignee?: Array<string> | null;
+        /**
+         * Kev
+         */
+        kev?: boolean | null;
+        /**
+         * Fixable
+         */
+        fixable?: boolean | null;
+        /**
+         * Disagree
+         */
+        disagree?: boolean | null;
+        /**
+         * Cve Id
+         */
+        cve_id?: Array<string> | null;
+        /**
+         * Image Digest
+         */
+        image_digest?: string | null;
+        /**
+         * Image Repo
+         */
+        image_repo?: Array<string> | null;
+        /**
+         * Namespace
+         */
+        namespace?: Array<string> | null;
+        /**
+         * Ptype
+         */
+        ptype?: Array<string> | null;
+        /**
+         * Package Name
+         */
+        package_name?: Array<string> | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Present
+         */
+        present?: boolean;
+        /**
+         * New Within Days
+         */
+        new_within_days?: number | null;
+        /**
+         * Overdue
+         */
+        overdue?: boolean | null;
+        /**
+         * Unassigned
+         */
+        unassigned?: boolean | null;
+        /**
+         * Exclude Severity
+         */
+        exclude_severity?: Array<string> | null;
+        /**
+         * Exclude State
+         */
+        exclude_state?: Array<string> | null;
+        /**
+         * Exclude Scanner
+         */
+        exclude_scanner?: string | null;
+        /**
+         * Exclude Assignee
+         */
+        exclude_assignee?: Array<string> | null;
+        /**
+         * Exclude Image Repo
+         */
+        exclude_image_repo?: Array<string> | null;
+        /**
+         * Exclude Namespace
+         */
+        exclude_namespace?: Array<string> | null;
+        /**
+         * Exclude Ptype
+         */
+        exclude_ptype?: Array<string> | null;
+        /**
+         * Exclude Cve Id
+         */
+        exclude_cve_id?: Array<string> | null;
+        /**
+         * Exclude Package Name
+         */
+        exclude_package_name?: Array<string> | null;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/v1/findings/top-values';
+};
+
+export type TopValuesFindingsApiV1FindingsTopValuesGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TopValuesFindingsApiV1FindingsTopValuesGetError = TopValuesFindingsApiV1FindingsTopValuesGetErrors[keyof TopValuesFindingsApiV1FindingsTopValuesGetErrors];
+
+export type TopValuesFindingsApiV1FindingsTopValuesGetResponses = {
+    /**
+     * Response Top Values Findings Api V1 Findings Top Values Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type TopValuesFindingsApiV1FindingsTopValuesGetResponse = TopValuesFindingsApiV1FindingsTopValuesGetResponses[keyof TopValuesFindingsApiV1FindingsTopValuesGetResponses];
 
 export type TriageApiV1FindingsFindingKeyTriagePatchData = {
     body: TriagePatch;

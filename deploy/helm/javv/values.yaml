@@ -100,8 +100,9 @@ backend:
     JAVV_INSPECT_TIMEOUT_SECONDS: "10.0"
     # largest dashboard file that an import reads, in bytes (4 MiB)
     JAVV_DASHBOARD_IMPORT_MAX_BYTES: "4194304"
-    # a Riskiest images panel with filters ranks its 100 images in one pass of the store,
-    # so no image with the most findings is left out (false: faster, can leave one out)
+    # a Riskiest images panel with filters and a Top CVEs panel rank their 100 rows in one
+    # pass of the store, so no row with the most findings is left out (false: faster, can
+    # leave one out)
     JAVV_EXACT_RANKING: "true"
     # the MCP endpoint for AI agents at /api/v1/mcp: off until you turn it on
     JAVV_MCP_ENABLED: "false"

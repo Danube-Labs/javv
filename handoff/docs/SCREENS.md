@@ -260,7 +260,7 @@ JAVV does not know what runs there, which is not a clean cluster. Operator rulin
 A/B picture `visual-assets/440/440-riskiest-unknown-ab.png`.
 
 **Vulnerabilities over time as a panel (issue 1176).** The chart is also the dashboard panel
-`findings-over-time` (`components/dashboards/FindingsTrendLens.vue`). The Overview card does not
+`findings-over-time` (`components/dashboards/FindingsTrendPanel.vue`). The Overview card does not
 change. The panel reads `/trends/findings` itself and shows only the lines by scanner (decision D4
 A): the split by severity is a read at the time now only, and a panel shows each time. The route
 gives both scanners at a past time, so the panel picks the lines of the selected scanner from the
@@ -1306,12 +1306,18 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   renders again only the panels that follow it, so the other panels do not read their data again.
 - **Data:** each panel reads its own data at the selected cluster, T and window (D8,
   DESIGN.md §10).
-- **Panel filters (issue 999, decision 2 C):** six panels can keep findings filters: Findings
-  summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components and
-  Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
+- **Panel filters (issue 999, decision 2 C):** seven panels can keep findings filters: Findings
+  summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components,
+  Top CVEs (issue 1176) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
   store ranks the running images under the filters, for the scanner of the panel, and the panel
   pages through at most 100 of them. With no filter it reads `GET /api/v1/images` as before. A
-  row still opens the image page, which does not take the filters. Such a panel
+  row still opens the image page, which does not take the filters. Top CVEs reads
+  `GET /api/v1/findings/top-values?by=cve_id` (`components/dashboards/TopCvesPanel.vue`): the store
+  ranks the CVEs by findings under the filters, for one scanner when the panel shows one, and the
+  panel pages through at most 100 of them. Its severity tag is the highest severity of the
+  findings in the count. A row opens Findings on the CVE. At a past time it reads nothing and says "This panel
+  shows only the time now, not the past time that you selected. To see the CVEs, select Back to
+  now." (operator, 2026-11-09: the words of Top components do not tell a new reader enough). Such a panel
   sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
   kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens
   Findings with the filters of the panel and the value of the row. The value of the row replaces

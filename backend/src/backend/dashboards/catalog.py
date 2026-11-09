@@ -14,6 +14,7 @@ PanelId = Literal[
     "findings-by-namespace",
     "riskiest-images",
     "top-components",
+    "top-cves",
     "scan-ingest",
     "failed-ingests",
     "triage-activity",
@@ -37,6 +38,7 @@ PANELS: dict[str, CatalogPanel] = {
     "findings-by-namespace": CatalogPanel({"short": 11, "tall": 24}, uses_scanner=True),
     "riskiest-images": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "top-components": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
+    "top-cves": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "scan-ingest": CatalogPanel({"short": 4}, uses_scanner=False),
     "failed-ingests": CatalogPanel({"short": 4}, uses_scanner=False),
     "triage-activity": CatalogPanel({"short": 5}, uses_scanner=False),
@@ -47,13 +49,15 @@ PANELS: dict[str, CatalogPanel] = {
 # the panels that read findings counts take the filters of /findings (issue 999, decision 1),
 # each with the fields it refuses: Triage progress splits by state itself. The scanner is the
 # panel's own setting, so no panel takes a scanner filter (see DashboardPanel). Riskiest
-# images ranks under its filters through /findings/top-images (issue 1063).
+# images ranks under its filters through /findings/top-images (issue 1063), and Top CVEs
+# through /findings/top-values (issue 1176).
 FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "findings-summary": (),
     "package-type": (),
     "findings-by-namespace": (),
     "riskiest-images": (),
     "top-components": (),
+    "top-cves": (),
     "triage-progress": ("state",),
 }
 
