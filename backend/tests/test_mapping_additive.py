@@ -15,6 +15,7 @@ definitions in `core/bootstrap.py` are compared twice:
 """
 
 import copy
+import re
 import types
 from typing import Any
 
@@ -108,13 +109,18 @@ def test_the_definitions_at_a_ref_are_read_from_that_ref() -> None:
     assert _definitions_at("v0.3.4")[0] == 13  # 0.3.4 shipped schema 13
 
 
+# uv options may sit between `uv run` and `pytest`: clock-drift.yml runs `uv run --no-sync pytest`
+# (issue 1182)
+_RUNS_PYTEST = re.compile(r"\buv run (?:--\S+ )*pytest\b")
+
+
 def test_every_job_that_runs_the_backend_tests_checks_out_the_history() -> None:
     runs = 0
     for workflow in sorted((ROOT / ".github/workflows").glob("*.yml")):
         for name, job in (yaml.safe_load(workflow.read_text())["jobs"] or {}).items():
             steps = job.get("steps", [])
             if not any(
-                "uv run pytest" in s.get("run", "") and s.get("working-directory") == "backend"
+                _RUNS_PYTEST.search(s.get("run", "")) and s.get("working-directory") == "backend"
                 for s in steps
             ):
                 continue

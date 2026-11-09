@@ -73,13 +73,16 @@ jobs:
         working-directory: backend
         run: uv sync --all-extras --dev
 
-      # ci.yml's split (serial-marked tests alone, after the parallel pass), no coverage floor
+      # ci.yml's split (serial-marked tests alone, after the parallel pass), no coverage floor.
+      # --no-sync: the tests use the environment of the step above, built on the real clock. On
+      # ubuntu-26.04, a plain `uv run` under faketime builds the local packages again and fetches
+      # hatchling from pypi.org, whose certificate is past its end at +90 days (issue 1182).
       - name: Pytest at +90 days
         working-directory: backend
         run: |
           faketime -f '+90d' date -u
-          faketime -f '+90d' uv run pytest -n 2 -m "not serial"
-          faketime -f '+90d' uv run pytest -m serial
+          faketime -f '+90d' uv run --no-sync pytest -n 2 -m "not serial"
+          faketime -f '+90d' uv run --no-sync pytest -m serial
 
   frontend:
     name: Frontend at +365 days
