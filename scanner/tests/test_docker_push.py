@@ -200,6 +200,11 @@ def test_a_setting_that_is_not_valid_stops_the_run(settings, name, value):
         settings(**{name: value})
 
 
+def test_a_backend_url_with_no_scheme_names_both_schemes(settings):
+    with pytest.raises(push.SettingError, match="start it with http:// or https://"):
+        settings(JAVV_BACKEND_URL="javv.example.com")
+
+
 def test_docker_host_names_the_socket(settings):
     assert settings().docker_socket == "/var/run/docker.sock"
     assert settings(DOCKER_HOST="unix:///run/user/1000/docker.sock").docker_socket == (
