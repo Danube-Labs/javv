@@ -5,7 +5,7 @@
 # and the defaults live in core/settings.py, so a second copy here could only drift.
 
 # tag + digest: the digest makes the build reproducible; Renovate updates both
-FROM python:3.12-slim@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54 AS build
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS build
 WORKDIR /app
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
@@ -20,7 +20,7 @@ COPY backend/src ./src
 # needs the venv alone, not the sources
 RUN uv sync --frozen --no-dev --no-editable
 
-FROM python:3.12-slim@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 RUN groupadd --system --gid 65532 javv \
  && useradd --system --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent javv
 COPY --from=build /app/.venv /app/.venv
