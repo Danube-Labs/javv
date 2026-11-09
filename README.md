@@ -49,16 +49,21 @@ triage lifecycle, but their reports are rigid. **Log dashboards** have flexible 
 audit of a finding. JAVV gives you both: a real triage lifecycle *and* dashboards that you build,
 over what runs in your clusters now.
 
-Three things JAVV does differently:
+What JAVV gives you:
 
-- **It scans what runs, not a registry.** JAVV finds the images that run in your clusters and
-  scans those. You see the vulnerabilities that you are exposed to now, not a catalogue.
 - **Two scanners, never merged.** Trivy and Grype scan each image, and their results stay side by
   side. JAVV keeps the CVE of each scanner, also when the other scanner reports it too. It **flags where they
   disagree**, so you see what one scanner alone misses.
-- **Each vulnerability has an audit trail.** Each finding keeps its own history: the triage
-  states, each decision and each note, with who, what and when. **Time travel** shows each screen
-  as it was at a time in the past. Most tools cannot audit one finding. In JAVV, that is the core.
+- **Dashboards that you build.** Make your own dashboards from a catalog of panels. Share each
+  dashboard with everyone or with some roles. Copy a dashboard to a different JAVV as a file.
+- **Triage of many findings at once.** Filter the findings, then change the state of all the
+  matching findings in one step. JAVV adds your note to each finding. The audit log records the
+  change.
+- **CSV exports for your reports.** Export the findings, the audit log, the contributors and the
+  approvals queue as CSV files. For a file that is too large, make an export report.
+- **An MCP server for AI agents.** Connect an agent such as Claude Code or Codex. The agent reads
+  and triages the findings. Each MCP token has one level: read, write, or write and risk accept.
+  The audit log records each tool call.
 
 ## Where JAVV scans
 
