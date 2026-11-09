@@ -11,7 +11,10 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import { GUIDE_SECTIONS } from '@/about/guide'
+import ContributorsSection from '@/components/about/guide/ContributorsSection.vue'
 import DashboardsSection from '@/components/about/guide/DashboardsSection.vue'
+import ExportsSection from '@/components/about/guide/ExportsSection.vue'
+import InspectorSection from '@/components/about/guide/InspectorSection.vue'
 import { ACTION_LABELS } from '@/audit/actionLabels'
 import McpSection from '@/components/about/guide/McpSection.vue'
 import NowVsNewSection from '@/components/about/guide/NowVsNewSection.vue'
@@ -166,6 +169,37 @@ describe('section bodies', () => {
     expect(w.find('.panel-scanner .ui-name').text()).toBe(PANEL_SCANNER_OPTS[0].label)
     expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/build-a-dashboard\.md$/)
     expect(w.text()).toContain('Only the owner and the admin role can change it.')
+    expect(w.text()).not.toContain(';')
+  })
+
+  it('Contributors names the four handled actions by the action names of the Audit log (issue 1142)', () => {
+    const text = mount(ContributorsSection).find('.handled').text()
+    const names = (['acknowledge', 'not_affected', 'risk_accept', 'resolve'] as const).map((a) => ACTION_LABELS[a])
+    expect(text).toBe(`Handled counts these actions: ${names.slice(0, -1).join(', ')} and ${names.at(-1)}.`)
+    expect(mount(ContributorsSection).text()).toContain('The table shows at most 100 people.')
+  })
+
+  it('Exports gives the tab names of the export window, the two defaults and the VEX rule (issue 1142)', () => {
+    const w = mount(ExportsSection)
+    const names = w.findAll('.ui-name').map((n) => n.text())
+    expect(names).toEqual(expect.arrayContaining(['Run now', 'In the background']))
+    const dialog = read('components/findings/ExportDialog.vue')
+    expect(dialog).toContain("label: 'Run now'")
+    expect(dialog).toContain("label: 'In the background'")
+    expect(w.text()).toContain('50,000 rows by default')
+    expect(w.text()).toContain('24 hours by default')
+    expect(w.text()).toContain('A VEX file holds the findings of one scanner.')
+    expect(w.text()).not.toContain(';')
+  })
+
+  it('Data inspector names the three repair jobs of the job card and the admin role (issue 1142)', () => {
+    const w = mount(InspectorSection)
+    const card = read('components/system/RepairActionsCard.vue')
+    for (const job of ['Rebuild state', 'Staleness sweep', 'Lifecycle sweep']) {
+      expect(w.find('.repair-jobs').text()).toContain(job)
+      expect(card).toContain(`'${job}'`)
+    }
+    expect(w.text()).toContain('you need the admin role')
     expect(w.text()).not.toContain(';')
   })
 })

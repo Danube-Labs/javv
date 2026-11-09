@@ -3,9 +3,12 @@ import type { Component } from 'vue'
 
 import type { GuideSectionId } from '@/about/guide'
 
+import ContributorsSection from './ContributorsSection.vue'
 import DashboardsSection from './DashboardsSection.vue'
+import ExportsSection from './ExportsSection.vue'
 import GlossarySection from './GlossarySection.vue'
 import ImagesSection from './ImagesSection.vue'
+import InspectorSection from './InspectorSection.vue'
 import McpSection from './McpSection.vue'
 import NowVsNewSection from './NowVsNewSection.vue'
 import SavedViewsSection from './SavedViewsSection.vue'
@@ -25,6 +28,9 @@ export const SECTION_BODY: Record<GuideSectionId, Component> = {
   'state-or-acceptance': StateOrAcceptanceSection,
   'saved-views': SavedViewsSection,
   dashboards: DashboardsSection,
+  contributors: ContributorsSection,
+  exports: ExportsSection,
+  'data-inspector': InspectorSection,
   'ai-agents': McpSection,
   glossary: GlossarySection,
 }

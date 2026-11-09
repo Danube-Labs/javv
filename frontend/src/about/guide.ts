@@ -68,6 +68,24 @@ export const GUIDE_SECTIONS = [
     icon: 'grid',
   },
   {
+    id: 'contributors',
+    title: 'Contributors',
+    summary: 'Where the numbers come from, and what handled and SLA met count.',
+    icon: 'award',
+  },
+  {
+    id: 'exports',
+    title: 'Exports',
+    summary: 'Run now or in the background, the limits, and the VEX file.',
+    icon: 'download',
+  },
+  {
+    id: 'data-inspector',
+    title: 'Data inspector',
+    summary: 'The two job cards, and who can run a job.',
+    icon: 'database',
+  },
+  {
     id: 'ai-agents',
     title: 'AI agents (MCP)',
     summary: 'What an agent can read and change, how the Audit log names it, and how to connect it.',
