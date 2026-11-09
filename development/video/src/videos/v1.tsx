@@ -118,7 +118,7 @@ function Diagram({ frame: f }: { frame: number }) {
             opacity: interpolate(split, [60, 74], [0, 1], clamp), whiteSpace: 'nowrap',
           }}
         >
-          never merged
+          side by side
         </div>
       </div>
     </div>
