@@ -12,6 +12,7 @@ import ContributorsLens from '@/components/contributors/ContributorsLens.vue'
 import ProgressPanel from '@/components/contributors/ProgressPanel.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
+import FindingsTrendLens from '@/components/dashboards/FindingsTrendLens.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
 import OverviewNamespacesCard from '@/components/overview/OverviewNamespacesCard.vue'
 import OverviewStatBands from '@/components/overview/OverviewStatBands.vue'
@@ -88,6 +89,19 @@ export const PANELS: readonly CatalogPanel[] = [
     framed: false,
     takesFilters: true,
     props: (ctx) => ({ scanner: ctx.scanner, query: globalQuery(ctx), filters: ctx.filters }),
+  },
+  {
+    id: 'findings-over-time',
+    name: 'Vulnerabilities over time',
+    group: 'Findings',
+    line: 'New and resolved findings for each day, for each scanner.',
+    component: FindingsTrendLens,
+    defaultWidth: 2,
+    heights: { short: 9 },
+    usesScanner: true,
+    framed: false,
+    takesFilters: false,
+    props: (ctx) => ({ clusterId: ctx.clusterId, t: ctx.t, windowDays: ctx.windowDays, scanner: ctx.scanner }),
   },
   {
     id: 'package-type',

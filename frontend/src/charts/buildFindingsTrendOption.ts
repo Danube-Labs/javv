@@ -4,6 +4,7 @@
  * human `state=resolved`). Colors/chrome come only from the pinned chart literals. */
 import type { EChartsOption, LineSeriesOption } from 'echarts'
 
+import type { ScannerLens } from '@/lib/scannerLens'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
 
 export interface TrendPoint {
@@ -28,6 +29,13 @@ export function emptyTrendNote(option: EChartsOption, lens: 'scanner' | 'severit
   return lens === 'scanner'
     ? 'No new or resolved findings in this range.'
     : 'No new findings in this range.'
+}
+
+/** The lines of the scanner that the switch selects, or of both. The route gives both scanners
+ * at a past T whatever `scanner` it gets, so a panel picks them from the answer. */
+export function trendForScanner(data: FindingsTrendData, scanner: ScannerLens): FindingsTrendData {
+  if (scanner === 'all') return data
+  return { new: { [scanner]: data.new[scanner] }, resolved: { [scanner]: data.resolved[scanner] } }
 }
 
 export function buildFindingsTrendOption(data: FindingsTrendData): EChartsOption {

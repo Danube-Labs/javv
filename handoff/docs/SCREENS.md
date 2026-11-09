@@ -259,6 +259,16 @@ inventory committed at this point in time."), not "No image findings in the runn
 JAVV does not know what runs there, which is not a clean cluster. Operator ruling 2026-10-25 on the
 A/B picture `visual-assets/440/440-riskiest-unknown-ab.png`.
 
+**Vulnerabilities over time as a panel (issue 1176).** The chart is also the dashboard panel
+`findings-over-time` (`components/dashboards/FindingsTrendLens.vue`). The Overview card does not
+change. The panel reads `/trends/findings` itself and shows only the lines by scanner (decision D4
+A): the split by severity is a read at the time now only, and a panel shows each time. The route
+gives both scanners at a past time, so the panel picks the lines of the selected scanner from the
+answer, and the scanner switch starts no read. The panel takes no findings filters, because
+`/trends/findings` takes none. States: the loading shimmer, "No new or resolved findings in this
+range.", "Vulnerability trend unavailable." and, for a range of less than 1 day, the note of the
+Overview card.
+
 **Changed vs SCREENS.md:** A-1 (lowercase + negligible), B-1 (donut kept, fed by M8d ptype),
 B-2/B-6 (widget cuts), A-m9 (trend semantics label), C-1 (time-travel states). Scanner-type
 filter stays (it maps to the `scanner` filter param).

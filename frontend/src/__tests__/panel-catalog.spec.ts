@@ -78,6 +78,13 @@ const READS: Record<
     emptyCopy: 'No findings at this time.',
     errorCopy: 'Findings summary unavailable.',
   },
+  'findings-over-time': {
+    calls: ['findingsTrendApiV1TrendsFindingsGet'],
+    empty: [{ new: {}, resolved: {} }],
+    loading: 'Loading vulnerabilities over time',
+    emptyCopy: 'No new or resolved findings in this range.',
+    errorCopy: 'Vulnerability trend unavailable.',
+  },
   'package-type': {
     calls: ['facetFindingsApiV1FindingsFacetsGet'],
     empty: [{ facets: {} }],
