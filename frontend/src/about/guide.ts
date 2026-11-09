@@ -62,6 +62,12 @@ export const GUIDE_SECTIONS = [
     icon: 'bookmark',
   },
   {
+    id: 'dashboards',
+    title: 'Dashboards',
+    summary: 'The panels, the scanner of each panel, and where to find the steps.',
+    icon: 'grid',
+  },
+  {
     id: 'ai-agents',
     title: 'AI agents (MCP)',
     summary: 'What an agent can read and change, how the Audit log names it, and how to connect it.',

@@ -3,6 +3,7 @@ import type { Component } from 'vue'
 
 import type { GuideSectionId } from '@/about/guide'
 
+import DashboardsSection from './DashboardsSection.vue'
 import GlossarySection from './GlossarySection.vue'
 import ImagesSection from './ImagesSection.vue'
 import McpSection from './McpSection.vue'
@@ -23,6 +24,7 @@ export const SECTION_BODY: Record<GuideSectionId, Component> = {
   triage: TriageSection,
   'state-or-acceptance': StateOrAcceptanceSection,
   'saved-views': SavedViewsSection,
+  dashboards: DashboardsSection,
   'ai-agents': McpSection,
   glossary: GlossarySection,
 }

@@ -69,11 +69,4 @@ const DOCS = onMain('docs/use/use-the-mcp-server.md')
   margin-top: var(--space-2);
   max-width: 560px;
 }
-.docs-link {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.docs-link:hover {
-  color: var(--ink);
-}
 </style>

@@ -39,4 +39,11 @@
   font-weight: 600;
   white-space: nowrap;
 }
+.guide-prose :slotted(.docs-link) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.guide-prose :slotted(.docs-link:hover) {
+  color: var(--ink);
+}
 </style>

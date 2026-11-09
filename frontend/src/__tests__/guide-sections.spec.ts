@@ -11,6 +11,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import { GUIDE_SECTIONS } from '@/about/guide'
+import DashboardsSection from '@/components/about/guide/DashboardsSection.vue'
 import { ACTION_LABELS } from '@/audit/actionLabels'
 import McpSection from '@/components/about/guide/McpSection.vue'
 import NowVsNewSection from '@/components/about/guide/NowVsNewSection.vue'
@@ -21,6 +22,7 @@ import TimeRangeSection from '@/components/about/guide/TimeRangeSection.vue'
 import TriageSection from '@/components/about/guide/TriageSection.vue'
 import TwoScannersSection from '@/components/about/guide/TwoScannersSection.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { PANEL_SCANNER_OPTS } from '@/dashboards/edit'
 import { CISA_JUSTIFICATIONS, PANEL_TARGETS } from '@/findings/triageRules'
 import { endpointUrl, MCP_LEVELS } from '@/views/settings/mcpTokensForm'
 
@@ -157,5 +159,13 @@ describe('section bodies', () => {
     expect(w.text()).toContain('To change a view, delete it and save it again.')
     expect(w.find('.view-count').text()).toContain('in the selected cluster, at the end of the time range')
     expect(read('components/findings/SaveViewDialog.vue')).toContain('>Save view</UiButton>')
+  })
+
+  it('Dashboards gives the words of the panel scanner setting and links Build a dashboard (issue 1142)', () => {
+    const w = mount(DashboardsSection)
+    expect(w.find('.panel-scanner .ui-name').text()).toBe(PANEL_SCANNER_OPTS[0].label)
+    expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/build-a-dashboard\.md$/)
+    expect(w.text()).toContain('Only the owner and the admin role can change it.')
+    expect(w.text()).not.toContain(';')
   })
 })
