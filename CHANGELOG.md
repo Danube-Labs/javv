@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.9.9](https://github.com/Danube-Labs/javv/compare/v0.9.8...v0.9.9) (2026-11-09)
+
+
+### Features
+
+* one close button in the kit, used by every close site ([#1149](https://github.com/Danube-Labs/javv/issues/1149)) ([36987fd](https://github.com/Danube-Labs/javv/commit/36987fdd4e49866bca244f0272c5c3c28f011253))
+* the guide gets five sections and addresses the reader as you ([#1166](https://github.com/Danube-Labs/javv/issues/1166)) ([a4c49a5](https://github.com/Danube-Labs/javv/commit/a4c49a5ffb909fa96fa3904808ec75598a966876))
+* the image page has one band of three columns, and findings gets a digest filter ([#1150](https://github.com/Danube-Labs/javv/issues/1150)) ([ea57443](https://github.com/Danube-Labs/javv/commit/ea57443130f68c693e6f32ea25e53c88a22d5437))
+
+
+### Bug Fixes
+
+* plain words that are true for kubernetes, nomad and docker ([#1160](https://github.com/Danube-Labs/javv/issues/1160)) ([6171e89](https://github.com/Danube-Labs/javv/commit/6171e8939b6371f08a69aded3500f2480dedf1f1))
+* the export window says what runs, with no off-peak window ([#1144](https://github.com/Danube-Labs/javv/issues/1144)) ([afb46a4](https://github.com/Danube-Labs/javv/commit/afb46a4ba5468c48a64dca2068645254a8fbe21b))
+* the namespace boxes wear the kit box, and wide-box hints stop at 75 characters ([#1148](https://github.com/Danube-Labs/javv/issues/1148)) ([0c42af7](https://github.com/Danube-Labs/javv/commit/0c42af7d19401034f0d7e2f585ec17d78b5ade04))
+* the push scripts name http:// and https:// for a backend url with no scheme ([#1165](https://github.com/Danube-Labs/javv/issues/1165)) ([05b2911](https://github.com/Danube-Labs/javv/commit/05b29119ddab1af5ce55b01eb46a096588361f0f))
+* the settings text says create, organization and plain words ([#1145](https://github.com/Danube-Labs/javv/issues/1145)) ([c05e9b6](https://github.com/Danube-Labs/javv/commit/c05e9b60ecd78a307a75045664b7408decf90165))
+* the slate accent marks first place, sla met and the activity charts ([#1147](https://github.com/Danube-Labs/javv/issues/1147)) ([957f8ed](https://github.com/Danube-Labs/javv/commit/957f8ed7a6166a8143be673b07f74898c17ccfe2))
+* the verb is delete, and a saved view asks before it is deleted ([#1151](https://github.com/Danube-Labs/javv/issues/1151)) ([ed0fca5](https://github.com/Danube-Labs/javv/commit/ed0fca594ae29c741cae84544960a3c1272e8878))
+* the videos of use javv show the words of the app again ([#1167](https://github.com/Danube-Labs/javv/issues/1167)) ([7cc58b9](https://github.com/Danube-Labs/javv/commit/7cc58b93c2a1f63437ab6ff368f4675d8dd93bc6))
+* the words about the two scanners say what all scanners counts ([#1146](https://github.com/Danube-Labs/javv/issues/1146)) ([1ab378d](https://github.com/Danube-Labs/javv/commit/1ab378d924623f2d6e80c7fda54d84df4642b43c))
+
 ## [0.9.8](https://github.com/Danube-Labs/javv/compare/v0.9.7...v0.9.8) (2026-11-07)
 
 
