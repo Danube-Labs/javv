@@ -4,21 +4,32 @@
  * tests pin that the sections render those, plus the list-level rules: every section in the
  * table of contents has a body, ids are unique, and no copy carries an em dash.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import { GUIDE_SECTIONS } from '@/about/guide'
+import ContributorsSection from '@/components/about/guide/ContributorsSection.vue'
+import DashboardsSection from '@/components/about/guide/DashboardsSection.vue'
+import ExportsSection from '@/components/about/guide/ExportsSection.vue'
+import InspectorSection from '@/components/about/guide/InspectorSection.vue'
 import { ACTION_LABELS } from '@/audit/actionLabels'
 import McpSection from '@/components/about/guide/McpSection.vue'
 import NowVsNewSection from '@/components/about/guide/NowVsNewSection.vue'
+import SavedViewsSection from '@/components/about/guide/SavedViewsSection.vue'
 import { SECTION_BODY } from '@/components/about/guide/sections'
 import StateOrAcceptanceSection from '@/components/about/guide/StateOrAcceptanceSection.vue'
 import TimeRangeSection from '@/components/about/guide/TimeRangeSection.vue'
 import TriageSection from '@/components/about/guide/TriageSection.vue'
 import TwoScannersSection from '@/components/about/guide/TwoScannersSection.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { PANEL_SCANNER_OPTS } from '@/dashboards/edit'
 import { CISA_JUSTIFICATIONS, PANEL_TARGETS } from '@/findings/triageRules'
 import { endpointUrl, MCP_LEVELS } from '@/views/settings/mcpTokensForm'
+
+const read = (path: string) => readFileSync(join(__dirname, '..', path), 'utf8')
 
 describe('GUIDE_SECTIONS', () => {
   it('has unique ids', () => {
@@ -32,6 +43,21 @@ describe('GUIDE_SECTIONS', () => {
 
   it('has no em dashes in titles or summaries', () => {
     for (const s of GUIDE_SECTIONS) expect(`${s.title} ${s.summary}`).not.toContain('—')
+  })
+})
+
+describe('the voice of the Guide (issue 1142)', () => {
+  // the reader is "you": no first person, and no reader named in the third person. Other people
+  // stay where they are the data of a screen, for example the users that a token cannot change.
+  // (case-sensitive past the first letter: "the User column" names a column, not the reader)
+  const NOT_THE_READER = /\b([Ww]e|[Oo]ur|[Uu]s|I|[Aa] user|[Tt]he user|[Aa]n admin|[Aa]dmins|[Aa] person)\b/
+
+  it('titles and summaries name the reader as you', () => {
+    for (const s of GUIDE_SECTIONS) expect(`${s.title} ${s.summary}`).not.toMatch(NOT_THE_READER)
+  })
+
+  it.each(GUIDE_SECTIONS.map((s) => [s.id]))('%s names the reader as you', (id) => {
+    expect(mount(SECTION_BODY[id as keyof typeof SECTION_BODY]).text()).not.toMatch(NOT_THE_READER)
   })
 })
 
@@ -125,6 +151,55 @@ describe('section bodies', () => {
   it('AI agents links the docs page and has no semicolon (Simplified Technical English)', () => {
     const w = mount(McpSection)
     expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/use-the-mcp-server\.md$/)
+    expect(w.text()).not.toContain(';')
+  })
+
+  it('Saved views says what a view keeps, who deletes it, and what its count is (issue 1142)', () => {
+    const w = mount(SavedViewsSection)
+    expect(w.text()).toContain('the filters, the columns, the row density, the sort and the time window')
+    expect(w.text()).toContain('It does not keep the cluster.')
+    expect(w.text()).toContain('The admin role can delete each view.')
+    expect(w.text()).toContain('To change a view, delete it and save it again.')
+    expect(w.find('.view-count').text()).toContain('in the selected cluster, at the end of the time range')
+    expect(read('components/findings/SaveViewDialog.vue')).toContain('>Save view</UiButton>')
+  })
+
+  it('Dashboards gives the words of the panel scanner setting and links Build a dashboard (issue 1142)', () => {
+    const w = mount(DashboardsSection)
+    expect(w.find('.panel-scanner .ui-name').text()).toBe(PANEL_SCANNER_OPTS[0].label)
+    expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/build-a-dashboard\.md$/)
+    expect(w.text()).toContain('Only the owner and the admin role can change it.')
+    expect(w.text()).not.toContain(';')
+  })
+
+  it('Contributors names the four handled actions by the action names of the Audit log (issue 1142)', () => {
+    const text = mount(ContributorsSection).find('.handled').text()
+    const names = (['acknowledge', 'not_affected', 'risk_accept', 'resolve'] as const).map((a) => ACTION_LABELS[a])
+    expect(text).toBe(`Handled counts these actions: ${names.slice(0, -1).join(', ')} and ${names.at(-1)}.`)
+    expect(mount(ContributorsSection).text()).toContain('The table shows at most 100 people.')
+  })
+
+  it('Exports gives the tab names of the export window, the two defaults and the VEX rule (issue 1142)', () => {
+    const w = mount(ExportsSection)
+    const names = w.findAll('.ui-name').map((n) => n.text())
+    expect(names).toEqual(expect.arrayContaining(['Run now', 'In the background']))
+    const dialog = read('components/findings/ExportDialog.vue')
+    expect(dialog).toContain("label: 'Run now'")
+    expect(dialog).toContain("label: 'In the background'")
+    expect(w.text()).toContain('50,000 rows by default')
+    expect(w.text()).toContain('24 hours by default')
+    expect(w.text()).toContain('A VEX file holds the findings of one scanner.')
+    expect(w.text()).not.toContain(';')
+  })
+
+  it('Data inspector names the three repair jobs of the job card and the admin role (issue 1142)', () => {
+    const w = mount(InspectorSection)
+    const card = read('components/system/RepairActionsCard.vue')
+    for (const job of ['Rebuild state', 'Staleness sweep', 'Lifecycle sweep']) {
+      expect(w.find('.repair-jobs').text()).toContain(job)
+      expect(card).toContain(`'${job}'`)
+    }
+    expect(w.text()).toContain('you need the admin role')
     expect(w.text()).not.toContain(';')
   })
 })
