@@ -426,6 +426,7 @@
               "findings-by-namespace",
               "riskiest-images",
               "top-components",
+              "top-cves",
               "scan-ingest",
               "failed-ingests",
               "triage-activity",

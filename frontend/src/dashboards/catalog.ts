@@ -14,6 +14,7 @@ import AuditLens from '@/components/dashboards/AuditLens.vue'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
 import FindingsTrendLens from '@/components/dashboards/FindingsTrendLens.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
+import TopCvesLens from '@/components/dashboards/TopCvesLens.vue'
 import OverviewNamespacesCard from '@/components/overview/OverviewNamespacesCard.vue'
 import OverviewStatBands from '@/components/overview/OverviewStatBands.vue'
 import PackageTypeCard from '@/components/overview/PackageTypeCard.vue'
@@ -159,6 +160,25 @@ export const PANELS: readonly CatalogPanel[] = [
     framed: false,
     takesFilters: true,
     props: (ctx) => ({ scanner: ctx.scanner, pageSize: TABLE_ROWS[ctx.height], filters: ctx.filters }),
+  },
+  {
+    id: 'top-cves',
+    name: 'Top CVEs',
+    group: 'Findings',
+    line: 'The CVEs with the most findings, with their highest severity.',
+    component: TopCvesLens,
+    defaultWidth: 1,
+    heights: { short: 13, tall: 26 },
+    usesScanner: true,
+    framed: false,
+    takesFilters: true,
+    props: (ctx) => ({
+      clusterId: ctx.clusterId,
+      t: ctx.t,
+      scanner: ctx.scanner,
+      pageSize: TABLE_ROWS[ctx.height],
+      filters: ctx.filters,
+    }),
   },
   {
     id: 'scan-ingest',

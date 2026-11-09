@@ -454,6 +454,23 @@ async def test_vulnerabilities_over_time_keeps_its_scanner(env) -> None:
     ]
 
 
+async def test_top_cves_keeps_its_filters_scanner_and_height(env) -> None:
+    """Issue 1176: Top CVEs reads findings counts through /findings/top-values, so it takes the
+    filters of /findings, the scanner setting of a panel and both heights."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [
+        _panel("top-cves", w=1, h="tall", scanner="trivy", filters={"fixable": True}),
+        _panel("top-cves", x=1, w=1),
+    ]
+    made = await _create(owner, panels=panels)
+    stored = (await owner.get(f"/api/v1/dashboards/{made['dashboard_id']}")).json()["panels"]
+    assert [(p["h"], p.get("scanner"), p.get("filters")) for p in stored] == [
+        ("tall", "trivy", {"fixable": True, "present": True}),
+        ("short", "dashboard", None),
+    ]
+
+
 async def test_triage_activity_keeps_its_audit_filters(env) -> None:
     """Issue 1063, decision D2 A: Triage activity stores the Action and User filters of the
     Audit log in `audit_filters`, apart from the findings filters. A change replaces them, and

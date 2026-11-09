@@ -23,6 +23,7 @@ vi.mock('@/api/generated', async (importOriginal) =>
     topImagesFindingsApiV1FindingsTopImagesGet: vi.fn<() => Promise<unknown>>(),
     contributorsApiV1ContributorsGet: vi.fn<() => Promise<unknown>>(),
     findingsTrendApiV1TrendsFindingsGet: vi.fn<() => Promise<unknown>>(),
+    topValuesFindingsApiV1FindingsTopValuesGet: vi.fn<() => Promise<unknown>>(),
   }),
 )
 vi.mock('@/api/client', () => ({ client: {} }))
@@ -119,6 +120,13 @@ const READS: Record<
     loading: 'Loading top components',
     emptyCopy: 'No component data yet.',
     errorCopy: 'Component ranking unavailable.',
+  },
+  'top-cves': {
+    calls: ['topValuesFindingsApiV1FindingsTopValuesGet'],
+    empty: [{ by: 'cve_id', values: [] }],
+    loading: 'Loading top CVEs',
+    emptyCopy: 'No CVE in the findings.',
+    errorCopy: 'CVE ranking unavailable.',
   },
   'scan-ingest': {
     calls: ['scansTrendApiV1TrendsScansGet', 'scannerFreshnessApiV1ScannersFreshnessGet'],
@@ -928,6 +936,23 @@ describe('a panel with filters (issue 999)', () => {
       answers: [{ components: [{ package_name: 'openssl', count: 4, unique_cves_by_scanner: { trivy: 3 } }] }],
       click: 'tbody tr',
       row: { q: 'openssl' },
+    },
+    // issue 1176: the store ranks the CVEs under the filters; a row opens Findings on its CVE
+    'top-cves': {
+      answers: [
+        {
+          values: [
+            {
+              value: 'CVE-2024-0003',
+              count: 3,
+              count_by_scanner: { trivy: 3 },
+              severity_by_scanner: { trivy: { high: 3 } },
+            },
+          ],
+        },
+      ],
+      click: 'tbody tr',
+      row: { cve: 'CVE-2024-0003' },
     },
     // issue 1063: with filters the store ranks the images; a row opens its image, as with none
     'riskiest-images': {

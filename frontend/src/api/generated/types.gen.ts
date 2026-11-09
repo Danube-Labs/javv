@@ -231,7 +231,7 @@ export type DashboardPanel = {
     /**
      * Panel
      */
-    panel: 'findings-summary' | 'findings-over-time' | 'package-type' | 'findings-by-namespace' | 'riskiest-images' | 'top-components' | 'scan-ingest' | 'failed-ingests' | 'triage-activity' | 'handled-findings' | 'triage-progress';
+    panel: 'findings-summary' | 'findings-over-time' | 'package-type' | 'findings-by-namespace' | 'riskiest-images' | 'top-components' | 'top-cves' | 'scan-ingest' | 'failed-ingests' | 'triage-activity' | 'handled-findings' | 'triage-progress';
     /**
      * Scanner
      */
