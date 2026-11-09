@@ -109,6 +109,8 @@ If JAVV does not send the scope, the container does not scan in this cycle.
 - If a setting is not valid, the log tells the correct values.
 - The next cycle starts 6 hours later.
 - If no image scanned, the cycle stays `partial`. JAVV keeps the images of the last good cycle.
+- If some images scanned, the cycle is `committed` with only those images. The log has an `ERROR`
+  line for each image that is not in the cycle.
 
 ## Known gaps
 
