@@ -56,6 +56,12 @@ export const GUIDE_SECTIONS = [
     icon: 'layers',
   },
   {
+    id: 'saved-views',
+    title: 'Saved views',
+    summary: 'What a view keeps, who can delete it, and what its count shows.',
+    icon: 'bookmark',
+  },
+  {
     id: 'ai-agents',
     title: 'AI agents (MCP)',
     summary: 'What an agent can read and change, how the Audit log names it, and how to connect it.',

@@ -4,6 +4,9 @@
  * tests pin that the sections render those, plus the list-level rules: every section in the
  * table of contents has a body, ids are unique, and no copy carries an em dash.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
@@ -11,6 +14,7 @@ import { GUIDE_SECTIONS } from '@/about/guide'
 import { ACTION_LABELS } from '@/audit/actionLabels'
 import McpSection from '@/components/about/guide/McpSection.vue'
 import NowVsNewSection from '@/components/about/guide/NowVsNewSection.vue'
+import SavedViewsSection from '@/components/about/guide/SavedViewsSection.vue'
 import { SECTION_BODY } from '@/components/about/guide/sections'
 import StateOrAcceptanceSection from '@/components/about/guide/StateOrAcceptanceSection.vue'
 import TimeRangeSection from '@/components/about/guide/TimeRangeSection.vue'
@@ -19,6 +23,8 @@ import TwoScannersSection from '@/components/about/guide/TwoScannersSection.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { CISA_JUSTIFICATIONS, PANEL_TARGETS } from '@/findings/triageRules'
 import { endpointUrl, MCP_LEVELS } from '@/views/settings/mcpTokensForm'
+
+const read = (path: string) => readFileSync(join(__dirname, '..', path), 'utf8')
 
 describe('GUIDE_SECTIONS', () => {
   it('has unique ids', () => {
@@ -141,5 +147,15 @@ describe('section bodies', () => {
     const w = mount(McpSection)
     expect(w.find('a.docs-link').attributes('href')).toMatch(/\/docs\/use\/use-the-mcp-server\.md$/)
     expect(w.text()).not.toContain(';')
+  })
+
+  it('Saved views says what a view keeps, who deletes it, and what its count is (issue 1142)', () => {
+    const w = mount(SavedViewsSection)
+    expect(w.text()).toContain('the filters, the columns, the row density, the sort and the time window')
+    expect(w.text()).toContain('It does not keep the cluster.')
+    expect(w.text()).toContain('The admin role can delete each view.')
+    expect(w.text()).toContain('To change a view, delete it and save it again.')
+    expect(w.find('.view-count').text()).toContain('in the selected cluster, at the end of the time range')
+    expect(read('components/findings/SaveViewDialog.vue')).toContain('>Save view</UiButton>')
   })
 })
