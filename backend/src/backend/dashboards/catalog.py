@@ -9,6 +9,7 @@ from typing import Literal
 
 PanelId = Literal[
     "findings-summary",
+    "findings-over-time",
     "package-type",
     "findings-by-namespace",
     "riskiest-images",
@@ -31,6 +32,7 @@ class CatalogPanel:
 
 PANELS: dict[str, CatalogPanel] = {
     "findings-summary": CatalogPanel({"short": 7}, uses_scanner=True),
+    "findings-over-time": CatalogPanel({"short": 9}, uses_scanner=True),
     "package-type": CatalogPanel({"short": 12}, uses_scanner=True),
     "findings-by-namespace": CatalogPanel({"short": 11, "tall": 24}, uses_scanner=True),
     "riskiest-images": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),

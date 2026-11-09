@@ -289,6 +289,10 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             {"panels": [_panel("scan-ingest", filters={"kev": True})]},
             id="filters on a panel that reads no findings counts",
         ),
+        pytest.param(
+            {"panels": [_panel("findings-over-time", filters={"kev": True})]},
+            id="filters on Vulnerabilities over time, whose trend read takes none",
+        ),
         pytest.param({"panels": [_panel(filters={"scanner": "trivy"})]}, id="a scanner filter"),
         pytest.param(
             {"panels": [_panel(filters={"exclude_scanner": "grype"})]}, id="a scanner exclude"
@@ -431,6 +435,23 @@ async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> N
     after = {p["panel"]: p.get("filters") for p in r.json()["panels"]}
     assert after["top-components"] == {"state": ["open"], "present": True}
     assert after["findings-summary"] == filters["findings-summary"]
+
+
+async def test_vulnerabilities_over_time_keeps_its_scanner(env) -> None:
+    """Issue 1176: the Overview trend is a panel with scanner data, so it takes the scanner
+    setting of a panel, as a Full or a Half panel."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [
+        _panel("findings-over-time"),
+        _panel("findings-over-time", w=1, y=1, scanner="grype"),
+    ]
+    made = await _create(owner, panels=panels)
+    stored = (await owner.get(f"/api/v1/dashboards/{made['dashboard_id']}")).json()["panels"]
+    assert [(p["panel"], p["w"], p.get("scanner")) for p in stored] == [
+        ("findings-over-time", 2, "dashboard"),
+        ("findings-over-time", 1, "grype"),
+    ]
 
 
 async def test_triage_activity_keeps_its_audit_filters(env) -> None:

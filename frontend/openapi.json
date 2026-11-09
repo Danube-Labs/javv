@@ -421,6 +421,7 @@
           "panel": {
             "enum": [
               "findings-summary",
+              "findings-over-time",
               "package-type",
               "findings-by-namespace",
               "riskiest-images",
