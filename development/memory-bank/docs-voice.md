@@ -61,9 +61,10 @@ and from Simplified Technical English (STE). The operator accepted it.
 The quotes come from the pages on 2026-11-09. A style guide can change. Read the page again
 before you change a rule here.
 
-## For a skill made from this file
+## The skill made from this file
 
-A skill that writes or checks JAVV text needs these parts:
+The skill [`.claude/skills/docs-voice/`](../../.claude/skills/docs-voice/SKILL.md) reads this
+file first, then writes or checks the text. It has these parts:
 
 1. The eleven rules and the exceptions above, with the Do and Do not examples.
 2. The checks of the repository, run by exit code: `ste-lint.py` on the new text, and the test of
