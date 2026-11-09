@@ -21,6 +21,8 @@ COPY backend/src ./src
 RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+# the digest pins the start; the upgrade adds the OS security fixes released after it (issue 1172)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 65532 javv \
  && useradd --system --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent javv
 COPY --from=build /app/.venv /app/.venv
