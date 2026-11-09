@@ -682,7 +682,7 @@ async def test_each_tool_refuses_an_argument_that_it_does_not_take(mcp_on):
             assert marker not in r.text, tool.name
         rows = await _rows(client, f"mcp:{name}")
     assert refused == dict.fromkeys(refused, True)
-    assert len(refused) == 24
+    assert len(refused) == 25
     assert [row["new_value"] for row in rows] == ["error 422"] * len(refused)
 
 
