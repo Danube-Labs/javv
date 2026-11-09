@@ -34,13 +34,80 @@ and from Simplified Technical English (STE). The operator accepted it.
 - A label in the app can name a column or a role that has the word "user" in it, for example the
   User column of the Audit log. That word is a name on the screen, not the reader.
 
+## Simplified Technical English
+
+All new text is in Simplified Technical English (ASD-STE100). The rules of STE are in two groups.
+JAVV applies the structural rules in full. It applies the word rules as a direction only, because
+the STE dictionary of approved words is not in the repository.
+
+### Two levels
+
+| Level | Text | What applies |
+|---|---|---|
+| Strict | The Guide, the operator pages, the steps under the videos, error messages and other text in the app | All rules below, and one word for one meaning |
+| Normal | PR bodies, issue comments, release notes, the memory bank | The structural rules. The word rules are advice. |
+
+### Structural rules
+
+| Rule | Do | Do not |
+|---|---|---|
+| Active voice | "The scanner sends its results." | `The results are sent.` Exception: the actor is not known or not important. |
+| No phrasal verbs | "Start the job." | `Spin up the job.` |
+| One instruction in each sentence | "Open the file. Read line 3." | `Open the file and read line 3, then compare it.` |
+| Sentence length | 20 words for a step, 25 words for a description | One long sentence with clauses inside clauses |
+| No semicolon | Two sentences | A semicolon anywhere |
+| Short noun groups | Three nouns at most: "scanner image tag" | `scanner image tag update policy` |
+| No words left out | "Files that are not saved are lost." | `Files not saved lost.` |
+| Keep the modality | "The request may have failed." stays as it is. | A hedge made into a fact: `The request failed.` |
+| Short paragraphs | One topic, six sentences at most | A paragraph with two topics |
+| Lists for sequences | A list for three or more steps or conditions | A sequence in one sentence of prose |
+
+STE permits the em dash. JAVV does not (rule 11).
+
+### Word rules, as a direction
+
+| Rule | Do | Do not |
+|---|---|---|
+| One word, one meaning | One verb for one action in the whole text: "check" each time | `check`, then `verify`, then `confirm` for the same action |
+| A verb for an action | "Analyze the log." | `Perform an analysis of the log.` |
+| One part of speech for a word | "Apply oil to the valve." | `Oil the valve.` |
+| Technical words | Keep a necessary technical word, and tell what it is the first time | Jargon that the text never explains |
+
+### Tenses
+
+Use the simple tenses: the imperative, the simple present, the simple past and the simple future.
+Do not use the present perfect (`has completed`), except when it carries a fact that the simple
+form loses. `The job has completed` tells that the output is there now. Keep it there.
+
+### Six things to look for
+
+1. **Synonym rotation**: one thing with two or three names in one text. Use one name.
+2. **Stacked hedges**: `it is important to note that this may help to improve`. Tell the fact, or
+   delete the sentence.
+3. **An action as a noun**: `perform an analysis of`, `provides help to`. Use the verb.
+4. **Marketing words**: `seamless`, `robust`, `powerful`, `effortless`. Delete the word, or give the
+   measurement.
+5. **Run-on sentences**: ideas joined by a semicolon or a dash. Write one idea in each sentence.
+6. **Soft phrasal verbs**: `spin up`, `reach out`, `dive into`, `kick off`. Use one plain verb:
+   `start`, `contact`, `read`, `begin`.
+
+### Limits of a rewrite
+
+- Keep each fact, condition and scope. If a shorter sentence loses a condition or a number, keep
+  the longer sentence.
+- Keep each hedge. "May have failed" is a different fact from "failed".
+- Add no fact that the source does not give: no cause, frequency or mechanism.
+- Do not change text that obeys the rules.
+- STE changes the form of a text, not what it says. Stop when the sentence has one meaning, not
+  when it is shortest.
+
 ## Where JAVV holds the rules
 
 | Text | Check |
 |---|---|
 | The Guide (`frontend/src/components/about/guide/`) | `frontend/src/__tests__/guide-sections.spec.ts`: the expression `NOT_THE_READER` finds "we", "our", "us", "I", "a user", "the user", "an admin", "admins" and "a person". It is case sensitive after the first letter, so the User column does not match. |
 | The docs site pages | `backend/tests/test_docs_site.py`: `test_published_pages_tell_tests_without_the_first_person`, `test_published_pages_carry_no_em_dash` and `test_published_docs_pages_pass_the_ste_linter`. |
-| All new text | `development/scripts/ste-lint.py`: sentence length, semicolons, phrasal verbs and the passive voice. |
+| All new text | `development/scripts/ste-lint.py`: sentence length, semicolons, phrasal verbs, actions as nouns, marketing words, synonym rotation and list items that end in "and". It also tells the passive voice and the present perfect, as advice only. It never flags a hedge. |
 | The release notes | `development/scripts/check-release-notes.py`, and the `Release notes` workflow. |
 
 ## Sources
@@ -56,6 +123,7 @@ and from Simplified Technical English (STE). The operator accepted it.
 | [GitLab: Language](https://docs.gitlab.com/development/documentation/styleguide/language/) | Use the active voice. Write from the customer's side: "Use merge requests to compare code", not "GitLab allows you to compare code". |
 | [GitLab: Word list](https://docs.gitlab.com/development/documentation/styleguide/word_list/) | "we": avoid it, and tell what the user can do in GitLab. "you": "Use you instead of the user, the administrator or the customer." "please": do not use it. |
 | [GitLab: Task topic type](https://docs.gitlab.com/development/documentation/topic_types/task/) | A task lists the roles that it needs in its prerequisites, and names the roles first. It avoids "Ensure that" and "You must have". A step tells the location, then the action. |
+| [ASD-STE100: About STE](https://www.asd-ste100.org/about_STE.html) | STE has 53 writing rules in 9 sections and a dictionary of about 900 approved words, each with one meaning. The rules ban the semicolon (rule 8.1) and phrasal verbs (rule 9.3). An action is a verb, not a noun (rule 3.7). The present perfect is not permitted. |
 | [ASD-STE100](https://www.asd-ste100.org/) | Simplified Technical English: a procedure uses the imperative. A procedural sentence has at most 20 words, a descriptive sentence at most 25. Use the active voice. One instruction in each sentence. The specification is free on request from the ASD-STE100 site. |
 
 The quotes come from the pages on 2026-11-09. A style guide can change. Read the page again
@@ -67,8 +135,9 @@ The skill [`.claude/skills/docs-voice/`](../../.claude/skills/docs-voice/SKILL.m
 file first, then writes or checks the text. It has these parts:
 
 1. The eleven rules and the exceptions above, with the Do and Do not examples.
-2. The checks of the repository, run by exit code: `ste-lint.py` on the new text, and the test of
+2. The STE level of the text, the six problems to look for, and the limits of a rewrite.
+3. The checks of the repository, run by exit code: `ste-lint.py` on the new text, and the test of
    the area (the Guide spec, or `test_docs_site.py`).
-3. A pass over each sentence that names a person: is the person the reader (rule 2), a role (rule
+4. A pass over each sentence that names a person: is the person the reader (rule 2), a role (rule
    5) or the data of a screen (rule 7)?
-4. No internal codes (issue numbers, decision codes, milestones) in text for users or operators.
+5. No internal codes (issue numbers, decision codes, milestones) in text for users or operators.
