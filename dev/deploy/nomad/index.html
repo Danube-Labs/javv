@@ -1501,8 +1501,8 @@ shows a Kubernetes cluster.</p>
 <p>The two jobs are examples. Change them for your cluster: for example, the source of the JAVV
 token, the cache volumes or the schedule. The script <code>javv_nomad_push.py</code> does the work. It reads
 the running images from the Nomad API, scans them and pushes the results to JAVV.</p>
-<p><strong>Tested with:</strong> Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the images
-<code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.1</code>.</p>
+<p><strong>Tested with:</strong> JAVV 0.9.8, Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the
+images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.1</code>.</p>
 <h2 id="how-the-jobs-work">How the jobs work<a class="headerlink" href="#how-the-jobs-work" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Each job is a periodic batch job. It runs every 6 hours.</li>
@@ -1566,10 +1566,17 @@ the running images from the Nomad API, scans them and pushes the results to JAVV
    <a href="../../docs/INGEST-CONTRACT/#before-you-start">Before you start</a> of the push page.</li>
 <li>
 <p>Put each token in the Nomad variable of its job. The job can read its variable. Other tokens
-   need a policy that gives them access to <code>nomad/jobs</code>:</p>
-<div class="highlight"><pre><span></span><code>nomad<span class="w"> </span>var<span class="w"> </span>put<span class="w"> </span>nomad/jobs/javv-scan-trivy<span class="w"> </span><span class="nv">javv_token</span><span class="o">=</span>&lt;the<span class="w"> </span>Trivy<span class="w"> </span>token&gt;
-nomad<span class="w"> </span>var<span class="w"> </span>put<span class="w"> </span>nomad/jobs/javv-scan-grype<span class="w"> </span><span class="nv">javv_token</span><span class="o">=</span>&lt;the<span class="w"> </span>Grype<span class="w"> </span>token&gt;
+   need a policy that gives them access to <code>nomad/jobs</code>. The commands read each token at a
+   prompt, so the token is not in the shell history or in the process list. <code>-out none</code> stops the
+   output of the variable with its token:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'Trivy token: '</span><span class="w"> </span>t<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>nomad<span class="w"> </span>var<span class="w"> </span>put<span class="w"> </span>-out<span class="w"> </span>none<span class="w"> </span>nomad/jobs/javv-scan-trivy<span class="w"> </span><span class="nv">javv_token</span><span class="o">=</span>-
+<span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'Grype token: '</span><span class="w"> </span>t<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>nomad<span class="w"> </span>var<span class="w"> </span>put<span class="w"> </span>-out<span class="w"> </span>none<span class="w"> </span>nomad/jobs/javv-scan-grype<span class="w"> </span><span class="nv">javv_token</span><span class="o">=</span>-
+<span class="nb">unset</span><span class="w"> </span>t
 </code></pre></div>
+<p>Use <code>printf</code>, not <code>echo</code>: Nomad keeps the value as it gets it, and <code>echo</code> adds a line break to
+the token.</p>
 </li>
 <li>
 <p>Make the volumes for the databases of the scanners:</p>
@@ -1594,9 +1601,11 @@ nomad<span class="w"> </span>acl<span class="w"> </span>policy<span class="w"> <
 </code></pre></div>
 </li>
 <li>
-<p>Start a first run, and read its log:</p>
+<p>Start a first run of each job, and read its log. The output of <code>periodic force</code> gives the
+   allocation ID of the run, in the line <code>Allocation "&lt;ID&gt;" created</code>:</p>
 <div class="highlight"><pre><span></span><code>nomad<span class="w"> </span>job<span class="w"> </span>periodic<span class="w"> </span>force<span class="w"> </span>javv-scan-trivy
-nomad<span class="w"> </span>job<span class="w"> </span>status<span class="w"> </span>javv-scan-trivy<span class="w">          </span><span class="c1"># the runs, with their allocations</span>
+nomad<span class="w"> </span>alloc<span class="w"> </span>logs<span class="w"> </span>-stderr<span class="w"> </span>&lt;allocation<span class="w"> </span>ID&gt;<span class="w"> </span>push
+nomad<span class="w"> </span>job<span class="w"> </span>periodic<span class="w"> </span>force<span class="w"> </span>javv-scan-grype
 nomad<span class="w"> </span>alloc<span class="w"> </span>logs<span class="w"> </span>-stderr<span class="w"> </span>&lt;allocation<span class="w"> </span>ID&gt;<span class="w"> </span>push
 </code></pre></div>
 </li>
@@ -1679,6 +1688,8 @@ for them.</p>
 <li>Exit code <code>2</code>: a setting is not valid. The log tells the correct values.</li>
 <li>Nomad does not start a failed run again. The next run of the schedule tries again.</li>
 <li>If no image scanned, the cycle stays <code>partial</code>. JAVV keeps the images of the last good cycle.</li>
+<li>If some images scanned, the cycle is <code>committed</code> with only those images. The run exits with
+  code <code>1</code>, and the log has an <code>ERROR</code> line for each image that is not in the cycle.</li>
 </ul>
 <h2 id="known-gaps">Known gaps<a class="headerlink" href="#known-gaps" title="Permanent link">&para;</a></h2>
 <ul>

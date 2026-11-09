@@ -1359,7 +1359,8 @@
 
 
 <h1 id="javv-operator-docs">JAVV operator docs<a class="headerlink" href="#javv-operator-docs" title="Permanent link">&para;</a></h1>
-<p>JAVV finds the container images that run in your Kubernetes clusters. It scans each image with
+<p>JAVV finds the container images that run in your Kubernetes clusters, Nomad clusters and Docker
+hosts. It scans each image with
 Trivy and with Grype, and it keeps the results of each scanner apart. For each vulnerability, JAVV
 records each triage decision in an audit log.</p>
 <p>These pages are for the people who install and operate JAVV. To learn how to triage findings in
@@ -1391,6 +1392,10 @@ JAVV, read <a href="use/">Use JAVV</a>. It has a short video for each task.</p>
 <tr>
 <td>Run the scanners in the clusters that you scan</td>
 <td><a href="DEPLOYING/#connect-the-scanners">Deploying: connect the scanners</a> and the <a href="../deploy/helm/javv-scanner/">scanner chart</a></td>
+</tr>
+<tr>
+<td>Scan a Nomad cluster or a Docker host</td>
+<td><a href="../deploy/nomad/">Scan a Nomad cluster</a> and <a href="../deploy/docker/">Scan a Docker Compose host</a></td>
 </tr>
 <tr>
 <td>Find the scanner and OpenSearch versions that a release supports</td>

@@ -1691,7 +1691,8 @@ Use the <a href="#example">example</a> as the template.</p>
    a user with <code>can_manage_tokens</code>. When you make the token for a new <code>cluster_id</code>, JAVV adds the cluster.</li>
 <li>The API call needs a session: sign in with <code>POST /auth/login</code>. At the first sign-in, change the
      password with <code>POST /auth/password</code>.</li>
-<li>Send <code>expiry</code> with a time zone, for example <code>2026-12-01T00:00:00Z</code>.</li>
+<li><code>expiry</code> is optional. A token with no <code>expiry</code> does not expire. Send <code>expiry</code> with a time
+     zone, for example <code>2026-12-01T00:00:00Z</code>.</li>
 <li>The token is in the key <code>token</code> of the reply.</li>
 <li><strong>Choose the <code>cluster_id</code>.</strong> It is the ID of your environment in JAVV, and it <strong>never changes</strong>.
    It has lowercase letters, digits and hyphens, 8 to 64 characters, and not a hyphen first. JAVV

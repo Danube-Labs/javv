@@ -2268,7 +2268,8 @@ the published images and how to use an OpenSearch that you operate.</p>
 <ul>
 <li>Docker Engine with the compose plugin 2.23.1 or later.</li>
 <li>A POSIX shell (Linux or macOS).</li>
-<li>cosign 3.x, to verify the images (<a href="#verify-the-images-and-charts">Verify the images and charts</a>).</li>
+<li>cosign 3.x, to verify the images (<a href="#verify-the-images-and-charts">Verify the images and charts</a>).
+  To install it, see <a href="https://docs.sigstore.dev/cosign/system_config/installation/">Install cosign</a>.</li>
 <li>These three files, in one folder:<ul>
 <li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/compose.yaml"><code>compose.yaml</code></a> <!-- x-release-please-version --></li>
 <li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/.env.example"><code>.env.example</code></a> <!-- x-release-please-version --></li>
@@ -2289,10 +2290,15 @@ chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
 <p><code>compose.yaml</code> names the backend and frontend images of its release.</p>
 <h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Set the memory map limit for OpenSearch.</strong> Do this one time on each host:
+<li><strong>Set the memory map limit for OpenSearch.</strong> OpenSearch needs a limit of 262144 or more. Do
+    this one time on each host. Show the limit:
+    <div class="highlight"><pre><span></span><code>sysctl<span class="w"> </span>vm.max_map_count
+</code></pre></div>
+    If the value is less than 262144, set it:
     <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>vm.max_map_count<span class="o">=</span><span class="m">262144</span>
 </code></pre></div>
-    To keep the limit after a reboot, also add it to <code>/etc/sysctl.conf</code>.</li>
+    To keep the limit after a reboot, also add the line <code>vm.max_map_count=262144</code> to
+    <code>/etc/sysctl.conf</code>. Do not set a lower value on a host that has a higher one.</li>
 <li>
 <p><strong>Make the <code>.env</code> file.</strong> In the folder with the three files, run one of these commands:
     <div class="highlight"><pre><span></span><code>./setup.sh<span class="w">           </span><span class="c1"># .env turns off the cookie's Secure flag, so sign-in works over http</span>
@@ -2329,6 +2335,7 @@ docker<span class="w"> </span>compose<span class="w"> </span>pull
 <span class="k">done</span>
 </code></pre></div>
     <!-- x-release-please-end -->
+    For each image, cosign writes a list of what it verified. Then one line shows <code>OK</code> or <code>FAILED</code>.
     Do not start JAVV when a line shows <code>FAILED</code>.
     <a href="#verify-the-images-and-charts">Verify the images and charts</a> tells what the verification
     proves. The OpenSearch image comes from Docker Hub. JAVV does not sign it.</p>
