@@ -1315,8 +1315,9 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   `GET /api/v1/findings/top-values?by=cve_id` (`components/dashboards/TopCvesLens.vue`): the store
   ranks the CVEs by findings under the filters, for one scanner when the panel shows one, and the
   panel pages through at most 100 of them. Its chip is the highest severity of the findings in the
-  count. A row opens Findings on the CVE. At a past time it says "CVE ranking is a current-state
-  read, unavailable at a rewound T.", as Top components does. Such a panel
+  count. A row opens Findings on the CVE. At a past time it reads nothing and says "This panel
+  shows only the time now, not the past time that you selected. To see the CVEs, select Back to
+  now." (operator, 2026-11-09: the words of Top components do not tell a new reader enough). Such a panel
   sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
   kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens
   Findings with the filters of the panel and the value of the row. The value of the row replaces

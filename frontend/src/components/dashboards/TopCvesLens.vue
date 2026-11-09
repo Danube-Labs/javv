@@ -4,7 +4,7 @@
  * (`GET /findings/top-values?by=cve_id`, at most 100) and paged by the shared GridPager. On one
  * scanner the read asks the store to rank by that scanner; on all scanners the count adds the
  * two, as every card's "all" does. The chip is the highest severity among the findings in the
- * count. A now-only read: at a rewound T the panel says so instead of guessing.
+ * count. A now-only read: at a past T the panel says so and names the way back to now.
  *
  * Self-contained per DESIGN.md section 10 — `(clusterId, t, scanner, filters)` in, its own read
  * and loading/empty/error states.
@@ -124,7 +124,9 @@ function goFindings(cve: string) {
         <p class="card-sub">by findings</p>
       </div>
     </div>
-    <p v-if="t !== null" class="empty-row">CVE ranking is a current-state read, unavailable at a rewound T.</p>
+    <p v-if="t !== null" class="empty-row">
+      This panel shows only the time now, not the past time that you selected. To see the CVEs, select Back to now.
+    </p>
     <UiSkeleton v-else-if="!settled" class="skel-pad" :height="220" radius="sm" label="Loading top CVEs" />
     <p v-else-if="failed" class="empty-row" role="alert">CVE ranking unavailable.</p>
     <p v-else-if="rows.length === 0" class="empty-row">No CVE in the findings.</p>

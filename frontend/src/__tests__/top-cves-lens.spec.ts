@@ -119,11 +119,13 @@ describe('TopCvesLens (self-contained panel)', () => {
     expect(tall.findAll('tbody tr')).toHaveLength(25)
   })
 
-  it('at a rewound T sends no read and says the ranking is for now only', async () => {
+  it('at a past T sends no read, says the panel shows only now, and names Back to now', async () => {
     const { w } = mountLens({ t: '2026-10-01T00:00:00Z' })
     await flushPromises()
     expect(readMock).not.toHaveBeenCalled()
-    expect(w.text()).toContain('CVE ranking is a current-state read, unavailable at a rewound T.')
+    expect(w.text()).toContain(
+      'This panel shows only the time now, not the past time that you selected. To see the CVEs, select Back to now.',
+    )
   })
 
   it('an older answer that comes last does not replace the answer of the newer read', async () => {
