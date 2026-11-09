@@ -18,8 +18,8 @@ const DOCS = onMain('docs/use/use-the-mcp-server.md')
   <GuideProse>
     <p>
       An AI agent is a program that reads JAVV for you, for example to sum up the findings of a cluster. It
-      connects to the MCP endpoint of JAVV with an MCP token. The endpoint is off until an admin turns it on.
-      An admin makes the tokens in <span class="ui-name">Settings › AI agents (MCP)</span>.
+      connects to the MCP endpoint of JAVV with an MCP token. The endpoint is off by default. To turn it on and
+      make the tokens, open <span class="ui-name">Settings › AI agents (MCP)</span>. Only the admin role allows it.
     </p>
 
     <p><strong>What a token can do</strong></p>
@@ -34,13 +34,14 @@ const DOCS = onMain('docs/use/use-the-mcp-server.md')
     <p><strong>An agent in the Audit log</strong></p>
     <ul>
       <li>
-        The user of an agent is <code class="mono">mcp:</code> and the name of its token, for example
+        In the <span class="ui-name">User</span> column, an agent shows as <code class="mono">mcp:</code> and the
+        name of its token, for example
         <code class="mono">mcp:weekly-report</code>.
       </li>
       <li>A change by an agent writes the same rows as the same change on a screen.</li>
       <li>
         Each tool call of an agent writes one row with the action
-        <span class="ui-name tool-call">{{ TOOL_CALL }}</span>. Only a user who can manage users sees these rows.
+        <span class="ui-name tool-call">{{ TOOL_CALL }}</span>. To see these rows, your role must allow user management.
       </li>
       <li>
         <span class="ui-name">Settings › AI agents (MCP)</span> shows who made each token, and when an agent

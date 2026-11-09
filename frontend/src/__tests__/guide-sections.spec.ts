@@ -35,6 +35,21 @@ describe('GUIDE_SECTIONS', () => {
   })
 })
 
+describe('the voice of the Guide (issue 1142)', () => {
+  // the reader is "you": no first person, and no reader named in the third person. Other people
+  // stay where they are the data of a screen, for example the users that a token cannot change.
+  // (case-sensitive past the first letter: "the User column" names a column, not the reader)
+  const NOT_THE_READER = /\b([Ww]e|[Oo]ur|[Uu]s|I|[Aa] user|[Tt]he user|[Aa]n admin|[Aa]dmins|[Aa] person)\b/
+
+  it('titles and summaries name the reader as you', () => {
+    for (const s of GUIDE_SECTIONS) expect(`${s.title} ${s.summary}`).not.toMatch(NOT_THE_READER)
+  })
+
+  it.each(GUIDE_SECTIONS.map((s) => [s.id]))('%s names the reader as you', (id) => {
+    expect(mount(SECTION_BODY[id as keyof typeof SECTION_BODY]).text()).not.toMatch(NOT_THE_READER)
+  })
+})
+
 describe('section bodies', () => {
   it.each(GUIDE_SECTIONS.map((s) => [s.id]))('%s renders text with no em dash', (id) => {
     const text = mount(SECTION_BODY[id as keyof typeof SECTION_BODY]).text()

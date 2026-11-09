@@ -95,8 +95,8 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     term: { text: 'Resolved' },
     chip: 'resolved',
     body:
-      'Set by a person, never by JAVV. A fix the scanner confirms shows as the finding leaving ' +
-      'the tables, not as Resolved.',
+      'JAVV does not set it. A fix the scanner confirms shows as the finding leaving the tables, ' +
+      'not as Resolved.',
   },
   {
     term: { filter: 'namespace' },

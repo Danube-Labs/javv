@@ -26,9 +26,9 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
         You set the state in the triage panel of the finding:
         <span class="state-row"><StateTag v-for="s in PERSON_STATES" :key="s" :state="s" /></span>
       </li>
-      <li>A user with the triage permission can set a state.</li>
+      <li>To set a state, your role must allow triage.</li>
       <li>
-        A state has no scope and no expiry date. A person changes it. One exception: JAVV sets
+        A state has no scope and no expiry date. JAVV does not change it, with one exception: JAVV sets
         <StateTag state="stale" /> when the scanner sends scans but no scan saw the finding during the
         freshness window. JAVV also sets Stale when the scanner sent no scans during the scanner-down
         window. When a scan sees the finding again, or reports it gone, the next staleness sweep restores
@@ -46,13 +46,13 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
         You create a risk acceptance with the button <span class="ui-name">Risk-accept this CVE</span> on a
         finding. You write a reason. You can set an expiry date.
       </li>
-      <li>Only a user with the permission to accept risk can create or revoke a risk acceptance.</li>
+      <li>To create or revoke a risk acceptance, your role must allow risk acceptance.</li>
       <li>
-        A risk acceptance sets <StateTag state="risk_accepted" /> on the Open findings in its scope. It does
-        not change a finding that a person set to a different state.
+        A risk acceptance sets <StateTag state="risk_accepted" /> on the Open findings in its scope. A finding
+        in its scope with a different state keeps that state.
       </li>
       <li>
-        When a user revokes a risk acceptance, those findings become Open again. After the expiry date, the
+        When you revoke a risk acceptance, those findings become Open again. After the expiry date, the
         next staleness sweep makes those findings Open again.
       </li>
     </ul>
@@ -78,7 +78,7 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
         A revoked risk acceptance is not on the Approval list. It stays on the finding, in
         <span class="ui-name">Decisions on this CVE</span>, with a line through it.
       </li>
-      <li>Only a user with the permission to accept risk can see the Approval list.</li>
+      <li>To see the Approval list, your role must allow risk acceptance.</li>
     </ul>
 
     <p><strong>Example 1: the image does not use the vulnerable code</strong></p>
