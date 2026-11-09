@@ -30,7 +30,8 @@ The page gives the sequence of calls, the rules for the script, and a reference 
    a user with `can_manage_tokens`. When you make the token for a new `cluster_id`, JAVV adds the cluster.
    - The API call needs a session: sign in with `POST /auth/login`. At the first sign-in, change the
      password with `POST /auth/password`.
-   - Send `expiry` with a time zone, for example `2026-12-01T00:00:00Z`.
+   - `expiry` is optional. A token with no `expiry` does not expire. Send `expiry` with a time
+     zone, for example `2026-12-01T00:00:00Z`.
    - The token is in the key `token` of the reply.
 2. **Choose the `cluster_id`.** It is the ID of your environment in JAVV, and it **never changes**.
    It has lowercase letters, digits and hyphens, 8 to 64 characters, and not a hyphen first. JAVV

@@ -1,6 +1,7 @@
 # JAVV operator docs
 
-JAVV finds the container images that run in your Kubernetes clusters. It scans each image with
+JAVV finds the container images that run in your Kubernetes clusters, Nomad clusters and Docker
+hosts. It scans each image with
 Trivy and with Grype, and it keeps the results of each scanner apart. For each vulnerability, JAVV
 records each triage decision in an audit log.
 
@@ -22,6 +23,7 @@ JAVV, read [Use JAVV](use/index.md). It has a short video for each task.
 |---|---|
 | Install JAVV with docker compose or with Helm | [Deploying](DEPLOYING.md) |
 | Run the scanners in the clusters that you scan | [Deploying: connect the scanners](DEPLOYING.md#connect-the-scanners) and the [scanner chart](../deploy/helm/javv-scanner/README.md) |
+| Scan a Nomad cluster or a Docker host | [Scan a Nomad cluster](../deploy/nomad/README.md) and [Scan a Docker Compose host](../deploy/docker/README.md) |
 | Find the scanner and OpenSearch versions that a release supports | [Supported versions](supported-versions.md) |
 | Change a setting | [Configuration](CONFIGURATION.md) |
 | Calculate the OpenSearch size for your clusters | [Sizing OpenSearch](runbooks/opensearch-sizing.md) |

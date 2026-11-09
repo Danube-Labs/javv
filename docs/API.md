@@ -45,7 +45,7 @@ the backend.
     jq -n --arg u admin --arg p "$pw" '{username: $u, password: $p}' \
       | curl -sf -c jar -b jar -H 'Content-Type: application/json' --data @- "$JAVV/auth/login"
     ```
-    The reply shows `must_change`. If it is `true`, do step 3. If it is `false`, go to step 4.
+    The reply shows `user.must_change`. If it is `true`, do step 3. If it is `false`, go to step 4.
 3. Change the password. The new password must have 12 characters or more:
     ```bash
     read -rs -p 'New password: ' new && echo
