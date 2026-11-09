@@ -2271,15 +2271,15 @@ the published images and how to use an OpenSearch that you operate.</p>
 <li>cosign 3.x, to verify the images (<a href="#verify-the-images-and-charts">Verify the images and charts</a>).
   To install it, see <a href="https://docs.sigstore.dev/cosign/system_config/installation/">Install cosign</a>.</li>
 <li>These three files, in one folder:<ul>
-<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/compose.yaml"><code>compose.yaml</code></a> <!-- x-release-please-version --></li>
-<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/.env.example"><code>.env.example</code></a> <!-- x-release-please-version --></li>
-<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/setup.sh"><code>setup.sh</code></a> <!-- x-release-please-version --></li>
+<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.9/deploy/compose/compose.yaml"><code>compose.yaml</code></a> <!-- x-release-please-version --></li>
+<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.9/deploy/compose/.env.example"><code>.env.example</code></a> <!-- x-release-please-version --></li>
+<li><a href="https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.9/deploy/compose/setup.sh"><code>setup.sh</code></a> <!-- x-release-please-version --></li>
 </ul>
 </li>
 </ul>
 <p>To get the files, run these commands in an empty folder. <code>VERSION</code> is the release that you install.</p>
 <!-- x-release-please-start-version -->
-<div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+<div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 <span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>compose.yaml<span class="w"> </span>.env.example<span class="w"> </span>setup.sh<span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <span class="w">  </span>curl<span class="w"> </span>-fsSLO<span class="w"> </span><span class="s2">"https://raw.githubusercontent.com/Danube-Labs/javv/v</span><span class="nv">$VERSION</span><span class="s2">/deploy/compose/</span><span class="nv">$f</span><span class="s2">"</span>
 <span class="k">done</span>
@@ -2322,7 +2322,7 @@ chmod<span class="w"> </span>+x<span class="w"> </span>setup.sh
 <p><strong>Get the images, and verify them.</strong> <code>compose.yaml</code> names each JAVV image by its tag, but the
     signature is for the digest of the image. Thus verify the digest that the pull got:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 <span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
 <span class="nv">ISSUER</span><span class="o">=</span>https://token.actions.githubusercontent.com
 docker<span class="w"> </span>compose<span class="w"> </span>pull
@@ -2690,7 +2690,7 @@ to the backend.</p>
 <li><strong>Verify the three charts.</strong> Each <code>helm install</code> of this page gets its chart from the registry.
     Verify each chart before you install it:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 <span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
 <span class="nv">ISSUER</span><span class="o">=</span>https://token.actions.githubusercontent.com
 <span class="k">for</span><span class="w"> </span>chart<span class="w"> </span><span class="k">in</span><span class="w"> </span>javv-opensearch<span class="w"> </span>javv<span class="w"> </span>javv-scanner<span class="p">;</span><span class="w"> </span><span class="k">do</span>
@@ -2711,7 +2711,7 @@ to the backend.</p>
   (<a href="#an-opensearch-of-your-own">An OpenSearch of your own</a>).</li>
 </ul>
 <p><!-- x-release-please-start-version -->
-<div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+<div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 <span class="nb">read</span><span class="w"> </span>-rs<span class="w"> </span>-p<span class="w"> </span><span class="s1">'OpenSearch admin password: '</span><span class="w"> </span>pw<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span>
 <span class="nb">printf</span><span class="w"> </span><span class="s1">'%s'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$pw</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>javv-opensearch-admin<span class="w"> </span>--from-file<span class="o">=</span><span class="nv">password</span><span class="o">=</span>/dev/stdin
 <span class="nb">unset</span><span class="w"> </span>pw
@@ -2752,7 +2752,7 @@ kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="
 </li>
 <li><strong>Install JAVV.</strong> The backend signs in to OpenSearch as <code>javv</code>, with the Secret of <code>javv</code>:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 helm<span class="w"> </span>install<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>secrets.existingSecret<span class="o">=</span>javv-secrets<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>opensearch.passwordSecret.name<span class="o">=</span>javv-opensearch-backend
@@ -2785,7 +2785,7 @@ different cluster needs an address and a port of JAVV that it can connect to. Us
 <p>The chart value <code>frontend.service.type</code>, set to <code>LoadBalancer</code> or <code>NodePort</code>. <code>VERSION</code> is the
   release that runs now:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 helm<span class="w"> </span>upgrade<span class="w"> </span>javv<span class="w"> </span>oci://ghcr.io/danube-labs/charts/javv<span class="w"> </span>--version<span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION</span><span class="s2">"</span><span class="w"> </span>--reuse-values<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--set<span class="w"> </span>frontend.service.type<span class="o">=</span>LoadBalancer<span class="w">   </span><span class="c1"># or NodePort</span>
 kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>javv
@@ -2868,7 +2868,7 @@ network. Each pair of a cluster and a scanner has its own token.</p>
     <a href="#install-on-kubernetes-with-helm">Helm steps</a>. Put each token in its own Secret, and set the
     address of JAVV:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>javv-scanner
 <span class="c1"># asks for each token, so it is not in your shell history or the process list</span>
 <span class="k">for</span><span class="w"> </span>s<span class="w"> </span><span class="k">in</span><span class="w"> </span>trivy<span class="w"> </span>grype<span class="p">;</span><span class="w"> </span><span class="k">do</span>
@@ -3007,7 +3007,7 @@ the scanner container, and set <code>DOCKER_CONFIG</code> to that directory.</p>
 <ol>
 <li>Verify an image and its SBOM attestation:
     <!-- x-release-please-start-version -->
-    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.8
+    <div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">0</span>.9.9
 <span class="nv">IMAGE</span><span class="o">=</span>ghcr.io/danube-labs/javv-backend:<span class="nv">$VERSION</span><span class="w">   </span><span class="c1"># or javv-frontend</span>
 <span class="nv">IDENTITY</span><span class="o">=</span><span class="s1">'^https://github\.com/Danube-Labs/javv(-poc)?/\.github/workflows/release-please\.yml@refs/heads/main$'</span>
 <span class="nv">ISSUER</span><span class="o">=</span>https://token.actions.githubusercontent.com
