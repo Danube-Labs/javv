@@ -39,6 +39,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-10-20 | The charts keep the defaults of the official OpenSearch chart. Do not add jobs or policies for a risk that the upstream chart does not address. | 945 |
 | 2026-10-27 | The repository `javv-poc` has the new name `javv`, with its full history, issues and numbers. This replaces the plan to clean the history and delete `javv-poc`. The placeholder repository is `javv-backup`. The release identity accepts both names. | 926, PR 1030 |
 | 2026-10-30 | Filters on a dashboard panel: five panels read findings counts. They take the filters of Findings, in the shape of a saved view. Riskiest images and Triage activity get filters in a separate issue (decision 1). | 999, 1063 |
+| 2026-11-09 | The page for a Docker host does not tell how to scan a host that also runs JAVV (D1 option B). The scan pages for Nomad and Docker name the JAVV release that their test used, and their file links stay on `main` (D2 option A). | 1161 |
 
 ## Design and architecture
 
