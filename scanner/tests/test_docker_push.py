@@ -399,6 +399,17 @@ def test_no_digest_fails_the_run_and_keeps_the_cycle_partial(cycle):
     assert inventory["expected_count"] == 4  # the images found, not 0
 
 
+def test_an_image_with_no_digest_is_left_out_of_a_committed_cycle(cycle):
+    code, calls, _ = cycle(
+        digest=lambda image: None if image == NGINX else "sha256:repo-" + image[7:]
+    )
+    assert code == 1
+    pushes = [b for _, p, b, _ in calls if p == "/api/v1/ingest/scan"]
+    assert "nginx:1.27-alpine" not in {b["image_ref"] for b in pushes}
+    inventory = next(b for _, p, b, _ in calls if p == "/api/v1/inventory-runs")
+    assert inventory["expected_count"] == len(pushes) == 3  # JAVV commits the cycle without it
+
+
 def test_a_dry_run_pushes_nothing(cycle):
     code, calls, scanned = cycle(JAVV_DRY_RUN="true")
     assert (code, scanned) == (0, [])
