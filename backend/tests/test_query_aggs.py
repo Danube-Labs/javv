@@ -25,16 +25,19 @@ from backend.query.aggs import (
     TOP_COMPONENTS_SIZE,
     TOP_IMAGES_RANK,
     TOP_IMAGES_SIZE,
+    TOP_VALUES_FIELDS,
     build_composite_body,
     build_facets_body,
     build_top_components_body,
     build_top_images_body,
+    build_top_values_body,
     cap_value_search,
     contains_pattern,
     decode_after,
     encode_after,
     facet_aggregation,
     top_images_rows,
+    top_values_rows,
 )
 from backend.query.search import SearchFilters, unassigned_clause
 from os_env import OS_URL, requires_opensearch
@@ -138,6 +141,71 @@ def test_top_components_body_is_per_scanner_cardinality_only() -> None:
     assert body["size"] == 0
     # the caller's filter context applies to the body like every other agg
     assert {"term": {"fixable": True}} in body["query"]["bool"]["filter"]
+
+
+def test_top_values_body_ranks_by_findings_with_each_scanner_apart() -> None:
+    """Issue 1176: the Top CVEs board. The store ranks by findings, ties by the value; the
+    severities count under each scanner only, so no count adds the two scanners' severities."""
+    body = build_top_values_body(SearchFilters(fixable=True), "cve_id")
+    values = body["aggs"]["values"]
+    assert values["terms"] == {
+        "field": "cve_id",
+        "size": TOP_COMPONENTS_SIZE,
+        "order": [{"_count": "desc"}, {"_key": "asc"}],
+    }
+    assert set(values["aggs"]) == {"by_scanner"}  # no severity split across the scanners
+    by_scanner = values["aggs"]["by_scanner"]
+    assert by_scanner["terms"]["field"] == "scanner"
+    assert by_scanner["aggs"]["severity"]["terms"]["field"] == "severity_canonical"
+    assert body["size"] == 0
+    assert {"term": {"fixable": True}} in body["query"]["bool"]["filter"]
+    assert body["terminate_after"] == ONE_PASS_TERMINATE_AFTER
+    assert "terminate_after" not in build_top_values_body(SearchFilters(), "cve_id", exact=False)
+    assert TOP_VALUES_FIELDS == ("cve_id",)
+    with pytest.raises(ValueError):
+        build_top_values_body(SearchFilters(), "assignee")
+
+
+def test_top_values_rows_keep_the_store_order_and_each_scanner() -> None:
+    def bucket(key: str, per: dict[str, dict[str, int]]) -> dict[str, Any]:
+        scanners = [
+            {
+                "key": s,
+                "doc_count": sum(sev.values()),
+                "severity": {"buckets": [{"key": k, "doc_count": n} for k, n in sev.items()]},
+            }
+            for s, sev in per.items()
+        ]
+        return {
+            "key": key,
+            "doc_count": sum(s["doc_count"] for s in scanners),
+            "by_scanner": {"buckets": scanners},
+        }
+
+    rows = top_values_rows(
+        {
+            "values": {
+                "buckets": [
+                    bucket("CVE-2", {"trivy": {"high": 2}, "grype": {"critical": 1}}),
+                    bucket("CVE-1", {"grype": {"low": 1}}),
+                ]
+            }
+        }
+    )
+    assert rows == [
+        {
+            "value": "CVE-2",
+            "count": 3,
+            "count_by_scanner": {"trivy": 2, "grype": 1},
+            "severity_by_scanner": {"trivy": {"high": 2}, "grype": {"critical": 1}},
+        },
+        {
+            "value": "CVE-1",
+            "count": 1,
+            "count_by_scanner": {"grype": 1},
+            "severity_by_scanner": {"grype": {"low": 1}},
+        },
+    ]
 
 
 def test_top_images_body_ranks_the_running_images_on_the_store() -> None:

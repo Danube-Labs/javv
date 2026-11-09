@@ -225,6 +225,67 @@ def build_top_components_body(filters: SearchFilters) -> dict[str, Any]:
     return body
 
 
+# the fields GET /findings/top-values ranks (issue 1176, decision D5): only the CVE for now; a
+# new field needs a ruling. The board cap is Top components', for the same card and pager.
+TOP_VALUES_FIELDS = ("cve_id",)
+
+
+def build_top_values_body(
+    filters: SearchFilters,
+    by: str,
+    *,
+    sla_cutoffs: dict[str, str] | None = None,
+    exact: bool = True,
+) -> dict[str, Any]:
+    """The Top CVEs board (issue 1176): capped `terms` over `by`, ranked by the store on the
+    findings of each value, ties by the value. Each bucket counts the findings of each scanner
+    and their severities; a filter on one scanner ranks by that scanner. With no filter the rank
+    is the findings of both, as the "all" of every card adds them. Exact with
+    `JAVV_EXACT_RANKING`, as the Riskiest images board."""
+    if by not in TOP_VALUES_FIELDS:
+        raise ValueError(f"by must be one of {', '.join(TOP_VALUES_FIELDS)}")
+    body = _base(filters, sla_cutoffs)
+    body["aggs"] = {
+        "values": {
+            "terms": {
+                "field": by,
+                "size": TOP_COMPONENTS_SIZE,
+                "order": [{"_count": "desc"}, {"_key": "asc"}],
+            },
+            "aggs": {
+                "by_scanner": {
+                    "terms": {"field": "scanner", "size": 4},
+                    "aggs": {
+                        "severity": {
+                            "terms": {"field": "severity_canonical", "size": len(SEVERITY_BUCKETS)}
+                        }
+                    },
+                }
+            },
+        }
+    }
+    if exact:
+        body["terminate_after"] = ONE_PASS_TERMINATE_AFTER
+    return body
+
+
+def top_values_rows(aggregations: dict[str, Any]) -> list[dict[str, Any]]:
+    """The rows of a build_top_values_body response, in the store's order. The findings and
+    the severities stay per scanner; `count` is the findings of the scanners in the read."""
+    return [
+        {
+            "value": b["key"],
+            "count": b["doc_count"],
+            "count_by_scanner": {s["key"]: s["doc_count"] for s in b["by_scanner"]["buckets"]},
+            "severity_by_scanner": {
+                s["key"]: {v["key"]: v["doc_count"] for v in s["severity"]["buckets"]}
+                for s in b["by_scanner"]["buckets"]
+            },
+        }
+        for b in aggregations["values"]["buckets"]
+    ]
+
+
 # the cap of the filtered Riskiest images board (issue 1063): the same server board as Top
 # components, which the card shows page by page. Not a tunable.
 TOP_IMAGES_SIZE = 100

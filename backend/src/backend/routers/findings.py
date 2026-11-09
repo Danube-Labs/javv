@@ -22,7 +22,7 @@ path; a past T dispatches through `query/as_of.py` to M8b's registered `as_of_t`
 
 from collections.abc import Awaitable
 from datetime import UTC, datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, Literal, cast
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -39,11 +39,13 @@ from backend.query.aggs import (
     build_facets_body,
     build_top_components_body,
     build_top_images_body,
+    build_top_values_body,
     cap_value_search,
     decode_after,
     encode_after,
     facet_aggregation,
     top_images_rows,
+    top_values_rows,
 )
 from backend.query.as_of import AsOfTReader, AsOfTUnavailable, as_of_t_reader, parse_as_of
 from backend.query.pit import images_for_inventory_run, latest_committed_inventory
@@ -507,6 +509,32 @@ async def top_components_findings(
             for b in resp["aggregations"]["components"]["buckets"]
         ]
     }
+
+
+@router.get("/top-values")
+async def top_values_findings(
+    request: Request,
+    principal: Authenticated,
+    cluster_id: ClusterId,
+    filters: Filters,
+    as_of_t: AsOf,
+    by: Annotated[Literal["cve_id"], Query()],
+) -> dict[str, Any]:
+    """The Top CVEs card (issue 1176): the values of `by` with the most findings under the
+    filters, at most TOP_COMPONENTS_SIZE. The severities stay per scanner; `count` adds the
+    findings of the scanners, as the "all" of every card does. A now-only read, as Top
+    components."""
+    if as_of_t is not None:
+        raise HTTPException(422, "top-values is a now-only read")
+    client = cast(Any, request.app.state.opensearch)
+    body = build_top_values_body(
+        filters,
+        by,
+        sla_cutoffs=await _sla_cutoffs(client, filters),
+        exact=get_settings().exact_ranking,
+    )
+    resp = await tenant_search(client, index="findings", cluster_id=cluster_id, body=body)
+    return {"by": by, "values": top_values_rows(resp["aggregations"])}
 
 
 _MANIFEST_FIELDS = ("inventory_run_id", "inventory_order", "started_at", "completed_at")

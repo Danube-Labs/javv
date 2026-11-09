@@ -1,7 +1,7 @@
 """The read tools of the MCP endpoint (issue 1096, D6). Each one is a route function, through
 `tools.build`; `test_mcp_read_coverage.py` holds each read route to a tool or to `NO_TOOL`."""
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -88,6 +88,16 @@ READ_TOOLS: tuple[Tool, ...] = (
         name="top_components",
         description="The packages of one cluster with the most findings, with their counts.",
         routes={"": findings.top_components_findings},
+    ),
+    Tool(
+        name="top_cves",
+        description=(
+            "The CVEs of one cluster with the most findings, with the findings and the severities "
+            "of each scanner. At most 100 CVEs, now only. Use scanner to rank by one scanner."
+        ),
+        routes={"": findings.top_values_findings},
+        # the route ranks only the CVE now (issue 1176, D5), so the agent never names it
+        params={"by": (Literal["cve_id"], "cve_id")},
     ),
     Tool(
         name="list_images",

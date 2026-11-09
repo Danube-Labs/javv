@@ -116,9 +116,9 @@ class Settings(BaseSettings):
     # dashboards (issue 440): the largest NDJSON file one import reads (past it → 413). A dashboard
     # with 24 panels measured 3.3 KB, so the default holds the 1,000 a list can show.
     dashboard_import_max_bytes: int = Field(default=4 * 1024 * 1024, ge=1)
-    # the filtered Riskiest images ranking (issue 1063): true searches each shard in one pass, so
-    # the 100 images are exact. False lets OpenSearch split the search into segment slices; each
-    # slice keeps only its own top images, which can drop the true top image.
+    # the filtered Riskiest images and the Top CVEs rankings (issues 1063 and 1176): true searches
+    # each shard in one pass, so the 100 rows are exact. False lets OpenSearch split the search
+    # into segment slices; each slice keeps only its own top rows, which can drop the true top row.
     exact_ranking: bool = True
     # the MCP endpoint for AI agents (issue 1096): off until an operator turns it on. Each MCP
     # token has its own budget of requests per minute, and an answer past the cap loses rows

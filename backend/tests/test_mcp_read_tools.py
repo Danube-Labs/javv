@@ -66,6 +66,8 @@ CASES: list[tuple[str, dict[str, Any]]] = [
     ("group_findings", {"cluster_id": "{cluster}", "by": "cve_id"}),
     ("top_images", {"cluster_id": "{cluster}"}),
     ("top_components", {"cluster_id": "{cluster}"}),
+    ("top_cves", {"cluster_id": "{cluster}", "by": "cve_id"}),
+    ("top_cves", {"cluster_id": "{cluster}", "by": "cve_id", "scanner": "grype", "fixable": True}),
     ("list_images", {"cluster_id": "{cluster}"}),
     ("image_timeline", {"cluster_id": "{cluster}", "image_repo": "bench/app", "tag": "1"}),
     ("trends", {"kind": "findings", "cluster_id": "{cluster}", "days": 7}),
@@ -207,6 +209,25 @@ async def test_the_findings_page_is_25_at_most_and_the_ui_switch_is_not_offered(
         result = r.json()["result"]
         assert result["isError"] and "size" in result["content"][0]["text"]
         assert "26" not in result["content"][0]["text"]  # a refused value is not sent back
+
+
+async def test_top_cves_ranks_the_cve_with_no_by_from_the_agent(mcp_on):
+    """Issue 1176 (D7 A): the route ranks only `cve_id` (D5), so the tool takes it by default
+    and a call with no `by` answers what the route answers for `by=cve_id`."""
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+        await _seed(client, cluster, _findings(3) + _findings(2, cve="CVE-2024-9001"))
+        await _session(http, client, admin=True)
+        _, raw = await _token(client)
+        schema = (await _tools(http, raw))["top_cves"]["inputSchema"]
+        assert schema["properties"]["by"]["default"] == "cve_id"
+        assert "by" not in schema.get("required", [])
+        text = _text(await http.post(PATH, **_call("top_cves", {"cluster_id": cluster}, raw)))
+        route = await http.get(
+            "/api/v1/findings/top-values", params={"cluster_id": cluster, "by": "cve_id"}
+        )
+    assert json.loads(text) == route.json()
+    assert [v["value"] for v in route.json()["values"]] == ["CVE-2024-9000", "CVE-2024-9001"]
 
 
 async def test_a_grouped_tool_takes_a_kind_and_only_the_parameters_of_that_kind(mcp_on):
