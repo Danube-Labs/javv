@@ -226,7 +226,8 @@ def build_top_components_body(filters: SearchFilters) -> dict[str, Any]:
 
 
 # the fields GET /findings/top-values ranks (issue 1176, decision D5): only the CVE for now; a
-# new field needs a ruling. The board cap is Top components', for the same card and pager.
+# new field needs a decision. The board cap is Top components' TOP_COMPONENTS_SIZE, for the same
+# card and pager (docs/CONFIGURATION.md, "Fixed aggregation sizes").
 TOP_VALUES_FIELDS = ("cve_id",)
 
 
