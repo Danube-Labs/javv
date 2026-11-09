@@ -8,7 +8,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import TopCvesLens, { type CveRow } from '@/components/dashboards/TopCvesLens.vue'
+import TopCvesPanel, { type CveRow } from '@/components/dashboards/TopCvesPanel.vue'
 
 vi.mock('@/api/generated', async (importOriginal) =>
   (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
@@ -41,16 +41,16 @@ const ROWS = [
 
 const props = { clusterId: 'c-k3d-0001', t: null, scanner: 'all' as const }
 
-function mountLens(over: Record<string, unknown> = {}) {
+function mountPanel(over: Record<string, unknown> = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }],
   })
-  const w = mount(TopCvesLens, { props: { ...props, ...over }, global: { plugins: [router] } })
+  const w = mount(TopCvesPanel, { props: { ...props, ...over }, global: { plugins: [router] } })
   return { w, router }
 }
 
-describe('TopCvesLens (self-contained panel)', () => {
+describe('TopCvesPanel (self-contained panel)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -58,7 +58,7 @@ describe('TopCvesLens (self-contained panel)', () => {
 
   it('reads the ranked CVEs of the cluster, and shows them in the store order', async () => {
     readMock.mockResolvedValue(ok({ by: 'cve_id', values: ROWS }))
-    const { w } = mountLens()
+    const { w } = mountPanel()
     await flushPromises()
     expect(readMock.mock.calls[0]![0]).toEqual({
       client: {},
@@ -73,7 +73,7 @@ describe('TopCvesLens (self-contained panel)', () => {
 
   it('shows the highest severity among the findings in the count', async () => {
     readMock.mockResolvedValue(ok({ values: ROWS }))
-    const { w } = mountLens()
+    const { w } = mountPanel()
     await flushPromises()
     const chips = w.findAll('tbody tr').map((tr) => tr.findAll('td')[1]!.text().toLowerCase())
     expect(chips[0]).toContain('critical') // grype's critical over trivy's high
@@ -82,7 +82,7 @@ describe('TopCvesLens (self-contained panel)', () => {
 
   it('on one scanner asks the store to rank by that scanner, and reads again on a switch', async () => {
     readMock.mockResolvedValue(ok({ values: [] }))
-    const { w } = mountLens({ scanner: 'grype' })
+    const { w } = mountPanel({ scanner: 'grype' })
     await flushPromises()
     expect(readMock.mock.calls[0]![0]).toMatchObject({ query: { by: 'cve_id', scanner: 'grype' } })
     await w.setProps({ scanner: 'all' })
@@ -94,7 +94,7 @@ describe('TopCvesLens (self-contained panel)', () => {
   it('reads with the filters of the panel, and a row opens Findings with them and the CVE', async () => {
     readMock.mockResolvedValue(ok({ values: ROWS }))
     const filters = { namespace: ['payments'], cve_id: ['CVE-1999-0001'], present: true }
-    const { w, router } = mountLens({ filters })
+    const { w, router } = mountPanel({ filters })
     await flushPromises()
     expect(readMock.mock.calls[0]![0]).toMatchObject({
       query: { cluster_id: 'c-k3d-0001', by: 'cve_id', namespace: ['payments'], all_filters: true },
@@ -111,16 +111,16 @@ describe('TopCvesLens (self-contained panel)', () => {
       row(`CVE-2024-${String(1000 - i)}`, { trivy: { high: 40 - i } }),
     )
     readMock.mockResolvedValue(ok({ values: many }))
-    const { w } = mountLens()
+    const { w } = mountPanel()
     await flushPromises()
     expect(w.findAll('tbody tr')).toHaveLength(10)
-    const tall = mountLens({ pageSize: 25 }).w
+    const tall = mountPanel({ pageSize: 25 }).w
     await flushPromises()
     expect(tall.findAll('tbody tr')).toHaveLength(25)
   })
 
   it('at a past T sends no read, says the panel shows only now, and names Back to now', async () => {
-    const { w } = mountLens({ t: '2026-10-01T00:00:00Z' })
+    const { w } = mountPanel({ t: '2026-10-01T00:00:00Z' })
     await flushPromises()
     expect(readMock).not.toHaveBeenCalled()
     expect(w.text()).toContain(
@@ -132,7 +132,7 @@ describe('TopCvesLens (self-contained panel)', () => {
     let old!: (v: unknown) => void
     readMock.mockReturnValueOnce(new Promise((r) => (old = r)) as never)
     readMock.mockResolvedValueOnce(ok({ values: [ROWS[1]] }))
-    const { w } = mountLens()
+    const { w } = mountPanel()
     await w.setProps({ clusterId: 'c-k3d-0002' })
     await flushPromises()
     old(ok({ values: ROWS }))
@@ -143,14 +143,14 @@ describe('TopCvesLens (self-contained panel)', () => {
   it('shows a loading shimmer, then the empty copy or the error', async () => {
     let resolve!: (v: unknown) => void
     readMock.mockReturnValueOnce(new Promise((r) => (resolve = r)) as never)
-    const { w } = mountLens()
+    const { w } = mountPanel()
     expect(w.find('[aria-label="Loading top CVEs"]').exists()).toBe(true)
     expect(w.text()).not.toContain('No CVE in the findings') // no claim before evidence
     resolve(ok({ values: [] }))
     await flushPromises()
     expect(w.text()).toContain('No CVE in the findings.')
     readMock.mockResolvedValueOnce({ data: null, response: { ok: false, status: 500 } } as never)
-    const failed = mountLens().w
+    const failed = mountPanel().w
     await flushPromises()
     expect(failed.text()).toContain('CVE ranking unavailable.')
   })
@@ -158,7 +158,7 @@ describe('TopCvesLens (self-contained panel)', () => {
   it('an OK reply whose body could not be read is a failed read, not a throw (issue 749)', async () => {
     const thrown: string[] = []
     readMock.mockResolvedValue(okWithoutBody())
-    const w = mount(TopCvesLens, {
+    const w = mount(TopCvesPanel, {
       props,
       global: {
         plugins: [createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })],

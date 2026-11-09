@@ -60,7 +60,7 @@ watch(
     if (mine !== seq) return // a newer read owns the panel now
     failed.value = !response?.ok || !data
     if (failed.value) {
-      logger.warn('findings_trend_lens_failed', { status: response?.status })
+      logger.warn('findings_trend_panel_failed', { status: response?.status })
       trend.value = EMPTY
     } else {
       const d = data as Partial<FindingsTrendData>

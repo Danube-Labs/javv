@@ -12,9 +12,9 @@ import ContributorsLens from '@/components/contributors/ContributorsLens.vue'
 import ProgressPanel from '@/components/contributors/ProgressPanel.vue'
 import AuditLens from '@/components/dashboards/AuditLens.vue'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
-import FindingsTrendLens from '@/components/dashboards/FindingsTrendLens.vue'
+import FindingsTrendPanel from '@/components/dashboards/FindingsTrendPanel.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
-import TopCvesLens from '@/components/dashboards/TopCvesLens.vue'
+import TopCvesPanel from '@/components/dashboards/TopCvesPanel.vue'
 import OverviewNamespacesCard from '@/components/overview/OverviewNamespacesCard.vue'
 import OverviewStatBands from '@/components/overview/OverviewStatBands.vue'
 import PackageTypeCard from '@/components/overview/PackageTypeCard.vue'
@@ -96,7 +96,7 @@ export const PANELS: readonly CatalogPanel[] = [
     name: 'Vulnerabilities over time',
     group: 'Findings',
     line: 'New and resolved findings for each day, for each scanner.',
-    component: FindingsTrendLens,
+    component: FindingsTrendPanel,
     defaultWidth: 2,
     heights: { short: 9 },
     usesScanner: true,
@@ -166,7 +166,7 @@ export const PANELS: readonly CatalogPanel[] = [
     name: 'Top CVEs',
     group: 'Findings',
     line: 'The CVEs with the most findings, with their highest severity.',
-    component: TopCvesLens,
+    component: TopCvesPanel,
     defaultWidth: 1,
     heights: { short: 13, tall: 26 },
     usesScanner: true,

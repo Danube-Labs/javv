@@ -3,8 +3,8 @@
  * Top CVEs (issue 1176): the CVEs with the most findings, ranked by the store
  * (`GET /findings/top-values?by=cve_id`, at most 100) and paged by the shared GridPager. On one
  * scanner the read asks the store to rank by that scanner; on all scanners the count adds the
- * two, as every card's "all" does. The chip is the highest severity among the findings in the
- * count. A now-only read: at a past T the panel says so and names the way back to now.
+ * two, as every card's "all" does. The severity tag is the highest severity among the findings
+ * in the count. A now-only read: at a past T the panel says so and names the way back to now.
  *
  * Self-contained per DESIGN.md section 10 — `(clusterId, t, scanner, filters)` in, its own read
  * and loading/empty/error states.
@@ -75,7 +75,7 @@ watch(
     })
     if (mine !== seq) return // a newer read owns the board now
     failed.value = !response?.ok || !data
-    if (failed.value) logger.warn('top_cves_lens_failed', { status: response?.status })
+    if (failed.value) logger.warn('top_cves_panel_failed', { status: response?.status })
     rows.value = failed.value ? [] : ((data as { values?: CveRow[] }).values ?? [])
     settled.value = true
   },
