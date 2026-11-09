@@ -8,8 +8,8 @@ The Compose file is an example. Change it for your host: for example, the schedu
 the tokens or the cache volumes. The script `javv_docker_push.py` does the work. It reads the
 running containers from the Docker API, scans their images and pushes the results to JAVV.
 
-**Tested with:** Docker 29.9.3 with the containerd image store, Docker Compose 5.7.0, and the images
-`javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
+**Tested with:** JAVV 0.9.8, Docker 29.9.3 with the containerd image store, Docker Compose 5.7.0,
+and the images `javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
 
 ## How the containers work
 

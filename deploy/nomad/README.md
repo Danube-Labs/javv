@@ -8,8 +8,8 @@ The two jobs are examples. Change them for your cluster: for example, the source
 token, the cache volumes or the schedule. The script `javv_nomad_push.py` does the work. It reads
 the running images from the Nomad API, scans them and pushes the results to JAVV.
 
-**Tested with:** Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the images
-`javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
+**Tested with:** JAVV 0.9.8, Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the
+images `javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
 
 ## How the jobs work
 
