@@ -51,12 +51,20 @@ Run the commands in the folder that holds the files.
 1. In JAVV, make two tokens for the cluster: one for `trivy`, one for `grype`. See
    [Before you start](../../docs/INGEST-CONTRACT.md#before-you-start) of the push page.
 2. Put each token in the Nomad variable of its job. The job can read its variable. Other tokens
-   need a policy that gives them access to `nomad/jobs`:
+   need a policy that gives them access to `nomad/jobs`. The commands read each token at a
+   prompt, so the token is not in the shell history or in the process list. `-out none` stops the
+   output of the variable with its token:
 
     ```bash
-    nomad var put nomad/jobs/javv-scan-trivy javv_token=<the Trivy token>
-    nomad var put nomad/jobs/javv-scan-grype javv_token=<the Grype token>
+    read -rs -p 'Trivy token: ' t && echo
+    printf '%s' "$t" | nomad var put -out none nomad/jobs/javv-scan-trivy javv_token=-
+    read -rs -p 'Grype token: ' t && echo
+    printf '%s' "$t" | nomad var put -out none nomad/jobs/javv-scan-grype javv_token=-
+    unset t
     ```
+
+    Use `printf`, not `echo`: Nomad keeps the value as it gets it, and `echo` adds a line break to
+    the token.
 
 3. Make the volumes for the databases of the scanners:
 
@@ -83,11 +91,13 @@ Run the commands in the folder that holds the files.
       javv-scan-grype javv-scan.policy.hcl
     ```
 
-6. Start a first run, and read its log:
+6. Start a first run of each job, and read its log. The output of `periodic force` gives the
+   allocation ID of the run, in the line `Allocation "<ID>" created`:
 
     ```bash
     nomad job periodic force javv-scan-trivy
-    nomad job status javv-scan-trivy          # the runs, with their allocations
+    nomad alloc logs -stderr <allocation ID> push
+    nomad job periodic force javv-scan-grype
     nomad alloc logs -stderr <allocation ID> push
     ```
 
@@ -134,6 +144,8 @@ If JAVV does not send the scope, the job does not scan in this run.
 - Exit code `2`: a setting is not valid. The log tells the correct values.
 - Nomad does not start a failed run again. The next run of the schedule tries again.
 - If no image scanned, the cycle stays `partial`. JAVV keeps the images of the last good cycle.
+- If some images scanned, the cycle is `committed` with only those images. The run exits with
+  code `1`, and the log has an `ERROR` line for each image that is not in the cycle.
 
 ## Known gaps
 
