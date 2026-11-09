@@ -1130,7 +1130,7 @@ is the shared `SectionNav` (Settings' left menu, moved into the kit so both scre
 component), sticky on the left; one card per section beside it. **Width: wide.** **Nav:**
 *Help → Guide* (`book` icon, an open book drawn for JAVV by operator ruling 2026-10-01: no
 licensed icon sets), before *About*.
-**Content:** nine sections: the time range, now vs new, two scanners never merged, scans and
+**Content:** fourteen sections (nine until issue 1142): the time range, now vs new, two scanners never merged, scans and
 freshness, images are digests, triage, a state or a risk acceptance (issue 698: the two side by
 side, what the Approval list shows, and two worked examples, written in Simplified Technical
 English), and a glossary that carries the data dictionary (#351 §6). Written for the people using the app: plain words, no internal decision codes, no
@@ -1144,6 +1144,20 @@ action name from `ACTION_LABELS`, the tool call rows only for `can_manage_users`
 connect: the URL of this JAVV in the `CopyValue` box with Copy (the Guide is the only screen that
 gives a user who is not an admin the URL), the `Authorization: Bearer` header, and a link to the
 docs page *Use the MCP server*. Written in Simplified Technical English.
+**Saved views, Dashboards, Contributors, Exports and Data inspector** (issue 1142): five sections
+after *A state or a risk acceptance*, with the `bookmark`, `grid`, `award`, `download` and
+`database` icons. Saved views: what a view keeps (not the cluster), who deletes it, no edit, and
+what the card counts. Dashboards: the panels, the scanner switch and the panel scanner setting
+(the words of `PANEL_SCANNER_OPTS`), filters, sharing, export and import, then a link to the docs
+page *Build a dashboard* for the steps. Contributors: the Audit log as the source, the four
+handled actions (the action names of the Audit log), SLA met, the podium and the 100 rows.
+Exports: *Run now* and *In the background*, the default row limit and file life, the VEX file of
+one scanner. Data inspector: the two job cards and the admin role. Written in Simplified
+Technical English.
+**Voice** (operator ruling 2026-11-09, issue 1142): the reader is "you" and a step is a command.
+No "we", "our" or "I", and no reader named in the third person ("a user", "an admin"). A
+permission names the role that you need. JAVV, a screen or the data is the subject of a
+description. `guide-sections.spec.ts` holds it for each section.
 **Links in:** `/guide#<section>`. The shell's URL re-stamp keeps the hash, and the router
 scrolls only on arriving at a section, so changing the range or cluster on the page doesn't jump.
 Two screens point in through the shared `GuideLink` (operator rulings, 2026-10-01: words on the
