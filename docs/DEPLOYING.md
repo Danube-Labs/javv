@@ -34,6 +34,7 @@ There are two installation methods. They use the same images, settings and defau
 - Docker Engine with the compose plugin 2.23.1 or later.
 - A POSIX shell (Linux or macOS).
 - cosign 3.x, to verify the images ([Verify the images and charts](#verify-the-images-and-charts)).
+  To install it, see [Install cosign](https://docs.sigstore.dev/cosign/system_config/installation/).
 - These three files, in one folder:
     - [`compose.yaml`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/compose.yaml) <!-- x-release-please-version -->
     - [`.env.example`](https://raw.githubusercontent.com/Danube-Labs/javv/v0.9.8/deploy/compose/.env.example) <!-- x-release-please-version -->
@@ -55,11 +56,17 @@ chmod +x setup.sh
 
 ### Steps
 
-1. **Set the memory map limit for OpenSearch.** Do this one time on each host:
+1. **Set the memory map limit for OpenSearch.** OpenSearch needs a limit of 262144 or more. Do
+    this one time on each host. Show the limit:
+    ```bash
+    sysctl vm.max_map_count
+    ```
+    If the value is less than 262144, set it:
     ```bash
     sudo sysctl -w vm.max_map_count=262144
     ```
-    To keep the limit after a reboot, also add it to `/etc/sysctl.conf`.
+    To keep the limit after a reboot, also add the line `vm.max_map_count=262144` to
+    `/etc/sysctl.conf`. Do not set a lower value on a host that has a higher one.
 2. **Make the `.env` file.** In the folder with the three files, run one of these commands:
     ```bash
     ./setup.sh           # .env turns off the cookie's Secure flag, so sign-in works over http
@@ -97,6 +104,7 @@ chmod +x setup.sh
     done
     ```
     <!-- x-release-please-end -->
+    For each image, cosign writes a list of what it verified. Then one line shows `OK` or `FAILED`.
     Do not start JAVV when a line shows `FAILED`.
     [Verify the images and charts](#verify-the-images-and-charts) tells what the verification
     proves. The OpenSearch image comes from Docker Hub. JAVV does not sign it.
