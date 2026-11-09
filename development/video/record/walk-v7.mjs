@@ -1,5 +1,5 @@
 // Video 7, build a dashboard: make it, add panels, move one, change one, add Triage activity,
-// remove a panel, save, read it, copy it with export and import, remove the copy, and open the
+// delete a panel, save, read it, copy it with export and import, delete the copy, and open the
 // dashboard as a viewer. The walk makes a new dashboard each time, so it runs on any store; run
 // it after the walks of videos 2 to 4, so that Triage activity has changes to show.
 import fs from 'node:fs'
@@ -194,8 +194,8 @@ await record('v7', async ({ page: first, shot, hoverShot, settle, switchUser }) 
   await taApply.click()
   await loaded()
 
-  // 6. remove a panel with its bin icon
-  const removeSummary = page.getByRole('button', { name: `Remove ${panels[0]}`, exact: true })
+  // 6. delete a panel with its bin icon
+  const removeSummary = page.getByRole('button', { name: `Delete ${panels[0]}`, exact: true })
   await shot('before-remove', { remove: removeSummary, panel: tab(panels[0]) })
   await hoverShot('before-remove', removeSummary)
   await removeSummary.click()
@@ -316,7 +316,7 @@ await record('v7', async ({ page: first, shot, hoverShot, settle, switchUser }) 
   await dialog().waitFor({ state: 'detached', timeout: 10000 })
   await settle()
 
-  // 10. remove the copy: open it, Edit dashboard, Remove, Remove dashboard
+  // 10. delete the copy: open it, Edit dashboard, Delete, Delete dashboard
   const copyCard = page.locator('.view-card').filter({ hasNot: page.locator(`a[href="/dashboards/${dashId}"]`) }).filter({ hasText: NAME }).first()
   const copyLink = copyCard.locator('.vc-link')
   await shot('list-two', { copy: copyCard, grid: page.locator('.views-grid') })
@@ -328,15 +328,15 @@ await record('v7', async ({ page: first, shot, hoverShot, settle, switchUser }) 
   await shot('copy', { edit })
   await hoverShot('copy', edit)
   await edit.click()
-  await headBtn('Remove').waitFor({ timeout: 15000 })
+  await headBtn('Delete').waitFor({ timeout: 15000 })
   await loaded()
-  const remove = headBtn('Remove')
+  const remove = headBtn('Delete')
   await shot('copy-edit', { remove })
   await hoverShot('copy-edit', remove)
   await remove.click()
   await dialog().waitFor({ timeout: 10000 })
   await settle()
-  const confirm = dialog().getByRole('button', { name: 'Remove dashboard' })
+  const confirm = dialog().getByRole('button', { name: 'Delete dashboard' })
   await shot('remove', { dialog: dialog(), confirm })
   await hoverShot('remove', confirm)
   await confirm.click()

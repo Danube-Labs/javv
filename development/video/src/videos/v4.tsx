@@ -24,6 +24,6 @@ export const v4: Video = {
     { shot: 'after', step: 3, caption: 'The State filter now counts the acknowledged findings.', spot: 'stateFacet' },
     { shot: 'after', step: 4, caption: 'Some filters block bulk triage. Here, select Trivy in the Scanner filter.', spot: 'scanFacet', click: { box: 'trivy', to: 'trivy' } },
     { shot: 'trivy', step: 4, caption: 'Select Bulk triage again.', spot: 'bulkBtn', click: { box: 'bulkBtn', to: 'blocked', page: true } },
-    { shot: 'blocked', step: 4, caption: 'Bulk triage follows only Severity, State and Assignee. Other filters block it, so it never changes more findings than you see.', spot: 'blocked', hold: 'dialog' },
+    { shot: 'blocked', step: 4, caption: 'Bulk triage follows only Severity, State, Assignee and Digest. Other filters block it, so it never changes more findings than you see.', spot: 'blocked', hold: 'dialog' },
   ],
 }

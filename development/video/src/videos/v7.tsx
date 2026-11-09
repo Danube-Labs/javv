@@ -52,8 +52,8 @@ export const v7: Video = {
     { shot: 'taf-fields', step: 5, caption: 'Select User.', spot: 'menu', hold: 'pop', click: { box: 'field', to: 'taf-values' } },
     { shot: 'taf-values', step: 5, caption: 'Select a user. Here, lead.', spot: 'value', hold: 'pop', click: { box: 'value', to: 'ta-set' } },
     { shot: 'ta-set', step: 5, caption: 'Select Apply. The panel counts only the changes of lead.', spot: 'apply', hold: 'pop', click: { box: 'apply', to: 'before-remove' } },
-    // 6. remove a panel
-    { shot: 'before-remove', step: 6, caption: 'To remove a panel, select the bin icon on it.', spot: 'remove', click: { box: 'remove', to: 'removed' } },
+    // 6. delete a panel
+    { shot: 'before-remove', step: 6, caption: 'To delete a panel, select the bin icon on it.', spot: 'remove', click: { box: 'remove', to: 'removed' } },
     // 7. save
     { shot: 'removed', step: 7, caption: 'Discard puts back the dashboard as it was at the last save. Select Save changes.', spot: 'bar', click: { box: 'save', to: 'saved' } },
     { shot: 'saved', step: 7, caption: 'Name and sharing changes the name, the description and who can see the dashboard.', spot: 'details', click: { box: 'details', to: 'details-edit', page: true } },
@@ -75,11 +75,11 @@ export const v7: Video = {
     { shot: 'import-file', step: 9, caption: 'Keep the IDs makes the same dashboards on a different JAVV. Make copies gives each one a new ID.', spot: 'ids', hold: 'dialog', click: { box: 'copies', to: 'import-copy' } },
     { shot: 'import-copy', step: 9, caption: 'Select Import.', spot: 'run', hold: 'dialog', click: { box: 'run', to: 'imported' } },
     { shot: 'imported', step: 9, caption: 'The result shows each line of the file. You are the owner of each dashboard that the import makes.', spot: 'dialog', hold: 'dialog', click: { box: 'done', to: 'list-two', page: true } },
-    // 10. remove
-    { shot: 'list-two', step: 10, caption: 'Open the copy to remove it.', spot: 'copy', click: { box: 'copy', to: 'copy', page: true } },
+    // 10. delete
+    { shot: 'list-two', step: 10, caption: 'Open the copy to delete it.', spot: 'copy', click: { box: 'copy', to: 'copy', page: true } },
     { shot: 'copy', step: 10, caption: 'Select Edit dashboard.', spot: 'edit', click: { box: 'edit', to: 'copy-edit', page: true } },
-    { shot: 'copy-edit', step: 10, caption: 'Select Remove.', spot: 'remove', click: { box: 'remove', to: 'remove', page: true } },
-    { shot: 'remove', step: 10, caption: 'Select Remove dashboard. The data of the panels stays. The audit log keeps a copy of the dashboard.', spot: 'dialog', hold: 'dialog', click: { box: 'confirm', to: 'list-after', page: true } },
+    { shot: 'copy-edit', step: 10, caption: 'Select Delete.', spot: 'remove', click: { box: 'remove', to: 'remove', page: true } },
+    { shot: 'remove', step: 10, caption: 'Select Delete dashboard. The data of the panels stays. The audit log keeps a copy of the dashboard.', spot: 'dialog', hold: 'dialog', click: { box: 'confirm', to: 'list-after', page: true } },
     { shot: 'list-after', step: 10, caption: 'The first dashboard stays.', spot: 'card' },
     // 11. a viewer
     { shot: 'viewer', step: 11, caption: 'A user with the viewer role sees the dashboard. Edit dashboard is off, and the reason shows next to it.', spot: 'note', wide: true },
