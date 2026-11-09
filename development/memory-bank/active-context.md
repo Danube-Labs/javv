@@ -1,15 +1,15 @@
 # Active context
 
-As of: 2026-11-07
+As of: 2026-11-09
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
 
 ## Where the project is
 
-- The last release is 0.9.8 (2026-11-07): the fixes from the install test of 0.9.7 (issue 1108).
-  The Images CSV has the counts of each scanner, Settings is easier to read, and the install docs
-  verify the images and charts before they run them (issues 1125, 1126 and 1127).
+- The last release is 0.9.9 (2026-11-09): the changes after the install test of 0.9.7. Pages and
+  jobs scan a Nomad cluster and a Docker Compose host (issue 1155). Ten screens have plain words
+  and one close button (issues 1140 and 1152). The Guide has five new sections (issue 1142).
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
 ## In progress
