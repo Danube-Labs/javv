@@ -108,7 +108,7 @@ class Settings:
         self.javv = required("JAVV_BACKEND_URL").rstrip("/")
         if not self.javv.startswith(("http://", "https://")):
             raise SettingError(
-                f"JAVV_BACKEND_URL={self.javv!r}: start it with https://"
+                f"JAVV_BACKEND_URL={self.javv!r}: start it with http:// or https://"
             )
         self.token = required("JAVV_TOKEN")
         self.cluster = required("JAVV_CLUSTER_ID")

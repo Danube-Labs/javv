@@ -215,6 +215,11 @@ def test_a_setting_that_is_not_valid_stops_the_job(settings, name, value):
         settings(**{name: value})
 
 
+def test_a_backend_url_with_no_scheme_names_both_schemes(settings):
+    with pytest.raises(push.SettingError, match="start it with http:// or https://"):
+        settings(JAVV_BACKEND_URL="javv.example.com")
+
+
 def test_the_settings_go_into_the_scan_settings(settings):
     s = settings(JAVV_TRIVY_SEVERITIES="high,critical", JAVV_TRIVY_IGNORE_UNFIXED="true")
     assert s.tuning == {
