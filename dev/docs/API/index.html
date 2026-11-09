@@ -2704,7 +2704,7 @@ a hyphen.</p>
 <tr>
 <td>None</td>
 <td><code>{"&lt;name&gt;": [...]}</code></td>
-<td><code>/contributors</code> (<code>leaderboard</code>), <code>/images</code> (<code>images</code>), <code>/images/timeline</code> (<code>events</code>), <code>/findings/top-components</code> (<code>components</code>), <code>/findings/top-images</code> (<code>images</code>), <code>/clusters</code> (<code>clusters</code>), <code>/views</code> (<code>views</code>), <code>/dashboards</code> (<code>dashboards</code>), <code>/dashboards/roles</code> (<code>roles</code>), <code>/notifications</code> (<code>items</code>), <code>/admin/jobs</code> (<code>jobs</code>), <code>/admin/roles</code> (<code>roles</code>), <code>/admin/snapshots</code> (<code>snapshots</code>), <code>/scanners/provenance</code> (<code>scanners</code>), <code>/scanners/freshness</code> (<code>scanners</code>)</td>
+<td><code>/contributors</code> (<code>leaderboard</code>), <code>/images</code> (<code>images</code>), <code>/images/timeline</code> (<code>events</code>), <code>/findings/top-components</code> (<code>components</code>), <code>/findings/top-images</code> (<code>images</code>), <code>/findings/top-values</code> (<code>values</code>), <code>/clusters</code> (<code>clusters</code>), <code>/views</code> (<code>views</code>), <code>/dashboards</code> (<code>dashboards</code>), <code>/dashboards/roles</code> (<code>roles</code>), <code>/notifications</code> (<code>items</code>), <code>/admin/jobs</code> (<code>jobs</code>), <code>/admin/roles</code> (<code>roles</code>), <code>/admin/snapshots</code> (<code>snapshots</code>), <code>/scanners/provenance</code> (<code>scanners</code>), <code>/scanners/freshness</code> (<code>scanners</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -3079,6 +3079,12 @@ cron expressions.</p>
 <td><code>/api/v1/findings/top-components</code></td>
 <td>session</td>
 <td>The packages with the most findings, and the count of different CVEs for each scanner. A past <code>as_of</code> gets 422.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/findings/top-values</code></td>
+<td>session</td>
+<td>The CVEs with the most findings, with the filters of <code>GET /api/v1/findings</code>. <code>by</code> must be <code>cve_id</code>. The dashboard panel Top CVEs uses it. It gives at most 100 rows, from the most findings to the fewest, and the CVE ID decides a tie. Each row has the CVE ID in <code>value</code> and the findings in <code>count</code>. <code>count_by_scanner</code> has the findings of each scanner, and <code>severity_by_scanner</code> has the findings of each severity for each scanner. <code>count</code> adds the findings of the two scanners. Use <code>scanner</code> to rank by one scanner. A past <code>as_of</code> gets 422. <code>JAVV_EXACT_RANKING</code> sets how OpenSearch ranks the rows, as for <code>GET /api/v1/findings/top-images</code>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3712,7 +3718,7 @@ permissions of the user who opens the dashboard.</p>
 </tr>
 <tr>
 <td><code>filters</code></td>
-<td>The filters of <code>GET /api/v1/findings</code>, with the fields and checks of the <code>preset</code> of a saved view. Only on the panels that read findings counts: <code>findings-summary</code>, <code>package-type</code>, <code>findings-by-namespace</code>, <code>riskiest-images</code>, <code>top-components</code> and <code>triage-progress</code>.</td>
+<td>The filters of <code>GET /api/v1/findings</code>, with the fields and checks of the <code>preset</code> of a saved view. Only on the panels that read findings counts: <code>findings-summary</code>, <code>package-type</code>, <code>findings-by-namespace</code>, <code>riskiest-images</code>, <code>top-components</code>, <code>top-cves</code> and <code>triage-progress</code>.</td>
 </tr>
 <tr>
 <td><code>audit_filters</code></td>
@@ -4107,6 +4113,10 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <tr>
 <td><code>top_components</code></td>
 <td><code>GET /api/v1/findings/top-components</code></td>
+</tr>
+<tr>
+<td><code>top_cves</code></td>
+<td><code>GET /api/v1/findings/top-values</code>. <code>by</code> is <code>cve_id</code> by default, so the agent does not send it.</td>
 </tr>
 <tr>
 <td><code>list_images</code></td>
