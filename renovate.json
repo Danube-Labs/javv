@@ -48,6 +48,11 @@
       "groupName": "oxlint"
     },
     {
+      "description": "Remotion moves as one PR: its packages pin each other to the exact version, so a bump of one moves all of them in the lockfile and separate PRs carry the same change",
+      "matchPackageNames": ["remotion", "@remotion/**"],
+      "groupName": "remotion"
+    },
+    {
       "description": "uv moves as one PR: versions.yaml (GitHub release) plus the uv image the scanner Dockerfiles copy from, which check-versions.sh holds equal",
       "matchPackageNames": ["astral-sh/uv", "ghcr.io/astral-sh/uv"],
       "groupName": "uv"
