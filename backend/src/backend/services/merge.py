@@ -37,6 +37,8 @@ SCANNER_FIELDS = frozenset(
         "epss",
         "kev",
         "ptype",  # M8d/B-1 — re-observed per scan; a v4 sweep heals v3-era nulls (D30)
+        "locations",  # issue 1077: the files of the newest scan, as that scan found them
+        "locations_total",
         "last_seen_at",
         "last_scan_run_id",
         "last_scan_order",

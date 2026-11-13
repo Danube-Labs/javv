@@ -63,7 +63,7 @@ def test_the_example_on_the_contract_page_validates() -> None:
     page = (SCHEMA_DOC.parent / "INGEST-CONTRACT.md").read_text()
     [heredoc] = re.findall(r"<<EOF\n(.*?)\nEOF\n", page, re.S)
     envelope = IngestEnvelope.model_validate_json(heredoc.replace("$ORDER", "1"))
-    assert (envelope.schema_version, len(envelope.findings)) == (4, 1)
+    assert (envelope.schema_version, len(envelope.findings)) == (5, 1)
 
 
 def _page_field_levels() -> dict[str, str]:

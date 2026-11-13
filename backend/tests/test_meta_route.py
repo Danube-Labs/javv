@@ -90,7 +90,7 @@ async def test_meta_reports_the_running_versions_to_any_signed_in_user(env) -> N
         "version": APP_VERSION,
         "mapping_version": MAPPING_VERSION,
         # the envelope versions ingest accepts: a new one lands here with the model change
-        "envelope_versions": [3, 4],
+        "envelope_versions": [3, 4, 5],
         # read live from the store, so an OpenSearch upgrade shows without a backend restart
         "opensearch_version": (await client.info())["version"]["number"],
         "python_version": platform.python_version(),

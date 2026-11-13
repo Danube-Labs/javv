@@ -48,6 +48,7 @@ class AsOfTReader(Protocol):
         order: str,
         size: int,
         cursor: str | None,
+        locations: bool = False,
     ) -> dict[str, Any]: ...
 
     async def findings_facets(

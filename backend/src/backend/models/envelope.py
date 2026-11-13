@@ -9,13 +9,16 @@ integrity check; the server RE-derives the canonical severity + rank from the ve
 (D16) — the client's `severity_canonical` is accepted on the wire but never trusted.
 """
 
-from typing import Literal
+import unicodedata
+from typing import Annotated, Literal
 
 from pydantic import (
+    AfterValidator,
     AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
+    StringConstraints,
     field_validator,
     model_validator,
 )
@@ -59,6 +62,28 @@ _CANONICAL = {
 
 # cluster_id shape: the ONE shared rule lives in core/identifiers.py (task E / audit M2)
 
+# The paths of a finding (issue 1077, ruling D2), the caps of docs/INGEST-CONTRACT.md: 64 paths in
+# one entry, and also on one stored finding after ingest joins its entries (services.ingest).
+LOCATIONS_CAP = 64
+_UNSHOWN = frozenset({"Cc", "Cf", "Zl", "Zp"})
+
+
+def _shows_as_it_is(path: str) -> str:
+    """A path comes from the content of an image, and a screen shows it as text. A control
+    character, a line separator or a format character (a bidi override, a zero-width space)
+    makes the text read otherwise than its bytes, so ingest refuses it."""
+    if any(unicodedata.category(c) in _UNSHOWN for c in path):
+        raise ValueError("a path has a control, separator or format character")
+    return path
+
+
+# the pattern holds the ASCII part of the rule in the JSON schema of docs/INGEST-CONTRACT.md
+_Path = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=1024, pattern=r"^[^\x00-\x1f\x7f]+$"),
+    AfterValidator(_shows_as_it_is),
+]
+
 
 def canonical_severity(raw: str) -> str:
     """Defensive normalizer (D16): anything unrecognized is `unknown`, never `crit`."""
@@ -82,6 +107,9 @@ class IngestFinding(BaseModel):
     # D30). Untrusted input, lands in a keyword facet field — shape-constrained at the edge.
     ptype: str | None = Field(default=None, max_length=64, pattern=r"^[a-z0-9][a-z0-9+._-]*$")
     severity_canonical: str  # sent by the scanner; NOT trusted — see severity_server
+    # the files where the scanner found the package (schema 5, issue 1077). A report row can have
+    # more than one (Grype); ingest joins the paths of all the rows of one finding (D1 B).
+    locations: list[_Path] = Field(default_factory=list, max_length=LOCATIONS_CAP)
 
     @property
     def severity_server(self) -> str:
@@ -152,11 +180,11 @@ class IngestEffectiveConfig(BaseModel):
 class IngestEnvelope(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    # v3 + v4 dual acceptance (M8d/B-1, #241) — the ONE deliberate departure from the
+    # v3 + v4 + v5 acceptance (M8d/B-1, #241; issue 1077 D4) — the deliberate departure from the
     # current-envelope-only rule (D25/D35; v3 itself was a flag day, D44): scanner images are
-    # operator-swapped (D41), so the ptype rollout must not brick un-swapped scanners. v3
-    # findings simply have no ptype (→ null). Drop back to a single Literal when v3 retires.
-    schema_version: Literal[3, 4]
+    # operator-swapped (D41), so a new field must not brick un-swapped scanners. v3 findings have
+    # no ptype (→ null), v3 and v4 findings no paths (→ null: not reported, issue 1077).
+    schema_version: Literal[3, 4, 5]
     cluster_id: str
     scanner: Literal["trivy", "grype"]  # per-scanner is sacred — no other value exists
     image_digest: str = Field(pattern=r"^sha256:[a-fA-F0-9]{6,64}$", max_length=128)
@@ -186,6 +214,13 @@ class IngestEnvelope(BaseModel):
         buckets = c.crit + c.high + c.med + c.low + c.negligible + c.unknown
         if c.total != buckets or c.total != len(self.findings):
             raise ValueError("counts invariant violated: total != bucket sum != len(findings)")
+        return self
+
+    @model_validator(mode="after")
+    def _paths_need_schema_5(self) -> "IngestEnvelope":
+        # JAVV stores null paths for schema 3 and 4 (not reported), so it cannot keep a few
+        if self.schema_version < 5 and any(f.locations for f in self.findings):
+            raise ValueError("locations need schema_version 5")
         return self
 
     @model_validator(mode="after")

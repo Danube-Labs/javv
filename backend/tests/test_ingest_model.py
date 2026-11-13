@@ -55,12 +55,75 @@ def test_extra_fields_are_rejected_everywhere() -> None:
             IngestEnvelope.model_validate(mutation)
 
 
-def test_schema_versions_outside_the_dual_window_are_rejected() -> None:
-    # the M8d window is exactly {3, 4} (D25/D35 + the B-1 no-flag-day exception) — anything
-    # older is a pre-D44 scanner (422, swap the image), anything newer is a config error
-    for version in (1, 2, 5):
+def test_schema_versions_outside_the_accepted_window_are_rejected() -> None:
+    # the window is exactly {3, 4, 5}: v4 added ptype (M8d/B-1), v5 the paths (issue 1077, D4).
+    # Anything older is a pre-D44 scanner (422, swap the image), anything newer a config error
+    for version in (1, 2, 6):
         with pytest.raises(ValidationError):
             IngestEnvelope.model_validate({**GOLDEN, "schema_version": version})
+
+
+def _with_paths(*paths: object) -> dict[str, object]:
+    """The golden envelope, schema 5, with `paths` on its first finding."""
+    findings = [{**GOLDEN["findings"][0], "locations": list(paths)}, *GOLDEN["findings"][1:]]
+    return {**GOLDEN, "schema_version": 5, "findings": findings}
+
+
+def test_a_v5_entry_carries_its_paths() -> None:
+    env = IngestEnvelope.model_validate(_with_paths("/usr/local/go/bin/go", "/usr/bin/x"))
+    assert env.schema_version == 5
+    assert env.findings[0].locations == ["/usr/local/go/bin/go", "/usr/bin/x"]
+    assert env.findings[1].locations == []  # optional: an entry with no path sends none
+
+
+def test_v3_and_v4_envelopes_have_no_paths() -> None:
+    v3 = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-v3-golden.json").read_text())
+    for raw in (v3, GOLDEN):
+        assert all(f.locations == [] for f in IngestEnvelope.model_validate(raw).findings)
+
+
+def test_the_paths_of_an_entry_are_capped() -> None:
+    """D2 (issue 1077): 64 paths in one entry and 1,024 characters in one path."""
+    IngestEnvelope.model_validate(_with_paths(*(f"/p/{i}" for i in range(64))))
+    IngestEnvelope.model_validate(_with_paths("/" + "a" * 1023))
+    for bad in ([f"/p/{i}" for i in range(65)], ["/" + "a" * 1024], [""]):
+        with pytest.raises(ValidationError, match="locations"):
+            IngestEnvelope.model_validate(_with_paths(*bad))
+
+
+@pytest.mark.parametrize(
+    "char",
+    [
+        *("\x00", "\n", "\r", "\t", "\x1b", "\x7f"),  # ASCII controls
+        *("\x85", "\x9b"),  # C1 controls: NEL, CSI
+        *("\u2028", "\u2029"),  # line and paragraph separators
+        *("\u202e", "\u2066", "\u200f"),  # bidi controls: a path that reads in another order
+        *("\u200b", "\ufeff", "\u00ad"),  # invisible format characters
+    ],
+)
+def test_a_path_with_a_control_or_format_character_is_refused(char: str) -> None:
+    # the paths come from the content of an image: untrusted input that a screen shows as text,
+    # so it must read as its bytes are (a right-to-left override can show `exe.png` as `png.exe`)
+    with pytest.raises(ValidationError, match="locations"):
+        IngestEnvelope.model_validate(_with_paths(f"/usr/bin/a{char}b"))
+
+
+def test_a_path_with_letters_of_any_language_is_accepted() -> None:
+    paths = ("/opt/café/ünïcode.jar", "/srv/データ/lib.so", "/usr/share/doc/a b+c~d")
+    env = IngestEnvelope.model_validate(_with_paths(*paths))
+    assert env.findings[0].locations == list(paths)
+
+
+def test_paths_need_schema_5() -> None:
+    """A schema 3 or 4 scanner does not report paths, so JAVV stores null for them (issue 1077).
+    An older envelope that sends paths anyway is refused, not stored in part."""
+    with pytest.raises(ValidationError, match="schema_version 5"):
+        IngestEnvelope.model_validate({**_with_paths("/usr/bin/a"), "schema_version": 4})
+
+
+def test_a_path_is_text_not_a_number() -> None:
+    with pytest.raises(ValidationError, match="locations"):
+        IngestEnvelope.model_validate(_with_paths(7))
 
 
 def test_cluster_id_shape_is_enforced() -> None:
@@ -179,13 +242,15 @@ def _entry(vuln_id: str, severity: str, *, fixable: bool = True) -> dict[str, ob
     }
 
 
-def _envelope(entries: list[dict[str, object]]) -> IngestEnvelope:
+def _envelope(entries: list[dict[str, object]], *, schema: int = 4) -> IngestEnvelope:
     """The envelope as the scanner sends it: its counts count the entries."""
     counts = dict.fromkeys(_COUNT_COLUMN.values(), 0)
     for e in entries:
         counts[_COUNT_COLUMN[canonical_severity(str(e["severity"]))]] += 1
     counts |= {"total": len(entries), "fixable": sum(1 for e in entries if e["fixable"])}
-    return IngestEnvelope.model_validate({**GOLDEN, "findings": entries, "counts": counts})
+    return IngestEnvelope.model_validate(
+        {**GOLDEN, "schema_version": schema, "findings": entries, "counts": counts}
+    )
 
 
 def _counts(doc: dict[str, object]) -> dict[str, object]:
@@ -241,6 +306,69 @@ def test_a_report_with_no_repeats_keeps_the_counts_of_the_envelope() -> None:
     docs = build_docs(env)
     assert _counts(docs["scan_event"]) == env.counts.model_dump()
     assert docs["scan_event"]["report_entries"] == 29
+
+
+def _at(entry: dict[str, object], *paths: str) -> dict[str, object]:
+    return {**entry, "locations": list(paths)}
+
+
+def test_the_paths_of_the_entries_of_one_finding_join() -> None:
+    """D1 B (issue 1077): the scanner sends each report row, the backend joins their paths."""
+    from backend.services.ingest import build_docs
+
+    e = _entry("CVE-2026-1", "HIGH")
+    entries = [_at(e, "/usr/local/go/bin/go"), _at(e, "/usr/bin/lpp"), _at(e, "/usr/bin/lpp")]
+    [finding] = build_docs(_envelope(entries, schema=5))["findings"]
+    assert finding["locations"] == ["/usr/bin/lpp", "/usr/local/go/bin/go"]  # sorted, one each
+    assert finding["locations_total"] == 2
+
+
+def test_an_entry_with_no_path_keeps_the_paths_of_the_others() -> None:
+    from backend.services.ingest import build_docs
+
+    e = _entry("CVE-2026-1", "HIGH")
+    [finding] = build_docs(_envelope([_at(e, "/a"), _at(e), _at(e, "/b")], schema=5))["findings"]
+    assert finding["locations"] == ["/a", "/b"] and finding["locations_total"] == 2
+
+
+def test_the_join_keeps_the_first_64_sorted_paths_and_the_full_number() -> None:
+    from backend.services.ingest import build_docs
+
+    e = _entry("CVE-2026-1", "HIGH")
+    paths = [f"/opt/app/{i:03d}" for i in range(70)]
+    entries = [_at(e, *paths[:40]), _at(e, *reversed(paths[30:]))]  # 70 paths, 10 in both
+    [finding] = build_docs(_envelope(entries, schema=5))["findings"]
+    assert finding["locations"] == paths[:64]
+    assert finding["locations_total"] == 70
+
+
+def test_the_paths_of_two_findings_stay_apart() -> None:
+    from backend.services.ingest import build_docs
+
+    entries = [_at(_entry("CVE-2026-1", "HIGH"), "/a"), _at(_entry("CVE-2026-2", "LOW"), "/b")]
+    found = {
+        f["cve_id"]: f["locations"] for f in build_docs(_envelope(entries, schema=5))["findings"]
+    }
+    assert found == {"CVE-2026-1": ["/a"], "CVE-2026-2": ["/b"]}
+
+
+def test_a_finding_with_no_path_stores_an_empty_list() -> None:
+    from backend.services.ingest import build_docs
+
+    [finding] = build_docs(_envelope([_entry("CVE-2026-1", "HIGH")], schema=5))["findings"]
+    assert finding["locations"] == [] and finding["locations_total"] == 0
+
+
+def test_an_older_scanner_stores_null_paths() -> None:
+    """Operator ruling (issue 1077): schema 3 and 4 do not report paths. JAVV stores null, not an
+    empty list and 0, so "not reported" stays apart from "no path found", as for `ptype`."""
+    from backend.services.ingest import build_docs
+
+    v3 = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-v3-golden.json").read_text())
+    for env in (IngestEnvelope.model_validate(v3), _envelope([_entry("CVE-2026-1", "HIGH")])):
+        assert env.schema_version in (3, 4)
+        for finding in build_docs(env)["findings"]:
+            assert finding["locations"] is None and finding["locations_total"] is None
 
 
 def test_a_clean_scan_counts_zero() -> None:

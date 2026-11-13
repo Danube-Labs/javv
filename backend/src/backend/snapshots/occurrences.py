@@ -38,6 +38,8 @@ _ROW_FIELDS = (
     "fixed_version",
     "ptype",
     "kev",
+    "locations",
+    "locations_total",
     "schema_version",
 )
 
@@ -78,6 +80,9 @@ def build_occurrence_rows(docs: dict[str, Any]) -> list[tuple[str, dict[str, Any
             "ptype": f["ptype"],  # M8d/B-1: as-of-then package type; null on v3-era rows
             # issue 1000: as-of-then — a past-time read gives a KEV finding the KEV deadline
             "kev": f["kev"],
+            # issue 1077: as-of-then, so a past-time read shows the files of that scan
+            "locations": f["locations"],
+            "locations_total": f["locations_total"],
             "schema_version": f["schema_version"],
         }
         assert tuple(row) == _ROW_FIELDS  # spec drift guard — INDEX-MAP is the row contract

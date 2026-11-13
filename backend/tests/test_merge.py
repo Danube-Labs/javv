@@ -36,6 +36,15 @@ def test_merge_action_updates_scanner_fields_only() -> None:
     assert body["upsert"]["first_seen_at"] == doc["first_seen_at"]
 
 
+def test_a_rescan_refreshes_the_paths() -> None:
+    """Issue 1077: the paths are scanner data. A new scan replaces them, as it does the other
+    scanner fields, and a scan that does not report paths (schema 4) sets them to null."""
+    _, body = merge_action(_one_finding_doc(), index="findings")
+    fields = body["script"]["params"]["f"]
+    assert fields["locations"] is None and fields["locations_total"] is None
+    assert {"locations", "locations_total"} <= SCANNER_FIELDS
+
+
 def test_merge_action_guards_on_scan_order() -> None:
     # the script is the newer-scan-wins per-doc guard (M-1): no-op when not strictly newer
     _, body = merge_action(_one_finding_doc(), index="findings")

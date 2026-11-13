@@ -16,7 +16,7 @@ from opensearchpy import AsyncOpenSearch
 
 from backend.decisions.lifecycle import DecisionPayload, DecisionScope, create_decision
 from backend.models.envelope import IngestEnvelope, canonical_severity
-from backend.query.as_of_t import AsOfTQuery
+from backend.query.as_of_t import AsOfTQuery, _finding_row
 from backend.query.search import SearchFilters, run_search
 from backend.services.ingest import build_docs, ingest_envelope
 from backend.sla.overdue import compute_overdue
@@ -51,6 +51,7 @@ RECONSTRUCTABLE = (
     "vex_justification",
     "last_scan_run_id",
     "last_scan_order",
+    "locations_total",  # issue 1077 — the paths themselves come only on request (D5)
 )
 
 
@@ -183,6 +184,136 @@ async def test_i11_keystone_replay_to_now_matches_materialized_state(
                 f"I11 divergence on {field} for {fk}: "
                 f"replay={replay_doc[field]!r} cache={cache_doc.get(field)!r}"
             )
+
+
+@requires_opensearch
+async def test_the_past_read_gives_the_paths_of_the_live_read_and_only_on_request(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """Issue 1077: the history row records the paths of a finding, so a read at T=just-now has
+    the paths of the cache. As in the live read, a row has them only with `locations`."""
+    client, prefix = real_os
+    # the raw forms of the two scanners: Trivy without the first slash, Grype with it
+    paths = ["usr/local/go/bin/go", "/usr/local/go/bin/go"]
+    env = dict(GOLDEN) | {
+        "schema_version": 5,
+        "findings": [
+            dict(f, locations=paths) if i < 2 else f for i, f in enumerate(GOLDEN["findings"])
+        ],
+    }
+    run = IngestEnvelope.model_validate(env)
+    await ingest_envelope(client, run, prefix=prefix)
+    t = await _now(client, prefix)
+
+    live = await run_search(
+        client,
+        cluster_id=CLUSTER,
+        filters=SearchFilters(present=True),
+        size=500,
+        prefix=prefix,
+        locations=True,
+    )
+    cache = {d["finding_key"]: d for d in live["data"]}
+    past = await READER.findings_page(
+        client,
+        cluster_id=CLUSTER,
+        t=t,
+        filters=SearchFilters(present=True),
+        sort="severity_rank",
+        order="desc",
+        size=500,
+        cursor=None,
+        prefix=prefix,
+        locations=True,
+    )
+    replay = {d["finding_key"]: d for d in past["data"]}
+    assert set(replay) == set(cache)
+    with_paths = [fk for fk, d in cache.items() if d["locations"]]
+    assert with_paths  # the seed reached the cache, so the comparison below means something
+    for fk, doc in cache.items():
+        assert replay[fk]["locations"] == doc["locations"]
+        assert replay[fk]["locations_total"] == doc["locations_total"]
+    assert all(cache[fk]["locations"] == sorted(paths) for fk in with_paths)
+
+    plain = await _past_rows(client, prefix, t)
+    assert all("locations" not in d for d in plain.values())
+    assert {fk: d["locations_total"] for fk, d in plain.items()} == {
+        fk: d["locations_total"] for fk, d in cache.items()
+    }
+
+
+@requires_opensearch
+async def test_the_past_read_asks_the_store_for_the_paths_only_on_request(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1077: the history rows of a whole cluster come into memory for one past read. A
+    read that does not send the paths must not load up to 64 of them for each finding."""
+    client, prefix = real_os
+    env = dict(GOLDEN) | {
+        "schema_version": 5,
+        "findings": [dict(f, locations=["usr/bin/a"]) for f in GOLDEN["findings"]],
+    }
+    await ingest_envelope(client, IngestEnvelope.model_validate(env), prefix=prefix)
+    t = await _now(client, prefix)
+
+    bodies: list[dict[str, Any]] = []
+    search = client.search
+
+    async def spy(*args: Any, **kwargs: Any) -> Any:
+        bodies.append(kwargs.get("body") or {})
+        return await search(*args, **kwargs)
+
+    monkeypatch.setattr(client, "search", spy)
+
+    def last_rows() -> list[dict[str, Any]]:
+        found = [
+            b["aggs"]["k"]["aggs"]["last"]["top_hits"] for b in bodies if "k" in b.get("aggs", {})
+        ]
+        bodies.clear()
+        assert found  # the reconstruction ran its history query
+        return found
+
+    plain = await _past_rows(client, prefix, t)
+    assert all(h.get("_source") == {"excludes": ["locations"]} for h in last_rows())
+    assert all(d["locations_total"] == 1 and "locations" not in d for d in plain.values())
+
+    page = await READER.findings_page(
+        client,
+        cluster_id=CLUSTER,
+        t=t,
+        filters=SearchFilters(present=True),
+        sort="severity_rank",
+        order="desc",
+        size=500,
+        cursor=None,
+        prefix=prefix,
+        locations=True,
+    )
+    assert all("_source" not in h for h in last_rows())
+    assert all(d["locations"] == ["usr/bin/a"] for d in page["data"])
+
+
+def test_a_history_row_before_the_paths_has_null_paths() -> None:
+    """A history row written before mapping v23 has no path fields: the row says null, not an
+    empty list, since the history did not record them (as `ptype` on the rows before M8d)."""
+    occ = {
+        "finding_key": "fk-old",
+        "cluster_id": CLUSTER,
+        "scanner": "trivy",
+        "image_digest": DIGEST,
+        "vuln_id": "CVE-2024-0001",
+        "package_name": "openssl",
+        "package_version": "3.0.1",
+        "severity": "HIGH",
+        "@timestamp": "2026-01-01T00:00:00+00:00",
+        "scan_run_id": "run-old",
+        "scan_order": 1,
+    }
+    raw = {"occurrence": occ, "first_seen_at": None, "present": True, "resolved_at": None}
+    human = {"state": "open", "vex_justification": None, "assignee": None, "notes": None}
+    row = _finding_row(raw, human)
+    assert row["locations"] is None
+    assert row["locations_total"] is None
 
 
 async def _seed_kev(client: AsyncOpenSearch, prefix: str) -> tuple[str, datetime, datetime]:
