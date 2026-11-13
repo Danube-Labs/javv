@@ -118,25 +118,11 @@ function onDragEnd() {
   flex: none;
 }
 .dd-menu {
-  position: absolute;
-  top: calc(100% + 6px);
   right: 0;
   left: auto;
-  z-index: 30;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: var(--dd-shadow);
   padding: 6px;
   min-width: 230px;
-}
-.dd-head {
-  font-family: var(--font-mono);
-  font-size: var(--text-dd-head);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--soft);
-  padding: 8px 12px 6px;
 }
 .dd-head-hint {
   float: right;

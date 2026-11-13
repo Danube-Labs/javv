@@ -103,16 +103,8 @@ function goFindings(query: Record<string, string>) {
 
 <style scoped>
 .card-head {
-  display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   padding: 14px 16px 10px;
-}
-.card-head h2 {
-  margin: 0;
-  font-size: var(--text-card-title);
-  font-weight: 600;
 }
 .card-sub {
   margin: 2px 0 0;
@@ -122,9 +114,6 @@ function goFindings(query: Record<string, string>) {
 .strong {
   font-weight: 700;
   color: var(--ink);
-}
-.skel-pad {
-  margin: 0 16px 14px;
 }
 /* the affordance carrier — same convention as the grid's cve-link */
 .ns-link {

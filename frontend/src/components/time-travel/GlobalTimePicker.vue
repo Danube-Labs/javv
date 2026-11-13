@@ -254,26 +254,12 @@ function backToNow() {
   color: var(--hist-fg);
 }
 .dd-menu {
-  position: absolute;
-  top: calc(100% + 6px);
   left: 0;
-  z-index: 30;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: var(--dd-shadow);
   padding: 6px;
 }
 .time-menu {
   min-width: 340px;
-}
-.dd-head {
-  font-family: var(--font-mono);
-  font-size: var(--text-dd-head);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--soft);
-  padding: 8px 12px 6px;
 }
 .tt-note {
   font-size: var(--text-sm);

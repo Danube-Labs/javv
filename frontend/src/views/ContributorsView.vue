@@ -211,7 +211,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
       <div class="contrib-layout">
         <div class="contrib-main">
           <section class="card-section">
-            <div class="card-head">
+            <div class="contrib-head">
               <h2>Top contributors</h2>
               <p class="card-sub">most findings resolved · {{ windowLabel }}</p>
             </div>
@@ -221,7 +221,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           </section>
 
           <section class="card-section card-flush">
-            <div class="card-head">
+            <div class="contrib-head">
               <h2>Leaderboard</h2>
               <p class="card-sub">all contributors · ranked by resolved</p>
               <UiButton
@@ -243,7 +243,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
 
         <div class="contrib-side">
           <section class="card-section">
-            <div class="card-head">
+            <div class="contrib-head">
               <h2>Triage progress</h2>
               <p class="card-sub">now · Trivy and Grype together</p>
             </div>
@@ -251,7 +251,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           </section>
 
           <section class="card-section">
-            <div class="card-head">
+            <div class="contrib-head">
               <h2>Recent activity</h2>
               <p class="card-sub">from the audit trail</p>
             </div>
@@ -313,16 +313,16 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
 .card-flush {
   padding: 14px 0 0;
 }
-.card-flush .card-head {
+.card-flush .contrib-head {
   padding: 0 16px;
 }
-.card-head {
+.contrib-head {
   display: flex;
   align-items: baseline;
   gap: 8px;
   margin-bottom: 12px;
 }
-.card-head h2 {
+.contrib-head h2 {
   margin: 0;
   font-size: var(--text-sm);
   font-weight: 700;

@@ -68,7 +68,10 @@ A **text box or dropdown** is a kit piece: `UiTextBox`, `UiTextArea`, `UiSelect`
 1050). A window never styles a box of its own, and neither do the form fields outside windows
 (issue 1053). ESLint refuses a raw `input`, `select` or `textarea` outside `components/ui/`. The
 four places that keep one say why in the disable comment (issue 1055). A **search box** is
-`UiSearchBox` on the base.css skin `.search-box` (`card` is the `.facet-search` card over a filter list). A **window footer** is a `ghost` Cancel,
+`UiSearchBox` on the base.css skin `.search-box` (`card` is the `.facet-search` card over a filter list). A **card frame** is `.card`, a **card
+heading** is `.card-head` with its `h2`, and a **menu panel** is `.dd-menu` with `.dd-head`: base.css
+skins that hold the shared values (issue 1181). A component adds its padding, alignment or side, and
+never sets a shared property again (the style rules test fails a copy). A **window footer** is a `ghost` Cancel,
 Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)

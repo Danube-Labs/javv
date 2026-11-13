@@ -175,23 +175,12 @@ function goFindings(cve: string) {
 
 <style scoped>
 .card-head {
-  display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   padding: 14px 16px 10px;
-}
-.card-head h2 {
-  margin: 0;
-  font-size: var(--text-card-title);
-  font-weight: 600;
 }
 .card-sub {
   margin: 2px 0 0;
   font-size: var(--text-sm);
   color: var(--soft);
-}
-.skel-pad {
-  margin: 0 16px 14px;
 }
 </style>

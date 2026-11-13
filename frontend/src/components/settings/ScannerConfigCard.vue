@@ -90,17 +90,10 @@ const SCOPE_LABEL: Record<string, string> = {
 
 <style scoped>
 .card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
   overflow: hidden;
 }
 .card-head {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line2);
 }

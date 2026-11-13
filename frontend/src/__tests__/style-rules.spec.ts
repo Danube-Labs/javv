@@ -168,6 +168,84 @@ describe('style rules: one shared set of skins', () => {
 })
 
 /**
+ * One shared card, card heading, menu panel and error text (issue 1181). base.css holds the
+ * values that were equal in every component copy: 12 files had the card frame, 12 the heading, 4
+ * the menu panel. A component style can add to one of these rules (its padding, its side). It
+ * must not set a property again that the shared rule sets, because a copy hides a later change
+ * of the shared value. The property list comes from base.css, so a new shared value is covered
+ * with no change here. Only a rule with exactly one of these selectors counts.
+ */
+const SHARED_RULES = ['.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error']
+
+/** The properties that each rule of `css` sets, by its exact selector. */
+function ruleProperties(css: string): Map<string, Set<string>> {
+  const found = new Map<string, Set<string>>()
+  // its own comment strip: this runs while the file loads, before `withoutCssComments` exists
+  for (const m of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const properties = [...(m[2] ?? '').matchAll(/(?:^|;)\s*([a-z-]+)\s*:/g)].map((d) => d[1] ?? '')
+    for (const selector of (m[1] ?? '').split(',').map((s) => s.trim().replace(/\s+/g, ' '))) {
+      const set = found.get(selector) ?? new Set<string>()
+      for (const property of properties) set.add(property)
+      found.set(selector, set)
+    }
+  }
+  return found
+}
+
+/** `selector: property` for each shared property that `css` sets again. */
+function sharedRuleCopies(css: string, shared: Map<string, Set<string>>): string[] {
+  const hits: string[] = []
+  for (const [selector, properties] of ruleProperties(css))
+    for (const property of properties)
+      if (shared.get(selector)?.has(property)) hits.push(`${selector}: ${property}`)
+  return hits
+}
+
+describe('style rules: one shared card, menu panel and error text', () => {
+  const all = ruleProperties(readFileSync(join(SRC, 'styles/base.css'), 'utf8'))
+  const shared = new Map(SHARED_RULES.map((selector) => [selector, all.get(selector) ?? new Set<string>()]))
+
+  /** A copy that is a real difference, with its reason. */
+  const RULED = new Map([
+    // this card sets its failure line in the text color, not in the error color
+    ['components/settings/RetiredClustersCard.vue', ['.load-error: color']],
+  ])
+
+  const copies = (rel: string): string[] => {
+    const styles = parseSfc(readFileSync(join(SRC, rel), 'utf8')).descriptor.styles
+    return sharedRuleCopies(styles.map((s) => s.content).join('\n'), shared)
+  }
+  const files = walk(SRC)
+    .map((p) => relative(SRC, p).split('\\').join('/'))
+    .filter((rel) => rel.endsWith('.vue'))
+
+  it('base.css has each shared rule', () => {
+    for (const selector of SHARED_RULES)
+      expect(shared.get(selector)?.size, `${selector} is not in base.css`).toBeGreaterThan(0)
+  })
+
+  it('no component sets a shared property again', () => {
+    const hits = files.flatMap((rel) =>
+      copies(rel)
+        .filter((hit) => !RULED.get(rel)?.includes(hit))
+        .map((hit) => `${rel} → ${hit}`),
+    )
+    expect(hits, `set again outside base.css (issue 1181): ${hits.join('; ')}`).toEqual([])
+  })
+
+  it('each ruled exception is real, not a stale entry', () => {
+    for (const [rel, ruled] of RULED) expect(copies(rel)).toEqual(expect.arrayContaining(ruled))
+  })
+
+  it('the check finds a planted copy and lets an addition pass', () => {
+    const planted = '.card { background: var(--card); padding: 4px; }\n.x,\n.card-head   h2 { margin: 0; }'
+    expect(sharedRuleCopies(planted, shared)).toEqual(['.card: background', '.card-head h2: margin'])
+    const addition = '/* .card { border: 0; } */ .card { padding: 4px; } .card-head.dark { gap: 0; } .rail .load-error { color: red; }'
+    expect(sharedRuleCopies(addition, shared)).toEqual([])
+  })
+})
+
+/**
  * "Never same-hue text on its own tint" (DESIGN.md §2, operator ruling 2026-07-09; bitten twice
  * by 2026-07-10): a rule block that pairs `color: var(--X-fg)` with `background: var(--X-bg)`
  * of the SAME hue family ships low-contrast prose. Chips/tags are the ruled exception (short

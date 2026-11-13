@@ -145,10 +145,6 @@ const needAttention = computed(
   font-weight: 600;
 }
 
-.load-error {
-  color: var(--health-down-fg);
-  font-size: var(--text-body);
-}
 .first-run {
   padding: 48px 0;
   text-align: center;

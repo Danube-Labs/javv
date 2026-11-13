@@ -98,14 +98,8 @@ function goSettings(close: () => void) {
   background: var(--slate);
 }
 .dd-menu {
-  position: absolute;
-  top: calc(100% + 6px);
   right: 0;
-  z-index: 30;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-radius: var(--r);
-  box-shadow: var(--dd-shadow);
   padding: 5px;
   min-width: 230px;
 }

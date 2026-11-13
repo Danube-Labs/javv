@@ -189,10 +189,6 @@ const overviewRoute = (row: ClusterRow) => ({ path: '/overview', query: { cluste
 <style scoped>
 /* flush table card (prototype fleet-card): the table IS the card — no head, no inner panel */
 .card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
   margin-top: 16px;
 }
 .fleet-card .tbl th:first-child,

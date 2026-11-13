@@ -251,12 +251,6 @@ const budgetPct = computed(() =>
   gap: var(--grid-gap);
   align-items: start;
 }
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-}
 
 /* ---- console ---- */
 /* the B2 slate table-head band as both cards' title register (operator, 2026-07-18) */
