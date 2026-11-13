@@ -114,6 +114,29 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 | 2026-11-09 | The Guide addresses the reader as "you", and a step is a command. It has no "we", "our" or "I", and it names no reader in the third person ("a user", "an admin"). A permission names the role that you need. JAVV, a screen or the data is the subject of a description. Other people stay in the third person only as the data of a screen. | 1142 |
 
+## AI vulnerability research (alpha)
+
+The plan of the agent skill is in issue 1193. The issue body has the current state, and the comments have the full text of each ruling.
+
+| Date | Ruling | Source |
+|---|---|---|
+| 2026-11-12 | 1. "Internal" lowers the urgency of a CVE. It seldom makes the risk zero: with no NetworkPolicy, each pod can reach each other pod. | 1193 |
+| 2026-11-12 | 2. Exposure goes through other services, for example internet → Keycloak → Postgres. The answer gives the full path, ingress and egress, not one connection. | 1193 |
+| 2026-11-12 | 3. Workload modelling is not a JAVV task. JAVV gives the CVE and its location. A flow tool gives the network. The agent reads the cluster itself. | 1193 |
+| 2026-11-12 | 4. The agent reads the cluster with `kubectl`. No Kubernetes MCP server. | 1193 |
+| 2026-11-12 | 5. The skill only reads. It does not touch Secrets. | 1193 |
+| 2026-11-12 | 6. A flow tool that runs on each node is acceptable as an optional module, off by default. | 1193 |
+| 2026-11-12 | 7. The POC uses a built scenario on the dev cluster alpha, with known answers. | 1193 |
+| 2026-11-12 | 8. An answer passes when four parts are true. The exposure class and the path agree with the known answer. Each claim cites a tool output. Missing data shows as "unknown". The answer has no invented facts. | 1193 |
+| 2026-11-12 | 9. Each answer starts with the scan date of each scanner, from the event with the highest `scan_order` in `image_timeline`. The skill does not look up KEV or EPSS by CVE id. When the scan is old, the skill can tell the person what to check. | 1193 |
+| 2026-11-12 | 10. The flow module uses the upstream image of the tool, pinned by digest in `versions.yaml` and bumped by Renovate. CI checks its cosign signature before a bump merges. JAVV does not build the image again. No image with code comes from a registry at run time. | 1193 |
+| 2026-11-12 | 11. The skill first answers 10 questions with the JAVV MCP endpoint and `kubectl` only. The evals have two arms: without and with flow data. If flow data changes fewer than 2 of the 10 answers, the alpha has no flow module. | 1193 |
+| 2026-11-12 | 12. The skill reads the names of env keys only, never their values, and no ConfigMaps. It names a read-only ClusterRole with no access to secrets, configmaps, `pods/exec`, `pods/log`, `pods/proxy` or `pods/portforward`. Ruling 14 adds an optional Role for `pods/log`. The flow tool pushes OTLP to a collector in the cluster and opens no port on the nodes. The agent reads flow data through the JAVV MCP endpoint. | 1193 |
+| 2026-11-12 | 13. A stored edge has the cluster, the server port, and the first and last time seen. Each side is an image digest and a namespace. The destination can also be an external class. JAVV stores no workload names (issue 308). The collector maps owners to digests with the pod list that the scanner already reads. | 1193 |
+| 2026-11-13 | 14. The skill can read the access logs of the ingress controller, with consent. An optional Role gives `get` on `pods/log` in the namespace of the ingress controller only. The skill asks before each read. A filter on the machine of the person sends only the client address, the host and a count to the agent. Reads of configuration need no question. Secrets, ConfigMaps, `pods/exec`, `pods/proxy` and `pods/portforward` stay forbidden. | 1193 |
+| 2026-11-12 | Step 0 rule: a workload is public when an entry point to it is public. The skill finds exposure from the entry points (LoadBalancer or NodePort Services, Ingress, Gateway routes), not from the callers. One call from the internet in the flow data shows exposure. No call in the window does not show that the workload is private. | 1193 |
+| 2026-11-12 | Step 0 rule: keep the server port, drop the client port. A client port makes a new series for each connection. | 1193 |
+
 ## Process
 
 | Date | Ruling | Source |
