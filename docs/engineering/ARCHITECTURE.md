@@ -332,8 +332,8 @@ groups:
 The logs are JSON from `structlog` (`javv_common/logging.py`). **No Redis/Kafka/broker.** The
 rate limit is `SlidingWindowLimiter` (`core/rate_limit.py`), in the memory of the process (→429).
 Ingest refuses a body over the compressed or decompressed size cap (→413). When OpenSearch is
-not reachable or is read-only, a request gets 503. The only flow control is the retry of `_bulk`
-items with backoff.
+not reachable, a request gets 503. When OpenSearch is read-only, a write gets 503 and reads work.
+The flow control is these limits and the retry of `_bulk` items with backoff.
 
 ## 6. HA & multi-pod (D23)
 The single-node, single-pod default is a SPOF **by design**; HA is **not JAVV-built**. For the store, HA is
@@ -377,6 +377,7 @@ OpenSearch nodes / a coordinating node. Never a second datastore (D11).
 Earlier versions of this file described these parts as present. The code does not have them.
 - `slowapi`. The rate limit is `SlidingWindowLimiter` (`core/rate_limit.py`).
 - Backpressure with a bounded `asyncio.Semaphore` (→503).
-- Metrics for payload sizes, the decompression ratio, `_bulk` latency, queue depth and memory.
+- JAVV metrics for payload sizes, the decompression ratio, `_bulk` latency and queue depth. For memory,
+  `/metrics` has only the process metrics of the Prometheus client.
 - A console log format for development. The logs are JSON only.
 - More than one backend (`replicas>1`). The `javv` chart refuses it.

@@ -42,8 +42,8 @@ change the password on first login - FR-18.)
 - **FR-2 Scan.** Selected scanner (Trivy|Grype) over unique digests. It pulls from private registries
   with the login that the operator mounts (`<scanner>.registryAuth`, read through `DOCKER_CONFIG`,
   issue 739). It **scans everything every cycle** - a stateless scanner with **local digest-dedup**
-  (each unique digest once) and **exclusions** by namespace, image pattern and owner kind only (no skip-unchanged, no backend query -
-  D30); bounded concurrency.
+  (each unique digest once) and **exclusions** by namespace, image pattern and owner kind only (no skip-unchanged, no backend query for what changed -
+  D30. The scanner gets its scan scope and the order of the cycle from the backend); bounded concurrency.
 - **FR-3 Ingest.** Scanner **normalizes** Trivy/Grype JSON into the shared shape (canonicalizing the severity
   *vocabulary* to the D46 full words `critical/high/medium/low/negligible/unknown` while **preserving the verbatim scanner word**) and pushes per-image,
   gzipped, retried (backoff+jitter, dead-letter), to `POST /api/v1/ingest/scan` over a private network with a
@@ -121,7 +121,7 @@ change the password on first login - FR-18.)
 - **FR-9 Tagging.** Not built (see "Not built" at the end of this file).
 - **FR-10 SLA / overdue.** Per-severity SLA days (CRIT 2 / HIGH 7 / MED 30 / LOW 90, editable) + KEV
   override (24h). `overdue` derived from **read-time vuln-age** (group by `cve_id + image_digest`, earliest
-  `first_seen_at` - so a package bump doesn't reset the clock, D21); surfaced on findings + notifications.
+  `first_seen_at` - so a package bump doesn't reset the clock, D21); surfaced on findings.
 - **FR-11 Scanner disagreement.** (a) Per-finding **severity** disagreement flag; (b) per-image **count**
   disagreement (`trivy_count` vs `grype_count` + `count_delta`). Precomputed; shown side-by-side, never summed.
 - **FR-12 Search & dashboards.** Filter by namespace/image/tag/severity/timestamp/**scanner**/state/
@@ -158,8 +158,8 @@ change the password on first login - FR-18.)
 - **FR-15 Contributors / trends (MVP, expanded).** Resolved-over-time, median TTR, SLA-hit %, leaderboard
   (+ expanded metrics) - from `system-audit-log` + `findings`; scoped by the global time-range picker.
   **Leaderboard window is bounded by `system-audit-log` retention** (kept long - §5.5b).
-- **FR-16 Notifications (MVP, per-user).** `system-notifications` holds the ready exports of the user
-  (`report_ready`) and the notices of a cluster that JAVV retires soon (`cluster_retiring`); bell badge;
+- **FR-16 Notifications (MVP, per-user).** `system-notifications` holds the ready reports of the user
+  (`report_ready`: an export, or a bulk triage that ran in the background) and the notices of a cluster that JAVV retires soon (`cluster_retiring`); bell badge;
   polling (no broker).
 - **FR-17 Saved views (MVP, shared).** `system-views` named filter sets, visible to every signed-in user;
   only the owner or an admin can change or delete one (M8e/C-6); deep-link into pre-filtered Findings.
@@ -298,6 +298,7 @@ sequenceDiagram
     participant OS as OpenSearch
     Note over SC: The schedule of the CronJob starts each cycle. JAVV never calls a cluster.
     SC->>API: Get the scan scope
+    SC->>API: Get the order of the cycle (scan_order)
     SC->>SC: discover workloads + local digest-dedup + scan ALL + normalize (canonical severity, verbatim kept)
     SC->>API: POST /ingest/scan (gzip, scan_run_id, envelope vN) [hardened]
     API->>OS: partial-merge findings (detect_noop, scanner fields only) + append occurrences/images snapshots + scan-events commit (idempotent _id, last)
@@ -334,9 +335,11 @@ Earlier versions of this file described these parts as present. The code does no
   route exist. `INDEX-MAP.md` lists the index as planned.
 - **FR-16:** notifications for SLA breaches and for new assignments. No code writes the types
   `sla_breach` and `assignment`.
-- **FR-19:** a snapshot schedule. A snapshot is a manual action.
+- **FR-19:** a snapshot schedule. No route and no job sets one: `admin/snapshot.py` has a helper for a
+  policy, and nothing calls it. A snapshot is a manual action.
 - **FR-20 and NFR-7:** `slowapi`, backpressure with a bounded `asyncio.Semaphore` (→503), and metrics for
-  payload sizes, the decompression ratio, queue depth and memory.
+  JAVV metrics for payload sizes, the decompression ratio and queue depth. For memory, `/metrics` has
+  only the process metrics of the Prometheus client.
 - **NFR-1 and NFR-7:** a `total_fields` limit and `refresh_interval: 30s`. `backend/src` sets neither.
 - **First working flow:** a UI that tells the scanner to discover and to scan. The scanners are CronJobs
   that push.

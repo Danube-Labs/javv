@@ -793,7 +793,8 @@ goes to the user.
 
 JAVV sends two types, `report_ready` and `cluster_retiring`:
 
-- The report drain sends `report_ready` when an export report is ready.
+- The report drain sends `report_ready` when a report is ready: an export, or a bulk triage that
+  ran in the background.
 
 - The retirement sweep sends `cluster_retiring` to each user with `can_manage_settings` when a
   cluster starts its warning period. It sends it one time for each silence. `ref` is the

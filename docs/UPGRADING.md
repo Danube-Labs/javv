@@ -373,8 +373,7 @@ chart, but not OpenSearch:
 
 - 0.7.1 and 0.8.6 changed the text of its README and of the comments in `values.yaml`, and no
   value. 0.8.1 changed the text of its README.
-- 0.9.2 changed the links to the repository in `Chart.yaml` and in the README. 0.9.4 changed the
-  text of its README.
+- 0.9.2 changed the links to the repository in `Chart.yaml`.
 - 0.8.7 changed the test pod of the chart (`helm test store`). The pod can now run in a namespace
   with the `restricted` level of the pod security standards.
 
