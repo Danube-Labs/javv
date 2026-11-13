@@ -12,7 +12,7 @@ import httpx
 import pytest
 
 from scanner.adapters.grype import parse_grype, parse_grype_provenance
-from scanner.compat import COMPAT_IMAGE, contract_violations, push_compat
+from scanner.compat import COMPAT_IMAGE, COMPAT_IMAGES, contract_violations, push_compat
 from scanner.config import GrypeConfig
 from scanner.models import Provenance, ScanResult
 
@@ -127,6 +127,35 @@ def test_push_runs_the_real_cycle_and_reports_what_it_sent(tmp_path: Path) -> No
     assert sent["effective_config"]["scope"]["include_namespaces"] == []
     [inventory] = seen["inventory"]
     assert json.loads(inventory.content)["expected_count"] == 1
+
+
+def test_the_summary_lists_the_paths_that_the_push_sent(tmp_path: Path) -> None:
+    """Issue 1077: CI compares the paths in the store with these, so they are the paths of the
+    envelope that went over the wire, not of the scan before the envelope."""
+    http, seen = _backend()
+    with http:
+        _, summary, violations = _push(http, tmp_path)
+    assert violations == [] and summary is not None
+    [ingest] = seen["ingest"]
+    sent = json.loads(gzip.decompress(ingest.content))
+    assert sent["schema_version"] == 5
+    wire = sorted({p for f in sent["findings"] for p in f["locations"]})
+    assert summary.paths == wire
+    assert "/usr/local/bin/python3.9" in wire  # the compat image has paths, so the check bites
+
+
+def test_the_fixtures_are_pinned_by_digest_and_copied_by_the_workflow() -> None:
+    """Each fixture image is served from the project registry, copied by digest by the manual
+    workflow compat-fixture.yml (issue 631). A fixture that the workflow does not copy would make
+    the CI round trip pull a missing image."""
+    workflow = (Path(__file__).parents[2] / ".github/workflows/compat-fixture.yml").read_text()
+    assert COMPAT_IMAGES["python"] == COMPAT_IMAGE
+    assert set(COMPAT_IMAGES) == {"python", "go-binaries"}
+    for image in COMPAT_IMAGES.values():
+        name, _, digest = image.partition("@")
+        assert name.startswith("ghcr.io/danube-labs/javv-compat-fixture:")
+        assert digest.startswith("sha256:") and len(digest) == 71
+        assert f"@{digest}" in workflow and name in workflow
 
 
 def test_a_refused_push_is_a_violation_and_dead_letters(tmp_path: Path) -> None:

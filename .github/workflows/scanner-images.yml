@@ -138,9 +138,13 @@ jobs:
           token=$(cd backend && uv run --no-sync python -m backend.core.tokens \
             --cluster "$JAVV_CLUSTER_ID" --scanner "$SCANNER" | tail -1)
           echo "::add-mask::$token"
-          (cd scanner && JAVV_TOKEN="$token" JAVV_DEAD_LETTER="$RUNNER_TEMP/dead-letter.jsonl" \
-            uv run python -m scanner.compat --scanner "$SCANNER" --push --summary "$RUNNER_TEMP/summary.json")
-          development/scripts/check-ingest-roundtrip.sh "$RUNNER_TEMP/summary.json" http://localhost:9200
+          # go-binaries: the same CVE in many files, so repeated rows and paths (issues 1076, 1077)
+          for fixture in python go-binaries; do
+            (cd scanner && JAVV_TOKEN="$token" JAVV_DEAD_LETTER="$RUNNER_TEMP/dead-letter.jsonl" \
+              uv run python -m scanner.compat --scanner "$SCANNER" --fixture "$fixture" \
+              --push --summary "$RUNNER_TEMP/summary-$fixture.json")
+            development/scripts/check-ingest-roundtrip.sh "$RUNNER_TEMP/summary-$fixture.json" http://localhost:9200
+          done
       - name: Backend log
         if: failure()
         run: tail -n 60 "$RUNNER_TEMP/backend.log" || true

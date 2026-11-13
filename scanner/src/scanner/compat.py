@@ -44,6 +44,15 @@ COMPAT_IMAGE = (
     "ghcr.io/danube-labs/javv-compat-fixture:python-3.9.16-slim"
     "@sha256:5cde4e147c4165ad8dbf8a4df9631863766eeb0b79b890fafe6885b3b127af74"
 )
+# rancher/local-path-provisioner:v0.0.36: the same CVE in many Go binaries, so a report repeats a
+# finding once for each file (issue 1076) and each row has a path from both scanners (issue 1077)
+COMPAT_IMAGES = {
+    "python": COMPAT_IMAGE,
+    "go-binaries": (
+        "ghcr.io/danube-labs/javv-compat-fixture:local-path-provisioner-v0.0.36"
+        "@sha256:1eba82e9c386038b4af6d69cca7519fac738c28c42735ed48ce70c882ad0d80f"
+    ),
+}
 
 log = structlog.get_logger()
 
@@ -98,6 +107,7 @@ class PushSummary:
     counts: dict[str, int]
     delivered: bool
     inventory_committed: bool
+    paths: list[str]  # every path in the envelope, sorted, once (issue 1077)
 
 
 def push_compat(
@@ -174,6 +184,7 @@ def push_compat(
         counts=envelope.counts.model_dump(),
         delivered=results[0].delivered,
         inventory_committed=bool(committed and committed[0]),
+        paths=sorted({p for f in envelope.findings for p in f.locations}),
     )
     if not summary.delivered:
         violations.append("the backend did not accept the envelope (dead-lettered)")
@@ -224,7 +235,8 @@ def _push_main(scanner: Scanner, image: str, summary_path: Path | None) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="JAVV scanner compatibility gate")
     ap.add_argument("--scanner", required=True, choices=["trivy", "grype"])
-    ap.add_argument("--image", default=COMPAT_IMAGE)
+    ap.add_argument("--fixture", choices=sorted(COMPAT_IMAGES), default="python")
+    ap.add_argument("--image", help="an image to scan in place of the fixture")
     ap.add_argument(
         "--push",
         action="store_true",
@@ -232,6 +244,7 @@ def main() -> int:
     )
     ap.add_argument("--summary", type=Path, help="with --push: write what was sent here (JSON)")
     args = ap.parse_args()
+    args.image = args.image or COMPAT_IMAGES[args.fixture]
 
     if args.push:
         return _push_main(cast(Scanner, args.scanner), args.image, args.summary)
