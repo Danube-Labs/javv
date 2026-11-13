@@ -138,6 +138,21 @@ Status: ✅ implemented (M0/M0b; M10's CronJobs, vuln-DB cache and RBAC in the `
 either way the backend never sees a partial commit, and the next cycle re-scans and re-pushes anyway because
 the scanner holds no state.
 
+## File paths of a finding (issue 1077)
+Each finding carries `locations`: the files in the image where the scanner found the package. The
+envelope is schema 5. The backend accepts 3, 4 and 5, so upgrade the backend first.
+- **Trivy:** `PkgPath`, else the `Target` of a language result that names a file (a Go binary, a
+  lock file). For Python, Conda, Ruby, Node.js, Java and Kubernetes packages, `Target` is a label,
+  never a path. An OS package has no path.
+- **Grype:** every `artifact.locations[].path`. For an OS package these are the files of the
+  package database (operator ruling).
+- `normalize.clean_paths` gives each path its first `/`, drops a path that the backend refuses, keeps each
+  path once and keeps the first 64 sorted paths. One bad file name thus never stops the push of an image.
+- The scanner sends each report row with its own paths and never merges rows. Ingest joins them.
+- `scan done` counts the rows with paths (`entries_with_paths`). A warning `paths left out` counts
+  the paths it did not send. These two lines hold counts, not paths.
+- The Nomad and Docker scan scripts still send schema 4, with no paths (issue 1199).
+
 ## Provenance (D41)
 Each envelope stamps the scanner's self-reported **`scanner_version`**, and the version and the build
 time of the vuln DB: Grype gives them in its scan output, and Trivy in `trivy version --format json`,

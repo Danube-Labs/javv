@@ -1,8 +1,10 @@
 name: Compat fixture
 
-# Copies the scanner compatibility gate's fixture image into our own registry (issue 631), so the
-# gate and the ingest round trip don't depend on Docker Hub still serving it. The copy is by
-# digest, so it keeps the same digest: `COMPAT_IMAGE` in scanner/src/scanner/compat.py pins it.
+# Copies the scanner compatibility gate's fixture images into our own registry (issue 631), so the
+# gate and the ingest round trip don't depend on Docker Hub still serving them. The copy is by
+# digest, so it keeps the same digest: `COMPAT_IMAGES` in scanner/src/scanner/compat.py pins each.
+# The second image has the same CVE in many Go binaries: repeated report rows (issue 1076) and the
+# file paths of both scanners (issue 1077).
 # Run by hand, once and again only if the copy is lost. GHCR creates the package private; it must
 # be made public in the package settings before CI can pull it without a login.
 
@@ -12,14 +14,20 @@ on:
 permissions:
   contents: read
 
-env:
-  SOURCE: docker.io/library/python:3.9.16-slim@sha256:5cde4e147c4165ad8dbf8a4df9631863766eeb0b79b890fafe6885b3b127af74
-  TARGET: ghcr.io/danube-labs/javv-compat-fixture:python-3.9.16-slim
-
 jobs:
   copy:
     name: Copy the fixture by digest
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - SOURCE: docker.io/library/python:3.9.16-slim@sha256:5cde4e147c4165ad8dbf8a4df9631863766eeb0b79b890fafe6885b3b127af74
+            TARGET: ghcr.io/danube-labs/javv-compat-fixture:python-3.9.16-slim
+          - SOURCE: docker.io/rancher/local-path-provisioner:v0.0.36@sha256:1eba82e9c386038b4af6d69cca7519fac738c28c42735ed48ce70c882ad0d80f
+            TARGET: ghcr.io/danube-labs/javv-compat-fixture:local-path-provisioner-v0.0.36
+    env:
+      SOURCE: ${{ matrix.SOURCE }}
+      TARGET: ${{ matrix.TARGET }}
     permissions:
       contents: read
       packages: write

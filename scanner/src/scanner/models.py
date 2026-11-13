@@ -42,6 +42,9 @@ class Finding(BaseModel):
     # string (Trivy Type / Grype artifact.type) — per-scanner vocabulary, never folded across
     # scanners (per-scanner is sacred; facet buckets never merge)
     ptype: str | None = None
+    # the files in the image where the scanner found the package (issue 1077): each starts with
+    # `/`, no repeats, the first 64 sorted (normalize.clean_paths). One report row, never merged.
+    locations: tuple[str, ...] = ()
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -56,3 +59,5 @@ class ScanResult:
 
     findings: list[Finding] = field(default_factory=list)
     provenance: Provenance = field(default_factory=Provenance)
+    paths_dropped: int = 0  # paths that the backend would refuse (normalize.clean_paths)
+    paths_over_cap: int = 0  # valid paths past the first 64 of an entry

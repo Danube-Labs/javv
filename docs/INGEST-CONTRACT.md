@@ -248,12 +248,18 @@ The JAVV scanners run `trivy image --format json <image>` and `grype <image> -o 
 | `epss` | Trivy does not give it. Send `null`. | `vulnerability.epss[0].epss` |
 | `kev` | Trivy does not give it. Send `false`. | `true` when `vulnerability.knownExploited` is not empty |
 | `ptype` | `os` when `Results[].Class` is `os-pkgs`. Else `Results[].Type` in lowercase. | `artifact.type` in lowercase |
-| `locations` | `PkgPath` of the vulnerability. If it is empty and `Results[].Class` is `lang-pkgs`, `Results[].Target`. Put `/` in front of a path that does not start with it. A package of the operating system has no path. | Each `path` of `artifact.locations[]` |
+| `locations` | `PkgPath` of the vulnerability. If it is empty and `Results[].Class` is `lang-pkgs`, `Results[].Target`. Do not use a `Target` of the type `python-pkg`, `conda-pkg`, `gemspec`, `node-pkg`, `jar` or `kubernetes`. For these types, `Target` is a label, for example `Python` or `Java`, not a file. A package of the operating system has no path. | Each `path` of `artifact.locations[]`. For a package of the operating system, these are the files of the package database, for example `/var/lib/dpkg/status`. Some of them belong to a related package, for example its `copyright` file. |
 | `scanner_version` | `Trivy.Version` | `descriptor.version` |
 | `scanner_db_version` | `VulnerabilityDB.Version` from `trivy version --format json` | `descriptor.db.status.schemaVersion` |
 | `scanner_db_built` | `VulnerabilityDB.UpdatedAt` from `trivy version --format json` | `descriptor.db.status.built` |
 
 The JAVV scanners skip an entry that has no vulnerability ID or no package name.
+
+The JAVV scanners prepare the paths of an entry in this order:
+
+1. Put `/` in front of a path that does not start with it.
+2. Drop a path that JAVV refuses (see [Errors](#errors)). One bad file name thus does not stop the push of the image.
+3. Remove the repeats, and keep the first 64 paths in sorted order.
 
 ## Errors
 

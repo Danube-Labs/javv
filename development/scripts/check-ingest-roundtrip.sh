@@ -8,6 +8,8 @@
 #     and ingest keeps one finding per key (issue 1076)
 #   - the scan event's report_entries equals the entries the envelope sent (counts.total)
 #   - the run's scan event carries the scanner version the binary reported
+#   - each history row of the run holds the file paths of its finding: the paths of all the
+#     entries of that finding that the envelope sent, sorted, the first 64 (issue 1077)
 #   - the run's inventory is committed
 # Reads OpenSearch directly: the backend offers no machine-token read of a run.
 #
@@ -54,10 +56,27 @@ entries=$(jq -r '.report_entries // "none"' <<<"$event")
 got_version=$(jq -r '.scanner_version // "none"' <<<"$event")
 [ "$got_version" = "$version" ] || bad "scan event scanner_version: sent $version, stored $got_version"
 
+# the paths are stored, not indexed (INDEX-MAP), so read them back from _source. One row for each
+# finding: [vuln_id, package_name, package_version, paths], as `finding_paths` of the summary
+sent_paths=$(jq -c '(.finding_paths // "none") | if type == "array" then sort else . end' "$summary")
+[ "$sent_paths" != '"none"' ] || bad "the summary lists no paths: the scanner predates issue 1077"
+rows=$(curl -sf "$OS/javv-finding-occurrences*/_search" -H 'content-type: application/json' -d "{
+  \"size\": 10000, \"track_total_hits\": true, \"query\": $run_filter,
+  \"_source\": [\"vuln_id\", \"package_name\", \"package_version\", \"locations\"]}")
+[ "$(jq -r .hits.total.value <<<"$rows")" -le 10000 ] || bad "more than 10,000 rows: read them in pages"
+stored_paths=$(jq -c '[.hits.hits[]._source
+  | [.vuln_id, .package_name, .package_version, (.locations // [])]] | sort' <<<"$rows")
+if [ "$sent_paths" != '"none"' ] && [ "$stored_paths" != "$sent_paths" ]; then
+  only_sent=$(jq -nc --argjson a "$sent_paths" --argjson b "$stored_paths" '$a - $b | .[0:2]')
+  only_stored=$(jq -nc --argjson a "$stored_paths" --argjson b "$sent_paths" '$a - $b | .[0:2]')
+  bad "paths of a finding differ: only sent $only_sent, only stored $only_stored"
+fi
+paths=$(jq '[.[][3][]] | unique | length' <<<"$stored_paths")
+
 status=$(curl -sf "$OS/javv-inventory-runs*/_search" -H 'content-type: application/json' \
   -d "{\"size\": 1, \"query\": {\"term\": {\"inventory_run_id\": \"$run\"}}}" \
   | jq -r '.hits.hits[0]._source.status // "missing"')
 [ "$status" = "committed" ] || bad "inventory run $run is $status, not committed"
 
 if [ "$fail" -ne 0 ]; then exit 1; fi
-echo "OK $scanner $version: run $run stored what was sent ($sent_entries entries, $findings findings), inventory committed"
+echo "OK $scanner $version: run $run stored what was sent ($sent_entries entries, $findings findings, $paths paths), inventory committed"

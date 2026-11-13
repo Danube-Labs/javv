@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from scanner.adapters.grype import parse_grype, parse_grype_provenance
-from scanner.adapters.trivy import parse_trivy, parse_trivy_provenance
+from scanner.adapters.grype import parse_grype, parse_grype_provenance, read_grype
+from scanner.adapters.trivy import parse_trivy, parse_trivy_provenance, read_trivy
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -165,3 +165,105 @@ def test_parse_trivy_skips_entries_missing_id_or_package() -> None:
     }
     findings = parse_trivy(data)
     assert [f.vuln_id for f in findings] == ["CVE-1"]
+
+
+# --- the file paths of a finding (issue 1077) --------------------------------
+# trivy-paths.json and grype-paths.json are cut from real reports of the pinned versions (see the
+# fixtures README): node:16-slim, tomcat:9.0.50-jdk11 and rancher/local-path-provisioner:v0.0.36.
+
+
+def _by(findings: list[Any], *keys: str) -> dict[tuple[str, ...], Any]:
+    return {tuple(getattr(f, k) for k in keys): f for f in findings}
+
+
+def test_trivy_reads_the_file_of_a_package_and_adds_the_first_slash() -> None:
+    found = {
+        (f.vuln_id, f.package_name): f.locations for f in parse_trivy(load("trivy-paths.json"))
+    }
+    # Node.js and Java: Target is a label, the file is in PkgPath (written without a first slash)
+    assert found[("CVE-2026-3449", "@tootallnate/once")] == (
+        "/usr/local/lib/node_modules/npm/node_modules/@tootallnate/once/package.json",
+    )
+    assert found[("CVE-2024-52316", "org.apache.tomcat:tomcat-catalina")] == (
+        "/usr/local/tomcat/lib/catalina.jar",
+    )
+    # an OS package has no path: Target is the name of the image
+    assert found[("CVE-2021-37600", "bsdutils")] == ()
+
+
+def test_trivy_takes_the_target_of_a_go_binary_and_keeps_each_row() -> None:
+    """A Go binary has no PkgPath: Target is its file. The same CVE in two binaries stays two
+    rows; the scanner does not merge them, the backend joins their paths (D1 B)."""
+    rows = [f for f in parse_trivy(load("trivy-paths.json")) if f.vuln_id == "CVE-2026-111943"]
+    assert sorted(f.locations for f in rows) == [
+        ("/usr/bin/local-path-provisioner",),
+        ("/usr/local/go/bin/go",),
+    ]
+
+
+def test_trivy_never_takes_a_label_for_a_path() -> None:
+    """Trivy writes `Python`, `Node.js`, `Ruby`, `Java`, `Conda` or `Kubernetes` in Target when the
+    packages come from many files (pkg/scan/langpkg/scan.go, targetName). With no PkgPath, the
+    entry has no path, not `/Node.js`."""
+    data = load("trivy-paths.json")
+    for result in data["Results"]:
+        for v in result.get("Vulnerabilities") or []:
+            v.pop("PkgPath", None)
+    found = _by(parse_trivy(data), "vuln_id", "package_name")
+    assert found[("CVE-2026-3449", "@tootallnate/once")].locations == ()
+    assert found[("CVE-2024-52316", "org.apache.tomcat:tomcat-catalina")].locations == ()
+    assert found[("CVE-2026-111943", "stdlib")].locations != ()  # a binary keeps its Target
+
+
+def test_grype_reads_every_location_of_a_match() -> None:
+    """Operator ruling (issue 1077): Grype sends all its locations, also the package database
+    files of an OS package."""
+    found = {
+        (f.vuln_id, f.package_name): f.locations for f in parse_grype(load("grype-paths.json"))
+    }
+    assert found[("CVE-2021-3711", "libssl1.1")] == (
+        "/usr/share/doc/libssl1.1/copyright",
+        "/var/lib/dpkg/info/libssl1.1:amd64.md5sums",
+        "/var/lib/dpkg/status",
+    )
+    assert found[("CVE-2023-44487", "tomcat-coyote")] == (
+        "/usr/local/tomcat/lib/tomcat-coyote.jar",
+    )
+    assert found[("GHSA-2p57-rm9w-gvfp", "ip")] == (
+        "/usr/local/lib/node_modules/npm/node_modules/ip/package.json",
+    )
+    go = sorted(
+        f.locations for f in parse_grype(load("grype-paths.json")) if f.vuln_id == "GO-2026-5026"
+    )
+    assert go == [("/usr/bin/local-path-provisioner",), ("/usr/local/go/bin/go",)]
+
+
+def test_a_path_that_the_backend_refuses_is_dropped_and_the_entry_kept() -> None:
+    """A file name comes from the image. A bad one loses its path, not the finding or the push."""
+    trivy = load("trivy-paths.json")
+    jar = next(r for r in trivy["Results"] if r.get("Type") == "jar")
+    jar["Vulnerabilities"][0]["PkgPath"] = "usr/local/tomcat/lib/\u202egpj.jar"
+    grype = load("grype-paths.json")
+    grype["matches"][0]["artifact"]["locations"].append({"path": "/x\ny"})
+
+    t = read_trivy(trivy)
+    assert _by(t.findings, "package_name")[("org.apache.tomcat:tomcat-catalina",)].locations == ()
+    assert (t.paths_dropped, t.paths_over_cap) == (1, 0)
+    g = read_grype(grype)
+    assert len(_by(g.findings, "package_name")[("libssl1.1",)].locations) == 3
+    assert (g.paths_dropped, g.paths_over_cap) == (1, 0)
+
+
+def test_the_python_fixtures_have_paths_for_both_scanners() -> None:
+    """The compat image: Trivy gives the METADATA file of a Python package, Grype the binary."""
+    trivy = [
+        f for f in parse_trivy(load("trivy-python-3.9.16-slim.json")) if f.ptype == "python-pkg"
+    ]
+    assert trivy and all(
+        f.locations and f.locations[0].startswith("/usr/local/lib/") for f in trivy
+    )
+    grype = [f for f in parse_grype(load("grype-python-3.9.16-slim.json")) if f.ptype == "binary"]
+    assert grype and grype[0].locations == (
+        "/usr/local/bin/python3.9",
+        "/usr/local/lib/libpython3.9.so.1.0",
+    )

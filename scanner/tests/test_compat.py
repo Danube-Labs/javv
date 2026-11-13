@@ -11,10 +11,16 @@ from pathlib import Path
 import httpx
 import pytest
 
-from scanner.adapters.grype import parse_grype, parse_grype_provenance
-from scanner.compat import COMPAT_IMAGE, contract_violations, push_compat
+from scanner.adapters.grype import parse_grype, parse_grype_provenance, read_grype
+from scanner.compat import (
+    COMPAT_IMAGE,
+    COMPAT_IMAGES,
+    contract_violations,
+    finding_paths,
+    push_compat,
+)
 from scanner.config import GrypeConfig
-from scanner.models import Provenance, ScanResult
+from scanner.models import Finding, Provenance, ScanResult
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -35,6 +41,22 @@ def test_missing_version_and_no_findings_is_flagged() -> None:
     violations = contract_violations(result, scanner="grype", expect_findings=True)
     assert any("scanner_version" in v for v in violations)
     assert any("findings" in v for v in violations)
+
+
+def test_a_fixture_with_no_path_is_flagged_and_another_image_is_not() -> None:
+    """Review of PR 1200: a later scanner that renames its path keys sends no path, and the round
+    trip of an empty set passes. The fixtures have paths for both scanners, so the gate needs
+    them there; an image named with --image need not have any."""
+    raw = load("grype-python-3.9.16-slim.json")
+    for m in raw["matches"]:
+        m["artifact"]["files"] = m["artifact"].pop("locations")  # the drift
+    result = read_grype(raw)
+    assert result.findings and not any(f.locations for f in result.findings)
+    flagged = contract_violations(result, scanner="grype", expect_findings=True, expect_paths=True)
+    assert any("no paths" in v for v in flagged)
+    assert contract_violations(result, scanner="grype", expect_findings=True) == []
+    good = read_grype(load("grype-python-3.9.16-slim.json"))
+    assert contract_violations(good, scanner="grype", expect_findings=True, expect_paths=True) == []
 
 
 def test_renamed_output_key_drifts_to_zero_findings_and_is_flagged() -> None:
@@ -127,6 +149,55 @@ def test_push_runs_the_real_cycle_and_reports_what_it_sent(tmp_path: Path) -> No
     assert sent["effective_config"]["scope"]["include_namespaces"] == []
     [inventory] = seen["inventory"]
     assert json.loads(inventory.content)["expected_count"] == 1
+
+
+def test_the_summary_lists_the_paths_that_the_push_sent(tmp_path: Path) -> None:
+    """Issue 1077: CI compares the paths in the store with these, so they are the paths of the
+    envelope that went over the wire, not of the scan before the envelope."""
+    http, seen = _backend()
+    with http:
+        _, summary, violations = _push(http, tmp_path)
+    assert violations == [] and summary is not None
+    [ingest] = seen["ingest"]
+    sent = json.loads(gzip.decompress(ingest.content))
+    assert sent["schema_version"] == 5
+    # each finding of the wire with the paths of all its entries, joined as ingest joins them
+    joined: dict[tuple[str, str, str], set[str]] = {}
+    for f in sent["findings"]:
+        key = (f["vuln_id"], f["package_name"], f["package_version"])
+        joined.setdefault(key, set()).update(f["locations"])
+    assert summary.finding_paths == sorted([*k, sorted(v)[:64]] for k, v in joined.items())
+    assert any("/usr/local/bin/python3.9" in row[3] for row in summary.finding_paths)
+
+
+def test_the_summary_joins_the_paths_of_repeated_entries() -> None:
+    """The rows of one finding are other files (issue 1076), so the summary gives the finding the
+    paths of all its rows, sorted, at most 64: what ingest stores."""
+    one = Finding(vuln_id="CVE-1", package_name="stdlib", package_version="v1.2", severity="HIGH")
+    rows = [
+        one.model_copy(update={"locations": ("/usr/local/go/bin/go",)}),
+        one.model_copy(update={"locations": ("/usr/bin/a",)}),
+        one.model_copy(update={"locations": tuple(f"/opt/{i:02d}" for i in range(70))}),
+        Finding(vuln_id="CVE-2", package_name="zlib", package_version="1", severity="LOW"),
+    ]
+    got = finding_paths(rows)
+    assert got[0][:3] == ["CVE-1", "stdlib", "v1.2"] and len(got[0][3]) == 64
+    assert got[0][3][0] == "/opt/00" and "/usr/local/go/bin/go" not in got[0][3]  # past the 64
+    assert got[1] == ["CVE-2", "zlib", "1", []]
+
+
+def test_the_fixtures_are_pinned_by_digest_and_copied_by_the_workflow() -> None:
+    """Each fixture image is served from the project registry, copied by digest by the manual
+    workflow compat-fixture.yml (issue 631). A fixture that the workflow does not copy would make
+    the CI round trip pull a missing image."""
+    workflow = (Path(__file__).parents[2] / ".github/workflows/compat-fixture.yml").read_text()
+    assert COMPAT_IMAGES["python"] == COMPAT_IMAGE
+    assert set(COMPAT_IMAGES) == {"python", "go-binaries"}
+    for image in COMPAT_IMAGES.values():
+        name, _, digest = image.partition("@")
+        assert name.startswith("ghcr.io/danube-labs/javv-compat-fixture:")
+        assert digest.startswith("sha256:") and len(digest) == 71
+        assert f"@{digest}" in workflow and name in workflow
 
 
 def test_a_refused_push_is_a_violation_and_dead_letters(tmp_path: Path) -> None:

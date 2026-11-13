@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scanner.normalize import SEVERITIES, canonical_severity
+from scanner.normalize import PATH_CAP, SEVERITIES, canonical_severity, clean_paths
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -75,3 +75,52 @@ def test_every_real_fixture_severity_canonicalizes_into_the_bucket_set() -> None
 
     assert seen, "fixtures yielded no severities"
     assert seen <= set(SEVERITIES)
+
+
+# --- the file paths of an entry (issue 1077) ---
+
+
+def test_a_path_gets_its_first_slash_and_repeats_go() -> None:
+    """Trivy writes `usr/local/go/bin/go` and Grype `/usr/local/go/bin/go` for one file: the
+    operator ruled that every path starts with `/`, so the two scanners give the same text."""
+    got = clean_paths(["usr/local/go/bin/go", "/usr/local/go/bin/go", "/app/b.jar", "/app/b.jar"])
+    assert got.paths == ("/app/b.jar", "/usr/local/go/bin/go")
+    assert (got.dropped, got.over_cap) == (0, 0)
+
+
+def test_no_path_gives_an_empty_result() -> None:
+    assert clean_paths([]) == clean_paths(()) and clean_paths([]).paths == ()
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "",
+        "/" + "a" * 1024,  # 1,025 characters
+        *("/a\x00b", "/a\nb", "/a\x7fb"),  # ASCII controls
+        *("/a\x85b", "/a\u2028b"),  # a C1 control, a line separator
+        *("/a\u202eb", "/a\u200bb"),  # a bidi override, a zero-width space
+        "/a\udc80b",  # a lone surrogate: no UTF-8 text, so the envelope could not be written
+        7,
+        None,
+    ],
+)
+def test_a_path_that_the_backend_refuses_is_dropped_and_counted(bad: object) -> None:
+    """The backend refuses the whole envelope for one bad path (issue 1077, review round 1), and
+    a file name comes from the image: the scanner drops the path, not the push of the image."""
+    got = clean_paths(["/ok", bad])
+    assert got.paths == ("/ok",)
+    assert got.dropped == 1
+
+
+def test_a_path_of_1024_characters_and_letters_of_any_language_pass() -> None:
+    long = "/" + "a" * 1023
+    assert clean_paths(["/opt/café/データ.jar", long]).paths == (long, "/opt/café/データ.jar")
+
+
+def test_an_entry_keeps_the_first_64_sorted_paths() -> None:
+    raw = [f"/opt/app/{i:03d}.jar" for i in reversed(range(PATH_CAP + 6))]
+    got = clean_paths(raw)
+    assert PATH_CAP == 64
+    assert got.paths == tuple(sorted(raw)[:PATH_CAP])
+    assert (got.dropped, got.over_cap) == (0, 6)

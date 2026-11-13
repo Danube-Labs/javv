@@ -141,7 +141,7 @@ def test_scan_all_stamps_observed_topology_from_discovery() -> None:
     assert env.image_ref == "nginx:1.21.6"
     assert env.namespaces == ["team-a", "team-b"]  # sorted distinct
     assert env.replicas == 3  # three running pods
-    assert env.schema_version == 4
+    assert env.schema_version == 5
 
 
 def test_scan_all_isolates_a_failing_image_and_finishes_the_cycle() -> None:
@@ -317,7 +317,7 @@ def test_scan_all_stamps_effective_config_and_schema_v3() -> None:
         effective_config=cfg,
     )
     env = pushed[0]
-    assert env.schema_version == 4
+    assert env.schema_version == 5
     assert env.effective_config is not None
     dumped = env.effective_config.model_dump()
     assert dumped["tuning"]["severities"] == "CRITICAL,HIGH"
@@ -365,6 +365,54 @@ def test_scan_all_logs_per_image_progress_at_info() -> None:
     assert all(e["log_level"] == "info" for e in scanning + done)
     assert [e["findings"] for e in done] == [1, 1]
     assert all("duration_s" in e for e in done)
+
+
+def test_scan_done_counts_the_entries_with_paths_and_warns_on_paths_left_out() -> None:
+    """Issue 1077: `scan done` tells how many report rows have paths. When the scanner drops
+    paths, a warning gives the counts. No line has a path: it comes from the image."""
+    import structlog.testing
+
+    run.log = structlog.get_logger()  # fresh proxy — an earlier main() cached the prod pipeline
+    targets = [target("sha256:a", "app:1"), target("sha256:b", "app:2")]
+    secret_path = "/opt/app/lib/log4j-core-2.14.1.jar"
+
+    def scan_fn(ref: str) -> ScanResult:
+        rows = [
+            Finding(vuln_id="CVE-1", package_name="p", package_version="1", severity="HIGH"),
+            Finding(
+                vuln_id="CVE-2",
+                package_name="q",
+                package_version="1",
+                severity="LOW",
+                locations=(secret_path,),
+            ),
+        ]
+        if ref == "app:2":
+            return ScanResult(findings=rows)
+        return ScanResult(findings=rows, paths_dropped=2, paths_over_cap=1)
+
+    pushed: list[Envelope] = []
+
+    def push_fn(env: Envelope) -> PushResult:
+        pushed.append(env)
+        return PushResult(delivered=True, attempts=1, dead_lettered=False)
+
+    with structlog.testing.capture_logs() as logs:
+        scan_all(
+            targets, scanner="grype", cluster_id="c", scan_fn=scan_fn, push_fn=push_fn, scan_order=1
+        )
+
+    done = [e for e in logs if e["event"] == "scan done"]
+    assert [(e["findings"], e["entries_with_paths"]) for e in done] == [(2, 1), (2, 1)]
+    left_out = [e for e in logs if e["event"] == "paths left out"]
+    assert len(left_out) == 1 and left_out[0]["log_level"] == "warning"
+    assert (left_out[0]["image_ref"], left_out[0]["dropped"], left_out[0]["over_cap"]) == (
+        "app:1",
+        2,
+        1,
+    )
+    assert secret_path not in repr(logs)
+    assert pushed[0].findings[1].locations == (secret_path,)  # the envelope still carries it
 
 
 def test_scan_all_logs_a_failed_image_as_a_warning() -> None:

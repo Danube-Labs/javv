@@ -26,7 +26,9 @@ from scanner.scope import ScanScope
 # v3: effective_config (tuning flags + applied scope) for read-only display/audit (D44/FR-25)
 # v4: per-finding ptype — "os" or the verbatim-lowercase ecosystem (M8d/B-1, #241); the backend
 #     accepts v3 AND v4 during the rollout (no flag day — operators swap images at their own pace)
-SCHEMA_VERSION = 4
+# v5: per-finding locations, the files where the scanner found the package (issue 1077); the
+#     backend accepts 3, 4 and 5 and ships first (docs/UPGRADING.md)
+SCHEMA_VERSION = 5
 
 Scanner = Literal["trivy", "grype"]
 

@@ -101,7 +101,7 @@ def test_envelope_carries_observed_topology() -> None:
     assert env.image_ref == "nginx:1.21.6"
     assert env.namespaces == ["team-a", "team-b"]
     assert env.replicas == 3
-    assert env.schema_version == 4  # v4 = ptype (M8d/B-1); v3 was the effective_config stamp (D44)
+    assert env.schema_version == 5  # v5 = the paths of a finding (issue 1077); v4 = ptype
     # and it survives serialization (what the backend ingests)
     dumped = json.loads(env.model_dump_json())
     assert dumped["namespaces"] == ["team-a", "team-b"] and dumped["replicas"] == 3
