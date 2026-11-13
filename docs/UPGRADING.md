@@ -367,12 +367,13 @@ applied it automatically on the first start.
 No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
 backend accepts (3 and 4).
 
-No release up to and including 0.9.0 changed the OpenSearch chart in a way that needs the `store`
+No release up to and including 0.9.9 changed the OpenSearch chart in a way that needs the `store`
 upgrade. Each release changed its version number. Some releases also changed other parts of the
 chart, but not OpenSearch:
 
 - 0.7.1 and 0.8.6 changed the text of its README and of the comments in `values.yaml`, and no
   value. 0.8.1 changed the text of its README.
+- 0.9.2 changed the links to the repository in `Chart.yaml`.
 - 0.8.7 changed the test pod of the chart (`helm test store`). The pod can now run in a namespace
   with the `restricted` level of the pod security standards.
 

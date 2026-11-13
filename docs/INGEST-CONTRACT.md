@@ -345,7 +345,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
       "fixed_version": "1.1.1w-0+deb11u2",
       "epss": null,
       "kev": false,
-      "ptype": "deb",
+      "ptype": "os",
       "severity_canonical": "high"
     }
   ]

@@ -40,7 +40,7 @@ sequenceDiagram
   `unchanged` when its `_meta.version` is at or above the code's `MAPPING_VERSION`. When two pods
   race to create the same index, the loser sees `resource_already_exists_exception` and records
   `unchanged`. Mapping and template updates send identical bodies, so concurrent updates agree. On a
-  store that is already current, it checks 20 indices and templates with two reads each. That took
+  store that is already current, it checks 22 indices and templates with two reads each. That took
   0.8 s end to end on the dev store, including interpreter start.
 - **`JAVV_BOOTSTRAP_ON_STARTUP=false` skips all of it,** including seeding the roles and the admin. It
   exists for unit tests. A deployment must leave it at `true` ([CONFIGURATION.md, Connection to OpenSearch](../CONFIGURATION.md#connection-to-opensearch)).
@@ -69,7 +69,7 @@ A **breaking** change (a copy of an index with `_reindex`) is a different case: 
 One backend runs at a time (issue 691, `Recreate`), so two backend releases never serve together.
 An older release still meets a newer store after a rollback, and the frontend and the scanners are
 upgraded on their own. That is safe only because every mapping change is **additive**. `core/bootstrap.py` says so in its instructions for evolving a mapping,
-and the history v2 → v18 contains only added fields and indices.
+and the history v2 → v22 contains only added fields and indices.
 
 `backend/tests/test_mapping_additive.py` holds this rule (issue 261). It compares the definitions in
 `core/bootstrap.py` with the newest release tag: each index, template, field and setting of that

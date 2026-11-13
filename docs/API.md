@@ -246,8 +246,9 @@ Each answer that is not a success has the same body, with the type `application/
     - `expiry-passed` on a 422 for a decision whose `expiry` is not after today in UTC, or not
       after now (`POST /api/v1/decisions`, `PATCH /api/v1/decisions/{decision_id}`).
 - `title`: a short text that names the error.
-- `detail`: on a 422 from a field check, the list of the fields that are not valid, with the
-  reason for each. It does not hold the value that you sent. Else it is `null`.
+- `detail`: one text, or `null`. On a 422 from a field check, the text lists the fields that are
+  not valid, with the reason for each. It does not hold the value that you sent. Some other
+  errors also have a `detail`, for example the 503 `store-read-only` and the 429 of the MCP endpoint.
 - `request_id`: the id of the request in the backend log. The `X-Request-ID` header of the answer
   also has it, on each answer. To set the id yourself, send `X-Request-ID` with 1 to 64 letters,
   digits or hyphens. If you send no id, or an id that is not valid, the backend makes one.
@@ -790,7 +791,10 @@ goes to the user.
 | PATCH | `/api/v1/notifications/{notification_id}/read` | session | Marks one of your notifications as read. A notification of a different user gets 404. |
 | DELETE | `/api/v1/notifications/{notification_id}` | session | Deletes one of your notifications (204). A notification of a different user gets 404. |
 
-The types are `report_ready`, `sla_breach`, `assignment` and `cluster_retiring`:
+JAVV sends two types, `report_ready` and `cluster_retiring`:
+
+- The report drain sends `report_ready` when a report is ready: an export, or a bulk triage that
+  ran in the background.
 
 - The retirement sweep sends `cluster_retiring` to each user with `can_manage_settings` when a
   cluster starts its warning period. It sends it one time for each silence. `ref` is the
@@ -982,7 +986,7 @@ A write route that is not in this table has no tool. `test_mcp_read_coverage.py`
 | `javv_ingest_failures_unrecorded_total` | counter | `reason` | Refused pushes with no record ([Records of a refused push](#records-of-a-refused-push)). A value larger than 0 means that the **Failed ingests** table does not show all the refused pushes. |
 | `javv_ingest_findings_written_total` | counter | `scanner` | Findings that the backend wrote. Two entries of an envelope for one finding count one time. |
 | `javv_http_request_duration_seconds` | histogram | `method`, `route`, `status` | The time of each request. `route` is the route pattern, not the full path. A path with no route counts as `unmatched`. `/metrics` and the probes are not counted. |
-| `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes. `429` also counts each request that got 429 "The search backend is busy". The backend logs `store busy` for these at most once in 10 seconds, with `held_back`. |
+| `javv_opensearch_request_errors_total` | counter | `kind` | Failed requests to OpenSearch: `conn` and `timeout` on reads, `429` and `503` on writes, and `other` for a check of the store that failed. `429` also counts each request that got 429 "The search backend is busy". The backend logs `store busy` for these at most once in 10 seconds, with `held_back`. |
 | `javv_opensearch_backoff_retries_total` | counter | none | Writes that OpenSearch refused with 429 or 503, and that the backend sent again. A high rate means that OpenSearch is too busy. |
 | `javv_sla_clock_missing_total` | counter | none | Pages of findings with a row that has no `sla_clock_at`. The backend calculates the value for these rows, and logs a warning. A steady rate means that the store needs the `rebuild_state` job. |
 | `javv_cas_conflicts_total` | counter | `site` | Writes that lost a race to a different writer: `watermarks`, `scan_orders`, `inventory_orders`, `reconcile`, `reproject`, `merge`, `report_claim` and `retirement`. A high rate means many writers on the same data. |

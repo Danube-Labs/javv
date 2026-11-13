@@ -1,4 +1,6 @@
 <script setup lang="ts">
+/** The bulk limit is the default of `JAVV_BULK_INLINE_LIMIT` of docs/CONFIGURATION.md: the backend
+ * can have another value, so the text says "by default". */
 import StateTag from '@/components/chips/StateTag.vue'
 import { CISA_JUSTIFICATIONS, PANEL_TARGETS } from '@/findings/triageRules'
 
@@ -40,7 +42,7 @@ const PERSON_STATES = PANEL_TARGETS.map((t) => t.state)
       <strong>Bulk changes apply to exactly what the filters describe.</strong> If a filter can't be
       expressed in a bulk change (a scanner, KEV, namespace or image filter, for example), bulk is
       blocked rather than changing more rows than you see. A bulk change matching more findings than the
-      bulk limit (10,000 by default) is refused; narrow the filters first.
+      bulk limit (5,000 by default) is refused; narrow the filters first.
     </p>
   </GuideProse>
 </template>

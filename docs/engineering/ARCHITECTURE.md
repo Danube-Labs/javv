@@ -7,7 +7,7 @@
 > the hybrid data model + the v4 refinements: `system-exceptions`→`system-decisions`, raw-fidelity keyword
 > normalizer, rebuildable triage state (partial-merge + rebuild job), idempotent appends, full-snapshot
 > point-in-time (no close events), scheduled/throttled export, and an explicit HA/multi-pod section. Source of
-> decisions: `PLAN.md` / `SPEC.md`. UI reference: `handoff/v4/`. Diagrams: Mermaid.
+> decisions: `PLAN.md` / `SPEC.md`. UI reference: `handoff/docs/` (current. `handoff/v4/` is the frozen trail). Diagrams: Mermaid.
 
 ## 1. System diagram
 
@@ -34,7 +34,7 @@ flowchart TB
         direction TB
         subgraph API["FastAPI · AsyncOpenSearch · OpenAPI /docs"]
             direction TB
-            INGEST["Ingest (hardened)<br/>per-(cluster,scanner) token (256-bit, peppered SHA-256) · validate envelope (current only)<br/>rate-limit·size+decompress caps·structured queries"]
+            INGEST["Ingest (hardened)<br/>per-(cluster,scanner) token (256-bit, peppered SHA-256) · validate envelope (accepted schema versions)<br/>rate-limit·size+decompress caps·structured queries"]
             UPSERT["findings partial-merge (_bulk)<br/>_id=finding_key · detect_noop · reconcile-on-commit (present=false)<br/>scanner fields only - human cache untouched"]
             APPEND["Append scan-events + finding-occurrences full snapshot (immutable)<br/>deterministic _id (idempotent) · scan-events = commit catalog (commit_key 4-tuple)"]
             PROJECT["Decision projection → state<br/>new findings only · precedence · scope × apply_both"]
@@ -256,13 +256,13 @@ reconcile** flips `present=false` on `findings` the run omitted (cache only - hi
 ## 3. Data flow (end to end)
 
 1. **Discover** - scanner lists workloads/images; reads `kube-system` UID = `cluster_id`; **local
-   digest-dedup** (scan-all every cycle; exclude by namespace/label - no skip-unchanged, D30).
+   digest-dedup** (scan-all every cycle; exclude by namespace, image pattern and owner kind - no skip-unchanged, D30).
 2. **Scan + normalize** - trivy/grype adapter invokes its binary (PVC-cached DB), pulls via namespace-scoped
    creds, normalizes to the shared shape, **maps the severity vocabulary to the canonical ramp while keeping
    the verbatim scanner word** (D16), grype adds EPSS/KEV, stamps `scanner`.
 3. **Push** - per-image, gzipped, backoff+jitter+dead-letter, `scan_run_id`, **versioned envelope**, per-
    `(cluster,scanner)` token.
-4. **Ingest (hardened)** - validate envelope (**current version only**, reject older w/ 4xx - D35) +
+4. **Ingest (hardened)** - validate envelope (**only the schema versions that `models/envelope.py` accepts**. Any other version gets a 4xx - D35) +
    size/decompression caps + rate-limit + **token↔payload binding** (SEC-3). Then **commit-then-cache ordering**
    (D39/H3-r2), all with **deterministic `_id`** (D18): **(a)** append the full `javv-finding-occurrences`
    snapshot (each row stamped `commit_key` + **`scan_order`**) + the `javv-images` snapshot (stamped
@@ -321,23 +321,35 @@ A finding's `state` is derived, not free-typed:
   not. The resulting `state` is a rebuildable cache (D17).
 
 ## 5. Observability & ops (M1)
-`/healthz` + `/readyz` + Prometheus `/metrics` (ingestion rate, 4xx/413/429/503, payload sizes,
-**decompression ratio**, `_bulk` latency, queue depth, memory). structlog (JSON prod / console dev). **No
-Redis/Kafka/broker** - backpressure is a bounded `asyncio.Semaphore` (→503), rate-limit is `slowapi` in-proc
-(→429); both observable above.
+`/healthz` + `/readyz` + Prometheus `/metrics`. `core/metrics.py` holds each metric. The main
+groups:
+- Ingest: envelopes accepted and rejected (by reason), finding docs written.
+- HTTP: the request duration for each route template.
+- OpenSearch: request errors by kind, and the retries of `_bulk` items that got 429 or 503.
+- Limits and auth: requests that a configured limit refused, open PIT slots, auth failures.
+- Background jobs: the runs of each kind, and the time of the last success.
+
+The logs are JSON from `structlog` (`javv_common/logging.py`). **No Redis/Kafka/broker.** The
+rate limit is `SlidingWindowLimiter` (`core/rate_limit.py`), in the memory of the process (→429).
+Ingest refuses a body over the compressed or decompressed size cap (→413). When OpenSearch is
+not reachable, a request that needs the store gets 503. When OpenSearch is read-only, a write gets 503 and reads work.
+The flow control is these limits and the retry of `_bulk` items with backoff.
 
 ## 6. HA & multi-pod (D23)
-The single-node, single-pod default is a SPOF **by design**; HA is **not JAVV-built** - it's OpenSearch
-multi-node + replica shards + stateless app `replicas>1`, no code change. The point-in-time snapshot
+The single-node, single-pod default is a SPOF **by design**; HA is **not JAVV-built**. For the store, HA is
+OpenSearch multi-node + replica shards. JAVV runs **one backend**: the `javv` chart sets `replicas: 1` with
+`strategy: Recreate` and refuses a `backend.replicas` value (`docs/runbooks/multi-pod.md`). More than one
+backend is not tested and not supported. The notes below tell what the design does at more than one
+backend. The point-in-time snapshot
 **history** is **pure-append with deterministic `_id`, so there is no close-event race** at any replica count
 (designed out - history has no read-modify-write). The **current cache** (`findings`) *does* read-modify-write,
 but it is **guarded** and safe at any replica count without a broker: newer-scan-wins on `scan_order` + the
 per-digest `javv-scan-watermarks` watermark (CAS) + reconcile retry-to-zero-conflicts (D40). The reconcile
 `update_by_query` is **bounded** - filtered to one `cluster_id`+`scanner`+`image_digest`, throttled, with
 conflict/retry counts observed. The remaining multi-pod caveats:
-- **Per-replica rate-limit.** `slowapi` counts per pod (no shared store, D11). Behind one Service across N
+- **Per-replica rate-limit.** `SlidingWindowLimiter` counts per pod (no shared store, D11). Behind one Service across N
   pods the global limit ≈ configured × replicas (exact at `replicas:1`). The per-request size/decompression
-  caps and the per-pod semaphore still hold on every pod. A hard global cap would need shared state (out of
+  caps still hold on every pod. A hard global cap would need shared state (out of
   scope). Documented, not "fixed."
 - **Job claiming is safe at any replica count (D38/M17).** Each backend runs its own scheduler (issue 691),
   and the `system-jobs` lease keeps a job kind to one run across backends. That does **not** stop N API
@@ -356,7 +368,16 @@ OpenSearch nodes / a coordinating node. Never a second datastore (D11).
 - **Diagrams are Mermaid** (working agreement). Keep this file current as the architecture evolves.
 - **Tenant isolation** enforced in the query layer (`cluster_id` filter on every read/export), never UI-only.
   **RBAC** gates mutations client- and server-side; **every** triage action is journaled.
-- The frontend recreates `handoff/v4/` in Vue 3 - keep the `fields`-config pattern verbatim; treat
-  the JSX prototype as executable spec. Expected UI extensions beyond the handoff: `not_affected`+
+- The frontend started as `handoff/v4/` (the JSX prototype, now frozen) in Vue 3. The current UI
+  reference is `handoff/docs/`. Keep the `fields`-config pattern. Expected UI extensions beyond the handoff: `not_affected`+
   justification pickers, the scoped risk-accept dialog, the inventory staleness banner, the export
   dialog with `Run now` and `In the background` (see `PLAN` M9).
+
+## 8. Not built
+Earlier versions of this file described these parts as present. The code does not have them.
+- `slowapi`. The rate limit is `SlidingWindowLimiter` (`core/rate_limit.py`).
+- Backpressure with a bounded `asyncio.Semaphore` (→503).
+- JAVV metrics for payload sizes, the decompression ratio, `_bulk` latency and queue depth. For memory,
+  `/metrics` has only the process metrics of the Prometheus client.
+- A console log format for development. The logs are JSON only.
+- More than one backend (`replicas>1`). The `javv` chart refuses it.
