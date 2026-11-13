@@ -2356,8 +2356,8 @@ The JAVV scanners run <code>trivy image --format json &lt;image&gt;</code> and <
 </tr>
 <tr>
 <td><code>locations</code></td>
-<td><code>PkgPath</code> of the vulnerability. If it is empty and <code>Results[].Class</code> is <code>lang-pkgs</code>, <code>Results[].Target</code>. Put <code>/</code> in front of a path that does not start with it. A package of the operating system has no path.</td>
-<td>Each <code>path</code> of <code>artifact.locations[]</code></td>
+<td><code>PkgPath</code> of the vulnerability. If it is empty and <code>Results[].Class</code> is <code>lang-pkgs</code>, <code>Results[].Target</code>. Do not use a <code>Target</code> of the type <code>python-pkg</code>, <code>conda-pkg</code>, <code>gemspec</code>, <code>node-pkg</code>, <code>jar</code> or <code>kubernetes</code>. For these types, <code>Target</code> is a label, for example <code>Python</code> or <code>Java</code>, not a file. A package of the operating system has no path.</td>
+<td>Each <code>path</code> of <code>artifact.locations[]</code>. For a package of the operating system, these are the files of the package database, for example <code>/var/lib/dpkg/status</code>. Some of them belong to a related package, for example its <code>copyright</code> file.</td>
 </tr>
 <tr>
 <td><code>scanner_version</code></td>
@@ -2377,6 +2377,12 @@ The JAVV scanners run <code>trivy image --format json &lt;image&gt;</code> and <
 </tbody>
 </table>
 <p>The JAVV scanners skip an entry that has no vulnerability ID or no package name.</p>
+<p>The JAVV scanners prepare the paths of an entry in this order:</p>
+<ol>
+<li>Put <code>/</code> in front of a path that does not start with it.</li>
+<li>Drop a path that JAVV refuses (see <a href="#errors">Errors</a>). One bad file name thus does not stop the push of the image.</li>
+<li>Remove the repeats, and keep the first 64 paths in sorted order.</li>
+</ol>
 <h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h2>
 <p>JAVV validates the envelope at each level, and it refuses each field that this page does not
 have. JAVV refuses the envelope with <code>422</code> in these conditions:</p>
