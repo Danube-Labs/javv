@@ -3504,12 +3504,12 @@ Docker host.</p>
 <tr>
 <td><code>VITE_DB_AGE_WARN_DAYS</code></td>
 <td><code>7</code></td>
-<td>Days after which the scanner card shows the vulnerability database as old: amber <code>· N days old</code> next to <strong>DB built</strong>. A scanner with an old database finds fewer vulnerabilities. To fix it, use a newer scanner image. A value that is not a number above 0 gives the default.</td>
+<td>Days after which the scanner card shows the vulnerability database as old: amber <code>· N days old</code> next to <strong>Database built</strong>. A scanner with an old database finds fewer vulnerabilities. To fix it, use a newer scanner image. A value that is not a number above 0 gives the default.</td>
 </tr>
 <tr>
 <td><code>VITE_EXPIRY_WARN_DAYS</code></td>
 <td><code>7</code></td>
-<td>Days before a risk acceptance expires when its chip in the Approvals queue turns amber: <code>expires in Nd</code>. At the expiry, the chip turns red, and the findings of the acceptance open again. A value that is not a number above 0 gives the default.</td>
+<td>Days before a risk acceptance expires when its chip in the Approval list turns amber: <code>expires in Nd</code>. At the expiry, the chip turns red, and the findings of the acceptance open again. A value that is not a number above 0 gives the default.</td>
 </tr>
 <tr>
 <td><code>VITE_CLIENT_EVENTS</code></td>
@@ -3961,7 +3961,7 @@ workload?</p>
 </tr>
 <tr>
 <td><strong>Read page size:</strong> the reader reads in pages, so this value is a batch size, not a limit on results</td>
-<td><code>decisions/reproject._PAGE</code> (10k), <code>triage/bulk._FREEZE_PAGE</code> (10k), <code>services/disagreement._SEARCH_PAGE</code> (10k), <code>jobs/rebuild_state._PAGE</code> (1k), <code>export/sweep._PAGE_SIZE</code> (500), <code>routers/findings._GROUP_CLOCK_PAGE</code> (1k), <code>routers/contributors._ROWS_PAGE_SIZE</code> (10k), <code>query/pit._ROW_PAGE</code> (10k), <code>query/human_at._ROW_PAGE</code> (10k), and the row walks of <code>jobs/rebuild_state</code> and <code>jobs/staleness</code> (10k). All <code>search_after</code> walks use <code>query/paging.search_to_exhaustion</code>.</td>
+<td><code>decisions/reproject._PAGE</code> (10k), <code>triage/bulk._FREEZE_PAGE</code> (10k), <code>services/disagreement._SEARCH_PAGE</code> (10k), <code>jobs/rebuild_state._PAGE</code> (1k), <code>export/sweep._PAGE_SIZE</code> (500), <code>routers/findings._GROUP_CLOCK_PAGE</code> (1k), <code>routers/contributors._ROWS_PAGE_SIZE</code> (10k), <code>query/pit._ROW_PAGE</code> (10k), <code>query/human_at._ROW_PAGE</code> (10k), and the row walks of <code>jobs/rebuild_state</code> and <code>jobs/staleness</code> (10k). Also <code>query/pit._PAGE</code> (1k), <code>query/as_of_t._PAGE</code> (1k), <code>services/sla_clock._SEARCH_PAGE</code> (10k), <code>routers/scanners._RUNS_PAGE</code> (1k), <code>export/approvals_csv._PAGE_SIZE</code> (500), <code>export/audit_csv._PAGE_SIZE</code> (500), <code>jobs/findings_cleanup._PAGE</code> (500), <code>jobs/report_sweep._PAGE</code> (500) and <code>reports/storage._READ_PAGE</code> (500). Some <code>search_after</code> walks use <code>query/paging.search_to_exhaustion</code>. The others have their own loop.</td>
 <td>Each value is at or below the <code>from</code>/<code>size</code> limit of OpenSearch, 10k. A sweep uses a smaller value to keep its memory constant. The caller reads pages until there are no more, so each value gives complete results. A value changes only the number of round trips and the memory.</td>
 </tr>
 <tr>
@@ -3996,7 +3996,7 @@ workload?</p>
 </tr>
 <tr>
 <td><strong>Fixed aggregation sizes:</strong> sized to a domain with a known limit</td>
-<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. The Audit log User list and the Approvals Approver list use it too. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 45 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard. <code>query/aggs.TOP_IMAGES_SIZE</code> (100): the images of a Riskiest images panel with filters, which the panel shows page by page. A cluster can have more images. The panel shows only the first 100, as Top components shows only 100 packages. The rank is on critical findings, then high, medium and low findings. <code>query/aggs.TOP_COMPONENTS_SIZE</code> (100): the packages of a Top components card or panel, and the CVEs of a Top CVEs panel. The panel shows them page by page. A cluster can have more packages or CVEs.</td>
+<td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. The Audit log User list and the Approvals Approver list use it too. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 46 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard. <code>query/aggs.TOP_IMAGES_SIZE</code> (100): the images of a Riskiest images panel with filters, which the panel shows page by page. A cluster can have more images. The panel shows only the first 100, as Top components shows only 100 packages. The rank is on critical findings, then high, medium and low findings. <code>query/aggs.TOP_COMPONENTS_SIZE</code> (100): the packages of a Top components card or panel, and the CVEs of a Top CVEs panel. The panel shows them page by page. A cluster can have more packages or CVEs.</td>
 <td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
 </tr>
 </tbody>

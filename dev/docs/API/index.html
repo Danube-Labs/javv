@@ -2616,8 +2616,9 @@ a hyphen.</p>
 </ul>
 </li>
 <li><code>title</code>: a short text that names the error.</li>
-<li><code>detail</code>: on a 422 from a field check, the list of the fields that are not valid, with the
-  reason for each. It does not hold the value that you sent. Else it is <code>null</code>.</li>
+<li><code>detail</code>: one text, or <code>null</code>. On a 422 from a field check, the text lists the fields that are
+  not valid, with the reason for each. It does not hold the value that you sent. Some other
+  errors also have a <code>detail</code>, for example the 503 <code>store-read-only</code> and the 429 of the MCP endpoint.</li>
 <li><code>request_id</code>: the id of the request in the backend log. The <code>X-Request-ID</code> header of the answer
   also has it, on each answer. To set the id yourself, send <code>X-Request-ID</code> with 1 to 64 letters,
   digits or hyphens. If you send no id, or an id that is not valid, the backend makes one.</li>
@@ -3874,11 +3875,17 @@ goes to the user.</p>
 </tr>
 </tbody>
 </table>
-<p>The types are <code>report_ready</code>, <code>sla_breach</code>, <code>assignment</code> and <code>cluster_retiring</code>:</p>
+<p>JAVV sends two types, <code>report_ready</code> and <code>cluster_retiring</code>:</p>
 <ul>
-<li>The retirement sweep sends <code>cluster_retiring</code> to each user with <code>can_manage_settings</code> when a
+<li>
+<p>The report drain sends <code>report_ready</code> when a report is ready: an export, or a bulk triage that
+  ran in the background.</p>
+</li>
+<li>
+<p>The retirement sweep sends <code>cluster_retiring</code> to each user with <code>can_manage_settings</code> when a
   cluster starts its warning period. It sends it one time for each silence. <code>ref</code> is the
-  <code>retires_at</code> of the cluster.</li>
+  <code>retires_at</code> of the cluster.</p>
+</li>
 <li>The sweep deletes these notifications when the cluster scans again, or when a return from
   retirement starts a new silence. A change of the settings keeps them.</li>
 </ul>
@@ -4294,7 +4301,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <td><code>javv_opensearch_request_errors_total</code></td>
 <td>counter</td>
 <td><code>kind</code></td>
-<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes. <code>429</code> also counts each request that got 429 "The search backend is busy". The backend logs <code>store busy</code> for these at most once in 10 seconds, with <code>held_back</code>.</td>
+<td>Failed requests to OpenSearch: <code>conn</code> and <code>timeout</code> on reads, <code>429</code> and <code>503</code> on writes, and <code>other</code> for a check of the store that failed. <code>429</code> also counts each request that got 429 "The search backend is busy". The backend logs <code>store busy</code> for these at most once in 10 seconds, with <code>held_back</code>.</td>
 </tr>
 <tr>
 <td><code>javv_opensearch_backoff_retries_total</code></td>
