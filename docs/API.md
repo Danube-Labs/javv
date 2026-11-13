@@ -540,7 +540,7 @@ that fails during your read can show on a later page.
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| PATCH | `/api/v1/findings/{finding_key}/triage` | `can_triage` | Changes the state of one finding: `open`, `acknowledged`, `not_affected`, `risk_accepted` or `resolved`. `not_affected` needs a `vex_justification`. `risk_accepted` also needs `can_accept_audit_final`. A change of state of a risk-accepted finding also needs `can_accept_audit_final`. This includes a `stale` finding that goes back to `risk_accepted` when the scanner reports it again. A change of `notes` or `assignee` only does not need it. |
+| PATCH | `/api/v1/findings/{finding_key}/triage` | `can_triage` | Changes the state of one finding: `open`, `acknowledged`, `not_affected`, `risk_accepted` or `resolved`. `not_affected` needs a `vex_justification`. `risk_accepted` also needs `can_accept_audit_final`. A change of state of a risk-accepted finding also needs `can_accept_audit_final`. This includes a `stale` finding that goes back to `risk_accepted` when the scanner reports it again. A change of `notes` or `assignee` only does not need it. The answer has the finding as JAVV stores it, in `finding`. Thus it has `locations` and `locations_total`, as `GET /api/v1/findings` with `locations=true` gives them. |
 | POST | `/api/v1/findings/bulk-triage` | `can_triage` | Changes the state of all the findings that a selector finds, now. More than `JAVV_BULK_INLINE_LIMIT` (5000) findings get 413. Use a report for more. A selector that finds more than `JAVV_BULK_MAX_TARGETS` (10000) gets 413. An empty selector gets 422. A change of state of a set that holds risk-accepted findings needs `can_accept_audit_final`. Without it, the request gets 403 with the count, and JAVV changes no finding. |
 | POST | `/api/v1/decisions` | `can_triage` | Makes a decision. A `risk_accepted` or `ignore_rule` decision also needs `can_accept_audit_final`. `expiry` is a date (`YYYY-MM-DD`), or a date and time with a time zone. JAVV keeps a date and time in UTC. A date stops at 00:00 UTC on that day. Thus the date must be after today in UTC, and a date and time must be after now. Else the answer is 422. |
 | GET | `/api/v1/decisions` | session | Lists the decisions of the cluster, with `cve_id`, `include_revoked` (default `false`), `size` (1 to 500, default 50) and `offset` (0 to 10000) |
@@ -968,7 +968,7 @@ These reads have no tool. `test_mcp_read_coverage.py` fails when a new `GET` rou
 
 | Tool | Level | Route |
 |---|---|---|
-| `set_triage` | `write` | `PATCH /api/v1/findings/{finding_key}/triage` |
+| `set_triage` | `write` | `PATCH /api/v1/findings/{finding_key}/triage`. The answer has the stored finding with its `locations`, as the route gives it. |
 | `bulk_triage` | `write` | `POST /api/v1/findings/bulk-triage`, with its limits `JAVV_BULK_MAX_TARGETS` and `JAVV_BULK_INLINE_LIMIT` |
 | `not_affected_decision` | `write` | Kind `make` (`POST /api/v1/decisions`), `change` (`PATCH /api/v1/decisions/{decision_id}`) or `revoke` (`POST /api/v1/decisions/{decision_id}/revoke`). The type of a new or changed decision can only be `not_affected`. Kinds `change` and `revoke` take only a `not_affected` decision. |
 | `risk_accept_decision` | `write_risk_accept` | The same three routes. The type of a new or changed decision can only be `risk_accepted` or `ignore_rule`. Kinds `change` and `revoke` take only a decision of these types. |
