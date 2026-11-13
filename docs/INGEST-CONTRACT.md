@@ -79,12 +79,13 @@ JAVV.
   to 0. This push tells JAVV that the image is clean.
 - **Do not push an image that stopped.** After the next committed cycle, the image is not in
   **Running images**. Its findings stay open until the staleness sweep marks them stale.
-- **Send each finding one time.** JAVV identifies a finding by the cluster, the image digest, the
-  scanner, `vuln_id`, `package_name` and `package_version`. If an envelope has two entries with
-  the same values, JAVV keeps one finding and counts it one time. It keeps the values of the last
-  entry. The counts of the envelope still include each entry, as [Counts](#counts) tells. JAVV
-  keeps the number of entries of each scan in `report_entries`. Thus you can compare a scan in JAVV
-  with the report of the scanner.
+- **Send each finding one time, or one entry for each file.** JAVV identifies a finding by the
+  cluster, the image digest, the scanner, `vuln_id`, `package_name` and `package_version`. If an
+  envelope has two entries with the same values, JAVV keeps one finding and counts it one time.
+  It keeps the values of the last entry, and it joins the `locations` of all the entries. The
+  counts of the envelope still include each entry, as [Counts](#counts) tells. JAVV keeps the
+  number of entries of each scan in `report_entries`. Thus you can compare a scan in JAVV with the
+  report of the scanner.
 - **Send the severity word that the scanner wrote, with no change.** JAVV calculates its own
   severity from this word.
 - **Make the counts agree.** `counts.total` is equal to the number of findings, and to the sum of
@@ -123,7 +124,7 @@ The column **Type** uses JSON types. "or null" means that `null` is a correct va
 
 | Field | Level | Type | Limits | Meaning and example |
 |---|---|---|---|---|
-| `schema_version` | required | integer | `3` or `4` | The version of the envelope. Send `4`. Version 3 has no `ptype` in the findings. |
+| `schema_version` | required | integer | `3`, `4` or `5` | The version of the envelope. Send `5`. Version 4 has no `locations` in the findings. Version 3 also has no `ptype`. |
 | `cluster_id` | required | string | Lowercase letters, digits and hyphens, 8 to 64 characters, not a hyphen first | The ID of your environment. Example: `my-nomad-fleet-01`. It must be the cluster of the token. |
 | `scanner` | required | string | `trivy` or `grype` | The scanner that made the findings. It must be the scanner of the token. |
 | `image_digest` | required | string | `sha256:` and 6 to 64 hexadecimal digits | The repository digest of the image: the part after `@` in `repo@sha256:…`. Docker shows it in `RepoDigests`, and Trivy and Grype write it in their output. Do not send the image ID of the classic Docker image store. With that ID, JAVV shows one image as two images: one from Kubernetes, one from Docker. JAVV identifies each image by this value. |
@@ -206,6 +207,7 @@ Each item of `findings` is one vulnerability in one package of the image.
 | `findings[].epss` | optional | number or null | 0 to 1 | The EPSS probability. Default: `null`. |
 | `findings[].kev` | optional | boolean | | `true` when the vulnerability is in the CISA list of known exploited vulnerabilities. Default: `false`. |
 | `findings[].ptype` | optional | string or null | 64 characters at most. Lowercase letters, digits and `+ . _ -`, and a letter or digit first. | The type of the package: `os` for a package of the operating system, else the ecosystem. Default: `null`. Examples: `os`, `python-pkg`, `npm`. |
+| `findings[].locations` | optional | array of strings | 64 items at most. Each item has 1 to 1,024 characters and no control character. | The files in the image where the scanner found the package. Start each path with `/`. Default: `[]`. Example: `["/usr/local/go/bin/go"]`. JAVV joins the paths of the entries of one finding. It keeps the first 64 paths in sorted order, and the full number of paths. |
 
 **Severity word.** JAVV calculates the severity from `severity` in lowercase, as follows:
 
@@ -246,6 +248,7 @@ The JAVV scanners run `trivy image --format json <image>` and `grype <image> -o 
 | `epss` | Trivy does not give it. Send `null`. | `vulnerability.epss[0].epss` |
 | `kev` | Trivy does not give it. Send `false`. | `true` when `vulnerability.knownExploited` is not empty |
 | `ptype` | `os` when `Results[].Class` is `os-pkgs`. Else `Results[].Type` in lowercase. | `artifact.type` in lowercase |
+| `locations` | `PkgPath` of the vulnerability. If it is empty and `Results[].Class` is `lang-pkgs`, `Results[].Target`. Put `/` in front of a path that does not start with it. A package of the operating system has no path. | Each `path` of `artifact.locations[]` |
 | `scanner_version` | `Trivy.Version` | `descriptor.version` |
 | `scanner_db_version` | `VulnerabilityDB.Version` from `trivy version --format json` | `descriptor.db.status.schemaVersion` |
 | `scanner_db_built` | `VulnerabilityDB.UpdatedAt` from `trivy version --format json` | `descriptor.db.status.built` |
@@ -265,7 +268,9 @@ have. JAVV refuses the envelope with `422` in these conditions:
 - **`image_digest`** does not agree with `^sha256:[a-fA-F0-9]{6,64}$`.
 - **`scanner` and `effective_config.tuning` do not agree**, for example a `trivy` envelope with
   Grype settings.
-- **`schema_version`** is not 3 or 4.
+- **`schema_version`** is not 3, 4 or 5.
+- **A path in `locations`** is empty, longer than 1,024 characters or has a control character, or
+  an entry has more than 64 paths.
 - **A time has no time zone.**
 - **`scan_order` is larger than the largest one that step 1 gave** to this cluster and scanner.
   The reason in the reply is `unallocated_order`.
@@ -302,7 +307,7 @@ ORDER=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   https://javv.example/api/v1/ingest/scan -d @- <<EOF
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "cluster_id": "my-nomad-fleet-01",
   "scanner": "trivy",
   "image_digest": "sha256:aa11bb22cc33dd44ee55ff667788990011223344556677889900aabbccddeeff",

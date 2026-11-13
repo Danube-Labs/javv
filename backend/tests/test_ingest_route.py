@@ -318,6 +318,70 @@ async def test_golden_envelope_round_trip_against_real_opensearch() -> None:
         await client.close()
 
 
+def _envelope_with_paths(digest: str, run: str, order: int, entries: list[dict[str, Any]]) -> Any:
+    """A schema 5 envelope of one image whose counts count `entries`, as the scanner sends."""
+    from backend.models.envelope import COUNT_COLUMN, IngestEnvelope, canonical_severity
+
+    counts = dict.fromkeys(COUNT_COLUMN.values(), 0)
+    for e in entries:
+        counts[COUNT_COLUMN[canonical_severity(e["severity"])]] += 1
+    counts |= {"total": len(entries), "fixable": sum(1 for e in entries if e.get("fixable"))}
+    return IngestEnvelope.model_validate(
+        {
+            **json.loads(GOLDEN),
+            "schema_version": 5,
+            "image_digest": digest,
+            "scan_run_id": run,
+            "scan_order": order,
+            "findings": entries,
+            "counts": counts,
+        }
+    )
+
+
+@requires_opensearch
+async def test_the_paths_of_a_finding_reach_the_cache_and_the_history() -> None:
+    """Issue 1077 end to end on a real store: the paths of the entries of one finding join on the
+    findings doc and on its history row, and a later scan with no path replaces them."""
+    from backend.core.bootstrap import bootstrap
+    from backend.services.ingest import ingest_envelope
+
+    first = {**_FIXTURE["findings"][0]}
+    digest = f"sha256:{uuid.uuid4().hex}{uuid.uuid4().hex}"
+    run1, run2 = f"paths-{uuid.uuid4().hex[:8]}", f"paths-{uuid.uuid4().hex[:8]}"
+    entries = [
+        {**first, "locations": ["/usr/local/go/bin/go"]},
+        {**first, "locations": ["/usr/bin/lpp", "/usr/local/go/bin/go"]},
+    ]
+    client = AsyncOpenSearch(hosts=[OS_URL])
+    try:
+        await bootstrap(client)
+        await ingest_envelope(client, _envelope_with_paths(digest, run1, 7, entries))
+        await client.indices.refresh(index=f"findings,javv-finding-occurrences-{CLUSTER}-*")
+        q = {"query": {"term": {"image_digest": digest}}}
+        [doc] = (await client.search(index="findings", body=q))["hits"]["hits"]
+        assert doc["_source"]["locations"] == ["/usr/bin/lpp", "/usr/local/go/bin/go"]
+        assert doc["_source"]["locations_total"] == 2
+        occ = await client.search(
+            index=f"javv-finding-occurrences-{CLUSTER}-*",
+            body={"query": {"term": {"scan_run_id": run1}}},
+            params={"expand_wildcards": "all"},
+        )
+        [row] = occ["hits"]["hits"]
+        assert row["_source"]["locations"] == doc["_source"]["locations"]
+
+        # a newer scan of the same image sends no path (an older scanner): the cache follows it
+        no_path = _envelope_with_paths(digest, run2, 8, [first]).model_copy(
+            update={"schema_version": 4}
+        )
+        await ingest_envelope(client, no_path)
+        await client.indices.refresh(index="findings")
+        [doc] = (await client.search(index="findings", body=q))["hits"]["hits"]
+        assert doc["_source"]["locations"] == [] and doc["_source"]["locations_total"] == 0
+    finally:
+        await client.close()
+
+
 async def test_oversized_compressed_body_is_413_even_with_lying_header() -> None:
     t = mint_token()
     big = b"\x1f\x8b" + b"0" * (11 * 1024 * 1024)  # 11 MiB on the wire (> 10 MiB cap)

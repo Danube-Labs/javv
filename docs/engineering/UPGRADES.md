@@ -84,7 +84,7 @@ the second change.
 | old pod, writing | a mapping with more fields than it writes | the document simply lacks the new field; readers treat it as absent (the same as documents written before the bump) |
 | new pod, reading | documents written by the old pod | the same "field absent" case every bump already handles |
 | scanner (old image) | a newer backend | `scanner/src/scanner/scope.py` parses the scan scope leniently (unknown fields are ignored) |
-| scanner (new image) | the backend's accepted envelope window | the backend accepts every envelope version in `GET /api/v1/meta` → `envelope_versions` (currently 3 and 4); the backend must be upgraded **first** |
+| scanner (new image) | the backend's accepted envelope window | the backend accepts every envelope version in `GET /api/v1/meta` → `envelope_versions` (currently 3, 4 and 5); the backend must be upgraded **first** |
 
 **The order is backend, then frontend, then the scanner images.** A newer frontend against an older
 backend would call routes that don't exist yet. A newer scanner can send an envelope version the older

@@ -171,6 +171,17 @@
           "title": "Kev",
           "type": "boolean"
         },
+        "locations": {
+          "items": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Locations",
+          "type": "array"
+        },
         "package_name": {
           "maxLength": 512,
           "minLength": 1,
@@ -437,7 +448,8 @@
     "schema_version": {
       "enum": [
         3,
-        4
+        4,
+        5
       ],
       "title": "Schema Version",
       "type": "integer"
