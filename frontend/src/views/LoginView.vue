@@ -141,10 +141,6 @@ async function submitChange() {
   flex-direction: column;
   width: 340px;
   padding: 28px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
 }
 .login-brand {
   display: flex;

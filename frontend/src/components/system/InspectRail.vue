@@ -54,12 +54,6 @@ function entries(groups: RailGroups, key: keyof RailGroups): RailEntry[] {
 </template>
 
 <style scoped>
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-}
 .rail {
   padding: 0 0 8px;
   overflow: hidden;

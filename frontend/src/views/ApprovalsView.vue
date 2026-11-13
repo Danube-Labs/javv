@@ -358,7 +358,5 @@ const fmt = (n: number) => n.toLocaleString('en-US')
 }
 .load-error {
   margin-top: 16px;
-  color: var(--health-down-fg);
-  font-size: var(--text-body);
 }
 </style>

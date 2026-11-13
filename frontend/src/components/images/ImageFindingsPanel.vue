@@ -155,10 +155,6 @@ function openFinding(row: FindingRow) {
 </template>
 
 <style scoped>
-.load-error {
-  color: var(--health-down-fg);
-  font-size: var(--text-body);
-}
 .first-run {
   padding: 48px 0;
   text-align: center;
@@ -167,11 +163,5 @@ function openFinding(row: FindingRow) {
 .first-run h2 {
   color: var(--ink);
   margin: 0 0 6px;
-}
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
 }
 </style>

@@ -26,10 +26,6 @@ defineProps<{ title: string; sub?: string; flush?: boolean; darkHead?: boolean }
 
 <style scoped>
 .card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
   overflow: hidden;
   /* fill the grid track when stretched — equal-height rows leave slack INSIDE the card,
      absorbed above the pager/notes, never as dead page space (operator, 2026-07-17) */
@@ -38,10 +34,7 @@ defineProps<{ title: string; sub?: string; flush?: boolean; darkHead?: boolean }
   flex-direction: column;
 }
 .card-head {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line2);
 }
@@ -54,11 +47,6 @@ defineProps<{ title: string; sub?: string; flush?: boolean; darkHead?: boolean }
 .card-head.dark .card-sub {
   color: inherit;
   opacity: 0.75;
-}
-.card-head h2 {
-  margin: 0;
-  font-size: var(--text-card-title);
-  font-weight: 600;
 }
 .card-sub {
   margin: 2px 0 0;

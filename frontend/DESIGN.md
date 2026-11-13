@@ -381,6 +381,14 @@ rules and keeps its card size. `UiSearchBox` draws both (issue 1055), and the se
 filter use it too. The command palette keeps its own row: the cursor is in it when it opens. The
 style rules test refuses a copy of either outside base.css.
 
+**One card frame, card heading and menu panel** (issue 1181): base.css holds the values that
+were equal in every component copy. `.card` is the frame (background, line, corner, shadow).
+`.card-head` is the layout of a card heading, and `.card-head h2` is its title. `.dd-menu` is the
+panel of a menu in `UiDropdown`, and `.dd-head` is a small label in it. `.skel-pad` is the space
+around the loading skeleton of a card table, and `.load-error` is the color and size of a failure
+line. A component adds its own padding, alignment, margin, side or width. It does not set a
+shared property again: the style rules test reads the properties from base.css and fails a copy.
+
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
 `primary`. `window-footer-buttons.spec.ts` reads every window footer. That test is the check, and
@@ -460,11 +468,8 @@ Focus:          outline: var(--focus-ring); outline-offset: 1px
 </template>
 
 <style scoped>
+/* base.css gives .card its frame. The component adds only its own padding. */
 .card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
   padding: 14px 16px;
 }
 .chip {

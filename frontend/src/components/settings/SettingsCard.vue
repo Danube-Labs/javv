@@ -22,24 +22,12 @@ defineProps<{ title: string; subtitle?: string }>()
 
 <style scoped>
 .card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
   overflow: hidden;
 }
 .card-head {
-  display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line2);
-}
-.card-head h2 {
-  margin: 0;
-  font-size: var(--text-card-title);
-  font-weight: 600;
 }
 .card-sub {
   margin: 2px 0 0;

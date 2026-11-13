@@ -209,6 +209,48 @@ html [class*=' p-'] {
   font-size: var(--text-body);
 }
 
+/* ---- shared card and menu panel (issue 1181). Each rule holds only the values that were equal
+   in every component copy. A component adds its own padding, alignment, margin or side. It must
+   not set one of these properties again: the style rules test reads this list and fails a copy. */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-head h2 {
+  margin: 0;
+  font-size: var(--text-card-title);
+  font-weight: 600;
+}
+/* the space around a loading skeleton that stands in for the table of a card */
+.skel-pad {
+  margin: 0 16px 14px;
+}
+/* the panel of a menu inside UiDropdown. The side, the corner, the padding and the width stay
+   with each menu */
+.dd-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 30;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--dd-shadow);
+}
+.dd-head {
+  padding: 8px 12px 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-dd-head);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
 /* ---- shared table skin (the findings grid is the reference) — one source for every data
    table, PrimeVue (pt class) or plain <table class="tbl">. Columns, identifier link cells,
    and value chips stay per-component; scoped styles may add, never re-own. */

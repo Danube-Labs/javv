@@ -322,14 +322,8 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--coral-text);
 }
 .dd-menu {
-  position: absolute;
-  top: calc(100% + 6px);
   left: 0;
-  z-index: 30;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: var(--dd-shadow);
   padding: 6px;
   min-width: 230px;
 }
@@ -340,14 +334,6 @@ function onKeydown(e: KeyboardEvent) {
 .dd-menu--up {
   top: auto;
   bottom: calc(100% + 6px);
-}
-.dd-head {
-  font-family: var(--font-mono);
-  font-size: var(--text-dd-head);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--soft);
-  padding: 8px 12px 6px;
 }
 .dd-item {
   display: flex;

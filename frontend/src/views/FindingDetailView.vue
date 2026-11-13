@@ -451,10 +451,6 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
   color: var(--soft);
   max-width: 62ch;
 }
-.load-error {
-  color: var(--health-down-fg);
-  font-size: var(--text-body);
-}
 
 .skel-stack > * + * {
   margin-top: 16px;
