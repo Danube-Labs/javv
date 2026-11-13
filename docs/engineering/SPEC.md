@@ -298,7 +298,7 @@ sequenceDiagram
     participant OS as OpenSearch
     Note over SC: The schedule of the CronJob starts each cycle. JAVV never calls a cluster.
     SC->>API: Get the scan scope
-    SC->>API: Get the order of the cycle (scan_order)
+    SC->>API: POST /scan-runs (the order of the cycle, scan_order)
     SC->>SC: discover workloads + local digest-dedup + scan ALL + normalize (canonical severity, verbatim kept)
     SC->>API: POST /ingest/scan (gzip, scan_run_id, envelope vN) [hardened]
     API->>OS: partial-merge findings (detect_noop, scanner fields only) + append occurrences/images snapshots + scan-events commit (idempotent _id, last)
@@ -337,7 +337,7 @@ Earlier versions of this file described these parts as present. The code does no
   `sla_breach` and `assignment`.
 - **FR-19:** a snapshot schedule. No route and no job sets one: `admin/snapshot.py` has a helper for a
   policy, and nothing calls it. A snapshot is a manual action.
-- **FR-20 and NFR-7:** `slowapi`, backpressure with a bounded `asyncio.Semaphore` (→503), and metrics for
+- **FR-20 and NFR-7:** `slowapi`, backpressure with a bounded `asyncio.Semaphore` (→503), and
   JAVV metrics for payload sizes, the decompression ratio and queue depth. For memory, `/metrics` has
   only the process metrics of the Prometheus client.
 - **NFR-1 and NFR-7:** a `total_fields` limit and `refresh_interval: 30s`. `backend/src` sets neither.

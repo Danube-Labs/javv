@@ -332,7 +332,7 @@ groups:
 The logs are JSON from `structlog` (`javv_common/logging.py`). **No Redis/Kafka/broker.** The
 rate limit is `SlidingWindowLimiter` (`core/rate_limit.py`), in the memory of the process (→429).
 Ingest refuses a body over the compressed or decompressed size cap (→413). When OpenSearch is
-not reachable, a request gets 503. When OpenSearch is read-only, a write gets 503 and reads work.
+not reachable, a request that needs the store gets 503. When OpenSearch is read-only, a write gets 503 and reads work.
 The flow control is these limits and the retry of `_bulk` items with backoff.
 
 ## 6. HA & multi-pod (D23)
