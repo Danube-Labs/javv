@@ -1,7 +1,8 @@
 """development/scripts/check-ingest-roundtrip.sh checks a pushed run in the store (issue 631). A
 scanner report lists a finding once for each file that holds the package, and JAVV stores and
 counts findings (issue 1076). Thus the script compares the stored history rows with the counts of
-the stored scan event, and the entries that the scanner sent with `report_entries`."""
+the stored scan event, and the entries that the scanner sent with `report_entries`. It also
+compares the file paths that the scanner sent with the paths of the history rows (issue 1077)."""
 
 import json
 import subprocess
@@ -34,7 +35,14 @@ async def _push_a_run_with_a_repeated_entry(
             **GOLDEN,
             "cluster_id": cluster,
             "scan_run_id": run,
-            "findings": [first, second, first, first],  # 4 entries, 2 findings
+            "schema_version": 5,
+            # 4 entries, 2 findings: the repeats of the first finding are other files (issue 1077)
+            "findings": [
+                {**first, "locations": ["/usr/bin/a"]},
+                second,
+                {**first, "locations": ["/usr/bin/b"]},
+                first,
+            ],
             "counts": counts,
         }
     )
@@ -54,6 +62,7 @@ async def _push_a_run_with_a_repeated_entry(
         "counts": counts,
         "delivered": True,
         "inventory_committed": True,
+        "paths": ["/usr/bin/a", "/usr/bin/b"],
     }
 
 
@@ -78,6 +87,7 @@ async def test_a_run_with_a_repeated_entry_passes_and_names_both_numbers(tmp_pat
         await client.close()
     assert result.returncode == 0, result.stdout + result.stderr
     assert "4 entries" in result.stdout and "2 findings" in result.stdout
+    assert "2 paths" in result.stdout
 
 
 @requires_opensearch
@@ -95,3 +105,23 @@ async def test_a_lost_entry_fails_the_check(tmp_path: Path) -> None:
         await client.close()
     assert result.returncode == 1
     assert "entries: sent 5, stored 4" in result.stdout
+
+
+@requires_opensearch
+async def test_a_lost_path_fails_the_check(tmp_path: Path) -> None:
+    client, cluster = AsyncOpenSearch(hosts=[OS_URL]), f"c-rt-{uuid.uuid4().hex[:8]}"
+    try:
+        summary = await _push_a_run_with_a_repeated_entry(client, cluster)
+        # the scanner sent a path that the store does not hold
+        sent = {**summary, "paths": ["/usr/bin/a", "/usr/bin/b", "/usr/bin/c"]}
+        result = _check(sent, tmp_path)
+        older = _check({k: v for k, v in summary.items() if k != "paths"}, tmp_path)
+    finally:
+        await client.indices.delete(
+            index=f"javv-*-{cluster}-*", params={"ignore_unavailable": "true"}
+        )
+        await client.close()
+    assert result.returncode == 1
+    assert 'only sent ["/usr/bin/c"], only stored []' in result.stdout
+    assert older.returncode == 1  # a scanner from before the paths writes no `paths`
+    assert "the summary lists no paths" in older.stdout
