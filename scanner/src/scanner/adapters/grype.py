@@ -14,6 +14,7 @@ from typing import Any
 
 from scanner.config import GrypeConfig
 from scanner.models import Finding, Provenance, ScanResult
+from scanner.normalize import clean_paths
 
 Runner = Callable[..., "subprocess.CompletedProcess[str]"]
 
@@ -64,8 +65,19 @@ def _epss(epss: Any) -> float | None:
     return None
 
 
-def parse_grype(data: Mapping[str, Any]) -> list[Finding]:
+def _raw_paths(artifact: Mapping[str, Any]) -> list[object]:
+    """Each `artifact.locations[].path`. Operator ruling (issue 1077): all of them, also the
+    package database files of an OS package."""
+    locations = artifact.get("locations")
+    if not isinstance(locations, Sequence) or isinstance(locations, str):
+        return []
+    return [loc.get("path") for loc in locations if isinstance(loc, Mapping)]
+
+
+def read_grype(data: Mapping[str, Any]) -> ScanResult:
+    """The findings, the provenance and the count of paths left out, from one Grype report."""
     findings: list[Finding] = []
+    dropped = over_cap = 0
     for m in data.get("matches") or []:
         if not isinstance(m, Mapping):
             continue
@@ -80,6 +92,9 @@ def parse_grype(data: Mapping[str, Any]) -> list[Finding]:
         # package type (M8d/B-1): Grype's artifact.type, verbatim-lowercase (apk/deb/rpm/python/…)
         raw_ptype = artifact.get("type")
         ptype = raw_ptype.lower() if isinstance(raw_ptype, str) and raw_ptype else None
+        paths = clean_paths(_raw_paths(artifact))
+        dropped += paths.dropped
+        over_cap += paths.over_cap
         findings.append(
             Finding(
                 vuln_id=vuln_id,
@@ -92,9 +107,19 @@ def parse_grype(data: Mapping[str, Any]) -> list[Finding]:
                 epss=_epss(vuln.get("epss")),
                 kev=bool(vuln.get("knownExploited")),
                 ptype=ptype,
+                locations=paths.paths,
             )
         )
-    return findings
+    return ScanResult(
+        findings=findings,
+        provenance=parse_grype_provenance(data),
+        paths_dropped=dropped,
+        paths_over_cap=over_cap,
+    )
+
+
+def parse_grype(data: Mapping[str, Any]) -> list[Finding]:
+    return read_grype(data).findings
 
 
 def parse_grype_provenance(data: Mapping[str, Any]) -> Provenance:
@@ -124,5 +149,4 @@ def scan_grype(
         check=True,
         timeout=cfg.scan_timeout,
     )
-    data = json.loads(proc.stdout)
-    return ScanResult(findings=parse_grype(data), provenance=parse_grype_provenance(data))
+    return read_grype(json.loads(proc.stdout))

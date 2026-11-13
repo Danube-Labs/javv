@@ -8,11 +8,13 @@ Trivy provides no EPSS/KEV. Input is untrusted: malformed entries are skipped, n
 import json
 import subprocess
 from collections.abc import Callable, Mapping
+from dataclasses import replace
 from datetime import datetime
 from typing import Any, NamedTuple
 
 from scanner.config import TrivyConfig
 from scanner.models import Finding, Provenance, ScanResult
+from scanner.normalize import clean_paths
 
 # Hard cap per image so a hung scanner can't block the cycle forever (TimeoutExpired is then
 # isolated per-image in run.scan_all). The k8s activeDeadlineSeconds belt-and-braces lands in M10.
@@ -61,8 +63,26 @@ def _ptype(result: Mapping[str, Any]) -> str | None:
     return ptype.lower() if isinstance(ptype, str) and ptype else None
 
 
-def parse_trivy(data: Mapping[str, Any]) -> list[Finding]:
+# Trivy puts these labels in `Target` when the packages of a type come from many files, and the
+# file of each package in `PkgPath` (v0.76.2, pkg/scan/langpkg/scan.go, `targetName`)
+_LABEL_TYPES = frozenset({"python-pkg", "conda-pkg", "gemspec", "node-pkg", "jar", "kubernetes"})
+
+
+def _raw_paths(result: Mapping[str, Any], vuln: Mapping[str, Any]) -> list[object]:
+    """`PkgPath`, else the `Target` of a language result that names a file (a Go binary, a lock
+    file). An OS package has none: its `Target` is the name of the image."""
+    if vuln.get("PkgPath"):
+        return [vuln["PkgPath"]]
+    if result.get("Class") == "lang-pkgs" and result.get("Type") not in _LABEL_TYPES:
+        target = result.get("Target")
+        return [target] if target else []
+    return []
+
+
+def read_trivy(data: Mapping[str, Any]) -> ScanResult:
+    """The findings, the provenance and the count of paths left out, from one Trivy report."""
     findings: list[Finding] = []
+    dropped = over_cap = 0
     for result in data.get("Results") or []:
         if not isinstance(result, Mapping):
             continue
@@ -75,6 +95,9 @@ def parse_trivy(data: Mapping[str, Any]) -> list[Finding]:
             if not vuln_id or not package_name:
                 continue
             fixed_version = v.get("FixedVersion") or None
+            paths = clean_paths(_raw_paths(result, v))
+            dropped += paths.dropped
+            over_cap += paths.over_cap
             findings.append(
                 Finding(
                     vuln_id=vuln_id,
@@ -85,9 +108,19 @@ def parse_trivy(data: Mapping[str, Any]) -> list[Finding]:
                     fixable=bool(fixed_version),
                     fixed_version=fixed_version,
                     ptype=ptype,
+                    locations=paths.paths,
                 )
             )
-    return findings
+    return ScanResult(
+        findings=findings,
+        provenance=parse_trivy_provenance(data),
+        paths_dropped=dropped,
+        paths_over_cap=over_cap,
+    )
+
+
+def parse_trivy(data: Mapping[str, Any]) -> list[Finding]:
+    return read_trivy(data).findings
 
 
 def parse_trivy_provenance(data: Mapping[str, Any]) -> Provenance:
@@ -155,8 +188,12 @@ def scan_trivy(
         check=True,
         timeout=SCAN_TIMEOUT_SECONDS,
     )
-    data = json.loads(proc.stdout)
-    provenance = parse_trivy_provenance(data)
+    result = read_trivy(json.loads(proc.stdout))
     if db is not None:
-        provenance = provenance.model_copy(update={"db_version": db.version, "db_built": db.built})
-    return ScanResult(findings=parse_trivy(data), provenance=provenance)
+        result = replace(
+            result,
+            provenance=result.provenance.model_copy(
+                update={"db_version": db.version, "db_built": db.built}
+            ),
+        )
+    return result

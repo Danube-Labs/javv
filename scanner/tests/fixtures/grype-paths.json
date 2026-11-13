@@ -1,0 +1,1752 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2021-3711",
+        "dataSource": "https://security-tracker.debian.org/tracker/CVE-2021-3711",
+        "namespace": "debian:distro:debian:10",
+        "severity": "Critical",
+        "urls": [],
+        "description": "In order to decrypt SM2 encrypted data an application is expected to call the API function EVP_PKEY_decrypt(). Typically an application will call this function twice. The first time, on entry, the \"out\" parameter can be NULL and, on exit, the \"outlen\" parameter is populated with the buffer size required to hold the decrypted plaintext. The application can then allocate a sufficiently sized buffer and call EVP_PKEY_decrypt() again, but this time passing a non-NULL value for the \"out\" parameter. A bug in the implementation of the SM2 decryption code means that the calculation of the buffer size required to hold the plaintext returned by the first call to EVP_PKEY_decrypt() can be smaller than the actual size required by the second call. This can lead to a buffer overflow when EVP_PKEY_decrypt() is called by the application a second time with a buffer that is too small. A malicious attacker who is able present SM2 content for decryption to an application could cause attacker chosen data to overflow the buffer by up to a maximum of 62 bytes altering the contents of other data held after the buffer, possibly changing application behaviour or causing the application to crash. The location of the buffer is application dependent but is typically heap allocated. Fixed in OpenSSL 1.1.1l (Affected 1.1.1-1.1.1k).",
+        "cvss": [
+          {
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "metrics": {
+              "baseScore": 9.8,
+              "exploitabilityScore": 3.9,
+              "impactScore": 5.9
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "epss": [
+          {
+            "cve": "CVE-2021-3711",
+            "epss": 0.87816,
+            "percentile": 0.99765,
+            "date": "2026-11-12"
+          }
+        ],
+        "cwes": [
+          {
+            "cve": "CVE-2021-3711",
+            "cwe": "CWE-120",
+            "source": "nvd@nist.gov",
+            "type": "Primary"
+          }
+        ],
+        "fix": {
+          "versions": [
+            "1.1.1d-0+deb10u7"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "1.1.1d-0+deb10u7",
+              "date": "2026-02-27",
+              "kind": "first-observed"
+            }
+          ]
+        },
+        "advisories": [
+          {
+            "id": "DSA-4963-1",
+            "link": "https://security-tracker.debian.org/tracker/DSA-4963-1"
+          }
+        ],
+        "risk": 82.54704000000001
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2021-3711",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2021-3711",
+          "namespace": "nvd:cpe",
+          "severity": "Critical",
+          "urls": [
+            "http://www.openwall.com/lists/oss-security/2021/08/26/2",
+            "https://cert-portal.siemens.com/productcert/pdf/ssa-389290.pdf",
+            "https://git.openssl.org/gitweb/?p=openssl.git%3Ba=commitdiff%3Bh=59f5e75f3bced8fc0e130d72a3f582cf7b480b46",
+            "https://lists.apache.org/thread.html/r18995de860f0e63635f3008fd2a6aca82394249476d21691e7c59c9e%40%3Cdev.tomcat.apache.org%3E",
+            "https://lists.apache.org/thread.html/rad5d9f83f0d11fb3f8bb148d179b8a9ad7c6a17f18d70e5805a713d1%40%3Cdev.tomcat.apache.org%3E",
+            "https://security.gentoo.org/glsa/202209-02",
+            "https://security.gentoo.org/glsa/202210-02",
+            "https://security.netapp.com/advisory/ntap-20210827-0010/",
+            "https://security.netapp.com/advisory/ntap-20211022-0003/",
+            "https://security.netapp.com/advisory/ntap-20240621-0006/",
+            "https://www.debian.org/security/2021/dsa-4963",
+            "https://www.openssl.org/news/secadv/20210824.txt",
+            "https://www.oracle.com/security-alerts/cpuapr2022.html",
+            "https://www.oracle.com/security-alerts/cpujan2022.html",
+            "https://www.oracle.com/security-alerts/cpuoct2021.html",
+            "https://www.tenable.com/security/tns-2021-16",
+            "https://www.tenable.com/security/tns-2022-02"
+          ],
+          "description": "In order to decrypt SM2 encrypted data an application is expected to call the API function EVP_PKEY_decrypt(). Typically an application will call this function twice. The first time, on entry, the \"out\" parameter can be NULL and, on exit, the \"outlen\" parameter is populated with the buffer size required to hold the decrypted plaintext. The application can then allocate a sufficiently sized buffer and call EVP_PKEY_decrypt() again, but this time passing a non-NULL value for the \"out\" parameter. A bug in the implementation of the SM2 decryption code means that the calculation of the buffer size required to hold the plaintext returned by the first call to EVP_PKEY_decrypt() can be smaller than the actual size required by the second call. This can lead to a buffer overflow when EVP_PKEY_decrypt() is called by the application a second time with a buffer that is too small. A malicious attacker who is able present SM2 content for decryption to an application could cause attacker chosen data to overflow the buffer by up to a maximum of 62 bytes altering the contents of other data held after the buffer, possibly changing application behaviour or causing the application to crash. The location of the buffer is application dependent but is typically heap allocated. Fixed in OpenSSL 1.1.1l (Affected 1.1.1-1.1.1k).",
+          "cvss": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "metrics": {
+                "baseScore": 9.8,
+                "exploitabilityScore": 3.9,
+                "impactScore": 5.9
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "version": "2.0",
+              "vector": "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+              "metrics": {
+                "baseScore": 7.5,
+                "exploitabilityScore": 10,
+                "impactScore": 6.5
+              },
+              "vendorMetadata": {}
+            }
+          ],
+          "epss": [
+            {
+              "cve": "CVE-2021-3711",
+              "epss": 0.87816,
+              "percentile": 0.99765,
+              "date": "2026-11-12"
+            }
+          ],
+          "cwes": [
+            {
+              "cve": "CVE-2021-3711",
+              "cwe": "CWE-120",
+              "source": "nvd@nist.gov",
+              "type": "Primary"
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-indirect-match",
+          "matcher": "dpkg-matcher",
+          "searchedBy": {
+            "distro": {
+              "type": "debian",
+              "version": "10.10"
+            },
+            "package": {
+              "name": "openssl",
+              "version": "1.1.1d-0+deb10u6"
+            },
+            "namespace": "debian:distro:debian:10"
+          },
+          "found": {
+            "vulnerabilityID": "CVE-2021-3711",
+            "versionConstraint": "< 1.1.1d-0+deb10u7 (deb)"
+          },
+          "fix": {
+            "suggestedVersion": "1.1.1d-0+deb10u7"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "a1b8aa953f7aceb6",
+        "name": "libssl1.1",
+        "version": "1.1.1d-0+deb10u6",
+        "type": "deb",
+        "locations": [
+          {
+            "path": "/var/lib/dpkg/status",
+            "layerID": "sha256:ec329d1fff1d47afe28b0851d9320b6b05c8ccc7202a49f4382c2c6343e3faa8",
+            "accessPath": "/var/lib/dpkg/status",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/usr/share/doc/libssl1.1/copyright",
+            "layerID": "sha256:4b0edb23340c111e75557748161eed3ca159584871569ce7ec9b659e1db201b4",
+            "accessPath": "/usr/share/doc/libssl1.1/copyright",
+            "annotations": {
+              "evidence": "supporting"
+            }
+          },
+          {
+            "path": "/var/lib/dpkg/info/libssl1.1:amd64.md5sums",
+            "layerID": "sha256:4b0edb23340c111e75557748161eed3ca159584871569ce7ec9b659e1db201b4",
+            "accessPath": "/var/lib/dpkg/info/libssl1.1:amd64.md5sums",
+            "annotations": {
+              "evidence": "supporting"
+            }
+          }
+        ],
+        "language": "",
+        "licenses": [
+          "OpenSSL"
+        ],
+        "cpes": [
+          "cpe:2.3:a:libssl1.1:libssl1.1:1.1.1d-0\\+deb10u6:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:deb/debian/libssl1.1@1.1.1d-0%2Bdeb10u6?arch=amd64&distro=debian-10.10&upstream=openssl",
+        "upstreams": [
+          {
+            "name": "openssl"
+          }
+        ]
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2023-44487",
+        "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2023-44487",
+        "namespace": "nvd:language:java",
+        "severity": "High",
+        "urls": [
+          "http://www.openwall.com/lists/oss-security/2023/10/10/6",
+          "http://www.openwall.com/lists/oss-security/2023/10/10/7",
+          "http://www.openwall.com/lists/oss-security/2023/10/13/4",
+          "http://www.openwall.com/lists/oss-security/2023/10/13/9",
+          "http://www.openwall.com/lists/oss-security/2023/10/18/4",
+          "http://www.openwall.com/lists/oss-security/2023/10/18/8",
+          "http://www.openwall.com/lists/oss-security/2023/10/19/6",
+          "http://www.openwall.com/lists/oss-security/2023/10/20/8",
+          "https://access.redhat.com/security/cve/cve-2023-44487",
+          "https://arstechnica.com/security/2023/10/how-ddosers-used-the-http-2-protocol-to-deliver-attacks-of-unprecedented-size/",
+          "https://aws.amazon.com/security/security-bulletins/AWS-2023-011/",
+          "https://blog.cloudflare.com/technical-breakdown-http2-rapid-reset-ddos-attack/",
+          "https://blog.cloudflare.com/zero-day-rapid-reset-http2-record-breaking-ddos-attack/",
+          "https://blog.litespeedtech.com/2023/10/11/rapid-reset-http-2-vulnerablilty/",
+          "https://blog.qualys.com/vulnerabilities-threat-research/2023/10/10/cve-2023-44487-http-2-rapid-reset-attack",
+          "https://blog.vespa.ai/cve-2023-44487/",
+          "https://bugzilla.proxmox.com/show_bug.cgi?id=4988",
+          "https://bugzilla.redhat.com/show_bug.cgi?id=2242803",
+          "https://bugzilla.suse.com/show_bug.cgi?id=1216123",
+          "https://cgit.freebsd.org/ports/commit/?id=c64c329c2c1752f46b73e3e6ce9f4329be6629f9",
+          "https://cloud.google.com/blog/products/identity-security/google-cloud-mitigated-largest-ddos-attack-peaking-above-398-million-rps/",
+          "https://cloud.google.com/blog/products/identity-security/how-it-works-the-novel-http2-rapid-reset-ddos-attack",
+          "https://community.traefik.io/t/is-traefik-vulnerable-to-cve-2023-44487/20125",
+          "https://discuss.hashicorp.com/t/hcsec-2023-32-vault-consul-and-boundary-affected-by-http-2-rapid-reset-denial-of-service-vulnerability-cve-2023-44487/59715",
+          "https://edg.io/lp/blog/resets-leaks-ddos-and-the-tale-of-a-hidden-cve",
+          "https://forums.swift.org/t/swift-nio-http2-security-update-cve-2023-44487-http-2-dos/67764",
+          "https://gist.github.com/adulau/7c2bfb8e9cdbe4b35a5e131c66a0c088",
+          "https://github.com/Azure/AKS/issues/3947",
+          "https://github.com/Kong/kong/discussions/11741",
+          "https://github.com/advisories/GHSA-qppj-fm5r-hxr3",
+          "https://github.com/advisories/GHSA-vx74-f528-fxqg",
+          "https://github.com/advisories/GHSA-xpw8-rcwv-8f8p",
+          "https://github.com/akka/akka-http/issues/4323",
+          "https://github.com/alibaba/tengine/issues/1872",
+          "https://github.com/apache/apisix/issues/10320",
+          "https://github.com/apache/httpd-site/pull/10",
+          "https://github.com/apache/httpd/blob/afcdbeebbff4b0c50ea26cdd16e178c0d1f24152/modules/http2/h2_mplx.c#L1101-L1113",
+          "https://github.com/apache/tomcat/tree/main/java/org/apache/coyote/http2",
+          "https://github.com/apache/trafficserver/pull/10564",
+          "https://github.com/arkrwn/PoC/tree/main/CVE-2023-44487",
+          "https://github.com/bcdannyboy/CVE-2023-44487",
+          "https://github.com/caddyserver/caddy/issues/5877",
+          "https://github.com/caddyserver/caddy/releases/tag/v2.7.5",
+          "https://github.com/dotnet/announcements/issues/277",
+          "https://github.com/dotnet/core/blob/e4613450ea0da7fd2fc6b61dfb2c1c1dec1ce9ec/release-notes/6.0/6.0.23/6.0.23.md?plain=1#L73",
+          "https://github.com/eclipse/jetty.project/issues/10679",
+          "https://github.com/envoyproxy/envoy/pull/30055",
+          "https://github.com/etcd-io/etcd/issues/16740",
+          "https://github.com/facebook/proxygen/pull/466",
+          "https://github.com/golang/go/issues/63417",
+          "https://github.com/grpc/grpc-go/pull/6703",
+          "https://github.com/grpc/grpc/releases/tag/v1.59.2",
+          "https://github.com/h2o/h2o/pull/3291",
+          "https://github.com/h2o/h2o/security/advisories/GHSA-2m7v-gc89-fjqf",
+          "https://github.com/haproxy/haproxy/issues/2312",
+          "https://github.com/icing/mod_h2/blob/0a864782af0a942aa2ad4ed960a6b32cd35bcf0a/mod_http2/README.md?plain=1#L239-L244",
+          "https://github.com/junkurihara/rust-rpxy/issues/97",
+          "https://github.com/kazu-yamamoto/http2/commit/f61d41a502bd0f60eb24e1ce14edc7b6df6722a1",
+          "https://github.com/kazu-yamamoto/http2/issues/93",
+          "https://github.com/kubernetes/kubernetes/pull/121120",
+          "https://github.com/line/armeria/pull/5232",
+          "https://github.com/linkerd/website/pull/1695/commits/4b9c6836471bc8270ab48aae6fd2181bc73fd632",
+          "https://github.com/micrictor/http2-rst-stream",
+          "https://github.com/microsoft/CBL-Mariner/pull/6381",
+          "https://github.com/netty/netty/commit/58f75f665aa81a8cbcf6ffa74820042a285c5e61",
+          "https://github.com/nghttp2/nghttp2/pull/1961",
+          "https://github.com/nghttp2/nghttp2/releases/tag/v1.57.0",
+          "https://github.com/ninenines/cowboy/issues/1615",
+          "https://github.com/nodejs/node/pull/50121",
+          "https://github.com/openresty/openresty/issues/930",
+          "https://github.com/opensearch-project/data-prepper/issues/3474",
+          "https://github.com/oqtane/oqtane.framework/discussions/3367",
+          "https://github.com/projectcontour/contour/pull/5826",
+          "https://github.com/tempesta-tech/tempesta/issues/1986",
+          "https://github.com/varnishcache/varnish-cache/issues/3996",
+          "https://groups.google.com/g/golang-announce/c/iNNxDTCjZvo",
+          "https://istio.io/latest/news/security/istio-security-2023-004/",
+          "https://linkerd.io/2023/10/12/linkerd-cve-2023-44487/",
+          "https://lists.apache.org/thread/5py8h42mxfsn8l1wy6o41xwhsjlsd87q",
+          "https://lists.debian.org/debian-lts-announce/2023/10/msg00020.html",
+          "https://lists.debian.org/debian-lts-announce/2023/10/msg00023.html",
+          "https://lists.debian.org/debian-lts-announce/2023/10/msg00024.html",
+          "https://lists.debian.org/debian-lts-announce/2023/10/msg00045.html",
+          "https://lists.debian.org/debian-lts-announce/2023/10/msg00047.html",
+          "https://lists.debian.org/debian-lts-announce/2023/11/msg00001.html",
+          "https://lists.debian.org/debian-lts-announce/2023/11/msg00012.html",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/2MBEPPC36UBVOZZNAXFHKLFGSLCMN5LI/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/3N4NJ7FR4X4FPZUGNTQAPSTVB2HB2Y4A/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/BFQD3KUEMFBHPAPBGLWQC34L4OWL5HAZ/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/CLB4TW7KALB3EEQWNWCN7OUIWWVWWCG2/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/E72T67UPDRXHIDLO3OROR25YAMN4GGW5/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FNA62Q767CFAFHBCDKYNPBMZWB7TWYVU/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/HT7T2R4MQKLIF4ODV4BDLPARWFPCJ5CZ/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/JIZSEFC3YKCGABA2BZW6ZJRMDZJMB7PJ/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/JMEXY22BFG5Q64HQCM5CK2Q7KDKVV4TY/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/KSEGD2IWKNUO3DWY4KQGUQM5BISRWHQE/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/LKYHSZQFDNR7RSA7LHVLLIAQMVYCUGBG/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/LNMZJCDHGLJJLXO4OXWJMTVQRNWOC7UL/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/VHUHTSXLXGXS7JYKBXTA3VINUPHTNGVU/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/VSRDIV77HNKUSM7SJC5BKE5JSHLHU2NK/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/WE2I52RHNNU42PX6NZ2RBUHSFFJ2LVZX/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/WLPRQ5TWUQQXYWBJM7ECYDAIL2YVKIUH/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/X6QXN4ORIVF6XBW4WWFE7VNPVC74S45Y/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/XFOIBB4YFICHDM7IBOP7PWXW3FX4HLL2/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZB43REMKRQR62NJEI7I5NQ4FSXNLBKRT/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZKQSIKIAT5TJ3WSLU3RDBQ35YX4GY4V3/",
+          "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZLU6U2R2IC2K64NDPNMV55AUAO65MAF4/",
+          "https://lists.w3.org/Archives/Public/ietf-http-wg/2023OctDec/0025.html",
+          "https://mailman.nginx.org/pipermail/nginx-devel/2023-October/S36Q5HBXR7CAIMPLLPRSSSYR4PCMWILK.html",
+          "https://martinthomson.github.io/h2-stream-limits/draft-thomson-httpbis-h2-stream-limits.html",
+          "https://msrc.microsoft.com/blog/2023/10/microsoft-response-to-distributed-denial-of-service-ddos-attacks-against-http/2/",
+          "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-44487",
+          "https://my.f5.com/manage/s/article/K000137106",
+          "https://netty.io/news/2023/10/10/4-1-100-Final.html",
+          "https://news.ycombinator.com/item?id=37830987",
+          "https://news.ycombinator.com/item?id=37830998",
+          "https://news.ycombinator.com/item?id=37831062",
+          "https://news.ycombinator.com/item?id=37837043",
+          "https://openssf.org/blog/2023/10/10/http-2-rapid-reset-vulnerability-highlights-need-for-rapid-response/",
+          "https://seanmonstar.com/post/730794151136935936/hyper-http2-rapid-reset-unaffected",
+          "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-http2-reset-d8Kf32vZ",
+          "https://security.gentoo.org/glsa/202311-09",
+          "https://security.netapp.com/advisory/ntap-20231016-0001/",
+          "https://security.netapp.com/advisory/ntap-20240426-0007/",
+          "https://security.netapp.com/advisory/ntap-20240621-0006/",
+          "https://security.netapp.com/advisory/ntap-20240621-0007/",
+          "https://security.paloaltonetworks.com/CVE-2023-44487",
+          "https://tomcat.apache.org/security-10.html#Fixed_in_Apache_Tomcat_10.1.14",
+          "https://ubuntu.com/security/CVE-2023-44487",
+          "https://www.bleepingcomputer.com/news/security/new-http-2-rapid-reset-zero-day-attack-breaks-ddos-records/",
+          "https://www.cisa.gov/news-events/alerts/2023/10/10/http2-rapid-reset-vulnerability-cve-2023-44487",
+          "https://www.darkreading.com/cloud/internet-wide-zero-day-bug-fuels-largest-ever-ddos-event",
+          "https://www.debian.org/security/2023/dsa-5521",
+          "https://www.debian.org/security/2023/dsa-5522",
+          "https://www.debian.org/security/2023/dsa-5540",
+          "https://www.debian.org/security/2023/dsa-5549",
+          "https://www.debian.org/security/2023/dsa-5558",
+          "https://www.debian.org/security/2023/dsa-5570",
+          "https://www.haproxy.com/blog/haproxy-is-not-affected-by-the-http-2-rapid-reset-attack-cve-2023-44487",
+          "https://www.netlify.com/blog/netlify-successfully-mitigates-cve-2023-44487/",
+          "https://www.nginx.com/blog/http-2-rapid-reset-attack-impacting-f5-nginx-products/",
+          "https://www.openwall.com/lists/oss-security/2023/10/10/6",
+          "https://www.phoronix.com/news/HTTP2-Rapid-Reset-Attack",
+          "https://www.theregister.com/2023/10/10/http2_rapid_reset_zeroday/",
+          "http://www.openwall.com/lists/oss-security/2025/08/13/6",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/2MBEPPC36UBVOZZNAXFHKLFGSLCMN5LI/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/3N4NJ7FR4X4FPZUGNTQAPSTVB2HB2Y4A/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/BFQD3KUEMFBHPAPBGLWQC34L4OWL5HAZ/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/CLB4TW7KALB3EEQWNWCN7OUIWWVWWCG2/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/E72T67UPDRXHIDLO3OROR25YAMN4GGW5/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/FNA62Q767CFAFHBCDKYNPBMZWB7TWYVU/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/HT7T2R4MQKLIF4ODV4BDLPARWFPCJ5CZ/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/JIZSEFC3YKCGABA2BZW6ZJRMDZJMB7PJ/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/JMEXY22BFG5Q64HQCM5CK2Q7KDKVV4TY/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/KSEGD2IWKNUO3DWY4KQGUQM5BISRWHQE/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/LKYHSZQFDNR7RSA7LHVLLIAQMVYCUGBG/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/LNMZJCDHGLJJLXO4OXWJMTVQRNWOC7UL/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/VHUHTSXLXGXS7JYKBXTA3VINUPHTNGVU/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/VSRDIV77HNKUSM7SJC5BKE5JSHLHU2NK/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/WE2I52RHNNU42PX6NZ2RBUHSFFJ2LVZX/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/WLPRQ5TWUQQXYWBJM7ECYDAIL2YVKIUH/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/X6QXN4ORIVF6XBW4WWFE7VNPVC74S45Y/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/XFOIBB4YFICHDM7IBOP7PWXW3FX4HLL2/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZB43REMKRQR62NJEI7I5NQ4FSXNLBKRT/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZKQSIKIAT5TJ3WSLU3RDBQ35YX4GY4V3/",
+          "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ZLU6U2R2IC2K64NDPNMV55AUAO65MAF4/",
+          "https://www.vicarius.io/vsociety/posts/rapid-reset-cve-2023-44487-dos-in-http2-understanding-the-root-cause",
+          "https://cert-portal.siemens.com/productcert/html/ssa-082556.html",
+          "https://cert-portal.siemens.com/productcert/html/ssa-341067.html",
+          "https://cert-portal.siemens.com/productcert/html/ssa-784301.html",
+          "https://cert-portal.siemens.com/productcert/html/ssa-832273.html",
+          "https://cert-portal.siemens.com/productcert/html/ssa-915275.html",
+          "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-44487",
+          "https://github.com/envoyproxy/envoy/security/advisories/GHSA-jhv4-f7mr-xx76",
+          "https://github.com/kubernetes/ingress-nginx/blob/4b5c5efe2508dc915a48c54de7f23912ff2ec695/changelog/controller-1.9.3.md?plain=1#L15",
+          "https://varnish-cache.org/releases/rel6.0.12.html#rel6-0-12",
+          "https://varnish-cache.org/releases/rel7.3.1.html#rel7-3-1",
+          "https://varnish-cache.org/releases/rel7.4.2.html#rel7-4-2"
+        ],
+        "description": "The HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly, as exploited in the wild in August through October 2023.",
+        "cvss": [
+          {
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "metrics": {
+              "baseScore": 7.5,
+              "exploitabilityScore": 3.9,
+              "impactScore": 3.6
+            },
+            "vendorMetadata": {}
+          },
+          {
+            "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+            "type": "Secondary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "metrics": {
+              "baseScore": 7.5,
+              "exploitabilityScore": 3.9,
+              "impactScore": 3.6
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "knownExploited": [
+          {
+            "cve": "CVE-2023-44487",
+            "vendorProject": "IETF",
+            "product": "HTTP/2",
+            "dateAdded": "2023-10-10",
+            "requiredAction": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
+            "dueDate": "2023-10-31",
+            "knownRansomwareCampaignUse": "unknown",
+            "notes": "This vulnerability affects a common open-source component, third-party library, or protocol used by different products. For more information, please see: HTTP/2 Rapid Reset Vulnerability, CVE-2023-44487 | CISA: https://www.cisa.gov/news-events/alerts/2023/10/10/http2-rapid-reset-vulnerability-cve-2023-44487",
+            "urls": [
+              "https://blog.cloudflare.com/technical-breakdown-http2-rapid-reset-ddos-attack/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-44487"
+            ],
+            "cwes": [
+              "CWE-400"
+            ]
+          }
+        ],
+        "epss": [
+          {
+            "cve": "CVE-2023-44487",
+            "epss": 0.99999,
+            "percentile": 0.99998,
+            "date": "2026-11-12"
+          }
+        ],
+        "cwes": [
+          {
+            "cve": "CVE-2023-44487",
+            "cwe": "CWE-400",
+            "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+            "type": "Secondary"
+          }
+        ],
+        "fix": {
+          "versions": [
+            "8.5.94",
+            "9.0.81",
+            "10.1.14",
+            "11.0.0-M12"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "10.1.14",
+              "date": "2025-09-04",
+              "kind": "first-observed"
+            },
+            {
+              "version": "11.0.0-M12",
+              "date": "2025-09-04",
+              "kind": "first-observed"
+            },
+            {
+              "version": "8.5.94",
+              "date": "2025-09-04",
+              "kind": "first-observed"
+            },
+            {
+              "version": "9.0.81",
+              "date": "2025-09-04",
+              "kind": "first-observed"
+            }
+          ]
+        },
+        "advisories": [],
+        "risk": 78.75000000000001
+      },
+      "relatedVulnerabilities": [],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "java-matcher",
+          "searchedBy": {
+            "language": "java",
+            "namespace": "nvd:language:java",
+            "package": {
+              "name": "org.apache.tomcat:tomcat-coyote",
+              "version": "9.0.50"
+            }
+          },
+          "found": {
+            "vulnerabilityID": "CVE-2023-44487",
+            "versionConstraint": ">= 10.0.0-M1, < 10.1.14||>= 11.0.0-M1, < 11.0.0-M12||>= 8.5.0, < 8.5.94||>= 9.0.0.M1, < 9.0.81 (maven)"
+          },
+          "fix": {
+            "suggestedVersion": "9.0.81"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "9319fa9c69a36499",
+        "name": "tomcat-coyote",
+        "version": "9.0.50",
+        "type": "java-archive",
+        "locations": [
+          {
+            "path": "/usr/local/tomcat/lib/tomcat-coyote.jar",
+            "layerID": "sha256:ec329d1fff1d47afe28b0851d9320b6b05c8ccc7202a49f4382c2c6343e3faa8",
+            "accessPath": "/usr/local/tomcat/lib/tomcat-coyote.jar",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ],
+        "language": "java",
+        "licenses": [
+          "Apache-2.0"
+        ],
+        "cpes": [
+          "cpe:2.3:a:apache:tomcat-coyote:9.0.50:*:*:*:*:*:*:*",
+          "cpe:2.3:a:apache:tomcat_coyote:9.0.50:*:*:*:*:*:*:*",
+          "cpe:2.3:a:apache:tomcat:9.0.50:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:maven/org.apache.tomcat/tomcat-coyote@9.0.50",
+        "upstreams": [],
+        "metadataType": "JavaMetadata",
+        "metadata": {
+          "virtualPath": "/usr/local/tomcat/lib/tomcat-coyote.jar",
+          "pomArtifactID": "tomcat-coyote",
+          "pomGroupID": "org.apache.tomcat",
+          "manifestName": "",
+          "archiveDigests": [
+            {
+              "algorithm": "sha1",
+              "value": "ef20d9c87cdab3c667efb55091d8bd5f65b10735"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GHSA-2p57-rm9w-gvfp",
+        "dataSource": "https://github.com/advisories/GHSA-2p57-rm9w-gvfp",
+        "namespace": "github:language:javascript",
+        "severity": "High",
+        "urls": [
+          "https://nvd.nist.gov/vuln/detail/CVE-2024-29415",
+          "https://github.com/indutny/node-ip/issues/150",
+          "https://github.com/indutny/node-ip/pull/143",
+          "https://github.com/indutny/node-ip/pull/144",
+          "https://security.netapp.com/advisory/ntap-20250117-0010"
+        ],
+        "description": "ip SSRF improper categorization in isPublic",
+        "cvss": [
+          {
+            "type": "Secondary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "metrics": {
+              "baseScore": 8.1,
+              "exploitabilityScore": 2.3,
+              "impactScore": 5.9
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "epss": [
+          {
+            "cve": "CVE-2024-29415",
+            "epss": 0.08279,
+            "percentile": 0.94993,
+            "date": "2026-11-12"
+          }
+        ],
+        "cwes": [
+          {
+            "cve": "CVE-2024-29415",
+            "cwe": "CWE-918",
+            "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+            "type": "Secondary"
+          },
+          {
+            "cve": "CVE-2024-29415",
+            "cwe": "CWE-941",
+            "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+            "type": "Secondary"
+          }
+        ],
+        "fix": {
+          "versions": [],
+          "state": "not-fixed"
+        },
+        "advisories": [],
+        "risk": 6.45762
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2024-29415",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2024-29415",
+          "namespace": "nvd:cpe",
+          "severity": "High",
+          "urls": [
+            "https://github.com/indutny/node-ip/issues/150",
+            "https://github.com/indutny/node-ip/pull/143",
+            "https://github.com/indutny/node-ip/pull/144",
+            "https://security.netapp.com/advisory/ntap-20250117-0010/"
+          ],
+          "description": "The ip package through 2.0.1 for Node.js might allow SSRF because some IP addresses (such as 127.1, 01200034567, 012.1.2.3, 000:0:0000::01, and ::fFFf:127.0.0.1) are improperly categorized as globally routable via isPublic. NOTE: this issue exists because of an incomplete fix for CVE-2023-42282.",
+          "cvss": [
+            {
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "metrics": {
+                "baseScore": 8.1,
+                "exploitabilityScore": 2.3,
+                "impactScore": 5.9
+              },
+              "vendorMetadata": {}
+            }
+          ],
+          "epss": [
+            {
+              "cve": "CVE-2024-29415",
+              "epss": 0.08279,
+              "percentile": 0.94993,
+              "date": "2026-11-12"
+            }
+          ],
+          "cwes": [
+            {
+              "cve": "CVE-2024-29415",
+              "cwe": "CWE-918",
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary"
+            },
+            {
+              "cve": "CVE-2024-29415",
+              "cwe": "CWE-941",
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary"
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "javascript-matcher",
+          "searchedBy": {
+            "language": "javascript",
+            "namespace": "github:language:javascript",
+            "package": {
+              "name": "ip",
+              "version": "2.0.0"
+            }
+          },
+          "found": {
+            "vulnerabilityID": "GHSA-2p57-rm9w-gvfp",
+            "versionConstraint": "<=2.0.1 (semantic)"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "f5d5ef66bca4ec69",
+        "name": "ip",
+        "version": "2.0.0",
+        "type": "npm",
+        "locations": [
+          {
+            "path": "/usr/local/lib/node_modules/npm/node_modules/ip/package.json",
+            "layerID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8",
+            "accessPath": "/usr/local/lib/node_modules/npm/node_modules/ip/package.json",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ],
+        "language": "javascript",
+        "licenses": [
+          "MIT"
+        ],
+        "cpes": [
+          "cpe:2.3:a:fedorindutny:ip:2.0.0:*:*:*:*:node.js:*:*"
+        ],
+        "purl": "pkg:npm/ip@2.0.0",
+        "upstreams": []
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GO-2026-5026",
+        "dataSource": "https://go.dev/cl/767220",
+        "namespace": "govulndb:language:go",
+        "severity": "High",
+        "urls": [
+          "https://go.dev/issue/78760",
+          "https://groups.google.com/g/golang-announce/c/iI-mYSI0lu8",
+          "https://groups.google.com/g/golang-announce/c/94pEornpRlI"
+        ],
+        "description": "The ToASCII and ToUnicode functions incorrectly accept Punycode-encoded labels that decode to an ASCII-only label. For example, ToUnicode(\"xn--example-.com\") incorrectly returns the name \"example.com\" rather than an error.\n\nThis behavior can lead to privilege escalation in programs using the idna package. For example, a program which performs privilege checks on the ASCII hostname may reject \"example.com\" but permit \"xn--example-.com\". If that program subsequently converts the ASCII hostname to Unicode, it will inadvertently permits access to the Unicode name \"example.com\".",
+        "cvss": [
+          {
+            "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+            "type": "Secondary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:N",
+            "metrics": {
+              "baseScore": 8.2,
+              "exploitabilityScore": 1.8,
+              "impactScore": 5.8
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "epss": [
+          {
+            "cve": "CVE-2026-39821",
+            "epss": 0.01834,
+            "percentile": 0.79217,
+            "date": "2026-11-12"
+          }
+        ],
+        "cwes": [
+          {
+            "cve": "CVE-2026-39821",
+            "cwe": "CWE-1289",
+            "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+            "type": "Secondary"
+          },
+          {
+            "cve": "CVE-2026-39821",
+            "cwe": "CWE-1289",
+            "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+            "type": "Secondary"
+          }
+        ],
+        "fix": {
+          "versions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "1.25.13",
+              "date": "2026-08-13",
+              "kind": "release"
+            },
+            {
+              "version": "1.26.6",
+              "date": "2026-08-13",
+              "kind": "release"
+            },
+            {
+              "version": "1.27.0-rc.3",
+              "date": "2026-08-13",
+              "kind": "release"
+            }
+          ]
+        },
+        "advisories": [],
+        "risk": 1.4396899999999997
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2026-39821",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2026-39821",
+          "namespace": "nvd:cpe",
+          "severity": "High",
+          "urls": [
+            "https://go.dev/cl/767220",
+            "https://go.dev/issue/78760",
+            "https://groups.google.com/g/golang-announce/c/94pEornpRlI",
+            "https://groups.google.com/g/golang-announce/c/iI-mYSI0lu8",
+            "https://pkg.go.dev/vuln/GO-2026-5026",
+            "https://access.redhat.com/errata/RHSA-2026:23262",
+            "https://access.redhat.com/errata/RHSA-2026:23264",
+            "https://access.redhat.com/errata/RHSA-2026:26546",
+            "https://access.redhat.com/errata/RHSA-2026:26547",
+            "https://access.redhat.com/errata/RHSA-2026:30650",
+            "https://access.redhat.com/errata/RHSA-2026:30651",
+            "https://access.redhat.com/errata/RHSA-2026:30853",
+            "https://access.redhat.com/errata/RHSA-2026:30854",
+            "https://access.redhat.com/errata/RHSA-2026:30855",
+            "https://access.redhat.com/errata/RHSA-2026:33155",
+            "https://access.redhat.com/errata/RHSA-2026:33160",
+            "https://access.redhat.com/errata/RHSA-2026:33163",
+            "https://access.redhat.com/errata/RHSA-2026:33173",
+            "https://access.redhat.com/errata/RHSA-2026:33183",
+            "https://access.redhat.com/errata/RHSA-2026:33524",
+            "https://access.redhat.com/errata/RHSA-2026:33531",
+            "https://access.redhat.com/errata/RHSA-2026:34342",
+            "https://access.redhat.com/errata/RHSA-2026:34357",
+            "https://access.redhat.com/errata/RHSA-2026:34359",
+            "https://access.redhat.com/errata/RHSA-2026:34364",
+            "https://access.redhat.com/errata/RHSA-2026:34789",
+            "https://access.redhat.com/errata/RHSA-2026:35826",
+            "https://access.redhat.com/errata/RHSA-2026:35827",
+            "https://access.redhat.com/errata/RHSA-2026:35828",
+            "https://access.redhat.com/errata/RHSA-2026:35829",
+            "https://access.redhat.com/errata/RHSA-2026:35830",
+            "https://access.redhat.com/errata/RHSA-2026:35831",
+            "https://access.redhat.com/errata/RHSA-2026:35993",
+            "https://access.redhat.com/errata/RHSA-2026:35994",
+            "https://access.redhat.com/errata/RHSA-2026:36105",
+            "https://access.redhat.com/errata/RHSA-2026:36167",
+            "https://access.redhat.com/errata/RHSA-2026:36207",
+            "https://access.redhat.com/errata/RHSA-2026:36648",
+            "https://access.redhat.com/errata/RHSA-2026:36651",
+            "https://access.redhat.com/errata/RHSA-2026:36796",
+            "https://access.redhat.com/errata/RHSA-2026:36797",
+            "https://access.redhat.com/errata/RHSA-2026:36808",
+            "https://access.redhat.com/errata/RHSA-2026:36820",
+            "https://access.redhat.com/errata/RHSA-2026:36883",
+            "https://access.redhat.com/errata/RHSA-2026:37387",
+            "https://access.redhat.com/errata/RHSA-2026:37435",
+            "https://access.redhat.com/errata/RHSA-2026:37436",
+            "https://access.redhat.com/errata/RHSA-2026:38995",
+            "https://access.redhat.com/errata/RHSA-2026:39005",
+            "https://access.redhat.com/errata/RHSA-2026:39573",
+            "https://access.redhat.com/errata/RHSA-2026:39879",
+            "https://access.redhat.com/errata/RHSA-2026:40118",
+            "https://access.redhat.com/errata/RHSA-2026:40262",
+            "https://access.redhat.com/errata/RHSA-2026:40945",
+            "https://access.redhat.com/errata/RHSA-2026:41019",
+            "https://access.redhat.com/errata/RHSA-2026:41030",
+            "https://access.redhat.com/errata/RHSA-2026:41031",
+            "https://access.redhat.com/errata/RHSA-2026:41036",
+            "https://access.redhat.com/errata/RHSA-2026:41055",
+            "https://access.redhat.com/errata/RHSA-2026:41066",
+            "https://access.redhat.com/errata/RHSA-2026:41928",
+            "https://access.redhat.com/errata/RHSA-2026:41930",
+            "https://access.redhat.com/errata/RHSA-2026:42043",
+            "https://access.redhat.com/errata/RHSA-2026:42047",
+            "https://access.redhat.com/errata/RHSA-2026:42048",
+            "https://access.redhat.com/errata/RHSA-2026:42049",
+            "https://access.redhat.com/errata/RHSA-2026:42050",
+            "https://access.redhat.com/errata/RHSA-2026:42051",
+            "https://access.redhat.com/errata/RHSA-2026:42078",
+            "https://access.redhat.com/errata/RHSA-2026:42079",
+            "https://access.redhat.com/errata/RHSA-2026:42080",
+            "https://access.redhat.com/errata/RHSA-2026:42082",
+            "https://access.redhat.com/errata/RHSA-2026:42132",
+            "https://access.redhat.com/errata/RHSA-2026:42142",
+            "https://access.redhat.com/errata/RHSA-2026:42146",
+            "https://access.redhat.com/errata/RHSA-2026:42150",
+            "https://access.redhat.com/errata/RHSA-2026:42151",
+            "https://access.redhat.com/errata/RHSA-2026:42240",
+            "https://access.redhat.com/errata/RHSA-2026:42644",
+            "https://access.redhat.com/errata/RHSA-2026:42796",
+            "https://access.redhat.com/errata/RHSA-2026:42852",
+            "https://access.redhat.com/errata/RHSA-2026:43038",
+            "https://access.redhat.com/errata/RHSA-2026:43052",
+            "https://access.redhat.com/errata/RHSA-2026:43692",
+            "https://access.redhat.com/errata/RHSA-2026:44622",
+            "https://access.redhat.com/errata/RHSA-2026:44624",
+            "https://access.redhat.com/errata/RHSA-2026:46395",
+            "https://access.redhat.com/errata/RHSA-2026:47149",
+            "https://access.redhat.com/errata/RHSA-2026:47735",
+            "https://access.redhat.com/errata/RHSA-2026:47737",
+            "https://access.redhat.com/errata/RHSA-2026:47952",
+            "https://access.redhat.com/errata/RHSA-2026:49702",
+            "https://access.redhat.com/errata/RHSA-2026:49712",
+            "https://access.redhat.com/errata/RHSA-2026:50300",
+            "https://access.redhat.com/errata/RHSA-2026:50843",
+            "https://access.redhat.com/errata/RHSA-2026:51033",
+            "https://access.redhat.com/errata/RHSA-2026:51112",
+            "https://access.redhat.com/errata/RHSA-2026:51187",
+            "https://access.redhat.com/errata/RHSA-2026:51194",
+            "https://access.redhat.com/errata/RHSA-2026:51341",
+            "https://access.redhat.com/errata/RHSA-2026:52826",
+            "https://access.redhat.com/errata/RHSA-2026:53374",
+            "https://access.redhat.com/errata/RHSA-2026:53412",
+            "https://access.redhat.com/errata/RHSA-2026:53413",
+            "https://access.redhat.com/errata/RHSA-2026:53415",
+            "https://access.redhat.com/errata/RHSA-2026:53530",
+            "https://access.redhat.com/errata/RHSA-2026:54191",
+            "https://access.redhat.com/errata/RHSA-2026:54274",
+            "https://access.redhat.com/errata/RHSA-2026:54283",
+            "https://access.redhat.com/errata/RHSA-2026:54284",
+            "https://access.redhat.com/errata/RHSA-2026:54285",
+            "https://access.redhat.com/errata/RHSA-2026:54286",
+            "https://access.redhat.com/errata/RHSA-2026:54287",
+            "https://access.redhat.com/errata/RHSA-2026:54395",
+            "https://access.redhat.com/errata/RHSA-2026:54401",
+            "https://access.redhat.com/errata/RHSA-2026:54435",
+            "https://access.redhat.com/errata/RHSA-2026:54441",
+            "https://access.redhat.com/errata/RHSA-2026:54531",
+            "https://access.redhat.com/errata/RHSA-2026:54580",
+            "https://access.redhat.com/errata/RHSA-2026:54757",
+            "https://access.redhat.com/errata/RHSA-2026:56143",
+            "https://access.redhat.com/errata/RHSA-2026:56223",
+            "https://access.redhat.com/errata/RHSA-2026:56340",
+            "https://access.redhat.com/errata/RHSA-2026:56431",
+            "https://access.redhat.com/errata/RHSA-2026:57194",
+            "https://access.redhat.com/errata/RHSA-2026:57541",
+            "https://access.redhat.com/errata/RHSA-2026:57649",
+            "https://access.redhat.com/errata/RHSA-2026:57845",
+            "https://access.redhat.com/errata/RHSA-2026:59546",
+            "https://access.redhat.com/errata/RHSA-2026:59549",
+            "https://access.redhat.com/errata/RHSA-2026:59562",
+            "https://access.redhat.com/errata/RHSA-2026:60315",
+            "https://access.redhat.com/errata/RHSA-2026:60354",
+            "https://access.redhat.com/errata/RHSA-2026:60387",
+            "https://access.redhat.com/errata/RHSA-2026:60520",
+            "https://access.redhat.com/errata/RHSA-2026:61245",
+            "https://access.redhat.com/errata/RHSA-2026:61253",
+            "https://access.redhat.com/errata/RHSA-2026:62549",
+            "https://access.redhat.com/errata/RHSA-2026:63134",
+            "https://access.redhat.com/errata/RHSA-2026:65126",
+            "https://access.redhat.com/errata/RHSA-2026:65153",
+            "https://access.redhat.com/errata/RHSA-2026:65359",
+            "https://access.redhat.com/errata/RHSA-2026:65534",
+            "https://access.redhat.com/errata/RHSA-2026:65851",
+            "https://access.redhat.com/errata/RHSA-2026:65886",
+            "https://access.redhat.com/errata/RHSA-2026:66016",
+            "https://access.redhat.com/errata/RHSA-2026:66022",
+            "https://access.redhat.com/errata/RHSA-2026:66350",
+            "https://access.redhat.com/errata/RHSA-2026:66432",
+            "https://access.redhat.com/errata/RHSA-2026:67149",
+            "https://access.redhat.com/errata/RHSA-2026:67159",
+            "https://access.redhat.com/errata/RHSA-2026:67160",
+            "https://access.redhat.com/errata/RHSA-2026:67287",
+            "https://access.redhat.com/errata/RHSA-2026:67319",
+            "https://access.redhat.com/errata/RHSA-2026:67517",
+            "https://access.redhat.com/errata/RHSA-2026:68504",
+            "https://access.redhat.com/security/cve/CVE-2026-39821",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2480756",
+            "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-39821.json"
+          ],
+          "description": "The ToASCII and ToUnicode functions incorrectly accept Punycode-encoded labels that decode to an ASCII-only label. For example, ToUnicode(\"xn--example-.com\") incorrectly returns the name \"example.com\" rather than an error. This behavior can lead to privilege escalation in programs using the idna package. For example, a program which performs privilege checks on the ASCII hostname may reject \"example.com\" but permit \"xn--example-.com\". If that program subsequently converts the ASCII hostname to Unicode, it will inadvertently permits access to the Unicode name \"example.com\".",
+          "cvss": [
+            {
+              "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:N",
+              "metrics": {
+                "baseScore": 8.2,
+                "exploitabilityScore": 1.8,
+                "impactScore": 5.8
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:N",
+              "metrics": {
+                "baseScore": 9.6,
+                "exploitabilityScore": 3.2,
+                "impactScore": 5.8
+              },
+              "vendorMetadata": {}
+            }
+          ],
+          "epss": [
+            {
+              "cve": "CVE-2026-39821",
+              "epss": 0.01834,
+              "percentile": 0.79217,
+              "date": "2026-11-12"
+            }
+          ],
+          "cwes": [
+            {
+              "cve": "CVE-2026-39821",
+              "cwe": "CWE-1289",
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary"
+            },
+            {
+              "cve": "CVE-2026-39821",
+              "cwe": "CWE-1289",
+              "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+              "type": "Secondary"
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "go-module-matcher",
+          "searchedBy": {
+            "language": "go",
+            "namespace": "govulndb:language:go",
+            "package": {
+              "name": "stdlib",
+              "version": "go1.26.3"
+            }
+          },
+          "found": {
+            "vulnerabilityID": "GO-2026-5026",
+            "versionConstraint": "<1.25.13||>=1.26.0-0,<1.26.6||>=1.27.0-0,<1.27.0-rc.3 (go)",
+            "matchedSymbols": [
+              "net/http.Client.Do",
+              "net/http.Client.Post",
+              "net/http.ClientConn.Close",
+              "net/http.ClientConn.RoundTrip",
+              "net/http.Post",
+              "net/http.Transport.CloseIdleConnections",
+              "net/http.Transport.NewClientConn",
+              "net/http.Transport.RoundTrip",
+              "net/http.http1ClientConn.Close",
+              "net/http.http1ClientConn.RoundTrip",
+              "net/http.http2ClientConn.RoundTrip",
+              "net/http.idnaASCII"
+            ]
+          },
+          "fix": {
+            "suggestedVersion": "1.26.6"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "a316827fcbedaa78",
+        "name": "stdlib",
+        "version": "go1.26.3",
+        "type": "go-module",
+        "locations": [
+          {
+            "path": "/usr/local/go/bin/go",
+            "layerID": "sha256:bf2ba1efee40f4bea5fc45e72a2c97e65e2302341d474f3d56beb1bfc3bd7480",
+            "accessPath": "/usr/local/go/bin/go",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ],
+        "language": "go",
+        "licenses": [
+          "BSD-3-Clause"
+        ],
+        "cpes": [
+          "cpe:2.3:a:golang:go:1.26.3:-:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:golang/stdlib@1.26.3",
+        "upstreams": [],
+        "metadataType": "GolangBinMetadata",
+        "metadata": {
+          "goCompiledVersion": "go1.26.3",
+          "architecture": ""
+        }
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GO-2026-5026",
+        "dataSource": "https://go.dev/cl/767220",
+        "namespace": "govulndb:language:go",
+        "severity": "High",
+        "urls": [
+          "https://go.dev/issue/78760",
+          "https://groups.google.com/g/golang-announce/c/iI-mYSI0lu8",
+          "https://groups.google.com/g/golang-announce/c/94pEornpRlI"
+        ],
+        "description": "The ToASCII and ToUnicode functions incorrectly accept Punycode-encoded labels that decode to an ASCII-only label. For example, ToUnicode(\"xn--example-.com\") incorrectly returns the name \"example.com\" rather than an error.\n\nThis behavior can lead to privilege escalation in programs using the idna package. For example, a program which performs privilege checks on the ASCII hostname may reject \"example.com\" but permit \"xn--example-.com\". If that program subsequently converts the ASCII hostname to Unicode, it will inadvertently permits access to the Unicode name \"example.com\".",
+        "cvss": [
+          {
+            "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+            "type": "Secondary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:N",
+            "metrics": {
+              "baseScore": 8.2,
+              "exploitabilityScore": 1.8,
+              "impactScore": 5.8
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "epss": [
+          {
+            "cve": "CVE-2026-39821",
+            "epss": 0.01834,
+            "percentile": 0.79217,
+            "date": "2026-11-12"
+          }
+        ],
+        "cwes": [
+          {
+            "cve": "CVE-2026-39821",
+            "cwe": "CWE-1289",
+            "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+            "type": "Secondary"
+          },
+          {
+            "cve": "CVE-2026-39821",
+            "cwe": "CWE-1289",
+            "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+            "type": "Secondary"
+          }
+        ],
+        "fix": {
+          "versions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "1.25.13",
+              "date": "2026-08-13",
+              "kind": "release"
+            },
+            {
+              "version": "1.26.6",
+              "date": "2026-08-13",
+              "kind": "release"
+            },
+            {
+              "version": "1.27.0-rc.3",
+              "date": "2026-08-13",
+              "kind": "release"
+            }
+          ]
+        },
+        "advisories": [],
+        "risk": 1.4396899999999997
+      },
+      "relatedVulnerabilities": [
+        {
+          "id": "CVE-2026-39821",
+          "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2026-39821",
+          "namespace": "nvd:cpe",
+          "severity": "High",
+          "urls": [
+            "https://go.dev/cl/767220",
+            "https://go.dev/issue/78760",
+            "https://groups.google.com/g/golang-announce/c/94pEornpRlI",
+            "https://groups.google.com/g/golang-announce/c/iI-mYSI0lu8",
+            "https://pkg.go.dev/vuln/GO-2026-5026",
+            "https://access.redhat.com/errata/RHSA-2026:23262",
+            "https://access.redhat.com/errata/RHSA-2026:23264",
+            "https://access.redhat.com/errata/RHSA-2026:26546",
+            "https://access.redhat.com/errata/RHSA-2026:26547",
+            "https://access.redhat.com/errata/RHSA-2026:30650",
+            "https://access.redhat.com/errata/RHSA-2026:30651",
+            "https://access.redhat.com/errata/RHSA-2026:30853",
+            "https://access.redhat.com/errata/RHSA-2026:30854",
+            "https://access.redhat.com/errata/RHSA-2026:30855",
+            "https://access.redhat.com/errata/RHSA-2026:33155",
+            "https://access.redhat.com/errata/RHSA-2026:33160",
+            "https://access.redhat.com/errata/RHSA-2026:33163",
+            "https://access.redhat.com/errata/RHSA-2026:33173",
+            "https://access.redhat.com/errata/RHSA-2026:33183",
+            "https://access.redhat.com/errata/RHSA-2026:33524",
+            "https://access.redhat.com/errata/RHSA-2026:33531",
+            "https://access.redhat.com/errata/RHSA-2026:34342",
+            "https://access.redhat.com/errata/RHSA-2026:34357",
+            "https://access.redhat.com/errata/RHSA-2026:34359",
+            "https://access.redhat.com/errata/RHSA-2026:34364",
+            "https://access.redhat.com/errata/RHSA-2026:34789",
+            "https://access.redhat.com/errata/RHSA-2026:35826",
+            "https://access.redhat.com/errata/RHSA-2026:35827",
+            "https://access.redhat.com/errata/RHSA-2026:35828",
+            "https://access.redhat.com/errata/RHSA-2026:35829",
+            "https://access.redhat.com/errata/RHSA-2026:35830",
+            "https://access.redhat.com/errata/RHSA-2026:35831",
+            "https://access.redhat.com/errata/RHSA-2026:35993",
+            "https://access.redhat.com/errata/RHSA-2026:35994",
+            "https://access.redhat.com/errata/RHSA-2026:36105",
+            "https://access.redhat.com/errata/RHSA-2026:36167",
+            "https://access.redhat.com/errata/RHSA-2026:36207",
+            "https://access.redhat.com/errata/RHSA-2026:36648",
+            "https://access.redhat.com/errata/RHSA-2026:36651",
+            "https://access.redhat.com/errata/RHSA-2026:36796",
+            "https://access.redhat.com/errata/RHSA-2026:36797",
+            "https://access.redhat.com/errata/RHSA-2026:36808",
+            "https://access.redhat.com/errata/RHSA-2026:36820",
+            "https://access.redhat.com/errata/RHSA-2026:36883",
+            "https://access.redhat.com/errata/RHSA-2026:37387",
+            "https://access.redhat.com/errata/RHSA-2026:37435",
+            "https://access.redhat.com/errata/RHSA-2026:37436",
+            "https://access.redhat.com/errata/RHSA-2026:38995",
+            "https://access.redhat.com/errata/RHSA-2026:39005",
+            "https://access.redhat.com/errata/RHSA-2026:39573",
+            "https://access.redhat.com/errata/RHSA-2026:39879",
+            "https://access.redhat.com/errata/RHSA-2026:40118",
+            "https://access.redhat.com/errata/RHSA-2026:40262",
+            "https://access.redhat.com/errata/RHSA-2026:40945",
+            "https://access.redhat.com/errata/RHSA-2026:41019",
+            "https://access.redhat.com/errata/RHSA-2026:41030",
+            "https://access.redhat.com/errata/RHSA-2026:41031",
+            "https://access.redhat.com/errata/RHSA-2026:41036",
+            "https://access.redhat.com/errata/RHSA-2026:41055",
+            "https://access.redhat.com/errata/RHSA-2026:41066",
+            "https://access.redhat.com/errata/RHSA-2026:41928",
+            "https://access.redhat.com/errata/RHSA-2026:41930",
+            "https://access.redhat.com/errata/RHSA-2026:42043",
+            "https://access.redhat.com/errata/RHSA-2026:42047",
+            "https://access.redhat.com/errata/RHSA-2026:42048",
+            "https://access.redhat.com/errata/RHSA-2026:42049",
+            "https://access.redhat.com/errata/RHSA-2026:42050",
+            "https://access.redhat.com/errata/RHSA-2026:42051",
+            "https://access.redhat.com/errata/RHSA-2026:42078",
+            "https://access.redhat.com/errata/RHSA-2026:42079",
+            "https://access.redhat.com/errata/RHSA-2026:42080",
+            "https://access.redhat.com/errata/RHSA-2026:42082",
+            "https://access.redhat.com/errata/RHSA-2026:42132",
+            "https://access.redhat.com/errata/RHSA-2026:42142",
+            "https://access.redhat.com/errata/RHSA-2026:42146",
+            "https://access.redhat.com/errata/RHSA-2026:42150",
+            "https://access.redhat.com/errata/RHSA-2026:42151",
+            "https://access.redhat.com/errata/RHSA-2026:42240",
+            "https://access.redhat.com/errata/RHSA-2026:42644",
+            "https://access.redhat.com/errata/RHSA-2026:42796",
+            "https://access.redhat.com/errata/RHSA-2026:42852",
+            "https://access.redhat.com/errata/RHSA-2026:43038",
+            "https://access.redhat.com/errata/RHSA-2026:43052",
+            "https://access.redhat.com/errata/RHSA-2026:43692",
+            "https://access.redhat.com/errata/RHSA-2026:44622",
+            "https://access.redhat.com/errata/RHSA-2026:44624",
+            "https://access.redhat.com/errata/RHSA-2026:46395",
+            "https://access.redhat.com/errata/RHSA-2026:47149",
+            "https://access.redhat.com/errata/RHSA-2026:47735",
+            "https://access.redhat.com/errata/RHSA-2026:47737",
+            "https://access.redhat.com/errata/RHSA-2026:47952",
+            "https://access.redhat.com/errata/RHSA-2026:49702",
+            "https://access.redhat.com/errata/RHSA-2026:49712",
+            "https://access.redhat.com/errata/RHSA-2026:50300",
+            "https://access.redhat.com/errata/RHSA-2026:50843",
+            "https://access.redhat.com/errata/RHSA-2026:51033",
+            "https://access.redhat.com/errata/RHSA-2026:51112",
+            "https://access.redhat.com/errata/RHSA-2026:51187",
+            "https://access.redhat.com/errata/RHSA-2026:51194",
+            "https://access.redhat.com/errata/RHSA-2026:51341",
+            "https://access.redhat.com/errata/RHSA-2026:52826",
+            "https://access.redhat.com/errata/RHSA-2026:53374",
+            "https://access.redhat.com/errata/RHSA-2026:53412",
+            "https://access.redhat.com/errata/RHSA-2026:53413",
+            "https://access.redhat.com/errata/RHSA-2026:53415",
+            "https://access.redhat.com/errata/RHSA-2026:53530",
+            "https://access.redhat.com/errata/RHSA-2026:54191",
+            "https://access.redhat.com/errata/RHSA-2026:54274",
+            "https://access.redhat.com/errata/RHSA-2026:54283",
+            "https://access.redhat.com/errata/RHSA-2026:54284",
+            "https://access.redhat.com/errata/RHSA-2026:54285",
+            "https://access.redhat.com/errata/RHSA-2026:54286",
+            "https://access.redhat.com/errata/RHSA-2026:54287",
+            "https://access.redhat.com/errata/RHSA-2026:54395",
+            "https://access.redhat.com/errata/RHSA-2026:54401",
+            "https://access.redhat.com/errata/RHSA-2026:54435",
+            "https://access.redhat.com/errata/RHSA-2026:54441",
+            "https://access.redhat.com/errata/RHSA-2026:54531",
+            "https://access.redhat.com/errata/RHSA-2026:54580",
+            "https://access.redhat.com/errata/RHSA-2026:54757",
+            "https://access.redhat.com/errata/RHSA-2026:56143",
+            "https://access.redhat.com/errata/RHSA-2026:56223",
+            "https://access.redhat.com/errata/RHSA-2026:56340",
+            "https://access.redhat.com/errata/RHSA-2026:56431",
+            "https://access.redhat.com/errata/RHSA-2026:57194",
+            "https://access.redhat.com/errata/RHSA-2026:57541",
+            "https://access.redhat.com/errata/RHSA-2026:57649",
+            "https://access.redhat.com/errata/RHSA-2026:57845",
+            "https://access.redhat.com/errata/RHSA-2026:59546",
+            "https://access.redhat.com/errata/RHSA-2026:59549",
+            "https://access.redhat.com/errata/RHSA-2026:59562",
+            "https://access.redhat.com/errata/RHSA-2026:60315",
+            "https://access.redhat.com/errata/RHSA-2026:60354",
+            "https://access.redhat.com/errata/RHSA-2026:60387",
+            "https://access.redhat.com/errata/RHSA-2026:60520",
+            "https://access.redhat.com/errata/RHSA-2026:61245",
+            "https://access.redhat.com/errata/RHSA-2026:61253",
+            "https://access.redhat.com/errata/RHSA-2026:62549",
+            "https://access.redhat.com/errata/RHSA-2026:63134",
+            "https://access.redhat.com/errata/RHSA-2026:65126",
+            "https://access.redhat.com/errata/RHSA-2026:65153",
+            "https://access.redhat.com/errata/RHSA-2026:65359",
+            "https://access.redhat.com/errata/RHSA-2026:65534",
+            "https://access.redhat.com/errata/RHSA-2026:65851",
+            "https://access.redhat.com/errata/RHSA-2026:65886",
+            "https://access.redhat.com/errata/RHSA-2026:66016",
+            "https://access.redhat.com/errata/RHSA-2026:66022",
+            "https://access.redhat.com/errata/RHSA-2026:66350",
+            "https://access.redhat.com/errata/RHSA-2026:66432",
+            "https://access.redhat.com/errata/RHSA-2026:67149",
+            "https://access.redhat.com/errata/RHSA-2026:67159",
+            "https://access.redhat.com/errata/RHSA-2026:67160",
+            "https://access.redhat.com/errata/RHSA-2026:67287",
+            "https://access.redhat.com/errata/RHSA-2026:67319",
+            "https://access.redhat.com/errata/RHSA-2026:67517",
+            "https://access.redhat.com/errata/RHSA-2026:68504",
+            "https://access.redhat.com/security/cve/CVE-2026-39821",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2480756",
+            "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-39821.json"
+          ],
+          "description": "The ToASCII and ToUnicode functions incorrectly accept Punycode-encoded labels that decode to an ASCII-only label. For example, ToUnicode(\"xn--example-.com\") incorrectly returns the name \"example.com\" rather than an error. This behavior can lead to privilege escalation in programs using the idna package. For example, a program which performs privilege checks on the ASCII hostname may reject \"example.com\" but permit \"xn--example-.com\". If that program subsequently converts the ASCII hostname to Unicode, it will inadvertently permits access to the Unicode name \"example.com\".",
+          "cvss": [
+            {
+              "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:N",
+              "metrics": {
+                "baseScore": 8.2,
+                "exploitabilityScore": 1.8,
+                "impactScore": 5.8
+              },
+              "vendorMetadata": {}
+            },
+            {
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary",
+              "version": "3.1",
+              "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:N",
+              "metrics": {
+                "baseScore": 9.6,
+                "exploitabilityScore": 3.2,
+                "impactScore": 5.8
+              },
+              "vendorMetadata": {}
+            }
+          ],
+          "epss": [
+            {
+              "cve": "CVE-2026-39821",
+              "epss": 0.01834,
+              "percentile": 0.79217,
+              "date": "2026-11-12"
+            }
+          ],
+          "cwes": [
+            {
+              "cve": "CVE-2026-39821",
+              "cwe": "CWE-1289",
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "type": "Secondary"
+            },
+            {
+              "cve": "CVE-2026-39821",
+              "cwe": "CWE-1289",
+              "source": "0b0ca135-0b70-47e7-9f44-1890c2a1c46c",
+              "type": "Secondary"
+            }
+          ]
+        }
+      ],
+      "matchDetails": [
+        {
+          "type": "exact-direct-match",
+          "matcher": "go-module-matcher",
+          "searchedBy": {
+            "language": "go",
+            "namespace": "govulndb:language:go",
+            "package": {
+              "name": "stdlib",
+              "version": "go1.26.3"
+            }
+          },
+          "found": {
+            "vulnerabilityID": "GO-2026-5026",
+            "versionConstraint": "<1.25.13||>=1.26.0-0,<1.26.6||>=1.27.0-0,<1.27.0-rc.3 (go)",
+            "matchedSymbols": [
+              "net/http.Client.CloseIdleConnections",
+              "net/http.Client.Do",
+              "net/http.Client.Get",
+              "net/http.Client.Head",
+              "net/http.Client.Post",
+              "net/http.Client.PostForm",
+              "net/http.ClientConn.Close",
+              "net/http.ClientConn.RoundTrip",
+              "net/http.Get",
+              "net/http.Transport.CloseIdleConnections",
+              "net/http.Transport.NewClientConn",
+              "net/http.Transport.RoundTrip",
+              "net/http.http1ClientConn.Close",
+              "net/http.http1ClientConn.RoundTrip",
+              "net/http.http2ClientConn.RoundTrip",
+              "net/http.idnaASCII"
+            ]
+          },
+          "fix": {
+            "suggestedVersion": "1.26.6"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "180dfa4e9b4fea17",
+        "name": "stdlib",
+        "version": "go1.26.3",
+        "type": "go-module",
+        "locations": [
+          {
+            "path": "/usr/bin/local-path-provisioner",
+            "layerID": "sha256:df6f1ce51bd467f781bb34082d1ed68fe435fd03d70738fcf0f8ce14bc2e4348",
+            "accessPath": "/usr/bin/local-path-provisioner",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ],
+        "language": "go",
+        "licenses": [
+          "BSD-3-Clause"
+        ],
+        "cpes": [
+          "cpe:2.3:a:golang:go:1.26.3:-:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:golang/stdlib@1.26.3",
+        "upstreams": [],
+        "metadataType": "GolangBinMetadata",
+        "metadata": {
+          "goCompiledVersion": "go1.26.3",
+          "architecture": ""
+        }
+      }
+    }
+  ],
+  "source": {
+    "type": "image",
+    "target": {
+      "userInput": "trimmed from tomcat:9.0.50-jdk11, node:16-slim and rancher/local-path-provisioner:v0.0.36"
+    }
+  },
+  "distro": {
+    "name": "debian",
+    "version": "10.10",
+    "idLike": []
+  },
+  "descriptor": {
+    "name": "grype",
+    "version": "0.121.1",
+    "configuration": {
+      "output": [
+        "json"
+      ],
+      "file": "",
+      "pretty": false,
+      "distro": "",
+      "add-cpes-if-none": false,
+      "output-template-file": "",
+      "check-for-app-update": true,
+      "only-fixed": false,
+      "only-notfixed": false,
+      "ignore-wontfix": "",
+      "platform": "",
+      "search": {
+        "scope": "squashed",
+        "unindexed-archives": false,
+        "indexed-archives": true
+      },
+      "ignore": [
+        {
+          "vulnerability": "",
+          "include-aliases": false,
+          "reason": "",
+          "namespace": "",
+          "fix-state": "",
+          "package": {
+            "name": "kernel-headers",
+            "version": "",
+            "language": "",
+            "type": "rpm",
+            "location": "",
+            "upstream-name": "kernel"
+          },
+          "vex-status": "",
+          "vex-justification": "",
+          "match-type": "exact-indirect-match"
+        },
+        {
+          "vulnerability": "",
+          "include-aliases": false,
+          "reason": "",
+          "namespace": "",
+          "fix-state": "",
+          "package": {
+            "name": "linux(-.*)?-headers-.*",
+            "version": "",
+            "language": "",
+            "type": "deb",
+            "location": "",
+            "upstream-name": "linux.*"
+          },
+          "vex-status": "",
+          "vex-justification": "",
+          "match-type": "exact-indirect-match"
+        },
+        {
+          "vulnerability": "",
+          "include-aliases": false,
+          "reason": "",
+          "namespace": "",
+          "fix-state": "",
+          "package": {
+            "name": "linux-libc-dev",
+            "version": "",
+            "language": "",
+            "type": "deb",
+            "location": "",
+            "upstream-name": "linux"
+          },
+          "vex-status": "",
+          "vex-justification": "",
+          "match-type": "exact-indirect-match"
+        },
+        {
+          "vulnerability": "",
+          "include-aliases": false,
+          "reason": "",
+          "namespace": "",
+          "fix-state": "",
+          "package": {
+            "name": "linux-kbuild-.*",
+            "version": "",
+            "language": "",
+            "type": "deb",
+            "location": "",
+            "upstream-name": "linux.*"
+          },
+          "vex-status": "",
+          "vex-justification": "",
+          "match-type": "exact-indirect-match"
+        }
+      ],
+      "exclude": [],
+      "externalSources": {
+        "enable": false,
+        "maven": {
+          "searchUpstreamBySha1": true,
+          "baseUrl": "https://search.maven.org/solrsearch/select",
+          "rateLimit": 300000000
+        }
+      },
+      "match": {
+        "java": {
+          "using-cpes": false
+        },
+        "jvm": {
+          "using-cpes": true
+        },
+        "dotnet": {
+          "using-cpes": false
+        },
+        "golang": {
+          "using-cpes": false,
+          "always-use-cpe-for-stdlib": false,
+          "allow-main-module-pseudo-version-comparison": false
+        },
+        "javascript": {
+          "using-cpes": false
+        },
+        "python": {
+          "using-cpes": false
+        },
+        "ruby": {
+          "using-cpes": false
+        },
+        "rust": {
+          "using-cpes": false
+        },
+        "hex": {
+          "using-cpes": false
+        },
+        "stock": {
+          "using-cpes": true
+        },
+        "dpkg": {
+          "using-cpes": false,
+          "missing-epoch-strategy": "zero",
+          "use-cpes-for-eol": false
+        },
+        "rpm": {
+          "using-cpes": false,
+          "missing-epoch-strategy": "auto",
+          "use-cpes-for-eol": false
+        }
+      },
+      "fail-on-severity": "",
+      "registry": {
+        "insecure-skip-tls-verify": false,
+        "insecure-use-http": false,
+        "ca-cert": ""
+      },
+      "show-suppressed": false,
+      "include-matcher-suppressions": false,
+      "by-cve": false,
+      "SortBy": {
+        "sort-by": "risk"
+      },
+      "name": "",
+      "default-image-pull-source": "",
+      "from": null,
+      "vex-documents": [],
+      "vex-add": [],
+      "match-upstream-kernel-headers": false,
+      "fix-channel": {
+        "redhat-eus": {
+          "apply": "auto",
+          "versions": ">= 8.0"
+        },
+        "ubuntu-esm": {
+          "apply": "auto",
+          "versions": ""
+        }
+      },
+      "timestamp": true,
+      "alerts": {
+        "enable-eol-distro-warnings": true
+      },
+      "db": {
+        "cache-dir": "/root/.cache/grype/db",
+        "update-url": "https://grype.anchore.io/databases",
+        "ca-cert": "",
+        "auto-update": true,
+        "validate-by-hash-on-start": true,
+        "validate-age": true,
+        "max-allowed-built-age": 432000000000000,
+        "require-update-check": false,
+        "update-available-timeout": 30000000000,
+        "update-download-timeout": 300000000000,
+        "max-update-check-frequency": 7200000000000
+      },
+      "exp": {},
+      "dev": {
+        "db": {
+          "debug": false
+        }
+      }
+    },
+    "db": {
+      "status": {
+        "schemaVersion": "v6.1.10",
+        "from": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-13T00:21:35Z_1794584434.tar.zst?checksum=sha256%3A45d983a9834f587403cb814a0f8f6078c905a7c85a84c3c52efb994f125bcf84",
+        "built": "2026-11-13T15:40:34Z",
+        "path": "/root/.cache/grype/db/6/vulnerability.db",
+        "valid": true
+      },
+      "providers": {
+        "alma": {
+          "captured": "2026-11-13T00:21:42Z",
+          "input": "xxh64:7c7f732182a20222"
+        },
+        "alpine": {
+          "captured": "2026-11-13T00:21:47Z",
+          "input": "xxh64:58e23ea952476873"
+        },
+        "amazon": {
+          "captured": "2026-11-13T08:09:30Z",
+          "input": "xxh64:175689076f391ba2"
+        },
+        "arch": {
+          "captured": "2026-11-13T00:21:41Z",
+          "input": "xxh64:6c29863d89e40f65"
+        },
+        "bitnami": {
+          "captured": "2026-11-13T00:21:38Z",
+          "input": "xxh64:1b1b44659e15469f"
+        },
+        "chainguard": {
+          "captured": "2026-11-13T00:21:59Z",
+          "input": "xxh64:b07c6675f4b68bab"
+        },
+        "chainguard-libraries": {
+          "captured": "2026-11-13T00:21:35Z",
+          "input": "xxh64:b0393b01520dedbb"
+        },
+        "debian": {
+          "captured": "2026-11-13T00:22:00Z",
+          "input": "xxh64:ef8ed24d89bc1fd4"
+        },
+        "echo": {
+          "captured": "2026-11-13T00:21:53Z",
+          "input": "xxh64:c8e777d8f016c742"
+        },
+        "eol": {
+          "captured": "2026-11-13T00:21:49Z",
+          "input": "xxh64:ffde365b89c82e35"
+        },
+        "epss": {
+          "captured": "2026-11-13T00:23:10Z",
+          "input": "xxh64:94fe05b01b9b6602"
+        },
+        "fedora": {
+          "captured": "2026-11-13T08:09:42Z",
+          "input": "xxh64:4c229e7b5b01dcf1"
+        },
+        "github": {
+          "captured": "2026-11-13T08:09:46Z",
+          "input": "xxh64:917da470427eb298"
+        },
+        "govulndb": {
+          "captured": "2026-11-13T00:21:42Z",
+          "input": "xxh64:62eb98444ae8ee02"
+        },
+        "hummingbird": {
+          "captured": "2026-11-13T00:44:46Z",
+          "input": "xxh64:745d16e779178a1d"
+        },
+        "kev": {
+          "captured": "2026-11-13T00:22:01Z",
+          "input": "xxh64:783f3e247b968528"
+        },
+        "mariner": {
+          "captured": "2026-11-13T00:21:51Z",
+          "input": "xxh64:c9285c93dc64ed8d"
+        },
+        "minimos": {
+          "captured": "2026-11-13T00:21:52Z",
+          "input": "xxh64:d92e5bf414909a1e"
+        },
+        "nvd": {
+          "captured": "2026-11-13T08:10:26Z",
+          "input": "xxh64:c50d065eba61f3d8"
+        },
+        "oracle": {
+          "captured": "2026-11-13T00:21:45Z",
+          "input": "xxh64:1d0a4566a7c5b420"
+        },
+        "photon": {
+          "captured": "2026-11-13T00:22:05Z",
+          "input": "xxh64:c4cc22d42ae165c7"
+        },
+        "rhel": {
+          "captured": "2026-11-13T00:40:40Z",
+          "input": "xxh64:f591bcf7eaa5a728"
+        },
+        "secureos": {
+          "captured": "2026-11-13T00:21:50Z",
+          "input": "xxh64:779faf39a5991ba5"
+        },
+        "sles": {
+          "captured": "2026-11-13T00:41:27Z",
+          "input": "xxh64:e291b42fdcd739a1"
+        },
+        "ubuntu": {
+          "captured": "2026-11-13T15:06:50Z",
+          "input": "xxh64:c214a441a3204864"
+        },
+        "wolfi": {
+          "captured": "2026-11-13T00:21:49Z",
+          "input": "xxh64:c85e4412eca6887a"
+        }
+      }
+    },
+    "timestamp": "2026-11-13T20:59:30.137584091+02:00"
+  }
+}

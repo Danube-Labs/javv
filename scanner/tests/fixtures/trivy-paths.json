@@ -1,0 +1,760 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "trimmed from node:16-slim, tomcat:9.0.50-jdk11 and rancher/local-path-provisioner:v0.0.36",
+  "ArtifactType": "container_image",
+  "Trivy": {
+    "Version": "0.76.2"
+  },
+  "Results": [
+    {
+      "Target": "docker.io/library/node:16-slim (debian 10.13)",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Packages": [
+        {
+          "ID": "bsdutils@1:2.33.1-0.1",
+          "Name": "bsdutils",
+          "Identifier": {
+            "PURL": "pkg:deb/debian/bsdutils@2.33.1-0.1?arch=amd64&distro=debian-10.13&epoch=1",
+            "UID": "bc387084df03f5d4"
+          },
+          "Version": "2.33.1",
+          "Release": "0.1",
+          "Epoch": 1,
+          "Arch": "amd64",
+          "SrcName": "util-linux",
+          "SrcVersion": "2.33.1",
+          "SrcRelease": "0.1",
+          "Licenses": [
+            "GPL-2.0-or-later",
+            "GPL-2.0-only",
+            "public-domain",
+            "BSD-4-Clause",
+            "MIT",
+            "BSD-2-Clause",
+            "BSD-3-Clause",
+            "LGPL-2.0-or-later",
+            "LGPL-2.1-or-later",
+            "GPL-3.0-or-later",
+            "LGPL-3.0-or-later",
+            "GPL-3.0-only",
+            "LGPL-2.0-only",
+            "LGPL-2.1-only",
+            "LGPL-3.0-only"
+          ],
+          "Maintainer": "LaMont Jones <lamont@debian.org>",
+          "Repository": {
+            "Class": "official"
+          },
+          "Layer": {
+            "Digest": "sha256:91f01557fe0da558070d4f24631c94e91a80877a24621b52b8b13009b62d8d96",
+            "DiffID": "sha256:7181ae4642b70e4e7e2a1818a652956c208c733b4dfabb8e45df8fda7d993332"
+          },
+          "InstalledFiles": [
+            "/usr/bin/logger",
+            "/usr/bin/renice",
+            "/usr/bin/script",
+            "/usr/bin/scriptreplay",
+            "/usr/bin/wall",
+            "/usr/share/bash-completion/completions/logger",
+            "/usr/share/bash-completion/completions/renice",
+            "/usr/share/bash-completion/completions/script",
+            "/usr/share/bash-completion/completions/scriptreplay",
+            "/usr/share/bash-completion/completions/wall",
+            "/usr/share/doc/bsdutils/changelog.Debian.gz",
+            "/usr/share/doc/bsdutils/changelog.gz",
+            "/usr/share/doc/bsdutils/copyright",
+            "/usr/share/lintian/overrides/bsdutils",
+            "/usr/share/man/man1/logger.1.gz",
+            "/usr/share/man/man1/renice.1.gz",
+            "/usr/share/man/man1/script.1.gz",
+            "/usr/share/man/man1/scriptreplay.1.gz",
+            "/usr/share/man/man1/wall.1.gz"
+          ],
+          "AnalyzedBy": "dpkg"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2021-37600",
+          "VendorIDs": [
+            "DLA-3782-1"
+          ],
+          "PkgID": "bsdutils@1:2.33.1-0.1",
+          "PkgName": "bsdutils",
+          "PkgIdentifier": {
+            "PURL": "pkg:deb/debian/bsdutils@2.33.1-0.1?arch=amd64&distro=debian-10.13&epoch=1",
+            "UID": "bc387084df03f5d4"
+          },
+          "InstalledVersion": "1:2.33.1-0.1",
+          "FixedVersion": "2.33.1-0.1+deb10u1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:91f01557fe0da558070d4f24631c94e91a80877a24621b52b8b13009b62d8d96",
+            "DiffID": "sha256:7181ae4642b70e4e7e2a1818a652956c208c733b4dfabb8e45df8fda7d993332"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2021-37600",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Fingerprint": "sha256:14d4a66076e09f0f199ba58f4443d9596c517d84e8f1d902cdc182a7131ec75c",
+          "Title": "util-linux: integer overflow can lead to buffer overflow in get_sem_elements() in sys-utils/ipcutils.c",
+          "Description": "An integer overflow in util-linux through 2.37.1 can potentially cause a buffer overflow if an attacker were able to use system resources in a way that leads to a large number in the /proc/sysvipc/sem file. NOTE: this is unexploitable in GNU C Library environments, and possibly in all realistic environments.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-190"
+          ],
+          "VendorSeverity": {
+            "amazon": 1,
+            "cbl-mariner": 2,
+            "nvd": 2,
+            "photon": 2,
+            "redhat": 1,
+            "ubuntu": 1
+          },
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:L/AC:H/Au:N/C:N/I:N/A:P",
+              "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+              "V2Score": 1.2,
+              "V3Score": 5.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H",
+              "V3Score": 4.7
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2021-37600",
+            "https://cert-portal.siemens.com/productcert/html/ssa-398330.html",
+            "https://github.com/karelzak/util-linux/commit/1c9143d0c1f979c3daf10e1c37b5b1e916c22a1c",
+            "https://github.com/karelzak/util-linux/issues/1395",
+            "https://lists.debian.org/debian-lts-announce/2024/04/msg00005.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2021-37600",
+            "https://security.gentoo.org/glsa/202401-08",
+            "https://security.netapp.com/advisory/ntap-20210902-0002/",
+            "https://www.cve.org/CVERecord?id=CVE-2021-37600"
+          ],
+          "PublishedDate": "2021-07-30T14:15:18.737Z",
+          "LastModifiedDate": "2026-10-14T12:17:15.117Z"
+        }
+      ]
+    },
+    {
+      "Target": "Node.js",
+      "Class": "lang-pkgs",
+      "Type": "node-pkg",
+      "Packages": [
+        {
+          "ID": "@tootallnate/once@2.0.0",
+          "Name": "@tootallnate/once",
+          "Identifier": {
+            "PURL": "pkg:npm/%40tootallnate/once@2.0.0",
+            "UID": "c50acaafa3f3651f"
+          },
+          "Version": "2.0.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Layer": {
+            "Digest": "sha256:72f5a0bbd6d5f85fce35070bd624cf69c2ceb91424afe8a5ed2a02442cdd711c",
+            "DiffID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8"
+          },
+          "FilePath": "usr/local/lib/node_modules/npm/node_modules/@tootallnate/once/package.json",
+          "AnalyzedBy": "node-pkg"
+        },
+        {
+          "ID": "brace-expansion@1.1.11",
+          "Name": "brace-expansion",
+          "Identifier": {
+            "PURL": "pkg:npm/brace-expansion@1.1.11",
+            "UID": "d57c7e5fa9e0d52"
+          },
+          "Version": "1.1.11",
+          "Licenses": [
+            "MIT"
+          ],
+          "Layer": {
+            "Digest": "sha256:72f5a0bbd6d5f85fce35070bd624cf69c2ceb91424afe8a5ed2a02442cdd711c",
+            "DiffID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8"
+          },
+          "FilePath": "usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/brace-expansion/package.json",
+          "AnalyzedBy": "node-pkg"
+        },
+        {
+          "ID": "brace-expansion@1.1.11",
+          "Name": "brace-expansion",
+          "Identifier": {
+            "PURL": "pkg:npm/brace-expansion@1.1.11",
+            "UID": "927059ccd3339e7f"
+          },
+          "Version": "1.1.11",
+          "Licenses": [
+            "MIT"
+          ],
+          "Layer": {
+            "Digest": "sha256:72f5a0bbd6d5f85fce35070bd624cf69c2ceb91424afe8a5ed2a02442cdd711c",
+            "DiffID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8"
+          },
+          "FilePath": "usr/local/lib/node_modules/npm/node_modules/rimraf/node_modules/brace-expansion/package.json",
+          "AnalyzedBy": "node-pkg"
+        },
+        {
+          "ID": "brace-expansion@2.0.1",
+          "Name": "brace-expansion",
+          "Identifier": {
+            "PURL": "pkg:npm/brace-expansion@2.0.1",
+            "UID": "becc2016f5337669"
+          },
+          "Version": "2.0.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Layer": {
+            "Digest": "sha256:72f5a0bbd6d5f85fce35070bd624cf69c2ceb91424afe8a5ed2a02442cdd711c",
+            "DiffID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8"
+          },
+          "FilePath": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+          "AnalyzedBy": "node-pkg"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2026-3449",
+          "VendorIDs": [
+            "GHSA-vpq2-c234-7xj6"
+          ],
+          "PkgID": "@tootallnate/once@2.0.0",
+          "PkgName": "@tootallnate/once",
+          "PkgPath": "usr/local/lib/node_modules/npm/node_modules/@tootallnate/once/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/%40tootallnate/once@2.0.0",
+            "UID": "c50acaafa3f3651f"
+          },
+          "InstalledVersion": "2.0.0",
+          "FixedVersion": "3.0.1, 2.0.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:72f5a0bbd6d5f85fce35070bd624cf69c2ceb91424afe8a5ed2a02442cdd711c",
+            "DiffID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-3449",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:1510c1c1dc92465f61fab89927f732908c0fd823e40789a4366077221753c9c3",
+          "Title": "@tootallnate/once: @tootallnate/once: Denial of Service due to incorrect control flow scoping with AbortSignal",
+          "Description": "Versions of the package @tootallnate/once before 3.0.1 are vulnerable to Incorrect Control Flow Scoping in promise resolving when AbortSignal option is used. The Promise remains in a permanently pending state after the signal is aborted, causing any await or .then() usage to hang indefinitely. This can cause a control-flow leak that can lead to stalled requests, blocked workers, or degraded application availability.",
+          "Severity": "LOW",
+          "CweIDs": [
+            "CWE-705"
+          ],
+          "VendorSeverity": {
+            "ghsa": 1,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
+              "V40Vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+              "V3Score": 3.3,
+              "V40Score": 1.9
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-3449",
+            "https://github.com/TooTallNate/once",
+            "https://github.com/TooTallNate/once/commit/b9f43cc5259bee2952d91ad3cdbd201a82df448a",
+            "https://github.com/TooTallNate/once/issues/8",
+            "https://github.com/TooTallNate/once/releases/tag/v2.0.1",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-3449",
+            "https://security.snyk.io/vuln/SNYK-JS-TOOTALLNATEONCE-15250612",
+            "https://www.cve.org/CVERecord?id=CVE-2026-3449"
+          ],
+          "PublishedDate": "2026-03-03T05:17:25.017Z",
+          "LastModifiedDate": "2026-06-17T10:43:36.317Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-102276",
+          "VendorIDs": [
+            "GHSA-6j4f-fj2g-mc7p"
+          ],
+          "PkgID": "brace-expansion@2.0.1",
+          "PkgName": "brace-expansion",
+          "PkgPath": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/brace-expansion@2.0.1",
+            "UID": "becc2016f5337669"
+          },
+          "InstalledVersion": "2.0.1",
+          "FixedVersion": "5.0.10, 3.0.7, 2.1.5, 1.1.19",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:72f5a0bbd6d5f85fce35070bd624cf69c2ceb91424afe8a5ed2a02442cdd711c",
+            "DiffID": "sha256:de7107ec43531e9a25f9434250cc5993af701d1c2d93220db3ded3d6a2f3ebe8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-102276",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Fingerprint": "sha256:9c61c5b6ffc308ecf905b6bfa8c73ff7b8d374de540daa3373677cfb674c4462",
+          "Title": "brace-expansion: brace-expansion: Denial of Service via stack exhaustion from crafted brace patterns",
+          "Description": "The brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to 1.1.19, 2.1.5, 3.0.7, and 5.0.10, crafted brace patterns can exhaust the native stack in parseCommaParts because parseCommaParts recursively processes the remainder once per brace group and uses push.apply to pass every element of a very large comma-part array as a function argument. Patterns containing many comma-separated brace groups trigger the recursive path, while the large array triggers the argument-array path without deep recursion. These paths cause recursive and argument-array native stack exhaustion before max or maxLength can limit output, potentially terminating the Node.js process in a process-terminating denial of service. This issue is fixed in versions 1.1.19, 2.1.5, 3.0.7, and 5.0.10.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "ghsa": 3,
+            "oracle-oval": 3,
+            "redhat": 3,
+            "rocky": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:92376",
+            "https://access.redhat.com/errata/RHSA-2026:96234",
+            "https://access.redhat.com/security/cve/CVE-2026-102276",
+            "https://advisory.echohq.com/cve/CVE-2026-102276",
+            "https://bugzilla.redhat.com/2542700",
+            "https://bugzilla.redhat.com/2542707",
+            "https://bugzilla.redhat.com/2553656",
+            "https://bugzilla.redhat.com/2553677",
+            "https://bugzilla.redhat.com/2553678",
+            "https://bugzilla.redhat.com/2559873",
+            "https://bugzilla.redhat.com/2559875",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2542596",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2542700",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2542706",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2542707",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2558973",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2559870",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2559873",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2559875",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2560016",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2560018",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2560019",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2560021",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2560022",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-101911",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-102276",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-102277",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-102278",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-105481",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-105482",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-105483",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-106069",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-106071",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-106072",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-106073",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-106074",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-111497",
+            "https://errata.almalinux.org/9/ALSA-2026-96234.html",
+            "https://errata.rockylinux.org/RLSA-2026:92376",
+            "https://github.com/juliangruber/brace-expansion",
+            "https://github.com/juliangruber/brace-expansion/commit/0bcbfc0a5928c3073d48f42999d1ce4fc1c42fbc",
+            "https://github.com/juliangruber/brace-expansion/commit/316359e6019c39b3254c8ba8e25dc586a480652c",
+            "https://github.com/juliangruber/brace-expansion/commit/5171e681c0922b7ae8bfaf9a331e309107be6edc",
+            "https://github.com/juliangruber/brace-expansion/commit/6735c94873ca570bcdd6a0690033bdd3126379d3",
+            "https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-6j4f-fj2g-mc7p",
+            "https://linux.oracle.com/cve/CVE-2026-102276.html",
+            "https://linux.oracle.com/errata/ELSA-2026-96236.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-102276",
+            "https://www.cve.org/CVERecord?id=CVE-2026-102276"
+          ],
+          "PublishedDate": "2026-09-28T21:17:16.033Z",
+          "LastModifiedDate": "2026-09-30T19:57:08.043Z"
+        }
+      ]
+    },
+    {
+      "Target": "Java",
+      "Class": "lang-pkgs",
+      "Type": "jar",
+      "Packages": [
+        {
+          "Name": "org.apache.tomcat:tomcat-catalina",
+          "Identifier": {
+            "PURL": "pkg:maven/org.apache.tomcat/tomcat-catalina@9.0.50",
+            "UID": "9d5eb926672f43ee"
+          },
+          "Version": "9.0.50",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Layer": {
+            "Digest": "sha256:613f58a3636e41ead9ef8b00a74d6fd07e24bc47a38918775a17f94a27013651",
+            "DiffID": "sha256:ec329d1fff1d47afe28b0851d9320b6b05c8ccc7202a49f4382c2c6343e3faa8"
+          },
+          "FilePath": "usr/local/tomcat/lib/catalina.jar",
+          "AnalyzedBy": "jar"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2024-52316",
+          "VendorIDs": [
+            "GHSA-xcpr-7mr4-h4xq"
+          ],
+          "PkgName": "org.apache.tomcat:tomcat-catalina",
+          "PkgPath": "usr/local/tomcat/lib/catalina.jar",
+          "PkgIdentifier": {
+            "PURL": "pkg:maven/org.apache.tomcat/tomcat-catalina@9.0.50",
+            "UID": "9d5eb926672f43ee"
+          },
+          "InstalledVersion": "9.0.50",
+          "FixedVersion": "9.0.96, 10.1.30, 11.0.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:613f58a3636e41ead9ef8b00a74d6fd07e24bc47a38918775a17f94a27013651",
+            "DiffID": "sha256:ec329d1fff1d47afe28b0851d9320b6b05c8ccc7202a49f4382c2c6343e3faa8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-52316",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory Maven",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Amaven"
+          },
+          "Fingerprint": "sha256:662ca20c2a4af16dce27537153b9f73132a663121a0567379eddb16f2188ff89",
+          "Title": "tomcat: Apache Tomcat: Authentication bypass when using Jakarta Authentication API",
+          "Description": "Unchecked Error Condition vulnerability in Apache Tomcat. If Tomcat is configured to use a custom Jakarta Authentication (formerly JASPIC) ServerAuthContext component which may throw an exception during the authentication process without explicitly setting an HTTP status to indicate failure, the authentication may not fail, allowing the user to bypass the authentication process. There are no known Jakarta Authentication components that behave in this way.\n\nThis issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.0-M26, from 10.1.0-M1 through 10.1.30, from 9.0.0-M1 through 9.0.95.\n\nThe following versions were EOL at the time the CVE was created but are \nknown to be affected: 8.5.0 though 8.5.100. Other EOL versions may also be affected.\n\n\nUsers are recommended to upgrade to version 11.0.0, 10.1.31 or 9.0.96, which fix the issue.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-391",
+            "CWE-754"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "bitnami": 4,
+            "ghsa": 4,
+            "oracle-oval": 2,
+            "photon": 4,
+            "redhat": 1,
+            "rocky": 3,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "bitnami": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "V3Score": 9.8
+            },
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "V3Score": 9.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "http://www.openwall.com/lists/oss-security/2024/11/18/2",
+            "https://access.redhat.com/errata/RHSA-2026:68677",
+            "https://access.redhat.com/security/cve/CVE-2024-52316",
+            "https://bugzilla.redhat.com/2476511",
+            "https://bugzilla.redhat.com/2476513",
+            "https://bugzilla.redhat.com/2476516",
+            "https://bugzilla.redhat.com/2476519",
+            "https://bugzilla.redhat.com/2476520",
+            "https://bugzilla.redhat.com/2494669",
+            "https://bugzilla.redhat.com/2499917",
+            "https://bugzilla.redhat.com/2499931",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2326972",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2332815",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2369253",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2388226",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2406588",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2406590",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2440430",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2440437",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2457037",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2457038",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2457039",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2457040",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2457044",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476511",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476512",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476513",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476516",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476518",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476519",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2476520",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494668",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494669",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494675",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494676",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494678",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494681",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494688",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2499917",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2499931",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-52316",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-54677",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-46701",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-55668",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-55754",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-61795",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-66614",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-24733",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-24880",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-25854",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-29145",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-34483",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-34487",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-41284",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-41293",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-42498",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-43512",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-43513",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-43514",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-43515",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-50229",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-53404",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-53434",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-55276",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-55955",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-55956",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-55957",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59083",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59084",
+            "https://errata.almalinux.org/8/ALSA-2026-68677.html",
+            "https://errata.rockylinux.org/RLSA-2026:68677",
+            "https://github.com/apache/tomcat",
+            "https://github.com/apache/tomcat/commit/6d097a66746635df6880fe7662a792156b0eca14",
+            "https://github.com/apache/tomcat/commit/7532f9dc4a8c37ec958f79dc82c4924a6c539223",
+            "https://github.com/apache/tomcat/commit/7532f9dc4a8c37ec958f79dc82c4924a6c539223%20%289.0.96%29",
+            "https://github.com/apache/tomcat/commit/acc2f01395f895980f5d8a64573fcc1bade13369",
+            "https://github.com/apache/tomcat/commit/acc2f01395f895980f5d8a64573fcc1bade13369%20%2810.1.31%29",
+            "https://linux.oracle.com/cve/CVE-2024-52316.html",
+            "https://linux.oracle.com/errata/ELSA-2025-7497.html",
+            "https://lists.apache.org/thread/lopzlqh91jj9n334g02om08sbysdb928",
+            "https://lists.debian.org/debian-lts-announce/2025/01/msg00009.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-52316",
+            "https://security.netapp.com/advisory/ntap-20250124-0003",
+            "https://security.netapp.com/advisory/ntap-20250124-0003/",
+            "https://www.cve.org/CVERecord?id=CVE-2024-52316"
+          ],
+          "PublishedDate": "2024-11-18T12:15:18.6Z",
+          "LastModifiedDate": "2026-06-17T08:06:59.85Z"
+        }
+      ]
+    },
+    {
+      "Target": "usr/bin/local-path-provisioner",
+      "Class": "lang-pkgs",
+      "Type": "gobinary",
+      "Packages": [
+        {
+          "ID": "stdlib@v1.26.3",
+          "Name": "stdlib",
+          "Identifier": {
+            "PURL": "pkg:golang/stdlib@v1.26.3",
+            "UID": "d81c7f40b3007f26"
+          },
+          "Version": "v1.26.3",
+          "Relationship": "direct",
+          "Layer": {
+            "Digest": "sha256:2ea378030e229653465b96cba2649a10ad5ce102171db84c263bb85a1bd8854f",
+            "DiffID": "sha256:df6f1ce51bd467f781bb34082d1ed68fe435fd03d70738fcf0f8ce14bc2e4348"
+          },
+          "AnalyzedBy": "gobinary"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2026-111943",
+          "VendorIDs": [
+            "GO-2026-6809"
+          ],
+          "PkgID": "stdlib@v1.26.3",
+          "PkgName": "stdlib",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/stdlib@v1.26.3",
+            "UID": "d81c7f40b3007f26"
+          },
+          "InstalledVersion": "v1.26.3",
+          "FixedVersion": "1.26.10, 1.27.3",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:2ea378030e229653465b96cba2649a10ad5ce102171db84c263bb85a1bd8854f",
+            "DiffID": "sha256:df6f1ce51bd467f781bb34082d1ed68fe435fd03d70738fcf0f8ce14bc2e4348"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-111943",
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:a8448b821b3c3c0d4dce5d13e71492e5807245b3aadccb9e6979c31af18fa290",
+          "Title": "crypto/x509: golang: crypto/x509: Man-in-the-middle attacks via untrusted intermediate certificates",
+          "Description": "On most platforms, Go uses the given system root certificates. However, in some narrower cases, the system trust stores may not be updated without further action. To defend against the narrower set of cases that may remain affected, a denylist was added in crypto/x509 to return an error when calling Verify with any of the known intermediate certificates that are no longer considered to be trustworthy.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-299"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "oracle-oval": 3,
+            "redhat": 3,
+            "rocky": 3
+          },
+          "CVSS": {
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N",
+              "V3Score": 6.8
+            }
+          },
+          "References": [
+            "http://www.openwall.com/lists/oss-security/2026/10/20/29",
+            "https://access.redhat.com/errata/RHSA-2026:95518",
+            "https://access.redhat.com/errata/RHSA-2026:95638",
+            "https://access.redhat.com/security/cve/CVE-2026-111943",
+            "https://bugzilla.redhat.com/2548336",
+            "https://bugzilla.redhat.com/2556068",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2556068",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-111943",
+            "https://errata.almalinux.org/9/ALSA-2026-95518.html",
+            "https://errata.rockylinux.org/RLSA-2026:95638",
+            "https://github.com/golang/go/issues/82345",
+            "https://go.dev/cl/851047",
+            "https://go.dev/issue/82345",
+            "https://groups.google.com/g/golang-announce/c/66pojueaQek",
+            "https://groups.google.com/g/golang-nuts/c/K22sG2AYnKU",
+            "https://linux.oracle.com/cve/CVE-2026-111943.html",
+            "https://linux.oracle.com/errata/ELSA-2026-95638.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-111943",
+            "https://pkg.go.dev/vuln/GO-2026-6809",
+            "https://www.cve.org/CVERecord?id=CVE-2026-111943"
+          ],
+          "PublishedDate": "2026-10-21T01:17:20.797Z",
+          "LastModifiedDate": "2026-10-30T13:18:28.74Z"
+        }
+      ]
+    },
+    {
+      "Target": "usr/local/go/bin/go",
+      "Class": "lang-pkgs",
+      "Type": "gobinary",
+      "Packages": [
+        {
+          "ID": "stdlib@v1.26.3",
+          "Name": "stdlib",
+          "Identifier": {
+            "PURL": "pkg:golang/stdlib@v1.26.3",
+            "UID": "fa14e5a6e827f2a1"
+          },
+          "Version": "v1.26.3",
+          "Relationship": "direct",
+          "Layer": {
+            "Digest": "sha256:1a70bdedd442d430ea119cf8db8c0031b4eedeb5bde886892773876ded7629e8",
+            "DiffID": "sha256:bf2ba1efee40f4bea5fc45e72a2c97e65e2302341d474f3d56beb1bfc3bd7480"
+          },
+          "AnalyzedBy": "gobinary"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2026-111943",
+          "VendorIDs": [
+            "GO-2026-6809"
+          ],
+          "PkgID": "stdlib@v1.26.3",
+          "PkgName": "stdlib",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/stdlib@v1.26.3",
+            "UID": "fa14e5a6e827f2a1"
+          },
+          "InstalledVersion": "v1.26.3",
+          "FixedVersion": "1.26.10, 1.27.3",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:1a70bdedd442d430ea119cf8db8c0031b4eedeb5bde886892773876ded7629e8",
+            "DiffID": "sha256:bf2ba1efee40f4bea5fc45e72a2c97e65e2302341d474f3d56beb1bfc3bd7480"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-111943",
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:6cd376eda79cc89a0dbdda88096966b18e2c069f8a7e1f25731967c1877e2fe0",
+          "Title": "crypto/x509: golang: crypto/x509: Man-in-the-middle attacks via untrusted intermediate certificates",
+          "Description": "On most platforms, Go uses the given system root certificates. However, in some narrower cases, the system trust stores may not be updated without further action. To defend against the narrower set of cases that may remain affected, a denylist was added in crypto/x509 to return an error when calling Verify with any of the known intermediate certificates that are no longer considered to be trustworthy.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-299"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "oracle-oval": 3,
+            "redhat": 3,
+            "rocky": 3
+          },
+          "CVSS": {
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N",
+              "V3Score": 6.8
+            }
+          },
+          "References": [
+            "http://www.openwall.com/lists/oss-security/2026/10/20/29",
+            "https://access.redhat.com/errata/RHSA-2026:95518",
+            "https://access.redhat.com/errata/RHSA-2026:95638",
+            "https://access.redhat.com/security/cve/CVE-2026-111943",
+            "https://bugzilla.redhat.com/2548336",
+            "https://bugzilla.redhat.com/2556068",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2556068",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-111943",
+            "https://errata.almalinux.org/9/ALSA-2026-95518.html",
+            "https://errata.rockylinux.org/RLSA-2026:95638",
+            "https://github.com/golang/go/issues/82345",
+            "https://go.dev/cl/851047",
+            "https://go.dev/issue/82345",
+            "https://groups.google.com/g/golang-announce/c/66pojueaQek",
+            "https://groups.google.com/g/golang-nuts/c/K22sG2AYnKU",
+            "https://linux.oracle.com/cve/CVE-2026-111943.html",
+            "https://linux.oracle.com/errata/ELSA-2026-95638.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-111943",
+            "https://pkg.go.dev/vuln/GO-2026-6809",
+            "https://www.cve.org/CVERecord?id=CVE-2026-111943"
+          ],
+          "PublishedDate": "2026-10-21T01:17:20.797Z",
+          "LastModifiedDate": "2026-10-30T13:18:28.74Z"
+        }
+      ]
+    }
+  ]
+}
