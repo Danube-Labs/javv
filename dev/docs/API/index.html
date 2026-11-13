@@ -3061,7 +3061,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/findings</code></td>
 <td>session</td>
-<td>One page of findings, with a cursor (<a href="#read-a-list-page-by-page">Read a list page by page</a>). <code>size</code> is 1 to 500, default 50. <code>sort</code> is <code>severity_rank</code>, <code>first_seen_at</code>, <code>last_scan_at</code>, <code>cvss</code> or <code>epss</code>. The last page closes the search of the cursor. With <code>keep_open=true</code>, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with <code>POST /api/v1/cursors/close</code>.</td>
+<td>One page of findings, with a cursor (<a href="#read-a-list-page-by-page">Read a list page by page</a>). <code>size</code> is 1 to 500, default 50. <code>sort</code> is <code>severity_rank</code>, <code>first_seen_at</code>, <code>last_scan_at</code>, <code>cvss</code> or <code>epss</code>. The last page closes the search of the cursor. With <code>keep_open=true</code>, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with <code>POST /api/v1/cursors/close</code>. Each row has <code>locations_total</code>, the number of files where the scanner found the package. With <code>locations=true</code>, each row also has <code>locations</code>, the first 64 of these file paths in sorted order. The cursor does not keep <code>locations</code>, so send it with each page. A scanner that sends schema 3 or 4 does not report paths, so both fields are <code>null</code>. A finding that no scan reported after the upgrade to mapping version 23 has neither field. At a past <code>as_of</code>, a row from a scan before that upgrade has <code>locations_total: null</code>. With <code>locations=true</code>, it also has <code>locations: null</code>.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3310,7 +3310,7 @@ that fails during your read can show on a later page.</p>
 <td>PATCH</td>
 <td><code>/api/v1/findings/{finding_key}/triage</code></td>
 <td><code>can_triage</code></td>
-<td>Changes the state of one finding: <code>open</code>, <code>acknowledged</code>, <code>not_affected</code>, <code>risk_accepted</code> or <code>resolved</code>. <code>not_affected</code> needs a <code>vex_justification</code>. <code>risk_accepted</code> also needs <code>can_accept_audit_final</code>. A change of state of a risk-accepted finding also needs <code>can_accept_audit_final</code>. This includes a <code>stale</code> finding that goes back to <code>risk_accepted</code> when the scanner reports it again. A change of <code>notes</code> or <code>assignee</code> only does not need it.</td>
+<td>Changes the state of one finding: <code>open</code>, <code>acknowledged</code>, <code>not_affected</code>, <code>risk_accepted</code> or <code>resolved</code>. <code>not_affected</code> needs a <code>vex_justification</code>. <code>risk_accepted</code> also needs <code>can_accept_audit_final</code>. A change of state of a risk-accepted finding also needs <code>can_accept_audit_final</code>. This includes a <code>stale</code> finding that goes back to <code>risk_accepted</code> when the scanner reports it again. A change of <code>notes</code> or <code>assignee</code> only does not need it. The answer has the finding as JAVV stores it, in <code>finding</code>. Thus it has <code>locations</code> and <code>locations_total</code>, as <code>GET /api/v1/findings</code> with <code>locations=true</code> gives them.</td>
 </tr>
 <tr>
 <td>POST</td>
@@ -4103,7 +4103,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 </tr>
 <tr>
 <td><code>search_findings</code></td>
-<td><code>GET /api/v1/findings</code>. <code>size</code> is 20 by default and 25 at most. The tool has no <code>keep_open</code>. A first page, with no <code>cursor</code>, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text <code>cursor closed</code>, which tells this cause. A search that ended after its keep-alive gets 410 with the text <code>cursor expired</code>.</td>
+<td><code>GET /api/v1/findings</code>. <code>size</code> is 20 by default and 25 at most. The tool has no <code>keep_open</code> and no <code>locations</code>: each row has <code>locations_total</code> and no paths. A first page, with no <code>cursor</code>, closes the open search of the last first page of the same token and tool. A later page of the closed search gets 410 with the text <code>cursor closed</code>, which tells this cause. A search that ended after its keep-alive gets 410 with the text <code>cursor expired</code>.</td>
 </tr>
 <tr>
 <td><code>count_findings</code></td>
@@ -4235,7 +4235,7 @@ it logs <code>ingest failure not recorded</code> with the <code>failure_id</code
 <tr>
 <td><code>set_triage</code></td>
 <td><code>write</code></td>
-<td><code>PATCH /api/v1/findings/{finding_key}/triage</code></td>
+<td><code>PATCH /api/v1/findings/{finding_key}/triage</code>. The answer has the stored finding with its <code>locations</code>, as the route gives it.</td>
 </tr>
 <tr>
 <td><code>bulk_triage</code></td>
