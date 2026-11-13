@@ -97,9 +97,18 @@ def scan_all(
         log.info(
             "scan done",
             image_ref=t.image_ref,
-            findings=len(scanned.findings),
+            findings=len(scanned.findings),  # report rows: ingest joins them per finding key
+            entries_with_paths=sum(1 for f in scanned.findings if f.locations),
             duration_s=round(time.monotonic() - started, 2),
         )
+        if scanned.paths_dropped or scanned.paths_over_cap:
+            # counts only: a path comes from the content of the image (issue 1077)
+            log.warning(
+                "paths left out",
+                image_ref=t.image_ref,
+                dropped=scanned.paths_dropped,
+                over_cap=scanned.paths_over_cap,
+            )
         envelope = build_envelope(
             run,
             cluster_id=cluster_id,
