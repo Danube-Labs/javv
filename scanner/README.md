@@ -150,7 +150,7 @@ envelope is schema 5. The backend accepts 3, 4 and 5, so upgrade the backend fir
   path once and keeps the first 64 sorted paths. One bad file name thus never stops the push of an image.
 - The scanner sends each report row with its own paths and never merges rows. Ingest joins them.
 - `scan done` counts the rows with paths (`entries_with_paths`). A warning `paths left out` counts
-  the paths it did not send. No log line holds a path.
+  the paths it did not send. These two lines hold counts, not paths.
 - The Nomad and Docker scan scripts still send schema 4, with no paths (issue 1199).
 
 ## Provenance (D41)

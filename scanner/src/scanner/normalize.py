@@ -51,8 +51,9 @@ def canonical_severity(raw: object) -> str:
 # 64 paths in one entry, 1,024 characters in one path.
 PATH_CAP = 64
 _PATH_CHARS = 1024
-# a control character, a line or paragraph separator, a format character (bidi, zero-width)
-_UNSHOWN = frozenset({"Cc", "Cf", "Zl", "Zp"})
+# a control character, a line or paragraph separator, a format character (bidi, zero-width), and
+# a lone surrogate, which has no UTF-8 form: the envelope could not be written with it
+_UNSHOWN = frozenset({"Cc", "Cf", "Zl", "Zp", "Cs"})
 
 
 class CleanPaths(NamedTuple):

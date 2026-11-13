@@ -62,7 +62,11 @@ async def _push_a_run_with_a_repeated_entry(
         "counts": counts,
         "delivered": True,
         "inventory_committed": True,
-        "paths": ["/usr/bin/a", "/usr/bin/b"],
+        # what `scanner.compat` writes: each finding with the paths of all its entries
+        "finding_paths": [
+            [f["vuln_id"], f["package_name"], f["package_version"], paths]
+            for f, paths in ((first, ["/usr/bin/a", "/usr/bin/b"]), (second, []))
+        ],
     }
 
 
@@ -108,20 +112,21 @@ async def test_a_lost_entry_fails_the_check(tmp_path: Path) -> None:
 
 
 @requires_opensearch
-async def test_a_lost_path_fails_the_check(tmp_path: Path) -> None:
+async def test_a_path_on_the_wrong_finding_fails_the_check(tmp_path: Path) -> None:
     client, cluster = AsyncOpenSearch(hosts=[OS_URL]), f"c-rt-{uuid.uuid4().hex[:8]}"
     try:
         summary = await _push_a_run_with_a_repeated_entry(client, cluster)
-        # the scanner sent a path that the store does not hold
-        sent = {**summary, "paths": ["/usr/bin/a", "/usr/bin/b", "/usr/bin/c"]}
-        result = _check(sent, tmp_path)
-        older = _check({k: v for k, v in summary.items() if k != "paths"}, tmp_path)
+        # the store holds the paths, but on the other finding than the scanner sent them for
+        (a, b) = summary["finding_paths"]
+        moved = {**summary, "finding_paths": [[*a[:3], []], [*b[:3], a[3]]]}
+        result = _check(moved, tmp_path)
+        older = _check({k: v for k, v in summary.items() if k != "finding_paths"}, tmp_path)
     finally:
         await client.indices.delete(
             index=f"javv-*-{cluster}-*", params={"ignore_unavailable": "true"}
         )
         await client.close()
     assert result.returncode == 1
-    assert 'only sent ["/usr/bin/c"], only stored []' in result.stdout
+    assert "paths of a finding differ" in result.stdout and "/usr/bin/b" in result.stdout
     assert older.returncode == 1  # a scanner from before the paths writes no `paths`
     assert "the summary lists no paths" in older.stdout

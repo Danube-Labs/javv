@@ -100,6 +100,7 @@ def test_no_path_gives_an_empty_result() -> None:
         *("/a\x00b", "/a\nb", "/a\x7fb"),  # ASCII controls
         *("/a\x85b", "/a\u2028b"),  # a C1 control, a line separator
         *("/a\u202eb", "/a\u200bb"),  # a bidi override, a zero-width space
+        "/a\udc80b",  # a lone surrogate: no UTF-8 text, so the envelope could not be written
         7,
         None,
     ],

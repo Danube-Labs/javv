@@ -14,9 +14,10 @@ import argparse
 import json
 import os
 import sys
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import httpx
 import structlog
@@ -27,8 +28,8 @@ from scanner.config import GrypeConfig, TrivyConfig
 from scanner.discovery import ImageTarget, Location
 from scanner.envelope import EffectiveConfig, Envelope, Scanner, build_envelope, new_scan_run
 from scanner.inventory import commit_inventory
-from scanner.models import ScanResult
-from scanner.normalize import COUNT_COLUMN, SEVERITIES
+from scanner.models import Finding, ScanResult
+from scanner.normalize import COUNT_COLUMN, PATH_CAP, SEVERITIES
 from scanner.orders import fetch_scan_order
 from scanner.push import RetryBudget, push_envelope
 from scanner.run import ScanFn, read_backend_env, scan_all, scan_wiring
@@ -58,15 +59,19 @@ log = structlog.get_logger()
 
 
 def contract_violations(
-    result: ScanResult, *, scanner: Scanner, expect_findings: bool
+    result: ScanResult, *, scanner: Scanner, expect_findings: bool, expect_paths: bool = False
 ) -> list[str]:
-    """Return human-readable contract violations; empty list = the version is compatible."""
+    """Return human-readable contract violations; empty list = the version is compatible.
+    `expect_paths`: the image is a fixture, which has paths for both scanners (issue 1077)."""
     violations: list[str] = []
 
     if not result.provenance.scanner_version:
         violations.append("scanner_version missing — provenance path drifted")
     if expect_findings and not result.findings:
         violations.append("no findings parsed on a known-vulnerable image — parse path drifted")
+    if expect_paths and result.findings and not any(f.locations for f in result.findings):
+        # an empty set of paths also passes the round trip, so the gate must catch it here
+        violations.append("no paths parsed on a fixture image — path parse drifted")
 
     non_canonical = [f.vuln_id for f in result.findings if f.severity_canonical not in SEVERITIES]
     if non_canonical:
@@ -92,7 +97,19 @@ def contract_violations(
 
 def run_compat(scanner: Scanner, image: str) -> tuple[ScanResult, list[str]]:
     result = _DRIVERS[scanner](image)
-    return result, contract_violations(result, scanner=scanner, expect_findings=True)
+    return result, contract_violations(
+        result, scanner=scanner, expect_findings=True, expect_paths=image in COMPAT_IMAGES.values()
+    )
+
+
+def finding_paths(findings: Sequence[Finding]) -> list[list[Any]]:
+    """`[vuln_id, package_name, package_version, paths]` for each finding of one envelope: the
+    paths of all its rows, sorted, the first 64. Ingest joins them so (issue 1077, D1 B and D2),
+    and the round trip compares each stored finding with this."""
+    joined: dict[tuple[str, str, str], set[str]] = {}
+    for f in findings:
+        joined.setdefault((f.vuln_id, f.package_name, f.package_version), set()).update(f.locations)
+    return sorted([*key, sorted(paths)[:PATH_CAP]] for key, paths in joined.items())
 
 
 @dataclass(frozen=True)
@@ -107,7 +124,8 @@ class PushSummary:
     counts: dict[str, int]
     delivered: bool
     inventory_committed: bool
-    paths: list[str]  # every path in the envelope, sorted, once (issue 1077)
+    # [vuln_id, package_name, package_version, paths] for each finding (issue 1077)
+    finding_paths: list[list[Any]]
 
 
 def push_compat(
@@ -174,7 +192,9 @@ def push_compat(
     if not scanned or not pushed:
         return None, None, ["the scan failed before anything was pushed (see the warning above)"]
     result, envelope = scanned[0], pushed[0]
-    violations = contract_violations(result, scanner=scanner, expect_findings=True)
+    violations = contract_violations(
+        result, scanner=scanner, expect_findings=True, expect_paths=image in COMPAT_IMAGES.values()
+    )
     summary = PushSummary(
         scanner=scanner,
         scanner_version=result.provenance.scanner_version,
@@ -184,7 +204,7 @@ def push_compat(
         counts=envelope.counts.model_dump(),
         delivered=results[0].delivered,
         inventory_committed=bool(committed and committed[0]),
-        paths=sorted({p for f in envelope.findings for p in f.locations}),
+        finding_paths=finding_paths(envelope.findings),
     )
     if not summary.delivered:
         violations.append("the backend did not accept the envelope (dead-lettered)")

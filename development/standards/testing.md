@@ -24,8 +24,8 @@ For anything that depends on OpenSearch behavior (merge semantics, `update_by_qu
   version: the real binary scans the two compat fixtures, `scanner.compat --push` sends each through the real cycle
   to a real backend, and `development/scripts/check-ingest-roundtrip.sh` checks the run in the store: the
   history rows per severity against the counts of the stored scan event (both count findings, issue
-  1076), its `report_entries` against the entries that were sent, the file paths of its history rows
-  against the paths that were sent (issue 1077), its scanner version, and the committed inventory. The
+  1076), its `report_entries` against the entries that were sent, the file paths of each history row
+  against the paths that were sent for its finding (issue 1077), its scanner version, and the committed inventory. The
   second fixture has the same CVE in many Go binaries, so repeated rows.
   `backend/tests/test_ingest_roundtrip_script.py` runs the script on a run with a repeated entry.
 
