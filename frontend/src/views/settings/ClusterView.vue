@@ -25,9 +25,9 @@ import { useToastStore } from '@/stores/toast'
 
 import { useFleetClusters } from './clusterRetirement'
 
-// the envelope contract version this backend accepts (D44 schema v3 → v4 joint stamp; the
-// ruled §13.8 display value — bump alongside the ingest contract)
-const SCHEMA_VERSION = 4
+// the envelope contract version this backend accepts (D44 schema v3 → v4 joint stamp, v5 the
+// file paths of issue 1077; the ruled §13.8 display value — bump alongside the ingest contract)
+const SCHEMA_VERSION = 5
 
 const clusterStore = useClusterStore()
 const toast = useToastStore()
