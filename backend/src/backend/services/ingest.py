@@ -14,7 +14,7 @@ from typing import Any
 import structlog
 from opensearchpy import AsyncOpenSearch
 
-from backend.models.envelope import COUNT_COLUMN, IngestEnvelope
+from backend.models.envelope import COUNT_COLUMN, LOCATIONS_CAP, IngestEnvelope
 from backend.repositories.bulk import bulk_write
 from backend.services.aliases import ensure_write_alias
 from backend.services.disagreement import (
@@ -65,6 +65,9 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
     # holds the package, and JAVV counts findings. The last entry wins, here and in the history
     # rows; the cache merge alone would keep the first (its scan_order guard skips an equal order).
     by_key: dict[str, dict[str, Any]] = {}
+    # the paths do not follow the last entry: each entry is a different file of the same finding,
+    # so the finding keeps all of them (issue 1077, D1 B)
+    paths: dict[str, set[str]] = {}
     for f in env.findings:
         finding_key = _h(
             env.cluster_id,
@@ -74,6 +77,7 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
             f.package_name,
             f.package_version,
         )
+        paths.setdefault(finding_key, set()).update(f.locations)
         by_key[finding_key] = {
             "finding_key": finding_key,
             "cluster_id": env.cluster_id,
@@ -105,6 +109,10 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
             "state": "open",
             "schema_version": env.schema_version,
         }
+    for finding_key, doc in by_key.items():
+        joined = sorted(paths[finding_key])
+        doc["locations"] = joined[:LOCATIONS_CAP]  # D2: the first 64, in a stable order
+        doc["locations_total"] = len(joined)  # the full number, also past the cap
     findings = list(by_key.values())
     counts = _count_findings(findings)
 

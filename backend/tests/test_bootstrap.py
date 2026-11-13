@@ -54,6 +54,11 @@ def test_findings_mapping_matches_index_map() -> None:
     assert p["epss"] == {"type": "float"} and p["kev"] == {"type": "boolean"}  # grype-only pair
     assert p["last_scan_order"] == {"type": "long"}  # newer-scan-wins guard key (D40)
     assert p["present"] == {"type": "boolean"}  # presence ⟂ state (D39)
+    # issue 1077: the paths are kept, never searched, so they add no index or doc-values cost
+    paths = {"type": "keyword", "index": False, "doc_values": False}
+    assert p["locations"] == paths and p["locations_total"] == {"type": "integer"}
+    occ = _props(INDEX_TEMPLATES["javv-finding-occurrences"])
+    assert occ["locations"] == paths and occ["locations_total"] == {"type": "integer"}
     # the lc normalizer must exist in the index settings for the severity mapping to be valid
     analysis = MUTABLE_INDEXES["findings"]["settings"]["index"]["analysis"]
     assert analysis["normalizer"]["lc"] == {"type": "custom", "filter": ["lowercase"]}

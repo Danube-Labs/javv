@@ -69,12 +69,16 @@ from opensearchpy import AsyncOpenSearch, RequestError
 #             the run keeps the number of scanner report entries so an audit can match the report)
 #          v22 + system-mcp-tokens (issue 1096 — the tokens of the MCP endpoint, apart from the
 #             scanner tokens so that neither token check can read the other kind)
-MAPPING_VERSION = 22
+#          v23 + locations, locations_total on findings and javv-finding-occurrences (issue 1077 —
+#             the files where the scanner found a finding; kept, not searched)
+MAPPING_VERSION = 23
 
 _KW = {"type": "keyword"}
 _DATE = {"type": "date"}
 _INT = {"type": "integer"}
 _BOOL = {"type": "boolean"}
+# kept in _source and never searched or aggregated (issue 1077: the paths of a finding)
+_STORED_ONLY = {"type": "keyword", "index": False, "doc_values": False}
 
 # severity buckets (D16) + total/fixable — the envelope's counts, invariant-checked at ingest
 _COUNT_BUCKETS = ("crit", "high", "med", "low", "negligible", "unknown", "total", "fixable")
@@ -117,6 +121,9 @@ _FINDINGS_PROPERTIES: dict[str, Any] = {
     "epss": {"type": "float"},  # grype only (null for trivy)
     "kev": _BOOL,  # grype only
     "ptype": _KW,  # package type (M8d/B-1): "os" | ecosystem string; null = pre-v4 observation
+    # the files of the finding (issue 1077, D2): at most 64 sorted paths, and the full number
+    "locations": _STORED_ONLY,
+    "locations_total": _INT,
     "disagree": _BOOL,  # precomputed severity disagreement (D5a)
     "first_seen_at": _DATE,  # full precision (D37/M13)
     # the materialized D21 group clock (issue 363): min first_seen_at across the finding's
@@ -491,6 +498,9 @@ _OCCURRENCES_PROPERTIES: dict[str, Any] = {
     "ptype": _KW,  # package type (M8d/B-1): "os" | ecosystem string; null on v3-era rows
     # as-of-then (issue 1000): the past-time SLA deadline; absent on rows written before v20
     "kev": _BOOL,
+    # as-of-then (issue 1077): the files of the finding in this scan; absent before v23
+    "locations": _STORED_ONLY,
+    "locations_total": _INT,
     "schema_version": {"type": "short"},
 }
 

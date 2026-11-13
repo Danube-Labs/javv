@@ -73,6 +73,8 @@ fixable           boolean
 fixed_version     keyword
 ptype             keyword       package type (M8d/B-1): "os" | ecosystem string; null on v3-era rows
 kev               boolean       as-of-then, grype only (issue 1000, mapping v20): the past-time SLA deadline; absent on older rows
+locations         keyword[]     as-of-then (issue 1077, mapping v23): the files of the finding in this scan, at most 64, sorted; index:false + doc_values:false (kept in _source, never searched); [] when the scan sent no path; absent on older rows
+locations_total   integer       as-of-then (issue 1077): the full number of paths, also past the cap of 64
 schema_version    short
 ```
 *(No `severity_rank` here - OE-5/D38; as-of-T severity sort uses a fixed order map
@@ -268,6 +270,8 @@ fixed_version     keyword
 epss              float          grype only (null for trivy)
 kev               boolean        grype only
 ptype             keyword        package type (M8d/B-1): "os" | verbatim-lowercase ecosystem; null until a v4 scan observes (D30 heals)
+locations         keyword[]      the files where the scanner found the finding (issue 1077, mapping v23): the paths of all the report entries of the finding key, joined, sorted, at most 64; index:false + doc_values:false (kept in _source, never searched); scanner field, refreshed per scan; [] when the scan sent no path
+locations_total   integer        the full number of paths, also past the cap of 64; 0 when the scan sent no path
 disagree          boolean        precomputed severity disagreement (D5a)
 first_seen_at     date           full precision (not day-grain - D37/M13)
 sla_clock_at      date           materialized D21 group clock (issue 363): min first_seen_at across the (cve_id, image_digest) group, cross-scanner, PRESENT rows - derived family like `disagree`, owned by services.sla_clock (recomputed per digest at commit; rebuild-state = backfill/heal). The overdue FILTER ranges on it against live-policy cutoffs; the VERDICT stays read-time (never stored - FR-10 instantness)

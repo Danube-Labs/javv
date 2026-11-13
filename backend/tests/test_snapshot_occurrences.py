@@ -73,6 +73,18 @@ def test_row_records_the_kev_value_of_its_finding() -> None:
     assert [row["kev"] for _, row in rows] == [i == 0 for i in range(len(rows))]
 
 
+def test_row_records_the_paths_of_its_finding() -> None:
+    """Issue 1077: a read at a past time shows the paths that that scan found."""
+    env = dict(GOLDEN, schema_version=5)
+    first = dict(GOLDEN["findings"][0], locations=["/usr/bin/b", "/usr/bin/a"])
+    env["findings"] = [first, *GOLDEN["findings"][1:]]
+    rows = build_occurrence_rows(build_docs(IngestEnvelope.model_validate(env)))
+    by_key = {row["vuln_id"]: row for _, row in rows}
+    assert by_key[first["vuln_id"]]["locations"] == ["/usr/bin/a", "/usr/bin/b"]
+    assert by_key[first["vuln_id"]]["locations_total"] == 2
+    assert rows[-1][1]["locations"] == [] and rows[-1][1]["locations_total"] == 0
+
+
 def test_occurrence_id_is_deterministic_and_distinct() -> None:
     docs = _golden_docs()
     ids = [rid for rid, _ in build_occurrence_rows(docs)]
