@@ -63,7 +63,7 @@ capabilities, the always-applied `cluster_id` filter) · `triage/` · `decisions
 `admin/` · `jobs/` · `mcp/` (the MCP endpoint for AI agents at `/api/v1/mcp`: the token gate, and
 the read and write tools made from the route functions, issue 1096) · `tools/` (`export_openapi`). Tests in
 `backend/tests/`
-(128 files, about 1,750 tests on 2026-10-14; session-scoped bootstrap in `conftest.py` - new test files must NOT
+(157 test files, about 2,760 tests on 2026-11-13; session-scoped bootstrap in `conftest.py` - new test files must NOT
 re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in app code;
 `tests/security/test_rbac_idor_contract.py` is the **capability registry of record**;
 `test_mapping_additive.py` compares the mappings with the newest release tag and with `main`, and
@@ -74,7 +74,7 @@ re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in
 | Path | Contents |
 |---|---|
 | **`docs/engineering/`** | **CANONICAL design.** `PLAN` (decisions D1-D47, data model, M0-M10) · `SPEC` (FR/NFR) · `ARCHITECTURE` (layers, Mermaid) · `INDEX-MAP` (every index + mapping - **read before touching any index**) · `FLOW-EXAMPLE` (worked ingest/query/time-travel) · `AUDIT-RESPONSE` (external-audit fixes, rounds 1-4) · `AUDIT` (2nd audit + resolutions) · `UPGRADES` (how a rollout runs the index bootstrap, rollback, what the Helm chart must do) |
-| **`docs/API.md`** | The shipped HTTP surface at a glance: all routes, 3 auth regimes, capability column (sourced from the RBAC registry), error tables. **Route change → update it in the same PR** (DoD §6) |
+| **`docs/API.md`** | The shipped HTTP surface at a glance: all routes, 4 kinds of authentication, capability column (sourced from the RBAC registry), error tables. **Route change → update it in the same PR** (DoD §6) |
 | **`docs/CONFIGURATION.md`** | Every configuration setting: its default, what it does, where you set it. **New setting → same PR** |
 | **`docs/index.md`** | The home page of the docs site: which page to read for each task |
 | **`docs/DEPLOYING.md`** | The operator deploy guide. It covers the three containers and docker compose on one machine: http or https, the ports, the settings and the data. It also covers the three Helm charts, the scanners, the signatures, an OpenSearch of your own, a forgotten password and the known limits. |

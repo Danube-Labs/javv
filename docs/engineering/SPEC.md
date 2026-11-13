@@ -5,7 +5,7 @@
 
 > **Revision 4 (2026-06-21).** Supersedes `.deprecated/docs/engineering/deprecated/V3/SPEC_v3.md` (frozen). Reflects the post-v3 audit
 > dialogue. Companions: `PLAN.md` (decisions/data-model/milestones), `ARCHITECTURE.md` (flows),
-> `handoff/v4/` (UI reference - *reference point, not a 1:1 contract*). Diagrams: Mermaid.
+> `handoff/docs/` (UI reference - *reference point, not a 1:1 contract*. `handoff/v4/` is the frozen trail). Diagrams: Mermaid.
 > Key v4 changes: `system-exceptions`→`system-decisions`; raw-fidelity via keyword normalizer; rebuildable
 > triage state; idempotent appends; projection-on-new-only; two-timer staleness; VEX **import → v1.1**
 > (export stays); scheduled/throttled export; envelope-versioning policy; Admin Data & OpenSearch panel.
@@ -42,13 +42,14 @@ change the password on first login - FR-18.)
 - **FR-2 Scan.** Selected scanner (Trivy|Grype) over unique digests. It pulls from private registries
   with the login that the operator mounts (`<scanner>.registryAuth`, read through `DOCKER_CONFIG`,
   issue 739). It **scans everything every cycle** - a stateless scanner with **local digest-dedup**
-  (each unique digest once) and namespace/label **exclusions** only (no skip-unchanged, no backend query -
+  (each unique digest once) and **exclusions** by namespace, image pattern and owner kind only (no skip-unchanged, no backend query -
   D30); bounded concurrency.
 - **FR-3 Ingest.** Scanner **normalizes** Trivy/Grype JSON into the shared shape (canonicalizing the severity
   *vocabulary* to the D46 full words `critical/high/medium/low/negligible/unknown` while **preserving the verbatim scanner word**) and pushes per-image,
   gzipped, retried (backoff+jitter, dead-letter), to `POST /api/v1/ingest/scan` over a private network with a
-  per-`(cluster,scanner)` token. The endpoint **validates** the **versioned** envelope and **accepts the
-  current envelope only, rejecting older with a clear 4xx** (D25/D35/D38 - N/N-1 dual-parse dropped); it is
+  per-`(cluster,scanner)` token. The endpoint **validates** the **versioned** envelope and **accepts only the
+  schema versions that `models/envelope.py` lists, and refuses any other version with a clear 4xx**
+  (D25/D35/D38); it is
   **hardened** (NFR-7) and never parses raw scanner JSON. Each push carries `scan_run_id` and the scanner's
   self-reported **`scanner_version` + vuln-DB version/built** provenance (D41) - the ingest model must accept
   these fields (it is `extra="forbid"`).
@@ -117,8 +118,7 @@ change the password on first login - FR-18.)
   semantics are pinned (D22):** matches on `(cluster, cve, scope)` ignoring scanner, projects onto each
   scanner's finding independently, each closes on its own, and a scanner-specific decision outranks a
   both-scanners one for that scanner.
-- **FR-9 Tagging.** Team/app/org tags on findings/images; image-level where possible; retags as async
-  `update_by_query` (`slices=auto`, `conflicts=proceed`), rate-limited; tag fields preserved on re-ingest.
+- **FR-9 Tagging.** Not built (see "Not built" at the end of this file).
 - **FR-10 SLA / overdue.** Per-severity SLA days (CRIT 2 / HIGH 7 / MED 30 / LOW 90, editable) + KEV
   override (24h). `overdue` derived from **read-time vuln-age** (group by `cve_id + image_digest`, earliest
   `first_seen_at` - so a package bump doesn't reset the clock, D21); surfaced on findings + notifications.
@@ -158,8 +158,9 @@ change the password on first login - FR-18.)
 - **FR-15 Contributors / trends (MVP, expanded).** Resolved-over-time, median TTR, SLA-hit %, leaderboard
   (+ expanded metrics) - from `system-audit-log` + `findings`; scoped by the global time-range picker.
   **Leaderboard window is bounded by `system-audit-log` retention** (kept long - §5.5b).
-- **FR-16 Notifications (MVP, per-user).** `system-notifications` populated with the user's SLA breaches +
-  new assignments + ready exports; bell badge; polling (no broker).
+- **FR-16 Notifications (MVP, per-user).** `system-notifications` holds the ready exports of the user
+  (`report_ready`) and the notices of a cluster that JAVV retires soon (`cluster_retiring`); bell badge;
+  polling (no broker).
 - **FR-17 Saved views (MVP, shared).** `system-views` named filter sets, visible to every signed-in user;
   only the owner or an admin can change or delete one (M8e/C-6); deep-link into pre-filtered Findings.
 - **FR-18 Auth/RBAC (capability-based - D33; lifecycle - SEC-5).** Local users (`system-users`, argon2id) +
@@ -179,11 +180,12 @@ change the password on first login - FR-18.)
   accidental cross-cluster bleed), **not** a per-user auth boundary; per-user/role `allowed_cluster_ids` grants
   are **post-MVP**. RBAC gated client + server.
 - **FR-19 Data & OpenSearch settings (Admin, D26).** `Settings → Data & OpenSearch`: per-`cluster_id`
-  `retention_days`; **rollover** settings (doc count / age / size; defaults ~40 GB / 30 d / 50 M docs);
-  **snapshot** repository + schedule + manual snapshot/restore; **staleness timers** (FR-6) (here or a
+  `retention_days`; **rollover** settings (doc count / age / size; defaults 30 d / 5,000,000 docs / 50 GB, `jobs/lifecycle.py`);
+  **snapshot** repository + manual snapshot/restore; **staleness timers** (FR-6) (here or a
   sibling "Scanning" section). JAVV applies/updates the ISM policies. *(Superseded by the M4 mechanism decision: the daily lifecycle sweep reads the `system-config` settings live and drops whole indices at horizon — no ISM policy re-apply; see the M9e bolt README.)* (Full index-management UI is v1.x.)
-- **FR-20 Observability.** `/healthz`, `/readyz`, Prometheus `/metrics` (ingestion rate, 4xx/413/429/503,
-  payload sizes, **decompression ratio**, queue depth, latency, memory); structured logs (structlog). M1.
+- **FR-20 Observability.** `/healthz`, `/readyz`, Prometheus `/metrics` (envelopes accepted and
+  rejected by reason, the request duration of each route, OpenSearch errors and retries, limit refusals,
+  auth failures, job runs: `core/metrics.py`); structured JSON logs (structlog). M1.
 - **FR-21 Risk metadata.** Capture **EPSS/KEV** from Grype (explicit mapped fields; absent for Trivy).
 - **FR-22 VEX export (MVP); import (v1.1).** **Export** (M6): serialize `state`/`vex_justification` →
   OpenVEX/CycloneDX, a standard record of the triage decisions. *(2026-10-09: trivy and grype do not
@@ -219,7 +221,7 @@ change the password on first login - FR-18.)
 - **FR-25 Effective-config stamp (D44).** Every envelope (schema **v3**) carries `effective_config` =
   the scanner's effective **tuning** flags (per-scanner shape) + the **scope** applied that cycle;
   persisted on **scan-events** only. Read-only - feeds the M9e per-scanner cards and the audit trail;
-  no write-back. Envelope stays current-only: v2→v3 is a flag-day (scanner + backend upgrade together).
+  no write-back. The step v2→v3 was a flag-day (scanner + backend upgrade together). Ingest now accepts the versions that `models/envelope.py` lists.
 - **FR-26 MCP endpoint for AI agents (issue 1096).** `POST /api/v1/mcp` (stateless, streamable HTTP),
   off by default (`JAVV_MCP_ENABLED`). `can_manage_tokens` makes an MCP token with a name, a level and
   an expiry of at most 90 days; the token shows once, and rotate and revoke act at once. The principal
@@ -237,7 +239,7 @@ change the password on first login - FR-18.)
 - **NFR-1 Storage.** OpenSearch-only; explicit mappings + `dynamic:false`; `keyword` ids/enums with a
   **lowercase `normalizer`** on scanner enum/casing fields (raw preserved in `_source`; case-insensitive
   aggs/filters; **no duplicate normalized fields** - D16) + a derived numeric `severity_rank` for correct
-  severity sort/range (D16); vendor-keyed CVSS reshaped to fixed arrays; `total_fields` safety net. Current-state single indices with `cluster_id`; logs partitioned per
+  severity sort/range (D16); vendor-keyed CVSS reshaped to fixed arrays. Current-state single indices with `cluster_id`; logs partitioned per
   `cluster_id`. `finding_key` is a single-valued `keyword`. **Single-store contention** (heavy reporting vs
   ingest/auth share one cluster) is mitigated by scheduled/throttled export (FR-13) and, at scale, by adding
   OpenSearch nodes / a coordinating node - never a second datastore (D11). Schema changes follow the
@@ -245,8 +247,8 @@ change the password on first login - FR-18.)
 - **NFR-2 Lightweight deploy.** docker-compose + k8s/Helm. OpenSearch minimums (compose ≥4 GB / 1–2 GB heap;
   small prod ≥8 GB / ~4 GB heap). **Shard budget:** monthly rollover + 1 primary shard/index keeps shard
   count sane; append indices partition by **`cluster_id` only** (`scanner` is a field, not in the index name -
-  D38/M15), so the multiplier is per-cluster × 4 append families (occurrences, scan-events, images,
-  inventory-runs - the last is tiny, 1 doc/run) × rollover, **not** also × scanner. A single
+  D38/M15), so the multiplier is per-cluster × 5 append families (occurrences, scan-events, images,
+  inventory-runs and ingest-failures - the last two are small) × rollover, **not** also × scanner. A single
   small node supports a documented cluster-count ceiling before needing multi-node or a shared-index mode
   (each shard carries fixed heap/cluster-state overhead regardless of size; hundreds of clusters → revisit).
 - **NFR-3 Least-priv scanner RBAC.** Read-only: `list` pods, `get` the `kube-system` namespace. **No
@@ -263,9 +265,9 @@ change the password on first login - FR-18.)
   NON-downsampled); `javv-scan-events-*` (trends); `system-audit-log` (**keep long** → bounds Contributors +
   compliance); current-state has no time-retention. HA is **not JAVV-built** (NFR-9/D23).
 - **NFR-7 Ingest hardening.** `AsyncOpenSearch` + `_bulk` (inspect per-item errors; backoff on 429/503);
-  `refresh_interval: 30s` with `refresh=wait_for` on **triage writes only**; per-token rate-limit (`slowapi`,
-  in-proc) → 429; bounded `asyncio.Semaphore` → 503; **max compressed (~5 MB) + streamed decompressed
-  (~50 MB) caps** → 413 (gzip-bomb guard); Pydantic v2 `extra="forbid"` + per-field `max_length` + bounded
+  `refresh=wait_for` on **triage writes**; per-token rate-limit (`SlidingWindowLimiter`,
+  in-proc) → 429; **max compressed (10 MiB) + streamed decompressed
+  (60 MiB) caps** → 413 (gzip-bomb guard; `JAVV_INGEST_MAX_COMPRESSED_BYTES`, `JAVV_INGEST_MAX_BODY_BYTES`); Pydantic v2 `extra="forbid"` + per-field `max_length` + bounded
   arrays; **structured query bodies, never string-concat**; **do not sanitize field values** (UTF-8/emoji
   safe - risk is field-names/`query_string`/`script`); bearer tokens 256-bit random, **peppered
   SHA-256**-hashed, `hmac.compare_digest`, rotatable (D38/M14). MCP tokens (FR-26) are minted and
@@ -291,39 +293,50 @@ change the password on first login - FR-18.)
 sequenceDiagram
     actor U as User
     participant UI
-    participant SC as Scanner
+    participant SC as Scanner (CronJob in the cluster)
     participant API as JAVV API
     participant OS as OpenSearch
-    U->>UI: Open workloads view
-    UI->>SC: Discover workloads
-    SC-->>UI: namespaces / workloads / images
-    U->>UI: Pick scanner + Scan
-    UI->>SC: scan(set, scanner)
-    SC->>SC: local digest-dedup + scan ALL + normalize (canonical severity, verbatim kept)
+    Note over SC: The schedule of the CronJob starts each cycle. JAVV never calls a cluster.
+    SC->>API: Get the scan scope
+    SC->>SC: discover workloads + local digest-dedup + scan ALL + normalize (canonical severity, verbatim kept)
     SC->>API: POST /ingest/scan (gzip, scan_run_id, envelope vN) [hardened]
     API->>OS: partial-merge findings (detect_noop, scanner fields only) + append occurrences/images snapshots + scan-events commit (idempotent _id, last)
     API->>OS: reconcile-on-commit: present=false on findings the run omitted (D37)
     API->>API: project decisions → state (new findings only)
     Note over OS: occurrences = full per-scan snapshot (no close events). scan-events doc = commit catalog (read latest run here, then occurrences)
+    U->>UI: Open Findings
     UI->>API: Fetch findings
     API-->>UI: findings (+ state, disagree)
     UI-->>U: results table
 ```
 
-**Acceptance:** pick scanner → Scan → digest-deduped images scanned → findings ingested with no duplicates
+**Acceptance:** the CronJob runs → digest-deduped images scanned → findings ingested with no duplicates
 and **zero writes for unchanged findings** → scan-events appended (idempotent) → table renders. Re-running
 preserves triage (and a retry double-push double-counts nothing); staleness/decision projection behave per
 FR-6/FR-8.
 
 ## Scope notes
 - **MVP:** per-finding occurrences + point-in-time (FR-5b/FR-14, built M8 after read); VEX **export**
-  (FR-22); Contributors **expanded** (FR-15); SLA bell (FR-16); scheduled export (FR-13); snapshot/restore
+  (FR-22); Contributors **expanded** (FR-15); the bell (FR-16); scheduled export (FR-13); snapshot/restore
   (NFR-6); Data & OpenSearch admin panel (FR-19); local auth + bootstrap admin (FR-18).
 - **v1.1 fast-follow:** **VEX import**, Jira ticket push and the `javv-metrics-*` downsample tier. The
   dashboard **builder** of this list shipped in 0.8.9 (issue 440): users save dashboards of catalog
   panels, next to the saved views.
 - **Deferred:** CEL/expression policies; LDAP/OIDC.
-- **HA:** OpenSearch-native (multi-node + replicas) + stateless app replicas - not JAVV-built; multi-pod
-  concurrency caveats per NFR-9/D23.
+- **HA:** OpenSearch-native (multi-node + replicas) - not JAVV-built. JAVV runs one backend
+  (`docs/runbooks/multi-pod.md`); multi-pod concurrency caveats per NFR-9/D23.
 - **Explicit non-goals:** supply-chain hash-integrity checking; **cross-scanner merge** (disagreement flags
   only).
+
+## Not built
+Earlier versions of this file described these parts as present. The code does not have them.
+- **FR-9 Tagging.** Team, app and org tags on findings and images. No `system-tags` index and no tag
+  route exist. `INDEX-MAP.md` lists the index as planned.
+- **FR-16:** notifications for SLA breaches and for new assignments. No code writes the types
+  `sla_breach` and `assignment`.
+- **FR-19:** a snapshot schedule. A snapshot is a manual action.
+- **FR-20 and NFR-7:** `slowapi`, backpressure with a bounded `asyncio.Semaphore` (→503), and metrics for
+  payload sizes, the decompression ratio, queue depth and memory.
+- **NFR-1 and NFR-7:** a `total_fields` limit and `refresh_interval: 30s`. `backend/src` sets neither.
+- **First working flow:** a UI that tells the scanner to discover and to scan. The scanners are CronJobs
+  that push.

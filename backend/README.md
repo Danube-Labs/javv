@@ -13,7 +13,7 @@ The HTTP surface is documented in [`docs/API.md`](../docs/API.md); every setting
 src/backend/
   main.py       app factory (create_app)
   core/         settings · lifespan · bootstrap (versioned indexes/templates) · errors · logging ·
-                metrics · rate limits · security headers
+                metrics · rate limits
   routers/      the HTTP layer, one module per resource (ingest, findings, triage, decisions,
                 exports, reports, trends, views, admin, auth, …)
   models/       the ingest envelope
@@ -28,6 +28,7 @@ src/backend/
   audit/        the append-only audit-log writer
   auth/         sessions, passwords, lockout, capabilities, the bootstrap admin
   export/       CSV and VEX streams
+  mcp/          the MCP endpoint for AI agents: its token check, the read tools and the write tools
   reports/      the scheduled-export queue: claim, lease, chunked storage, download tokens
   admin/        scan scope, snapshot repo, report TTL settings, the cluster registry,
                 cluster retirement and delete

@@ -61,7 +61,7 @@ Each cluster has its own series of each of these indices:
 |---|---|
 | `javv-finding-occurrences-<cluster_id>-*` | One document for each finding in each scan. Time travel reads it. It holds almost all of the data of JAVV. |
 | `javv-scan-events-<cluster_id>-*` | One document for each image and scanner in each scan. It holds the count of each severity, the versions of the scanner and of its database, and the scan settings. |
-| `javv-images-<cluster_id>-*` | The images of each scan cycle, with their counts. The **Images** page reads it. |
+| `javv-images-<cluster_id>-*` | The images of each scan cycle, with their counts. The **Running images** page reads it. |
 | `javv-inventory-runs-<cluster_id>-*` | One document for each scan cycle: the number of images that the scanner expected, and the number that JAVV received. |
 | `javv-ingest-failures-<cluster_id>-*` | One document for each push that JAVV refused after the token check. The **Failed ingests** table reads it. |
 
