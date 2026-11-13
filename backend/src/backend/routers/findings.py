@@ -356,6 +356,7 @@ async def search_findings(
     size: Annotated[int, Query(ge=1, le=500)] = 50,
     cursor: Annotated[str | None, Query(max_length=4096)] = None,
     keep_open: bool = False,
+    locations: bool = False,
 ) -> dict[str, Any]:
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:  # past T → M8b's reconstruction, never this route's query (D28)
@@ -369,6 +370,7 @@ async def search_findings(
                 order=order,
                 size=size,
                 cursor=cursor,
+                locations=locations,
             )
         )
     # no read-side refresh (audit A-m2/#191): reads observe what's committed; triage writes with
@@ -391,6 +393,7 @@ async def search_findings(
             order=order,
             cursor=cursor,
             keep_open=keep_open,
+            locations=locations,
         )
     except CursorExpired as exc:  # A-m1: idled past keep_alive → 410 Gone, restart the walk
         pit_guard.release(principal.user_id, slot)

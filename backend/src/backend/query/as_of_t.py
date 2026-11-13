@@ -191,6 +191,9 @@ def _finding_row(raw: dict[str, Any], human: dict[str, Any]) -> dict[str, Any]:
         "fixable": occ.get("fixable"),
         "fixed_version": occ.get("fixed_version"),
         "ptype": occ.get("ptype"),  # recorded from M8d on; explicit null on v3-era rows
+        # recorded from mapping v23 on (issue 1077); explicit null on the rows before it
+        "locations": occ.get("locations"),
+        "locations_total": occ.get("locations_total"),
         "epss": None,
         "kev": None,
         "disagree": None,
@@ -453,6 +456,7 @@ class AsOfTQuery:
         size: int,
         cursor: str | None,
         prefix: str = "",
+        locations: bool = False,
     ) -> dict[str, Any]:
         if cursor is not None:
             _decode(cursor)  # shape check before any reconstruction work
@@ -475,6 +479,8 @@ class AsOfTQuery:
         else:
             rows_after = rows
         page = rows_after[:size]
+        if not locations:  # the live rule: the paths only on request (issue 1077, D5)
+            page = [{k: v for k, v in r.items() if k != "locations"} for r in page]
         next_cursor = (
             _encode({"k": page[-1]["finding_key"], "s": sort, "o": order})
             if len(rows_after) > size

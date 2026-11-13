@@ -5581,6 +5581,16 @@
           },
           {
             "in": "query",
+            "name": "locations",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Locations",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "severity",
             "required": false,
             "schema": {

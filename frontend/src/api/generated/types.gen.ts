@@ -2769,6 +2769,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          */
         keep_open?: boolean;
         /**
+         * Locations
+         */
+        locations?: boolean;
+        /**
          * Severity
          */
         severity?: Array<string> | null;

@@ -369,10 +369,13 @@ async def run_search(
     cursor: str | None = None,
     prefix: str = "",
     keep_open: bool = False,
+    locations: bool = False,
 ) -> dict[str, Any]:
     """One page. Returns `{data, next_cursor, total}`; `next_cursor=None` ends the walk.
     `keep_open` keeps a continuation's PIT past its final page, for a client that may page back
-    and closes the walk itself (`POST /api/v1/cursors/close`, issue 832)."""
+    and closes the walk itself (`POST /api/v1/cursors/close`, issue 832). Rows leave out the
+    file paths unless `locations` asks for them: up to 64 paths of 1,024 characters on each row
+    would make a grid page heavy for a count it shows (issue 1077, D5)."""
     keep_alive = get_settings().search_pit_keep_alive
     search_after: list[Any] | None = None
     sla_cutoffs: dict[str, str] | None = None
@@ -404,6 +407,8 @@ async def run_search(
     )
     body = tenant_query(cluster_id, body)  # SEC-4 — the only guard on the index-less PIT path
     body["pit"] = {"id": pit_id, "keep_alive": keep_alive}
+    if not locations:
+        body["_source"] = {"excludes": ["locations"]}
     try:
         resp = await client.search(body=body)
     except NotFoundError as exc:  # the PIT is gone — expired past keep_alive, or a tampered id

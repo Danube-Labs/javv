@@ -1249,3 +1249,46 @@ async def test_top_images_refuse_a_pair_and_need_a_session(env) -> None:
         params={"cluster_id": cid, "namespace": "a", "exclude_namespace": "b"},
     )
     assert r.status_code == 422
+
+
+async def test_the_grid_read_sends_the_count_of_paths_and_the_paths_only_on_request(env) -> None:
+    """Issue 1077, D5: a row leaves out `locations` unless the caller sends `locations=true`, and
+    keeps `locations_total` always. Each page of a walk takes the choice of its own request."""
+    login, client = env
+    cid = f"c-srch-{uuid.uuid4().hex[:8]}"
+    # the forms of the two scanners, as each one writes them (Trivy without the first slash)
+    paths = ["/usr/local/go/bin/go", "usr/local/go/bin/go", "/app/lib/log4j-core-2.14.1.jar"]
+    await _seed(client, cid, _rows(3, locations=paths, locations_total=3))
+    http = await login()
+
+    r = await http.get("/api/v1/findings", params={"cluster_id": cid})
+    assert r.status_code == 200
+    rows = r.json()["data"]
+    assert len(rows) == 3
+    assert all("locations" not in d for d in rows)
+    assert all(d["locations_total"] == 3 for d in rows)
+
+    r = await http.get("/api/v1/findings", params={"cluster_id": cid, "locations": "true"})
+    assert r.status_code == 200
+    assert all(d["locations"] == paths and d["locations_total"] == 3 for d in r.json()["data"])
+
+    first = await http.get(
+        "/api/v1/findings", params={"cluster_id": cid, "size": 1, "locations": "true"}
+    )
+    assert first.status_code == 200
+    assert first.json()["data"][0]["locations"] == paths
+    cursor = first.json()["next_cursor"]
+    assert cursor is not None
+    plain = await http.get(
+        "/api/v1/findings", params={"cluster_id": cid, "size": 1, "cursor": cursor}
+    )
+    assert plain.status_code == 200
+    assert "locations" not in plain.json()["data"][0]  # the cursor does not carry the choice
+    cursor = plain.json()["next_cursor"]
+    assert cursor is not None
+    last = await http.get(
+        "/api/v1/findings",
+        params={"cluster_id": cid, "size": 1, "cursor": cursor, "locations": "true"},
+    )
+    assert last.status_code == 200
+    assert last.json()["data"][0]["locations"] == paths

@@ -211,6 +211,24 @@ async def test_the_findings_page_is_25_at_most_and_the_ui_switch_is_not_offered(
         assert "26" not in result["content"][0]["text"]  # a refused value is not sent back
 
 
+async def test_search_findings_sends_the_count_of_paths_and_never_the_paths(mcp_on):
+    """Issue 1077, D5: the tool reads as the Findings grid does. A page of 25 rows with 64 paths
+    each could pass the size that a client takes, so the agent gets `locations_total` only."""
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+        await _seed(client, cluster, _findings(2, locations=["/usr/bin/curl"], locations_total=1))
+        _, raw = await _token(client)
+        schema = (await _tools(http, raw))["search_findings"]["inputSchema"]
+        assert "locations" not in schema["properties"]
+        text = _text(
+            await http.post(PATH, **_call("search_findings", {"cluster_id": cluster}, raw))
+        )
+    rows = json.loads(text)["data"]
+    assert len(rows) == 2
+    assert all(r["locations_total"] == 1 and "locations" not in r for r in rows)
+    assert "/usr/bin/curl" not in text
+
+
 async def test_top_cves_ranks_the_cve_with_no_by_from_the_agent(mcp_on):
     """Issue 1176 (D7 A): the route ranks only `cve_id` (D5), so the tool takes it by default
     and a call with no `by` answers what the route answers for `by=cve_id`."""
@@ -352,10 +370,12 @@ def test_search_findings_names_the_fields_that_a_past_time_does_not_record():
         "fixable": True,
         "fixed_version": "1.1",
         "ptype": "os",
+        "locations": ["/usr/lib/libssl.so.1.0"],
+        "locations_total": 1,
         "@timestamp": "2026-01-01T00:00:00Z",
         "scan_run_id": "r-1",
         "scan_order": 1,
-        "schema_version": 4,
+        "schema_version": 5,
     }
     raw = {
         "occurrence": occurrence,

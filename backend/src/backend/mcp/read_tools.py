@@ -51,11 +51,13 @@ READ_TOOLS: tuple[Tool, ...] = (
             "search and closes the cursor of your last search with this tool: read all the pages "
             "that you need first. as_of reads a past time. With as_of, image_repo, tag, app, "
             "epss, kev and disagree are null: the history does not record them, and a filter or "
-            "a sort on them is refused."
+            "a sort on them is refused. locations_total is the number of files where the "
+            "scanner found the package."
         ),
         routes={"": findings.search_findings},
         params={"size": FINDINGS_PAGE},
-        hidden=("keep_open",),
+        # 25 rows of 64 paths could pass the size that a client takes (issue 1077, D5)
+        hidden=("keep_open", "locations"),
         paged=True,
     ),
     Tool(
