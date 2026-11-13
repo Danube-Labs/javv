@@ -370,14 +370,14 @@ async def test_the_paths_of_a_finding_reach_the_cache_and_the_history() -> None:
         [row] = occ["hits"]["hits"]
         assert row["_source"]["locations"] == doc["_source"]["locations"]
 
-        # a newer scan of the same image sends no path (an older scanner): the cache follows it
+        # a newer scan of the same image by an older scanner does not report paths: null
         no_path = _envelope_with_paths(digest, run2, 8, [first]).model_copy(
             update={"schema_version": 4}
         )
         await ingest_envelope(client, no_path)
         await client.indices.refresh(index="findings")
         [doc] = (await client.search(index="findings", body=q))["hits"]["hits"]
-        assert doc["_source"]["locations"] == [] and doc["_source"]["locations_total"] == 0
+        assert doc["_source"]["locations"] is None and doc["_source"]["locations_total"] is None
     finally:
         await client.close()
 

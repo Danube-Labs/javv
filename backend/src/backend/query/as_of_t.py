@@ -95,6 +95,7 @@ async def _last_rows_per_key(
     digest: str,
     committed: list[dict[str, Any]],
     prefix: str,
+    locations: bool = False,
 ) -> list[dict[str, Any]]:
     """One digest's reconstructed scanner rows at T: the LAST committed occurrence per
     finding_key (top_hits by `scan_order` — exact), plus the first-appearance clock. Present ⟺
@@ -102,6 +103,9 @@ async def _last_rows_per_key(
     `resolved_at` is the first committed run after it (the rebuild arm's derivation, §9)."""
     orders = [r["scan_order"] for r in committed]
     latest = committed[-1]
+    last: dict[str, Any] = {"size": 1, "sort": [{"scan_order": "desc"}]}
+    if not locations:  # up to 64 paths for each finding of the cluster: only when a page sends them
+        last["_source"] = {"excludes": ["locations"]}
     rows: list[dict[str, Any]] = []
     after: dict[str, Any] | None = None
     while True:
@@ -129,7 +133,7 @@ async def _last_rows_per_key(
                         "k": {
                             "composite": composite,
                             "aggs": {
-                                "last": {"top_hits": {"size": 1, "sort": [{"scan_order": "desc"}]}},
+                                "last": {"top_hits": last},
                                 # dates are epoch-ms (< 2^53) — a min agg is exact here
                                 "first": {
                                     "min": {
@@ -218,7 +222,13 @@ class AsOfTQuery:
     """The registered reader (slice 3: findings trio; slice 4 adds trends + contributors)."""
 
     async def _raws(
-        self, client: AsyncOpenSearch, cluster_id: str, t: datetime, *, prefix: str = ""
+        self,
+        client: AsyncOpenSearch,
+        cluster_id: str,
+        t: datetime,
+        *,
+        prefix: str = "",
+        locations: bool = False,
     ) -> list[dict[str, Any]]:
         """The cluster's raw scanner facts at T (occurrence + presence + first/resolved clocks)
         — shared by the findings reconstruction and the findings-trend derivation."""
@@ -236,16 +246,24 @@ class AsOfTQuery:
             if not committed:
                 committed = latest_only
             raws.extend(
-                await _last_rows_per_key(client, cluster_id, scanner, digest, committed, prefix)
+                await _last_rows_per_key(
+                    client, cluster_id, scanner, digest, committed, prefix, locations
+                )
             )
         return raws
 
     async def _reconstruct(
-        self, client: AsyncOpenSearch, cluster_id: str, t: datetime, *, prefix: str = ""
+        self,
+        client: AsyncOpenSearch,
+        cluster_id: str,
+        t: datetime,
+        *,
+        prefix: str = "",
+        locations: bool = False,
     ) -> list[dict[str, Any]]:
         """Every finding row of the cluster as it stood at T (present AND tombstones) —
         filters/facets/groups are applied over this one reconstruction."""
-        raws = await self._raws(client, cluster_id, t, prefix=prefix)
+        raws = await self._raws(client, cluster_id, t, prefix=prefix, locations=locations)
         keys = [r["occurrence"]["finding_key"] for r in raws]
         humans = await finding_states_at(client, cluster_id, t, finding_keys=keys, prefix=prefix)
         decisions = await decisions_active_at(client, cluster_id, t, prefix=prefix)
@@ -420,6 +438,7 @@ class AsOfTQuery:
         sort: str,
         order: str,
         prefix: str = "",
+        locations: bool = False,
     ) -> list[dict[str, Any]]:
         """Every filtered row at T in walk order, from ONE reconstruction — the export
         path's source (audit F-09: paging findings_page re-reconstructed the whole cluster
@@ -432,7 +451,8 @@ class AsOfTQuery:
             raise ValueError("order must be asc or desc")
         self._apply_filters([], filters)  # filter re-validation, before any work
         rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
+            await self._reconstruct(client, cluster_id, t, prefix=prefix, locations=locations),
+            filters,
         )
         desc = order == "desc"
 
@@ -468,6 +488,7 @@ class AsOfTQuery:
             sort=sort,
             order=order,
             prefix=prefix,
+            locations=locations,
         )
         if cursor is not None:
             c = _decode(cursor)

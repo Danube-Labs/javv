@@ -91,11 +91,34 @@ def test_the_paths_of_an_entry_are_capped() -> None:
             IngestEnvelope.model_validate(_with_paths(*bad))
 
 
-@pytest.mark.parametrize("char", ["\x00", "\n", "\r", "\t", "\x1b", "\x7f"])
-def test_a_path_with_a_control_character_is_refused(char: str) -> None:
-    # the paths come from the content of an image: untrusted input that a screen shows as text
+@pytest.mark.parametrize(
+    "char",
+    [
+        *("\x00", "\n", "\r", "\t", "\x1b", "\x7f"),  # ASCII controls
+        *("\x85", "\x9b"),  # C1 controls: NEL, CSI
+        *("\u2028", "\u2029"),  # line and paragraph separators
+        *("\u202e", "\u2066", "\u200f"),  # bidi controls: a path that reads in another order
+        *("\u200b", "\ufeff", "\u00ad"),  # invisible format characters
+    ],
+)
+def test_a_path_with_a_control_or_format_character_is_refused(char: str) -> None:
+    # the paths come from the content of an image: untrusted input that a screen shows as text,
+    # so it must read as its bytes are (a right-to-left override can show `exe.png` as `png.exe`)
     with pytest.raises(ValidationError, match="locations"):
         IngestEnvelope.model_validate(_with_paths(f"/usr/bin/a{char}b"))
+
+
+def test_a_path_with_letters_of_any_language_is_accepted() -> None:
+    paths = ("/opt/café/ünïcode.jar", "/srv/データ/lib.so", "/usr/share/doc/a b+c~d")
+    env = IngestEnvelope.model_validate(_with_paths(*paths))
+    assert env.findings[0].locations == list(paths)
+
+
+def test_paths_need_schema_5() -> None:
+    """A schema 3 or 4 scanner does not report paths, so JAVV stores null for them (issue 1077).
+    An older envelope that sends paths anyway is refused, not stored in part."""
+    with pytest.raises(ValidationError, match="schema_version 5"):
+        IngestEnvelope.model_validate({**_with_paths("/usr/bin/a"), "schema_version": 4})
 
 
 def test_a_path_is_text_not_a_number() -> None:
@@ -219,13 +242,15 @@ def _entry(vuln_id: str, severity: str, *, fixable: bool = True) -> dict[str, ob
     }
 
 
-def _envelope(entries: list[dict[str, object]]) -> IngestEnvelope:
+def _envelope(entries: list[dict[str, object]], *, schema: int = 4) -> IngestEnvelope:
     """The envelope as the scanner sends it: its counts count the entries."""
     counts = dict.fromkeys(_COUNT_COLUMN.values(), 0)
     for e in entries:
         counts[_COUNT_COLUMN[canonical_severity(str(e["severity"]))]] += 1
     counts |= {"total": len(entries), "fixable": sum(1 for e in entries if e["fixable"])}
-    return IngestEnvelope.model_validate({**GOLDEN, "findings": entries, "counts": counts})
+    return IngestEnvelope.model_validate(
+        {**GOLDEN, "schema_version": schema, "findings": entries, "counts": counts}
+    )
 
 
 def _counts(doc: dict[str, object]) -> dict[str, object]:
@@ -293,7 +318,7 @@ def test_the_paths_of_the_entries_of_one_finding_join() -> None:
 
     e = _entry("CVE-2026-1", "HIGH")
     entries = [_at(e, "/usr/local/go/bin/go"), _at(e, "/usr/bin/lpp"), _at(e, "/usr/bin/lpp")]
-    [finding] = build_docs(_envelope(entries))["findings"]
+    [finding] = build_docs(_envelope(entries, schema=5))["findings"]
     assert finding["locations"] == ["/usr/bin/lpp", "/usr/local/go/bin/go"]  # sorted, one each
     assert finding["locations_total"] == 2
 
@@ -302,7 +327,7 @@ def test_an_entry_with_no_path_keeps_the_paths_of_the_others() -> None:
     from backend.services.ingest import build_docs
 
     e = _entry("CVE-2026-1", "HIGH")
-    [finding] = build_docs(_envelope([_at(e, "/a"), _at(e), _at(e, "/b")]))["findings"]
+    [finding] = build_docs(_envelope([_at(e, "/a"), _at(e), _at(e, "/b")], schema=5))["findings"]
     assert finding["locations"] == ["/a", "/b"] and finding["locations_total"] == 2
 
 
@@ -312,7 +337,7 @@ def test_the_join_keeps_the_first_64_sorted_paths_and_the_full_number() -> None:
     e = _entry("CVE-2026-1", "HIGH")
     paths = [f"/opt/app/{i:03d}" for i in range(70)]
     entries = [_at(e, *paths[:40]), _at(e, *reversed(paths[30:]))]  # 70 paths, 10 in both
-    [finding] = build_docs(_envelope(entries))["findings"]
+    [finding] = build_docs(_envelope(entries, schema=5))["findings"]
     assert finding["locations"] == paths[:64]
     assert finding["locations_total"] == 70
 
@@ -321,15 +346,29 @@ def test_the_paths_of_two_findings_stay_apart() -> None:
     from backend.services.ingest import build_docs
 
     entries = [_at(_entry("CVE-2026-1", "HIGH"), "/a"), _at(_entry("CVE-2026-2", "LOW"), "/b")]
-    found = {f["cve_id"]: f["locations"] for f in build_docs(_envelope(entries))["findings"]}
+    found = {
+        f["cve_id"]: f["locations"] for f in build_docs(_envelope(entries, schema=5))["findings"]
+    }
     assert found == {"CVE-2026-1": ["/a"], "CVE-2026-2": ["/b"]}
 
 
 def test_a_finding_with_no_path_stores_an_empty_list() -> None:
     from backend.services.ingest import build_docs
 
-    [finding] = build_docs(_envelope([_entry("CVE-2026-1", "HIGH")]))["findings"]
+    [finding] = build_docs(_envelope([_entry("CVE-2026-1", "HIGH")], schema=5))["findings"]
     assert finding["locations"] == [] and finding["locations_total"] == 0
+
+
+def test_an_older_scanner_stores_null_paths() -> None:
+    """Operator ruling (issue 1077): schema 3 and 4 do not report paths. JAVV stores null, not an
+    empty list and 0, so "not reported" stays apart from "no path found", as for `ptype`."""
+    from backend.services.ingest import build_docs
+
+    v3 = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-v3-golden.json").read_text())
+    for env in (IngestEnvelope.model_validate(v3), _envelope([_entry("CVE-2026-1", "HIGH")])):
+        assert env.schema_version in (3, 4)
+        for finding in build_docs(env)["findings"]:
+            assert finding["locations"] is None and finding["locations_total"] is None
 
 
 def test_a_clean_scan_counts_zero() -> None:

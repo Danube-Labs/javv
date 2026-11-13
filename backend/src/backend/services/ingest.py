@@ -110,6 +110,9 @@ def build_docs(env: IngestEnvelope) -> dict[str, Any]:
             "schema_version": env.schema_version,
         }
     for finding_key, doc in by_key.items():
+        if env.schema_version < 5:  # the scanner does not report paths: null, as for `ptype`
+            doc["locations"] = doc["locations_total"] = None
+            continue
         joined = sorted(paths[finding_key])
         doc["locations"] = joined[:LOCATIONS_CAP]  # D2: the first 64, in a stable order
         doc["locations_total"] = len(joined)  # the full number, also past the cap

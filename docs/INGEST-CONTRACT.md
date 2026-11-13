@@ -124,7 +124,7 @@ The column **Type** uses JSON types. "or null" means that `null` is a correct va
 
 | Field | Level | Type | Limits | Meaning and example |
 |---|---|---|---|---|
-| `schema_version` | required | integer | `3`, `4` or `5` | The version of the envelope. Send `5`. Version 4 has no `locations` in the findings. Version 3 also has no `ptype`. |
+| `schema_version` | required | integer | `3`, `4` or `5` | The version of the envelope. Send `5`. Version 4 has no `locations` in the findings, so JAVV stores `null` for their paths. Version 3 also has no `ptype`. |
 | `cluster_id` | required | string | Lowercase letters, digits and hyphens, 8 to 64 characters, not a hyphen first | The ID of your environment. Example: `my-nomad-fleet-01`. It must be the cluster of the token. |
 | `scanner` | required | string | `trivy` or `grype` | The scanner that made the findings. It must be the scanner of the token. |
 | `image_digest` | required | string | `sha256:` and 6 to 64 hexadecimal digits | The repository digest of the image: the part after `@` in `repo@sha256:…`. Docker shows it in `RepoDigests`, and Trivy and Grype write it in their output. Do not send the image ID of the classic Docker image store. With that ID, JAVV shows one image as two images: one from Kubernetes, one from Docker. JAVV identifies each image by this value. |
@@ -207,7 +207,7 @@ Each item of `findings` is one vulnerability in one package of the image.
 | `findings[].epss` | optional | number or null | 0 to 1 | The EPSS probability. Default: `null`. |
 | `findings[].kev` | optional | boolean | | `true` when the vulnerability is in the CISA list of known exploited vulnerabilities. Default: `false`. |
 | `findings[].ptype` | optional | string or null | 64 characters at most. Lowercase letters, digits and `+ . _ -`, and a letter or digit first. | The type of the package: `os` for a package of the operating system, else the ecosystem. Default: `null`. Examples: `os`, `python-pkg`, `npm`. |
-| `findings[].locations` | optional | array of strings | 64 items at most. Each item has 1 to 1,024 characters and no control character. | The files in the image where the scanner found the package. Start each path with `/`. Default: `[]`. Example: `["/usr/local/go/bin/go"]`. JAVV joins the paths of the entries of one finding. It keeps the first 64 paths in sorted order, and the full number of paths. |
+| `findings[].locations` | optional | array of strings | 64 items at most. Each item has 1 to 1,024 characters. It has no control character, line separator or format character, for example a bidi control or a zero-width space. | The files in the image where the scanner found the package. Start each path with `/`. Send it only with `schema_version` 5. Default: `[]`. Example: `["/usr/local/go/bin/go"]`. JAVV joins the paths of the entries of one finding. It keeps the first 64 paths in sorted order, and the full number of paths. |
 
 **Severity word.** JAVV calculates the severity from `severity` in lowercase, as follows:
 
@@ -269,8 +269,9 @@ have. JAVV refuses the envelope with `422` in these conditions:
 - **`scanner` and `effective_config.tuning` do not agree**, for example a `trivy` envelope with
   Grype settings.
 - **`schema_version`** is not 3, 4 or 5.
-- **A path in `locations`** is empty, longer than 1,024 characters or has a control character, or
-  an entry has more than 64 paths.
+- **A path in `locations`** is empty or longer than 1,024 characters. Or it has a control character,
+  a line separator or a format character. Or an entry has more than 64 paths.
+- **An envelope of version 3 or 4 has `locations`** in a finding.
 - **A time has no time zone.**
 - **`scan_order` is larger than the largest one that step 1 gave** to this cluster and scanner.
   The reason in the reply is `unallocated_order`.

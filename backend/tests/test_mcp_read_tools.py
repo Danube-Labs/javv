@@ -223,10 +223,15 @@ async def test_search_findings_sends_the_count_of_paths_and_never_the_paths(mcp_
         text = _text(
             await http.post(PATH, **_call("search_findings", {"cluster_id": cluster}, raw))
         )
+        r = await http.post(
+            PATH, **_call("search_findings", {"cluster_id": cluster, "locations": True}, raw)
+        )
+        refused = r.json()["result"]
     rows = json.loads(text)["data"]
     assert len(rows) == 2
     assert all(r["locations_total"] == 1 and "locations" not in r for r in rows)
     assert "/usr/bin/curl" not in text
+    assert refused["isError"] and "locations" in refused["content"][0]["text"]
 
 
 async def test_top_cves_ranks_the_cve_with_no_by_from_the_agent(mcp_on):

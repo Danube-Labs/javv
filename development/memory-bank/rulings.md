@@ -71,6 +71,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-07 | `helm install scanner` uses `--wait`, so a cache volume that does not bind stops the install (D3). | 1125 |
 | 2026-11-07 | The scanner CronJobs get no `startingDeadlineSeconds`. The docs and the NOTES tell that a schedule during the pause of a manual cycle runs a second cycle at the resume (D2). | 1126 |
 | 2026-11-13 | A finding keeps the files where the scanner found it. The scanner sends each report row with its paths, and the backend joins the paths of the entries of one finding key (D1 B). The backend keeps the first 64 sorted paths and their full number, and a path has 1,024 characters at most (D2). Each path starts with `/`: the Trivy adapter adds it. The backend and the scanner ship in the same release, 0.9.10 (D4). The Findings grid read sends the number of paths only (D5). The look of the Paths column waits for a ruling on a built page (D3). | 1077 |
+| 2026-11-13 | A scan of schema 3 or 4 does not report paths. JAVV stores `null` in both path fields, not an empty list and 0, as it does for `ptype`. Such an envelope that sends paths gets 422. The triage answer keeps the paths of its finding. | 1077 |
 | 2026-11-07 | The docs give no Ingress example. The `javv` chart makes no Ingress, and the docs tell the user to put one in front (D3). | 1126 |
 
 ## UI copy and look

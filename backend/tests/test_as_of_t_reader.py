@@ -242,6 +242,57 @@ async def test_the_past_read_gives_the_paths_of_the_live_read_and_only_on_reques
     }
 
 
+@requires_opensearch
+async def test_the_past_read_asks_the_store_for_the_paths_only_on_request(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1077: the history rows of a whole cluster come into memory for one past read. A
+    read that does not send the paths must not load up to 64 of them for each finding."""
+    client, prefix = real_os
+    env = dict(GOLDEN) | {
+        "schema_version": 5,
+        "findings": [dict(f, locations=["usr/bin/a"]) for f in GOLDEN["findings"]],
+    }
+    await ingest_envelope(client, IngestEnvelope.model_validate(env), prefix=prefix)
+    t = await _now(client, prefix)
+
+    bodies: list[dict[str, Any]] = []
+    search = client.search
+
+    async def spy(*args: Any, **kwargs: Any) -> Any:
+        bodies.append(kwargs.get("body") or {})
+        return await search(*args, **kwargs)
+
+    monkeypatch.setattr(client, "search", spy)
+
+    def last_rows() -> list[dict[str, Any]]:
+        found = [
+            b["aggs"]["k"]["aggs"]["last"]["top_hits"] for b in bodies if "k" in b.get("aggs", {})
+        ]
+        bodies.clear()
+        assert found  # the reconstruction ran its history query
+        return found
+
+    plain = await _past_rows(client, prefix, t)
+    assert all(h.get("_source") == {"excludes": ["locations"]} for h in last_rows())
+    assert all(d["locations_total"] == 1 and "locations" not in d for d in plain.values())
+
+    page = await READER.findings_page(
+        client,
+        cluster_id=CLUSTER,
+        t=t,
+        filters=SearchFilters(present=True),
+        sort="severity_rank",
+        order="desc",
+        size=500,
+        cursor=None,
+        prefix=prefix,
+        locations=True,
+    )
+    assert all("_source" not in h for h in last_rows())
+    assert all(d["locations"] == ["usr/bin/a"] for d in page["data"])
+
+
 def test_a_history_row_before_the_paths_has_null_paths() -> None:
     """A history row written before mapping v23 has no path fields: the row says null, not an
     empty list, since the history did not record them (as `ptype` on the rows before M8d)."""
