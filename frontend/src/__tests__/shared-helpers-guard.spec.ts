@@ -1,7 +1,9 @@
 /**
  * The shared script helpers stay shared (issue 1190, rows 12 to 14): the number format and the day
  * label live in lib/format.ts, and the paging of a table lives in usePagedSlice or useCursorPager.
- * A component that writes its own copy again fails here, whatever name the copy has.
+ * A file outside those homes fails here when it has the body of fmt or of dayLabel in the shape
+ * that the components copied (under any name), or a setSize of its own. Another shape of the same
+ * work (Intl.NumberFormat, other options, a paging stack with no setSize) is not caught.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'

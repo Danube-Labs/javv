@@ -78,8 +78,9 @@ Paging behind GridPager is two composables, never a hand-written stack: `useCurs
 and `usePagedSlice` (a bounded row set the client already holds — saved views, a finding's
 Activity/Affected cards, DecisionsCard, the ranked cards, the leaderboard, the scan runs and the
 Settings lists; `keepPage` keeps the page when an action reads the list again, issue 1190).
-A number in text is `fmt` and a day is `dayLabel`, both in `lib/format.ts`;
-`shared-helpers-guard.spec.ts` fails a copy of either, or a `setSize` of its own (issue 1190).
+A number format function is `fmt` and a day label is `dayLabel`, both in `lib/format.ts`;
+`shared-helpers-guard.spec.ts` fails a copy of their bodies in the copied shape, or a `setSize` of
+its own (issue 1190). It does not catch other shapes of the same work.
 Backend: `query/paging.py` + the bulk helpers.
 **Grep first.** A raw parallel implementation of a solved surface fails review.
 **Screen head controls** take `head` (`UiButton`, `UiSegControl`): one 30px height, the darker

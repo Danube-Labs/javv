@@ -74,6 +74,12 @@ describe('RiskiestImagesCard paging', () => {
     expect(pagerText(w)).toBe('Showing 1–10 of 12')
   })
 
+  it('a tall dashboard panel opens with its own number of rows', async () => {
+    const w = await mountCard({ pageSize: 25 })
+    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(bodyRows(w)).toBe(25)
+  })
+
   it('a dashboard panel of a new height shows page 1 with its rows', async () => {
     const w = await mountCard()
     await nextPage(w)

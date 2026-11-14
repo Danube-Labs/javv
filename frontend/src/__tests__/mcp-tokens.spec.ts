@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as sdk from '@/api/generated'
 import CopyValue from '@/components/settings/CopyValue.vue'
@@ -347,6 +347,10 @@ describe('the AI agents section: paging (issue 1190, row 13)', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     document.body.innerHTML = ''
+  })
+  // clearAllMocks keeps an implementation: the next describe must not read this list
+  afterEach(() => {
+    vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockReset()
   })
 
   const thirty = () => Array.from({ length: 30 }, (_, i) => token(`agent-${String(i).padStart(2, '0')}`))

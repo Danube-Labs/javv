@@ -10,11 +10,12 @@ import type { BoardRow } from '@/contributors/viewModel'
 
 import { bodyRows, nextPage, pagerText, pickRowsPerPage } from './helpers/pager'
 
+// the server's order is the reverse of the ranking: user-29 resolved the most
 const actor = (i: number): BoardRow => ({
-  actor: `user-${i}`,
-  actions: 50 - i,
-  by_action: { resolved: 50 - i },
-  handled: 50 - i,
+  actor: `user-${String(i).padStart(2, '0')}`,
+  actions: 1 + i,
+  by_action: { resolve: 1 + i },
+  handled: 1 + i,
   median_ttr_seconds: null,
   sla_hit_pct: null,
 })
@@ -31,8 +32,10 @@ describe('LeaderboardTable paging', () => {
     const w = mountTable()
     expect(pagerText(w)).toBe('Showing 1–10 of 30')
     expect(bodyRows(w)).toBe(10)
+    expect(w.find('tbody tr').text()).toContain('user-29') // the pages hold the ranked board
     await nextPage(w)
     expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(w.find('tbody tr').text()).toContain('user-19')
   })
 
   it('a new number of rows per page shows page 1 with that number of rows', async () => {
