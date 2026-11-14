@@ -481,6 +481,20 @@ to Not affected add "Reason:" and the plain label of the triage panel, for examp
 Component not present" (issues 924 and 931). The assignee and note rows say "Assigned to:" and
 "Note:", the names of the triage panel.
 
+**Affected components, the Paths column (issue 1077, operator rulings 2026-11-14 on built
+pictures, option B2):** the read of the card sends `locations=true`. A row of the card can hold
+more than one finding: one for each scanner and each digest of the tag. The column gives one
+number for each finding, in the order of the Scanners column, and never adds them: `11 paths`,
+`1 path`, `0 paths`, or `0 · 11` for a row of two scanners. `-` is a scan that sent no paths
+(a scanner before envelope schema 5). The hover text names the scanner of each number. A row
+with at least one path has a button with the count: a chevron that points down and turns up
+while open, and the hover state stays while open (as the panel filters button of a dashboard).
+The row under it lists the paths of each finding, as text only, on white with a hairline. A
+block starts with the chip of its scanner and a sentence in ink at 13px, for example "Trivy found
+stdlib v1.26.3 at 11 paths in this image. The finding counts one time." A finding that the
+backend capped at 64 paths says "JAVV keeps the first 64 of N paths." When the table is wider
+than its card, the list stays in the part in view. A new read closes the open rows.
+
 **SLA box:** server-computed deadline + overdue flag from the findings read (B-5).
 
 **States:** loading; 403-capability-hidden (triage controls disabled-with-tooltip without
@@ -662,6 +676,14 @@ the repository, the digest and the switch; the replicas and the namespaces moved
 - *Build history*: `N digests · N scans`, "<scanner>, <first day> to <last day>". A clickable stat
   cell with `aria-expanded`: it opens and closes the Build history card under the band. The card
   is closed when the page opens; its chevron points down while it is open.
+
+**The Paths column (issue 1077, operator rulings 2026-11-14 on built pictures, option B2):** the
+findings read sends `locations=true` on each page (the cursor does not keep it). The shared
+findings table takes the column through its `paths` property, so the Findings grid and its
+Columns menu do not change. The column comes after Package: after Fixed it was out of the card
+at 1440px. Each row is one finding, so the cell has one number, and the button and the list are
+the ones of the finding page (§4). The button opens the list and does not open the finding. A
+click on the row still opens the finding.
 
 **States:** loading; **"Not yet scanned then"** (T before the first committed scan); build-changed
 marker (never a silent gap); scanner-silent; degraded; C-1 pre-M8b state for any `T<now`. A
@@ -1488,6 +1510,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 | 3 · 5 · 7 | (prototype: filtering is the rail checkbox only — cells and rail rows offer no exclude) | **Value actions** (issue 349 §2): a `+`/`−` pair beside a value in the rail and in the Findings/Images/Audit/Approvals grids, revealed by the row's own hover; `components/filters/ValueActions.vue`, the M9a filter module's third part. An excluded rail row stays LISTED, struck in `--fpill-not-op`, so it can be clicked off. At-rest specimen (B) built and LOST — at 198 glyphs on a 25-row page it wrapped the narrow namespace column and inflated row heights against the §4 density contract. A knowing exception to DESIGN.md §5 "hover-only is not discoverable" and to Nuxt UI's at-rest row actions, bounded: an ACTIVE action always shows, and keyboard focus reveals it. Cells earn the affordance only where the cell value IS the filter value — a multi-namespace row, the shortened image cell and the severity-mix columns get none. The Images rail additionally grows **Image + Tag** as data-driven dims (deliberate: the cell action needs the fields, and listing them keeps an exclusion legible in the rail), capped at 32 by count like the server facets — `q` contains-matches both, so the note's "search reaches the rest" holds | 2026-07-28 §8.5 A/B ruling on built specimens: hover-reveal wins |
 | 6 | §6 card counts "from `/findings/facets`" | Held EXACTLY as written — a `/findings`-based count was built first and immediately leaked a PIT per card + 429'd the concurrency cap; count = severity-bucket sum from facets | 2026-07-17, M9f slice 4 (the spec was right) |
 | 6 | — | Cards additionally show the schema-v2 **workbench capture** (columns/density/sort/relative window; cluster-agnostic by shape) and page through the kit GridPager (operator ask); apply = deep-link round-trip incl. `!`-negation grammar | 2026-07-17, M9f slice 4 |
+| 4 · 8 | (not in the contract) | **Paths column** (issue 1077). One number of paths for each finding of a row, never added. A row with a path opens and lists them on white. The chip of the scanner leads each block, and the sentence is in ink at 13px. The chevron points down. On the image page the column comes after Package. | 2026-11-14 §8.5 rulings on built pictures. Option B2 won over B (a beige list, a sentence of 11px in `--soft`, a chevron to the right), B1 (one tint) and B3 (a toggle with an icon only). A row with one path opens. A row of two scanners shows two numbers. No path shows `0 paths`. |
 | global | (prototype topbar: disabled search input, text sign-out, mixed control heights) | **Topbar register**: all three controls (cluster switcher · time picker · search) at **40px** with **2px `--line` borders**, keep-beige (white-chip and slate-tint A/Bs LOST); search sits on `--bg` with ink hint + real control wash; Sign out = kit UiButton `control`; FilterBar pills/add-filter at **38px** | 2026-07-17 §8.5 rulings on built specimens (M9f slice 2) |
 | global | (prototype primary button: gloss — inset highlight + drop shadow) | **Flat solid coral** (solid-button grammar): hue kept, gloss removed; hover/active = `--coral-dd` (a full step — `--coral-d` was too small). Muted-terracotta and soft-wash variants built and LOST | 2026-07-17 §8.5 ruling (M9f slice 3) |
 | global | (issue 1004: a soft lift on the Dashboards head buttons. Other heads: a 34px primary or ghost, 30px buttons and a 36px switch.) | **One 30px height for every screen head control, with a 1px edge and no blur.** The token is `--control-edge`, set by `head` on UiButton and UiSegControl. The soft shadow (C) LOST: it is the generic look of shadcn/ui. No shadow (E) LOST. | 2026-10-29 §8.5 ruling on built specimens, option D (issue 1039) |

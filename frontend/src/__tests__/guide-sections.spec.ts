@@ -97,6 +97,8 @@ describe('section bodies', () => {
     const text = mount(TwoScannersSection).find('.count-unit').text()
     expect(text).toContain('JAVV counts findings.')
     expect(text).toContain('one time for each file that holds the package')
+    // issue 1077: the files are on the screen now, and the Guide says where
+    expect(text).toContain('The Paths column of a finding page and of an image page lists these files.')
   })
 
   it('Triage shows six states: the ones a person sets, risk accepted, and stale', () => {
