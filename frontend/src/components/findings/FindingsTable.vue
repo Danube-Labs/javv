@@ -14,7 +14,7 @@
  * the OWNER maps + persists them (`system/columnOrder.ts`), same parent-owns-state
  * discipline as `hidden`.
  *
- * `paths` (issue 1077, the image page) adds a Paths column after Fixed and lets a row open to
+ * `paths` (issue 1077, the image page) adds a Paths column after Package and lets a row open to
  * list the files of its finding. It is not in FINDINGS_COLUMNS, so the Findings grid and its
  * Columns menu stay as they are. It is not for a `reorderable` table: the parent maps the drag
  * indexes over its own column list, which has no Paths.
@@ -90,11 +90,12 @@ const props = withDefaults(
 /** a column of this table: the togglable ones plus Paths, which only the `paths` prop adds */
 type TableKey = FindingsColumnKey | 'paths'
 
-/** rendered orderable columns: display order minus the hidden set, Paths after Fixed */
+/** rendered orderable columns: display order minus the hidden set, Paths after Package, where
+ * it is in view at 1440px without a scroll (after Fixed it was not) */
 const orderedKeys = computed(() => {
   const keys: TableKey[] = props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[]
   if (!props.paths) return keys
-  const at = keys.indexOf('fixed')
+  const at = keys.indexOf('package')
   return at === -1 ? [...keys, 'paths' as const] : [...keys.slice(0, at + 1), 'paths' as const, ...keys.slice(at + 1)]
 })
 
@@ -253,6 +254,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
       :loading="props.loading"
       data-key="finding_key"
       v-model:expanded-rows="expanded"
+      :class="{ 'tbl-paths': props.paths }"
       :reorderable-columns="props.reorderable"
       :pt="{ table: { class: `tbl tbl-hover ${props.dense ? 'tbl-dense' : ''} ${props.reorderable ? 'tbl-reorder' : ''}` } }"
       @sort="onSort"
@@ -448,9 +450,19 @@ const cellActive = (key: string, value: string): FilterMode | null =>
   display: inline-flex;
   gap: 4px;
 }
-/* the list under an opened row: the panel brings its own padding */
-:deep(.p-datatable-row-expansion > td) {
+/* the list under an opened row: the panel brings its own padding. The table can be wider than
+   its card: the list keeps to the part in view, wherever the table is scrolled */
+.tbl-paths :deep(.p-datatable-row-expansion > td) {
   padding: 0;
+}
+.tbl-paths :deep(.p-datatable-table-container) {
+  container-type: inline-size;
+}
+.tbl-paths :deep(.paths-panel) {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqw;
 }
 .empty-row {
   padding: 34px 12px; /* the primary grid breathes more than the skin default */

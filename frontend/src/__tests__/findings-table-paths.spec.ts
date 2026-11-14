@@ -50,9 +50,9 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     expect(w.find('button.paths-btn').exists()).toBe(false)
   })
 
-  it('on: the Paths column comes right after Fixed', () => {
+  it('on: the Paths column comes right after Package', () => {
     const h = heads(mountTable([row('a')], true))
-    expect(h[h.indexOf('Fixed') + 1]).toBe('Paths')
+    expect(h[h.indexOf('Package') + 1]).toBe('Paths')
   })
 
   it('on: a row with paths opens to list them, and the click does not open the finding', async () => {

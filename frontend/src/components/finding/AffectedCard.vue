@@ -138,6 +138,17 @@ const pathsId = (i: number) => `affected-paths-${page.value}-${i}`
 .tbl.tbl .paths-cell {
   padding: 0;
 }
+/* below about 1100px the table is wider than its card and scrolls: the list keeps to the part in
+   view, wherever the table is scrolled */
+.tbl-wrap {
+  container-type: inline-size;
+}
+.paths-cell :deep(.paths-panel) {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqw;
+}
 .empty-row {
   text-align: center;
   color: var(--soft);
