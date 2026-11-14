@@ -124,11 +124,6 @@ const needAttention = computed(
   gap: 16px;
   margin-bottom: 18px;
 }
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
 /* joined stat band (Nuxt stat grammar) — fleet cells are read-only: no wash, no chevron
    (never dress a cell whose destination doesn't exist) */

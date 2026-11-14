@@ -67,6 +67,11 @@ html [class*=' p-'] {
   justify-content: space-between;
   margin-bottom: var(--space-6); /* the page band boundary — generous */
 }
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .screen-sub {
   color: var(--soft);
   font-size: var(--text-body);

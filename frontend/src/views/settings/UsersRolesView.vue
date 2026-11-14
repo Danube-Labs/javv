@@ -403,11 +403,6 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
   display: inline-flex;
   gap: 6px;
 }
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .row-error {
   color: var(--health-down-fg);
   font-size: var(--text-sm);

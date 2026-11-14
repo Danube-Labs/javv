@@ -399,9 +399,6 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
   margin: 0 0 16px;
 }
 .head-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   /* cube (44px) + its gap (14px): a dropped switch lines up under the title, not the cube */
   margin-left: 58px;
 }

@@ -212,10 +212,7 @@ function goFindings(query: Record<string, string>) {
   min-width: 0;
 }
 .head-actions {
-  display: flex;
   flex: none;
-  align-items: center;
-  gap: 10px;
 }
 
 .grid {

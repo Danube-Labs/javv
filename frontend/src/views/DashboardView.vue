@@ -431,12 +431,9 @@ async function save() {
 }
 /* edit mode has five controls: next to a long name they go to a second row, not past the edge */
 .head-actions {
-  display: flex;
   flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
 }
 .dash-meta {
   display: flex;
