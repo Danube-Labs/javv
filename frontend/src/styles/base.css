@@ -470,6 +470,11 @@ html [class*=' p-'] {
 .tbl .strong {
   font-weight: 700;
 }
+/* a strong cell reads in the ink color; the selector stops at the cell, so a strong link inside
+   a cell keeps its own color (issue 1190) */
+.tbl td.strong {
+  color: var(--ink);
+}
 .tbl .nowrap {
   white-space: nowrap;
 }

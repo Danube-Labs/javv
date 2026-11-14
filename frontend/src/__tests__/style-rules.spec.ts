@@ -263,6 +263,17 @@ describe('style rules: one shared card, menu panel and error text', () => {
     expect(sharedRuleCopies(addition, shared)).toEqual([])
   })
 
+  it('a component leaves the color of a strong cell to base.css (issue 1190)', () => {
+    const strongColor = (css: string) => (ruleProperties(css).get('.strong')?.has('color') ? ['.strong: color'] : [])
+    expect(all.get('.tbl td.strong')?.has('color')).toBe(true)
+    const hits = files.filter((rel) =>
+      strongColor(parseSfc(readFileSync(join(SRC, rel), 'utf8')).descriptor.styles.map((s) => s.content).join('\n')).length,
+    )
+    expect(hits, `a .strong color outside base.css: ${hits.join(', ')}`).toEqual([])
+    expect(strongColor('.strong { font-weight: 700; color: var(--ink); }')).toEqual(['.strong: color'])
+    expect(strongColor('.strong { font-weight: 700; }')).toEqual([])
+  })
+
   it('each free property is a property of its shared rule in base.css', () => {
     for (const [selector, free] of FREE_PROPERTIES)
       for (const property of free) expect(all.get(selector)?.has(property), `${selector}: ${property}`).toBe(true)

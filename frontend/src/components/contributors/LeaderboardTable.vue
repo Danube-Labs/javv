@@ -109,8 +109,4 @@ const atCap = computed(() => props.rows.length >= props.cap)
   color: var(--muted);
   font-weight: 700;
 }
-.strong {
-  font-weight: 700;
-  color: var(--ink);
-}
 </style>
