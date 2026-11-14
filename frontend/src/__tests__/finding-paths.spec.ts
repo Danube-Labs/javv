@@ -6,6 +6,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
+import ScannerTag from '@/components/chips/ScannerTag.vue'
 import FindingPaths from '@/components/finding/FindingPaths.vue'
 import {
   countText,
@@ -94,6 +95,12 @@ describe('FindingPaths', () => {
     expect(blocks.map((b) => b.attributes('aria-label'))).toEqual(['Paths from Trivy', 'Paths from Grype'])
     expect(blocks[0]!.findAll('li').map((li) => li.text())).toEqual(['/usr/bin/a', '/usr/bin/b'])
     expect(blocks[1]!.findAll('li').map((li) => li.text())).toEqual(['/usr/local/go/bin/go'])
+  })
+
+  it('the chip of its scanner leads each block, as in the Scanners column (option B2)', () => {
+    const w = mountIt([e({ total: 0 }), e({ scanner: 'grype', total: 1, paths: ['/x'] })])
+    const blocks = w.findAll('.paths-block')
+    expect(blocks.map((b) => b.find('.paths-say').findComponent(ScannerTag).props('name'))).toEqual(['trivy', 'grype'])
   })
 
   it('a path from the image shows as text, never as markup', () => {

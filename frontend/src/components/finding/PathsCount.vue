@@ -39,11 +39,19 @@ const emit = defineEmits<{ toggle: [] }>()
 .paths-btn {
   font-family: var(--font-mono);
 }
+/* the chevron points down and turns up while open: the list opens here. A chevron that points
+   right (`.cell-go`) says that a click opens another page */
 .paths-chev {
+  transform: rotate(90deg);
   transition: transform var(--dur-quick) var(--ease-out);
 }
 .paths-chev--open {
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
+}
+/* open: the hover state stays, as on the panel filters button of a dashboard */
+.paths-btn[aria-expanded='true'] {
+  background: var(--control-hover-bg);
+  border-color: var(--control-hover-line);
 }
 @media (prefers-reduced-motion: reduce) {
   .paths-chev {

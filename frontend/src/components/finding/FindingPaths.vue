@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * The files of the findings of one row (issue 1077), under the row that opens it: one block
- * for each finding, in scanner order, never joined. A path comes from the content of a scanned
- * image, so it renders as text only. The finding page and the image page both use it.
+ * for each finding, in scanner order, never joined, each led by the chip of its scanner. A path
+ * comes from the content of a scanned image, so it renders as text only. The finding page and the image page both use it.
  */
 import { computed } from 'vue'
 
+import ScannerTag from '@/components/chips/ScannerTag.vue'
 import { type FindingPaths, foundText, keptText, scannerName, shortDigest } from '@/findings/paths'
 
 const props = defineProps<{
@@ -27,6 +28,7 @@ const manyDigests = computed(() => new Set(props.entries.map((e) => e.digest)).s
       :aria-label="`Paths from ${scannerName(e.scanner)}`"
     >
       <p class="paths-say">
+        <ScannerTag :name="e.scanner" />
         {{ foundText(e, packageName, version) }}
         <span v-if="manyDigests && e.digest" class="paths-digest">Digest {{ shortDigest(e.digest) }}.</span>
       </p>
@@ -44,7 +46,10 @@ const manyDigests = computed(() => new Set(props.entries.map((e) => e.digest)).s
   flex-direction: column;
   gap: 10px;
   padding: 10px 14px 12px;
-  background: var(--panel);
+  /* white with a hairline, not a beige tint: the text reads in ink at full contrast (issue 1077,
+     option B2 on built pictures) */
+  background: var(--card);
+  box-shadow: inset 0 1px 0 var(--line2);
 }
 .paths-block {
   display: flex;
@@ -52,9 +57,12 @@ const manyDigests = computed(() => new Set(props.entries.map((e) => e.digest)).s
   gap: 4px;
 }
 .paths-say {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--soft);
+  font-size: var(--text-body);
+  color: var(--ink);
   line-height: 1.5;
 }
 .paths-digest {
