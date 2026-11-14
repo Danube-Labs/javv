@@ -3,6 +3,9 @@
 #   uv tool install pre-commit && pre-commit install && pre-commit install --hook-type commit-msg
 minimum_pre_commit_version: "3.5.0"
 default_install_hook_types: [pre-commit, commit-msg]
+# A skill vendored as it is from upstream: its SOURCE.md pins the commit, and an update copies
+# the files again. A reformat here would make every update a diff against our own edits.
+exclude: '^\.claude/skills/ste80-humanizer/'
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
