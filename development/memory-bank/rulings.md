@@ -118,6 +118,10 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 | 2026-11-09 | The Guide addresses the reader as "you", and a step is a command. It has no "we", "our" or "I", and it names no reader in the third person ("a user", "an admin"). A permission names the role that you need. JAVV, a screen or the data is the subject of a description. Other people stay in the third person only as the data of a screen. | 1142 |
 | 2026-11-14 | A rewrite of text for a reader starts with the skill `ste80-humanizer`, which finds the signs of model text. `docs-voice.md` stays the source of the rules, and `ste-lint.py` with exit 0 stays the gate. | 1205, PR 1206 |
+| 2026-11-14 | The 3 lists of Settings keep their page when an action reads the list again (`keepPage` of `usePagedSlice`). A number format is `fmt` and a day label is `dayLabel`, both in `lib/format.ts`. | 1190 |
+| 2026-11-14 | Each piece of code or style that moves to a shared module gets a functional test in the browser, before and after the move. | 1190 |
+| 2026-11-14 | The style rules test checks each property of a shared rule, except a size that a component keeps: the padding of `.empty-row` and the bottom margin of `.screen-head`. | 1190 |
+| 2026-11-14 | The ink color of a strong table cell is in `.tbl td.strong`. The selector stops at the cell, so a strong CVE link keeps its own color. A test showed that `.tbl .strong` changed the links of Findings and the Audit log. | 1190 |
 
 ## AI vulnerability research (alpha)
 

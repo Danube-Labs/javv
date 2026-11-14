@@ -173,7 +173,8 @@ describe('style rules: one shared set of skins', () => {
  * the menu panel. A component style can add to one of these rules (its padding, its side). It
  * must not set a property again that the shared rule sets, because a copy hides a later change
  * of the shared value. The property list comes from base.css, so a new shared value is covered
- * with no change here. Only a rule with exactly one of these selectors counts.
+ * with no change here. Only a rule with exactly one of these selectors counts. Issue 1190 added
+ * the data cell, the empty table line and the screen head with its actions.
  */
 const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
@@ -249,7 +250,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
         .filter((hit) => !RULED.get(rel)?.includes(hit))
         .map((hit) => `${rel} → ${hit}`),
     )
-    expect(hits, `set again outside base.css (issue 1181): ${hits.join('; ')}`).toEqual([])
+    expect(hits, `set again outside base.css (issues 1181, 1190): ${hits.join('; ')}`).toEqual([])
   })
 
   it('each ruled exception is real, not a stale entry', () => {
