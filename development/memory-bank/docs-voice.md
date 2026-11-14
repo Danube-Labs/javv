@@ -101,6 +101,16 @@ form loses. `The job has completed` tells that the output is there now. Keep it 
 - STE changes the form of a text, not what it says. Stop when the sentence has one meaning, not
   when it is shortest.
 
+### Signs of model text
+
+Before a rewrite, the skill `ste80-humanizer` (`.claude/skills/ste80-humanizer/`) finds the signs
+of text that a model wrote: for example the "X, not Y" frame, a closing line that tells nothing
+new, or a group of three for no reason. This file stays the source of the rules. Where the two do
+not agree, this file is correct. The operator chose the skill on 2026-11-14 (issue 1205, PR 1206).
+
+No checker finds a sentence that has no clear meaning. "The finding counts one time" passed the
+linter, but it does not tell what JAVV counts.
+
 ## Where JAVV holds the rules
 
 | Text | Check |
@@ -141,3 +151,4 @@ file first, then writes or checks the text. It has these parts:
 4. A pass over each sentence that names a person: is the person the reader (rule 2), a role (rule
    5) or the data of a screen (rule 7)?
 5. No internal codes (issue numbers, decision codes, milestones) in text for users or operators.
+6. A pass of the skill `ste80-humanizer` for the signs of model text, before you write the text.

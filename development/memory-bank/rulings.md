@@ -117,6 +117,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-08 | The words of the app are true for each source of scans: the Kubernetes chart, a Nomad job and a Compose file. The scanner cards say "set where it runs", not "operator-managed (GitOps)". The Glossary tells what **Namespace** is for Nomad and Docker, and the label stays (D3 option A). The app says "vulnerability database", not "vuln DB", and no "cross-merge" or "digest-deduped". | 1152 |
 | standing | A choice between two looks comes as one picture with A and B side by side. | `frontend/DESIGN.md` section 8.5 |
 | 2026-11-09 | The Guide addresses the reader as "you", and a step is a command. It has no "we", "our" or "I", and it names no reader in the third person ("a user", "an admin"). A permission names the role that you need. JAVV, a screen or the data is the subject of a description. Other people stay in the third person only as the data of a screen. | 1142 |
+| 2026-11-14 | A rewrite of text for a reader starts with the skill `ste80-humanizer`, which finds the signs of model text. `docs-voice.md` stays the source of the rules, and `ste-lint.py` with exit 0 stays the gate. | 1205, PR 1206 |
 
 ## AI vulnerability research (alpha)
 
