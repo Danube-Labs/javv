@@ -77,6 +77,16 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     expect(w.findComponent(FindingPaths).exists()).toBe(false)
   })
 
+  it('on: a click on the chevron does not open the finding either', async () => {
+    // the table ignores a click on a button, but not one on the shape inside the chevron
+    const w = mountTable([row('a', { locations: ['/x'], locations_total: 1 })], true)
+    const shape = w.find('button.paths-btn .paths-chev').element.firstElementChild!
+    shape.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await w.vm.$nextTick()
+    expect(w.emitted('rowClick')).toBeUndefined()
+    expect(w.findComponent(FindingPaths).exists()).toBe(true)
+  })
+
   it('on: a row with no path has no button, "0 paths" or "-"', () => {
     const w = mountTable([row('a', { locations: [], locations_total: 0 }), row('b')], true)
     expect(w.find('button.paths-btn').exists()).toBe(false)
