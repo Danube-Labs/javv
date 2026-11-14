@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.10](https://github.com/Danube-Labs/javv/compare/v0.9.9...v0.9.10) (2026-11-14)
+
+
+### Features
+
+* ingest and the findings read carry the files of a finding ([#1198](https://github.com/Danube-Labs/javv/issues/1198)) ([b436fab](https://github.com/Danube-Labs/javv/commit/b436fab5de657cb20310ab042768a415e632a832))
+* the finding page and the image page show the files of a finding ([#1203](https://github.com/Danube-Labs/javv/issues/1203)) ([8e598e4](https://github.com/Danube-Labs/javv/commit/8e598e46b88eb5071e31c3520e321c840aa98638))
+* the overview chart vulnerabilities over time is a dashboard panel ([#1178](https://github.com/Danube-Labs/javv/issues/1178)) ([9c70816](https://github.com/Danube-Labs/javv/commit/9c70816b66b5d9d033cb6872fc38518031a6d235))
+* the scanner sends the files of a finding ([#1200](https://github.com/Danube-Labs/javv/issues/1200)) ([8b7acf1](https://github.com/Danube-Labs/javv/commit/8b7acf1c04939781cc96bdf58138eb9843190f42))
+* top cves is a dashboard panel on a ranked read, with the mcp tool top_cves ([#1179](https://github.com/Danube-Labs/javv/issues/1179)) ([aaa2973](https://github.com/Danube-Labs/javv/commit/aaa2973b9a95629e7f73e2077b0c5350b71a668b))
+
+
+### Bug Fixes
+
+* the clock drift tests run without a sync, so uv fetches nothing at +90 days ([#1183](https://github.com/Danube-Labs/javv/issues/1183)) ([3432fc9](https://github.com/Danube-Labs/javv/commit/3432fc983c26ad957c232ba69f93767ceabebfaa))
+* the final stage of each image upgrades its os packages ([#1173](https://github.com/Danube-Labs/javv/issues/1173)) ([b608a81](https://github.com/Danube-Labs/javv/commit/b608a8177a95fe320d6bcbf799a55c96d775f10a)), closes [#1172](https://github.com/Danube-Labs/javv/issues/1172)
+
 ## [0.9.9](https://github.com/Danube-Labs/javv/compare/v0.9.8...v0.9.9) (2026-11-09)
 
 
