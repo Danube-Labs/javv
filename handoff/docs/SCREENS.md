@@ -484,16 +484,19 @@ Component not present" (issues 924 and 931). The assignee and note rows say "Ass
 **Affected components, the Paths column (issue 1077, operator rulings 2026-11-14 on built
 pictures, option B2):** the read of the card sends `locations=true`. A row of the card can hold
 more than one finding: one for each scanner and each digest of the tag. The column gives one
-number for each finding, in the order of the Scanners column, and never adds them: `11 paths`,
-`1 path`, `0 paths`, or `0 · 11` for a row of two scanners. `-` is a scan that sent no paths
-(a scanner before envelope schema 5). The hover text names the scanner of each number. A row
+number for each finding, in scanner order (as the Scanners column), then in digest order, and
+never adds them: `11 paths`, `1 path`, `0 paths`, or `0 · 11` for a row of two scanners. `-` is
+a scan that sent no paths (a scanner before envelope schema 5). The hover text and the name of
+the button give the scanner of each number, and its short digest when the row holds more than
+one digest of its tag. A row
 with at least one path has a button with the count: a chevron that points down and turns up
 while open, and the hover state stays while open (as the panel filters button of a dashboard).
 The row under it lists the paths of each finding, as text only, on white with a hairline. A
 block starts with the chip of its scanner and a sentence in ink at 13px, for example "Trivy found
 stdlib v1.26.3 at 11 paths in this image. The finding counts one time." A finding that the
 backend capped at 64 paths says "JAVV keeps the first 64 of N paths." When the table is wider
-than its card, the list stays in the part in view. A new read closes the open rows.
+than its card, the list stays in the part in view. A new read, or another page of the card,
+closes the open rows. A path shows its spaces as stored.
 
 **SLA box:** server-computed deadline + overdue flag from the findings read (B-5).
 
