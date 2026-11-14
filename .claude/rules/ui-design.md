@@ -76,7 +76,8 @@ Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)
 and `usePagedSlice` (a bounded row set the client already holds — saved views, a finding's
-Activity/Affected cards, DecisionsCard).
+Activity/Affected cards, DecisionsCard, the ranked cards, the leaderboard, the scan runs and the
+Settings lists; `keepPage` keeps the page when an action reads the list again, issue 1190).
 Backend: `query/paging.py` + the bulk helpers.
 **Grep first.** A raw parallel implementation of a solved surface fails review.
 **Screen head controls** take `head` (`UiButton`, `UiSegControl`): one 30px height, the darker

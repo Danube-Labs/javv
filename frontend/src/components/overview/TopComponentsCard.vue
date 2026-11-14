@@ -18,6 +18,7 @@ import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
 import { logger } from '@/lib/logger'
@@ -96,23 +97,11 @@ const ordered = computed(() =>
     .sort((a, b) => b.uniq - a.uniq),
 )
 
-const page = ref(0)
-const size = ref(props.pageSize)
-watch([ordered], () => {
-  page.value = 0
-})
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => ordered.value, props.pageSize)
 watch(
   () => props.pageSize,
   (next) => setSize(next),
 )
-const shown = computed(() =>
-  ordered.value.slice(page.value * size.value, (page.value + 1) * size.value),
-)
-const hasNext = computed(() => (page.value + 1) * size.value < ordered.value.length)
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
 
 const findingsRoute = (pkg: string) => ({ path: '/findings', query: panelFindingsQuery(props.filters, { q: pkg }) })
 function goFindings(pkg: string) {
