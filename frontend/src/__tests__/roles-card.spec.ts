@@ -5,13 +5,15 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import RolesCard, { type PermissionRow, type RoleRow } from '@/components/settings/RolesCard.vue'
-import { setRoleApiV1AdminUsersUsernameRolePatch } from '@/api/generated'
+import { listUsersApiV1AdminUsersGet, setRoleApiV1AdminUsersUsernameRolePatch } from '@/api/generated'
 import { useToastStore } from '@/stores/toast'
 import UsersRolesView from '@/views/settings/UsersRolesView.vue'
+
+import { nextPage, pagerText, pickRowsPerPage } from './helpers/pager'
 
 vi.mock('@/api/generated', async (importOriginal) =>
   (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
@@ -183,5 +185,60 @@ describe('Settings > Users and roles (issue 990)', () => {
     const cell = w.findAll('td').find((td) => td.text() === 'local')
     expect(cell).toBeDefined()
     expect(cell!.classes()).not.toContain('mono-cell')
+  })
+})
+
+describe('Settings > Users and roles: paging (issue 1190, row 13)', () => {
+  const listUsers = vi.mocked(listUsersApiV1AdminUsersGet)
+  const factory = listUsers.getMockImplementation()
+  afterEach(() => {
+    listUsers.mockImplementation(factory!)
+  })
+
+  async function mountWith(n: number) {
+    const users = Array.from({ length: n }, (_, i) => ({
+      username: `user-${String(i).padStart(2, '0')}`,
+      role: 'triager',
+      capabilities: [],
+      must_change: false,
+      disabled: false,
+      auth_source: 'local',
+      created_at: null,
+    }))
+    // each read answers with a new list, as the server does
+    listUsers.mockImplementation(async () => ({
+      data: { users: users.map((u) => ({ ...u })), total: n },
+      response: { ok: true, status: 200 },
+    }) as never)
+    setActivePinia(createPinia())
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/:any(.*)*', component: { render: () => null } }],
+    })
+    const w = mount(UsersRolesView, { global: { plugins: [router] } })
+    await flushPromises()
+    return w
+  }
+  const usersCard = (w: ReturnType<typeof mount>) => w.get('.pager').element.closest('.card')!
+
+  it('a new number of rows per page shows page 1 with that number of rows', async () => {
+    const w = await mountWith(30)
+    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    await nextPage(w)
+    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    await pickRowsPerPage(w, 25)
+    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(usersCard(w).querySelectorAll('tbody tr')).toHaveLength(25)
+  })
+
+  it('a role change on page 2 reads the list again and stays on page 2', async () => {
+    const w = await mountWith(30)
+    await nextPage(w)
+    const reads = listUsers.mock.calls.length
+    await w.find('select[aria-label="Role for user-15"]').setValue('viewer')
+    await w.findAll('button').find((b) => b.text() === 'Change role')!.trigger('click')
+    await flushPromises()
+    expect(listUsers.mock.calls.length).toBe(reads + 1)
+    expect(pagerText(w)).toBe('Showing 11–20 of 30')
   })
 })

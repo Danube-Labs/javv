@@ -32,6 +32,7 @@ import { approvalsValueSearch } from '@/composables/useValueSearch'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { MAX_FILTER_VALUES } from '@/filters/fields.config'
 import type { FacetsResponse } from '@/filters/facets'
+import { fmt } from '@/lib/format'
 import { logger } from '@/lib/logger'
 import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
@@ -216,7 +217,6 @@ function onEdited() {
   void fetchQueue()
 }
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

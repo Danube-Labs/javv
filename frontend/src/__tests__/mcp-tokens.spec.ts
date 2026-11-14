@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as sdk from '@/api/generated'
 import CopyValue from '@/components/settings/CopyValue.vue'
@@ -26,6 +26,8 @@ import {
   MCP_NAME,
 } from '@/views/settings/mcpTokensForm'
 import { tokenStatus } from '@/views/settings/tokensForm'
+
+import { bodyRows, nextPage, pagerText, pickRowsPerPage } from './helpers/pager'
 
 vi.mock('@/api/generated', async (importOriginal) =>
   (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
@@ -337,6 +339,52 @@ describe('the AI agents section', () => {
       'Token live revoked. The agent that uses it is refused from now on.',
     ])
     expect(sdk.listTokensApiV1AdminMcpTokensGet).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('the AI agents section: paging (issue 1190, row 13)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    document.body.innerHTML = ''
+  })
+  // clearAllMocks keeps an implementation: the next describe must not read this list
+  afterEach(() => {
+    vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockReset()
+  })
+
+  const thirty = () => Array.from({ length: 30 }, (_, i) => token(`agent-${String(i).padStart(2, '0')}`))
+
+  it('a new number of rows per page shows page 1 with that number of rows', async () => {
+    answer(thirty())
+    const w = await mountView()
+    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    await nextPage(w)
+    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    await pickRowsPerPage(w, 25)
+    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(bodyRows(w)).toBe(25)
+  })
+
+  it('a revoke on page 2 reads the list again and stays on page 2', async () => {
+    answer(thirty())
+    // each read answers with a new list, as the server does
+    vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockImplementation((async () => ({
+      response: { ok: true },
+      data: { tokens: thirty(), total: 30 },
+    })) as never)
+    vi.mocked(sdk.revokeApiV1AdminMcpTokensNameRevokePost).mockResolvedValue({ response: { ok: true } } as never)
+    const w = await mountView()
+    await nextPage(w)
+    const row = w.findAll('tbody tr')[5]! // the sixth row of page 2: agent-15
+    await row.findAll('button').find((b) => b.text().trim() === 'Revoke')!.trigger('click')
+    footer('Revoke').click()
+    await flushPromises()
+    expect(sdk.revokeApiV1AdminMcpTokensNameRevokePost).toHaveBeenCalledWith(
+      expect.objectContaining({ path: { name: 'agent-15' } }),
+    )
+    expect(sdk.listTokensApiV1AdminMcpTokensGet).toHaveBeenCalledTimes(2)
+    expect(pagerText(w)).toBe('Showing 11–20 of 30')
   })
 })
 

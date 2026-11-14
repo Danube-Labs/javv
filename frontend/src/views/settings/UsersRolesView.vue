@@ -7,7 +7,7 @@
  * seeded 5th role appears without a client change. A role change REVOKES the user's sessions
  * (D33) — the confirm dialog says so. 409 on the last enabled admin renders inline.
  */
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
@@ -31,6 +31,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { logger } from '@/lib/logger'
 import { roleLabel } from '@/lib/roleLabel'
 import { useAuthStore } from '@/stores/auth'
@@ -82,15 +83,8 @@ async function load() {
 }
 void load()
 
-// display slices of the one server answer (the ScannerRunsTable idiom)
-const page = ref(0)
-const size = ref(10)
-const shown = computed(() => users.value.slice(page.value * size.value, (page.value + 1) * size.value))
-const hasNext = computed(() => (page.value + 1) * size.value < users.value.length)
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
+// the list is read again after an invite, a role change or a disable: the page stays (issue 1190)
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => users.value, 10, { keepPage: true })
 
 // ── invite (create-with-temp-password) ─────────────────────────────────────────────────
 const inviteOpen = ref(false)

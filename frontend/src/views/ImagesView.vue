@@ -28,6 +28,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
 import type { ValueSearchFn } from '@/filters/facets'
 import { IMAGES_COLUMNS, IMAGES_FIELDS } from '@/images/fields.config'
+import { fmt } from '@/lib/format'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { filterImages, imagesCsv, imagesFacets, searchImageValues } from '@/images/imageFilters'
 import { logger } from '@/lib/logger'
@@ -161,7 +162,6 @@ const totalReplicas = computed(() => images.images.reduce((n, r) => n + (r.repli
 const inventoryAt = computed(() =>
   images.inventory?.completed_at ? lastDataAt(images.inventory.completed_at) : null,
 )
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

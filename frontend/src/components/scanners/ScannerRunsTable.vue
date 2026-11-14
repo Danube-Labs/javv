@@ -6,10 +6,12 @@
  * arithmetic beyond slicing. At the cap the header says so: older runs exist but are not
  * fetched (the full history is the ingest lens's job).
  */
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 import MixBar from '@/components/dashboards/MixBar.vue'
 import GridPager from '@/components/findings/GridPager.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
+import { fmt } from '@/lib/format'
 import { lastDataAt } from '@/system/freshness'
 import type { Severity } from '@/styles/tokens'
 
@@ -26,25 +28,9 @@ const props = defineProps<{
 const mix = (run: ScanRunRow): Partial<Record<Severity, number>> =>
   (run.severity ?? {}) as Partial<Record<Severity, number>>
 
-const page = ref(0)
-const size = ref(10)
-watch(
-  () => props.runs,
-  () => {
-    page.value = 0
-  },
-)
-
-const shown = computed(() => props.runs.slice(page.value * size.value, (page.value + 1) * size.value))
-const hasNext = computed(() => (page.value + 1) * size.value < props.runs.length)
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.runs)
 const atCap = computed(() => props.runs.length >= props.cap)
 
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
-
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

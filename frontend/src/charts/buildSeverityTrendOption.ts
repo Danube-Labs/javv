@@ -4,13 +4,11 @@
  * burn-down. Counts are row counts within the selected scanner scope — scoped at the QUERY. */
 import type { EChartsOption, LineSeriesOption } from 'echarts'
 
+import { dayLabel } from '@/lib/format'
 import { CHART_SEV, CHART_UI, SEVERITIES, type Severity } from '@/styles/tokens'
 import type { TrendPoint } from '@/charts/buildFindingsTrendOption'
 
 export type SeverityTrendData = Partial<Record<Severity, TrendPoint[]>>
-
-const dayLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
 export function buildSeverityTrendOption(data: SeverityTrendData): EChartsOption {
   const dates = (SEVERITIES.map((s) => data[s]).find((r) => r?.length) ?? []).map((p) =>

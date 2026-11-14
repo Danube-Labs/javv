@@ -25,6 +25,7 @@ import DigestSubTimeline from '@/components/images/DigestSubTimeline.vue'
 import ImageFindingsPanel from '@/components/images/ImageFindingsPanel.vue'
 import { buildImageAtTQuery } from '@/images/buildImageAtTQuery'
 import { historySummary, notYetScannedAt, type TimelineEvent } from '@/images/subTimeline'
+import { dayLabel, fmt } from '@/lib/format'
 import type { ImageRow } from '@/stores/images'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -162,10 +163,8 @@ const historyOpen = ref(false)
 function openFindings() {
   void router.push({ path: '/findings', query: { digest: digest.value, scanner: scanner.value } })
 }
-const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'}`
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>
@@ -250,7 +249,7 @@ const fmt = (n: number) => n.toLocaleString('en-US')
         <span class="stat-sub">
           <template v-if="timelineFailed">not available</template>
           <template v-else-if="history.firstAt && history.lastAt"
-            >{{ scanner }}, {{ day(history.firstAt) }} to {{ day(history.lastAt) }}</template
+            >{{ scanner }}, {{ dayLabel(history.firstAt) }} to {{ dayLabel(history.lastAt) }}</template
           >
           <template v-else>{{ scanner }} has no scan of this tag</template>
         </span>

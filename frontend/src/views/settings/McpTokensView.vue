@@ -29,6 +29,7 @@ import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiTextBox from '@/components/ui/UiTextBox.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { readFailureCopy } from '@/findings/failureCopy'
 import { logger } from '@/lib/logger'
 import { useToastStore } from '@/stores/toast'
@@ -97,14 +98,8 @@ void load()
 
 const now = () => new Date()
 
-const page = ref(0)
-const size = ref(10)
-const shown = computed(() => rows.value.slice(page.value * size.value, (page.value + 1) * size.value))
-const hasNext = computed(() => (page.value + 1) * size.value < rows.value.length)
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
+// the list is read again after a create, a rotate or a revoke: the page stays (issue 1190)
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => rows.value, 10, { keepPage: true })
 
 // an expiry is 00:00 UTC of its day, so the day is read in UTC: a local zone would show the day before
 const fmtDay = (iso: string | null) =>

@@ -20,6 +20,7 @@ import {
   type ValueSearchFn,
 } from '@/filters/facets'
 import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
+import { fmt } from '@/lib/format'
 import type { FilterMode, Modes } from '@/stores/filters'
 
 const props = defineProps<{
@@ -115,7 +116,6 @@ function toggleOpen(g: Group) {
   expanded.value = next
 }
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

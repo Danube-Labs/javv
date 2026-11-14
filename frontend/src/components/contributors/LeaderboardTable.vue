@@ -6,13 +6,15 @@
  * slicing and the by_action reads. Severity-mix / pace columns are trimmed (not on the wire).
  * At the board cap the header says so.
  */
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import SlaPctChip from '@/components/chips/SlaPctChip.vue'
 import ContributorIdentity from '@/components/contributors/ContributorIdentity.vue'
 import GridPager from '@/components/findings/GridPager.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { ackOf, fmtMedian, resolvedOf, sortBoard, type BoardRow } from '@/contributors/viewModel'
+import { fmt } from '@/lib/format'
 
 const props = defineProps<{
   rows: BoardRow[]
@@ -22,26 +24,9 @@ const props = defineProps<{
 
 const ordered = computed(() => sortBoard(props.rows))
 
-const page = ref(0)
-const size = ref(10)
-watch(
-  () => props.rows,
-  () => {
-    page.value = 0
-  },
-)
-const shown = computed(() =>
-  ordered.value.slice(page.value * size.value, (page.value + 1) * size.value),
-)
-const hasNext = computed(() => (page.value + 1) * size.value < ordered.value.length)
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => ordered.value)
 const atCap = computed(() => props.rows.length >= props.cap)
 
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
-
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

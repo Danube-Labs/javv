@@ -9,7 +9,7 @@
  * Self-contained per DESIGN.md section 10 — `(clusterId, t, scanner, filters)` in, its own read
  * and loading/empty/error states.
  */
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { client } from '@/api/client'
@@ -19,6 +19,7 @@ import GridPager from '@/components/findings/GridPager.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
 import { logger } from '@/lib/logger'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
@@ -94,21 +95,11 @@ function highest(row: CveRow): string {
   return SEVERITIES.find((s) => present.has(s)) ?? 'unknown'
 }
 
-const page = ref(0)
-const size = ref(props.pageSize)
-watch(rows, () => {
-  page.value = 0
-})
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => rows.value, props.pageSize)
 watch(
   () => props.pageSize,
   (next) => setSize(next),
 )
-const shown = computed(() => rows.value.slice(page.value * size.value, (page.value + 1) * size.value))
-const hasNext = computed(() => (page.value + 1) * size.value < rows.value.length)
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
 
 const findingsRoute = (cve: string) => ({ path: '/findings', query: panelFindingsQuery(props.filters, { cve }) })
 function goFindings(cve: string) {

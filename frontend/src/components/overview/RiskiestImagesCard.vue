@@ -25,6 +25,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { panelFilterParts, panelQuery } from '@/dashboards/panelFilters'
 import { logger } from '@/lib/logger'
 import { fmt, type ScannerLens } from '@/lib/scannerLens'
@@ -135,23 +136,11 @@ const ordered = computed(() =>
     }),
 )
 
-const page = ref(0)
-const size = ref(props.pageSize)
-watch([ordered], () => {
-  page.value = 0
-})
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => ordered.value, props.pageSize)
 watch(
   () => props.pageSize,
   (next) => setSize(next),
 )
-const shown = computed(() =>
-  ordered.value.slice(page.value * size.value, (page.value + 1) * size.value),
-)
-const hasNext = computed(() => (page.value + 1) * size.value < ordered.value.length)
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
 
 const imageRoute = (row: ImageRow) => ({
   path: `/images/${encodeURIComponent(row.image_digest)}`,

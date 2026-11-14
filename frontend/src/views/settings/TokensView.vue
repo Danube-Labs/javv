@@ -36,6 +36,7 @@ import UiField from '@/components/ui/UiField.vue'
 import UiSegControl from '@/components/ui/UiSegControl.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { usePagedSlice } from '@/composables/usePagedSlice'
 import { logger } from '@/lib/logger'
 import { useClusterStore } from '@/stores/cluster'
 import { useToastStore } from '@/stores/toast'
@@ -90,15 +91,8 @@ const retiredClusters = computed(() => fleet.rows.value.filter((c) => c.retired 
 
 const now = () => new Date()
 
-// display slices of the one server answer (the ScannerRunsTable idiom)
-const page = ref(0)
-const size = ref(10)
-const shown = computed(() => rows.value.slice(page.value * size.value, (page.value + 1) * size.value))
-const hasNext = computed(() => (page.value + 1) * size.value < rows.value.length)
-function setSize(next: number) {
-  size.value = next
-  page.value = 0
-}
+// the list is read again after a create, a rotate or a revoke: the page stays (issue 1190)
+const { page, size, shown, hasNext, setSize } = usePagedSlice(() => rows.value, 10, { keepPage: true })
 
 const clusterName = (id: string) =>
   clusterStore.clusters.find((c) => c.cluster_id === id)?.cluster_name ??

@@ -4,6 +4,7 @@
  * (`bucketEndT`, INTERVAL_MS) — one histogram grammar, two data sources. */
 import type { EChartsOption } from 'echarts'
 
+import { dayLabel } from '@/lib/format'
 import { CHART_ACCENT, CHART_UI } from '@/styles/tokens'
 
 import type { IngestInterval } from './buildIngestLensOption'
@@ -13,8 +14,6 @@ export interface ActivityPoint {
   count: number
 }
 
-const dayLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const hourLabel = (iso: string): string =>
   new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
 

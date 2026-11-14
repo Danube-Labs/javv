@@ -15,11 +15,14 @@ import { useClusterStore } from '@/stores/cluster'
 import TokensView from '@/views/settings/TokensView.vue'
 import { CLUSTER_ID, mintClusterId, NEW_CLUSTER } from '@/views/settings/tokensForm'
 
+import { bodyRows, nextPage, pagerText, pickRowsPerPage } from './helpers/pager'
+
 vi.mock('@/api/generated', async (importOriginal) =>
   (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
     listClustersApiV1ClustersGet: vi.fn<() => Promise<unknown>>(),
     listTokensApiV1AdminTokensGet: vi.fn<() => Promise<unknown>>(),
     mintApiV1AdminTokensPost: vi.fn<() => Promise<unknown>>(),
+    revokeApiV1AdminTokensTokenIdRevokePost: vi.fn<() => Promise<unknown>>(),
   }),
 )
 
@@ -206,5 +209,64 @@ describe('the row actions (issue 984)', () => {
       tr.findAll('.row-actions button').map((b) => b.text()),
     )
     expect(actions).toEqual([['Rotate', 'Revoke'], ['Revoke'], []])
+  })
+})
+
+describe('paging (issue 1190, row 13)', () => {
+  const token = (i: number) => ({
+    id: `t-${String(i).padStart(2, '0')}`,
+    cluster_id: 'c-1',
+    scanner: 'trivy',
+    scope: null,
+    created_by: 'admin',
+    created_at: '2026-10-01T00:00:00+00:00',
+    expiry: null,
+    disabled: false,
+    last_ingest_at: null,
+  })
+
+  async function mountWith(n: number) {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    useAuthStore().user = { username: 'admin', capabilities: ['can_manage_tokens'] } as never
+    vi.mocked(sdk.listClustersApiV1ClustersGet).mockResolvedValue({
+      response: { ok: true },
+      data: { clusters: [] },
+    } as never)
+    // each read answers with a new list, as the server does
+    vi.mocked(sdk.listTokensApiV1AdminTokensGet).mockImplementation((async () => ({
+      response: { ok: true },
+      data: { total: n, tokens: Array.from({ length: n }, (_, i) => token(i)) },
+    })) as never)
+    const w = mount(TokensView, { attachTo: document.body })
+    await flushPromises()
+    return w
+  }
+
+  it('a new number of rows per page shows page 1 with that number of rows', async () => {
+    const w = await mountWith(30)
+    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    await nextPage(w)
+    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    await pickRowsPerPage(w, 25)
+    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(bodyRows(w)).toBe(25)
+    w.unmount()
+  })
+
+  it('a revoke on page 2 reads the list again and stays on page 2', async () => {
+    vi.mocked(sdk.revokeApiV1AdminTokensTokenIdRevokePost).mockResolvedValue({ response: { ok: true } } as never)
+    const w = await mountWith(30)
+    await nextPage(w)
+    const row = w.findAll('tbody tr')[5]! // the sixth row of page 2: t-15
+    await row.findAll('button').find((b) => b.text() === 'Revoke')!.trigger('click')
+    await w.findAll('.modal-actions button').find((b) => b.text() === 'Revoke')!.trigger('click')
+    await flushPromises()
+    expect(sdk.revokeApiV1AdminTokensTokenIdRevokePost).toHaveBeenCalledWith(
+      expect.objectContaining({ path: { token_id: 't-15' } }),
+    )
+    expect(sdk.listTokensApiV1AdminTokensGet).toHaveBeenCalledTimes(2)
+    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    w.unmount()
   })
 })
