@@ -37,6 +37,8 @@ What one finding covers:
    image, from one scanner.
 3. To see the findings of one scanner, use the Scanner filter.
 4. Select a finding to open it. The evidence shows the result of each scanner, side by side.
-5. Set the state of the finding in the triage panel. The next page shows how.
+5. To see the files that hold the package, select the number in the Paths column of Affected
+   components. The list of the files of each scanner opens under the row.
+6. Set the state of the finding in the triage panel. The next page shows how.
 
 Next: [Set the state of a finding](set-the-state-of-a-finding.md).

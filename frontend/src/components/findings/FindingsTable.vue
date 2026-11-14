@@ -13,6 +13,11 @@
  * `reorderable`, headers drag (discover-grid grammar) — the table emits raw PrimeVue indexes and
  * the OWNER maps + persists them (`system/columnOrder.ts`), same parent-owns-state
  * discipline as `hidden`.
+ *
+ * `paths` (issue 1077, the image page) adds a Paths column after Package and lets a row open to
+ * list the files of its finding. It is not in FINDINGS_COLUMNS, so the Findings grid and its
+ * Columns menu stay as they are. A `reorderable` table gets no Paths: the parent maps the drag
+ * indexes over its own column list, which has no Paths.
  */
 import Column from 'primevue/column'
 import DataTable, {
@@ -23,6 +28,8 @@ import { computed, nextTick, ref, watch } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 import DisagreementBadge from '@/components/chips/DisagreementBadge.vue'
+import FindingPaths from '@/components/finding/FindingPaths.vue'
+import PathsCount from '@/components/finding/PathsCount.vue'
 import EpssBar from '@/components/chips/EpssBar.vue'
 import KevTag from '@/components/chips/KevTag.vue'
 import SevChip from '@/components/chips/SevChip.vue'
@@ -33,6 +40,8 @@ import ValueActions from '@/components/filters/ValueActions.vue'
 import RowLink from '@/components/ui/RowLink.vue'
 import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS, type FindingsColumnKey } from '@/findings/columns'
+import { pathsOf } from '@/findings/paths'
+import { logger } from '@/lib/logger'
 import { stateLabel } from '@/findings/stateLabels'
 import { activeMode, type Selections } from '@/filters/fields.config'
 import type { FilterMode, Modes } from '@/stores/filters'
@@ -65,8 +74,12 @@ const props = withDefaults(
     modes?: Modes
     /** where a row leads: its identifier renders as a real link, so the keyboard can open it */
     rowTo?: (row: FindingRow) => RouteLocationRaw
+    /** the Paths column and the rows that open to list the paths (issue 1077); the read must
+     * send `locations=true` */
+    paths?: boolean
   }>(),
   {
+    paths: false,
     hidden: () => new Set<string>(),
     colOrder: () => FINDINGS_COLUMNS.map(([key]) => key),
     reorderable: false,
@@ -75,16 +88,52 @@ const props = withDefaults(
   },
 )
 
-/** rendered orderable columns: display order minus the hidden set */
-const orderedKeys = computed(
-  () => props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[],
+/** a column of this table: the togglable ones plus Paths, which only the `paths` prop adds */
+type TableKey = FindingsColumnKey | 'paths'
+
+/** rendered orderable columns: display order minus the hidden set, Paths after Package, where
+ * it is in view at 1440px without a scroll (after Fixed it was not) */
+/** the Paths column is on: never with `reorderable`, whose drag indexes have no Paths */
+const pathsOn = computed(() => props.paths && !props.reorderable)
+const orderedKeys = computed(() => {
+  const keys: TableKey[] = props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[]
+  if (!pathsOn.value) return keys
+  const at = keys.indexOf('package')
+  return at === -1 ? [...keys, 'paths' as const] : [...keys.slice(0, at + 1), 'paths' as const, ...keys.slice(at + 1)]
+})
+
+/* the rows opened to show their paths, by finding_key; a new page starts with all closed */
+const expanded = ref<Record<string, boolean>>({})
+watch(
+  () => props.rows,
+  (rows) => {
+    expanded.value = {}
+    // a count with no list: the read did not send `locations=true`, and the cell cannot open
+    const unread = pathsOn.value ? rows.filter((r) => r.locations === undefined && (r.locations_total ?? 0) > 0).length : 0
+    if (unread > 0) logger.warn('findings_table_paths_not_read', { rows: unread })
+  },
+  { immediate: true },
 )
+async function togglePaths(row: FindingRow) {
+  const next = { ...expanded.value }
+  if (next[row.finding_key]) delete next[row.finding_key]
+  else next[row.finding_key] = true
+  expanded.value = next
+  // the table draws its cells again, so the button is a new element: give it back the focus
+  await nextTick()
+  const root = (dt.value as unknown as { $el?: HTMLElement } | null)?.$el
+  // a finding key is not a CSS identifier: compare the value instead of building a selector
+  const id = pathsId(row)
+  const buttons = root ? Array.from(root.querySelectorAll<HTMLElement>('button.paths-btn')) : []
+  buttons.find((b) => b.getAttribute('aria-controls') === id)?.focus()
+}
+const pathsId = (row: FindingRow) => `finding-paths-${row.finding_key}`
 
 const timeTravel = useTimeTravelStore()
 /** the D28 display clock: SLA countdowns measure from T when rewound, never from today */
 const slaNowMs = computed(() => refNowMs(timeTravel.t))
 
-const COL_HEADER: Record<FindingsColumnKey, string> = {
+const COL_HEADER: Record<TableKey, string> = {
   first_seen: 'First seen',
   last_scan: 'Last scan',
   epss: 'EPSS',
@@ -99,10 +148,11 @@ const COL_HEADER: Record<FindingsColumnKey, string> = {
   sla: 'SLA',
   state: 'State',
   assignee: 'Assignee',
+  paths: 'Paths',
 }
 // every cell left-anchored (operator 2026-07-11: we read left to right — no r/c columns);
 // narrow data columns shrink to content so layout slack pools in the text columns
-const FIT_COLS = new Set<FindingsColumnKey>([
+const FIT_COLS = new Set<TableKey>([
   'first_seen',
   'last_scan',
   'epss',
@@ -114,12 +164,13 @@ const FIT_COLS = new Set<FindingsColumnKey>([
   'sla',
   'state',
   'assignee',
+  'paths',
 ])
-const colClass = (key: FindingsColumnKey) =>
+const colClass = (key: TableKey) =>
   [FIT_COLS.has(key) ? 'fit' : '', props.reorderable ? 'th-drag' : ''].join(' ').trim()
 
 // the server's sort whitelist, column → field (severity_rank rides the pinned column)
-const SORT_FIELD: Partial<Record<FindingsColumnKey, SortField>> = {
+const SORT_FIELD: Partial<Record<TableKey, SortField>> = {
   first_seen: 'first_seen_at',
   last_scan: 'last_scan_at',
   epss: 'epss',
@@ -176,7 +227,7 @@ const nsLabel = (r: FindingRow): string => {
  * Deliberately absent: the pure-data columns. `namespace` only qualifies on a single-namespace
  * row, because a finding spanning three namespaces has no one value to filter on.
  */
-const CELL_FILTER_FIELD: Partial<Record<FindingsColumnKey | 'severity' | 'cve', string>> = {
+const CELL_FILTER_FIELD: Partial<Record<TableKey | 'severity' | 'cve', string>> = {
   severity: 'severity',
   state: 'state',
   scanner: 'scanner',
@@ -218,6 +269,8 @@ const cellActive = (key: string, value: string): FilterMode | null =>
       :sort-order="props.order === 'desc' ? -1 : 1"
       :loading="props.loading"
       data-key="finding_key"
+      v-model:expanded-rows="expanded"
+      :class="{ 'tbl-paths': pathsOn }"
       :reorderable-columns="props.reorderable"
       :pt="{ table: { class: `tbl tbl-hover ${props.dense ? 'tbl-dense' : ''} ${props.reorderable ? 'tbl-reorder' : ''}` } }"
       @sort="onSort"
@@ -300,6 +353,13 @@ const cellActive = (key: string, value: string): FilterMode | null =>
           <SlaCell v-else-if="key === 'sla'" :due-at="data.due_at" :overdue="data.overdue === true" :now-ms="slaNowMs" />
           <StateTag v-else-if="key === 'state'" :state="data.state" />
           <span v-else-if="key === 'assignee'" class="sm">{{ data.assignee ?? '-' }}</span>
+          <PathsCount
+            v-else-if="key === 'paths'"
+            :entries="[pathsOf(data)]"
+            :open="expanded[data.finding_key] === true"
+            :controls="pathsId(data)"
+            @toggle="togglePaths(data)"
+          />
           <!-- `image` names itself "Image (all tags)": the cell reads `repo:tag` but the
                filter is repo-only, so "+ nginx" also matches nginx:1.21.6 -->
           <ValueActions
@@ -314,6 +374,14 @@ const cellActive = (key: string, value: string): FilterMode | null =>
           </span>
         </template>
       </Column>
+      <template v-if="pathsOn" #expansion="{ data }">
+        <FindingPaths
+          :id="pathsId(data)"
+          :entries="[pathsOf(data)]"
+          :package-name="data.package_name"
+          :version="data.installed_version"
+        />
+      </template>
       <template #empty>
         <!-- "no findings" is an ANSWER; before a read comes back there is none. `loading` misses
              the window before the cluster resolves, when no request has started yet. -->
@@ -397,6 +465,20 @@ const cellActive = (key: string, value: string): FilterMode | null =>
 :deep(.scanner-stack) {
   display: inline-flex;
   gap: 4px;
+}
+/* the list under an opened row: the panel brings its own padding. The table can be wider than
+   its card: the list keeps to the part in view, wherever the table is scrolled */
+.tbl-paths :deep(.p-datatable-row-expansion > td) {
+  padding: 0;
+}
+.tbl-paths :deep(.p-datatable-table-container) {
+  container-type: inline-size;
+}
+.tbl-paths :deep(.paths-panel) {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqw;
 }
 .empty-row {
   padding: 34px 12px; /* the primary grid breathes more than the skin default */

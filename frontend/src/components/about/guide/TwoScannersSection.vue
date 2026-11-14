@@ -25,7 +25,8 @@ import GuideProse from './GuideProse.vue'
       scanner. A scanner report can show the same finding more than one time: one time for each file
       that holds the package. For example, the Trivy report for rancher/local-path-provisioner v0.0.36
       has 371 entries. JAVV shows 101 findings for this image. The Go standard library is in 11
-      programs of the image, thus Trivy shows each of its CVEs 11 times.
+      programs of the image, thus Trivy shows each of its CVEs 11 times. The
+      <span class="ui-name">Paths</span> column of a finding page and of an image page lists these files.
     </p>
   </GuideProse>
 </template>

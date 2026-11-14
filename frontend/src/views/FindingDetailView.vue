@@ -118,7 +118,7 @@ function reloadPair() {
 /* ---- affected components: every occurrence of the CVE, server-side filtered ---- */
 const occQuery = computed(() =>
   clusterStore.selectedId && cveId.value
-    ? withGlobals({ cve_id: [cveId.value], size: 200 })
+    ? withGlobals({ cve_id: [cveId.value], size: 200, locations: true }) // the Paths column, issue 1077
     : null,
 )
 
@@ -135,9 +135,9 @@ watch(
     if (mine !== occSeq) return // a newer read owns the card now
     affectedFailed.value = !response.response?.ok || !response.data
     if (!affectedFailed.value) {
-      const body = response.data as { data: FindingRow[]; total: number }
+      const body = response.data as { data: FindingRow[]; total: { value: number } }
       affected.value = affectedComponentRows(body.data)
-      affectedTruncated.value = body.total > body.data.length
+      affectedTruncated.value = body.total.value > body.data.length
     } else {
       affected.value = []
       affectedTruncated.value = false

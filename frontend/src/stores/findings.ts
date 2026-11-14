@@ -38,6 +38,10 @@ export interface FindingRow {
   due_at: string | null
   first_seen_at?: string | null
   last_scan_at?: string | null
+  /** the files of the finding: sent only on a read with `locations=true` (issue 1077) */
+  locations?: string[] | null
+  /** the full number of files; null when the scan sent none (a scanner before schema 5) */
+  locations_total?: number | null
   [key: string]: unknown
 }
 

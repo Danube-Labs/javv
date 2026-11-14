@@ -5,6 +5,7 @@
  * them from whichever row carries them, labeled with the source scanner. Historical (`as_of`)
  * rows null-out unattested fields — every function tolerates nulls.
  */
+import { type FindingPaths, pathsOf } from '@/findings/paths'
 import type { FindingRow } from '@/stores/findings'
 
 export const SCANNER_ORDER = ['trivy', 'grype'] as const
@@ -70,7 +71,8 @@ export function epssOf(rows: FindingRow[]): { value: number; scanner: string } |
 /** One "affected components" row (prototype parity — the component is the package inside a
  * running image; workload names don't exist in the data, D30). Namespaces ride per row.
  * Scanners are LISTED, never merged: the group key includes both versions, so a scanner
- * disagreement on current/fixed splits into separate rows and stays visible. */
+ * disagreement on current/fixed splits into separate rows and stays visible. The paths stay
+ * per finding (issue 1077): one entry for each scanner and digest in the row, never joined. */
 export interface AffectedComponentRow {
   image: string
   packageName: string
@@ -78,6 +80,7 @@ export interface AffectedComponentRow {
   fixed: string | null
   namespaces: string[]
   scanners: string[]
+  paths: FindingPaths[]
 }
 
 export function affectedComponentRows(rows: FindingRow[]): AffectedComponentRow[] {
@@ -94,21 +97,21 @@ export function affectedComponentRows(rows: FindingRow[]): AffectedComponentRow[
         fixed: r.fixed_version,
         namespaces: [],
         scanners: [],
+        paths: [],
       }
       byKey.set(key, out)
     }
     const ns = Array.isArray(r.namespaces) ? (r.namespaces as string[]) : []
     for (const n of ns) if (!out.namespaces.includes(n)) out.namespaces.push(n)
     if (!out.scanners.includes(r.scanner)) out.scanners.push(r.scanner)
+    out.paths.push(pathsOf(r))
   }
   const out = [...byKey.values()]
+  const rank = (s: string) => (SCANNER_ORDER as readonly string[]).indexOf(s)
   for (const r of out) {
     r.namespaces.sort()
-    r.scanners.sort(
-      (a, b) =>
-        (SCANNER_ORDER as readonly string[]).indexOf(a) -
-        (SCANNER_ORDER as readonly string[]).indexOf(b),
-    )
+    r.scanners.sort((a, b) => rank(a) - rank(b))
+    r.paths.sort((a, b) => rank(a.scanner) - rank(b.scanner) || (a.digest ?? '').localeCompare(b.digest ?? ''))
   }
   return out.sort(
     (a, b) =>

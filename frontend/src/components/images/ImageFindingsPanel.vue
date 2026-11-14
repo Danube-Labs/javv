@@ -60,6 +60,7 @@ async function loadRows() {
       order: order.value,
       size: size.value,
       keep_open: true, // the last page keeps its search, so Prev from it works
+      locations: true, // the Paths column and the rows that open (issue 1077)
       ...(pager.cursor.value ? { cursor: pager.cursor.value } : {}),
     } as SearchFindingsApiV1FindingsGetData['query'],
   })
@@ -137,6 +138,7 @@ function openFinding(row: FindingRow) {
       :loading="loading"
       :hidden="HIDDEN_COLUMNS"
       :row-to="findingRoute"
+      paths
       @sort="onSort"
       @row-click="openFinding"
     />

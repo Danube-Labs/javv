@@ -88,8 +88,8 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     useClusterStore().selectedId = 'c-1'
     searchMock.mockImplementation((async (opts: { query: { image_digest?: string } }) =>
       opts.query.image_digest
-        ? ok({ data: [row('trivy', state), row('grype', state)], total: 2 })
-        : ok({ data: [], total: 0 })) as never)
+        ? ok({ data: [row('trivy', state), row('grype', state)], total: { value: 2, relation: 'eq' } })
+        : ok({ data: [], total: { value: 0, relation: 'eq' } })) as never)
     vi.mocked(listDecisionsApiV1DecisionsGet).mockResolvedValue(ok({ decisions: [] }) as never)
     vi.mocked(readAuditLogApiV1AuditGet).mockResolvedValue(ok({ data: [] }) as never)
     vi.mocked(closeCursorApiV1CursorsClosePost).mockResolvedValue(ok({}) as never)
@@ -137,5 +137,24 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     await flushPromises()
 
     expect(pairReads().length).toBe(before)
+  })
+
+  it('the read of Affected components asks for the paths, the read of the finding does not (issue 1077)', async () => {
+    await mountPage()
+    const occ = searchMock.mock.calls
+      .map((c) => (c[0] as { query: Record<string, unknown> }).query)
+      .filter((q) => !q.image_digest)
+    expect(occ.length).toBeGreaterThan(0)
+    for (const q of occ) expect(q).toMatchObject({ cve_id: ['CVE-2026-0001'], locations: true })
+    for (const c of pairReads()) expect((c[0] as { query: Record<string, unknown> }).query.locations).toBeUndefined()
+  })
+
+  it('more occurrences than the read holds: the card says so (review F3, the server sends total as an object)', async () => {
+    searchMock.mockImplementation((async (opts: { query: { image_digest?: string } }) =>
+      opts.query.image_digest
+        ? ok({ data: [row('trivy', state)], total: { value: 1, relation: 'eq' } })
+        : ok({ data: [row('trivy', state)], total: { value: 300, relation: 'eq' } })) as never)
+    const w = await mountPage()
+    expect(w.text()).toContain('More exist.')
   })
 })
