@@ -7,10 +7,9 @@ import type { EChartsOption, LineSeriesOption } from 'echarts'
 import { CHART_SEV, CHART_UI, SEVERITIES, type Severity } from '@/styles/tokens'
 import type { TrendPoint } from '@/charts/buildFindingsTrendOption'
 
-export type SeverityTrendData = Partial<Record<Severity, TrendPoint[]>>
+import { dayLabel } from './axisLabels'
 
-const dayLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+export type SeverityTrendData = Partial<Record<Severity, TrendPoint[]>>
 
 export function buildSeverityTrendOption(data: SeverityTrendData): EChartsOption {
   const dates = (SEVERITIES.map((s) => data[s]).find((r) => r?.length) ?? []).map((p) =>

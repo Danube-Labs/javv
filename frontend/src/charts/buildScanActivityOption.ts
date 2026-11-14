@@ -4,6 +4,8 @@ import type { BarSeriesOption, EChartsOption } from 'echarts'
 
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
 
+import { dayLabel } from './axisLabels'
+
 export interface ScanPoint {
   date: string
   scans: number
@@ -11,9 +13,6 @@ export interface ScanPoint {
 export type ScanActivityData = Partial<Record<'trivy' | 'grype', ScanPoint[]>>
 
 const SCANNERS = ['trivy', 'grype'] as const
-
-const dayLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
 export function buildScanActivityOption(series: ScanActivityData): EChartsOption {
   const dates = (SCANNERS.map((s) => series[s]).find((r) => r?.length) ?? []).map((p) =>

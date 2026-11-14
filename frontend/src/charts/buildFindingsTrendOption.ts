@@ -7,6 +7,8 @@ import type { EChartsOption, LineSeriesOption } from 'echarts'
 import type { ScannerLens } from '@/lib/scannerLens'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
 
+import { dayLabel } from './axisLabels'
+
 export interface TrendPoint {
   date: string
   count: number
@@ -17,9 +19,6 @@ export interface FindingsTrendData {
 }
 
 const SCANNERS = ['trivy', 'grype'] as const
-
-const dayLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
 /** What the card says instead of a chart with no lines. The route only returns days for a
  * scanner or severity that has a finding in the range, so "nothing in range" arrives as no

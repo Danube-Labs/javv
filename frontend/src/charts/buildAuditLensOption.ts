@@ -6,6 +6,7 @@ import type { EChartsOption } from 'echarts'
 
 import { CHART_ACCENT, CHART_UI } from '@/styles/tokens'
 
+import { dayLabel } from './axisLabels'
 import type { IngestInterval } from './buildIngestLensOption'
 
 export interface ActivityPoint {
@@ -13,8 +14,6 @@ export interface ActivityPoint {
   count: number
 }
 
-const dayLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const hourLabel = (iso: string): string =>
   new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
 
