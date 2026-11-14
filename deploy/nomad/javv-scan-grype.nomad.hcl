@@ -13,7 +13,7 @@ variable "cluster_id" {
 
 variable "image" {
   type    = string
-  default = "ghcr.io/danube-labs/javv-scanner-grype:0.121.1"
+  default = "ghcr.io/danube-labs/javv-scanner-grype:0.121.3"
 }
 
 job "javv-scan-grype" {

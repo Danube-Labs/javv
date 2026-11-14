@@ -218,7 +218,7 @@ the Dockerfiles and the dev compose file equal to it. To change the support, cha
 | Component | Current | Also supported |
 |---|---|---|
 | Trivy | 0.76.2 | 0.70.0 |
-| Grype | 0.121.1 | 0.121.3, 0.114.0 |
+| Grype | 0.121.3 | 0.114.0 |
 | OpenSearch | 3.9.0 | n/a |
 <!-- --8<-- [end:supported-versions] -->
 
