@@ -18,6 +18,7 @@ alpha. The pictures are also on branch `visual-assets`, folder `1205/settled/`.
 | Other packages | The other packages of the CVE on this image: option P1. The package name in the head band opens a menu with each package of the CVE on this image. A count ("4 on this image") shows next to the name. A click opens the finding of that package. The note at the bottom of the evidence card goes. The operator rejected P2 (tabs) and P3 (badges), and the underlined links of the first try. | `page-ruled-first-screen.png`, `packages-options.png` | PR C of the plan |
 | Q4 text | The evidence card (group 1). The line under the title is `Each row shows the values that one scanner sent.` The operator removed `JAVV does not change them`: it explains nothing. The note "Scanners agree on severity…" goes. The note for scanners that disagree is `The scanners give different severities. Each row shows the severity that its scanner sent.` | `page-ruled-first-screen.png` | PR C of the plan |
 | Q4 text | The Triage cell and panel (group 2) use the text of comment 6880398386. This includes "Save", the line under Save, "Add a note for Activity…" and "Accept the risk of this CVE…". It also includes the blocks of a Stale finding, of a Risk accepted finding and of a role that cannot change a risk acceptance. "Note and more…" stays. | `text-triage-cell-and-panel.png` | PR C of the plan |
+| Package menu | The menu of P1 has the look M1: the kit panel `PopoverShell` beside the package name. It has an arrow, the title "Packages with this CVE", the image and a close button. The current package has a check mark. The operator rejected the first menu (too close to the card) and M2 (a dropdown with a gap and a deep shadow). | `package-menu-m1.png` | PR C of the plan |
 
 ## Still open
 
@@ -30,4 +31,5 @@ Nothing in the UI and the text. The operator plans the PRs next.
 - Round 3: comment 6879278530 (`r3-*.png`).
 - Round 4: comment 6879683168 (`r4-*.png`).
 - Round 5: comment 6879978982 (`r5-*.png`).
-- Text round: comments 6880398386, 6880583694 (a correction) and 6880711120 (`t1-*.png`, `t2-*.png`, `t3-*.png`).
+- Text round: comments 6880398386, 6880583694 (a correction), 6880711120 and 6881237662 (`t1-*.png`, `t2-*.png`, `t3-*.png`).
+- Package menu: comment 6881679933 (`t4-package-menu.png`).
