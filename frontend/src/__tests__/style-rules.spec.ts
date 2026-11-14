@@ -175,7 +175,11 @@ describe('style rules: one shared set of skins', () => {
  * of the shared value. The property list comes from base.css, so a new shared value is covered
  * with no change here. Only a rule with exactly one of these selectors counts.
  */
-const SHARED_RULES = ['.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error']
+const SHARED_RULES = [
+  '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
+  // the table and screen-head rules that components set again (issue 1190)
+  '.mono-cell',
+]
 
 /** The properties that each rule of `css` sets, by its exact selector. */
 function ruleProperties(css: string): Map<string, Set<string>> {
@@ -242,6 +246,11 @@ describe('style rules: one shared card, menu panel and error text', () => {
     expect(sharedRuleCopies(planted, shared)).toEqual(['.card: background', '.card-head h2: margin'])
     const addition = '/* .card { border: 0; } */ .card { padding: 4px; } .card-head.dark { gap: 0; } .rail .load-error { color: red; }'
     expect(sharedRuleCopies(addition, shared)).toEqual([])
+  })
+
+  it('the check finds a planted copy of each rule of issue 1190', () => {
+    const planted = '.mono-cell { font-family: var(--font-mono); }'
+    expect(sharedRuleCopies(planted, shared)).toEqual(['.mono-cell: font-family'])
   })
 })
 

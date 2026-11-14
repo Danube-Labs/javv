@@ -261,9 +261,6 @@ async function submit() {
   font-size: var(--text-sm);
   color: var(--health-down-fg);
 }
-.mono-cell {
-  font-family: var(--font-mono);
-}
 .strong {
   font-weight: 700;
 }

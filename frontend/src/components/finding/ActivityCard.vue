@@ -93,9 +93,6 @@ function reasonOf(a: ActivityRow): string | null {
 </template>
 
 <style scoped>
-.mono-cell {
-  font-family: var(--font-mono);
-}
 .sm {
   font-size: var(--text-sm);
 }
