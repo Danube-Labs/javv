@@ -35,6 +35,7 @@ import {
   type BoardRow,
   type TeamTotals,
 } from '@/contributors/viewModel'
+import { fmt } from '@/lib/format'
 import { logger } from '@/lib/logger'
 import { readFailureCopy } from '@/findings/failureCopy'
 import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
@@ -139,7 +140,6 @@ async function exportCsv() {
   await runExport(q)
 }
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 const teamSla = computed(() =>
   totals.value?.sla_hit_pct == null ? '-' : `${Math.round(totals.value.sla_hit_pct)}%`,
 )

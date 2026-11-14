@@ -25,6 +25,7 @@ import DigestSubTimeline from '@/components/images/DigestSubTimeline.vue'
 import ImageFindingsPanel from '@/components/images/ImageFindingsPanel.vue'
 import { buildImageAtTQuery } from '@/images/buildImageAtTQuery'
 import { historySummary, notYetScannedAt, type TimelineEvent } from '@/images/subTimeline'
+import { fmt } from '@/lib/format'
 import type { ImageRow } from '@/stores/images'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -165,7 +166,6 @@ function openFindings() {
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'}`
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

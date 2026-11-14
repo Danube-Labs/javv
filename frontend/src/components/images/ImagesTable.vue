@@ -21,6 +21,7 @@ import RowLink from '@/components/ui/RowLink.vue'
 import { activeMode, type Selections } from '@/filters/fields.config'
 import { IMAGES_COLUMNS, type ImagesColumnKey } from '@/images/fields.config'
 import { scannerCountsOf } from '@/images/imageFilters'
+import { fmt } from '@/lib/format'
 import type { FilterMode, Modes } from '@/stores/filters'
 import type { ImageRow } from '@/stores/images'
 import type { Severity } from '@/styles/tokens'
@@ -124,7 +125,6 @@ const scannersFor = (r: ImageRow) =>
   r.severity_by_scanner ? Object.keys(r.severity_by_scanner) : r.scanners
 const nsLabel = (r: ImageRow) =>
   r.namespaces.length <= 1 ? (r.namespaces[0] ?? '-') : `${r.namespaces[0]} +${r.namespaces.length - 1}`
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

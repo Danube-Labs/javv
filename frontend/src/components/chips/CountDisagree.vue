@@ -6,6 +6,8 @@
  * look like two scanners agreeing. */
 import { computed } from 'vue'
 
+import { fmt } from '@/lib/format'
+
 const props = defineProps<{
   trivy?: number | null
   grype?: number | null
@@ -32,7 +34,6 @@ const counted = computed<Scanner[]>(() => {
 /** The lone witness, when exactly one scanner has counted. */
 const only = computed(() => (counted.value.length === 1 ? counted.value[0] : undefined))
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 const title = computed(() => {
   if (delta.value !== null && delta.value !== 0) {
     const ahead = delta.value > 0 ? LABEL.trivy : LABEL.grype

@@ -23,6 +23,7 @@ import {
   type FacetBucket,
 } from '@/contributors/viewModel'
 import { panelFindingsQuery, panelQuery } from '@/dashboards/panelFilters'
+import { fmt } from '@/lib/format'
 import { logger } from '@/lib/logger'
 import { SEVERITIES } from '@/styles/tokens'
 
@@ -83,7 +84,6 @@ const overall = computed(() => {
   const d = rows.value.reduce((n, r) => n + r.done, 0)
   return { done: d, total: t }
 })
-const fmt = (n: number) => n.toLocaleString('en-US')
 const pct = (r: { done: number; total: number }) =>
   r.total === 0 ? 0 : Math.round((r.done / r.total) * 100)
 

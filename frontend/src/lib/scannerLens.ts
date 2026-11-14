@@ -42,4 +42,4 @@ export function facetCount(
   )
 }
 
-export const fmt = (n: number) => n.toLocaleString('en-US')
+export { fmt } from './format'

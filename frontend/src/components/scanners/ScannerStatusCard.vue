@@ -15,6 +15,7 @@ import { computed } from 'vue'
 
 import HealthChip from '@/components/chips/HealthChip.vue'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
+import { fmt } from '@/lib/format'
 import {
   DB_AGE_WARN_AFTER_S,
   dbAgeSeconds,
@@ -50,7 +51,6 @@ const props = defineProps<{
   freshness: FreshnessRow | null
 }>()
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 const lastRun = () => props.provenance?.runs?.[0] ?? null
 
 /** amber when the vuln DB the last committed run scanned with is older than the warn window */

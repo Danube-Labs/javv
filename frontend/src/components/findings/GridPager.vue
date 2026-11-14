@@ -8,6 +8,7 @@ import { computed } from 'vue'
 
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { fmt } from '@/lib/format'
 
 const props = defineProps<{
   total: number
@@ -29,7 +30,6 @@ const range = computed(() => {
   const start = props.page * props.size + 1
   return { start, end: Math.min(start + count - 1, props.total) }
 })
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

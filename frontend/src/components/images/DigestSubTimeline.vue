@@ -6,6 +6,7 @@
 import { computed } from 'vue'
 
 import { digestEras, notYetScannedAt, type TimelineEvent } from '@/images/subTimeline'
+import { fmt } from '@/lib/format'
 import { lastDataAt } from '@/system/freshness'
 
 const props = defineProps<{
@@ -18,7 +19,6 @@ const props = defineProps<{
 const notYet = computed(() => notYetScannedAt(props.events, props.scanner, props.t))
 const eras = computed(() => digestEras(props.events, props.scanner).reverse())
 const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12)
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

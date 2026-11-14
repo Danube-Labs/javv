@@ -12,6 +12,7 @@
 import { computed } from 'vue'
 
 import ScannerTag from '@/components/chips/ScannerTag.vue'
+import { fmt } from '@/lib/format'
 import { CHART_SEV, type Severity } from '@/styles/tokens'
 
 const SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'negligible', 'unknown']
@@ -35,7 +36,6 @@ const segments = computed(() =>
         .filter((e) => e.n > 0)
         .map((e) => ({ sev: e.sev, pct: (e.n / total.value) * 100, color: CHART_SEV[e.sev] })),
 )
-const fmt = (n: number) => n.toLocaleString('en-US')
 const title = computed(() => {
   const parts = entries.value.filter((e) => e.n > 0).map((e) => `${e.sev} ${fmt(e.n)}`)
   const who = props.attribution ?? props.label

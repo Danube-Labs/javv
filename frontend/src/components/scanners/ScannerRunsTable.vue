@@ -10,6 +10,7 @@ import { computed, ref, watch } from 'vue'
 
 import MixBar from '@/components/dashboards/MixBar.vue'
 import GridPager from '@/components/findings/GridPager.vue'
+import { fmt } from '@/lib/format'
 import { lastDataAt } from '@/system/freshness'
 import type { Severity } from '@/styles/tokens'
 
@@ -44,7 +45,6 @@ function setSize(next: number) {
   page.value = 0
 }
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>

@@ -13,6 +13,7 @@ import SlaPctChip from '@/components/chips/SlaPctChip.vue'
 import ContributorIdentity from '@/components/contributors/ContributorIdentity.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import { ackOf, fmtMedian, resolvedOf, sortBoard, type BoardRow } from '@/contributors/viewModel'
+import { fmt } from '@/lib/format'
 
 const props = defineProps<{
   rows: BoardRow[]
@@ -41,7 +42,6 @@ function setSize(next: number) {
   page.value = 0
 }
 
-const fmt = (n: number) => n.toLocaleString('en-US')
 </script>
 
 <template>
