@@ -58,6 +58,7 @@ const manyDigests = computed(() => new Set(props.entries.map((e) => e.digest)).s
 }
 .paths-say {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin: 0;
@@ -76,8 +77,10 @@ const manyDigests = computed(() => new Set(props.entries.map((e) => e.digest)).s
   color: var(--ink);
   line-height: 1.6;
 }
-/* a path is one long word: it breaks anywhere instead of pushing the table wider */
+/* a path is one long word: it breaks anywhere instead of pushing the table wider. Its spaces
+   show as stored: two spaces in a row stay two */
 .paths-list li {
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 </style>

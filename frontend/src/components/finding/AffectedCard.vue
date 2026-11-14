@@ -27,12 +27,10 @@ const props = defineProps<{
 const { page, size, shown, hasNext, setSize } = usePagedSlice(() => props.affected)
 
 const rowKey = (a: AffectedComponentRow) => `${a.image}|${a.packageName}|${a.current}|${a.fixed}`
-/* the rows the user opened; a new read (another CVE, another T) starts with all of them closed */
+/* the rows the user opened; a new read (another CVE, another T) or another page of the card
+   starts with all of them closed, as the image table does */
 const open = reactive(new Set<string>())
-watch(
-  () => props.affected,
-  () => open.clear(),
-)
+watch([() => props.affected, page, size], () => open.clear())
 function toggle(key: string) {
   if (open.has(key)) open.delete(key)
   else open.add(key)

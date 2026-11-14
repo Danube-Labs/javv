@@ -32,6 +32,7 @@ const emit = defineEmits<{ toggle: [] }>()
     {{ countText(entries) }}
     <AppIcon name="chevron" :size="11" class="paths-chev" :class="{ 'paths-chev--open': open }" />
   </UiButton>
+  <span v-else-if="countText(entries) === '-'" class="muted-dash" :title="countTitle(entries)">-</span>
   <span v-else class="mono-cell sm paths-none" :title="countTitle(entries)">{{ countText(entries) }}</span>
 </template>
 

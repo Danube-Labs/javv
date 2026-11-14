@@ -49,6 +49,21 @@ describe('the text of the Paths cell', () => {
     expect(openLabel([e({ total: null })])).toBe('Paths: Trivy not reported. Show the paths')
   })
 
+  it('a row of two digests names the digest in the hover text and the button name (review F2)', () => {
+    const two = [
+      e({ digest: 'sha256:aaaaaaaaaaaaaaaa', total: 11, paths: ['/a'] }),
+      e({ digest: 'sha256:bbbbbbbbbbbbbbbb', total: 11, paths: ['/b'] }),
+      e({ scanner: 'grype', digest: 'sha256:aaaaaaaaaaaaaaaa', total: 1, paths: ['/c'] }),
+    ]
+    expect(countText(two)).toBe('11 · 11 · 1')
+    expect(countTitle(two)).toBe(
+      'Trivy on sha256:aaaaaaaaaaaa: 11 paths. Trivy on sha256:bbbbbbbbbbbb: 11 paths. Grype on sha256:aaaaaaaaaaaa: 1 path.',
+    )
+    expect(openLabel(two)).toBe(
+      'Paths: Trivy on sha256:aaaaaaaaaaaa 11, Trivy on sha256:bbbbbbbbbbbb 11, Grype on sha256:aaaaaaaaaaaa 1. Show the paths',
+    )
+  })
+
   it('a row opens only when a finding has a path to show, one path included', () => {
     expect(hasPaths([e({ total: 0 }), e({ total: null })])).toBe(false)
     expect(hasPaths([e({ total: 1, paths: ['/usr/bin/go'] })])).toBe(true)

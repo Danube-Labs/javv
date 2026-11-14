@@ -39,11 +39,19 @@ export function countText(entries: readonly FindingPaths[]): string {
   return entries.map((e) => (e.total === null ? '-' : String(e.total))).join(' · ')
 }
 
+/* who an entry is for: the scanner, and the digest when the row holds more than one digest of
+   its tag, else two numbers of one scanner cannot be told apart */
+function whoOf(entries: readonly FindingPaths[]): (e: FindingPaths) => string {
+  const many = new Set(entries.map((e) => e.digest)).size > 1
+  return (e) => (many && e.digest ? `${scannerName(e.scanner)} on ${shortDigest(e.digest)}` : scannerName(e.scanner))
+}
+
 /** The hover text of a cell, so "-" and "0" are not read as the same thing. */
 export function countTitle(entries: readonly FindingPaths[]): string {
+  const name = whoOf(entries)
   return entries
     .map((e) => {
-      const who = scannerName(e.scanner)
+      const who = name(e)
       if (e.total === null) return `${who}: this scan did not report paths.`
       if (e.total === 0) return `${who}: the scanner gave no path.`
       return `${who}: ${plural(e.total)}.`
@@ -53,8 +61,9 @@ export function countTitle(entries: readonly FindingPaths[]): string {
 
 /** The name a screen reader gives the button that opens the paths. */
 export function openLabel(entries: readonly FindingPaths[]): string {
+  const name = whoOf(entries)
   const counts = entries
-    .map((e) => `${scannerName(e.scanner)} ${e.total === null ? 'not reported' : e.total}`)
+    .map((e) => `${name(e)} ${e.total === null ? 'not reported' : e.total}`)
     .join(', ')
   return `Paths: ${counts}. Show the paths`
 }

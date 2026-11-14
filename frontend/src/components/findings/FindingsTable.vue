@@ -16,7 +16,7 @@
  *
  * `paths` (issue 1077, the image page) adds a Paths column after Package and lets a row open to
  * list the files of its finding. It is not in FINDINGS_COLUMNS, so the Findings grid and its
- * Columns menu stay as they are. It is not for a `reorderable` table: the parent maps the drag
+ * Columns menu stay as they are. A `reorderable` table gets no Paths: the parent maps the drag
  * indexes over its own column list, which has no Paths.
  */
 import Column from 'primevue/column'
@@ -41,6 +41,7 @@ import RowLink from '@/components/ui/RowLink.vue'
 import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS, type FindingsColumnKey } from '@/findings/columns'
 import { pathsOf } from '@/findings/paths'
+import { logger } from '@/lib/logger'
 import { stateLabel } from '@/findings/stateLabels'
 import { activeMode, type Selections } from '@/filters/fields.config'
 import type { FilterMode, Modes } from '@/stores/filters'
@@ -92,9 +93,11 @@ type TableKey = FindingsColumnKey | 'paths'
 
 /** rendered orderable columns: display order minus the hidden set, Paths after Package, where
  * it is in view at 1440px without a scroll (after Fixed it was not) */
+/** the Paths column is on: never with `reorderable`, whose drag indexes have no Paths */
+const pathsOn = computed(() => props.paths && !props.reorderable)
 const orderedKeys = computed(() => {
   const keys: TableKey[] = props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[]
-  if (!props.paths) return keys
+  if (!pathsOn.value) return keys
   const at = keys.indexOf('package')
   return at === -1 ? [...keys, 'paths' as const] : [...keys.slice(0, at + 1), 'paths' as const, ...keys.slice(at + 1)]
 })
@@ -103,13 +106,26 @@ const orderedKeys = computed(() => {
 const expanded = ref<Record<string, boolean>>({})
 watch(
   () => props.rows,
-  () => (expanded.value = {}),
+  (rows) => {
+    expanded.value = {}
+    // a count with no list: the read did not send `locations=true`, and the cell cannot open
+    const unread = pathsOn.value ? rows.filter((r) => r.locations === undefined && (r.locations_total ?? 0) > 0).length : 0
+    if (unread > 0) logger.warn('findings_table_paths_not_read', { rows: unread })
+  },
+  { immediate: true },
 )
-function togglePaths(row: FindingRow) {
+async function togglePaths(row: FindingRow) {
   const next = { ...expanded.value }
   if (next[row.finding_key]) delete next[row.finding_key]
   else next[row.finding_key] = true
   expanded.value = next
+  // the table draws its cells again, so the button is a new element: give it back the focus
+  await nextTick()
+  const root = (dt.value as unknown as { $el?: HTMLElement } | null)?.$el
+  // a finding key is not a CSS identifier: compare the value instead of building a selector
+  const id = pathsId(row)
+  const buttons = root ? Array.from(root.querySelectorAll<HTMLElement>('button.paths-btn')) : []
+  buttons.find((b) => b.getAttribute('aria-controls') === id)?.focus()
 }
 const pathsId = (row: FindingRow) => `finding-paths-${row.finding_key}`
 
@@ -254,7 +270,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
       :loading="props.loading"
       data-key="finding_key"
       v-model:expanded-rows="expanded"
-      :class="{ 'tbl-paths': props.paths }"
+      :class="{ 'tbl-paths': pathsOn }"
       :reorderable-columns="props.reorderable"
       :pt="{ table: { class: `tbl tbl-hover ${props.dense ? 'tbl-dense' : ''} ${props.reorderable ? 'tbl-reorder' : ''}` } }"
       @sort="onSort"
@@ -358,7 +374,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
           </span>
         </template>
       </Column>
-      <template v-if="props.paths" #expansion="{ data }">
+      <template v-if="pathsOn" #expansion="{ data }">
         <FindingPaths
           :id="pathsId(data)"
           :entries="[pathsOf(data)]"

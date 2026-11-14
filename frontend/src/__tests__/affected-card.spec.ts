@@ -86,7 +86,7 @@ describe('AffectedCard Paths column (issue 1077)', () => {
     expect(w.find('button.paths-btn').exists()).toBe(false)
     expect(cells(w, 0)[5]).toBe('0 paths')
     expect(cells(w, 1)[5]).toBe('-')
-    expect(w.findAll('.paths-none')[1]!.attributes('title')).toBe('Trivy: this scan did not report paths.')
+    expect(w.find('.muted-dash').attributes('title')).toBe('Trivy: this scan did not report paths.')
   })
 
   it('a new read closes the rows that were open', async () => {
@@ -99,5 +99,22 @@ describe('AffectedCard Paths column (issue 1077)', () => {
 
   it('the empty and refused rows span all seven columns', () => {
     expect(mountCard([]).find('td.empty-row').attributes('colspan')).toBe('7')
+  })
+
+  it('another page of the card closes the open rows (review F5)', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => comp({ image: `img-${String(i).padStart(2, '0')}:1`, paths: [trivy11] }))
+    const w = mountCard(many)
+    await w.find('button.paths-btn').trigger('click')
+    expect(w.findComponent(FindingPaths).exists()).toBe(true)
+    const next = w.findAll('button').find((b) => b.text() === 'Next')!
+    await next.trigger('click')
+    const prev = w.findAll('button').find((b) => b.text() === 'Prev')!
+    await prev.trigger('click')
+    expect(w.findComponent(FindingPaths).exists()).toBe(false)
+  })
+
+  it('"-" wears the shared empty-value class (review F7)', () => {
+    const w = mountCard([comp({ paths: [{ scanner: 'trivy', digest: 'sha256:a', total: null, paths: [] }] })])
+    expect(w.find('td .muted-dash').text()).toBe('-')
   })
 })

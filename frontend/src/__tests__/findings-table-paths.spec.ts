@@ -3,13 +3,14 @@
  * off, the table is the Findings grid as before. On, a row with a path opens to list its files,
  * and the button that opens it does not open the finding.
  */
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import PrimeVue from 'primevue/config'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import FindingPaths from '@/components/finding/FindingPaths.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
+import { logger } from '@/lib/logger'
 import type { FindingRow } from '@/stores/findings'
 
 const row = (key: string, over: Partial<FindingRow> = {}): FindingRow => ({
@@ -33,10 +34,11 @@ const row = (key: string, over: Partial<FindingRow> = {}): FindingRow => ({
   ...over,
 })
 
-const mountTable = (rows: FindingRow[], paths?: boolean) =>
+const mountTable = (rows: FindingRow[], paths?: boolean, more: Record<string, unknown> = {}) =>
   mount(FindingsTable, {
-    props: { rows, sort: 'severity_rank', order: 'desc', loading: false, settled: true, paths },
+    props: { rows, sort: 'severity_rank', order: 'desc', loading: false, settled: true, paths, ...more },
     global: { plugins: [PrimeVue] },
+    attachTo: document.body,
   })
 
 const heads = (w: ReturnType<typeof mountTable>) => w.findAll('thead th').map((th) => th.text())
@@ -90,7 +92,8 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
   it('on: a row with no path has no button, "0 paths" or "-"', () => {
     const w = mountTable([row('a', { locations: [], locations_total: 0 }), row('b')], true)
     expect(w.find('button.paths-btn').exists()).toBe(false)
-    expect(w.findAll('.paths-none').map((s) => s.text())).toEqual(['0 paths', '-'])
+    expect(w.find('.paths-none').text()).toBe('0 paths')
+    expect(w.find('.muted-dash').text()).toBe('-')
   })
 
   it('on: a new page closes the rows that were open', async () => {
@@ -99,5 +102,37 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     expect(w.findComponent(FindingPaths).exists()).toBe(true)
     await w.setProps({ rows: [row('a', { locations: ['/x'], locations_total: 1 })] })
     expect(w.findComponent(FindingPaths).exists()).toBe(false)
+  })
+
+  it('on: the button keeps the keyboard focus when its row opens and closes (review F1)', async () => {
+    // the table draws its cells again on each toggle, so the button is a new element each time
+    const w = mountTable([row('a', { locations: ['/x', '/y'], locations_total: 2 })], true)
+    const first = w.find('button.paths-btn').element as HTMLButtonElement
+    first.focus()
+    first.click()
+    await flushPromises()
+    const opened = w.find('button.paths-btn').element
+    expect(opened.getAttribute('aria-expanded')).toBe('true')
+    expect(document.activeElement).toBe(opened)
+    ;(opened as HTMLButtonElement).click()
+    await flushPromises()
+    expect(document.activeElement).toBe(w.find('button.paths-btn').element)
+    expect(w.findComponent(FindingPaths).exists()).toBe(false)
+    w.unmount()
+  })
+
+  it('a reorderable table gets no Paths column: its drag indexes have no Paths (review F4)', () => {
+    const w = mountTable([row('a', { locations: ['/x'], locations_total: 1 })], true, { reorderable: true })
+    expect(heads(w)).not.toContain('Paths')
+    w.unmount()
+  })
+
+  it('on, with a read that did not ask for the paths: one warning, no button (review F4)', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    const w = mountTable([row('a', { locations_total: 11 }), row('b', { locations: [], locations_total: 0 })], true)
+    expect(warn).toHaveBeenCalledWith('findings_table_paths_not_read', { rows: 1 })
+    expect(w.find('button.paths-btn').exists()).toBe(false)
+    warn.mockRestore()
+    w.unmount()
   })
 })
