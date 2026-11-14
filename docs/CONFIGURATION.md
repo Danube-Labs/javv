@@ -423,7 +423,7 @@ The scanner reads these environment variables.
 | `JAVV_GRYPE_ONLY_FIXED` | `false` | Adds `--only-fixed`. |
 | `JAVV_GRYPE_SCOPE` | not set: the Grype default | `--scope`: `squashed`, `all-layers` or `deep-squashed`. The scanner checks the value. |
 | `JAVV_GRYPE_SCAN_TIMEOUT` | `600` | Seconds before the scanner stops one Grype scan. Grype has no flag for a scan time limit. A value that is not a whole number above 0 stops the scanner with a clear error. |
-| **Grype version** | `0.121.1` | `scanners.grype.current` in `versions.yaml`, and the `ARG` in the Dockerfile. To change it, use a different image tag. |
+| **Grype version** | `0.121.3` | `scanners.grype.current` in `versions.yaml`, and the `ARG` in the Dockerfile. To change it, use a different image tag. |
 | **Vulnerability database** | schema 6, from Grype 0.88.0 | `versions.yaml` holds the schema. The `javv-scanner` chart refreshes the database at the start of each cycle. Without the chart, Grype refreshes it at scan time. |
 
 ## Frontend settings

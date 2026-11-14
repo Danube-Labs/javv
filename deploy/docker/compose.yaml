@@ -34,7 +34,7 @@ services:
 
   grype:
     <<: *scan
-    image: ghcr.io/danube-labs/javv-scanner-grype:0.121.1
+    image: ghcr.io/danube-labs/javv-scanner-grype:0.121.3
     environment:
       <<: *javv
       JAVV_SCANNER: grype

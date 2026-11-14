@@ -11,7 +11,7 @@ variable "TRIVY_VERSIONS" {
   default = "0.76.2,0.70.0"
 }
 variable "GRYPE_VERSIONS" {
-  default = "0.121.1,0.121.3,0.114.0"
+  default = "0.121.3,0.114.0"
 }
 # JAVV git commit that builds the image (the entrypoint is JAVV code). CI passes the short sha;
 # "dev" for local builds. Each image gets a moving :<ver> tag + an immutable :<ver>-<GIT_SHA> tag.

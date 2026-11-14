@@ -111,7 +111,7 @@ grype:
     repository: ghcr.io/danube-labs/javv-scanner-grype
     # -- The Grype version, from versions.yaml (`scanners.grype.current`). JAVV publishes the tag
     # again when it changes the image for that version. Thus each run pulls the image.
-    tag: "0.121.1"  # versions.yaml scanners.grype.current
+    tag: "0.121.3"  # versions.yaml scanners.grype.current
     # -- `sha256:...`: run exactly that image. It replaces `tag`. It is empty in the repository.
     # The chart of a release sets it to the digest that the tag named at the release.
     digest: ""
