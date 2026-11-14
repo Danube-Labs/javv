@@ -210,6 +210,11 @@ async function submit() {
   color: var(--ink);
   cursor: default;
 }
+/* an image chip shows its image ref in the mono family: the shared .mono-cell alone loses to the
+   UI font of the chip rule above */
+.ra-chip.mono-cell {
+  font-family: var(--font-mono);
+}
 .ra-chip:hover {
   border-color: var(--control-hover-line);
 }
