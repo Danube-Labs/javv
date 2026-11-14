@@ -15,13 +15,13 @@ alpha. The pictures are also on branch `visual-assets`, folder `1205/settled/`.
 | Q4 text | Affected components and the paths text: the new sentences of the text round (group 3). This includes "JAVV counts it as one finding" and the OS package lines for Trivy and Grype. Ruled on the text round. | `text-affected-and-paths.png` | PR A (paths text) and PR C |
 | Q4 text | Decisions on this CVE and Activity on this finding: the new sentences of the text round (group 4). Ruled on the text round. | `text-decisions-activity.png` | PR C of the plan |
 | Q4 text | The Triage panel has no legend box ("Fixed" and "Stale"). The Guide tells the same in "Scans and freshness", and a Stale finding shows its own block. Ruled on text round step 2. | `text-panel-no-legend.png` | PR C of the plan |
+| Other packages | The other packages of the CVE on this image: option P1. The package name in the head band opens a menu with each package of the CVE on this image. A count ("4 on this image") shows next to the name. A click opens the finding of that package. The note at the bottom of the evidence card goes. The operator rejected P2 (tabs) and P3 (badges), and the underlined links of the first try. | `page-ruled-first-screen.png`, `packages-options.png` | PR C of the plan |
+| Q4 text | The evidence card (group 1). The line under the title is `Each row shows the values that one scanner sent.` The operator removed `JAVV does not change them`: it explains nothing. The note "Scanners agree on severity…" goes. The note for scanners that disagree is `The scanners give different severities. Each row shows the severity that its scanner sent.` | `page-ruled-first-screen.png` | PR C of the plan |
+| Q4 text | The Triage cell and panel (group 2) use the text of comment 6880398386. This includes "Save", the line under Save, "Add a note for Activity…" and "Accept the risk of this CVE…". It also includes the blocks of a Stale finding, of a Risk accepted finding and of a role that cannot change a risk acceptance. "Note and more…" stays. | `text-triage-cell-and-panel.png` | PR C of the plan |
 
 ## Still open
 
-| Q | State |
-|---|---|
-| Q4 text, groups 1 and 2 | The evidence card and the rest of the Triage cell and panel text: waiting for the operator. |
-| Other packages | Three options for the links to the other packages of the CVE (P1 switcher, P2 tabs, P3 badges): comment 6880711120. |
+Nothing in the UI and the text. The operator plans the PRs next.
 
 ## Where the rounds are
 
