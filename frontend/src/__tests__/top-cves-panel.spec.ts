@@ -20,6 +20,7 @@ vi.mock('@/api/client', () => ({ client: {} }))
 import { topValuesFindingsApiV1FindingsTopValuesGet } from '@/api/generated'
 
 import { okWithoutBody } from './helpers/okWithoutBody'
+import { bodyRows, nextPage, pagerText, pickRowsPerPage } from './helpers/pager'
 
 const readMock = vi.mocked(topValuesFindingsApiV1FindingsTopValuesGet)
 const ok = (data: unknown) => ({ data, response: { ok: true, status: 200 } }) as never
@@ -117,6 +118,42 @@ describe('TopCvesPanel (self-contained panel)', () => {
     const tall = mountPanel({ pageSize: 25 }).w
     await flushPromises()
     expect(tall.findAll('tbody tr')).toHaveLength(25)
+  })
+
+  describe('paging (issue 1190, row 13: the shared usePagedSlice)', () => {
+    const many = (n: number) =>
+      Array.from({ length: n }, (_, i) => row(`CVE-2024-${String(1000 - i)}`, { trivy: { high: 40 - i } }))
+
+    it('a new number of rows per page shows page 1 with that number of rows', async () => {
+      readMock.mockResolvedValue(ok({ values: many(30) }))
+      const { w } = mountPanel()
+      await flushPromises()
+      await nextPage(w)
+      expect(pagerText(w)).toBe('Showing 11–20 of 30')
+      await pickRowsPerPage(w, 25)
+      expect(pagerText(w)).toBe('Showing 1–25 of 30')
+      expect(bodyRows(w)).toBe(25)
+    })
+
+    it('a new read shows page 1', async () => {
+      readMock.mockResolvedValue(ok({ values: many(30) }))
+      const { w } = mountPanel()
+      await flushPromises()
+      await nextPage(w)
+      readMock.mockResolvedValue(ok({ values: many(40) }))
+      await w.setProps({ scanner: 'grype' })
+      await flushPromises()
+      expect(pagerText(w)).toBe('Showing 1–10 of 40')
+    })
+
+    it('a panel of a new height shows page 1 with its rows', async () => {
+      readMock.mockResolvedValue(ok({ values: many(30) }))
+      const { w } = mountPanel()
+      await flushPromises()
+      await nextPage(w)
+      await w.setProps({ pageSize: 25 })
+      expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    })
   })
 
   it('at a past T sends no read, says the panel shows only now, and names Back to now', async () => {
