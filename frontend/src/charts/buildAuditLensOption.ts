@@ -4,9 +4,9 @@
  * (`bucketEndT`, INTERVAL_MS) — one histogram grammar, two data sources. */
 import type { EChartsOption } from 'echarts'
 
+import { dayLabel } from '@/lib/format'
 import { CHART_ACCENT, CHART_UI } from '@/styles/tokens'
 
-import { dayLabel } from './axisLabels'
 import type { IngestInterval } from './buildIngestLensOption'
 
 export interface ActivityPoint {

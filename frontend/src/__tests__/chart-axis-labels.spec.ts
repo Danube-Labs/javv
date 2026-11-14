@@ -3,11 +3,11 @@
  * short month in the time zone of the browser, as `3 Nov`.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { dayLabel } from '@/charts/axisLabels'
 import { buildAuditLensOption } from '@/charts/buildAuditLensOption'
 import { buildFindingsTrendOption } from '@/charts/buildFindingsTrendOption'
 import { buildScanActivityOption } from '@/charts/buildScanActivityOption'
 import { buildSeverityTrendOption } from '@/charts/buildSeverityTrendOption'
+import { dayLabel } from '@/lib/format'
 
 // Node reads TZ again when it changes, so a test can play a browser in another zone.
 const zone = process.env.TZ

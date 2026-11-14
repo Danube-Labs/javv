@@ -2,9 +2,8 @@
  * scan runs per day, one bar series per scanner — never merged). */
 import type { BarSeriesOption, EChartsOption } from 'echarts'
 
+import { dayLabel } from '@/lib/format'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
-
-import { dayLabel } from './axisLabels'
 
 export interface ScanPoint {
   date: string

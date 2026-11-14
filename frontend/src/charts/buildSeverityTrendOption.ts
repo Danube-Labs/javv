@@ -4,10 +4,9 @@
  * burn-down. Counts are row counts within the selected scanner scope — scoped at the QUERY. */
 import type { EChartsOption, LineSeriesOption } from 'echarts'
 
+import { dayLabel } from '@/lib/format'
 import { CHART_SEV, CHART_UI, SEVERITIES, type Severity } from '@/styles/tokens'
 import type { TrendPoint } from '@/charts/buildFindingsTrendOption'
-
-import { dayLabel } from './axisLabels'
 
 export type SeverityTrendData = Partial<Record<Severity, TrendPoint[]>>
 

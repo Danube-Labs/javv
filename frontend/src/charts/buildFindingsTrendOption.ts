@@ -4,10 +4,9 @@
  * human `state=resolved`). Colors/chrome come only from the pinned chart literals. */
 import type { EChartsOption, LineSeriesOption } from 'echarts'
 
+import { dayLabel } from '@/lib/format'
 import type { ScannerLens } from '@/lib/scannerLens'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
-
-import { dayLabel } from './axisLabels'
 
 export interface TrendPoint {
   date: string
