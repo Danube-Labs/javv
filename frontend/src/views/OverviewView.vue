@@ -202,9 +202,6 @@ function goFindings(query: Record<string, string>) {
   margin-bottom: 16px;
 }
 .screen-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
 }

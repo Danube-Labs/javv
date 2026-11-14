@@ -178,15 +178,18 @@ describe('style rules: one shared set of skins', () => {
 const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
   // the table and screen-head rules that components set again (issue 1190)
-  '.mono-cell', '.empty-row',
+  '.mono-cell', '.empty-row', '.screen-head',
 ]
 
 /**
  * The size that a component may give a shared rule, with its own value (operator ruling of
- * 2026-11-14, issue 1190): an empty table row keeps its own padding. The other properties of the
- * rule stay shared.
+ * 2026-11-14, issue 1190): an empty table row keeps its own padding, and a screen head its own
+ * space under it. The other properties of the rule stay shared.
  */
-const FREE_PROPERTIES = new Map([['.empty-row', ['padding']]])
+const FREE_PROPERTIES = new Map([
+  ['.empty-row', ['padding']],
+  ['.screen-head', ['margin-bottom']],
+])
 
 /** The properties that each rule of `css` sets, by its exact selector. */
 function ruleProperties(css: string): Map<string, Set<string>> {
@@ -266,11 +269,17 @@ describe('style rules: one shared card, menu panel and error text', () => {
   })
 
   it('the check finds a planted copy of each rule of issue 1190 and lets a free size pass', () => {
-    const planted = '.mono-cell { font-family: var(--font-mono); }\n.empty-row { color: var(--soft); text-align: center; }'
+    const planted = [
+      '.mono-cell { font-family: var(--font-mono); }',
+      '.empty-row { color: var(--soft); text-align: center; }',
+      '.screen-head { display: flex; align-items: flex-start; justify-content: space-between; }',
+    ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.mono-cell: font-family', '.empty-row: color', '.empty-row: text-align',
+      '.screen-head: display', '.screen-head: align-items', '.screen-head: justify-content',
     ])
-    expect(sharedRuleCopies('.empty-row { padding: 34px 12px; }', shared)).toEqual([])
+    const sizes = '.empty-row { padding: 34px 12px; }\n.screen-head { gap: 16px; margin-bottom: 18px; }'
+    expect(sharedRuleCopies(sizes, shared)).toEqual([])
   })
 })
 
