@@ -148,8 +148,6 @@ const pathsId = (i: number) => `affected-paths-${page.value}-${i}`
   width: 100cqw;
 }
 .empty-row {
-  text-align: center;
-  color: var(--soft);
   padding: 28px 12px;
 }
 </style>

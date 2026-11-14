@@ -136,8 +136,6 @@ function reasonOf(a: ActivityRow): string | null {
   min-width: 0;
 }
 .empty-row {
-  text-align: center;
-  color: var(--soft);
   padding: 28px 12px;
 }
 </style>

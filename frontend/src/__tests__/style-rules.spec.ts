@@ -178,8 +178,15 @@ describe('style rules: one shared set of skins', () => {
 const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
   // the table and screen-head rules that components set again (issue 1190)
-  '.mono-cell',
+  '.mono-cell', '.empty-row',
 ]
+
+/**
+ * The size that a component may give a shared rule, with its own value (operator ruling of
+ * 2026-11-14, issue 1190): an empty table row keeps its own padding. The other properties of the
+ * rule stay shared.
+ */
+const FREE_PROPERTIES = new Map([['.empty-row', ['padding']]])
 
 /** The properties that each rule of `css` sets, by its exact selector. */
 function ruleProperties(css: string): Map<string, Set<string>> {
@@ -207,7 +214,12 @@ function sharedRuleCopies(css: string, shared: Map<string, Set<string>>): string
 
 describe('style rules: one shared card, menu panel and error text', () => {
   const all = ruleProperties(readFileSync(join(SRC, 'styles/base.css'), 'utf8'))
-  const shared = new Map(SHARED_RULES.map((selector) => [selector, all.get(selector) ?? new Set<string>()]))
+  const shared = new Map(
+    SHARED_RULES.map((selector) => {
+      const free = FREE_PROPERTIES.get(selector) ?? []
+      return [selector, new Set([...(all.get(selector) ?? [])].filter((p) => !free.includes(p)))]
+    }),
+  )
 
   /** A copy that is a real difference, with its reason. */
   const RULED = new Map([
@@ -248,9 +260,17 @@ describe('style rules: one shared card, menu panel and error text', () => {
     expect(sharedRuleCopies(addition, shared)).toEqual([])
   })
 
-  it('the check finds a planted copy of each rule of issue 1190', () => {
-    const planted = '.mono-cell { font-family: var(--font-mono); }'
-    expect(sharedRuleCopies(planted, shared)).toEqual(['.mono-cell: font-family'])
+  it('each free property is a property of its shared rule in base.css', () => {
+    for (const [selector, free] of FREE_PROPERTIES)
+      for (const property of free) expect(all.get(selector)?.has(property), `${selector}: ${property}`).toBe(true)
+  })
+
+  it('the check finds a planted copy of each rule of issue 1190 and lets a free size pass', () => {
+    const planted = '.mono-cell { font-family: var(--font-mono); }\n.empty-row { color: var(--soft); text-align: center; }'
+    expect(sharedRuleCopies(planted, shared)).toEqual([
+      '.mono-cell: font-family', '.empty-row: color', '.empty-row: text-align',
+    ])
+    expect(sharedRuleCopies('.empty-row { padding: 34px 12px; }', shared)).toEqual([])
   })
 })
 
