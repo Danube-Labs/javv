@@ -34,7 +34,20 @@ Choose the level from the type of text. Do not tell the level in the text.
 When you rewrite a text, read all of it one time before you change a word. Know what it must
 still say after the rewrite.
 
-## 4. Write the text
+## 4. Find the signs of model text
+
+Run the skill `ste80-humanizer` on the text in its Strict mode for text in the app and on the
+operator pages, and in its Humanize mode for other text. Its Pass 1 finds the signs of text that
+a model wrote. One example is the "X, not Y" frame, also as a short tail: `..., not its files`.
+
+- Where the humanizer and this skill do not agree, this skill is correct. For example, JAVV text
+  has no "we", also in a casual text.
+- The checker of the humanizer (`scripts/ste_check.py`) is advice. The gate is `ste-lint.py` in
+  step 9.
+- No checker finds a sentence that has no clear meaning. Read each sentence and ask what it
+  tells the reader, and what it counts or names.
+
+## 5. Write the text
 
 - Address the reader as "you". Do not write "we", "our", "us" or "I".
 - Write a step as a command that starts with its verb. Tell where before what.
@@ -46,7 +59,7 @@ still say after the rewrite.
 - Text for users and operators has no internal codes: no issue numbers, decision codes or
   milestones. Internal text (the memory bank, PR bodies) can name an issue as `issue NNN`.
 
-## 5. Look for the six problems
+## 6. Look for the six problems
 
 Read each sentence and look for the six problems of `docs-voice.md`:
 
@@ -57,7 +70,7 @@ Read each sentence and look for the six problems of `docs-voice.md`:
 5. Run-on sentences.
 6. Soft phrasal verbs.
 
-## 6. Keep the meaning
+## 7. Keep the meaning
 
 - Keep each fact, condition, scope and number. If a shorter sentence loses one, keep the longer
   sentence. After the text, add one line that starts with "Kept as it is:" and names the phrase.
@@ -67,7 +80,7 @@ Read each sentence and look for the six problems of `docs-voice.md`:
 - Stop when each sentence has one meaning, not when it is shortest. A rewrite changes the form,
   not what the text says.
 
-## 7. Check each sentence that names a person
+## 8. Check each sentence that names a person
 
 For each person in the text, ask who it is:
 
@@ -77,7 +90,7 @@ For each person in the text, ask who it is:
 | A role that a step needs | The role, as the condition of the reader: "your role must allow triage" (rule 5) |
 | Somebody that a screen shows | The third person, as data: "The podium shows the first three people" (rule 7) |
 
-## 8. Run the checks, and judge them by the exit code
+## 9. Run the checks, and judge them by the exit code
 
 | Text | Command | Pass |
 |---|---|---|
@@ -89,7 +102,7 @@ For each person in the text, ask who it is:
 A text for GitHub (a PR body, an issue comment) also gets a grep for names, local paths, model
 names and session links before the post. Post only when both checks pass.
 
-## 9. When a rule does not fit
+## 10. When a rule does not fit
 
 Do not change a rule in passing. If a text needs a new exception, stop and ask the operator. An
 accepted change goes into `docs-voice.md` and `rulings.md` in the same PR.
