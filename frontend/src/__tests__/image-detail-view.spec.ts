@@ -98,6 +98,9 @@ describe('ImageDetailView (M9c slice 3)', () => {
     // every read is digest-scoped and single-scanner
     const firstQ = (searchMock.mock.calls[0]![0] as { query: Record<string, unknown> }).query
     expect(firstQ).toMatchObject({ cluster_id: 'c-1', image_digest: 'sha256:abc', scanner: 'trivy' })
+    // the Paths column needs the paths on every page: the cursor does not keep it (issue 1077)
+    expect(firstQ.locations).toBe(true)
+    expect(w.findAll('thead th').map((th) => th.text())).toContain('Paths')
     expect(w.findAll('tbody tr')).toHaveLength(1)
 
     searchMock.mockResolvedValue(
@@ -108,7 +111,7 @@ describe('ImageDetailView (M9c slice 3)', () => {
     await flushPromises()
 
     const lastQ = (searchMock.mock.calls.at(-1)![0] as { query: Record<string, unknown> }).query
-    expect(lastQ).toMatchObject({ scanner: 'grype', image_digest: 'sha256:abc' })
+    expect(lastQ).toMatchObject({ scanner: 'grype', image_digest: 'sha256:abc', locations: true })
     expect(w.findAll('tbody tr')).toHaveLength(2) // grype's rows REPLACE trivy's — no union
     expect(w.text()).toContain('nginx:1.21.6')
   })
