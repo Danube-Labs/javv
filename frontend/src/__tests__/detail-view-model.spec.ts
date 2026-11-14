@@ -118,4 +118,22 @@ describe('detail view-model (per-scanner sacred)', () => {
     expect(rows[3]!.scanners).toEqual(['grype'])
     expect(rows[4]).toBeUndefined()
   })
+
+  it('the paths stay one entry for each finding of a row, by scanner and digest, never joined (issue 1077)', () => {
+    const [r] = affectedComponentRows([
+      // raw server rows: grype first, two digests of one tag, trivy with no path at all
+      row({ scanner: 'grype', image_digest: 'sha256:bbb', locations: ['/var/lib/dpkg/status'], locations_total: 1 }),
+      row({ scanner: 'trivy', image_digest: 'sha256:bbb', locations: [], locations_total: 0 }),
+      row({ scanner: 'grype', image_digest: 'sha256:aaa', locations: ['/a', '/b'], locations_total: 70 }),
+      // a scan before schema 5: no field at all, which is not the same as 0
+      row({ scanner: 'trivy', image_digest: 'sha256:aaa' }),
+    ])
+    expect(r!.scanners).toEqual(['trivy', 'grype'])
+    expect(r!.paths).toEqual([
+      { scanner: 'trivy', digest: 'sha256:aaa', total: null, paths: [] },
+      { scanner: 'trivy', digest: 'sha256:bbb', total: 0, paths: [] },
+      { scanner: 'grype', digest: 'sha256:aaa', total: 70, paths: ['/a', '/b'] },
+      { scanner: 'grype', digest: 'sha256:bbb', total: 1, paths: ['/var/lib/dpkg/status'] },
+    ])
+  })
 })

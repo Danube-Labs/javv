@@ -118,7 +118,7 @@ function reloadPair() {
 /* ---- affected components: every occurrence of the CVE, server-side filtered ---- */
 const occQuery = computed(() =>
   clusterStore.selectedId && cveId.value
-    ? withGlobals({ cve_id: [cveId.value], size: 200 })
+    ? withGlobals({ cve_id: [cveId.value], size: 200, locations: true }) // the Paths column, issue 1077
     : null,
 )
 

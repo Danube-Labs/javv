@@ -138,4 +138,14 @@ describe('FindingDetailView after a decision (issue 910)', () => {
 
     expect(pairReads().length).toBe(before)
   })
+
+  it('the read of Affected components asks for the paths, the read of the finding does not (issue 1077)', async () => {
+    await mountPage()
+    const occ = searchMock.mock.calls
+      .map((c) => (c[0] as { query: Record<string, unknown> }).query)
+      .filter((q) => !q.image_digest)
+    expect(occ.length).toBeGreaterThan(0)
+    for (const q of occ) expect(q).toMatchObject({ cve_id: ['CVE-2026-0001'], locations: true })
+    for (const c of pairReads()) expect((c[0] as { query: Record<string, unknown> }).query.locations).toBeUndefined()
+  })
 })
