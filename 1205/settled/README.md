@@ -9,14 +9,14 @@ alpha. The pictures are also on branch `visual-assets`, folder `1205/settled/`.
 | Q1 | The head band of the finding page stays as today. The operator rejected round 1 (B, label and value pairs) and round 2 (C, the risk facts in a side column). | `q1-head-band-today.png` | Nothing to build. |
 | Q5 | Paths on the Findings list: option B. The column comes after Package. The count is the button of the image page, and the row opens to list the paths. | `q5-findings-list-paths.png` | PR B of the plan |
 | Q5 | The name stays "Paths". The operator rejected "Found in" and "Locations". | `q5-findings-list-paths.png` | PR B of the plan |
+| Q2 | The evidence: one row for each scanner (B2), the direction of the prototype. A value that differs gets no extra mark (M0): the two values show it. Ruled on round 3. | `q2-evidence-rows.png` | PR C of the plan |
 | Q6 | The notes of the table heads: option C. The note joins the name in the head text on one line, for example "Severity mix · Trivy", at the full head color (9.25:1). No chips or buttons in a table head. The operator rejected grouped two-row heads. | `q6-table-heads-one-line.png` | PR A of the plan |
 
 ## Still open
 
 | Q | State |
 |---|---|
-| Q2 | The evidence as one row for each scanner (B2) "looks nice". The mark for a value that differs is open. Round 3 shows no mark (M0), a note under the table (M1) and an icon in the cell (M2). |
-| Layout | The Triage panel is the cause of the uneven rows. Round 3 shows E (Triage as one band under the head) and F (Triage in a side panel that opens from a strip). |
+| Layout | The Triage panel is the cause of the uneven rows. The operator asked for Triage in its own cell next to the head, with the form in a pop-up. Round 4 shows G1 (a window) and G2 (a menu panel). |
 | Q4 and the paths text | Wait for the ruling on the layout. |
 
 ## Where the rounds are
@@ -24,3 +24,4 @@ alpha. The pictures are also on branch `visual-assets`, folder `1205/settled/`.
 - Round 1: issue 1205, comment 6878538508 (pictures `q*.png` in the parent folder).
 - Round 2: comment 6879024862 (`r2-*.png`).
 - Round 3: comment 6879278530 (`r3-*.png`).
+- Round 4: comment 6879683168 (`r4-*.png`).
