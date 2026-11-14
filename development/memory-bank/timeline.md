@@ -127,6 +127,19 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   sections and addresses the reader as "you" (issue 1142, PR 1166). The seven videos show the
   current words of the app (issue 1143, PR 1167). Two backend tests no longer fail by chance (issue
   1137, PR 1141). These changes shipped in 0.9.9 (2026-11-09).
+- **The work for 0.9.10** (2026-11-09 to now). Release PR 1175 is open, and the milestone 0.9.10
+  holds the issues.
+  - Dashboards: the panels Vulnerabilities over time and Top CVEs, with the MCP tool `top_cves`
+    (issue 1176, PRs 1178 and 1179).
+  - One shared style for the card frame, the card heading and the menu panel (issues 1181 and
+    1191, PR 1196). The docs agree with the code (issue 1190 part 1, PR 1195).
+  - A finding shows the files where the scanner found it (issue 1077): ingest and the findings
+    read (PR 1198), the scanner (PR 1200), the finding page and the image page (PR 1203). Grype
+    0.121.3 (PRs 1204 and 1202).
+  - The README has a new walkthrough and new highlights (PRs 1169, 1174 and 1180). The final stage
+    of each image upgrades its OS packages (PR 1173).
+  - The rulings of the plan for AI vulnerability research (issue 1193, PR 1194).
+  - Two skills for text: `docs-voice` (PR 1171) and `ste80-humanizer` (PR 1206).
 
 ## 6. Releases
 

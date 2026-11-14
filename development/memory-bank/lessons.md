@@ -33,6 +33,8 @@ looks like when it happens again. A number is a GitHub issue or PR.
 | Backend tests against the dev store leave users, clusters and indices behind | Set `JAVV_OPENSEARCH_URL` on each pytest command, and clean with `development/scripts/clean-dev-store.sh`. |
 | 2026-10-17 (905): the production build wrote `200ms` as `.2s`, so code that read the CSS token got 0.2 and the animation ended at once | Parse both time units. Check motion on a production build, not only in jsdom. |
 | 2026-10-19 (924): a rare 502 did not show with one request at a time (0 of 123). It showed with the requests that a page sends at once. | Reproduce a race with the real number of requests before you say that it does not happen. |
+| 2026-11-09 (1176): a new GET list route needed more than its own code. It also needed an entry in `test_list_envelope_contract.py` and in the list-key tables of `api-design.md` and `API.md`. It needed an MCP tool or a reason for no tool (`test_mcp_read_coverage.py`). | Before a new list route, read those three places. |
+| 2026-11-07 (1108): the docs-site anchor test refused a link to `#steps_1`, which two headings with the same name made. `helm-docs.sh --check` compares with the git index. | Link the parent section. Stage the chart files before the check. |
 
 ## Product behaviour
 
@@ -44,6 +46,8 @@ looks like when it happens again. A number is a GitHub issue or PR.
 | A new permission on a default role did not reach existing users, because each user keeps a copy of its capabilities | A change to a default role updates the roles and the users of each role. |
 | 2026-10-23 (977): a failure reason moved from the store into a component reset on each mount, while the store still said "failed" | Seed a view value from the store that it explains, and test unmount and mount again. |
 | 2026-07-16 (384): a view grew to 721 lines over design passes before anyone measured it | After a design pass, count the lines of each view that the PR changed. Near 500, move parts into panels. |
+| 2026-11-06 (1110, 1113): Claude Code sends 5 requests when it connects. A low MCP rate limit refused it, and the 429 reply had no detail. | The docs give 30 requests a minute as the lowest useful limit, and the 429 reply tells the reason. |
+| 2026-11-14 (1205): a text rewrite renamed the legend item "Fixed" to "Resolved". Only a person sets Resolved. A finding that a scan no longer reports gets `present=false`. | Before a rename of a state or a term, read its meaning in the backend. |
 
 ## Docs
 
@@ -52,3 +56,4 @@ looks like when it happens again. A number is a GitHub issue or PR.
 | 2026-10-09 (794): an operator page said that more than one backend works. That came from design text, and nobody tested it. | Operator pages say only what somebody ran. Mark design intent as untested. |
 | 2026-10-09 (796): a chart README had an install example with a missing Secret, while `docs/DEPLOYING.md` had the right steps | When a command is in two docs, compare each copy. |
 | 2026-09-27 (588), 2026-10-06 (754), 2026-10-14 (857): each docs pass found claims that did not match the code | Check each claim against the code before you write it. Absolute words ("each", "never") are the most likely to be wrong. |
+| 2026-11-09 (1161): an agent test said that a pull moved the tag of an image with no digest. The image had no tag before the run. `LastTagTime` shows only the last new tag. | Check a stated cause against the record before you act on it. |

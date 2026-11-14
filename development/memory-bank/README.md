@@ -29,6 +29,8 @@ canonical document is correct, and the bank must change. The canonical documents
 ## How the bank stays current
 
 - After each release, one docs PR updates `timeline.md` and `active-context.md`.
+- When an issue closes, its facts that last go into the bank: the timeline, a ruling, a lesson or
+  the active context. The notes of an agent do not keep them.
 - A PR that changes a decision or a ruling also changes `system-patterns.md` or `rulings.md`.
 - A PR that adds a lesson to `CLAUDE.md` or to a rule file also adds the incident to `lessons.md`.
 - `backend/tests/test_memory_bank.py` makes sure that each repository path in the bank exists, that
