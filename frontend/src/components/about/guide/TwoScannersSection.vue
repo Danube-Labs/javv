@@ -26,7 +26,8 @@ import GuideProse from './GuideProse.vue'
       that holds the package. For example, the Trivy report for rancher/local-path-provisioner v0.0.36
       has 371 entries. JAVV shows 101 findings for this image. The Go standard library is in 11
       programs of the image, thus Trivy shows each of its CVEs 11 times. The
-      <span class="ui-name">Paths</span> column of a finding page and of an image page lists these files.
+      <span class="ui-name">Paths</span> column of the Findings list, a finding page and an image page
+      lists these files.
     </p>
   </GuideProse>
 </template>

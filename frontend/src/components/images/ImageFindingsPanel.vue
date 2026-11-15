@@ -138,7 +138,6 @@ function openFinding(row: FindingRow) {
       :loading="loading"
       :hidden="HIDDEN_COLUMNS"
       :row-to="findingRoute"
-      paths
       @sort="onSort"
       @row-click="openFinding"
     />

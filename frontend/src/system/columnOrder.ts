@@ -7,14 +7,21 @@
  * order, so hiding + reordering + re-showing never scrambles a column the user parked.
  */
 
-/** Validated restore: unknown keys drop, missing known keys append (a new column released
- * after the user saved an order still appears); garbage degrades to the default. */
+/** Validated restore: unknown keys drop; garbage degrades to the default. A known key missing
+ * from the saved order (a column released after the user saved it) goes after the key before it
+ * in the default order, so it shows where a new user sees it (issue 1205). */
 export function restoreOrder(raw: string | null, known: readonly string[]): string[] {
   try {
     const parsed: unknown = JSON.parse(raw ?? '')
     if (Array.isArray(parsed)) {
-      const saved = parsed.filter((k): k is string => typeof k === 'string' && known.includes(k))
-      if (saved.length > 0) return [...saved, ...known.filter((k) => !saved.includes(k))]
+      const order = parsed.filter((k): k is string => typeof k === 'string' && known.includes(k))
+      if (order.length > 0) {
+        // `known` is walked in order, so the key before a missing one is already in `order`
+        known.forEach((key, i) => {
+          if (!order.includes(key)) order.splice(i === 0 ? 0 : order.indexOf(known[i - 1]!) + 1, 0, key)
+        })
+        return order
+      }
     }
   } catch {
     /* garbage degrades to the default order */

@@ -8,6 +8,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import ColumnsMenu from '@/components/findings/ColumnsMenu.vue'
+import { FINDINGS_COLUMNS } from '@/findings/columns'
 
 const COLS = [
   ['cve', 'CVE'],
@@ -47,6 +48,14 @@ describe('ColumnsMenu', () => {
     expect(wrapper.emitted('toggleCol')).toEqual([['package']])
     await wrapper.setProps({ hidden: new Set(['package']) })
     expect(wrapper.findAll('.facet-row').map((r) => r.classes('facet-on'))).toEqual([true, false, true])
+  })
+
+  it('the Findings menu has a Paths row right after Package (issue 1205)', async () => {
+    const wrapper = mount(ColumnsMenu, { props: { cols: FINDINGS_COLUMNS, dense: false, hidden: new Set<string>() }, attachTo: document.body })
+    mounted = wrapper
+    await wrapper.find('button').trigger('click')
+    const labels = wrapper.findAll('.facet-row').map((r) => r.find('.facet-label').text())
+    expect(labels[labels.indexOf('Package') + 1]).toBe('Paths')
   })
 
   it('a reorderable menu gives each row the grip', async () => {

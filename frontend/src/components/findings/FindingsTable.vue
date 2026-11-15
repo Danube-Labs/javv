@@ -14,10 +14,9 @@
  * the OWNER maps + persists them (`system/columnOrder.ts`), same parent-owns-state
  * discipline as `hidden`.
  *
- * `paths` (issue 1077, the image page) adds a Paths column after Package and lets a row open to
- * list the files of its finding. It is not in FINDINGS_COLUMNS, so the Findings grid and its
- * Columns menu stay as they are. A `reorderable` table gets no Paths: the parent maps the drag
- * indexes over its own column list, which has no Paths.
+ * The Paths column (issue 1077, on the Findings list since issue 1205) is a key of
+ * FINDINGS_COLUMNS: it shows where the order puts it, unless it is hidden. While it shows, a row
+ * opens to list the files of its finding, so the parent's read must send `locations=true`.
  */
 import Column from 'primevue/column'
 import DataTable, {
@@ -74,12 +73,8 @@ const props = withDefaults(
     modes?: Modes
     /** where a row leads: its identifier renders as a real link, so the keyboard can open it */
     rowTo?: (row: FindingRow) => RouteLocationRaw
-    /** the Paths column and the rows that open to list the paths (issue 1077); the read must
-     * send `locations=true` */
-    paths?: boolean
   }>(),
   {
-    paths: false,
     hidden: () => new Set<string>(),
     colOrder: () => FINDINGS_COLUMNS.map(([key]) => key),
     reorderable: false,
@@ -88,19 +83,10 @@ const props = withDefaults(
   },
 )
 
-/** a column of this table: the togglable ones plus Paths, which only the `paths` prop adds */
-type TableKey = FindingsColumnKey | 'paths'
-
-/** rendered orderable columns: display order minus the hidden set, Paths after Package, where
- * it is in view at 1440px without a scroll (after Fixed it was not) */
-/** the Paths column is on: never with `reorderable`, whose drag indexes have no Paths */
-const pathsOn = computed(() => props.paths && !props.reorderable)
-const orderedKeys = computed(() => {
-  const keys: TableKey[] = props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[]
-  if (!pathsOn.value) return keys
-  const at = keys.indexOf('package')
-  return at === -1 ? [...keys, 'paths' as const] : [...keys.slice(0, at + 1), 'paths' as const, ...keys.slice(at + 1)]
-})
+/** rendered orderable columns: display order minus the hidden set */
+const orderedKeys = computed(() => props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[])
+/** the Paths column shows, so its rows can open */
+const pathsOn = computed(() => orderedKeys.value.includes('paths'))
 
 /* the rows opened to show their paths, by finding_key; a new page starts with all closed */
 const expanded = ref<Record<string, boolean>>({})
@@ -133,7 +119,7 @@ const timeTravel = useTimeTravelStore()
 /** the D28 display clock: SLA countdowns measure from T when rewound, never from today */
 const slaNowMs = computed(() => refNowMs(timeTravel.t))
 
-const COL_HEADER: Record<TableKey, string> = {
+const COL_HEADER: Record<FindingsColumnKey, string> = {
   first_seen: 'First seen',
   last_scan: 'Last scan',
   epss: 'EPSS',
@@ -152,7 +138,7 @@ const COL_HEADER: Record<TableKey, string> = {
 }
 // every cell left-anchored (operator 2026-07-11: we read left to right — no r/c columns);
 // narrow data columns shrink to content so layout slack pools in the text columns
-const FIT_COLS = new Set<TableKey>([
+const FIT_COLS = new Set<FindingsColumnKey>([
   'first_seen',
   'last_scan',
   'epss',
@@ -166,11 +152,11 @@ const FIT_COLS = new Set<TableKey>([
   'assignee',
   'paths',
 ])
-const colClass = (key: TableKey) =>
+const colClass = (key: FindingsColumnKey) =>
   [FIT_COLS.has(key) ? 'fit' : '', props.reorderable ? 'th-drag' : ''].join(' ').trim()
 
 // the server's sort whitelist, column → field (severity_rank rides the pinned column)
-const SORT_FIELD: Partial<Record<TableKey, SortField>> = {
+const SORT_FIELD: Partial<Record<FindingsColumnKey, SortField>> = {
   first_seen: 'first_seen_at',
   last_scan: 'last_scan_at',
   epss: 'epss',
@@ -227,7 +213,7 @@ const nsLabel = (r: FindingRow): string => {
  * Deliberately absent: the pure-data columns. `namespace` only qualifies on a single-namespace
  * row, because a finding spanning three namespaces has no one value to filter on.
  */
-const CELL_FILTER_FIELD: Partial<Record<TableKey | 'severity' | 'cve', string>> = {
+const CELL_FILTER_FIELD: Partial<Record<FindingsColumnKey | 'severity' | 'cve', string>> = {
   severity: 'severity',
   state: 'state',
   scanner: 'scanner',
