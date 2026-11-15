@@ -123,7 +123,8 @@ function apply(v: ViewDoc) {
     const all = FINDINGS_COLUMNS.map(([key]) => key)
     const visible = new Set(wb.columns)
     localStorage.setItem(FINDINGS_COLS_KEY, JSON.stringify(all.filter((k) => !visible.has(k))))
-    localStorage.setItem(FINDINGS_ORDER_KEY, JSON.stringify(wb.columns))
+    // the hidden columns follow the columns of the view, so the menu lists the view's first
+    localStorage.setItem(FINDINGS_ORDER_KEY, JSON.stringify([...wb.columns, ...all.filter((k) => !visible.has(k))]))
   }
   if (wb?.dense !== null && wb?.dense !== undefined) {
     localStorage.setItem(FINDINGS_DENSE_KEY, String(wb.dense))

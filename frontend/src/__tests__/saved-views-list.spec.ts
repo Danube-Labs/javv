@@ -19,6 +19,7 @@ vi.mock('@/api/client', () => ({ client: {} }))
 
 import { deleteViewApiV1ViewsViewIdDelete, listViewsApiV1ViewsGet } from '@/api/generated'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
+import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { FINDINGS_COLS_KEY, FINDINGS_DENSE_KEY, FINDINGS_ORDER_KEY, presetToRouteQuery } from '@/findings/savedViews'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -140,7 +141,14 @@ describe('a saved view and the Paths column (issue 1205)', () => {
   it('a view that shows Paths keeps it where the view put it', async () => {
     const { hidden, order } = await applyView(['package', 'paths', 'state'])
     expect(hidden).not.toContain('paths')
-    expect(order).toEqual(['package', 'paths', 'state'])
+    expect(order.slice(0, 3)).toEqual(['package', 'paths', 'state'])
+  })
+
+  it('the stored order lists the columns of the view first, then the hidden ones in the default order', async () => {
+    // so the Columns menu leads with the view's columns, and a column shown again goes last
+    const { order } = await applyView(['state', 'package', 'image'])
+    const rest = FINDINGS_COLUMNS.map(([k]) => k).filter((k) => !['state', 'package', 'image'].includes(k))
+    expect(order).toEqual(['state', 'package', 'image', ...rest])
   })
 
   it('a view saved before the Paths column shows the columns it saved: Paths is hidden', async () => {

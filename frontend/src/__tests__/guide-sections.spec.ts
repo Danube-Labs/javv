@@ -98,7 +98,7 @@ describe('section bodies', () => {
     expect(text).toContain('JAVV counts findings.')
     expect(text).toContain('one time for each file that holds the package')
     // issue 1077: the files are on the screen now, and the Guide says where
-    expect(text).toContain('The Paths column of a finding page and of an image page lists these files.')
+    expect(text).toContain('The Paths column of the Findings list, a finding page and an image page lists these files.')
   })
 
   it('Triage shows six states: the ones a person sets, risk accepted, and stale', () => {

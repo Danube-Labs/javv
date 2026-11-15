@@ -27,6 +27,7 @@ import ColumnsMenu from '@/components/findings/ColumnsMenu.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import ImagesTable from '@/components/images/ImagesTable.vue'
 import { useClusterStore } from '@/stores/cluster'
+import { useFindingsStore } from '@/stores/findings'
 import FindingsView from '@/views/FindingsView.vue'
 import ImagesView from '@/views/ImagesView.vue'
 
@@ -123,13 +124,26 @@ describe('Findings: the Paths column (issue 1205)', () => {
     expect(table[table.indexOf('package') + 1]).toBe('paths')
   })
 
-  it('the read asks for the paths while Paths shows, and not after the menu hides it', async () => {
+  it('the read asks for the paths while Paths shows; a hide reads nothing, a show reads the page again', async () => {
     const w = await mountRouted(FindingsView)
     expect(lastFindingsQuery().locations).toBe(true)
+    // page 2: the page holds a cursor, whose search can expire while the user reads
+    const grid = useFindingsStore()
+    grid.setResult([], 60, 'c-page-2', true)
+    grid.goNext()
+    await flushPromises()
+    expect(lastFindingsQuery()).toMatchObject({ cursor: 'c-page-2', locations: true })
+    const reads = vi.mocked(searchFindingsApiV1FindingsGet).mock.calls.length
+
     w.findComponent(ColumnsMenu).vm.$emit('toggleCol', 'paths')
     await flushPromises()
     expect(hiddenOf(w, FindingsTable)).toContain('paths')
-    expect(lastFindingsQuery()).not.toHaveProperty('locations')
+    expect(vi.mocked(searchFindingsApiV1FindingsGet).mock.calls.length).toBe(reads)
+
+    w.findComponent(ColumnsMenu).vm.$emit('toggleCol', 'paths')
+    await flushPromises()
+    expect(vi.mocked(searchFindingsApiV1FindingsGet).mock.calls.length).toBe(reads + 1)
+    expect(lastFindingsQuery()).toMatchObject({ cursor: 'c-page-2', locations: true })
   })
 
   it('a stored hidden list with Paths: the read does not ask for the paths', async () => {
