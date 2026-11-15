@@ -401,8 +401,10 @@ inside a cell keeps its own color. For these two, the test fails only a `color` 
 
 **Rules that moved to base.css** (issue 1190): several components had a copy of these rules, and
 base.css now holds the one rule. `.stack` is the column of cards of a Settings page, 14px apart.
-`.scope-src` is the line under the controls of a card that tells where its scope comes from. The
-same test fails a copy of these rules.
+`.scope-src` is the line under the controls of a card that tells where its scope comes from.
+`.row-actions` holds the buttons of a table row side by side, 6px apart. The cell of the approval
+list holds its buttons in its own rule, `.approval-actions`. The same test fails a copy of these
+rules.
 
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is

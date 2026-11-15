@@ -1075,6 +1075,11 @@ button.stat-cell:hover .cell-go,
   font-size: var(--text-sm);
   color: var(--soft);
 }
+/* the buttons of a table row, side by side in their cell */
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
+}
 
 /* ---- text box and dropdown skins (issue 1050): the one look of a field that people type in or
    pick from, with every state (hover wash + line, focus, keyboard focus, invalid, disabled).

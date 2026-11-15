@@ -394,10 +394,6 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
 .row-off td {
   color: var(--soft);
 }
-.row-actions {
-  display: inline-flex;
-  gap: 6px;
-}
 .row-error {
   color: var(--health-down-fg);
   font-size: var(--text-sm);

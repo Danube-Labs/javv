@@ -381,10 +381,6 @@ const fmt = (iso: string | null) =>
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.row-actions {
-  display: inline-flex;
-  gap: 6px;
-}
 .raw-token {
   padding: 12px 14px;
   background: var(--panel);

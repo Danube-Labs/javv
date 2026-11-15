@@ -181,7 +181,7 @@ const SHARED_RULES = [
   // the table and screen-head rules that components set again (issue 1190)
   '.mono-cell', '.empty-row', '.screen-head', '.head-actions',
   // the rules that moved out of the components to base.css (issue 1190)
-  '.stack', '.scope-src',
+  '.stack', '.scope-src', '.row-actions',
 ]
 
 /**
@@ -302,10 +302,12 @@ describe('style rules: one shared card, menu panel and error text', () => {
     const planted = [
       '.stack { display: flex; flex-direction: column; gap: 14px; }',
       '.fam-why-note,\n.scope-src { margin: 10px 0 2px; font-size: var(--text-sm); color: var(--soft); }',
+      '.row-actions { display: inline-flex; gap: 6px; }',
     ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.stack: display', '.stack: flex-direction', '.stack: gap',
       '.scope-src: margin', '.scope-src: font-size', '.scope-src: color',
+      '.row-actions: display', '.row-actions: gap',
     ])
   })
 })
