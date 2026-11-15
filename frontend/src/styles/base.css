@@ -1063,6 +1063,18 @@ button.stat-cell:hover .cell-go,
   line-height: 1.5;
   color: var(--ink);
 }
+/* a Settings page is a column of cards, and a card says under its controls where its scope comes
+   from (issue 1190) */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.scope-src {
+  margin: 10px 0 2px;
+  font-size: var(--text-sm);
+  color: var(--soft);
+}
 
 /* ---- text box and dropdown skins (issue 1050): the one look of a field that people type in or
    pick from, with every state (hover wash + line, focus, keyboard focus, invalid, disabled).

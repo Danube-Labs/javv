@@ -399,6 +399,11 @@ strong cell and `.tbl td.strong` its ink color: the color stops at the cell, so 
 inside a cell keeps its own color. For these two, the test fails only a `color` in a component
 `.strong` rule. The card at the top of the image page is `.image-head`, not a screen head.
 
+**Rules that moved to base.css** (issue 1190): several components had a copy of these rules, and
+base.css now holds the one rule. `.stack` is the column of cards of a Settings page, 14px apart.
+`.scope-src` is the line under the controls of a card that tells where its scope comes from. The
+same test fails a copy of these rules.
+
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
 `primary`. `window-footer-buttons.spec.ts` reads every window footer. That test is the check, and

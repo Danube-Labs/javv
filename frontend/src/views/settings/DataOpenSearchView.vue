@@ -335,11 +335,6 @@ function discard() {
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .scanner-banner {
   display: flex;
   align-items: center;
@@ -388,8 +383,7 @@ function discard() {
 .fam-guard svg {
   color: var(--soft);
 }
-.fam-why-note,
-.scope-src {
+.fam-why-note {
   margin: 10px 0 2px;
   font-size: var(--text-sm);
   color: var(--soft);

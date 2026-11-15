@@ -163,11 +163,6 @@ async function retire() {
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .mono-sm {
   font-family: var(--font-mono);
   font-size: var(--text-mono-cell);

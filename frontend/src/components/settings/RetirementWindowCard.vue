@@ -133,11 +133,6 @@ async function save() {
   font-size: var(--text-sm);
   color: var(--health-down-fg);
 }
-.scope-src {
-  margin: 10px 0 2px;
-  font-size: var(--text-sm);
-  color: var(--soft);
-}
 .load-error {
   margin: 14px 0 8px;
 }

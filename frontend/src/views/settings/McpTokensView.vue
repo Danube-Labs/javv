@@ -405,11 +405,6 @@ async function submitRevoke() {
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .row-actions {
   display: inline-flex;
   gap: 6px;

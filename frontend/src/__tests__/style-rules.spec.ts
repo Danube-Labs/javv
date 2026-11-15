@@ -180,6 +180,8 @@ const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
   // the table and screen-head rules that components set again (issue 1190)
   '.mono-cell', '.empty-row', '.screen-head', '.head-actions',
+  // the rules that moved out of the components to base.css (issue 1190)
+  '.stack', '.scope-src',
 ]
 
 /**
@@ -294,6 +296,17 @@ describe('style rules: one shared card, menu panel and error text', () => {
     ])
     const sizes = '.empty-row { padding: 34px 12px; }\n.screen-head { gap: 16px; margin-bottom: 18px; }'
     expect(sharedRuleCopies(sizes, shared)).toEqual([])
+  })
+
+  it('the check finds a planted copy of each rule that moved to base.css (issue 1190)', () => {
+    const planted = [
+      '.stack { display: flex; flex-direction: column; gap: 14px; }',
+      '.fam-why-note,\n.scope-src { margin: 10px 0 2px; font-size: var(--text-sm); color: var(--soft); }',
+    ].join('\n')
+    expect(sharedRuleCopies(planted, shared)).toEqual([
+      '.stack: display', '.stack: flex-direction', '.stack: gap',
+      '.scope-src: margin', '.scope-src: font-size', '.scope-src: color',
+    ])
   })
 })
 

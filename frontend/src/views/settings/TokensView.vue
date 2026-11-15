@@ -373,11 +373,6 @@ const fmt = (iso: string | null) =>
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .cluster-cell {
   display: block;
   max-width: 0;
