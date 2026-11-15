@@ -172,7 +172,7 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
     <UiButton variant="quiet" class="back-btn" @click="router.push('/images')">
       <AppIcon name="arrowback" :size="13" /> Running images
     </UiButton>
-    <div class="screen-head">
+    <div class="image-head">
       <div class="img-id-head">
         <div class="img-cube" aria-hidden="true"><AppIcon name="cube" :size="22" /></div>
         <div>
@@ -311,7 +311,7 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
 
 <style scoped>
 /* the identity panel (prototype .img-detail-head — a card, not bare text on the canvas) */
-.screen-head {
+.image-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -328,7 +328,7 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
 .back-btn {
   margin-bottom: 10px;
 }
-.screen-head h1 {
+.image-head h1 {
   margin: 0 0 4px;
 }
 .screen-sub {
@@ -399,9 +399,6 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
   margin: 0 0 16px;
 }
 .head-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   /* cube (44px) + its gap (14px): a dropped switch lines up under the title, not the cube */
   margin-left: 58px;
 }

@@ -202,9 +202,6 @@ function goFindings(query: Record<string, string>) {
   margin-bottom: 16px;
 }
 .screen-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -215,10 +212,7 @@ function goFindings(query: Record<string, string>) {
   min-width: 0;
 }
 .head-actions {
-  display: flex;
   flex: none;
-  align-items: center;
-  gap: 10px;
 }
 
 .grid {

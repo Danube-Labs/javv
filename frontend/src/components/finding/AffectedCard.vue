@@ -147,9 +147,4 @@ const pathsId = (i: number) => `affected-paths-${page.value}-${i}`
   box-sizing: border-box;
   width: 100cqw;
 }
-.empty-row {
-  text-align: center;
-  color: var(--soft);
-  padding: 28px 12px;
-}
 </style>

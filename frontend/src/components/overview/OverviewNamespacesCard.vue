@@ -111,10 +111,6 @@ function goFindings(query: Record<string, string>) {
   font-size: var(--text-sm);
   color: var(--soft);
 }
-.strong {
-  font-weight: 700;
-  color: var(--ink);
-}
 /* the affordance carrier — same convention as the grid's cve-link */
 .ns-link {
   transition: color var(--dur-quick);

@@ -173,9 +173,24 @@ describe('style rules: one shared set of skins', () => {
  * the menu panel. A component style can add to one of these rules (its padding, its side). It
  * must not set a property again that the shared rule sets, because a copy hides a later change
  * of the shared value. The property list comes from base.css, so a new shared value is covered
- * with no change here. Only a rule with exactly one of these selectors counts.
+ * with no change here. Only a rule with exactly one of these selectors counts. Issue 1190 added
+ * the data cell, the empty table line and the screen head with its actions.
  */
-const SHARED_RULES = ['.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error']
+const SHARED_RULES = [
+  '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
+  // the table and screen-head rules that components set again (issue 1190)
+  '.mono-cell', '.empty-row', '.screen-head', '.head-actions',
+]
+
+/**
+ * The size that a component may give a shared rule, with its own value (operator ruling of
+ * 2026-11-14, issue 1190): an empty table row keeps its own padding, and a screen head its own
+ * space under it. The other properties of the rule stay shared.
+ */
+const FREE_PROPERTIES = new Map([
+  ['.empty-row', ['padding']],
+  ['.screen-head', ['margin-bottom']],
+])
 
 /** The properties that each rule of `css` sets, by its exact selector. */
 function ruleProperties(css: string): Map<string, Set<string>> {
@@ -203,7 +218,12 @@ function sharedRuleCopies(css: string, shared: Map<string, Set<string>>): string
 
 describe('style rules: one shared card, menu panel and error text', () => {
   const all = ruleProperties(readFileSync(join(SRC, 'styles/base.css'), 'utf8'))
-  const shared = new Map(SHARED_RULES.map((selector) => [selector, all.get(selector) ?? new Set<string>()]))
+  const shared = new Map(
+    SHARED_RULES.map((selector) => {
+      const free = FREE_PROPERTIES.get(selector) ?? []
+      return [selector, new Set([...(all.get(selector) ?? [])].filter((p) => !free.includes(p)))]
+    }),
+  )
 
   /** A copy that is a real difference, with its reason. */
   const RULED = new Map([
@@ -230,7 +250,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
         .filter((hit) => !RULED.get(rel)?.includes(hit))
         .map((hit) => `${rel} → ${hit}`),
     )
-    expect(hits, `set again outside base.css (issue 1181): ${hits.join('; ')}`).toEqual([])
+    expect(hits, `set again outside base.css (issues 1181, 1190): ${hits.join('; ')}`).toEqual([])
   })
 
   it('each ruled exception is real, not a stale entry', () => {
@@ -242,6 +262,38 @@ describe('style rules: one shared card, menu panel and error text', () => {
     expect(sharedRuleCopies(planted, shared)).toEqual(['.card: background', '.card-head h2: margin'])
     const addition = '/* .card { border: 0; } */ .card { padding: 4px; } .card-head.dark { gap: 0; } .rail .load-error { color: red; }'
     expect(sharedRuleCopies(addition, shared)).toEqual([])
+  })
+
+  it('a component leaves the color of a strong cell to base.css (issue 1190)', () => {
+    const strongColor = (css: string) => (ruleProperties(css).get('.strong')?.has('color') ? ['.strong: color'] : [])
+    expect(all.get('.tbl td.strong')?.has('color')).toBe(true)
+    const hits = files.filter((rel) =>
+      strongColor(parseSfc(readFileSync(join(SRC, rel), 'utf8')).descriptor.styles.map((s) => s.content).join('\n')).length,
+    )
+    expect(hits, `a .strong color outside base.css: ${hits.join(', ')}`).toEqual([])
+    expect(strongColor('.strong { font-weight: 700; color: var(--ink); }')).toEqual(['.strong: color'])
+    expect(strongColor('.strong { font-weight: 700; }')).toEqual([])
+  })
+
+  it('each free property is a property of its shared rule in base.css', () => {
+    for (const [selector, free] of FREE_PROPERTIES)
+      for (const property of free) expect(all.get(selector)?.has(property), `${selector}: ${property}`).toBe(true)
+  })
+
+  it('the check finds a planted copy of each rule of issue 1190 and lets a free size pass', () => {
+    const planted = [
+      '.mono-cell { font-family: var(--font-mono); }',
+      '.empty-row { color: var(--soft); text-align: center; }',
+      '.screen-head { display: flex; align-items: flex-start; justify-content: space-between; }',
+      '.head-actions { display: flex; flex: none; align-items: center; gap: 10px; }',
+    ].join('\n')
+    expect(sharedRuleCopies(planted, shared)).toEqual([
+      '.mono-cell: font-family', '.empty-row: color', '.empty-row: text-align',
+      '.screen-head: display', '.screen-head: align-items', '.screen-head: justify-content',
+      '.head-actions: display', '.head-actions: align-items', '.head-actions: gap',
+    ])
+    const sizes = '.empty-row { padding: 34px 12px; }\n.screen-head { gap: 16px; margin-bottom: 18px; }'
+    expect(sharedRuleCopies(sizes, shared)).toEqual([])
   })
 })
 

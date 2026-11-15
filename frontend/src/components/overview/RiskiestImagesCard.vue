@@ -234,10 +234,6 @@ function open(row: ImageRow) {
   font-size: var(--text-sm);
   color: var(--soft);
 }
-.strong {
-  font-weight: 700;
-  color: var(--ink);
-}
 .crit-alarm {
   color: var(--sev-critical-fg);
 }

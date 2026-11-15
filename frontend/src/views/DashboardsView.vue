@@ -230,10 +230,7 @@ function exportDashboard(d: DashboardDoc) {
 
 <style scoped>
 .head-actions {
-  display: flex;
   flex: none;
-  align-items: center;
-  gap: 10px;
 }
 /* the Saved views summary is an italic line; here it is a count and a time */
 .dash-sum {

@@ -190,9 +190,6 @@ const slaTier = computed(() => {
 .fact-link:hover .fact-go {
   color: var(--coral-text);
 }
-.mono-cell {
-  font-family: var(--font-mono);
-}
 
 /* the risk band: one joined card, hairline-divided cells, urgency carried by the numerals
    (stat-card grammar per the operator's Nuxt UI reference — ours, on tokens) */
