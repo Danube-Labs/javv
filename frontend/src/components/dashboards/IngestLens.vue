@@ -144,53 +144,20 @@ function onPointClick(params: { dataIndex: number }) {
 </template>
 
 <style scoped>
+/* the shared strip rules are in base.css (issue 1197) */
 .ingest-lens {
   /* fills the screen-head-band's table track — flush with the grid edges below */
   flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  padding: 10px 14px 4px;
-}
-/* the quiet-range flag: the history/staleness amber — attention ONLY when the range holds
-   no commits and the table is older than it looks (operator ruling) */
-.il-quiet {
-  background: var(--hist-bg);
-  border-color: var(--hist-line);
-}
-.il-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 2px;
 }
 .il-title {
   flex: none;
   white-space: nowrap;
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink);
 }
-/* one size, ink-dark (operator: the small soft text was unreadable) — only the explanatory
-   clause stays soft */
 /* when the head runs out of room the explanation wraps onto a second line: cut short, it ended
    at "the state at the…", which says nothing (issue 681) */
 .il-sub {
   flex: 1 1 0;
   min-width: 12ch;
-  font-size: var(--text-control);
-  color: var(--ink);
-}
-.il-sub b {
-  font-weight: 700;
-  color: var(--ink);
 }
 .il-help {
   flex: none;
@@ -202,15 +169,8 @@ function onPointClick(params: { dataIndex: number }) {
   color: var(--ink);
   text-align: right;
 }
-/* warning-grade copy reads at body size, never fine print (operator ruling) */
 .il-empty {
   margin: auto 0;
-  padding-bottom: 6px;
-  font-size: var(--text-body);
   font-weight: 500;
-  color: var(--ink);
-}
-.skel-gap {
-  margin-bottom: 6px;
 }
 </style>

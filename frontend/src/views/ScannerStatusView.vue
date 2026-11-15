@@ -206,16 +206,16 @@ const laneOptions = computed(() =>
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-.lens-stack > .ingest-lens,
-.lens-stack > .fail-lens {
+.lens-stack > .ingest-lens {
   border: 0;
   border-radius: 0;
   box-shadow: none;
 }
-.lens-stack > .ingest-lens {
+/* Scan ingest above, Failed ingests below: a line on each side of the gutter */
+.lens-stack > .ingest-lens:first-child {
   border-bottom: 1px solid var(--line);
 }
-.lens-stack > .fail-lens {
+.lens-stack > .ingest-lens + .ingest-lens {
   border-top: 1px solid var(--line);
 }
 .scan-cards {

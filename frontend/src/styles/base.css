@@ -515,6 +515,58 @@ html [class*=' p-'] {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+
+/* ---- a chart strip above a table: Scan ingest, Failed ingests, Audit activity, Handled findings
+   (issue 1197). These rules hold the values that are equal in all four strips. A strip adds the
+   rest in its own rule: how it fills its row, and how its line under the title wraps. */
+.ingest-lens {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 10px 14px 4px;
+}
+/* the quiet range: the history amber, only when the range holds nothing and the table is older
+   than it looks (operator ruling). After .ingest-lens, which sets the same properties. */
+.il-quiet {
+  background: var(--hist-bg);
+  border-color: var(--hist-line);
+}
+.il-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.il-title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+/* one size, ink-dark: the small soft text was unreadable (operator) */
+.il-sub {
+  font-size: var(--text-control);
+  color: var(--ink);
+}
+.il-sub b {
+  font-weight: 700;
+  color: var(--ink);
+}
+/* the text of an empty or failed strip reads at body size, never fine print (operator ruling) */
+.il-empty {
+  padding-bottom: 6px;
+  font-size: var(--text-body);
+  color: var(--ink);
+}
+.ingest-lens > .skel-gap {
+  margin-bottom: 6px;
+}
 @media (prefers-reduced-motion: reduce) {
   .tbl-hover.tbl-hover tbody tr {
     transition: none;
