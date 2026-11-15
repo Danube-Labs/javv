@@ -137,7 +137,6 @@ const needAttention = computed(
   font-weight: 600;
 }
 
-
 .skel-stack > * + * {
   margin-top: 16px;
 }

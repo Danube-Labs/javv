@@ -530,7 +530,6 @@ html [class*=' p-'] {
 .filter-field,
 .time-preset,
 .facet-row,
-.cols-row,
 .modal-close {
   transition:
     background 0.12s ease-out,
@@ -541,7 +540,6 @@ html [class*=' p-'] {
 .ra-chip:hover:not(.ra-chip-on),
 .filter-field:hover,
 .time-preset:hover,
-.cols-row:hover,
 .modal-close:hover {
   background: var(--control-hover-bg);
   border-color: var(--control-hover-line);
@@ -556,17 +554,16 @@ html [class*=' p-'] {
   .filter-field,
   .time-preset,
   .facet-row,
-  .cols-row,
   .modal-close {
     transition: none;
   }
 }
 
 /* A filter row: a value of a filter list or of Add filter, or a column of the Columns menu, with
-   its check box (issue 1190). The hover is the wash of every other control: `--panel` was a ~2%
-   step off the card, invisible on a good monitor and gone on a TN panel (operator, 2026-07-28).
-   It is a rule of its own, not a member of the hover list above, because a row has no line to
-   shift. */
+   its check box (issue 1190). Its keyboard focus ring is the global :focus-visible ring. The hover
+   is the wash of every other control: `--panel` was a ~2% step off the card, invisible on a good
+   monitor and gone on a TN panel (operator, 2026-07-28). It is a rule of its own, not a member of
+   the hover list above, because a row has no line to shift. */
 .facet-row {
   display: flex;
   align-items: center;
@@ -584,10 +581,6 @@ html [class*=' p-'] {
 .facet-row:hover {
   background: var(--control-hover-bg);
 }
-.facet-row:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
 .facet-check {
   width: 14px;
   height: 14px;
@@ -602,7 +595,6 @@ html [class*=' p-'] {
   box-shadow: inset 0 0 0 2px var(--card);
 }
 .facet-on {
-  color: var(--ink);
   font-weight: 500;
 }
 
@@ -1131,8 +1123,8 @@ button.stat-cell:hover .cell-go,
   line-height: 1.5;
   color: var(--ink);
 }
-/* a Settings page is a column of cards, and a card says under its controls where its scope comes
-   from (issue 1190) */
+/* a Settings page is a column of cards; .scope-src is a small note line under the controls of a
+   card, such as where its scope comes from (issue 1190) */
 .stack {
   display: flex;
   flex-direction: column;

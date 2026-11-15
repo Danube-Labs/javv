@@ -4,8 +4,8 @@
  * the parent to show or hide the column. jsdom has no styles, so this pins the classes and the
  * event; the browser walk of the issue compares the drawn rows and their hover.
  */
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { mount, type VueWrapper } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import ColumnsMenu from '@/components/findings/ColumnsMenu.vue'
 
@@ -15,8 +15,16 @@ const COLS = [
   ['severity', 'Severity'],
 ] as const
 
+// each open menu is attached to the page, so each test takes its menu off again
+let mounted: VueWrapper | null = null
+afterEach(() => {
+  mounted?.unmount()
+  mounted = null
+})
+
 const openMenu = async (props: { hidden: ReadonlySet<string>; reorderable?: boolean }) => {
   const wrapper = mount(ColumnsMenu, { props: { cols: COLS, dense: false, ...props }, attachTo: document.body })
+  mounted = wrapper
   await wrapper.find('button').trigger('click')
   return wrapper
 }
@@ -39,7 +47,6 @@ describe('ColumnsMenu', () => {
     expect(wrapper.emitted('toggleCol')).toEqual([['package']])
     await wrapper.setProps({ hidden: new Set(['package']) })
     expect(wrapper.findAll('.facet-row').map((r) => r.classes('facet-on'))).toEqual([true, false, true])
-    wrapper.unmount()
   })
 
   it('a reorderable menu gives each row the grip', async () => {

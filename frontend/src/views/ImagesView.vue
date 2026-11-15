@@ -294,8 +294,3 @@ const inventoryAt = computed(() =>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* head/layout/toolbar scaffolding lives in base.css (shared data-screen grammar) */
-
-</style>
