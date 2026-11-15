@@ -12,6 +12,8 @@ export const FINDINGS_COLUMNS = [
   ['epss', 'EPSS'],
   ['kev', 'KEV'],
   ['package', 'Package'],
+  // the number of paths of the finding; the row opens to list them (issue 1205)
+  ['paths', 'Paths'],
   ['current', 'Current'],
   ['fixed', 'Fixed'],
   ['image', 'Image'],

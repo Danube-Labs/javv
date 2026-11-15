@@ -585,7 +585,8 @@ card; never counted client-side). Card → Findings with the filter preset (deep
 must reproduce identical query params). The whole card is the link (issue 1004): its address is
 the /findings address of the filters, so a ctrl click opens a new tab. A plain click applies the
 whole view first (columns, density, sort, time window). The footer ends in a quiet
-"Open in Findings ›", not a button.
+"Open in Findings ›", not a button. A view shows the columns that it saved. A view saved before
+the Paths column (issue 1205) thus hides Paths, and the Columns menu shows it again.
 
 **States:** empty ("save a filter set from Findings"); count-loading per card; degraded (counts
 show em-dash); 403 on mutating someone else's view (edit/delete affordances hidden unless owner

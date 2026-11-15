@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { FINDINGS_COLUMNS } from '@/findings/columns'
 import { moveKey, reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 
 const KNOWN = ['a', 'b', 'c', 'd'] as const
@@ -12,9 +13,26 @@ describe('restoreOrder', () => {
     expect(restoreOrder('[]', KNOWN)).toEqual(['a', 'b', 'c', 'd'])
   })
 
-  it('keeps the saved order, drops unknown keys, appends missing ones', () => {
-    expect(restoreOrder('["c","a","zombie","b"]', KNOWN)).toEqual(['c', 'a', 'b', 'd'])
+  it('keeps the saved order and drops unknown keys and non-strings', () => {
+    expect(restoreOrder('["c","a","zombie","b","d"]', KNOWN)).toEqual(['c', 'a', 'b', 'd'])
+    expect(restoreOrder('["d",7,"a","c","b"]', KNOWN)).toEqual(['d', 'a', 'c', 'b'])
+  })
+
+  it('puts a missing key after the key before it in the default order (issue 1205)', () => {
+    // a key that came out after the user stored an order shows where the default order has it
+    expect(restoreOrder('["c","a","zombie","b"]', KNOWN)).toEqual(['c', 'd', 'a', 'b'])
     expect(restoreOrder('["d",7,"a"]', KNOWN)).toEqual(['d', 'a', 'b', 'c'])
+    // the first key of the default order has no key before it: it goes first
+    expect(restoreOrder('["c","b","d"]', KNOWN)).toEqual(['a', 'c', 'b', 'd'])
+  })
+
+  it('a Findings order stored before the Paths column gets Paths right after Package (issue 1205)', () => {
+    const keys = FINDINGS_COLUMNS.map(([key]) => key)
+    const before = keys.filter((k) => k !== 'paths')
+    const moved = ['assignee', ...before.filter((k) => k !== 'assignee')]
+    const order = restoreOrder(JSON.stringify(moved), keys)
+    expect(order[order.indexOf('package') + 1]).toBe('paths')
+    expect(order.filter((k) => k !== 'paths')).toEqual(moved)
   })
 })
 

@@ -96,7 +96,7 @@ type TableKey = FindingsColumnKey | 'paths'
 /** the Paths column is on: never with `reorderable`, whose drag indexes have no Paths */
 const pathsOn = computed(() => props.paths && !props.reorderable)
 const orderedKeys = computed(() => {
-  const keys: TableKey[] = props.colOrder.filter((k) => !props.hidden.has(k)) as FindingsColumnKey[]
+  const keys: TableKey[] = props.colOrder.filter((k) => !props.hidden.has(k) && k !== 'paths') as FindingsColumnKey[]
   if (!pathsOn.value) return keys
   const at = keys.indexOf('package')
   return at === -1 ? [...keys, 'paths' as const] : [...keys.slice(0, at + 1), 'paths' as const, ...keys.slice(at + 1)]

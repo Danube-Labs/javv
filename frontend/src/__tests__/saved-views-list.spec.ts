@@ -19,7 +19,7 @@ vi.mock('@/api/client', () => ({ client: {} }))
 
 import { deleteViewApiV1ViewsViewIdDelete, listViewsApiV1ViewsGet } from '@/api/generated'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
-import { FINDINGS_DENSE_KEY, presetToRouteQuery } from '@/findings/savedViews'
+import { FINDINGS_COLS_KEY, FINDINGS_DENSE_KEY, FINDINGS_ORDER_KEY, presetToRouteQuery } from '@/findings/savedViews'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import SavedViewsView from '@/views/SavedViewsView.vue'
@@ -118,5 +118,33 @@ describe('deleting a saved view', () => {
     expect(w.find('[role="dialog"]').exists()).toBe(false)
     expect(useToastStore().toasts.map((t) => t.message)).toEqual(['View “Prod backlog” deleted'])
     w.unmount()
+  })
+})
+
+describe('a saved view and the Paths column (issue 1205)', () => {
+  const applyView = async (columns: string[]) => {
+    vi.mocked(listViewsApiV1ViewsGet).mockResolvedValue({
+      data: { views: [{ ...VIEW, workbench: { columns } }] },
+      request: {},
+      response: { ok: true, status: 200 },
+    } as never)
+    const { w } = await mountList()
+    await w.get('a.vc-link').trigger('click', { button: 0 })
+    await flushPromises()
+    return {
+      hidden: JSON.parse(localStorage.getItem(FINDINGS_COLS_KEY) ?? 'null') as string[],
+      order: JSON.parse(localStorage.getItem(FINDINGS_ORDER_KEY) ?? 'null') as string[],
+    }
+  }
+
+  it('a view that shows Paths keeps it where the view put it', async () => {
+    const { hidden, order } = await applyView(['package', 'paths', 'state'])
+    expect(hidden).not.toContain('paths')
+    expect(order).toEqual(['package', 'paths', 'state'])
+  })
+
+  it('a view saved before the Paths column shows the columns it saved: Paths is hidden', async () => {
+    const { hidden } = await applyView(['package', 'image', 'state'])
+    expect(hidden).toContain('paths')
   })
 })

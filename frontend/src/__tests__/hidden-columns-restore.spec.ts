@@ -23,6 +23,7 @@ vi.mock('@/api/generated', async (importOriginal) => {
 vi.mock('@/api/client', () => ({ client: {} }))
 
 import { listRunningImagesApiV1ImagesGet } from '@/api/generated'
+import ColumnsMenu from '@/components/findings/ColumnsMenu.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import ImagesTable from '@/components/images/ImagesTable.vue'
 import { useClusterStore } from '@/stores/cluster'
@@ -81,5 +82,37 @@ describe.each(SCREENS)('%s: the stored hidden columns', (_name, view, table, key
     localStorage.setItem(key, '["namespace","zombie"]')
     const w = await mountRouted(view as Component)
     expect(hiddenOf(w, table as Component)).toEqual(['namespace'])
+  })
+})
+
+/** The order the Findings screen hands its table and its Columns menu. */
+function findingsOrder(w: Awaited<ReturnType<typeof mountRouted>>) {
+  const table = (w.findComponent(FindingsTable).props() as { colOrder: readonly string[] }).colOrder
+  const menu = (w.findComponent(ColumnsMenu).props() as { cols: readonly (readonly [string, string])[] }).cols.map(([k]) => k)
+  return { table: [...table], menu }
+}
+
+describe('Findings: the Paths column (issue 1205)', () => {
+  // the hidden columns and the order that main stored, before the Paths column
+  const MAIN_HIDDEN = '["epss","kev","current","fixed","last_scan"]'
+  const MAIN_ORDER = JSON.stringify(['assignee', 'first_seen', 'last_scan', 'epss', 'kev', 'package', 'current',
+    'fixed', 'image', 'namespace', 'images', 'scanner', 'sla', 'state'])
+
+  it('a first visit shows Paths, right after Package, in the table and in the menu', async () => {
+    const w = await mountRouted(FindingsView)
+    expect(hiddenOf(w, FindingsTable)).not.toContain('paths')
+    const { table, menu } = findingsOrder(w)
+    expect(table[table.indexOf('package') + 1]).toBe('paths')
+    expect(menu).toEqual(table)
+  })
+
+  it('a user with hidden columns and an order stored before PR B sees Paths after Package', async () => {
+    localStorage.setItem('javv.findings.hidden_cols', MAIN_HIDDEN)
+    localStorage.setItem('javv.findings.col_order', MAIN_ORDER)
+    const w = await mountRouted(FindingsView)
+    expect(hiddenOf(w, FindingsTable)).toEqual(['epss', 'kev', 'current', 'fixed', 'last_scan'])
+    const { table } = findingsOrder(w)
+    expect(table[0]).toBe('assignee')
+    expect(table[table.indexOf('package') + 1]).toBe('paths')
   })
 })
