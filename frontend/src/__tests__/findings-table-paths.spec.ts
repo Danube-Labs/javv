@@ -96,6 +96,22 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     expect(w.find('.muted-dash').text()).toBe('-')
   })
 
+  it('on, the image page: the row reads its package type, so an OS package says why it has no path (issue 1205)', async () => {
+    const w = mountTable(
+      [
+        row('a', { ptype: 'os', package_name: 'perl', installed_version: '5.32.1', locations: [], locations_total: 0 }),
+        row('b', { scanner: 'grype', ptype: 'deb', package_name: 'perl', installed_version: '5.32.1', locations: ['/var/lib/dpkg/status'], locations_total: 1 }),
+      ],
+      true,
+    )
+    expect(w.find('.paths-none').attributes('title')).toBe('Trivy: no path. Trivy gives no path for an OS package.')
+    await w.find('button.paths-btn').trigger('click')
+    expect(w.findComponent(FindingPaths).text()).toContain(
+      'For an OS package, Grype lists the files that show that the package is installed.',
+    )
+    w.unmount()
+  })
+
   it('on: a new page closes the rows that were open', async () => {
     const w = mountTable([row('a', { locations: ['/x'], locations_total: 1 })], true)
     await w.find('button.paths-btn').trigger('click')

@@ -14,10 +14,18 @@ export interface FindingPaths {
   digest: string | null
   total: number | null
   paths: string[]
+  /** an OS package: Trivy gives it no path, and Grype gives the files that show that it is
+   *  installed (the package database records), not the files of the package */
+  osPackage: boolean
 }
 
 const SCANNER_NAME: Record<string, string> = { trivy: 'Trivy', grype: 'Grype' }
 export const scannerName = (s: string): string => SCANNER_NAME[s] ?? s
+
+/* the package types of an OS package: `os` from Trivy, `deb`, `apk` and `rpm` from Grype. The
+   adapters send `ptype` in lower case, and ingest refuses any other case */
+const OS_PTYPES = new Set(['os', 'deb', 'apk', 'rpm'])
+export const isOsPackage = (ptype: string | null | undefined): boolean => OS_PTYPES.has(ptype ?? '')
 
 export function pathsOf(r: FindingRow): FindingPaths {
   return {
@@ -25,8 +33,12 @@ export function pathsOf(r: FindingRow): FindingPaths {
     digest: typeof r.image_digest === 'string' ? r.image_digest : null,
     total: r.locations_total ?? null,
     paths: r.locations ?? [],
+    osPackage: isOsPackage(r.ptype),
   }
 }
+
+/* Trivy reports an OS package with no file: its report names the image there */
+const trivyOs = (e: FindingPaths): boolean => e.scanner === 'trivy' && e.osPackage
 
 const plural = (n: number) => `${n} ${n === 1 ? 'path' : 'paths'}`
 
@@ -53,7 +65,7 @@ export function countTitle(entries: readonly FindingPaths[]): string {
     .map((e) => {
       const who = name(e)
       if (e.total === null) return `${who}: this scan did not report paths.`
-      if (e.total === 0) return `${who}: the scanner gave no path.`
+      if (e.total === 0) return trivyOs(e) ? `${who}: no path. Trivy gives no path for an OS package.` : `${who}: the scanner gave no path.`
       return `${who}: ${plural(e.total)}.`
     })
     .join(' ')
@@ -76,9 +88,14 @@ export const hasPaths = (entries: readonly FindingPaths[]): boolean =>
 export function foundText(e: FindingPaths, pkg: string, version: string | null): string {
   const who = scannerName(e.scanner)
   const what = version ? `${pkg} ${version}` : pkg
-  if (e.total === null) return `This scan of ${who} did not report the paths of ${what}.`
-  if (e.total === 0) return `${who} gave no path for ${what}.`
-  return `${who} found ${what} at ${plural(e.total)} in this image. The finding counts one time.`
+  if (e.total === null) return `The ${who} scan of this image did not report paths for ${what}.`
+  if (e.total === 0) {
+    return trivyOs(e) ? `${what} is an OS package. Trivy gives no path for an OS package.` : `${who} gave no path for ${what}.`
+  }
+  const found = `${who} found ${what} at ${plural(e.total)} in this image. JAVV counts it as one finding.`
+  return e.scanner === 'grype' && e.osPackage
+    ? `${found} For an OS package, Grype lists the files that show that the package is installed.`
+    : found
 }
 
 /** Said when JAVV keeps fewer paths than the scanner reported (the cap of 64, issue 1077 D2). */

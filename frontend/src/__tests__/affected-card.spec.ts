@@ -25,6 +25,7 @@ const trivy11 = {
   digest: 'sha256:aaa',
   total: 11,
   paths: ['/usr/bin/local-path-provisioner', '/usr/local/go/bin/go'],
+  osPackage: false,
 }
 
 const mountCard = (affected: AffectedComponentRow[]) =>
@@ -60,7 +61,7 @@ describe('AffectedCard Paths column (issue 1077)', () => {
   })
 
   it('a row with one path opens too: else nobody sees that file', () => {
-    const w = mountCard([comp({ paths: [{ scanner: 'grype', digest: 'sha256:a', total: 1, paths: ['/usr/local/go/bin/go'] }] })])
+    const w = mountCard([comp({ paths: [{ scanner: 'grype', digest: 'sha256:a', total: 1, paths: ['/usr/local/go/bin/go'], osPackage: false }] })])
     expect(w.find('button.paths-btn').text()).toBe('1 path')
   })
 
@@ -69,8 +70,8 @@ describe('AffectedCard Paths column (issue 1077)', () => {
       comp({
         scanners: ['trivy', 'grype'],
         paths: [
-          { scanner: 'trivy', digest: 'sha256:a', total: 0, paths: [] },
-          { scanner: 'grype', digest: 'sha256:a', total: 5, paths: ['/var/lib/dpkg/status'] },
+          { scanner: 'trivy', digest: 'sha256:a', total: 0, paths: [], osPackage: false },
+          { scanner: 'grype', digest: 'sha256:a', total: 5, paths: ['/var/lib/dpkg/status'], osPackage: false },
         ],
       }),
     ])
@@ -78,10 +79,32 @@ describe('AffectedCard Paths column (issue 1077)', () => {
     expect(w.find('button.paths-btn').attributes('title')).toBe('Trivy: the scanner gave no path. Grype: 5 paths.')
   })
 
+  it('an OS package: the hover and the open list say what the paths of each scanner are (issue 1205)', async () => {
+    const w = mountCard([
+      comp({
+        packageName: 'perl',
+        current: '5.32.1-4+deb11u2',
+        scanners: ['trivy', 'grype'],
+        paths: [
+          { scanner: 'trivy', digest: 'sha256:a', total: 0, paths: [], osPackage: true },
+          { scanner: 'grype', digest: 'sha256:a', total: 1, paths: ['/var/lib/dpkg/status'], osPackage: true },
+        ],
+      }),
+    ])
+    const btn = w.find('button.paths-btn')
+    expect(btn.attributes('title')).toBe('Trivy: no path. Trivy gives no path for an OS package. Grype: 1 path.')
+    await btn.trigger('click')
+    expect(w.findComponent(FindingPaths).findAll('.paths-say').map((p) => p.text())).toEqual([
+      'trivy perl 5.32.1-4+deb11u2 is an OS package. Trivy gives no path for an OS package.',
+      'grype Grype found perl 5.32.1-4+deb11u2 at 1 path in this image. JAVV counts it as one finding. ' +
+        'For an OS package, Grype lists the files that show that the package is installed.',
+    ])
+  })
+
   it('a row with no path to show has no button: "0 paths", or "-" when the scan sent none', () => {
     const w = mountCard([
-      comp({ image: 'a:1', paths: [{ scanner: 'trivy', digest: 'sha256:a', total: 0, paths: [] }] }),
-      comp({ image: 'b:1', paths: [{ scanner: 'trivy', digest: 'sha256:b', total: null, paths: [] }] }),
+      comp({ image: 'a:1', paths: [{ scanner: 'trivy', digest: 'sha256:a', total: 0, paths: [], osPackage: false }] }),
+      comp({ image: 'b:1', paths: [{ scanner: 'trivy', digest: 'sha256:b', total: null, paths: [], osPackage: false }] }),
     ])
     expect(w.find('button.paths-btn').exists()).toBe(false)
     expect(cells(w, 0)[5]).toBe('0 paths')
@@ -114,7 +137,7 @@ describe('AffectedCard Paths column (issue 1077)', () => {
   })
 
   it('"-" wears the shared empty-value class (review F7)', () => {
-    const w = mountCard([comp({ paths: [{ scanner: 'trivy', digest: 'sha256:a', total: null, paths: [] }] })])
+    const w = mountCard([comp({ paths: [{ scanner: 'trivy', digest: 'sha256:a', total: null, paths: [], osPackage: false }] })])
     expect(w.find('td .muted-dash').text()).toBe('-')
   })
 })

@@ -493,8 +493,15 @@ with at least one path has a button with the count: a chevron that points down a
 while open, and the hover state stays while open (as the panel filters button of a dashboard).
 The row under it lists the paths of each finding, as text only, on white with a hairline. A
 block starts with the chip of its scanner and a sentence in ink at 13px, for example "Trivy found
-stdlib v1.26.3 at 11 paths in this image. The finding counts one time." A finding that the
-backend capped at 64 paths says "JAVV keeps the first 64 of N paths." When the table is wider
+stdlib v1.26.3 at 11 paths in this image. JAVV counts it as one finding." A finding that the
+backend capped at 64 paths says "JAVV keeps the first 64 of N paths." The sentences tell what
+the paths of an OS package are (issue 1205, the text round, ruled 2026-11-14). The OS package
+types are `os` from Trivy and `deb`, `apk` and `rpm` from Grype, from the `ptype` of each finding.
+Trivy gives no path for an OS package: its block says "X is an OS package. Trivy gives no path
+for an OS package.", and the hover of its `0` says "Trivy: no path. Trivy gives no path for an OS
+package." A Grype block of an OS package adds "For an OS package, Grype lists the files that
+show that the package is installed." A scan that sent no paths says "The Trivy scan of this
+image did not report paths for X." When the table is wider
 than its card, the list stays in the part in view. A new read, or another page of the card,
 closes the open rows. A path shows its spaces as stored.
 
@@ -685,7 +692,8 @@ findings read sends `locations=true` on each page (the cursor does not keep it).
 findings table takes the column through its `paths` property, so the Findings grid and its
 Columns menu do not change. The column comes after Package: after Fixed it was out of the card
 at 1440px. Each row is one finding, so the cell has one number, and the button and the list are
-the ones of the finding page (§4). The button opens the list and does not open the finding. A
+the ones of the finding page (§4), with the same sentences and hover text, the OS package lines
+included (issue 1205). The button opens the list and does not open the finding. A
 click on the row still opens the finding.
 
 **States:** loading; **"Not yet scanned then"** (T before the first committed scan); build-changed
