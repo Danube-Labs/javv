@@ -145,7 +145,7 @@ describe('a saved view and the Paths column (issue 1205)', () => {
   })
 
   it('the stored order lists the columns of the view first, then the hidden ones in the default order', async () => {
-    // so the Columns menu leads with the view's columns, and a column shown again goes last
+    // so the Columns menu leads with the view's columns, and a column shown again comes after them
     const { order } = await applyView(['state', 'package', 'image'])
     const rest = FINDINGS_COLUMNS.map(([k]) => k).filter((k) => !['state', 'package', 'image'].includes(k))
     expect(order).toEqual(['state', 'package', 'image', ...rest])
