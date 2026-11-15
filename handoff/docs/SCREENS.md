@@ -368,7 +368,9 @@ Assignee.
 shows by default. Its cell is the paths button of the image page (issue 1077), with the number
 of paths. A row with a path opens under itself to list them. The list read sends
 `locations=true` only while Paths shows. In the Columns menu, a user can hide Paths and move it.
-A hide reads nothing. A show reads the page again with its cursor.
+A hide reads nothing. A show reads the page again only when the rows on screen came from a read
+without their paths (operator 2026-11-15, option 3). Paths shows by default, and a
+user who moved columns before gets it after Package (operator 2026-11-15).
 
 **Paging:** cursor-based (PIT + `search_after`) — the pager is **next/prev over server cursors**
 with rows-per-page (10/25/50); total from the server agg. Numbered random-access pages from v4 are

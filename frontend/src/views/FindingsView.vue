@@ -206,15 +206,25 @@ const failureMessage = computed(() =>
     ? FAILURE_COPY[failedKind.value]
     : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
-/** `q` only drops `locations`: the Columns menu hid Paths, and the rows held need no new read.
- * A read there would read the held cursor again, which can have expired (issue 1205, review). */
-const onlyPathsHidden = (q: typeof rowsQuery.value, old: typeof rowsQuery.value | undefined) =>
-  q !== null && old != null && old.locations === true && q.locations === undefined &&
-  JSON.stringify({ ...old, locations: undefined }) === JSON.stringify(q)
+/**
+ * `q` differs from `old` only in `locations`: the Columns menu hid or showed Paths. A hide needs no
+ * read, and a show needs one only when the rows held came from a read without their paths. Each
+ * read here would read the held cursor again, whose search can have expired on a later page
+ * (issue 1205, operator ruling of 2026-11-15, option 3).
+ */
+function pathsToggleNeedsNoRead(q: typeof rowsQuery.value, old: typeof rowsQuery.value | undefined): boolean {
+  if (q === null || old == null) return false
+  if (JSON.stringify({ ...old, locations: undefined }) !== JSON.stringify({ ...q, locations: undefined })) return false
+  if (old.locations === true && q.locations === undefined) return true
+  if (old.locations === undefined && q.locations === true) {
+    return grid.rows.length > 0 && grid.rows.every((r) => r.locations !== undefined)
+  }
+  return false
+}
 watch(
   rowsQuery,
   (q, old) => {
-    if (JSON.stringify(q) === JSON.stringify(old) || onlyPathsHidden(q, old)) return
+    if (JSON.stringify(q) === JSON.stringify(old) || pathsToggleNeedsNoRead(q, old)) return
     void loadRows(q)
   },
   { immediate: true },
