@@ -377,6 +377,17 @@ Docker host.
 - The scanners update their databases in the cache volume of the container. The containers do not
   have a separate refresh.
 
+Set these names in the `.env` file next to `compose.yaml`. They have no default. When one is not
+set, `docker compose up` stops with an error that names it.
+
+| Name in `.env` | What it sets |
+|---|---|
+| `JAVV_BACKEND_URL` | The JAVV address that the scanners push to. Start it with `http://` or `https://`. |
+| `JAVV_CLUSTER_ID` | The id of the host in JAVV. A Docker host has no `kube-system` namespace, so you choose the id. Use 8 to 64 lowercase letters, digits and hyphens, and do not start it with a hyphen. Example: `docker-host-01`. A different value stops the cycle with exit code 2, before a push. |
+| `JAVV_TRIVY_TOKEN` | **Secret.** The ingest token of the `trivy` container. `compose.yaml` gives it to the container as `JAVV_TOKEN`. |
+| `JAVV_GRYPE_TOKEN` | **Secret.** The ingest token of the `grype` container. `compose.yaml` gives it to the container as `JAVV_TOKEN`. |
+| `DOCKER_GID` | The group id of `/var/run/docker.sock`. The containers join this group to read the socket. |
+
 These settings are for the Docker containers only:
 
 | Setting | Default | What it does |

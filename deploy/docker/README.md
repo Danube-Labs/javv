@@ -56,7 +56,12 @@ Run the commands in the folder that holds the files.
     stat -c %g /var/run/docker.sock    # the value of DOCKER_GID
     ```
 
-3. In `.env`, set the address of JAVV, the ID of the host in JAVV, the two tokens and `DOCKER_GID`.
+3. In `.env`, set these names. Each one is necessary.
+    - `JAVV_BACKEND_URL`: the address of JAVV. Start it with `http://` or `https://`.
+    - `JAVV_CLUSTER_ID`: the ID of the host in JAVV, for example `docker-host-01`. Use 8 to 64
+      lowercase letters, digits and hyphens. Do not start it with a hyphen.
+    - `JAVV_TRIVY_TOKEN` and `JAVV_GRYPE_TOKEN`: the two tokens of step 1.
+    - `DOCKER_GID`: the number that the `stat` command of step 2 shows.
 4. Start the containers, and read the log of the first cycle:
 
     ```bash
