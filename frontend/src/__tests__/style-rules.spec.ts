@@ -183,6 +183,7 @@ const SHARED_RULES = [
   // the rules that moved out of the components to base.css (issue 1190)
   '.stack', '.scope-src', '.row-actions',
   '.facet-row', '.facet-row:hover', '.facet-row:focus-visible', '.facet-check', '.facet-on .facet-check', '.facet-on',
+  '.panel-band',
 ]
 
 /**
@@ -310,6 +311,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
       '.facet-check { width: 14px; }',
       '.facet-on .facet-check { background: var(--coral); }',
       '.facet-on { font-weight: 500; }',
+      '.panel-band { background: var(--table-head-bg); text-transform: uppercase; }',
     ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.stack: display', '.stack: flex-direction', '.stack: gap',
@@ -318,6 +320,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
       '.facet-row: border', '.facet-row: padding', '.facet-row: cursor',
       '.facet-row:hover: background', '.facet-row:focus-visible: outline', '.facet-check: width',
       '.facet-on .facet-check: background', '.facet-on: font-weight',
+      '.panel-band: background', '.panel-band: text-transform',
     ])
   })
 })

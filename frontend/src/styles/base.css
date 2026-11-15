@@ -491,6 +491,19 @@ html [class*=' p-'] {
   font-size: var(--text-body);
   text-align: center;
 }
+/* the slate band of the table heads as the title of a card with no table head, on the Data
+   inspector (operator, 2026-07-18; issue 1190) */
+.panel-band {
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--table-head-bg);
+  color: var(--table-head-fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-table-header);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 @media (prefers-reduced-motion: reduce) {
   .tbl-hover.tbl-hover tbody tr {
     transition: none;

@@ -77,8 +77,8 @@ side, and never sets a shared property again (the style rules test fails a copy 
 property name, not a shorthand; an empty row may keep its padding and a screen head its bottom
 margin; for the strong cell it fails only a `color` in a component `.strong` rule). The **Settings
 column** `.stack`, its **scope line** `.scope-src`, the **row buttons** `.row-actions` and the
-**filter row** `.facet-row` (check box, selected state, hover, focus) are base.css rules too
-(issue 1190). A **window footer** is a `ghost` Cancel,
+**filter row** `.facet-row` (check box, selected state, hover, focus) and the **card title band**
+`.panel-band` are base.css rules too (issue 1190). A **window footer** is a `ghost` Cancel,
 Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)

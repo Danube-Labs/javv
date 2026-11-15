@@ -253,18 +253,6 @@ const budgetPct = computed(() =>
 }
 
 /* ---- console ---- */
-/* the B2 slate table-head band as both cards' title register (operator, 2026-07-18) */
-.panel-band {
-  margin: 0;
-  padding: 10px 16px;
-  background: var(--table-head-bg);
-  color: var(--table-head-fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-table-header);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
 .console {
   overflow: hidden;
 }

@@ -58,18 +58,6 @@ function entries(groups: RailGroups, key: keyof RailGroups): RailEntry[] {
   padding: 0 0 8px;
   overflow: hidden;
 }
-/* the B2 slate table-head band (base.css .tbl thead ruling) as the card's title register */
-.panel-band {
-  margin: 0;
-  padding: 10px 16px;
-  background: var(--table-head-bg);
-  color: var(--table-head-fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-table-header);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
 .rail-group:not(:empty) {
   padding: 8px 8px 4px;
 }
