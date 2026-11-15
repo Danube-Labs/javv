@@ -67,4 +67,12 @@ describe('buildFindingsQuery', () => {
     })
     expect(q.cursor).toBe('abc123')
   })
+
+  it('asks for the paths of each row only when the grid shows them (issue 1205)', () => {
+    const on = buildFindingsQuery(FINDINGS_FIELDS, sel(), { cluster_id: CID }, { ...GRID, locations: true })
+    expect(on.locations).toBe(true)
+    const off = buildFindingsQuery(FINDINGS_FIELDS, sel(), { cluster_id: CID }, { ...GRID, locations: false })
+    expect(off).not.toHaveProperty('locations')
+    expect(buildFindingsQuery(FINDINGS_FIELDS, sel(), { cluster_id: CID }, GRID)).not.toHaveProperty('locations')
+  })
 })

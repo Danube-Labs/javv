@@ -1,7 +1,7 @@
 /**
- * The Paths column of the shared findings table (issue 1077). Only the image page turns it on:
- * off, the table is the Findings grid as before. On, a row with a path opens to list its files,
- * and the button that opens it does not open the finding.
+ * The Paths column of the shared findings table (issue 1077, on the Findings list since issue
+ * 1205). It is a column of the order like each other one: it shows unless it is hidden. A row
+ * with a path opens to list its files, and the button that opens it does not open the finding.
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import PrimeVue from 'primevue/config'
@@ -34,9 +34,18 @@ const row = (key: string, over: Partial<FindingRow> = {}): FindingRow => ({
   ...over,
 })
 
-const mountTable = (rows: FindingRow[], paths?: boolean, more: Record<string, unknown> = {}) =>
+/** `paths` false hides the Paths column, as the Columns menu does */
+const mountTable = (rows: FindingRow[], paths = true, more: Record<string, unknown> = {}) =>
   mount(FindingsTable, {
-    props: { rows, sort: 'severity_rank', order: 'desc', loading: false, settled: true, paths, ...more },
+    props: {
+      rows,
+      sort: 'severity_rank',
+      order: 'desc',
+      loading: false,
+      settled: true,
+      ...(paths ? {} : { hidden: new Set(['paths']) }),
+      ...more,
+    },
     global: { plugins: [PrimeVue] },
     attachTo: document.body,
   })
@@ -46,8 +55,8 @@ const heads = (w: ReturnType<typeof mountTable>) => w.findAll('thead th').map((t
 describe('FindingsTable, the Paths column (issue 1077)', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
-  it('off by default: no Paths column and no button, as the Findings grid was', () => {
-    const w = mountTable([row('a', { locations: ['/usr/bin/x'], locations_total: 1 })])
+  it('hidden: no Paths column, no button and no list', () => {
+    const w = mountTable([row('a', { locations: ['/usr/bin/x'], locations_total: 1 })], false)
     expect(heads(w)).not.toContain('Paths')
     expect(w.find('button.paths-btn').exists()).toBe(false)
   })
@@ -138,21 +147,33 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
   })
 
   it('the EPSS head says its scanner in the head text, with no element of its own (issue 1205)', () => {
-    const w = mountTable([row('a')], false, { hidden: new Set<string>() })
+    const w = mountTable([row('a')], true, { hidden: new Set<string>() })
     const epss = w.findAll('thead th span').filter((s) => s.text() === 'EPSS · via Grype')
     expect(epss.map((s) => s.element.childElementCount)).toEqual([0])
     w.unmount()
   })
 
-  it('a reorderable table gets no Paths column: its drag indexes have no Paths (review F4)', () => {
+  it('the Findings list: a table with drag heads shows Paths and its rows open (issue 1205)', async () => {
+    // the drag indexes count the columns of the order, and Paths is one of them now
     const w = mountTable([row('a', { locations: ['/x'], locations_total: 1 })], true, { reorderable: true })
-    expect(heads(w)).not.toContain('Paths')
+    const h = heads(w)
+    expect(h[h.indexOf('Package') + 1]).toBe('Paths')
+    await w.find('button.paths-btn').trigger('click')
+    expect(w.findComponent(FindingPaths).exists()).toBe(true)
+    expect(w.emitted('rowClick')).toBeUndefined()
+    w.unmount()
+  })
+
+  it('Paths shows where the column order puts it (issue 1205)', () => {
+    const order = ['paths', 'package', 'state']
+    const w = mountTable([row('a')], true, { colOrder: order })
+    expect(heads(w)).toEqual(['Vulnerability', 'Severity', 'Paths', 'Package', 'State'])
     w.unmount()
   })
 
   it('on, with a read that did not ask for the paths: one warning, no button (review F4)', () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
-    const w = mountTable([row('a', { locations_total: 11 }), row('b', { locations: [], locations_total: 0 })], true)
+    const w = mountTable([row('a', { locations_total: 11 }), row('b', { locations: [], locations_total: 0 })])
     expect(warn).toHaveBeenCalledWith('findings_table_paths_not_read', { rows: 1 })
     expect(w.find('button.paths-btn').exists()).toBe(false)
     warn.mockRestore()

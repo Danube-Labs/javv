@@ -22,7 +22,7 @@ vi.mock('@/api/generated', async (importOriginal) => {
 })
 vi.mock('@/api/client', () => ({ client: {} }))
 
-import { listRunningImagesApiV1ImagesGet } from '@/api/generated'
+import { listRunningImagesApiV1ImagesGet, searchFindingsApiV1FindingsGet } from '@/api/generated'
 import ColumnsMenu from '@/components/findings/ColumnsMenu.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import ImagesTable from '@/components/images/ImagesTable.vue'
@@ -92,6 +92,13 @@ function findingsOrder(w: Awaited<ReturnType<typeof mountRouted>>) {
   return { table: [...table], menu }
 }
 
+/** The query of the last findings read of the screen. */
+function lastFindingsQuery(): Record<string, unknown> {
+  const call = vi.mocked(searchFindingsApiV1FindingsGet).mock.lastCall
+  expect(call).toBeDefined()
+  return (call![0] as { query: Record<string, unknown> }).query
+}
+
 describe('Findings: the Paths column (issue 1205)', () => {
   // the hidden columns and the order that main stored, before the Paths column
   const MAIN_HIDDEN = '["epss","kev","current","fixed","last_scan"]'
@@ -114,5 +121,20 @@ describe('Findings: the Paths column (issue 1205)', () => {
     const { table } = findingsOrder(w)
     expect(table[0]).toBe('assignee')
     expect(table[table.indexOf('package') + 1]).toBe('paths')
+  })
+
+  it('the read asks for the paths while Paths shows, and not after the menu hides it', async () => {
+    const w = await mountRouted(FindingsView)
+    expect(lastFindingsQuery().locations).toBe(true)
+    w.findComponent(ColumnsMenu).vm.$emit('toggleCol', 'paths')
+    await flushPromises()
+    expect(hiddenOf(w, FindingsTable)).toContain('paths')
+    expect(lastFindingsQuery()).not.toHaveProperty('locations')
+  })
+
+  it('a stored hidden list with Paths: the read does not ask for the paths', async () => {
+    localStorage.setItem('javv.findings.hidden_cols', '["paths"]')
+    await mountRouted(FindingsView)
+    expect(lastFindingsQuery()).not.toHaveProperty('locations')
   })
 })

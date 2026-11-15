@@ -364,6 +364,11 @@ the sibling-scanner row, A-3) · Images (group agg, B-4) · SLA (server-computed
 B-5, **never client math**; field names verified at M9b kickoff) · State (6-state pill) ·
 Assignee.
 
+**Paths** (issue 1205, Q5 option B, operator 2026-11-14): the column comes after Package and
+shows by default. Its cell is the paths button of the image page (issue 1077), with the number
+of paths. A row with a path opens under itself to list them. The list read sends
+`locations=true` only while Paths shows. In the Columns menu, a user can hide Paths and move it.
+
 **Paging:** cursor-based (PIT + `search_after`) — the pager is **next/prev over server cursors**
 with rows-per-page (10/25/50); total from the server agg. Numbered random-access pages from v4 are
 dropped (contract is cursor paging).
@@ -692,10 +697,9 @@ the repository, the digest and the switch; the replicas and the namespaces moved
   is closed when the page opens; its chevron points down while it is open.
 
 **The Paths column (issue 1077, operator rulings 2026-11-14 on built pictures, option B2):** the
-findings read sends `locations=true` on each page (the cursor does not keep it). The shared
-findings table takes the column through its `paths` property, so the Findings grid and its
-Columns menu do not change. The column comes after Package: after Fixed it was out of the card
-at 1440px. Each row is one finding, so the cell has one number, and the button and the list are
+findings read sends `locations=true` on each page (the cursor does not keep it). Paths is a
+column of the shared findings table, as on the Findings list (§3, issue 1205). The column comes
+after Package: after Fixed it was out of the card at 1440px. Each row is one finding, so the cell has one number, and the button and the list are
 the ones of the finding page (§4), with the same sentences and hover text, the OS package lines
 included (issue 1205). The button opens the list and does not open the finding. A
 click on the row still opens the finding.

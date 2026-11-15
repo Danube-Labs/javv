@@ -106,6 +106,31 @@ watch(facetsQuery, (q) => void loadFacets(q), { immediate: true })
 // a value past the top 32 of a list: the menu asks for it under the same filters (issue 1064)
 const searchValues = findingsValueSearch(() => facetsQuery.value)
 
+/* ---- column visibility + density (Columns menu), persisted per browser; before the rows,
+   whose read asks for the paths only while the Paths column shows (issue 1205) ---- */
+const COLS_KEY = 'javv.findings.hidden_cols'
+const DENSE_KEY = 'javv.findings.dense'
+const COL_KEYS = FINDINGS_COLUMNS.map(([key]) => key)
+// first-run default hides the low-signal columns (operator 2026-07-11: KEV mostly empty,
+// versions live in the detail view; last_scan is the hidden sibling of first_seen) — the
+// Columns menu + localStorage override per user
+const hiddenCols = ref<Set<string>>(
+  restoreHidden(localStorage.getItem(COLS_KEY), COL_KEYS, ['epss', 'kev', 'current', 'fixed', 'last_scan']),
+)
+const dense = ref(localStorage.getItem(DENSE_KEY) !== 'false')
+
+function toggleCol(key: string) {
+  const next = new Set(hiddenCols.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  hiddenCols.value = next
+  localStorage.setItem(COLS_KEY, JSON.stringify([...next]))
+}
+function setDense(value: boolean) {
+  dense.value = value
+  localStorage.setItem(DENSE_KEY, String(value))
+}
+
 /* ---- grid rows (M9b) ---- */
 // filters or globals changed → any held cursor belongs to the old query: back to page 0
 watch(facetsQuery, (q, old) => {
@@ -124,7 +149,13 @@ const rowsQuery = computed(() =>
         FINDINGS_FIELDS,
         filters.selections,
         filterGlobals(),
-        { sort: grid.sort, order: grid.order, size: grid.size, cursor: grid.activeCursor },
+        {
+          sort: grid.sort,
+          order: grid.order,
+          size: grid.size,
+          cursor: grid.activeCursor,
+          locations: !hiddenCols.value.has('paths'),
+        },
         filters.modes,
       )
     : null,
@@ -244,30 +275,6 @@ function findingRoute(row: FindingRow) {
 function openFinding(row: FindingRow) {
   logger.debug('finding_row_clicked', { finding_key: row.finding_key })
   void router.push(findingRoute(row))
-}
-
-/* ---- column visibility + density (Columns menu), persisted per browser ---- */
-const COLS_KEY = 'javv.findings.hidden_cols'
-const DENSE_KEY = 'javv.findings.dense'
-const COL_KEYS = FINDINGS_COLUMNS.map(([key]) => key)
-// first-run default hides the low-signal columns (operator 2026-07-11: KEV mostly empty,
-// versions live in the detail view; last_scan is the hidden sibling of first_seen) — the
-// Columns menu + localStorage override per user
-const hiddenCols = ref<Set<string>>(
-  restoreHidden(localStorage.getItem(COLS_KEY), COL_KEYS, ['epss', 'kev', 'current', 'fixed', 'last_scan']),
-)
-const dense = ref(localStorage.getItem(DENSE_KEY) !== 'false')
-
-function toggleCol(key: string) {
-  const next = new Set(hiddenCols.value)
-  if (next.has(key)) next.delete(key)
-  else next.add(key)
-  hiddenCols.value = next
-  localStorage.setItem(COLS_KEY, JSON.stringify([...next]))
-}
-function setDense(value: boolean) {
-  dense.value = value
-  localStorage.setItem(DENSE_KEY, String(value))
 }
 
 /* ---- column order (task 92): header drag + Columns-menu drag, one persisted order ---- */

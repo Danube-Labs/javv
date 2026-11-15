@@ -5,7 +5,9 @@
  *   - `as_of` passes through only when time-traveling (D28);
  *   - sort restricted to the server's whitelist — an unknown field is a bug here, not a 422 there;
  *   - cursor paging (PIT + search_after): `size` + optional `cursor`, NO offset — the shipped M6
- *     contract has no `from` (bolt README updated 2026-07-09).
+ *     contract has no `from` (bolt README updated 2026-07-09);
+ *   - `locations=true` only while the Paths column shows: the cursor does not keep it, so each
+ *     page asks again.
  * Filter params come from the M9a `buildFilterQuery` — one builder, not two dialects.
  */
 import { buildFilterQuery, type FilterGlobals, type FilterQuery } from '@/filters/buildFilterQuery'
@@ -21,6 +23,8 @@ export interface GridState {
   order: SortOrder
   size: number
   cursor?: string | null
+  /** the grid shows the Paths column: each row then needs its paths (issue 1205) */
+  locations?: boolean
 }
 
 export function buildFindingsQuery(
@@ -39,5 +43,6 @@ export function buildFindingsQuery(
   query.order = grid.order
   query.size = grid.size
   if (grid.cursor) query.cursor = grid.cursor
+  if (grid.locations) query.locations = true
   return query
 }
