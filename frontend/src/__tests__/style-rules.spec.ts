@@ -174,8 +174,8 @@ describe('style rules: one shared set of skins', () => {
  * must not set a property again that the shared rule sets, because a copy hides a later change
  * of the shared value. The property list comes from base.css, so a new shared value is covered
  * with no change here. Only a rule with exactly one of these selectors counts. Issue 1190 added
- * the data cell, the empty table line and the screen head with its actions, and issue 1197 the
- * chart strips.
+ * the data cell, the empty table line and the screen head with its actions, issue 1197 the
+ * chart strips, and issue 1214 the line under a cut list and the line of an empty list.
  */
 const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
@@ -190,6 +190,8 @@ const SHARED_RULES = [
   // the chart strips above a table (issue 1197)
   '.ingest-lens', '.il-quiet', '.il-head', '.il-title', '.il-sub', '.il-sub b', '.il-empty',
   '.ingest-lens > .skel-gap',
+  // the line under a cut list and the line of an empty list (issue 1214)
+  '.cap-note', '.empty-note',
 ]
 
 /**
@@ -263,7 +265,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
         .filter((hit) => !RULED.get(rel)?.includes(hit))
         .map((hit) => `${rel} → ${hit}`),
     )
-    expect(hits, `set again outside base.css (issues 1181, 1190, 1197): ${hits.join('; ')}`).toEqual([])
+    expect(hits, `set again outside base.css (issues 1181, 1190, 1197, 1214): ${hits.join('; ')}`).toEqual([])
   })
 
   it('each ruled exception is real, not a stale entry', () => {
@@ -361,6 +363,15 @@ describe('style rules: one shared card, menu panel and error text', () => {
     // what a strip adds: how it fills its row, how its line wraps, the space of its empty text
     const additions = '.ingest-lens { flex: 1 1 auto; }\n.il-sub { white-space: nowrap; overflow: hidden; }\n.il-empty { margin: 0; font-weight: 500; }'
     expect(sharedRuleCopies(additions, shared)).toEqual([])
+  })
+
+  it('the check finds a planted copy of each note line and lets a margin pass (issue 1214)', () => {
+    // the shape the Settings token pages had: one grouped rule, then the size of the cut note
+    const planted = '.empty-note,\n.cap-note { margin: 14px 0 8px; color: var(--soft); }\n.cap-note { font-size: var(--text-sm); }'
+    expect(sharedRuleCopies(planted, shared)).toEqual(['.empty-note: color', '.cap-note: color', '.cap-note: font-size'])
+    // what each place keeps: its margin, and the line height of the Retired clusters card
+    const margins = '.cap-note { margin: 10px 0 0; }\n.load-error,\n.empty-note { margin: 2px 0; line-height: 1.5; }'
+    expect(sharedRuleCopies(margins, shared)).toEqual([])
   })
 })
 

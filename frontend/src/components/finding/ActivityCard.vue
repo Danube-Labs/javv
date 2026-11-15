@@ -101,8 +101,6 @@ function reasonOf(a: ActivityRow): string | null {
 }
 .cap-note {
   margin: 10px 0 0;
-  font-size: var(--text-sm);
-  color: var(--soft);
 }
 .act-list {
   list-style: none;

@@ -406,10 +406,6 @@ const fmt = (iso: string | null) =>
 .empty-note,
 .cap-note {
   margin: 14px 0 8px;
-  color: var(--soft);
-}
-.cap-note {
-  font-size: var(--text-sm);
 }
 .load-error {
   margin: 14px 0 8px;

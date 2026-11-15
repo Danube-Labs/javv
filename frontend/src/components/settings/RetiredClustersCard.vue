@@ -141,7 +141,6 @@ async function onDeleted() {
 .load-error,
 .empty-note {
   margin: 2px 0;
-  color: var(--soft);
   line-height: 1.5;
 }
 .load-error {
