@@ -151,9 +151,6 @@ function scopeLabel(d: DecisionRow): string {
 .c {
   text-align: center;
 }
-.empty-row {
-  padding: 24px 12px;
-}
 .dec-inactive td {
   text-decoration: line-through;
   color: var(--soft);

@@ -73,8 +73,9 @@ heading** is `.card-head` with its `h2`, and a **menu panel** is `.dd-menu` with
 skins that hold the shared values (issue 1181). So are a **data cell** `.mono-cell`, an **empty
 table line** `.empty-row`, a **screen head** `.screen-head` with its `.head-actions`, and a **strong
 cell** `.tbl .strong` + `.tbl td.strong` (issue 1190). A component adds its padding, alignment or
-side, and never sets a shared property again (the style rules test fails a copy; an empty row may
-keep its padding and a screen head its bottom margin). A **window footer** is a `ghost` Cancel,
+side, and never sets a shared property again (the style rules test fails a copy of the exact
+property name, not a shorthand; an empty row may keep its padding and a screen head its bottom
+margin; for the strong cell it fails only a `color` in a component `.strong` rule). A **window footer** is a `ghost` Cancel,
 Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)

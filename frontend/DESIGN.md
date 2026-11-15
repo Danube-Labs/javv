@@ -391,12 +391,13 @@ shared property again: the style rules test reads the properties from base.css a
 
 **One data cell, empty row and screen head** (issue 1190): base.css also holds these rules.
 `.mono-cell` is the mono family of a data cell. `.empty-row` is the padding, color, size and
-alignment of the line in an empty table. `.screen-head` is the row of a screen title, and `.head-actions` is
-the row of its controls (flex, centered, 10px apart). In a table, `.tbl .strong` is the weight of
-a strong cell and `.tbl td.strong` its ink color: the color stops at the cell, so a strong link
-inside a cell keeps its own color. The same test fails a copy of these rules, with two sizes free
-(operator, 2026-11-14): an empty row keeps its own padding, and a screen head its own margin under
-it. The card at the top of the image page is `.image-head`, not a screen head.
+alignment of the line in an empty table. `.screen-head` is the row of a screen title, and
+`.head-actions` is the row of its controls (flex, centered, 10px apart). The same test fails a
+copy of these four rules, with two sizes free (operator, 2026-11-14): an empty row keeps its own
+padding, and a screen head its own margin under it. In a table, `.tbl .strong` is the weight of a
+strong cell and `.tbl td.strong` its ink color: the color stops at the cell, so a strong link
+inside a cell keeps its own color. For these two, the test fails only a `color` in a component
+`.strong` rule. The card at the top of the image page is `.image-head`, not a screen head.
 
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
