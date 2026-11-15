@@ -1,6 +1,6 @@
 # Active context
 
-As of: 2026-11-14
+As of: 2026-11-15
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
@@ -9,18 +9,18 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 - The last release is 0.9.9 (2026-11-09). Release PR 1175 (0.9.10) is open. The milestone 0.9.10
   holds the work for it.
-- The work of issues 1077, 1176, 1181 and 1191 is in `main`, for 0.9.10.
+- The work of issues 1077, 1176, 1181, 1190, 1191 and 1197 is in `main`, for 0.9.10.
 - The phase is hardening for 1.0 (issue 555, phase 3).
 
-## Next, in this order (operator, 2026-11-14)
+## Next, in this order, before release 0.9.10 (operator, 2026-11-15)
 
 | Step | Issue | What | Plan |
 |---|---|---|---|
-| 1 | 1190, part 2 | PR A: script helpers. PR B: the styles set again. PR C: the style moves. | Issue comment 6852639140, with the rulings of 2026-11-13 |
-| 2 | 1197 | One shared part for the chart strips above the tables (rows 5 and 18 of issue 1190) | The comparison on the issue |
-| 3 | 1205 | The finding page, the paths and the table heads: PR A, PR B, PR C1, PR C2 | Issue comment 6878381960. The rulings and their pictures are in `1205/settled/` on the branch `visual-assets` |
+| 1 | 1214 | The two note lines `.cap-note` and `.empty-note`: option 2, the equal part to `base.css` | The plan comment on the issue |
+| 2 | 1205 | The finding page, the paths and the table heads: PR A, PR B, PR C1, PR C2 | Issue comment 6878381960. The rulings and their pictures are in `1205/settled/` on the branch `visual-assets` |
+| 3 | 1199 | Nomad and Docker scans send the file paths of a finding | The issue body. The operator moved it into 0.9.10 on 2026-11-15 |
 
-Each step starts on the word of the operator.
+All three are in the milestone 0.9.10. Each step starts on the word of the operator.
 
 ## Held
 
@@ -48,7 +48,6 @@ Small items that no issue tracks.
 
 | Issue | What | Note |
 |---|---|---|
-| 1199 | Nomad and Docker scans send the file paths of a finding | After issue 1077 |
 | 884 | A version stamp for the preferences that the browser keeps | Later |
 | 903 | All clusters sends 3 requests for each cluster | After 1.0 |
 

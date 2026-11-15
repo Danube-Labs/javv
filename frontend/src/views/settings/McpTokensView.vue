@@ -426,10 +426,6 @@ async function submitRevoke() {
 .empty-note,
 .cap-note {
   margin: 14px 0 8px;
-  color: var(--soft);
-}
-.cap-note {
-  font-size: var(--text-sm);
 }
 .load-error,
 .skel-gap {

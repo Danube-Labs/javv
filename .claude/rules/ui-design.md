@@ -81,7 +81,9 @@ column** `.stack`, its **scope line** `.scope-src`, the **row buttons** `.row-ac
 `.panel-band` and the **first-run text** `.first-run` are base.css rules too (issue 1190). So is a
 **chart strip** above a table: `.ingest-lens` with `.il-quiet`, `.il-head`, `.il-title`, `.il-sub`
 and `.il-empty`, holding only what all four strips share; a click on its bar calls
-`useBucketRewind`, never its own `bucketEndT` (issue 1197). A **window footer** is a `ghost` Cancel,
+`useBucketRewind`, never its own `bucketEndT` (issue 1197). The **note lines** `.cap-note` (under
+a list cut at a limit) and `.empty-note` (a list with no rows) hold their color, and the size of
+`.cap-note`, in base.css. A component adds only its margin (issue 1214). A **window footer** is a `ghost` Cancel,
 Close or Done and a `primary` main button (issue 1053, D2 option B).
 Paging behind GridPager is two composables, never a hand-written stack: `useCursorPager`
 (server `next_cursor` paging — the findings/audit stores, ImageFindingsPanel, IngestFailuresTable)

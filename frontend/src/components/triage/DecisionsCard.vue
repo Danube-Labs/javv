@@ -142,8 +142,6 @@ function scopeLabel(d: DecisionRow): string {
 <style scoped>
 .cap-note {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--soft);
 }
 .sm {
   font-size: var(--text-sm);

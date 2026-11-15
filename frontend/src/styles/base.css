@@ -1187,6 +1187,15 @@ button.stat-cell:hover .cell-go,
   font-size: var(--text-sm);
   color: var(--soft);
 }
+/* the line under a list cut at a limit, and the line of a list with no rows (issue 1214). Only
+   what is equal in each place: the component adds its margin, which follows where the line sits. */
+.cap-note {
+  font-size: var(--text-sm);
+  color: var(--soft);
+}
+.empty-note {
+  color: var(--soft);
+}
 /* the buttons of a table row, side by side in their cell */
 .row-actions {
   display: inline-flex;
