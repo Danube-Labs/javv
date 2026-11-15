@@ -1559,7 +1559,14 @@ stat<span class="w"> </span>-c<span class="w"> </span>%g<span class="w"> </span>
 </code></pre></div>
 </li>
 <li>
-<p>In <code>.env</code>, set the address of JAVV, the ID of the host in JAVV, the two tokens and <code>DOCKER_GID</code>.</p>
+<p>In <code>.env</code>, set these names. Each one is necessary.</p>
+<ul>
+<li><code>JAVV_BACKEND_URL</code>: the address of JAVV. Start it with <code>http://</code> or <code>https://</code>.</li>
+<li><code>JAVV_CLUSTER_ID</code>: the ID of the host in JAVV, for example <code>docker-host-01</code>. Use 8 to 64
+  lowercase letters, digits and hyphens. Do not start it with a hyphen.</li>
+<li><code>JAVV_TRIVY_TOKEN</code> and <code>JAVV_GRYPE_TOKEN</code>: the two tokens of step 1.</li>
+<li><code>DOCKER_GID</code>: the number that the <code>stat</code> command of step 2 shows.</li>
+</ul>
 </li>
 <li>
 <p>Start the containers, and read the log of the first cycle:</p>

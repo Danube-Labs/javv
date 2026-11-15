@@ -3291,6 +3291,38 @@ Docker host.</p>
 <li>The scanners update their databases in the cache volume of the container. The containers do not
   have a separate refresh.</li>
 </ul>
+<p>Set these names in the <code>.env</code> file next to <code>compose.yaml</code>. They have no default. When one is not
+set, <code>docker compose up</code> stops with an error that names it.</p>
+<table>
+<thead>
+<tr>
+<th>Name in <code>.env</code></th>
+<th>What it sets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JAVV_BACKEND_URL</code></td>
+<td>The JAVV address that the scanners push to. Start it with <code>http://</code> or <code>https://</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_CLUSTER_ID</code></td>
+<td>The id of the host in JAVV. A Docker host has no <code>kube-system</code> namespace, so you choose the id. Use 8 to 64 lowercase letters, digits and hyphens, and do not start it with a hyphen. Example: <code>docker-host-01</code>. A different value stops the cycle with exit code 2, before a push.</td>
+</tr>
+<tr>
+<td><code>JAVV_TRIVY_TOKEN</code></td>
+<td><strong>Secret.</strong> The ingest token of the <code>trivy</code> container. <code>compose.yaml</code> gives it to the container as <code>JAVV_TOKEN</code>.</td>
+</tr>
+<tr>
+<td><code>JAVV_GRYPE_TOKEN</code></td>
+<td><strong>Secret.</strong> The ingest token of the <code>grype</code> container. <code>compose.yaml</code> gives it to the container as <code>JAVV_TOKEN</code>.</td>
+</tr>
+<tr>
+<td><code>DOCKER_GID</code></td>
+<td>The group id of <code>/var/run/docker.sock</code>. The containers join this group to read the socket.</td>
+</tr>
+</tbody>
+</table>
 <p>These settings are for the Docker containers only:</p>
 <table>
 <thead>
