@@ -37,13 +37,16 @@ const nginx: ImageRow = {
   '@timestamp': '2026-11-07T10:19:31.159520+00:00',
 }
 
-function bars(rows: ImageRow[]) {
+function mountTable(rows: ImageRow[]) {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })
-  const w = mount(ImagesTable, {
+  return mount(ImagesTable, {
     props: { rows, sort: null, order: 'desc', loading: false, filtered: false, hidden: new Set<string>() },
     global: { plugins: [router] },
   })
-  return w.findAllComponents(MixBar).map((b) => ({ scanner: b.props('attribution'), counts: b.props('counts') }))
+}
+
+function bars(rows: ImageRow[]) {
+  return mountTable(rows).findAllComponents(MixBar).map((b) => ({ scanner: b.props('attribution'), counts: b.props('counts') }))
 }
 
 beforeEach(() => setActivePinia(createPinia()))
@@ -59,5 +62,18 @@ describe('the severity bars of an Images row', () => {
   it('draws no bar for a scanner with no committed scan', () => {
     const grypeOnly = { ...nginx, severity_by_scanner: { grype: nginx.severity_by_scanner!.grype! } }
     expect(bars([grypeOnly]).map((b) => b.scanner)).toEqual(['grype'])
+  })
+})
+
+describe('the heads of the Images table (issue 1205)', () => {
+  it('each note joins its head text after " · ", in the color and size of the head (option C)', () => {
+    const w = mountTable([nginx])
+    const heads = w.findAll('thead th').map((th) => th.text())
+    expect(heads).toEqual(
+      expect.arrayContaining(['Replicas · at last sweep', 'Vulns · Trivy / Grype', 'Severity mix · Trivy', 'Severity mix · Grype']),
+    )
+    // a note is text of the head, never an element that can take a color of its own
+    const noted = w.findAll('thead th span').filter((s) => s.text().includes(' · '))
+    expect(noted.map((s) => s.element.childElementCount)).toEqual([0, 0, 0, 0])
   })
 })

@@ -99,6 +99,8 @@ Backend: `query/paging.py` + the bulk helpers.
 line and the 1px `--control-edge` with no blur (issue 1039, option D). Never a soft blurred
 shadow, and never a `:deep` restyle in the view. **Role ids** show through `roleLabel()`
 (`@/lib/roleLabel`): `security_lead` reads "security lead", and the id stays the value.
+A **note in a table head** is head text after ` · `, as `Severity mix · Trivy`: no element of its
+own, no chip or button in a head (issue 1205, option C). `--soft` on the slate band is 2.19:1.
 **Window heads** are the slate band of the table heads, owned by `ModalShell` (issue 1049). A
 window never restyles its head, and the ✕ takes the sidebar's on-slate control colors.
 

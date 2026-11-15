@@ -225,6 +225,11 @@ every outside host unanswered. Neither face is on the vendored detector's overus
   operator B2 ruling 2026-07-16; supersedes both the `--panel` head and the short-lived
   settings "quiet sans head" — `tbl-quiet` is density only). On-band column dividers use
   `--table-head-line`, never the beige hairlines.
+- **A note in a table head is head text** (operator ruling 2026-11-14 on built pictures, issue
+  1205, option C): it joins the name after ` · `, on one line, in `--table-head-fg` at the head
+  size, for example `Severity mix · Trivy` (9.25:1 on the band). The note of its own, `.th-note`
+  in `--soft`, was 2.19:1 on the band and is gone. No chips or buttons in a table head, and no
+  second head row. `style-rules.spec.ts` fails a `th-note` in a source file.
 - **Window heads take the same band** (operator ruling 2026-10-29 on built pictures, issue 1049):
   `ModalShell` paints its head `--table-head-bg`/`--table-head-fg`, as the side panel head
   (`SlideoverShell`) does. The line under the title is that text at 75% opacity, the register of
@@ -487,6 +492,7 @@ Severity chip:  color var(--sev-critical-fg); background var(--sev-critical-bg);
 Chart series:   CHART_SEV.critical … (from '@/styles/tokens' — pinned to tokens.css by test)
 State pill:     var(--state-open-*) etc.   Health dot: var(--health-ok-dot)
 Table head:     background var(--table-head-bg); color var(--table-head-fg)
+                (a note is head text after ` · `, issue 1205)
 Window head:    the same band, in ModalShell only. The ✕ is on --side-control-bg   (issue 1049)
 Scanner identity: var(--scanner-trivy-*) / var(--scanner-grype-*)  (tags, seg dots, mix labels,
                 and on Scanner status each lane's head + table-head band: --table-head-bg takes the

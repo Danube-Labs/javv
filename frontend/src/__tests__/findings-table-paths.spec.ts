@@ -137,6 +137,13 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     w.unmount()
   })
 
+  it('the EPSS head says its scanner in the head text, with no element of its own (issue 1205)', () => {
+    const w = mountTable([row('a')], false, { hidden: new Set<string>() })
+    const epss = w.findAll('thead th span').filter((s) => s.text() === 'EPSS · via Grype')
+    expect(epss.map((s) => s.element.childElementCount)).toEqual([0])
+    w.unmount()
+  })
+
   it('a reorderable table gets no Paths column: its drag indexes have no Paths (review F4)', () => {
     const w = mountTable([row('a', { locations: ['/x'], locations_total: 1 })], true, { reorderable: true })
     expect(heads(w)).not.toContain('Paths')

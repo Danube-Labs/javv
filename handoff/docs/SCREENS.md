@@ -633,6 +633,9 @@ copy of the view. Before, the "×" of the card deleted the view at the first cli
 **Columns:** Image (`image_repo` + registry mono) · Tag · Namespace · Replicas (M8c inventory
 read) · per-scanner finding counts (`T n / G n / Δ` — never a merged total) · Severity mix
 (labeled MixBar, per scanner) · Scanners · Last seen.
+The heads carry their notes as head text after ` · `: `Replicas · at last sweep`, `Vulns · Trivy
+/ Grype`, `Severity mix · Trivy` and `Severity mix · Grype` (issue 1205, option C on built
+pictures, 2026-11-14). The EPSS head of the Findings grid is `EPSS · via Grype`.
 A digest-pinned image (`repo@sha256:…`) has no tag anywhere in Kubernetes: its Tag cell shows the
 empty-value dash with the title "Pinned by digest: the pod names no tag." (operator ruling
 2026-10-11, issue 817).

@@ -160,6 +160,13 @@ describe('contrast gate — every text pair computed ≥4.5:1 (AA)', () => {
     expect.soft(ratio('val-act-not-fg', 'slate3'), 'exclude mark on the chip').toBeGreaterThanOrEqual(NON_TEXT)
   })
 
+  it('table head (issue 1205): a note is head text, AA on the band; the old --soft note was not', () => {
+    // `--table-head-bg` is an alias of `--slate2`; this gate reads literal values only
+    expect.soft(ratio('table-head-fg', 'slate2'), 'head text and its note on the band').toBeGreaterThanOrEqual(AA)
+    // the reason the note joined the head text (option C): --soft on the band measured 2.19:1
+    expect(ratio('soft', 'slate2')).toBeLessThan(AA)
+  })
+
   it('window head (issue 1049): the title, the line under it and the close mark on the slate band', () => {
     // the band is --table-head-bg, which is var(--slate2); the token regex reads hex values only
     expect.soft(ratio('table-head-fg', 'slate2'), 'window title on the band').toBeGreaterThanOrEqual(AA)
