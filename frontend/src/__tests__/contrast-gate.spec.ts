@@ -162,7 +162,8 @@ describe('contrast gate — every text pair computed ≥4.5:1 (AA)', () => {
 
   it('window head (issue 1049): the title, the line under it and the close mark on the slate band', () => {
     // the band is --table-head-bg, which is var(--slate2); the token regex reads hex values only
-    expect.soft(ratio('table-head-fg', 'slate2'), 'window title on the band').toBeGreaterThanOrEqual(AA)
+    // the same check holds the text of a table head, its notes too (issue 1205, option C)
+    expect.soft(ratio('table-head-fg', 'slate2'), 'window title and table head text on the band').toBeGreaterThanOrEqual(AA)
     // the line under the title is the head text at 75% opacity, composited on the band
     const sub = blend('rgba(217, 226, 232, 0.75)', tokens['slate2'] as string)
     const subRatio = (luminance(sub) + 0.05) / (luminance(parseColor(tokens['slate2'] as string).rgb) + 0.05)

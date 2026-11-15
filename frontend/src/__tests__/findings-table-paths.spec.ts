@@ -96,6 +96,22 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     expect(w.find('.muted-dash').text()).toBe('-')
   })
 
+  it('on, the image page: the row reads its package type, so an OS package says why it has no path (issue 1205)', async () => {
+    const w = mountTable(
+      [
+        row('a', { ptype: 'os', package_name: 'perl', installed_version: '5.32.1', locations: [], locations_total: 0 }),
+        row('b', { scanner: 'grype', ptype: 'deb', package_name: 'perl', installed_version: '5.32.1', locations: ['/var/lib/dpkg/status'], locations_total: 1 }),
+      ],
+      true,
+    )
+    expect(w.find('.paths-none').attributes('title')).toBe('Trivy: no path. Trivy gives no path for an OS package.')
+    await w.find('button.paths-btn').trigger('click')
+    expect(w.findComponent(FindingPaths).text()).toContain(
+      'For an OS package, Grype lists the files that show that the package is installed.',
+    )
+    w.unmount()
+  })
+
   it('on: a new page closes the rows that were open', async () => {
     const w = mountTable([row('a', { locations: ['/x'], locations_total: 1 })], true)
     await w.find('button.paths-btn').trigger('click')
@@ -118,6 +134,13 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     await flushPromises()
     expect(document.activeElement).toBe(w.find('button.paths-btn').element)
     expect(w.findComponent(FindingPaths).exists()).toBe(false)
+    w.unmount()
+  })
+
+  it('the EPSS head says its scanner in the head text, with no element of its own (issue 1205)', () => {
+    const w = mountTable([row('a')], false, { hidden: new Set<string>() })
+    const epss = w.findAll('thead th span').filter((s) => s.text() === 'EPSS · via Grype')
+    expect(epss.map((s) => s.element.childElementCount)).toEqual([0])
     w.unmount()
   })
 

@@ -130,10 +130,21 @@ describe('detail view-model (per-scanner sacred)', () => {
     ])
     expect(r!.scanners).toEqual(['trivy', 'grype'])
     expect(r!.paths).toEqual([
-      { scanner: 'trivy', digest: 'sha256:aaa', total: null, paths: [] },
-      { scanner: 'trivy', digest: 'sha256:bbb', total: 0, paths: [] },
-      { scanner: 'grype', digest: 'sha256:aaa', total: 70, paths: ['/a', '/b'] },
-      { scanner: 'grype', digest: 'sha256:bbb', total: 1, paths: ['/var/lib/dpkg/status'] },
+      { scanner: 'trivy', digest: 'sha256:aaa', total: null, paths: [], osPackage: false },
+      { scanner: 'trivy', digest: 'sha256:bbb', total: 0, paths: [], osPackage: false },
+      { scanner: 'grype', digest: 'sha256:aaa', total: 70, paths: ['/a', '/b'], osPackage: false },
+      { scanner: 'grype', digest: 'sha256:bbb', total: 1, paths: ['/var/lib/dpkg/status'], osPackage: false },
+    ])
+  })
+
+  it('each paths entry keeps whether its finding is an OS package, from the ptype of its scanner (issue 1205)', () => {
+    const [r] = affectedComponentRows([
+      row({ scanner: 'trivy', ptype: 'os', locations: [], locations_total: 0 }),
+      row({ scanner: 'grype', ptype: 'deb', locations: ['/var/lib/dpkg/status'], locations_total: 1 }),
+    ])
+    expect(r!.paths.map((p) => [p.scanner, p.osPackage])).toEqual([
+      ['trivy', true],
+      ['grype', true],
     ])
   })
 })

@@ -14,16 +14,20 @@ import {
   type FindingPaths as Entry,
   foundText,
   hasPaths,
+  isOsPackage,
   keptText,
   openLabel,
+  pathsOf,
   shortDigest,
 } from '@/findings/paths'
+import type { FindingRow } from '@/stores/findings'
 
 const e = (over: Partial<Entry>): Entry => ({
   scanner: 'trivy',
   digest: 'sha256:aaa',
   total: 0,
   paths: [],
+  osPackage: false,
   ...over,
 })
 
@@ -73,15 +77,41 @@ describe('the text of the Paths cell', () => {
 describe('the sentences over the list', () => {
   it('names the scanner, the package and its version', () => {
     expect(foundText(e({ total: 11 }), 'stdlib', 'v1.26.3')).toBe(
-      'Trivy found stdlib v1.26.3 at 11 paths in this image. The finding counts one time.',
+      'Trivy found stdlib v1.26.3 at 11 paths in this image. JAVV counts it as one finding.',
     )
     expect(foundText(e({ scanner: 'grype', total: 1 }), 'go', null)).toBe(
-      'Grype found go at 1 path in this image. The finding counts one time.',
+      'Grype found go at 1 path in this image. JAVV counts it as one finding.',
     )
-    expect(foundText(e({ total: 0 }), 'openssl', '3.0.1')).toBe('Trivy gave no path for openssl 3.0.1.')
+    expect(foundText(e({ total: 0 }), 'stdlib', 'v1.26.3')).toBe('Trivy gave no path for stdlib v1.26.3.')
     expect(foundText(e({ total: null }), 'openssl', '3.0.1')).toBe(
-      'This scan of Trivy did not report the paths of openssl 3.0.1.',
+      'The Trivy scan of this image did not report paths for openssl 3.0.1.',
     )
+  })
+
+  it('an OS package: Trivy gives no path, and Grype lists the files that show it is installed (issue 1205)', () => {
+    expect(foundText(e({ total: 0, osPackage: true }), 'perl', '5.32.1')).toBe(
+      'perl 5.32.1 is an OS package. Trivy gives no path for an OS package.',
+    )
+    expect(foundText(e({ scanner: 'grype', total: 9, osPackage: true }), 'perl', '5.32.1')).toBe(
+      'Grype found perl 5.32.1 at 9 paths in this image. JAVV counts it as one finding. ' +
+        'For an OS package, Grype lists the files that show that the package is installed.',
+    )
+    // the sentences are about the scanner that behaves so: the other scanner keeps the plain text
+    expect(foundText(e({ total: 2, osPackage: true }), 'perl', null)).toBe(
+      'Trivy found perl at 2 paths in this image. JAVV counts it as one finding.',
+    )
+    expect(foundText(e({ scanner: 'grype', total: 0, osPackage: true }), 'perl', null)).toBe('Grype gave no path for perl.')
+    // a scan that sent no paths says so, an OS package too
+    expect(foundText(e({ total: null, osPackage: true }), 'perl', null)).toBe(
+      'The Trivy scan of this image did not report paths for perl.',
+    )
+  })
+
+  it('the hover of a Trivy 0 on an OS package says why (issue 1205)', () => {
+    expect(countTitle([e({ total: 0, osPackage: true }), e({ scanner: 'grype', total: 9, osPackage: true })])).toBe(
+      'Trivy: no path. Trivy gives no path for an OS package. Grype: 9 paths.',
+    )
+    expect(countTitle([e({ scanner: 'grype', total: 0, osPackage: true })])).toBe('Grype: the scanner gave no path.')
   })
 
   it('says when JAVV keeps fewer paths than the scanner reported', () => {
@@ -132,6 +162,16 @@ describe('FindingPaths', () => {
     expect(first!.find('ul').exists()).toBe(false)
   })
 
+  it('an OS package: the block of each scanner says what its paths are (issue 1205)', () => {
+    const w = mountIt([
+      e({ total: 0, osPackage: true }),
+      e({ scanner: 'grype', total: 1, paths: ['/var/lib/dpkg/status'], osPackage: true }),
+    ])
+    const [trivy, grype] = w.findAll('.paths-say').map((p) => p.text())
+    expect(trivy).toContain('stdlib v1.26.3 is an OS package. Trivy gives no path for an OS package.')
+    expect(grype).toContain('For an OS package, Grype lists the files that show that the package is installed.')
+  })
+
   it('names the digest only when the row holds more than one', () => {
     expect(mountIt([e({ total: 1, paths: ['/x'] })]).find('.paths-digest').exists()).toBe(false)
     const w = mountIt([
@@ -147,5 +187,20 @@ describe('FindingPaths', () => {
   it('says when JAVV keeps fewer paths than the scanner reported', () => {
     const w = mountIt([e({ total: 70, paths: ['/a'] })])
     expect(w.text()).toContain('JAVV keeps the first 1 of 70 paths.')
+  })
+})
+
+describe('pathsOf: the package type of the finding (issue 1205)', () => {
+  const row = (ptype: string | null) => ({ scanner: 'grype', image_digest: 'sha256:a', ptype, locations_total: 1, locations: ['/x'] }) as unknown as FindingRow
+
+  it('the OS package types of the two scanners are OS packages', () => {
+    const types = ['os', 'deb', 'apk', 'rpm']
+    expect(types.filter((t) => pathsOf(row(t)).osPackage)).toEqual(types)
+  })
+
+  it('a language package, a binary or no type is not', () => {
+    const types = ['gobinary', 'go-module', 'binary', 'jar', 'java-archive', 'python-pkg', 'npm', null]
+    expect(types.filter((t) => pathsOf(row(t)).osPackage)).toEqual([])
+    expect(isOsPackage(undefined)).toBe(false)
   })
 })

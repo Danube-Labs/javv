@@ -319,7 +319,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
         :class="colClass(key)"
       >
         <template #header>
-          <span v-if="key === 'epss'">EPSS<span class="th-note">via Grype</span></span>
+          <span v-if="key === 'epss'">EPSS · via Grype</span>
           <span v-else>{{ COL_HEADER[key] }}</span>
         </template>
         <!-- one wrapper for the whole chain: the actions belong at the cell's RIGHT EDGE, so
@@ -397,7 +397,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
 </template>
 
 <style scoped>
-/* the table skin (.tbl-wrap / .tbl family / th-note / empty-row) lives in base.css —
+/* the table skin (.tbl-wrap / .tbl family / empty-row) lives in base.css —
    only this grid's own cells and chips are styled here */
 /* the affordance carrier: the identifier reads as a link once the row is live (research: link
    cells > loud row hovers on dense tables) */

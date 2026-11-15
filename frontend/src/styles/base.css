@@ -478,13 +478,6 @@ html [class*=' p-'] {
 .tbl .nowrap {
   white-space: nowrap;
 }
-.th-note {
-  font-size: var(--text-dd-head);
-  color: var(--soft);
-  text-transform: none;
-  letter-spacing: 0;
-  margin-left: 5px;
-}
 .empty-row {
   padding: 22px 14px;
   color: var(--soft);

@@ -392,6 +392,37 @@ const CHIP_SELECTOR =
   // same day in issue 1049)
   /\.(time-range-hist|kev-tag|kev-lg|both-tag|state-opt-on|vm-fp|vm-ne|side-item|tbl|triage-head|so-head|modal-head|card-head|assignee-none|panel-band|vc-badge)\b/
 
+/**
+ * A note in a table head is head text (issue 1205, option C on built pictures, 2026-11-14): it
+ * joins the name after " · " in the head color, 9.25:1 on the slate band. The note of its own,
+ * `.th-note`, was `--soft` on that band, 2.19:1, under the AA floor. A source that brings the
+ * note back as a class fails here.
+ */
+const HEAD_NOTE = /\bth-note\b/
+const headNoteHits = (files: Record<string, string>) =>
+  Object.entries(files)
+    .filter(([, text]) => HEAD_NOTE.test(text))
+    .map(([rel]) => rel)
+
+describe('style rules: a note in a table head is head text (issue 1205)', () => {
+  it('no source has a th-note, in a template or a style rule', () => {
+    const files = Object.fromEntries(
+      walk(SRC).map((p) => [relative(SRC, p).split('\\').join('/'), readFileSync(p, 'utf8')]),
+    )
+    expect(headNoteHits(files), 'a head note is text after " · ", not an element of its own').toEqual([])
+  })
+
+  it('the check finds a planted note, in markup and in a rule, and lets head text pass', () => {
+    expect(
+      headNoteHits({
+        'a.vue': '<span>EPSS<span class="th-note">via Grype</span></span>',
+        'b.css': '.th-note { color: var(--soft); }',
+        'c.vue': '<span>EPSS · via Grype</span>',
+      }),
+    ).toEqual(['a.vue', 'b.css'])
+  })
+})
+
 describe('style rules — no same-hue text on its own tint', () => {
   const files = walk(SRC)
     .map((p) => relative(SRC, p).split('\\').join('/'))

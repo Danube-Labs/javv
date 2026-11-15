@@ -125,6 +125,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-15 | The cell of the approval list has its own class, `.approval-actions`, not the shared `.row-actions`. That class is on the table cell, not on a group of buttons in a cell. | 1190 |
 | 2026-11-15 | The first-run text of the image page keeps its padding of `48px 16px` in its card, as a ruled exception of the style rules test. Another component that sets the padding of `.first-run` fails. | 1190 |
 | 2026-11-15 | A filter row has one hover, `--control-hover-bg`, in the filter list, in Add filter and in the Columns menu. The Columns menu had `--panel`, which the ruling of 2026-07-28 calls invisible. | 1190 |
+| 2026-11-14 | A note in a table head is head text. It joins the name after ` · ` on one line, in the color of the head (9.25:1), for example `Severity mix · Trivy` (Q6 option C, on built pictures). A table head has no chips, no buttons and no second head row. The old note was `--soft` on the slate band, 2.19:1. | 1205 |
 | 2026-11-15 | `.cap-note` is the line under a list cut at a limit. `.empty-note` is the line of a list with no rows. `base.css` holds only their color and the size of `.cap-note` (option 2). Each place keeps its own margin, because the margin follows the place of the line. No user sees a change. | 1214 |
 
 ## AI vulnerability research (alpha)
