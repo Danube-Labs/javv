@@ -426,7 +426,7 @@ of the app. `shared-helpers-guard.spec.ts` fails a call of `bucketEndT` outside 
 for example "Showing the 90 newest of 190 tokens". `.empty-note` is the line of a list with no
 rows. base.css holds their color and the size of `.cap-note`. Each component adds its own margin,
 because the space follows the place of the line: under a Settings table, in a card or under a list.
-The same test fails a copy of the color or the size.
+`style-rules.spec.ts` fails a copy of the color or the size.
 
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
