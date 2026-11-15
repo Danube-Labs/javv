@@ -174,7 +174,8 @@ describe('style rules: one shared set of skins', () => {
  * must not set a property again that the shared rule sets, because a copy hides a later change
  * of the shared value. The property list comes from base.css, so a new shared value is covered
  * with no change here. Only a rule with exactly one of these selectors counts. Issue 1190 added
- * the data cell, the empty table line and the screen head with its actions.
+ * the data cell, the empty table line and the screen head with its actions, and issue 1197 the
+ * chart strips.
  */
 const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
@@ -186,6 +187,9 @@ const SHARED_RULES = [
   '.stack', '.scope-src', '.row-actions',
   '.facet-row', '.facet-row:hover', '.facet-check', '.facet-on .facet-check', '.facet-on',
   '.panel-band', '.first-run', '.first-run h2',
+  // the chart strips above a table (issue 1197)
+  '.ingest-lens', '.il-quiet', '.il-head', '.il-title', '.il-sub', '.il-sub b', '.il-empty',
+  '.ingest-lens > .skel-gap',
 ]
 
 /**
@@ -259,7 +263,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
         .filter((hit) => !RULED.get(rel)?.includes(hit))
         .map((hit) => `${rel} → ${hit}`),
     )
-    expect(hits, `set again outside base.css (issues 1181, 1190): ${hits.join('; ')}`).toEqual([])
+    expect(hits, `set again outside base.css (issues 1181, 1190, 1197): ${hits.join('; ')}`).toEqual([])
   })
 
   it('each ruled exception is real, not a stale entry', () => {
@@ -336,6 +340,27 @@ describe('style rules: one shared card, menu panel and error text', () => {
       '.panel-band: background', '.panel-band: text-transform',
       '.first-run: padding', '.first-run: color', '.first-run h2: margin',
     ])
+  })
+
+  it('the check finds a planted copy of each chart strip rule and lets an addition pass (issue 1197)', () => {
+    const planted = [
+      '.ingest-lens { flex: 1 1 auto; background: var(--card); padding: 10px 14px 4px; }',
+      '.il-quiet { border-color: var(--hist-line); }',
+      '.il-head { gap: 8px; }',
+      '.il-title { flex: none; text-transform: uppercase; }',
+      '.il-sub { white-space: nowrap; color: var(--ink); }',
+      '.il-sub b { font-weight: 700; }',
+      '.il-empty { margin: auto 0; font-size: var(--text-body); }',
+      '.ingest-lens > .skel-gap { margin-bottom: 6px; }',
+    ].join('\n')
+    expect(sharedRuleCopies(planted, shared)).toEqual([
+      '.ingest-lens: background', '.ingest-lens: padding', '.il-quiet: border-color', '.il-head: gap',
+      '.il-title: text-transform', '.il-sub: color', '.il-sub b: font-weight', '.il-empty: font-size',
+      '.ingest-lens > .skel-gap: margin-bottom',
+    ])
+    // what a strip adds: how it fills its row, how its line wraps, the space of its empty text
+    const additions = '.ingest-lens { flex: 1 1 auto; }\n.il-sub { white-space: nowrap; overflow: hidden; }\n.il-empty { margin: 0; font-weight: 500; }'
+    expect(sharedRuleCopies(additions, shared)).toEqual([])
   })
 })
 

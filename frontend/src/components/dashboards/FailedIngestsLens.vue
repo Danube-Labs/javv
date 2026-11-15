@@ -73,17 +73,17 @@ function onPointClick(params: { dataIndex: number }) {
 </script>
 
 <template>
-  <section class="fail-lens" aria-label="Failed ingest activity">
-    <div class="fl-head">
-      <h2 class="fl-title">Failed ingests</h2>
-      <span class="fl-sub">pushes the backend refused per {{ interval }}</span>
+  <section class="ingest-lens" aria-label="Failed ingest activity">
+    <div class="il-head">
+      <h2 class="il-title">Failed ingests</h2>
+      <span class="il-sub">pushes the backend refused per {{ interval }}</span>
       <span v-if="settled && !failed && refused > 0" class="fl-total mono-cell"
         >{{ refused }} in this range</span
       >
     </div>
     <UiSkeleton v-if="!settled" :height="56" radius="sm" label="Loading failed ingests" class="skel-gap" />
-    <p v-else-if="failed" class="fl-empty">Failed-ingest activity unavailable.</p>
-    <p v-else-if="refused === 0" class="fl-empty">No refused pushes in this range.</p>
+    <p v-else-if="failed" class="il-empty">Failed-ingest activity unavailable.</p>
+    <p v-else-if="refused === 0" class="il-empty">No refused pushes in this range.</p>
     <div v-else title="Click a day to view the whole app as of the end of that day">
       <EChart :option="option" :height="56" @point-click="onPointClick" />
     </div>
@@ -91,34 +91,8 @@ function onPointClick(params: { dataIndex: number }) {
 </template>
 
 <style scoped>
-/* the ingest strip's card skin, so the lens stands on its own on any host */
-.fail-lens {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  padding: 10px 14px 4px;
-}
-.fl-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 2px;
-}
-.fl-title {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.fl-sub {
-  font-size: var(--text-control);
-  color: var(--ink);
+/* the shared strip rules are in base.css (issue 1197). This strip does not grow in its row. */
+.il-sub {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -128,13 +102,7 @@ function onPointClick(params: { dataIndex: number }) {
   font-size: var(--text-control);
   color: var(--ink);
 }
-.fl-empty {
+.il-empty {
   margin: 0;
-  padding-bottom: 6px;
-  font-size: var(--text-body);
-  color: var(--ink);
-}
-.skel-gap {
-  margin-bottom: 6px;
 }
 </style>

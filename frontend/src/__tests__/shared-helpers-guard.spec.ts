@@ -2,8 +2,10 @@
  * The shared script helpers stay shared (issue 1190, rows 12 to 14): the number format and the day
  * label live in lib/format.ts, and the paging of a table lives in usePagedSlice or useCursorPager.
  * A file outside those homes fails here when it has the body of fmt or of dayLabel in the shape
- * that the components copied (under any name), or a setSize of its own. Another shape of the same
- * work (Intl.NumberFormat, other options, a paging stack with no setSize) is not caught.
+ * that the components copied (under any name), or a setSize of its own. The bar click of a chart
+ * strip lives in useBucketRewind (issue 1197): a call of bucketEndT outside it fails too. Another
+ * shape of the same work (Intl.NumberFormat, other options, a paging stack with no setSize) is not
+ * caught.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
@@ -40,6 +42,12 @@ const COPIES = [
     home: ['composables/usePagedSlice.ts', 'composables/useCursorPager.ts'],
     body: [/function\s+setSize\s*\(/, /const\s+setSize\s*=/],
   },
+  {
+    // a click on a bar of a chart strip: the end of the bucket becomes the time of the app (issue 1197)
+    what: 'the bar click of the chart strips (useBucketRewind)',
+    home: ['composables/useBucketRewind.ts', 'charts/buildIngestLensOption.ts'],
+    body: [/\bbucketEndT\s*\(/],
+  },
 ]
 
 /** Each copy of a shared helper in a file outside its home, as "file: what". */
@@ -63,12 +71,14 @@ describe('the shared script helpers have no copies', () => {
       "function count(n: number): string {\n  return n.toLocaleString('en-US')\n}",
       "const day = (iso: string) =>\n  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })",
       'function setSize(next: number) {\n  size.value = next\n}',
+      "const t = bucketEndT(bucket, Date.now(), 'day')\nif (t === null) timeTravel.backToNow()",
     ]
     expect(planted.map((text) => copiesIn('components/Planted.vue', text))).toEqual([
       ['components/Planted.vue: the number format of lib/format.ts (fmt)'],
       ['components/Planted.vue: the number format of lib/format.ts (fmt)'],
       ['components/Planted.vue: the day label of lib/format.ts (dayLabel)'],
       ['components/Planted.vue: the paging of usePagedSlice or useCursorPager (setSize)'],
+      ['components/Planted.vue: the bar click of the chart strips (useBucketRewind)'],
     ])
   })
 

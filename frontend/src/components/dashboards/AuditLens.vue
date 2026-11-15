@@ -10,12 +10,12 @@ import { computed, ref, watch } from 'vue'
 
 import { auditFacetsApiV1AuditFacetsGet } from '@/api/generated'
 import { buildAuditLensOption, type ActivityPoint } from '@/charts/buildAuditLensOption'
-import { bucketEndT, ingestInterval } from '@/charts/buildIngestLensOption'
+import { ingestInterval } from '@/charts/buildIngestLensOption'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { useBucketRewind } from '@/composables/useBucketRewind'
 import { logger } from '@/lib/logger'
 import { useTimeTravelStore } from '@/stores/timeTravel'
-import { lastDataAt } from '@/system/freshness'
 
 const props = withDefaults(
   defineProps<{
@@ -78,16 +78,9 @@ const totalEvents = computed(() => rows.value.reduce((n, p) => n + p.count, 0))
 const option = computed(() => buildAuditLensOption(rows.value, interval.value))
 const quiet = computed(() => settled.value && !failed.value && totalEvents.value === 0)
 
+const rewindToBucket = useBucketRewind()
 function onPointClick(params: { dataIndex: number }) {
-  const bucket = rows.value[params.dataIndex]?.date
-  if (!bucket) return
-  const t = bucketEndT(bucket, Date.now(), interval.value)
-  if (t === null) {
-    timeTravel.backToNow()
-    return
-  }
-  timeTravel.rewindTo(t)
-  timeTravel.setWindow(timeTravel.windowDays, `→ ${lastDataAt(t)}`)
+  rewindToBucket(rows.value[params.dataIndex]?.date, interval.value)
 }
 </script>
 
@@ -113,55 +106,17 @@ function onPointClick(params: { dataIndex: number }) {
 </template>
 
 <style scoped>
-/* the ingest lens's card grammar verbatim — one strip language for every lens */
+/* the shared strip rules are in base.css (issue 1197) */
 .ingest-lens {
   flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  padding: 10px 14px 4px;
-}
-.il-quiet {
-  background: var(--hist-bg);
-  border-color: var(--hist-line);
-}
-.il-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 2px;
-}
-.il-title {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink);
 }
 .il-sub {
-  font-size: var(--text-control);
-  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.il-sub b {
-  font-weight: 700;
-  color: var(--ink);
-}
 .il-empty {
   margin: auto 0;
-  padding-bottom: 6px;
-  font-size: var(--text-body);
   font-weight: 500;
-  color: var(--ink);
-}
-.skel-gap {
-  margin-bottom: 6px;
 }
 </style>
