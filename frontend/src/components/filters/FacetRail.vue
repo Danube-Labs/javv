@@ -261,48 +261,6 @@ function toggleOpen(g: Group) {
   color: var(--soft);
   line-height: 1.4;
 }
-.facet-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 5px 8px;
-  border-radius: 7px;
-  text-align: left;
-  color: var(--ink);
-  font-size: var(--text-control);
-  cursor: default;
-}
-/* the same wash every other control uses. `--panel` was a ~2% step off the card: invisible on
-   a good monitor and gone entirely on a TN panel (operator, 2026-07-28). It has to live here
-   rather than in base.css's shared hover list — that rule and this component's
-   `background: transparent` have equal specificity, so the scoped one, injected later, wins. */
-.facet-row:hover {
-  background: var(--control-hover-bg);
-}
-.facet-row:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
-.facet-check {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1.5px solid var(--facet-check-line);
-  flex: none;
-  transition: 0.1s;
-}
-.facet-on .facet-check {
-  background: var(--coral);
-  border-color: var(--coral);
-  box-shadow: inset 0 0 0 2px var(--card);
-}
-.facet-on {
-  color: var(--ink);
-  font-weight: 500;
-}
 /* an excluded value stays listed and readable (operator ruling 2026-07-27) — struck, not
    hidden, so the operator can see what they ruled out and click it off again. The red is
    `--fpill-not-op`, the same exclusion language the NOT-pill carries. */

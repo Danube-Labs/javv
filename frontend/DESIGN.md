@@ -399,6 +399,19 @@ strong cell and `.tbl td.strong` its ink color: the color stops at the cell, so 
 inside a cell keeps its own color. For these two, the test fails only a `color` in a component
 `.strong` rule. The card at the top of the image page is `.image-head`, not a screen head.
 
+**Rules that moved to base.css** (issue 1190): several components had a copy of these rules, and
+base.css now holds the one rule. `.stack` is the column of cards of a Settings page, 14px apart.
+`.scope-src` is a small note line under the controls of a card, such as where its scope comes from.
+`.row-actions` holds the buttons of a table row side by side, 6px apart. The cell of the approval
+list holds its buttons in its own rule, `.approval-actions`. `.facet-row` is a filter row: a value
+of a filter list or of Add filter, or a column of the Columns menu. `.facet-check` is its check box,
+and `.facet-on` its selected state. Its keyboard focus ring is the global `:focus-visible` ring. The
+hover of every filter row is `--control-hover-bg`, the Columns menu too (operator, 2026-11-15).
+`.panel-band` is the slate band of the table heads as the title of a card with no table head, on the
+Data inspector. `.first-run` is the text of a screen that has no data yet, with its `h2`. The same
+test fails a copy of these rules, with one ruled exception (operator, 2026-11-15): the first-run
+text of the image page sits in a card and keeps 16px from its sides.
+
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
 `primary`. `window-footer-buttons.spec.ts` reads every window footer. That test is the check, and

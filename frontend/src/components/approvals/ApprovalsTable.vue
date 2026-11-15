@@ -135,7 +135,7 @@ function revoke(row: ApprovalRow) {
           <td class="fit">
             <span class="mono-cell sm nowrap" :title="row.created_at">{{ lastDataAt(row.created_at) }}</span>
           </td>
-          <td class="fit row-actions" @click.stop>
+          <td class="fit approval-actions" @click.stop>
             <UiButton variant="mini" :disabled="busy" @click="emit('edit', row)">Edit</UiButton>
             <UiButton
               variant="mini"
@@ -193,14 +193,14 @@ function revoke(row: ApprovalRow) {
   white-space: nowrap;
   font-size: var(--text-sm);
 }
-.row-actions {
+.approval-actions {
   display: flex;
   gap: 6px;
   white-space: nowrap;
 }
 /* two-click revoke: the armed state speaks in the alarm register — hue in bg/border,
    prose stays ink (the style rules' same-hue rule, DESIGN.md §2) */
-.row-actions :deep(.revoke-armed) {
+.approval-actions :deep(.revoke-armed) {
   background: var(--sev-critical-bg);
   border-color: var(--sev-critical-solid);
   color: var(--ink);

@@ -380,11 +380,6 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .self-tag {
   margin-left: 8px;
   font-family: var(--font-mono);
@@ -398,10 +393,6 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
 }
 .row-off td {
   color: var(--soft);
-}
-.row-actions {
-  display: inline-flex;
-  gap: 6px;
 }
 .row-error {
   color: var(--health-down-fg);

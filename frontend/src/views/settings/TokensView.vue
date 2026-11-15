@@ -373,11 +373,6 @@ const fmt = (iso: string | null) =>
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .cluster-cell {
   display: block;
   max-width: 0;
@@ -385,10 +380,6 @@ const fmt = (iso: string | null) =>
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.row-actions {
-  display: inline-flex;
-  gap: 6px;
 }
 .raw-token {
   padding: 12px 14px;

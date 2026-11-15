@@ -491,6 +491,30 @@ html [class*=' p-'] {
   font-size: var(--text-body);
   text-align: center;
 }
+/* the text of a screen that has no data yet: All clusters, Running images and the image page
+   (issue 1190) */
+.first-run {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--soft);
+}
+.first-run h2 {
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+/* the slate band of the table heads as the title of a card with no table head, on the Data
+   inspector (operator, 2026-07-18; issue 1190) */
+.panel-band {
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--table-head-bg);
+  color: var(--table-head-fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-table-header);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 @media (prefers-reduced-motion: reduce) {
   .tbl-hover.tbl-hover tbody tr {
     transition: none;
@@ -506,7 +530,6 @@ html [class*=' p-'] {
 .filter-field,
 .time-preset,
 .facet-row,
-.cols-row,
 .modal-close {
   transition:
     background 0.12s ease-out,
@@ -517,7 +540,6 @@ html [class*=' p-'] {
 .ra-chip:hover:not(.ra-chip-on),
 .filter-field:hover,
 .time-preset:hover,
-.cols-row:hover,
 .modal-close:hover {
   background: var(--control-hover-bg);
   border-color: var(--control-hover-line);
@@ -532,10 +554,48 @@ html [class*=' p-'] {
   .filter-field,
   .time-preset,
   .facet-row,
-  .cols-row,
   .modal-close {
     transition: none;
   }
+}
+
+/* A filter row: a value of a filter list or of Add filter, or a column of the Columns menu, with
+   its check box (issue 1190). Its keyboard focus ring is the global :focus-visible ring. The hover
+   is the wash of every other control: `--panel` was a ~2% step off the card, invisible on a good
+   monitor and gone on a TN panel (operator, 2026-07-28). It is a rule of its own, not a member of
+   the hover list above, because a row has no line to shift. */
+.facet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 5px 8px;
+  border-radius: 7px;
+  text-align: left;
+  color: var(--ink);
+  font-size: var(--text-control);
+  cursor: default;
+}
+.facet-row:hover {
+  background: var(--control-hover-bg);
+}
+.facet-check {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.5px solid var(--facet-check-line);
+  flex: none;
+  transition: 0.1s;
+}
+.facet-on .facet-check {
+  background: var(--coral);
+  border-color: var(--coral);
+  box-shadow: inset 0 0 0 2px var(--card);
+}
+.facet-on {
+  font-weight: 500;
 }
 
 /* ---- joined stat band (§8.5 RULED app-wide, 2026-07-12: hairline-divided cells over the
@@ -1062,6 +1122,23 @@ button.stat-cell:hover .cell-go,
   max-width: 440px;
   line-height: 1.5;
   color: var(--ink);
+}
+/* a Settings page is a column of cards; .scope-src is a small note line under the controls of a
+   card, such as where its scope comes from (issue 1190) */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.scope-src {
+  margin: 10px 0 2px;
+  font-size: var(--text-sm);
+  color: var(--soft);
+}
+/* the buttons of a table row, side by side in their cell */
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
 }
 
 /* ---- text box and dropdown skins (issue 1050): the one look of a field that people type in or

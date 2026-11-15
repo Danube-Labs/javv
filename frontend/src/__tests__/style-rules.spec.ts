@@ -180,6 +180,12 @@ const SHARED_RULES = [
   '.card', '.card-head', '.card-head h2', '.skel-pad', '.dd-menu', '.dd-head', '.load-error',
   // the table and screen-head rules that components set again (issue 1190)
   '.mono-cell', '.empty-row', '.screen-head', '.head-actions',
+  // the rules that moved out of the components to base.css (issue 1190). `.facet-row` also takes
+  // `transition` from the shared control hover list of base.css, so a component copy of its
+  // transition fails too.
+  '.stack', '.scope-src', '.row-actions',
+  '.facet-row', '.facet-row:hover', '.facet-check', '.facet-on .facet-check', '.facet-on',
+  '.panel-band', '.first-run', '.first-run h2',
 ]
 
 /**
@@ -229,6 +235,9 @@ describe('style rules: one shared card, menu panel and error text', () => {
   const RULED = new Map([
     // this card sets its failure line in the text color, not in the error color
     ['components/settings/RetiredClustersCard.vue', ['.load-error: color']],
+    // the first-run text of the image page sits in a card and keeps 16px from its sides (operator,
+    // 2026-11-15, issue 1190)
+    ['views/ImageDetailView.vue', ['.first-run: padding']],
   ])
 
   const copies = (rel: string): string[] => {
@@ -294,6 +303,39 @@ describe('style rules: one shared card, menu panel and error text', () => {
     ])
     const sizes = '.empty-row { padding: 34px 12px; }\n.screen-head { gap: 16px; margin-bottom: 18px; }'
     expect(sharedRuleCopies(sizes, shared)).toEqual([])
+  })
+
+  it('every filter row hovers in the wash of the other controls (operator, 2026-11-15, issue 1190)', () => {
+    const css = readFileSync(join(SRC, 'styles/base.css'), 'utf8')
+    const at = css.indexOf('\n.facet-row:hover {')
+    expect(at).toBeGreaterThan(-1)
+    expect(css.slice(at, css.indexOf('}', at))).toContain('background: var(--control-hover-bg);')
+  })
+
+  it('the check finds a planted copy of each rule that moved to base.css (issue 1190)', () => {
+    const planted = [
+      '.stack { display: flex; flex-direction: column; gap: 14px; }',
+      '.fam-why-note,\n.scope-src { margin: 10px 0 2px; font-size: var(--text-sm); color: var(--soft); }',
+      '.row-actions { display: inline-flex; gap: 6px; }',
+      '.facet-row { border: 0; padding: 5px 8px; cursor: default; }',
+      '.facet-row:hover { background: var(--panel); }',
+      '.facet-check { width: 14px; }',
+      '.facet-on .facet-check { background: var(--coral); }',
+      '.facet-on { font-weight: 500; }',
+      '.panel-band { background: var(--table-head-bg); text-transform: uppercase; }',
+      '.first-run { padding: 48px 0; color: var(--soft); }',
+      '.first-run h2 { margin: 0 0 6px; }',
+    ].join('\n')
+    expect(sharedRuleCopies(planted, shared)).toEqual([
+      '.stack: display', '.stack: flex-direction', '.stack: gap',
+      '.scope-src: margin', '.scope-src: font-size', '.scope-src: color',
+      '.row-actions: display', '.row-actions: gap',
+      '.facet-row: border', '.facet-row: padding', '.facet-row: cursor',
+      '.facet-row:hover: background', '.facet-check: width',
+      '.facet-on .facet-check: background', '.facet-on: font-weight',
+      '.panel-band: background', '.panel-band: text-transform',
+      '.first-run: padding', '.first-run: color', '.first-run h2: margin',
+    ])
   })
 })
 

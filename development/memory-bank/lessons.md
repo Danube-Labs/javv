@@ -36,6 +36,7 @@ looks like when it happens again. A number is a GitHub issue or PR.
 | 2026-10-19 (924): a rare 502 did not show with one request at a time (0 of 123). It showed with the requests that a page sends at once. | Reproduce a race with the real number of requests before you say that it does not happen. |
 | 2026-11-09 (1176): a new GET list route needed more than its own code. It also needed an entry in `test_list_envelope_contract.py` and in the list-key tables of `api-design.md` and `API.md`. It needed an MCP tool or a reason for no tool (`test_mcp_read_coverage.py`). | Before a new list route, read those three places. |
 | 2026-11-07 (1108): the docs-site anchor test refused a link to `#steps_1`, which two headings with the same name made. `helm-docs.sh --check` compares with the git index. | Link the parent section. Stage the chart files before the check. |
+| 2026-11-14 and 2026-11-15 (1190): two moves of a scoped style to `base.css` had a hidden effect. The Risk accept image chip lost its mono font, because the deleted copy had won over another scoped class by source order. The card of `ImageFindingsPanel` takes the `.first-run` padding of `ImageDetailView`, because Vue gives the scope of a parent to the root of its child. | Before a scoped rule moves to `base.css`, measure the computed style of each element that wears it, before and after. A read of the source misses both effects. |
 
 ## Product behaviour
 

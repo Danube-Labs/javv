@@ -236,7 +236,7 @@ function discard() {
           </tbody>
         </table>
         </div>
-        <p class="fam-why-note">
+        <p class="scope-src">
           <b>Why one window, not per-family?</b> Time-travel rebuilds any past moment from
           occurrences, images and inventory runs <em>together</em>, so the app only reaches as
           far back as the <em>shortest</em> window. Separate per-family windows would silently
@@ -335,11 +335,6 @@ function discard() {
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .scanner-banner {
   display: flex;
   align-items: center;
@@ -386,12 +381,6 @@ function discard() {
   cursor: help;
 }
 .fam-guard svg {
-  color: var(--soft);
-}
-.fam-why-note,
-.scope-src {
-  margin: 10px 0 2px;
-  font-size: var(--text-sm);
   color: var(--soft);
 }
 /* rollover: three small numbers earn one row, not three full-width ones */

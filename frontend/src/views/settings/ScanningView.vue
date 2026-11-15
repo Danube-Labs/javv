@@ -239,11 +239,6 @@ function discard() {
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 /* the prototype .scanner-banner grammar, ink prose per DESIGN.md §2 */
 .scanner-banner {
   display: flex;
@@ -277,11 +272,6 @@ function discard() {
 .stale-note svg {
   flex: none;
   color: var(--teal);
-}
-.scope-src {
-  margin: 10px 0 2px;
-  font-size: var(--text-sm);
-  color: var(--soft);
 }
 .load-error {
   margin: 14px 0 8px;

@@ -122,6 +122,9 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-14 | Each piece of code or style that moves to a shared module gets a functional test in the browser, before and after the move. | 1190 |
 | 2026-11-14 | The style rules test checks each property of a shared rule, except a size that a component keeps: the padding of `.empty-row` and the bottom margin of `.screen-head`. | 1190 |
 | 2026-11-14 | The ink color of a strong table cell is in `.tbl td.strong`. The selector stops at the cell, so a strong CVE link keeps its own color. A test showed that `.tbl .strong` changed the links of Findings and the Audit log. | 1190 |
+| 2026-11-15 | The cell of the approval list has its own class, `.approval-actions`, not the shared `.row-actions`. That class is on the table cell, not on a group of buttons in a cell. | 1190 |
+| 2026-11-15 | The first-run text of the image page keeps its padding of `48px 16px` in its card, as a ruled exception of the style rules test. Another component that sets the padding of `.first-run` fails. | 1190 |
+| 2026-11-15 | A filter row has one hover, `--control-hover-bg`, in the filter list, in Add filter and in the Columns menu. The Columns menu had `--panel`, which the ruling of 2026-07-28 calls invisible. | 1190 |
 
 ## AI vulnerability research (alpha)
 

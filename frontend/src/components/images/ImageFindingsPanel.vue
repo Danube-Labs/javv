@@ -155,15 +155,3 @@ function openFinding(row: FindingRow) {
     />
   </div>
 </template>
-
-<style scoped>
-.first-run {
-  padding: 48px 0;
-  text-align: center;
-  color: var(--soft);
-}
-.first-run h2 {
-  color: var(--ink);
-  margin: 0 0 6px;
-}
-</style>

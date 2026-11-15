@@ -195,17 +195,6 @@ function canRun(job: JobDoc): boolean {
 .repair {
   margin-top: var(--space-6);
 }
-.panel-band {
-  margin: 0;
-  padding: 10px 16px;
-  background: var(--table-head-bg);
-  color: var(--table-head-fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-table-header);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
 .repair-sub {
   color: var(--soft);
   font-size: var(--text-body);

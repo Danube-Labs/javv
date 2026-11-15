@@ -138,10 +138,6 @@ async function onDeleted() {
   font-size: var(--text-sm);
   color: var(--soft);
 }
-.row-actions {
-  display: inline-flex;
-  gap: 6px;
-}
 .load-error,
 .empty-note {
   margin: 2px 0;

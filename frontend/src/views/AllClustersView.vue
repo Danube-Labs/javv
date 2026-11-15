@@ -137,16 +137,6 @@ const needAttention = computed(
   font-weight: 600;
 }
 
-.first-run {
-  padding: 48px 0;
-  text-align: center;
-  color: var(--soft);
-}
-.first-run h2 {
-  color: var(--ink);
-  margin: 0 0 6px;
-}
-
 .skel-stack > * + * {
   margin-top: 16px;
 }

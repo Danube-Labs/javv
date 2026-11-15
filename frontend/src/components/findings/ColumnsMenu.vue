@@ -132,27 +132,6 @@ function onDragEnd() {
 .density-seg {
   margin: 2px 8px 8px;
 }
-.facet-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 5px 8px;
-  border-radius: 7px;
-  text-align: left;
-  color: var(--ink);
-  font-size: var(--text-control);
-  cursor: default;
-}
-.facet-row:hover {
-  background: var(--panel);
-}
-.facet-row:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
 .row-reorderable {
   border-top: 2px solid transparent; /* reserved so the insertion line never shifts rows */
   cursor: grab; /* the ruled drag-surface exception (DESIGN.md §5) */
@@ -174,23 +153,6 @@ function onDragEnd() {
   border-top-color: var(--coral);
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-}
-.facet-check {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1.5px solid var(--facet-check-line);
-  flex: none;
-  transition: 0.1s;
-}
-.facet-on .facet-check {
-  background: var(--coral);
-  border-color: var(--coral);
-  box-shadow: inset 0 0 0 2px var(--card);
-}
-.facet-on {
-  color: var(--ink);
-  font-weight: 500;
 }
 .facet-label {
   flex: 1;

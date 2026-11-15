@@ -432,13 +432,9 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
 .card-body {
   padding: 10px 16px 14px;
 }
+/* the first-run text of this page sits in a card, so it keeps 16px from the sides of the card.
+   Vue gives this scope to the root of ImageFindingsPanel too, so its first-run card takes it. */
 .first-run {
   padding: 48px 16px;
-  text-align: center;
-  color: var(--soft);
-}
-.first-run h2 {
-  color: var(--ink);
-  margin: 0 0 6px;
 }
 </style>

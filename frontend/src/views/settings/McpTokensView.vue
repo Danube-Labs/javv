@@ -405,15 +405,6 @@ async function submitRevoke() {
 </template>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.row-actions {
-  display: inline-flex;
-  gap: 6px;
-}
 /* the one column that gives way: a name has up to 64 characters (issue 1115) */
 .name-cell {
   display: block;
