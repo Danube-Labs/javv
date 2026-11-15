@@ -66,7 +66,7 @@ describe('the severity bars of an Images row', () => {
 })
 
 describe('the heads of the Images table (issue 1205)', () => {
-  it('each note joins its head text after " · ", in the color and size of the head (option C)', () => {
+  it('each note joins its head text after " · ", with no element of its own (option C)', () => {
     const w = mountTable([nginx])
     const heads = w.findAll('thead th').map((th) => th.text())
     expect(heads).toEqual(
