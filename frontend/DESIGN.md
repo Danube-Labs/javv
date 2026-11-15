@@ -412,6 +412,16 @@ Data inspector. `.first-run` is the text of a screen that has no data yet, with 
 test fails a copy of these rules, with one ruled exception (operator, 2026-11-15): the first-run
 text of the image page sits in a card and keeps 16px from its sides.
 
+**One chart strip** (issue 1197): the four strips above a table (Scan ingest, Failed ingests, Audit
+activity, Handled findings) wear the same rules in base.css. `.ingest-lens` is the frame of a strip,
+`.il-quiet` its amber state when the range holds nothing, `.il-head` the row of its title,
+`.il-title` the title, `.il-sub` the line next to it with `.il-sub b`, and `.il-empty` the text of an
+empty or failed strip. `.ingest-lens > .skel-gap` is the space under its loading shimmer. These
+rules hold only the values that are equal in all four. A strip adds the rest in its own rule: how it
+fills its row, how its line wraps, and the margin and weight of its empty text. The same test fails
+a copy. A click on a bar of a strip calls `useBucketRewind`: the end of that bucket becomes the time
+of the app. `shared-helpers-guard.spec.ts` fails a call of `bucketEndT` outside it.
+
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
 `primary`. `window-footer-buttons.spec.ts` reads every window footer. That test is the check, and
