@@ -538,6 +538,50 @@ html [class*=' p-'] {
   }
 }
 
+/* A filter row: a value of a filter list or of Add filter, or a column of the Columns menu, with
+   its check box (issue 1190). The hover is the wash of every other control: `--panel` was a ~2%
+   step off the card, invisible on a good monitor and gone on a TN panel (operator, 2026-07-28).
+   It is a rule of its own, not a member of the hover list above, because a row has no line to
+   shift. */
+.facet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 5px 8px;
+  border-radius: 7px;
+  text-align: left;
+  color: var(--ink);
+  font-size: var(--text-control);
+  cursor: default;
+}
+.facet-row:hover {
+  background: var(--control-hover-bg);
+}
+.facet-row:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+.facet-check {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.5px solid var(--facet-check-line);
+  flex: none;
+  transition: 0.1s;
+}
+.facet-on .facet-check {
+  background: var(--coral);
+  border-color: var(--coral);
+  box-shadow: inset 0 0 0 2px var(--card);
+}
+.facet-on {
+  color: var(--ink);
+  font-weight: 500;
+}
+
 /* ---- joined stat band (§8.5 RULED app-wide, 2026-07-12: hairline-divided cells over the
    prototype's accent cards) — ONE source for every KPI/stat strip, the tbl-skin discipline
    (issue 368: this replaced four scoped per-view copies; re-rolling it is a review failure).

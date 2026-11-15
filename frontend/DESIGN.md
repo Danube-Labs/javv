@@ -403,8 +403,10 @@ inside a cell keeps its own color. For these two, the test fails only a `color` 
 base.css now holds the one rule. `.stack` is the column of cards of a Settings page, 14px apart.
 `.scope-src` is the line under the controls of a card that tells where its scope comes from.
 `.row-actions` holds the buttons of a table row side by side, 6px apart. The cell of the approval
-list holds its buttons in its own rule, `.approval-actions`. The same test fails a copy of these
-rules.
+list holds its buttons in its own rule, `.approval-actions`. `.facet-row` is a filter row: a value
+of a filter list or of Add filter, or a column of the Columns menu. `.facet-check` is its check box,
+and `.facet-on` its selected state. The hover of every filter row is `--control-hover-bg`, the
+Columns menu too (operator, 2026-11-15). The same test fails a copy of these rules.
 
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is

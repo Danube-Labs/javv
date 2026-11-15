@@ -48,46 +48,6 @@ const emit = defineEmits<{ toggle: [value: string] }>()
   max-height: 240px;
   overflow-y: auto;
 }
-.facet-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 5px 8px;
-  border-radius: 7px;
-  text-align: left;
-  color: var(--ink);
-  font-size: var(--text-control);
-  cursor: default;
-}
-/* the wash every other control uses, as on the rail's rows (`--panel` was invisible, operator
-   2026-07-28) */
-.facet-row:hover {
-  background: var(--control-hover-bg);
-}
-.facet-row:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 1px;
-}
-.facet-check {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1.5px solid var(--facet-check-line);
-  flex: none;
-  transition: 0.1s;
-}
-.facet-on .facet-check {
-  background: var(--coral);
-  border-color: var(--coral);
-  box-shadow: inset 0 0 0 2px var(--card);
-}
-.facet-on {
-  color: var(--ink);
-  font-weight: 500;
-}
 /* a long value (a full image repo) stays on one line and truncates; its full text is the title */
 .facet-label {
   flex: 1;

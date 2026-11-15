@@ -182,6 +182,7 @@ const SHARED_RULES = [
   '.mono-cell', '.empty-row', '.screen-head', '.head-actions',
   // the rules that moved out of the components to base.css (issue 1190)
   '.stack', '.scope-src', '.row-actions',
+  '.facet-row', '.facet-row:hover', '.facet-row:focus-visible', '.facet-check', '.facet-on .facet-check', '.facet-on',
 ]
 
 /**
@@ -303,11 +304,20 @@ describe('style rules: one shared card, menu panel and error text', () => {
       '.stack { display: flex; flex-direction: column; gap: 14px; }',
       '.fam-why-note,\n.scope-src { margin: 10px 0 2px; font-size: var(--text-sm); color: var(--soft); }',
       '.row-actions { display: inline-flex; gap: 6px; }',
+      '.facet-row { border: 0; padding: 5px 8px; cursor: default; }',
+      '.facet-row:hover { background: var(--panel); }',
+      '.facet-row:focus-visible { outline: var(--focus-ring); }',
+      '.facet-check { width: 14px; }',
+      '.facet-on .facet-check { background: var(--coral); }',
+      '.facet-on { font-weight: 500; }',
     ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.stack: display', '.stack: flex-direction', '.stack: gap',
       '.scope-src: margin', '.scope-src: font-size', '.scope-src: color',
       '.row-actions: display', '.row-actions: gap',
+      '.facet-row: border', '.facet-row: padding', '.facet-row: cursor',
+      '.facet-row:hover: background', '.facet-row:focus-visible: outline', '.facet-check: width',
+      '.facet-on .facet-check: background', '.facet-on: font-weight',
     ])
   })
 })
