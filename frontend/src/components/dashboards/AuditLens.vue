@@ -10,12 +10,12 @@ import { computed, ref, watch } from 'vue'
 
 import { auditFacetsApiV1AuditFacetsGet } from '@/api/generated'
 import { buildAuditLensOption, type ActivityPoint } from '@/charts/buildAuditLensOption'
-import { bucketEndT, ingestInterval } from '@/charts/buildIngestLensOption'
+import { ingestInterval } from '@/charts/buildIngestLensOption'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { useBucketRewind } from '@/composables/useBucketRewind'
 import { logger } from '@/lib/logger'
 import { useTimeTravelStore } from '@/stores/timeTravel'
-import { lastDataAt } from '@/system/freshness'
 
 const props = withDefaults(
   defineProps<{
@@ -78,16 +78,9 @@ const totalEvents = computed(() => rows.value.reduce((n, p) => n + p.count, 0))
 const option = computed(() => buildAuditLensOption(rows.value, interval.value))
 const quiet = computed(() => settled.value && !failed.value && totalEvents.value === 0)
 
+const rewindToBucket = useBucketRewind()
 function onPointClick(params: { dataIndex: number }) {
-  const bucket = rows.value[params.dataIndex]?.date
-  if (!bucket) return
-  const t = bucketEndT(bucket, Date.now(), interval.value)
-  if (t === null) {
-    timeTravel.backToNow()
-    return
-  }
-  timeTravel.rewindTo(t)
-  timeTravel.setWindow(timeTravel.windowDays, `→ ${lastDataAt(t)}`)
+  rewindToBucket(rows.value[params.dataIndex]?.date, interval.value)
 }
 </script>
 

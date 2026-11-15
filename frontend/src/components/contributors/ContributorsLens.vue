@@ -13,12 +13,11 @@ import { computed, ref, watch } from 'vue'
 import { contributorsApiV1ContributorsGet } from '@/api/generated'
 import type { ContributorsApiV1ContributorsGetData } from '@/api/generated'
 import { buildAuditLensOption, type ActivityPoint } from '@/charts/buildAuditLensOption'
-import { bucketEndT } from '@/charts/buildIngestLensOption'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import { useBucketRewind } from '@/composables/useBucketRewind'
 import { logger } from '@/lib/logger'
 import { useTimeTravelStore } from '@/stores/timeTravel'
-import { lastDataAt } from '@/system/freshness'
 
 const props = defineProps<{
   /** the Contributors read's own series; without it the strip reads `query` itself */
@@ -70,16 +69,9 @@ const totalHandled = computed(() => shown.value.reduce((n, p) => n + p.count, 0)
 const option = computed(() => buildAuditLensOption(shown.value, 'day', 'handled'))
 const quiet = computed(() => isSettled.value && !isFailed.value && totalHandled.value === 0)
 
+const rewindToBucket = useBucketRewind()
 function onPointClick(params: { dataIndex: number }) {
-  const bucket = shown.value[params.dataIndex]?.date
-  if (!bucket) return
-  const t = bucketEndT(bucket, Date.now(), 'day')
-  if (t === null) {
-    timeTravel.backToNow()
-    return
-  }
-  timeTravel.rewindTo(t)
-  timeTravel.setWindow(timeTravel.windowDays, `→ ${lastDataAt(t)}`)
+  rewindToBucket(shown.value[params.dataIndex]?.date, 'day')
 }
 </script>
 
