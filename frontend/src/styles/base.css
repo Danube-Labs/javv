@@ -491,6 +491,17 @@ html [class*=' p-'] {
   font-size: var(--text-body);
   text-align: center;
 }
+/* the text of a screen that has no data yet: All clusters, Running images and the image page
+   (issue 1190) */
+.first-run {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--soft);
+}
+.first-run h2 {
+  color: var(--ink);
+  margin: 0 0 6px;
+}
 /* the slate band of the table heads as the title of a card with no table head, on the Data
    inspector (operator, 2026-07-18; issue 1190) */
 .panel-band {

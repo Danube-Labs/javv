@@ -183,7 +183,7 @@ const SHARED_RULES = [
   // the rules that moved out of the components to base.css (issue 1190)
   '.stack', '.scope-src', '.row-actions',
   '.facet-row', '.facet-row:hover', '.facet-row:focus-visible', '.facet-check', '.facet-on .facet-check', '.facet-on',
-  '.panel-band',
+  '.panel-band', '.first-run', '.first-run h2',
 ]
 
 /**
@@ -233,6 +233,9 @@ describe('style rules: one shared card, menu panel and error text', () => {
   const RULED = new Map([
     // this card sets its failure line in the text color, not in the error color
     ['components/settings/RetiredClustersCard.vue', ['.load-error: color']],
+    // the first-run text of the image page sits in a card and keeps 16px from its sides (operator,
+    // 2026-11-15, issue 1190)
+    ['views/ImageDetailView.vue', ['.first-run: padding']],
   ])
 
   const copies = (rel: string): string[] => {
@@ -312,6 +315,8 @@ describe('style rules: one shared card, menu panel and error text', () => {
       '.facet-on .facet-check { background: var(--coral); }',
       '.facet-on { font-weight: 500; }',
       '.panel-band { background: var(--table-head-bg); text-transform: uppercase; }',
+      '.first-run { padding: 48px 0; color: var(--soft); }',
+      '.first-run h2 { margin: 0 0 6px; }',
     ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.stack: display', '.stack: flex-direction', '.stack: gap',
@@ -321,6 +326,7 @@ describe('style rules: one shared card, menu panel and error text', () => {
       '.facet-row:hover: background', '.facet-row:focus-visible: outline', '.facet-check: width',
       '.facet-on .facet-check: background', '.facet-on: font-weight',
       '.panel-band: background', '.panel-band: text-transform',
+      '.first-run: padding', '.first-run: color', '.first-run h2: margin',
     ])
   })
 })

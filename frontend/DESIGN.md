@@ -407,8 +407,10 @@ list holds its buttons in its own rule, `.approval-actions`. `.facet-row` is a f
 of a filter list or of Add filter, or a column of the Columns menu. `.facet-check` is its check box,
 and `.facet-on` its selected state. The hover of every filter row is `--control-hover-bg`, the
 Columns menu too (operator, 2026-11-15). `.panel-band` is the slate band of the table heads as the
-title of a card with no table head, on the Data inspector. The same test fails a copy of these
-rules.
+title of a card with no table head, on the Data inspector. `.first-run` is the text of a screen
+that has no data yet, with its `h2`. The same test fails a copy of these rules, with one ruled
+exception (operator, 2026-11-15): the first-run text of the image page sits in a card and keeps
+16px from its sides.
 
 **One pair of window buttons** (operator 2026-10-29 on built pictures, issue 1053, D2 option B):
 in the footer of a window, Cancel, Close or Done is `ghost`, and the button that does the work is
