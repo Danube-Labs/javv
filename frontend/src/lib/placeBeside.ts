@@ -54,3 +54,14 @@ export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point
   const top = clamp(point.y - ARROW_INSET - 6, POPOVER_MARGIN, view.height - size.height - POPOVER_MARGIN)
   return { left, top, side, arrow: clamp(point.y - top, ARROW_INSET, size.height - ARROW_INSET) }
 }
+
+/**
+ * True when the arrow points from the head band of the popover, so a dark head gives the arrow
+ * its color: below the element the arrow is on the top edge, on a side it is where its middle
+ * falls, and above the trigger it is on the bottom edge (issue 1205).
+ */
+export function arrowOnHead(placed: Placed, headHeight: number): boolean {
+  if (placed.side === 'below') return true
+  if (placed.side === 'above') return false
+  return placed.arrow < headHeight
+}

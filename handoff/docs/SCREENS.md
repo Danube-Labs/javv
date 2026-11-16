@@ -468,10 +468,22 @@ with the **per-scanner evidence table** instead.
 **Triage panel (6-state VEX, A-2):** open · acknowledged · not_affected (reveals CISA-five
 justification chips; component/code-not-present chips labeled "False positive") · risk_accepted
 (**read-only here** — comes from the scoped risk-accept dialog, with a manage pointer) ·
-resolved (manual) · stale (**system-set, read-only** + "re-scan to refresh"). Fixed-vs-stale
-explainer kept. Assignee (`assignee`, Assign to me / Reassign) + Notes (escaped, never rendered
+resolved (manual) · stale (**system-set, read-only** + "re-scan to refresh"). Assignee (`assignee`, Assign to me / Reassign) + Notes (escaped, never rendered
 as HTML). **Removed:** Impact / Action / Approver / Task free-text fields (V4-DELTA conflict 1 —
 the model is state + justification + notes + structured decisions).
+
+**The Triage cell and its panel (issue 1205, operator rulings 2026-11-14 and 2026-11-16 on built
+pictures):** the cell holds Assigned to, the four state buttons, "Note and more…" and Save. "Note
+and more…" opens the kit popover (`PopoverShell` with the dark head of a window) next to the
+cell. The panel holds the lines that explain the state (history, a role that cannot triage, a
+role that cannot change a risk acceptance, the Risk accepted and Stale blocks), the reason for
+Not affected, the note, the risk acceptance button, Save and the line under Save. The cell and the
+panel share one draft, so the two Save buttons send the same body, and a save closes the panel.
+A click on Not affected opens the panel at the reason. The Undo line and the save error stay in
+the cell, because they answer a save in the cell. "Note and more…" stays on for a read-only role
+and in history, so that the user can read the line that tells why. The legend box of Fixed and
+Stale is gone: the Guide tells the same in "Scans and freshness". The risk acceptance window keeps
+its title.
 
 **Undo (issue 681):** after a save that changed the state, the panel shows "Changed from X to Y
 just now" with an Undo button. Undo sends the earlier state back through the same triage PATCH

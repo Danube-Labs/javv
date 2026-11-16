@@ -7,11 +7,26 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { h, nextTick } from 'vue'
 
 import PopoverShell from '@/components/ui/PopoverShell.vue'
-import { placeBeside, POPOVER_GAP, POPOVER_MARGIN } from '@/lib/placeBeside'
+import { arrowOnHead, placeBeside, POPOVER_GAP, POPOVER_MARGIN } from '@/lib/placeBeside'
 
 const view = { width: 1440, height: 900 }
 const size = { width: 380, height: 300 }
 const box = (left: number, top: number, right: number, bottom: number) => ({ left, top, right, bottom })
+
+describe('the arrow on a dark head (issue 1205)', () => {
+  it('below the element, the arrow points from the top edge, so from the head', () => {
+    expect(arrowOnHead({ left: 0, top: 0, side: 'below', arrow: 40 }, 60)).toBe(true)
+  })
+  it('above the trigger, the arrow points from the bottom edge, never from the head', () => {
+    expect(arrowOnHead({ left: 0, top: 0, side: 'above', arrow: 40 }, 60)).toBe(false)
+  })
+  it('on a side, the arrow is on the head only while its middle is inside the head', () => {
+    expect(arrowOnHead({ left: 0, top: 0, side: 'right', arrow: 30 }, 60)).toBe(true)
+    expect(arrowOnHead({ left: 0, top: 0, side: 'left', arrow: 59 }, 60)).toBe(true)
+    expect(arrowOnHead({ left: 0, top: 0, side: 'right', arrow: 60 }, 60)).toBe(false)
+    expect(arrowOnHead({ left: 0, top: 0, side: 'right', arrow: 200 }, 60)).toBe(false)
+  })
+})
 
 describe('where the popover goes', () => {
   it('on the right of a panel in the left column, with the arrow at the trigger', () => {
@@ -85,6 +100,16 @@ describe('the popover', () => {
     expect(document.activeElement).toBe(card.element)
     await w.find('[aria-label="Close"]').trigger('click')
     expect(w.emitted('close')).toHaveLength(1)
+  })
+
+  it('has a light head unless a panel turns on the dark band of the window heads (issue 1205)', async () => {
+    const { w } = mountPopover()
+    await nextTick()
+    expect(w.find('.pop-head').classes()).not.toContain('pop-head--band')
+    expect(w.find('.ui-close').classes()).not.toContain('ui-close--dark')
+    await w.setProps({ band: true })
+    expect(w.find('.pop-head').classes()).toContain('pop-head--band')
+    expect(w.find('.ui-close').classes()).toContain('ui-close--dark')
   })
 
   it('closes on Escape and on a click outside, but not on a click inside or on its trigger', async () => {
