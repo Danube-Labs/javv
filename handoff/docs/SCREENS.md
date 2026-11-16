@@ -448,6 +448,12 @@ cut list (2026-11-16).
 - The finding row (all real fields, see DATA_MODEL) from `GET /api/v1/findings?cluster_id=…&cve_id=…&image=…` —
   and the **sibling-scanner row** from the same call without the `scanner` filter: that pair IS
   the per-scanner evidence table (A-3/B-2 — "no black box, no merge").
+  The call also has `package_name` from the link, so the rows are those of the package of the link
+  (issue 1227). If no row has that package and version, the page shows "No current finding" and
+  never another package.
+- The package menu of the head band: `GET /api/v1/findings?cluster_id=…&cve_id=…&image_digest=…&size=500`
+  (500 is the limit of the read). One row for each package and version, with the scanners that
+  found it (`packagesOnImage`). The menu says so when the image has more findings.
 - Triage: `PATCH /api/v1/findings/{finding_key}/triage` — body `{state, vex_justification?,
   assignee?, notes?}`; `vex_justification` (CISA five) **required iff** `state=not_affected`;
   CAS'd, journaled (D17).

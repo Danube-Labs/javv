@@ -10,6 +10,7 @@ import {
   epssOf,
   kevOn,
   orderEvidence,
+  packagesOnImage,
   primaryRow,
   scopeToPackage,
   severityDisagrees,
@@ -87,12 +88,31 @@ describe('detail view-model (per-scanner sacred)', () => {
       row({ finding_key: 'd', package_name: 'curl', scanner: 'grype' }),
     ]
     const clicked = scopeToPackage(rows, 'curl', '3.0.1')
-    expect(clicked.scoped.map((r) => r.finding_key)).toEqual(['b', 'd'])
-    expect(clicked.otherPackages).toEqual(['libcurl4'])
+    expect(clicked.map((r) => r.finding_key)).toEqual(['b', 'd'])
 
     const deepLink = scopeToPackage(rows, null)
-    expect(deepLink.scoped.map((r) => r.package_name)).toEqual(['libcurl4', 'libcurl4'])
-    expect(scopeToPackage([], 'curl').scoped).toEqual([])
+    expect(deepLink.map((r) => r.package_name)).toEqual(['libcurl4', 'libcurl4'])
+    expect(scopeToPackage([], 'curl')).toEqual([])
+  })
+
+  it('a link to a package that no row has scopes to nothing, never to another package (issue 1227)', () => {
+    const rows = [row({ finding_key: 'a', package_name: 'gcc-10-base' }), row({ finding_key: 'b', package_name: 'gcc-10-base', scanner: 'grype' })]
+    expect(scopeToPackage(rows, 'libasan6', '10.2.1-6')).toEqual([])
+    expect(scopeToPackage(rows, 'libasan6')).toEqual([])
+  })
+
+  it('a link with a version that no row of the package has scopes to nothing (issue 1227)', () => {
+    const rows = [row({ package_name: 'curl', installed_version: '7.74.0' })]
+    expect(scopeToPackage(rows, 'curl', '7.88.1')).toEqual([])
+  })
+
+  it('a link with the package and no version takes the first version of that package', () => {
+    const rows = [
+      row({ finding_key: 'a', package_name: 'libcurl4', installed_version: '7.74.0' }),
+      row({ finding_key: 'b', package_name: 'curl', installed_version: '7.74.0' }),
+      row({ finding_key: 'c', package_name: 'curl', installed_version: '7.74.0', scanner: 'grype' }),
+    ]
+    expect(scopeToPackage(rows, 'curl').map((r) => r.finding_key)).toEqual(['b', 'c'])
   })
 
   it('affected components collapse agreeing scanners into one row, never their versions', () => {
@@ -146,5 +166,40 @@ describe('detail view-model (per-scanner sacred)', () => {
       ['trivy', true],
       ['grype', true],
     ])
+  })
+})
+
+describe('packagesOnImage (issue 1227): the package menu of the head band', () => {
+  it('one row for each package and version, sorted by name, with the scanners that found it', () => {
+    const list = packagesOnImage([
+      row({ package_name: 'perl-base', installed_version: '5.32.1', scanner: 'grype' }),
+      row({ package_name: 'libperl5.32', installed_version: '5.32.1', scanner: 'grype' }),
+      row({ package_name: 'perl-base', installed_version: '5.32.1', scanner: 'trivy' }),
+      row({ package_name: 'libperl5.32', installed_version: '5.32.1', scanner: 'trivy' }),
+      row({ package_name: 'perl', installed_version: '5.32.1', scanner: 'grype' }),
+    ])
+    expect(list).toEqual([
+      { name: 'libperl5.32', version: '5.32.1', scanners: ['trivy', 'grype'] },
+      { name: 'perl', version: '5.32.1', scanners: ['grype'] },
+      { name: 'perl-base', version: '5.32.1', scanners: ['trivy', 'grype'] },
+    ])
+  })
+
+  it('two versions of one package are two rows, the lower version first', () => {
+    const list = packagesOnImage([
+      row({ package_name: 'curl', installed_version: '7.88.1' }),
+      row({ package_name: 'curl', installed_version: '7.74.0' }),
+    ])
+    expect(list.map((p) => p.version)).toEqual(['7.74.0', '7.88.1'])
+  })
+
+  it('a row with no version keeps the package, with a null version', () => {
+    expect(packagesOnImage([row({ installed_version: null })])).toEqual([
+      { name: 'openssl', version: null, scanners: ['trivy'] },
+    ])
+  })
+
+  it('no rows: no packages', () => {
+    expect(packagesOnImage([])).toEqual([])
   })
 })

@@ -11,37 +11,53 @@ import type { FindingRow } from '@/stores/findings'
 export const SCANNER_ORDER = ['trivy', 'grype'] as const
 
 /**
- * A (cve_id, image_digest) query returns one row per PACKAGE per scanner — finding identity
- * includes the package. The evidence table compares like with like: scope to one package
- * (the clicked row's, carried in the URL; deep links without it scope to the first row's) and
- * list the rest in the package menu of the head band (issue 1205).
+ * The read of a finding asks for the package of the link, and its rows are one for each scanner
+ * (finding identity includes the package). The evidence compares like with like: one package
+ * and version. A link that names a package scopes to that package only, never to another one:
+ * the first row of another package once took the head band and the Triage cell (issue 1227).
+ * A link with no package (an old deep link) scopes to the first row's package.
  */
-export function scopeToPackage(
-  rows: FindingRow[],
-  pkg?: string | null,
-  ver?: string | null,
-): { scoped: FindingRow[]; otherPackages: string[] } {
+export function scopeToPackage(rows: FindingRow[], pkg?: string | null, ver?: string | null): FindingRow[] {
   const ordered = orderEvidence(rows)
-  const anchor =
-    (pkg ? ordered.find((r) => r.package_name === pkg && (!ver || r.installed_version === ver)) : null) ??
-    ordered[0]
-  if (!anchor) return { scoped: [], otherPackages: [] }
-  const scoped = ordered.filter(
+  const anchor = pkg
+    ? ordered.find((r) => r.package_name === pkg && (!ver || r.installed_version === ver))
+    : ordered[0]
+  if (!anchor) return []
+  return ordered.filter(
     (r) => r.package_name === anchor.package_name && r.installed_version === anchor.installed_version,
   )
-  const otherPackages = [
-    ...new Set(rows.map((r) => r.package_name).filter((p) => p !== anchor.package_name)),
-  ]
-  return { scoped, otherPackages }
+}
+
+export interface PackageOnImage {
+  name: string
+  version: string | null
+  /** the scanners that found this package and version, in SCANNER_ORDER */
+  scanners: string[]
+}
+
+/** Each package and version of the CVE on the image, for the package menu of the head band. */
+export function packagesOnImage(rows: FindingRow[]): PackageOnImage[] {
+  const byKey = new Map<string, PackageOnImage>()
+  for (const r of rows) {
+    const version = r.installed_version ?? null
+    const key = `${r.package_name}\u0000${version ?? ''}`
+    const p = byKey.get(key) ?? { name: r.package_name, version, scanners: [] }
+    if (!p.scanners.includes(r.scanner)) p.scanners.push(r.scanner)
+    byKey.set(key, p)
+  }
+  return [...byKey.values()]
+    .map((p) => ({ ...p, scanners: [...p.scanners].sort((a, b) => scannerRank(a) - scannerRank(b)) }))
+    .sort((a, b) => a.name.localeCompare(b.name) || (a.version ?? '').localeCompare(b.version ?? '', undefined, { numeric: true }))
 }
 
 /** Evidence rows in fixed scanner order — verbatim rows, never merged. */
 export function orderEvidence(rows: FindingRow[]): FindingRow[] {
-  const rank = (s: string) => {
-    const i = (SCANNER_ORDER as readonly string[]).indexOf(s)
-    return i === -1 ? SCANNER_ORDER.length : i
-  }
-  return [...rows].sort((a, b) => rank(a.scanner) - rank(b.scanner))
+  return [...rows].sort((a, b) => scannerRank(a.scanner) - scannerRank(b.scanner))
+}
+
+function scannerRank(s: string): number {
+  const i = (SCANNER_ORDER as readonly string[]).indexOf(s)
+  return i === -1 ? SCANNER_ORDER.length : i
 }
 
 /** True when the pair disagrees on canonical severity, or a row's precomputed flag says so. */

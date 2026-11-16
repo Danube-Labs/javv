@@ -41,7 +41,16 @@ beforeEach(() => setActivePinia(createPinia()))
 async function head(otherPackages: string[]) {
   await router.push('/findings/CVE-2026-0001?digest=sha256:abc&scanner=trivy&pkg=libperl5.32&ver=5.32.1')
   const w = mount(DetailHead, {
-    props: { cveId: 'CVE-2026-0001', primary, digest: 'sha256:abc', kev: false, disagrees: false, epss: null, otherPackages },
+    props: {
+      cveId: 'CVE-2026-0001',
+      primary,
+      digest: 'sha256:abc',
+      kev: false,
+      disagrees: false,
+      epss: null,
+      packages: ['libperl5.32', ...otherPackages].map((name) => ({ name, version: '5.32.1', scanners: ['trivy'] })),
+      packagesCut: false,
+    },
     global: { plugins: [router] },
     attachTo: document.body,
   })

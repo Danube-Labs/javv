@@ -13,6 +13,7 @@ import DisagreementBadge from '@/components/chips/DisagreementBadge.vue'
 import SevChip from '@/components/chips/SevChip.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import PopoverShell from '@/components/ui/PopoverShell.vue'
+import type { PackageOnImage } from '@/findings/detailViewModel'
 import { fmtAt, num } from '@/findings/format'
 import type { FindingRow } from '@/stores/findings'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -25,9 +26,14 @@ const props = defineProps<{
   kev: boolean
   disagrees: boolean
   epss: { value: number; scanner: string } | null
-  /** the other packages of this CVE on this image */
-  otherPackages: string[]
+  /** each package of this CVE on this image (issue 1227) */
+  packages: PackageOnImage[]
+  /** the image has more findings of this CVE than the read holds */
+  packagesCut: boolean
 }>()
+const otherPackages = computed(() => [
+  ...new Set(props.packages.map((p) => p.name).filter((n) => n !== props.primary?.package_name)),
+])
 
 const route = useRoute()
 // the package menu (issue 1205, P1 with the look M1): each package of this CVE on this image
