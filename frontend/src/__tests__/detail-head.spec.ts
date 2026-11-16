@@ -4,9 +4,6 @@
  * dropdown with each package and version of this CVE on this image. A click opens the finding of
  * that package. The list stops at about nine rows and scrolls (DESIGN.md §2, no unbounded panels).
  */
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-
 import { config, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,6 +11,8 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 
 import DetailHead from '@/components/finding/DetailHead.vue'
 import type { PackageOnImage } from '@/findings/detailViewModel'
+
+import { declarations } from './helpers/componentStyle'
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -227,21 +226,6 @@ describe('the package menu of the head band (issue 1205, S1)', () => {
  */
 const LONG = 'go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc'
 
-/** The declarations of `selector` in the style block of a component, as `property: value`. */
-function declarations(file: string, selector: string): Record<string, string> {
-  const source = readFileSync(resolve(process.cwd(), 'src/components/finding', file), 'utf8')
-  const css = (/<style[^>]*>([\s\S]*?)<\/style>/.exec(source)?.[1] ?? '').replace(/\/\*[\s\S]*?\*\//g, '')
-  const out: Record<string, string> = {}
-  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (!(m[1] ?? '').split(',').map((s) => s.trim()).includes(selector)) continue
-    for (const d of (m[2] ?? '').split(';')) {
-      const [k, ...v] = d.split(':')
-      if (k?.trim()) out[k.trim()] = v.join(':').trim()
-    }
-  }
-  return out
-}
-
 describe('a long package name stays in the head band (issue 1229)', () => {
   it('the button has the full name as its hover text', async () => {
     const w = await head([pk(LONG), pk('perl')], false, LONG)
@@ -250,18 +234,18 @@ describe('a long package name stays in the head band (issue 1229)', () => {
   })
 
   it('the button stays in its fact: the name ends with an ellipsis, the count and the chevron keep one line', () => {
-    expect(declarations('DetailHead.vue', '.fact')).toMatchObject({ 'min-width': '0', 'max-width': '100%' })
-    expect(declarations('PackageMenu.vue', '.pk-dd')).toMatchObject({ 'max-width': '100%' })
+    expect(declarations('components/finding/DetailHead.vue', '.fact')).toMatchObject({ 'min-width': '0', 'max-width': '100%' })
+    expect(declarations('components/finding/PackageMenu.vue', '.pk-dd')).toMatchObject({ 'max-width': '100%' })
     // the button sits 8px to the left of its fact (margin-left: -8px), so it may be 8px wider
-    expect(declarations('PackageMenu.vue', '.pk-btn')).toMatchObject({ 'max-width': 'calc(100% + 8px)', 'margin-left': '-8px' })
-    expect(declarations('PackageMenu.vue', '.pk-btn-name')).toMatchObject({
+    expect(declarations('components/finding/PackageMenu.vue', '.pk-btn')).toMatchObject({ 'max-width': 'calc(100% + 8px)', 'margin-left': '-8px' })
+    expect(declarations('components/finding/PackageMenu.vue', '.pk-btn-name')).toMatchObject({
       'min-width': '0',
       overflow: 'hidden',
       'text-overflow': 'ellipsis',
       'white-space': 'nowrap',
     })
-    expect(declarations('PackageMenu.vue', '.pk-count')).toMatchObject({ flex: 'none', 'white-space': 'nowrap' })
-    expect(declarations('PackageMenu.vue', '.pk-chev')).toMatchObject({ flex: 'none' })
+    expect(declarations('components/finding/PackageMenu.vue', '.pk-count')).toMatchObject({ flex: 'none', 'white-space': 'nowrap' })
+    expect(declarations('components/finding/PackageMenu.vue', '.pk-chev')).toMatchObject({ flex: 'none' })
   })
 
   it('each row of the menu has the full name of its package as its hover text', async () => {
@@ -275,7 +259,7 @@ describe('a long package name stays in the head band (issue 1229)', () => {
     const name = w.find('.fact-val.fact-cut')
     expect(name.text()).toBe(LONG)
     expect(name.attributes('title')).toBe(LONG)
-    expect(declarations('DetailHead.vue', '.fact-cut')).toMatchObject({
+    expect(declarations('components/finding/DetailHead.vue', '.fact-cut')).toMatchObject({
       overflow: 'hidden',
       'text-overflow': 'ellipsis',
       'white-space': 'nowrap',

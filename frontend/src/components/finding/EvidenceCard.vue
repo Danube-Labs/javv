@@ -63,7 +63,7 @@ function verbatimDiffers(r: FindingRow): boolean {
           </tr>
           <tr>
             <td class="attr">Package</td>
-            <td v-for="c in columns" :key="c.scanner" class="mono-cell sm"><template v-if="c.row?.package_name">{{ c.row.package_name }}</template><span v-else class="muted-dash">-</span></td>
+            <td v-for="c in columns" :key="c.scanner" class="mono-cell sm cell-cut" :title="c.row?.package_name || undefined"><template v-if="c.row?.package_name">{{ c.row.package_name }}</template><span v-else class="muted-dash">-</span></td>
           </tr>
           <tr>
             <td class="attr">Fixed in</td>
@@ -104,6 +104,20 @@ function verbatimDiffers(r: FindingRow): boolean {
 </template>
 
 <style scoped>
+/* a value with no space (a Go module path, a pseudo-version) would set the width of its column and
+   push the other scanner out of the card: both scanner columns share the width, a package name
+   keeps one line with its full name as the hover text, and the other values wrap (issue 1231, E1) */
+.compare {
+  table-layout: fixed;
+}
+.compare tbody td {
+  overflow-wrap: anywhere;
+}
+.compare .cell-cut {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .compare .attr-col {
   width: 130px;
 }
