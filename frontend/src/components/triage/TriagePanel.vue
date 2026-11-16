@@ -104,7 +104,7 @@ function undoLast() {
     <div class="triage-body">
       <p v-if="undo && !locked" class="triage-undo" role="status">
         <span>
-          Changed from <b>{{ stateLabel(undo.from) }}</b> to <b>{{ stateLabel(undo.to) }}</b> just now.
+          You changed the state from <b>{{ stateLabel(undo.from) }}</b> to <b>{{ stateLabel(undo.to) }}</b> just now.
         </span>
         <UiButton :disabled="saving" @click="undoLast">Undo</UiButton>
       </p>
@@ -138,7 +138,7 @@ function undoLast() {
       <div class="cell-actions">
         <UiButton ref="more" :aria-expanded="moreOpen" @click="moreOpen = !moreOpen">Note and more…</UiButton>
         <UiButton variant="primary" :disabled="!canSave" @click="save">
-          {{ saving ? 'Saving…' : 'Save to audit trail' }}
+          {{ saving ? 'Saving…' : 'Save' }}
         </UiButton>
       </div>
     </div>

@@ -208,9 +208,11 @@ describe('the lines that explain the state are in the panel (operator, 2026-11-1
   it('T<now: read-only, and the history line is in the panel, even with can_triage', async () => {
     const w = panel({ historical: true })
     expect(disabled(cellSave(w))).toBe(true)
-    expect(cell(w).text()).not.toContain('Viewing history')
+    expect(cell(w).text()).not.toContain('past time')
     await openMore(w)
-    expect(pop(w).text()).toContain('Viewing history')
+    expect(pop(w).find('.triage-locked').text()).toBe(
+      'This page shows the state at a past time. You cannot change it here. To change the state, select Back to now.',
+    )
   })
 })
 
@@ -222,7 +224,7 @@ describe('the risk acceptance button', () => {
     const lead = panel({ canAcceptFinal: true })
     expect(cell(lead).find('.ui-btn--ghost').exists()).toBe(false)
     await openMore(lead)
-    expect(pop(lead).find('.ui-btn--ghost').text()).toContain('Risk-accept')
+    expect(pop(lead).find('.ui-btn--ghost').text()).toBe('Accept the risk of this CVE…')
   })
 
   it('closes the panel and asks the page for the window', async () => {
@@ -236,8 +238,8 @@ describe('the risk acceptance button', () => {
 
 describe('the lines that answer a save stay in the cell (operator, 2026-11-16, B2)', () => {
   it('the save error shows in the cell', () => {
-    const w = panel({ error: 'Changed by someone else. Reload and retry.' })
-    expect(cell(w).find('[role="alert"]').text()).toBe('Changed by someone else. Reload and retry.')
+    const w = panel({ error: 'Another person changed this finding.' })
+    expect(cell(w).find('[role="alert"]').text()).toBe('Another person changed this finding.')
   })
 
   it('shows no Undo until the parent says there is a change to undo', () => {
@@ -251,7 +253,7 @@ describe('the lines that answer a save stay in the cell (operator, 2026-11-16, B
       undo: { from: 'open', to: 'not_affected' },
     })
     const line = cell(w).find('.triage-undo')
-    expect(line.text()).toContain('Changed from Open to Not affected just now.')
+    expect(line.find('span').text()).toBe('You changed the state from Open to Not affected just now.')
     await line.find('button').trigger('click')
     expect(w.emitted('undo')).toHaveLength(1)
     expect(w.emitted('save')).toBeUndefined()
@@ -271,6 +273,55 @@ describe('the lines that answer a save stay in the cell (operator, 2026-11-16, B
     expect(panel({ undo: offer, canTriage: false }).find('.triage-undo').exists()).toBe(false)
     expect(panel({ undo: offer, historical: true }).find('.triage-undo').exists()).toBe(false)
     expect(panel({ undo: offer, saving: true }).find('.triage-undo button').attributes('disabled')).toBeDefined()
+  })
+})
+
+describe('the text of the cell and the panel (strict STE, comments 6880398386 and 6909666536)', () => {
+  it('both Save buttons say Save, and the line under Save names Activity', async () => {
+    const w = panel()
+    expect(cellSave(w).text()).toBe('Save')
+    await openMore(w)
+    expect(popSave(w).text()).toBe('Save')
+    expect(pop(w).find('#triage-notes').attributes('placeholder')).toBe('Add a note for Activity…')
+    expect(pop(w).find('.triage-foot').text()).toBe('JAVV records who saved each change and when. Activity lists the changes.')
+  })
+
+  it('the block of a Risk accepted finding', async () => {
+    const w = panel({ finding: { ...finding, state: 'risk_accepted' }, canAcceptFinal: true })
+    await openMore(w)
+    const block = pop(w).find('.ro-risk')
+    expect(block.find('b').text()).toBe('Set by a decision')
+    expect(block.find('span').text()).toBe(
+      'A decision on this CVE sets this state. The decision has a scope, an approver and an expiry date. ' +
+        'To change this state, use Decisions on this CVE.',
+    )
+  })
+
+  it('the block of a Stale finding', async () => {
+    const w = panel({ finding: { ...finding, state: 'stale' }, canAcceptFinal: true })
+    await openMore(w)
+    const block = pop(w).find('.ro-stale')
+    expect(block.find('b').text()).toBe('Set by JAVV')
+    expect(block.find('span').text()).toBe(
+      'No recent scan confirms this finding. The data can be old. If you set a state, it replaces Stale.',
+    )
+  })
+
+  it('the line of a role that cannot change a risk acceptance', async () => {
+    const w = panel({ finding: { ...finding, state: 'risk_accepted' } })
+    await openMore(w)
+    expect(pop(w).find('.triage-accept-locked').text()).toBe(
+      'To change a risk acceptance, your role must allow risk acceptance (can_accept_audit_final). ' +
+        'You can still assign this finding and add a note.',
+    )
+  })
+
+  it('the line of a role that cannot triage', async () => {
+    const w = panel({ canTriage: false })
+    await openMore(w)
+    expect(pop(w).find('.triage-locked').text()).toBe(
+      'Your role does not allow triage (can_triage). To change the state, ask a triager, a security lead or an admin.',
+    )
   })
 })
 

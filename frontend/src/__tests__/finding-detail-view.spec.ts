@@ -24,6 +24,7 @@ vi.mock('@/api/generated', async (importOriginal) =>
     revokeApiV1DecisionsDecisionIdRevokePost: vi.fn<() => Promise<unknown>>(),
     closeCursorApiV1CursorsClosePost: vi.fn<() => Promise<unknown>>(),
     listClustersApiV1ClustersGet: vi.fn<() => Promise<unknown>>(),
+    triageApiV1FindingsFindingKeyTriagePatch: vi.fn<() => Promise<unknown>>(),
   }),
 )
 vi.mock('@/api/client', () => ({ client: {} }))
@@ -34,6 +35,7 @@ import {
   readAuditLogApiV1AuditGet,
   revokeApiV1DecisionsDecisionIdRevokePost,
   searchFindingsApiV1FindingsGet,
+  triageApiV1FindingsFindingKeyTriagePatch,
 } from '@/api/generated'
 
 const searchMock = vi.mocked(searchFindingsApiV1FindingsGet)
@@ -164,6 +166,21 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     expect(pair.text()).toContain('Decisions on this CVE')
     expect(pair.text()).toContain('Activity on this finding')
     expect(pair.text()).not.toContain('Affected components')
+  })
+
+  it.each([
+    [409, 'Another person changed this finding. Load the page again. Then save your change again.'],
+    [422, 'JAVV did not accept this change of state. Load the page again. Then try again.'],
+    [500, 'JAVV did not save the change. The backend did not answer, or it sent an error. Try again.'],
+  ])('a save that fails with %i: the cell shows the error line (strict STE)', async (status, line) => {
+    vi.mocked(triageApiV1FindingsFindingKeyTriagePatch).mockResolvedValue({
+      data: undefined,
+      response: { ok: false, status },
+    } as never)
+    const w = await mountPage()
+    w.findComponent(TriagePanel).vm.$emit('save', { state: 'acknowledged' })
+    await flushPromises()
+    expect(w.find('aside.triage [role="alert"]').text()).toBe(line)
   })
 
   it('more occurrences than the read holds: the card says so (review F3, the server sends total as an object)', async () => {

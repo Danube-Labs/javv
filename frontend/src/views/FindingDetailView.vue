@@ -210,12 +210,12 @@ async function saveTriage(body: TriagePatchBody, undoing = false) {
     }
     toast.success(undoing ? 'Change undone' : 'Triage saved')
   } else if (response.response?.status === 409) {
-    triageError.value = 'Changed by someone else. Reload and retry.'
+    triageError.value = 'Another person changed this finding. Load the page again. Then save your change again.'
   } else if (response.response?.status === 422) {
-    triageError.value = 'The server rejected this transition. Reload and retry.'
+    triageError.value = 'JAVV did not accept this change of state. Load the page again. Then try again.'
     logger.warn('triage_rejected', { status: 422 })
   } else {
-    triageError.value = 'Save failed. Check the backend connection.'
+    triageError.value = 'JAVV did not save the change. The backend did not answer, or it sent an error. Try again.'
     logger.warn('triage_failed', { status: response.response?.status })
   }
 }

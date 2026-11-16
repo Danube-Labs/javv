@@ -389,8 +389,9 @@ const CHIP_SELECTOR =
   // triage-panel head that joined the same band per the 2026-07-17 ruling, and the inspector
   // cards' panel-band that joined it 2026-07-18, and the badge of a saved card that says who can
   // see the item, ruled 2026-10-29 in issue 1004, and the window head that joined the band the
-  // same day in issue 1049)
-  /\.(time-range-hist|kev-tag|kev-lg|both-tag|state-opt-on|vm-fp|vm-ne|side-item|tbl|triage-head|so-head|modal-head|card-head|assignee-none|panel-band|vc-badge)\b/
+  // same day in issue 1049, and the head of the Triage panel of "Note and more…", ruled dark blue
+  // as the head of a window on 2026-11-16 in issue 1205)
+  /\.(time-range-hist|kev-tag|kev-lg|both-tag|state-opt-on|vm-fp|vm-ne|side-item|tbl|triage-head|so-head|modal-head|pop-head--band|card-head|assignee-none|panel-band|vc-badge)\b/
 
 /**
  * A note in a table head is head text (issue 1205, option C on built pictures, 2026-11-14): it

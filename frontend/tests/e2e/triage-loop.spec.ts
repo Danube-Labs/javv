@@ -16,7 +16,7 @@ test('a triage action persists across reload, then is reverted', async ({ page }
 
   const ack = page.locator('.state-opt', { hasText: 'Acknowledge' })
   const open = page.locator('.state-opt', { hasText: 'Open' })
-  const save = page.locator('button', { hasText: 'Save to audit trail' })
+  const save = page.locator('aside.triage').getByRole('button', { name: 'Save', exact: true })
   const isOn = async (loc: typeof ack) =>
     ((await loc.getAttribute('class')) ?? '').includes('state-opt-on')
 
@@ -71,9 +71,11 @@ test('Undo takes a saved state change back, on the server', async ({ page }) => 
   await expect(undo).toHaveCount(0) // nothing to undo before a save
 
   await (wasAcked ? open : ack).click()
-  await page.locator('button', { hasText: 'Save to audit trail' }).click()
+  await page.locator('aside.triage').getByRole('button', { name: 'Save', exact: true }).click()
   await expect(undo).toContainText(
-    wasAcked ? 'Changed from Acknowledged to Open' : 'Changed from Open to Acknowledged',
+    wasAcked
+      ? 'You changed the state from Acknowledged to Open'
+      : 'You changed the state from Open to Acknowledged',
     { timeout: 15_000 },
   )
 

@@ -130,6 +130,15 @@ describe('section bodies', () => {
     expect(w.text()).toContain(`for example ${CISA_JUSTIFICATIONS[0].label}`)
   })
 
+  it('A state or a risk acceptance names the buttons of the Triage cell and its panel (issue 1205)', () => {
+    const names = mount(StateOrAcceptanceSection).findAll('.ui-name').map((n) => n.text())
+    expect(names).toContain('Note and more…')
+    expect(names).toContain('Accept the risk of this CVE')
+    expect(names.join(' ')).not.toContain('Risk-accept')
+    expect(read('components/triage/TriagePanel.vue')).toContain('>Note and more…</UiButton>')
+    expect(read('components/triage/TriageMorePanel.vue')).toContain('/>Accept the risk of this CVE…')
+  })
+
   it('A state or a risk acceptance has no semicolon (Simplified Technical English)', () => {
     expect(mount(StateOrAcceptanceSection).text()).not.toContain(';')
   })

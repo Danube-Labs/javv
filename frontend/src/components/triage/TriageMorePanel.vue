@@ -48,32 +48,38 @@ const noteText = computed({
   <div class="triage-more">
     <div v-if="historical" class="triage-locked">
       <AppIcon name="clock" :size="13" />
-      Viewing history: reconstructed state is read-only. Return to now to triage.
+      This page shows the state at a past time. You cannot change it here. To change the state, select Back to now.
     </div>
     <div v-else-if="!canTriage" class="triage-locked">
       <AppIcon name="key" :size="13" />
-      Read-only: you don't hold <b>can_triage</b>. Ask an Operator or Security Lead.
+      <span>
+        Your role does not allow triage (<b>can_triage</b>). To change the state, ask a triager, a security
+        lead or an admin.
+      </span>
     </div>
     <p v-if="acceptLocked && !locked" class="triage-locked triage-accept-locked">
       <AppIcon name="key" :size="13" />
       <span>
-        A risk-accept is changed by a Security Lead (<b>can_accept_audit_final</b>). You can still
-        assign this finding and add a note.
+        To change a risk acceptance, your role must allow risk acceptance (<b>can_accept_audit_final</b>).
+        You can still assign this finding and add a note.
       </span>
     </p>
 
     <div v-if="finding.state === 'risk_accepted'" class="ro-state ro-risk">
       <AppIcon name="shield" :size="13" />
       <div>
-        <b>Set by a scoped decision</b>
-        <span>Risk-accept isn't toggled here: it comes from a decision (scope + approver + expiry). Manage it below.</span>
+        <b>Set by a decision</b>
+        <span>
+          A decision on this CVE sets this state. The decision has a scope, an approver and an expiry date. To
+          change this state, use Decisions on this CVE.
+        </span>
       </div>
     </div>
     <div v-if="finding.state === 'stale'" class="ro-state ro-stale">
       <AppIcon name="clock" :size="13" />
       <div>
-        <b>System-set · scanner went silent</b>
-        <span>The scanner stopped reporting this finding; data may be old. A human state change overrides it.</span>
+        <b>Set by JAVV</b>
+        <span>No recent scan confirms this finding. The data can be old. If you set a state, it replaces Stale.</span>
       </div>
     </div>
 
@@ -91,7 +97,7 @@ const noteText = computed({
         v-model="noteText"
         prose
         rows="2"
-        placeholder="Add context for the audit trail…"
+        placeholder="Add a note for Activity…"
         :disabled="locked"
       />
     </UiField>
@@ -99,13 +105,13 @@ const noteText = computed({
     <p v-if="draftError" class="draft-error" role="alert">{{ draftError }}</p>
 
     <UiButton v-if="canAcceptFinal" variant="ghost" block class="btn-gap" :disabled="historical" @click="emit('riskAccept')">
-      <AppIcon name="shield" :size="14" />Risk-accept this CVE…
+      <AppIcon name="shield" :size="14" />Accept the risk of this CVE…
     </UiButton>
     <UiButton variant="primary" block class="btn-gap" :disabled="!canSave" @click="emit('save')">
-      {{ saving ? 'Saving…' : 'Save to audit trail' }}
+      {{ saving ? 'Saving…' : 'Save' }}
     </UiButton>
     <p class="triage-foot">
-      <AppIcon name="clock" :size="11" />Every action records who &amp; when. Deadlines absolute, 24h.
+      <AppIcon name="clock" :size="11" />JAVV records who saved each change and when. Activity lists the changes.
     </p>
   </div>
 </template>
