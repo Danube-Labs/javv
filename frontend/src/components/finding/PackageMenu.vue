@@ -114,7 +114,7 @@ function moveFocus(e: KeyboardEvent) {
           </template>
           <p v-if="!shownPackages.length" class="empty-note pk-note">No package matches.</p>
         </div>
-        <p v-if="packagesCut" class="cap-note pk-note">This menu shows the first {{ packages.length }} packages.</p>
+        <p v-if="packagesCut" class="cap-note pk-note">This menu shows {{ packages.length }} packages. The image has more.</p>
       </div>
     </template>
   </UiDropdown>

@@ -201,6 +201,7 @@ describe('the package menu of the head band (issue 1205, S1)', () => {
   it('a cut list ends with a line that says how many packages the menu shows', async () => {
     const w = await head(three, true)
     await open(w)
-    expect(w.find('.pk-menu .cap-note').text()).toBe('This menu shows the first 3 packages.')
+    // the read holds the first findings in its own order, not the first packages by name
+    expect(w.find('.pk-menu .cap-note').text()).toBe('This menu shows 3 packages. The image has more.')
   })
 })

@@ -314,9 +314,23 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
     expect(w.findComponent(TriagePanel).props('finding')).toMatchObject({ package_name: 'pkg-03' })
   })
 
-  it('a link whose version no row has: the page says that it has no finding, and shows no Triage cell', async () => {
+  it('a link whose version no row has: the page names the package and version it looked for, with no Triage cell', async () => {
     const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc&pkg=pkg-03&ver=9.9.9')
     expect(w.findComponent(TriagePanel).exists()).toBe(false)
-    expect(w.text()).toContain('No current finding for this CVE on this image.')
+    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toBe(
+      'This image has no current finding of CVE-2026-0001 in pkg-03 9.9.9. A newer scan can have removed it, or the selected range ends before a scan found it.',
+    )
+  })
+
+  it('a link with a package and no version: the line names the package alone', async () => {
+    searchMock.mockResolvedValue(ok({ data: [], total: { value: 0, relation: 'eq' } }) as never)
+    const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc&pkg=pkg-99')
+    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('no current finding of CVE-2026-0001 in pkg-99.')
+  })
+
+  it('a link with no package keeps the line of the CVE on the image', async () => {
+    searchMock.mockResolvedValue(ok({ data: [], total: { value: 0, relation: 'eq' } }) as never)
+    const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc')
+    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('No current finding for this CVE on this image.')
   })
 })
