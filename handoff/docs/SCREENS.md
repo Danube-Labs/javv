@@ -666,7 +666,7 @@ copy of the view. Before, the "×" of the card deleted the view at the first cli
 - Per-image severity mix + finding counts: `GET /api/v1/images?cluster_id=…`, the images of the
   last committed inventory — per-scanner counts side-by-side + the `trivy_count`/`grype_count`/`count_delta`
   count-disagreement pair (D5b; per-image, distinct from per-finding `disagree` — V4-DELTA
-  conflict 7). The counts count findings: one CVE in one package version, from one scanner. A
+  conflict 7). The counts count findings: one vulnerability in one package version, from one scanner. A
   report that lists a finding one time for each file counts it one time (issue 1076). An image
   scanned before release 0.9.5 counts the entries of the report until its next scan.
 - Inventory metadata (replicas at last sweep, app, first/last seen): **scheduled — M8c**
@@ -1390,15 +1390,15 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   DESIGN.md §10).
 - **Panel filters (issue 999, decision 2 C):** seven panels can keep findings filters: Findings
   summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components,
-  Top CVEs (issue 1176) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
+  Top vulnerabilities (issue 1176) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
   store ranks the running images under the filters, for the scanner of the panel, and the panel
   pages through at most 100 of them. With no filter it reads `GET /api/v1/images` as before. A
-  row still opens the image page, which does not take the filters. Top CVEs reads
+  row still opens the image page, which does not take the filters. Top vulnerabilities reads
   `GET /api/v1/findings/top-values?by=cve_id` (`components/dashboards/TopCvesPanel.vue`): the store
-  ranks the CVEs by findings under the filters, for one scanner when the panel shows one, and the
+  ranks the vulnerabilities by findings under the filters, for one scanner when the panel shows one, and the
   panel pages through at most 100 of them. Its severity tag is the highest severity of the
-  findings in the count. A row opens Findings on the CVE. At a past time it reads nothing and says "This panel
-  shows only the time now, not the past time that you selected. To see the CVEs, select Back to
+  findings in the count. A row opens Findings on the vulnerability. At a past time it reads nothing and says "This panel
+  shows only the time now, not the past time that you selected. To see the vulnerabilities, select Back to
   now." (operator, 2026-11-09: the words of Top components do not tell a new reader enough). Such a panel
   sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
   kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens

@@ -111,22 +111,22 @@ function goFindings(cve: string) {
   <section class="tbl-card">
     <div class="card-head">
       <div>
-        <h2>Top CVEs</h2>
+        <h2>Top vulnerabilities</h2>
         <p class="card-sub">by findings</p>
       </div>
     </div>
     <p v-if="t !== null" class="empty-row">
-      This panel shows only the time now, not the past time that you selected. To see the CVEs, select Back to now.
+      This panel shows only the time now, not the past time that you selected. To see the vulnerabilities, select Back to now.
     </p>
-    <UiSkeleton v-else-if="!settled" class="skel-pad" :height="220" radius="sm" label="Loading top CVEs" />
-    <p v-else-if="failed" class="empty-row" role="alert">CVE ranking unavailable.</p>
-    <p v-else-if="rows.length === 0" class="empty-row">No CVE in the findings.</p>
+    <UiSkeleton v-else-if="!settled" class="skel-pad" :height="220" radius="sm" label="Loading top vulnerabilities" />
+    <p v-else-if="failed" class="empty-row" role="alert">Vulnerability ranking unavailable.</p>
+    <p v-else-if="rows.length === 0" class="empty-row">No vulnerability in the findings.</p>
     <template v-else>
       <div class="tbl-wrap">
         <table class="tbl tbl-dense tbl-hover">
           <thead>
             <tr>
-              <th>CVE</th>
+              <th>Vulnerability</th>
               <th class="fit">Severity</th>
               <th class="r fit">Findings</th>
             </tr>

@@ -124,9 +124,9 @@ const READS: Record<
   'top-cves': {
     calls: ['topValuesFindingsApiV1FindingsTopValuesGet'],
     empty: [{ by: 'cve_id', values: [] }],
-    loading: 'Loading top CVEs',
-    emptyCopy: 'No CVE in the findings.',
-    errorCopy: 'CVE ranking unavailable.',
+    loading: 'Loading top vulnerabilities',
+    emptyCopy: 'No vulnerability in the findings.',
+    errorCopy: 'Vulnerability ranking unavailable.',
   },
   'scan-ingest': {
     calls: ['scansTrendApiV1TrendsScansGet', 'scannerFreshnessApiV1ScannersFreshnessGet'],
