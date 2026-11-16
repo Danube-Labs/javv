@@ -436,15 +436,30 @@ scanner. Under the head row, at full width: Affected components, then Decisions 
 by side at equal width. Under 1280 px the evidence goes under the head band and the cell, at full
 width. Under 1180 px each row is one column. With no room beside the cell, the panel of "Note and
 more…" opens under the cell, else above it, so it never covers the cell. When the CVE affects more
-than one package on the image, the package name in the head band is a button with the count ("4
-on this image"). It opens "Packages with this CVE" in the kit popover with the dark head, and a
-click opens the finding of that package (P1 with the look M1, 2026-11-14; the dark head
-2026-11-16). The evidence card then has no line for the other packages.
+than one package on the image, the package name in the head band is a button with the count ("18
+on this image"). It opens the package menu `PackageMenu` on the kit dropdown (S1 with the dark
+blue head, 2026-11-16, in place of the panel M1). The head has the title, the count, the image and
+the close button. A filter box shows for more than 8 packages. The list stops at about 9 rows and
+scrolls. Each row has the package, its version and the scanners that found it, and the current
+package has the coral language. A click opens the finding of that package and version. The
+evidence card then has no line for the other packages. The line under Affected
+components names the ID of the page and the selected cluster: `The scanners also found ID in these
+packages and images of cluster NAME.` The card has no note under the table, except the line of a
+cut list (2026-11-16).
 
 **Data**
 - The finding row (all real fields, see DATA_MODEL) from `GET /api/v1/findings?cluster_id=…&cve_id=…&image=…` —
   and the **sibling-scanner row** from the same call without the `scanner` filter: that pair IS
   the per-scanner evidence table (A-3/B-2 — "no black box, no merge").
+  The call also has `package_name` from the link, so the rows are those of the package of the link
+  (issue 1227). If no row has that package and version, the page never shows another package. It
+  names the package and the version it looked for: `This image has no finding of CVE-2023-4039 in
+  libasan6 10.2.1-6 at the selected time.`, then `A newer scan may no longer report it.` and `Or
+  the selected time range may end before a scan found it.`
+- The package menu of the head band: `GET /api/v1/findings?cluster_id=…&cve_id=…&image_digest=…&size=500`
+  (500 is the limit of the read). One row for each package and version, with the scanners that
+  found it (`packagesOnImage`). When the image has more findings, the count has a `+` and the
+  menu ends with `This menu shows N packages. The image has more.`
 - Triage: `PATCH /api/v1/findings/{finding_key}/triage` — body `{state, vex_justification?,
   assignee?, notes?}`; `vex_justification` (CISA five) **required iff** `state=not_affected`;
   CAS'd, journaled (D17).

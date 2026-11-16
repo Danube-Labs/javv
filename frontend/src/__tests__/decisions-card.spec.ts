@@ -96,3 +96,26 @@ describe('a decision past its expiry (issue 984)', () => {
     expect(await revocable(mountLead())).toEqual(['d-live', 'd-open'])
   })
 })
+
+describe('the decisions card text (issue 1205, group 4)', () => {
+  it('the line under the title says what a decision sets and how to change it', () => {
+    expect(card(false, false).find('.card-sub').text()).toBe(
+      'Each decision sets Risk accepted or Not affected for a scope. To change a decision, revoke it and make a new one. Activity lists the state changes of this finding.',
+    )
+  })
+
+  it('the hover of Revoke says how to replace the decision', () => {
+    const revoke = card(false, true).findAll('button').find((b) => b.text() === 'Revoke')!
+    expect(revoke.attributes('title')).toBe('Revoke this decision. To replace it, make a new decision.')
+  })
+
+  it('a list of 50 says that the card shows the first 50 and the Audit log the older ones', () => {
+    const fifty: DecisionRow[] = Array.from({ length: 50 }, (_, i) => ({
+      decision_id: `d-${i}`,
+      type: 'not_affected',
+      created_by: 'tri',
+    }))
+    const w = mount(DecisionsCard, { props: { decisions: fifty, canTriage: false, canAcceptFinal: false, busy: false } })
+    expect(w.find('.cap-note').text()).toBe('This card shows the first 50 decisions. The Audit log shows the older decisions.')
+  })
+})

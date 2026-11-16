@@ -142,3 +142,27 @@ describe('ActivityCard', () => {
     expect(row.find('.action-tag').text()).toBe('some future action')
   })
 })
+
+describe('ActivityCard text (issue 1205, group 4)', () => {
+  const rows = (n: number): ActivityRow[] =>
+    Array.from({ length: n }, (_, i) => ({ event_id: `e-${i}`, action: 'triage', actor: 'tri', '@timestamp': at }))
+
+  it('the line under the title says what a row is', () => {
+    expect(mount(ActivityCard, { props: { activity: rows(1) } }).find('.card-sub').text()).toBe(
+      'Each row is one triage change to this finding, with the person and the time.',
+    )
+  })
+
+  it('an empty list says that there are no triage changes yet', () => {
+    expect(mount(ActivityCard, { props: { activity: [] } }).find('.empty-row').text()).toBe('No triage changes yet.')
+  })
+
+  it('a list of 50 says that the card shows the latest 50 and the Audit log all of them', () => {
+    const w = mount(ActivityCard, { props: { activity: rows(50) } })
+    expect(w.find('.cap-note').text()).toBe('This card shows the latest 50 changes. The Audit log shows all of them.')
+  })
+
+  it('a list under 50 has no line about the cap', () => {
+    expect(mount(ActivityCard, { props: { activity: rows(49) } }).find('.cap-note').exists()).toBe(false)
+  })
+})

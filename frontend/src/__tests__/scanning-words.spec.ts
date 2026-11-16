@@ -34,7 +34,9 @@ describe('the words about the two scanners', () => {
 
   it('the Affected card of a finding does not say never merged', () => {
     const src = read('components/finding/AffectedCard.vue').split('<template>')[1]!
-    expect(src).toContain('sub="across the last committed inventory · one row for each image and package, with its scanners"')
+    expect(src).toContain(
+      ':sub="`The scanners also found ${cveId} in these packages and images of cluster ${clusterName}.`"',
+    )
     expect(src).not.toContain('never merged')
   })
 })

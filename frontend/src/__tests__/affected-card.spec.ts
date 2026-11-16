@@ -28,8 +28,8 @@ const trivy11 = {
   osPackage: false,
 }
 
-const mountCard = (affected: AffectedComponentRow[]) =>
-  mount(AffectedCard, { props: { affected, truncated: false } })
+const mountCard = (affected: AffectedComponentRow[], truncated = false) =>
+  mount(AffectedCard, { props: { affected, truncated, cveId: 'CVE-2026-42496', clusterName: 'alpha' } })
 
 const cells = (w: ReturnType<typeof mountCard>, row = 0) =>
   w.findAll('tbody tr')[row]!.findAll('td').map((td) => td.text())
@@ -139,5 +139,31 @@ describe('AffectedCard Paths column (issue 1077)', () => {
   it('"-" wears the shared empty-value class (review F7)', () => {
     const w = mountCard([comp({ paths: [{ scanner: 'trivy', digest: 'sha256:a', total: null, paths: [], osPackage: false }] })])
     expect(w.find('td .muted-dash').text()).toBe('-')
+  })
+})
+
+describe('AffectedCard text (issue 1205, group 3)', () => {
+  it('the line under the title names the ID of the page and the selected cluster', () => {
+    const w = mount(AffectedCard, {
+      props: { affected: [comp({})], truncated: false, cveId: 'GHSA-9wx4-h78v-vm56', clusterName: 'beta' },
+    })
+    expect(w.find('.card-sub').text()).toBe(
+      'The scanners also found GHSA-9wx4-h78v-vm56 in these packages and images of cluster beta.',
+    )
+  })
+
+  it('a whole list has no note and no empty strip under the table', () => {
+    const w = mountCard([comp({})])
+    expect(w.find('.card-notes').exists()).toBe(false)
+    expect(w.text()).not.toContain('clean bill')
+    expect(w.text()).not.toContain('Workload names')
+    expect(w.text()).not.toContain('the scanners disagree')
+  })
+
+  it('a cut list says how many components the card shows and where to see all of them', () => {
+    const w = mountCard([comp({}), comp({ packageName: 'libc6' }), comp({ packageName: 'perl' })], true)
+    expect(w.find('.card-notes').text().replace(/\s+/g, ' ')).toBe(
+      'This card shows the first 3 components. To see all of them, search for the CVE ID on the Findings page.',
+    )
   })
 })

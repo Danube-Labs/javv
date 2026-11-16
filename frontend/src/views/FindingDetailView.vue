@@ -29,6 +29,7 @@ import TriagePanel from '@/components/triage/TriagePanel.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
+import { usePackagesOnImage } from '@/composables/usePackagesOnImage'
 import {
   affectedComponentRows,
   epssOf,
@@ -70,10 +71,22 @@ const loading = ref(true)
 const failed = ref(false)
 const failedStatus = ref<number | null>(null)
 
+/* the package and version of the link: the row that the user opened */
+const pkg = computed(() => (typeof route.query.pkg === 'string' ? route.query.pkg : null))
+const ver = computed(() =>
+  typeof route.query.ver === 'string' && route.query.ver ? route.query.ver : null,
+)
+
 /* ---- the sibling pair: one query, no scanner filter (A-3) ---- */
 const pairQuery = computed(() =>
   clusterStore.selectedId && cveId.value && digest.value
-    ? withGlobals({ cve_id: [cveId.value], image_digest: digest.value, size: 10 })
+    ? withGlobals({
+        cve_id: [cveId.value],
+        image_digest: digest.value,
+        // the package of the link, so its rows are always in the read (issue 1227)
+        ...(pkg.value ? { package_name: [pkg.value] } : {}),
+        size: 10,
+      })
     : null,
 )
 
@@ -147,14 +160,11 @@ watch(
   { immediate: true },
 )
 
+/* each package of this CVE on this image, for the package menu of the head band (issue 1227) */
+const { packages, cut: packagesCut } = usePackagesOnImage(cveId, digest)
+
 /* ---- view-model: everything reads the PACKAGE-scoped set (one row per scanner) ---- */
-const pkg = computed(() => (typeof route.query.pkg === 'string' ? route.query.pkg : null))
-const ver = computed(() =>
-  typeof route.query.ver === 'string' && route.query.ver ? route.query.ver : null,
-)
-const scope = computed(() => scopeToPackage(rows.value, pkg.value, ver.value))
-const evidence = computed(() => scope.value.scoped)
-const otherPackages = computed(() => scope.value.otherPackages)
+const evidence = computed(() => scopeToPackage(rows.value, pkg.value, ver.value))
 const primary = computed(() => primaryRow(evidence.value, clickedScanner.value))
 const kev = computed(() => kevOn(evidence.value))
 const epss = computed(() => epssOf(evidence.value))
@@ -319,9 +329,16 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
       <p>This link is missing the image identity. Open the finding from the grid.</p>
     </div>
 
-    <div v-else-if="rows.length === 0" class="not-found">
+    <div v-else-if="evidence.length === 0" class="not-found">
       <h1 class="mono">{{ cveId }}</h1>
-      <p>
+      <!-- a link that names a package says which one it looked for: the CVE can still be on the
+           image in other packages (issue 1227) -->
+      <p v-if="pkg">
+        This image has no finding of {{ cveId }} in {{ pkg }}{{ ver ? ` ${ver}` : '' }} at the selected
+        time. A newer scan may no longer report it. Or the selected time range may end before a scan
+        found it.
+      </p>
+      <p v-else>
         No current finding for this CVE on this image. It may have been resolved by a newer
         scan, or the selected range ends before it was first seen.
       </p>
@@ -338,7 +355,8 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           :kev="kev"
           :disagrees="disagrees"
           :epss="epss"
-          :other-packages="otherPackages"
+          :packages="packages"
+          :packages-cut="packagesCut"
         />
         <EvidenceCard
           class="head-ev"
@@ -366,6 +384,8 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
         class="detail-band"
         :affected="affected"
         :truncated="affectedTruncated"
+        :cve-id="cveId"
+        :cluster-name="clusterStore.selected?.cluster_name ?? clusterStore.selectedId ?? ''"
         :failed="affectedFailed"
       />
 

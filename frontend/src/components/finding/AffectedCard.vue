@@ -19,6 +19,9 @@ import type { AffectedComponentRow } from '@/findings/detailViewModel'
 const props = defineProps<{
   affected: AffectedComponentRow[]
   truncated: boolean
+  /** the ID of the page and the selected cluster, for the line under the title */
+  cveId: string
+  clusterName: string
   /** the occurrences read was refused: say so, never "none" (issue 833, F2) */
   failed?: boolean
 }>()
@@ -42,7 +45,7 @@ const pathsId = (i: number) => `affected-paths-${page.value}-${i}`
 <template>
   <DetailCard
     title="Affected components"
-    sub="across the last committed inventory · one row for each image and package, with its scanners"
+    :sub="`The scanners also found ${cveId} in these packages and images of cluster ${clusterName}.`"
     flush
   >
     <template #title>
@@ -87,14 +90,10 @@ const pathsId = (i: number) => `affected-paths-${page.value}-${i}`
       @next="page += 1"
       @update:size="setSize"
     />
-    <div class="card-notes">
-      <p v-if="truncated" class="evidence-note">
-        Showing the first {{ affected.length }} components. More exist. Narrow via the
-        Findings grid (search the CVE id).
-      </p>
+    <div v-if="truncated" class="card-notes">
       <p class="evidence-note">
-        A package listed by one scanner only, or twice with different versions, is a scanner
-        disagreement, not a clean bill. Workload names land with the envelope (v1.1).
+        This card shows the first {{ affected.length }} components. To see all of them, search for
+        the CVE ID on the Findings page.
       </p>
     </div>
   </DetailCard>

@@ -77,7 +77,7 @@ function scopeLabel(d: DecisionRow): string {
 <template>
   <DetailCard
     title="Decisions on this CVE"
-    sub="scoped risk-accept / not-affected RULES (immutable; edits revoke + re-create). Plain state changes are triage actions, listed under Activity"
+    sub="Each decision sets Risk accepted or Not affected for a scope. To change a decision, revoke it and make a new one. Activity lists the state changes of this finding."
     flush
   >
     <template #action>
@@ -112,7 +112,7 @@ function scopeLabel(d: DecisionRow): string {
               <UiButton
                 v-if="canRevoke(d)"
                 :disabled="busy"
-                title="Revoke this decision (create a new one to replace it)"
+                title="Revoke this decision. To replace it, make a new decision."
                 @click="emit('revoke', d.decision_id)"
               >
                 Revoke
@@ -134,7 +134,7 @@ function scopeLabel(d: DecisionRow): string {
       @update:size="setSize"
     />
     <div v-if="decisions.length >= 50" class="card-notes">
-      <p class="cap-note">Showing the first 50 decisions. Older ones via the Audit screen (M9d).</p>
+      <p class="cap-note">This card shows the first 50 decisions. The Audit log shows the older decisions.</p>
     </div>
   </DetailCard>
 </template>
