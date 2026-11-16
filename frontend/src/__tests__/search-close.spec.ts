@@ -199,14 +199,14 @@ describe('one-shot reads close their walk at once', () => {
   const DETAIL = '/findings/CVE-2026-0001?digest=sha256:abc&scanner=trivy&pkg=pkg&ver=1.0'
   const DETAIL_ROUTES = [{ path: '/findings/:cveId', name: 'finding', component: FindingDetailView }]
 
-  it('Finding detail: the pair, the occurrences and the activity', async () => {
+  it('Finding detail: the pair, the occurrences, the packages on the image and the activity', async () => {
+    const label: Record<number, string> = { 10: 'pair', 500: 'packages' } // packages: issue 1227
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(
-      async (opts) =>
-        findingsPage((opts as { query: { size: number } }).query.size === 10 ? 'pair' : 'occ') as never,
+      async (opts) => findingsPage(label[(opts as { query: { size: number } }).query.size] ?? 'occ') as never,
     )
     vi.mocked(readAuditLogApiV1AuditGet).mockResolvedValue(auditPage('activity') as never)
     await mountApp(DETAIL_ROUTES, DETAIL)
-    expect(closed().sort()).toEqual(['activity', 'occ', 'pair'])
+    expect(closed().sort()).toEqual(['activity', 'occ', 'packages', 'pair'])
   })
 
   it('Finding detail at a past T: only the activity, the one read that holds a search', async () => {
