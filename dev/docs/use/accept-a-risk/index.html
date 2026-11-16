@@ -1409,8 +1409,8 @@
 <h1 id="accept-a-risk-with-an-expiry-date">Accept a risk, with an expiry date<a class="headerlink" href="#accept-a-risk-with-an-expiry-date" title="Permanent link">&para;</a></h1>
 <video controls preload="metadata" width="100%" src="../videos/accept-a-risk.mp4"></video>
 
-<p>A risk acceptance applies to one CVE in a scope. It also covers the new findings of that CVE in
-the scope.</p>
+<p>A risk acceptance applies to one vulnerability in a scope. It also covers the new findings of that
+vulnerability in the scope.</p>
 <div class="admonition tip">
 <p class="admonition-title">For AI agents</p>
 <p>Only an agent with a <code>write_risk_accept</code> token can accept a risk. It uses the tool
@@ -1426,15 +1426,16 @@ token cannot see this tool. Ask the user before each risk acceptance.</p>
 <ol>
 <li>Open a finding from the Findings table.</li>
 <li>In the Triage cell, select Note and more.</li>
-<li>Select Accept the risk of this CVE.</li>
-<li>Select a namespace. The acceptance covers this CVE in that namespace. A line in the dialog
-   shows the scope.</li>
+<li>Select Accept the risk of this vulnerability.</li>
+<li>Select a namespace. The acceptance covers this vulnerability in that namespace. A line in the
+   dialog shows the scope.</li>
 <li>Set an expiry date. The first date that you can select is tomorrow in UTC. When this date
    passes, the findings become Open again.</li>
 <li>Write the reason. Other users read it on the Approval list.</li>
-<li>Select Create decision. The risk acceptance is in effect. It shows in Decisions on this CVE.</li>
+<li>Select Create decision. The risk acceptance is in effect. It shows in Decisions on this
+   vulnerability.</li>
 <li>The Approval list shows all the risk acceptances in effect. Open it from the side menu. Each
-   row shows the CVE, the scope, the reason and the expiry date.</li>
+   row shows the vulnerability, the scope, the reason and the expiry date.</li>
 </ol>
 <h2 id="stop-a-risk-acceptance">Stop a risk acceptance<a class="headerlink" href="#stop-a-risk-acceptance" title="Permanent link">&para;</a></h2>
 <ol>
