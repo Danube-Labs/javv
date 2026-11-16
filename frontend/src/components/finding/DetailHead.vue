@@ -60,7 +60,7 @@ const slaTier = computed(() => {
         <div class="fact">
           <em>Package</em>
           <PackageMenu v-if="packages.length > 1" :packages="packages" :packages-cut="packagesCut" :primary="primary" />
-          <span v-else class="fact-val mono-cell">{{ primary?.package_name }}</span>
+          <span v-else class="fact-val mono-cell fact-cut" :title="primary?.package_name">{{ primary?.package_name }}</span>
         </div>
         <div class="fact">
           <em>Image</em>
@@ -162,10 +162,13 @@ const slaTier = computed(() => {
   gap: 14px 28px;
   margin-top: 18px;
 }
+/* a fact is never wider than the head band, so a long package name stays in it (issue 1229) */
 .fact {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
+  max-width: 100%;
 }
 .detail-meta em {
   font-style: normal;
@@ -178,6 +181,11 @@ const slaTier = computed(() => {
 .fact-val {
   font-size: var(--text-body);
   color: var(--ink);
+}
+.fact-cut {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fact-link {
   text-decoration: none;

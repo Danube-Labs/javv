@@ -44,16 +44,19 @@ const shownPackages = computed(() => {
 const isCurrent = (p: PackageOnImage) =>
   p.name === props.primary?.package_name && p.version === (props.primary?.installed_version ?? null)
 /* the focus goes into the menu on open: the filter box, else the first link (Primer SelectPanel),
-   and the list scrolls to the current package, which can be low in a long list. On a close that
-   leaves the focus nowhere, it goes back to the button */
+   and the list scrolls to the current package, which can be low in a long list. On a close, the
+   focus goes back to the button when it is nowhere or still in the menu: the menu stays in the
+   page for its leave motion, and the page body got the focus after it (issue 1229) */
 watch(pkOpen, async (now) => {
+  const menu = pkMenu.value
   await nextTick()
   if (now) {
     pkMenu.value?.querySelector<HTMLElement>('.pk-row.on')?.scrollIntoView({ block: 'nearest' })
     pkMenu.value?.querySelector<HTMLElement>('.search-box input, a.pk-row')?.focus({ preventScroll: true })
   } else {
     pkQuery.value = ''
-    if (!document.activeElement || document.activeElement === document.body) pkBtn.value?.focus()
+    const at = document.activeElement
+    if (!at || at === document.body || menu?.contains(at)) pkBtn.value?.focus()
   }
 })
 /** ArrowDown and ArrowUp move the focus through the filter box and the links */
@@ -70,8 +73,16 @@ function moveFocus(e: KeyboardEvent) {
 <template>
   <UiDropdown v-model:open="pkOpen" class="pk-dd">
     <template #trigger="{ toggle, open }">
-      <button ref="pkBtn" type="button" class="pk-btn" :aria-expanded="open" aria-haspopup="dialog" @click="toggle">
-        <span class="mono-cell">{{ primary?.package_name }}</span>
+      <button
+        ref="pkBtn"
+        type="button"
+        class="pk-btn"
+        :title="primary?.package_name"
+        :aria-expanded="open"
+        aria-haspopup="dialog"
+        @click="toggle"
+      >
+        <span class="mono-cell pk-btn-name">{{ primary?.package_name }}</span>
         <span class="pk-count">{{ packages.length }}{{ packagesCut ? '+' : '' }} on this image</span>
         <AppIcon name="chevron" :size="13" class="pk-chev" :class="{ open }" />
       </button>
@@ -96,7 +107,7 @@ function moveFocus(e: KeyboardEvent) {
           <template v-for="p in shownPackages" :key="`${p.name}|${p.version}`">
             <span v-if="isCurrent(p)" class="pk-row on" aria-current="true">
               <AppIcon name="check" :size="13" class="pk-mark" />
-              <span class="pk-name mono-cell">{{ p.name }}</span>
+              <span class="pk-name mono-cell" :title="p.name">{{ p.name }}</span>
               <span class="pk-ver mono-cell">{{ p.version }}</span>
               <span class="pk-scn"><ScannerTag v-for="sc in p.scanners" :key="sc" :name="sc" /></span>
             </span>
@@ -107,7 +118,7 @@ function moveFocus(e: KeyboardEvent) {
               @click="close()"
             >
               <span class="pk-mark" />
-              <span class="pk-name mono-cell">{{ p.name }}</span>
+              <span class="pk-name mono-cell" :title="p.name">{{ p.name }}</span>
               <span class="pk-ver mono-cell">{{ p.version }}</span>
               <span class="pk-scn"><ScannerTag v-for="sc in p.scanners" :key="sc" :name="sc" /></span>
             </RouterLink>
@@ -125,6 +136,8 @@ function moveFocus(e: KeyboardEvent) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  /* the negative margin lines the name up with its label, so the button may be 8px wider */
+  max-width: calc(100% + 8px);
   height: 30px;
   margin-left: -8px;
   padding: 0 8px;
@@ -146,7 +159,17 @@ function moveFocus(e: KeyboardEvent) {
   outline: var(--focus-ring);
   outline-offset: 1px;
 }
+/* a long name takes the free space and ends with an ellipsis; the count and the chevron keep
+   one line (issue 1229, operator ruling B1 of 2026-11-16 on built pictures) */
+.pk-btn-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pk-count {
+  flex: none;
+  white-space: nowrap;
   padding: 1px 7px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -156,6 +179,7 @@ function moveFocus(e: KeyboardEvent) {
   font-weight: 600;
 }
 .pk-chev {
+  flex: none;
   color: var(--soft);
   transform: rotate(90deg);
   transition: transform 0.12s;
@@ -165,6 +189,7 @@ function moveFocus(e: KeyboardEvent) {
 }
 .pk-dd {
   display: inline-block;
+  max-width: 100%;
 }
 /* the menu: the list stops at about nine rows and scrolls (DESIGN.md §2, no unbounded panels) */
 .pk-menu {
