@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { config, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -280,5 +280,62 @@ describe('a long package name stays in the head band (issue 1229)', () => {
       'text-overflow': 'ellipsis',
       'white-space': 'nowrap',
     })
+  })
+})
+
+/**
+ * The menu stays in the page for its leave motion, with the focus still on a link or on the close
+ * button in it. The focus then went to the page body (issue 1229: a frame trace in the browser
+ * showed it for Escape and for the close button, also with reduced motion). It goes back to the
+ * package button. Test Utils stubs Transition by default, which removes the menu at once and hides
+ * the defect, so these tests run the real Transition.
+ */
+describe('closing the package menu gives the focus back to the button (issue 1229)', () => {
+  beforeEach(() => {
+    config.global.stubs.transition = false
+  })
+  afterEach(() => {
+    config.global.stubs.transition = true
+  })
+  const settle = async () => {
+    await flushPromises()
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+  }
+
+  it('Escape', async () => {
+    const w = await head(three)
+    await open(w)
+    await settle()
+    expect(w.find('.pk-menu').element.contains(document.activeElement)).toBe(true)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await settle()
+    expect(w.find('.pk-menu').exists()).toBe(false)
+    expect(document.activeElement).toBe(pkBtn(w).element)
+  })
+
+  it('the close button', async () => {
+    const w = await head(three)
+    await open(w)
+    await settle()
+    const close = w.find('.pk-head .ui-close')
+    ;(close.element as HTMLElement).focus()
+    await close.trigger('click')
+    await settle()
+    expect(w.find('.pk-menu').exists()).toBe(false)
+    expect(document.activeElement).toBe(pkBtn(w).element)
+  })
+
+  it('a click outside the menu on a field keeps the focus on that field', async () => {
+    const field = document.createElement('input')
+    document.body.appendChild(field)
+    const w = await head(three)
+    await open(w)
+    await settle()
+    field.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    field.focus()
+    await settle()
+    expect(w.find('.pk-menu').exists()).toBe(false)
+    expect(document.activeElement).toBe(field)
   })
 })
