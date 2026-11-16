@@ -328,47 +328,50 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
     </div>
 
     <template v-else>
-      <DetailHead
-        :cve-id="cveId"
-        :primary="primary"
-        :digest="digest"
-        :kev="kev"
+      <!-- issue 1205: the head band and the Triage cell share the first row; the cards follow at
+           full width, Decisions and Activity side by side -->
+      <div class="head-row">
+        <DetailHead
+          :cve-id="cveId"
+          :primary="primary"
+          :digest="digest"
+          :kev="kev"
+          :disagrees="disagrees"
+          :epss="epss"
+        />
+        <TriagePanel
+          v-if="primary"
+          :finding="primary"
+          :can-triage="auth.hasCapability('can_triage')"
+          :can-accept-final="auth.hasCapability('can_accept_audit_final')"
+          :historical="historical"
+          :saving="saving"
+          :error="triageError"
+          :current-user="auth.user?.username ?? null"
+          :undo="undoOffer"
+          @save="saveTriage"
+          @undo="undoTriage"
+          @risk-accept="raOpen = true"
+        />
+      </div>
+
+      <EvidenceCard
+        class="detail-band"
+        :evidence="evidence"
+        :missing-scanners="missingScanners"
         :disagrees="disagrees"
-        :epss="epss"
+        :other-packages="otherPackages"
       />
 
-      <!-- issue-434 ruling: evidence reads left, everything actionable/journal lives in the
-           rail — no full-width cards dangling below the fold -->
-      <div class="detail-grid">
-        <EvidenceCard
-          class="detail-main"
-          :evidence="evidence"
-          :missing-scanners="missingScanners"
-          :disagrees="disagrees"
-          :other-packages="otherPackages"
-        />
+      <AffectedCard
+        class="detail-band"
+        :affected="affected"
+        :truncated="affectedTruncated"
+        :failed="affectedFailed"
+      />
 
-        <div class="detail-rail">
-          <TriagePanel
-            v-if="primary"
-            :finding="primary"
-            :can-triage="auth.hasCapability('can_triage')"
-            :can-accept-final="auth.hasCapability('can_accept_audit_final')"
-            :historical="historical"
-            :saving="saving"
-            :error="triageError"
-            :current-user="auth.user?.username ?? null"
-            :undo="undoOffer"
-            @save="saveTriage"
-            @undo="undoTriage"
-            @risk-accept="raOpen = true"
-          />
-        </div>
-
-        <!-- row 2, same tracks, stretched — decisions and activity sit side by side at
-             equal height (operator, 2026-07-17); the pagers bound their growth -->
+      <div class="card-pair detail-band">
         <DecisionsCard
-          class="detail-main"
           :decisions="decisions"
           :can-accept-final="auth.hasCapability('can_accept_audit_final')"
           :can-triage="auth.hasCapability('can_triage')"
@@ -379,14 +382,6 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
         />
         <ActivityCard :activity="activity" :failed="activityFailed" />
       </div>
-
-      <!-- the widest table gets the full width, below the grid, same edges -->
-      <AffectedCard
-        class="detail-band"
-        :affected="affected"
-        :truncated="affectedTruncated"
-        :failed="affectedFailed"
-      />
 
       <RiskAcceptDialog
         v-if="raOpen && primary"
@@ -416,32 +411,26 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
   color: var(--coral-text);
 }
 
-.detail-grid {
+.head-row {
   display: grid;
-  grid-template-columns: 1.55fr 1fr;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: var(--space-4);
-  /* both tracks stretch to the row: evidence and triage are the same height by
-     construction — no dead space under either (operator, 2026-07-17) */
   align-items: stretch;
-  margin-top: var(--space-6); /* the header is its own band — give it air below */
 }
-.detail-main {
-  min-width: 0;
+.card-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
 }
 @media (max-width: 1180px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
+  .head-row,
+  .card-pair {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
-/* full-width sections below the grid — same edges as the grid, same rhythm */
 .detail-band {
   margin-top: var(--space-4);
-}
-.detail-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
 }
 
 .not-found h1 {

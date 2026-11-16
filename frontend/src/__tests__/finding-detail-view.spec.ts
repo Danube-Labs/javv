@@ -149,6 +149,23 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     for (const c of pairReads()) expect((c[0] as { query: Record<string, unknown> }).query.locations).toBeUndefined()
   })
 
+  it('the head band and the Triage cell share the first row, the cards follow at full width (issue 1205)', async () => {
+    const w = await mountPage()
+    const row = w.find('.head-row')
+    expect(row.find('.detail-head').exists()).toBe(true)
+    expect(row.find('aside.triage').exists()).toBe(true)
+    const titles = ['Per-scanner evidence', 'Affected components', 'Decisions on this CVE', 'Activity on this finding']
+    const order = w
+      .findAll('h2')
+      .map((h) => titles.find((t) => h.text().startsWith(t)))
+      .filter(Boolean)
+    expect(order).toEqual(titles)
+    const pair = w.find('.card-pair')
+    expect(pair.text()).toContain('Decisions on this CVE')
+    expect(pair.text()).toContain('Activity on this finding')
+    expect(pair.text()).not.toContain('Affected components')
+  })
+
   it('more occurrences than the read holds: the card says so (review F3, the server sends total as an object)', async () => {
     searchMock.mockImplementation((async (opts: { query: { image_digest?: string } }) =>
       opts.query.image_digest
