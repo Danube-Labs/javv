@@ -40,6 +40,6 @@ What one finding covers:
 5. To see the paths of the package, select the number in the Paths column of Affected
    components. The paths of each scanner open under the row. For an OS package, Trivy gives no
    path. Grype lists the files that record the package as installed.
-6. Set the state of the finding in the triage panel. The next page shows how.
+6. Set the state of the finding in the Triage cell. The next page shows how.
 
 Next: [Set the state of a finding](set-the-state-of-a-finding.md).

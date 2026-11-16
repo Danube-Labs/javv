@@ -41,15 +41,31 @@ const vexJustification = ref<string | null>(null)
 const notes = ref('')
 const assignee = ref<string | null>(null)
 const moreOpen = ref(false)
+const sentDraft = ref(false)
+
+function clearDraft() {
+  target.value = null
+  vexJustification.value = null
+  notes.value = ''
+  assignee.value = null
+}
 
 watch(
   () => props.finding.finding_key,
   () => {
-    target.value = null
-    vexJustification.value = null
-    notes.value = ''
-    assignee.value = null
+    clearDraft()
+    sentDraft.value = false
     moreOpen.value = false
+  },
+)
+// the note box is out of sight in the panel, so a draft kept after its save would turn Save on
+// again and send the same note twice; a failed save keeps it to try again, and Undo never empties it
+watch(
+  () => props.saving,
+  (now, before) => {
+    if (!before || now || !sentDraft.value) return
+    sentDraft.value = false
+    if (!props.error) clearDraft()
   },
 )
 
@@ -80,6 +96,7 @@ function pickState(s: string) {
 }
 function save() {
   if (!draft.value.body) return
+  sentDraft.value = true
   emit('save', draft.value.body)
   moreOpen.value = false
 }

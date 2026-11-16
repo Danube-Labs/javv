@@ -23,7 +23,7 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
         A state applies to one finding. A finding is one CVE in one package of one image, from one scanner.
       </li>
       <li>
-        You set the state in the triage panel of the finding:
+        You set the state in the Triage cell of the finding:
         <span class="state-row"><StateTag v-for="s in PERSON_STATES" :key="s" :state="s" /></span>
       </li>
       <li>To set a state, your role must allow triage.</li>

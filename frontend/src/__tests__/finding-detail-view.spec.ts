@@ -11,6 +11,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import DecisionsCard from '@/components/triage/DecisionsCard.vue'
 import RiskAcceptDialog from '@/components/triage/RiskAcceptDialog.vue'
 import TriagePanel from '@/components/triage/TriagePanel.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import FindingDetailView from '@/views/FindingDetailView.vue'
 
@@ -181,6 +182,28 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     w.findComponent(TriagePanel).vm.$emit('save', { state: 'acknowledged' })
     await flushPromises()
     expect(w.find('aside.triage [role="alert"]').text()).toBe(line)
+  })
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])('a save from the cell that succeeds (%s): the draft empties only then (review round 1)', async (ok, emptied) => {
+    useAuthStore().user = { username: 'lead', role: 'x', capabilities: ['can_triage'], must_change: false } as never
+    vi.mocked(triageApiV1FindingsFindingKeyTriagePatch).mockResolvedValue(
+      (ok
+        ? { data: { finding: row('trivy', 'acknowledged') }, response: { ok: true, status: 200 } }
+        : { data: undefined, response: { ok: false, status: 409 } }) as never,
+    )
+    const w = await mountPage()
+    const cellSave = () => w.find('aside.triage .ui-btn--primary')
+    await w.findAll('aside.triage .state-opt').find((b) => b.text() === 'Acknowledge')!.trigger('click')
+    await w.findAll('aside.triage button').find((b) => b.text() === 'Note and more…')!.trigger('click')
+    await flushPromises()
+    await w.find('#triage-notes').setValue('checked the image')
+    expect(cellSave().attributes('disabled')).toBeUndefined()
+    await cellSave().trigger('click')
+    await flushPromises()
+    expect(cellSave().attributes('disabled') !== undefined).toBe(emptied)
   })
 
   it('more occurrences than the read holds: the card says so (review F3, the server sends total as an object)', async () => {

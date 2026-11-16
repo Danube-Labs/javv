@@ -325,6 +325,73 @@ describe('the text of the cell and the panel (strict STE, comments 6880398386 an
   })
 })
 
+describe('the draft after a save (review round 1)', () => {
+  async function saveNote(w: W) {
+    await stateBtn(w, 'Acknowledge').trigger('click')
+    await openMore(w)
+    await pop(w).find('#triage-notes').setValue('checked the image')
+    await popSave(w).trigger('click')
+    await w.setProps({ saving: true })
+  }
+
+  it('a save that went through empties the draft, so the note is not sent again', async () => {
+    const w = panel()
+    await saveNote(w)
+    await w.setProps({ saving: false, error: null })
+    expect(disabled(cellSave(w))).toBe(true)
+    await openMore(w)
+    expect((pop(w).find('#triage-notes').element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('a save that failed keeps the draft, so the user can save it again', async () => {
+    const w = panel()
+    await saveNote(w)
+    await w.setProps({ saving: false, error: 'Another person changed this finding.' })
+    expect(disabled(cellSave(w))).toBe(false)
+    await openMore(w)
+    expect((pop(w).find('#triage-notes').element as HTMLTextAreaElement).value).toBe('checked the image')
+  })
+
+  it('Undo leaves a typed note in the draft', async () => {
+    const w = panel({ undo: { from: 'open', to: 'acknowledged' } })
+    await openMore(w)
+    await pop(w).find('#triage-notes').setValue('not yet saved')
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await nextTick()
+    await w.find('.triage-undo button').trigger('click')
+    await w.setProps({ saving: true })
+    await w.setProps({ saving: false, undo: null })
+    await openMore(w)
+    expect((pop(w).find('#triage-notes').element as HTMLTextAreaElement).value).toBe('not yet saved')
+  })
+})
+
+describe('the guards of Save and of the panel (review round 1)', () => {
+  it('while a save runs, both Save buttons are off, with a legal draft', async () => {
+    const w = panel()
+    await stateBtn(w, 'Acknowledge').trigger('click')
+    await openMore(w)
+    await w.setProps({ saving: true })
+    expect(disabled(cellSave(w))).toBe(true)
+    expect(disabled(popSave(w))).toBe(true)
+  })
+
+  it('history turns Save off, also with a legal draft', async () => {
+    const w = panel()
+    await stateBtn(w, 'Acknowledge').trigger('click')
+    expect(disabled(cellSave(w))).toBe(false)
+    await w.setProps({ historical: true })
+    expect(disabled(cellSave(w))).toBe(true)
+  })
+
+  it('history turns the note and the risk button in the panel off', async () => {
+    const w = panel({ historical: true, canAcceptFinal: true })
+    await openMore(w)
+    expect(disabled(pop(w).find('#triage-notes'))).toBe(true)
+    expect(disabled(pop(w).find('.ui-btn--ghost'))).toBe(true)
+  })
+})
+
 describe('another finding', () => {
   it('drops the draft and closes the panel', async () => {
     const w = panel()
