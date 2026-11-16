@@ -9,8 +9,8 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.
     Obey these rules when you call the tools of JAVV:
 
     - Call `list_clusters` first. Most other tools need a `cluster_id` from its answer.
-    - A finding is one CVE in one package version for one scanner. The results of Trivy and
-      Grype stay apart. Do not add them together, and do not merge them.
+    - A finding is one vulnerability in one package version for one scanner. The results of
+      Trivy and Grype stay apart. Do not add them together, and do not merge them.
     - To get the next page of `search_findings` or `audit_log`, send `next_cursor` back as
       `cursor`. A new search with the same tool closes the cursor of your last search. Read all
       the pages that you need before you start the next search.
