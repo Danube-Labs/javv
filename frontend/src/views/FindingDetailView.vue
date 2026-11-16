@@ -334,8 +334,9 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
       <!-- a link that names a package says which one it looked for: the CVE can still be on the
            image in other packages (issue 1227) -->
       <p v-if="pkg">
-        This image has no current finding of {{ cveId }} in {{ pkg }}{{ ver ? ` ${ver}` : '' }}. A newer
-        scan can have removed it, or the selected range ends before a scan found it.
+        This image has no finding of {{ cveId }} in {{ pkg }}{{ ver ? ` ${ver}` : '' }} at the selected
+        time. A newer scan may no longer report it. Or the selected time range may end before a scan
+        found it.
       </p>
       <p v-else>
         No current finding for this CVE on this image. It may have been resolved by a newer

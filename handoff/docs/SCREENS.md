@@ -453,9 +453,9 @@ cut list (2026-11-16).
   the per-scanner evidence table (A-3/B-2 — "no black box, no merge").
   The call also has `package_name` from the link, so the rows are those of the package of the link
   (issue 1227). If no row has that package and version, the page never shows another package. It
-  names the package and the version it looked for: `This image has no current finding of
-  CVE-2023-4039 in libasan6 10.2.1-6.`, then `A newer scan can have removed it, or the selected
-  range ends before a scan found it.`
+  names the package and the version it looked for: `This image has no finding of CVE-2023-4039 in
+  libasan6 10.2.1-6 at the selected time.`, then `A newer scan may no longer report it.` and `Or
+  the selected time range may end before a scan found it.`
 - The package menu of the head band: `GET /api/v1/findings?cluster_id=…&cve_id=…&image_digest=…&size=500`
   (500 is the limit of the read). One row for each package and version, with the scanners that
   found it (`packagesOnImage`). When the image has more findings, the count has a `+` and the
