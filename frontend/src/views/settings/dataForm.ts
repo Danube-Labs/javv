@@ -94,7 +94,7 @@ export interface FamilyRow {
 export const FAMILY_ROWS: FamilyRow[] = [
   {
     pattern: 'javv-finding-occurrences-*',
-    purpose: 'per-scan CVE snapshots: the history, which bounds how far back time-travel reaches',
+    purpose: 'per-scan vulnerability snapshots: the history, which bounds how far back time-travel reaches',
     kind: 'append',
   },
   {

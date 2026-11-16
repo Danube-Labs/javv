@@ -33,6 +33,11 @@ and from Simplified Technical English (STE). The operator accepted it.
   deleted after 24 hours." Google, GitLab and Kubernetes give the same exception.
 - A label in the app can name a column or a role that has the word "user" in it, for example the
   User column of the Audit log. That word is a name on the screen, not the reader.
+- JAVV calls the ID of a finding a vulnerability (issue 1224). A label in the app says "vuln"
+  only where the full word is cut off or makes a column wider: the top bar hint, the Findings
+  search box and the column Unique vulns. The Guide and the docs pages always say
+  "vulnerability". "CVE" stays only in a fact that is true of CVE IDs only, such as the EPSS
+  entry of the glossary.
 
 ## Simplified Technical English
 

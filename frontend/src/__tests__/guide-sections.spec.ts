@@ -82,7 +82,7 @@ describe('section bodies', () => {
   it('Trivy and Grype: the title and the text say what All scanners counts (issue 1140, R4)', () => {
     expect(GUIDE_SECTIONS.find((g) => g.id === 'two-scanners')!.title).toBe('Trivy and Grype side by side')
     const text = mount(TwoScannersSection).text()
-    expect(text).toContain('All scanners shows Trivy and Grype together: a CVE that both report counts once for each.')
+    expect(text).toContain('All scanners shows Trivy and Grype together: a vulnerability that both report counts once for each.')
     expect(text).not.toContain('never added together')
     expect(GUIDE_SECTIONS.map((g) => `${g.title} ${g.summary}`).join(' ')).not.toContain('never merged')
   })
@@ -133,10 +133,10 @@ describe('section bodies', () => {
   it('A state or a risk acceptance names the buttons of the Triage cell and its panel (issue 1205)', () => {
     const names = mount(StateOrAcceptanceSection).findAll('.ui-name').map((n) => n.text())
     expect(names).toContain('Note and more…')
-    expect(names).toContain('Accept the risk of this CVE')
+    expect(names).toContain('Accept the risk of this vulnerability')
     expect(names.join(' ')).not.toContain('Risk-accept')
     expect(read('components/triage/TriagePanel.vue')).toContain('>Note and more…</UiButton>')
-    expect(read('components/triage/TriageMorePanel.vue')).toContain('/>Accept the risk of this CVE…')
+    expect(read('components/triage/TriageMorePanel.vue')).toContain('/>Accept the risk of this vulnerability…')
   })
 
   it('A state or a risk acceptance has no semicolon (Simplified Technical English)', () => {

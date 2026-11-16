@@ -52,7 +52,7 @@ describe('one config drives both components (PLAN gate)', () => {
     // the rendered group titles, not on rail.text() — "Package" is a substring of the
     // "Package type" group that legitimately IS in the rail
     const railGroups = rail.findAll('.facet-title').map((t) => t.text())
-    expect(railGroups).not.toContain('CVE')
+    expect(railGroups).not.toContain('Vulnerability')
     expect(railGroups).not.toContain('Package')
     expect(railGroups).toContain('Package type')
 
@@ -305,7 +305,7 @@ describe('FilterBar several typed values', () => {
     expect(bar.find('.filter-note').exists()).toBe(false)
   })
 
-  it('a removable row names its action for a screen reader; CVE keeps its capitals', async () => {
+  it('a removable row names its action for a screen reader; the Vulnerability field reads in lower case', async () => {
     const bar = mount(FilterBar, {
       props: {
         fields: FINDINGS_FIELDS,
@@ -314,10 +314,10 @@ describe('FilterBar several typed values', () => {
       },
     })
     await bar.find('.add-filter').trigger('click')
-    await bar.findAll('.filter-field').find((b) => b.text().includes('CVE'))?.trigger('click')
-    expect(bar.find('.filter-vsearch input').attributes('placeholder')).toBe('Add CVE…')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('Vulnerability'))?.trigger('click')
+    expect(bar.find('.filter-vsearch input').attributes('placeholder')).toBe('Add vulnerability…')
     expect(bar.find('.filter-menu .facet-row').attributes('aria-label')).toBe('Remove CVE-1')
-    expect(bar.find('.filter-clear-field').text()).toBe('Clear CVE')
+    expect(bar.find('.filter-clear-field').text()).toBe('Clear vulnerability')
   })
 
   it('the pill reads "is one of" for two typed values', () => {
@@ -329,7 +329,7 @@ describe('FilterBar several typed values', () => {
       },
     })
     const pill = bar.find('.fpill')
-    expect(pill.text()).toContain('CVE')
+    expect(pill.text()).toContain('Vulnerability')
     expect(pill.text()).toContain('is one of')
     expect(pill.text()).toContain('CVE-1, CVE-2')
     // the pill truncates long values; the title holds them all

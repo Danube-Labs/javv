@@ -339,7 +339,7 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
         found it.
       </p>
       <p v-else>
-        No current finding for this CVE on this image. It may have been resolved by a newer
+        No current finding for this vulnerability on this image. It may have been resolved by a newer
         scan, or the selected range ends before it was first seen.
       </p>
     </div>

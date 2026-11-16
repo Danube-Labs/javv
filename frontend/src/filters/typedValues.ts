@@ -22,7 +22,7 @@ export function typedValuesToAdd(
   return { add: all.slice(chosen.length), left }
 }
 
-/** A field label inside a sentence: "Add image…", "Clear package", but "Add CVE…". */
+/** A field label inside a sentence: "Add image…", "Clear package". A label in capitals keeps them. */
 export function inText(label: string): string {
   return /^[A-Z]+$/.test(label) ? label : label.toLowerCase()
 }

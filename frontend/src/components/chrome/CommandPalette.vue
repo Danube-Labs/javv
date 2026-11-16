@@ -51,7 +51,7 @@ const rows = computed<Row[]>(() => [
     go: () => void router.push(s.to),
   })),
   ...results.value.cves.map((b) => ({
-    group: 'CVEs',
+    group: 'Vulnerabilities',
     icon: 'alert' as const,
     label: b.key,
     count: b.count,
@@ -121,7 +121,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
             ref="inputEl"
             v-model="text"
             type="text"
-            placeholder="Search CVE, image, namespace, or jump to a screen…"
+            placeholder="Search vulnerability, image, namespace, or jump to a screen…"
             aria-label="Global search"
           />
           <kbd>esc</kbd>

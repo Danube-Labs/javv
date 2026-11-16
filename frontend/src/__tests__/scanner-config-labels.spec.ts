@@ -15,7 +15,7 @@ describe('scannerSettingLabel', () => {
     const grype = ['only_fixed', 'scope', 'scan_timeout']
     for (const key of [...trivy, ...grype]) expect(scannerSettingLabel(key)).not.toBe(key)
     expect(scannerSettingLabel('scan_timeout')).toBe('Scan time limit (seconds)')
-    expect(scannerSettingLabel('ignore_unfixed')).toBe('Skip CVEs with no fix')
+    expect(scannerSettingLabel('ignore_unfixed')).toBe('Skip vulnerabilities with no fix')
   })
 
   it('shows a key it does not know as it is', () => {
@@ -36,7 +36,7 @@ describe('ScannerConfigCard', () => {
     })
     const keys = w.findAll('.cfg-key').map((k) => [k.text(), k.attributes('title')])
     expect(keys).toContainEqual(['Scan time limit (seconds)', 'scan_timeout'])
-    expect(keys).toContainEqual(['Only CVEs with a fix', 'only_fixed'])
+    expect(keys).toContainEqual(['Only vulnerabilities with a fix', 'only_fixed'])
     expect(keys).toContainEqual(['new_flag', 'new_flag'])
     expect(w.text()).toContain('Vulnerability database schema')
     expect(w.text()).not.toContain('vuln DB')

@@ -93,7 +93,7 @@ const pathsId = (i: number) => `affected-paths-${page.value}-${i}`
     <div v-if="truncated" class="card-notes">
       <p class="evidence-note">
         This card shows the first {{ affected.length }} components. To see all of them, search for
-        the CVE ID on the Findings page.
+        the vulnerability ID on the Findings page.
       </p>
     </div>
   </DetailCard>

@@ -19,7 +19,7 @@ describe('the words about the two scanners', () => {
   it('the banner of Scanning says what All scanners counts', () => {
     const banner = read('views/settings/ScanningView.vue').split('class="scanner-banner"')[1]!.split('</div>')[0]!
     expect(banner.replace(/\s+/g, ' ')).toContain(
-      '<b>All scanners</b> shows Trivy and Grype together: a CVE that both report counts once for each.',
+      '<b>All scanners</b> shows Trivy and Grype together: a vulnerability that both report counts once for each.',
     )
     expect(banner).not.toMatch(/never merged|double-counting/)
   })
@@ -27,7 +27,7 @@ describe('the words about the two scanners', () => {
   it('the head note of Findings says how the two scanners count, in plain words (issue 1152)', () => {
     const src = read('views/FindingsView.vue').split('<template>')[1]!
     expect(src).toContain(
-      '<p class="head-note">Trivy and Grype count apart: a CVE that both report counts once for each</p>',
+      '<p class="head-note">Trivy and Grype count apart: a vulnerability that both report counts once for each</p>',
     )
     expect(src).not.toMatch(/cross-merge|per-scanner/)
   })

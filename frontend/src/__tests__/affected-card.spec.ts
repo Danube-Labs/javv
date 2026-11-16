@@ -163,7 +163,7 @@ describe('AffectedCard text (issue 1205, group 3)', () => {
   it('a cut list says how many components the card shows and where to see all of them', () => {
     const w = mountCard([comp({}), comp({ packageName: 'libc6' }), comp({ packageName: 'perl' })], true)
     expect(w.find('.card-notes').text().replace(/\s+/g, ' ')).toBe(
-      'This card shows the first 3 components. To see all of them, search for the CVE ID on the Findings page.',
+      'This card shows the first 3 components. To see all of them, search for the vulnerability ID on the Findings page.',
     )
   })
 })

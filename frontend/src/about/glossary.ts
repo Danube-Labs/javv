@@ -45,20 +45,20 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     term: { filter: 'fixable' },
-    body: 'The scanner names a version of the package that fixes this CVE.',
+    body: 'The scanner names a version of the package that fixes this vulnerability.',
   },
   {
     term: { filter: 'disagree' },
     chip: 'disagree',
     body:
-      'Trivy and Grype report the same CVE in the same package of this image, with different ' +
+      'Trivy and Grype report the same vulnerability in the same package of this image, with different ' +
       'severities. Both findings stay as reported; JAVV doesn’t decide which one is right.',
   },
   {
     term: { filter: 'overdue' },
     body:
       'Past the deadline your SLA policy sets for its severity. The clock starts the first time ' +
-      'either scanner reported the CVE on that image. Risk-accepted, not-affected and resolved ' +
+      'either scanner reported the vulnerability on that image. Risk-accepted, not-affected and resolved ' +
       'findings never count.',
   },
   {
@@ -69,7 +69,7 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     term: { text: 'First seen' },
     body:
       'When this scanner first reported this finding on this image. Each scanner keeps its own, ' +
-      'so the same CVE can show two different first-seen times.',
+      'so the same vulnerability can show two different first-seen times.',
   },
   {
     term: { text: 'Last seen · Last scan' },

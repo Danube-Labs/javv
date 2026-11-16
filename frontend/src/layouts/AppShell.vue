@@ -116,7 +116,7 @@ onUnmounted(() => {
         <div class="topbar-right">
           <button type="button" class="global-search" aria-label="Global search" @click="paletteOpen = true">
             <AppIcon name="search" :size="14" />
-            <span class="gs-hint">Search CVE, image, namespace…</span>
+            <span class="gs-hint">Search vuln, image, namespace…</span>
             <kbd>{{ metaKeyLabel }}K</kbd>
           </button>
           <NotificationBell />

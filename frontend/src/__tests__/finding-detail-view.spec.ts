@@ -162,14 +162,14 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     expect(row.find('aside.triage').exists()).toBe(true)
     // three panels, in this order: the head band, the evidence, the Triage cell (operator, 2026-11-16)
     expect([...row.element.children].map((c) => c.classList[0])).toEqual(['detail-head', 'card', 'triage'])
-    const titles = ['Per-scanner evidence', 'Affected components', 'Decisions on this CVE', 'Activity on this finding']
+    const titles = ['Per-scanner evidence', 'Affected components', 'Decisions on this vulnerability', 'Activity on this finding']
     const order = w
       .findAll('h2')
       .map((h) => titles.find((t) => h.text().startsWith(t)))
       .filter(Boolean)
     expect(order).toEqual(titles)
     const pair = w.find('.card-pair')
-    expect(pair.text()).toContain('Decisions on this CVE')
+    expect(pair.text()).toContain('Decisions on this vulnerability')
     expect(pair.text()).toContain('Activity on this finding')
     expect(pair.text()).not.toContain('Affected components')
   })
@@ -217,7 +217,7 @@ describe('FindingDetailView after a decision (issue 910)', () => {
         ? ok({ data: [row('trivy', state)], total: { value: 1, relation: 'eq' } })
         : ok({ data: [row('trivy', state)], total: { value: 300, relation: 'eq' } })) as never)
     const w = await mountPage()
-    expect(w.text()).toContain('To see all of them, search for the CVE ID on the Findings page.')
+    expect(w.text()).toContain('To see all of them, search for the vulnerability ID on the Findings page.')
   })
 })
 
@@ -331,6 +331,6 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
   it('a link with no package keeps the line of the CVE on the image', async () => {
     searchMock.mockResolvedValue(ok({ data: [], total: { value: 0, relation: 'eq' } }) as never)
     const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc')
-    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('No current finding for this CVE on this image.')
+    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('No current finding for this vulnerability on this image.')
   })
 })

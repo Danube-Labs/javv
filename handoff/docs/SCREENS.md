@@ -305,7 +305,7 @@ one value. A second pick adds the value, and the filter bar reads "is one of". I
 bar reads "is none of", and the grid leaves out the rows with any of the values. Scanner takes one
 value.
 
-**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, CVE and Package
+**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, Vulnerability and Package
 also take more than one value. In the filter bar's edit box, Enter adds the typed value to a list
 under the input, and the box stays open for the next value. A click on a value in the list removes
 it. A pick from a table cell adds the value, and the same pick again removes it. A pasted list with
@@ -435,7 +435,7 @@ tiles under the facts. The evidence keeps its shape: one row for each field, one
 scanner. Under the head row, at full width: Affected components, then Decisions and Activity side
 by side at equal width. Under 1280 px the evidence goes under the head band and the cell, at full
 width. Under 1180 px each row is one column. With no room beside the cell, the panel of "Note and
-more…" opens under the cell, else above it, so it never covers the cell. When the CVE affects more
+more…" opens under the cell, else above it, so it never covers the cell. When the vulnerability affects more
 than one package on the image, the package name in the head band is a button with the count ("18
 on this image"). It opens the package menu `PackageMenu` on the kit dropdown (S1 with the dark
 blue head, 2026-11-16, in place of the panel M1). The head has the title, the count, the image and
@@ -463,7 +463,7 @@ cut list (2026-11-16).
 - Triage: `PATCH /api/v1/findings/{finding_key}/triage` — body `{state, vex_justification?,
   assignee?, notes?}`; `vex_justification` (CISA five) **required iff** `state=not_affected`;
   CAS'd, journaled (D17).
-- Decisions on this CVE: `GET /api/v1/decisions?cluster_id=…&cve_id=…` (active / revoked
+- Decisions on this vulnerability: `GET /api/v1/decisions?cluster_id=…&cve_id=…` (active / revoked
   struck-through / expired). Risk-accept: `POST /api/v1/decisions` (type `risk_accepted`
   additionally requires `can_accept_audit_final` — SEC-2 → 403 without); edit =
   `PATCH /api/v1/decisions/{id}` (revoke+new, D40); revoke = `POST …/revoke`.
@@ -666,7 +666,7 @@ copy of the view. Before, the "×" of the card deleted the view at the first cli
 - Per-image severity mix + finding counts: `GET /api/v1/images?cluster_id=…`, the images of the
   last committed inventory — per-scanner counts side-by-side + the `trivy_count`/`grype_count`/`count_delta`
   count-disagreement pair (D5b; per-image, distinct from per-finding `disagree` — V4-DELTA
-  conflict 7). The counts count findings: one CVE in one package version, from one scanner. A
+  conflict 7). The counts count findings: one vulnerability in one package version, from one scanner. A
   report that lists a finding one time for each file counts it one time (issue 1076). An image
   scanned before release 0.9.5 counts the entries of the report until its next scan.
 - Inventory metadata (replicas at last sweep, app, first/last seen): **scheduled — M8c**
@@ -768,14 +768,14 @@ conflict 2).
 
 **Columns:** CVE (mono) · type · **scope** (images and/or namespaces; empty = cluster-wide) ·
 justification · approver · **expiry** (expired decisions resurface) · status (active / revoked
-struck-through / expired) · when. Row → finding detail's "Decisions on this CVE".
+struck-through / expired) · when. Row → finding detail's "Decisions on this vulnerability".
 
 **States:** loading; empty ("no pending decisions"); 403 (nav hidden); degraded. A refused read
 keeps the rail's values with "-" for each count, since the counts come with the rows (operator
 ruling 2026-10-13, issue 833).
 
 **Filters (issue 952):** Status and Approver take several values. A second pick adds the value,
-and the pill reads "is one of" (or "is none of" in exclude mode). Scanner and the CVE search take
+and the pill reads "is one of" (or "is none of" in exclude mode). Scanner and the vulnerability search take
 one value, as on Findings. The Approver counts leave out the Approver filter, so a picked approver
 does not hide the others. The Status counts follow the pick, as Severity does on Findings. A
 filter stops at 32 values, the API cap, and the rail and the edit box show "A filter takes at most
@@ -1173,8 +1173,8 @@ BLOCKED (D-3).
 ## 15. Global search (bolt: **M9f**)
 
 **Data:** three scoped, server-paged queries against the shipped read — no search endpoint is
-invented: CVE match `GET /api/v1/findings?cluster_id=…&cve_id=<q>` · image match
-`…&image=<q>` · namespace match `…&namespace=<q>`. Grouped dropdown (CVEs → finding detail;
+invented: vulnerability match `GET /api/v1/findings?cluster_id=…&cve_id=<q>` · image match
+`…&image=<q>` · namespace match `…&namespace=<q>`. Grouped dropdown (Vulnerabilities → finding detail;
 images → image detail; namespaces → filtered Findings). Package-name search: the filter family's
 coverage of `package_name` must be **verified at M9f kickoff**; if absent, that result group is
 dropped (not client-filtered).
@@ -1390,15 +1390,15 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   DESIGN.md §10).
 - **Panel filters (issue 999, decision 2 C):** seven panels can keep findings filters: Findings
   summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components,
-  Top CVEs (issue 1176) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
+  Top vulnerabilities (issue 1176) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
   store ranks the running images under the filters, for the scanner of the panel, and the panel
   pages through at most 100 of them. With no filter it reads `GET /api/v1/images` as before. A
-  row still opens the image page, which does not take the filters. Top CVEs reads
+  row still opens the image page, which does not take the filters. Top vulnerabilities reads
   `GET /api/v1/findings/top-values?by=cve_id` (`components/dashboards/TopCvesPanel.vue`): the store
-  ranks the CVEs by findings under the filters, for one scanner when the panel shows one, and the
+  ranks the vulnerabilities by findings under the filters, for one scanner when the panel shows one, and the
   panel pages through at most 100 of them. Its severity tag is the highest severity of the
-  findings in the count. A row opens Findings on the CVE. At a past time it reads nothing and says "This panel
-  shows only the time now, not the past time that you selected. To see the CVEs, select Back to
+  findings in the count. A row opens Findings on the vulnerability. At a past time it reads nothing and says "This panel
+  shows only the time now, not the past time that you selected. To see the vulnerabilities, select Back to
   now." (operator, 2026-11-09: the words of Top components do not tell a new reader enough). Such a panel
   sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
   kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens

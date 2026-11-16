@@ -333,7 +333,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           <template v-if="grid.totalKnown">{{ grid.total.toLocaleString('en-US') }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> findings</span>
         </p>
-        <p class="head-note">Trivy and Grype count apart: a CVE that both report counts once for each</p>
+        <p class="head-note">Trivy and Grype count apart: a vulnerability that both report counts once for each</p>
       </div>
       <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
     </div>
@@ -343,7 +343,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         <UiSearchBox
           card
           :model-value="filters.selections.q?.[0] ?? ''"
-          placeholder="CVE, image, namespace…"
+          placeholder="Vuln, image, namespace…"
           aria-label="Search findings (contains match)"
           @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
         />

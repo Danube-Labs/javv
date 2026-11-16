@@ -135,7 +135,7 @@ function goFindings(pkg: string) {
           <thead>
             <tr>
               <th>Component</th>
-              <th class="r fit">Unique CVEs</th>
+              <th class="r fit">Unique vulns</th>
             </tr>
           </thead>
           <tbody>

@@ -263,7 +263,7 @@ describe('saved views — the stored text filters are one-value lists (issue 949
 
   it('summary: the card names the stored text filters', () => {
     expect(presetSummary(FINDINGS_FIELDS, STORED as never)).toBe(
-      'Image "registry.local/api" · CVE is not "CVE-2021-3711"',
+      'Image "registry.local/api" · Vulnerability is not "CVE-2021-3711"',
     )
   })
 
@@ -317,7 +317,7 @@ describe('saved views — several typed values (issue 949 PR C)', () => {
   it('the card names every typed value', () => {
     expect(presetSummary(FINDINGS_FIELDS, { image_repo: ['api', 'web'] } as never)).toBe('Image is one of "api", "web"')
     expect(presetSummary(FINDINGS_FIELDS, { exclude_cve_id: ['CVE-1', 'CVE-2'] } as never)).toBe(
-      'CVE is none of "CVE-1", "CVE-2"',
+      'Vulnerability is none of "CVE-1", "CVE-2"',
     )
   })
 

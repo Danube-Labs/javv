@@ -93,11 +93,11 @@ async function submit() {
 </script>
 
 <template>
-  <ModalShell title="Risk-accept this CVE" :subtitle="cveId" :width="560" @close="emit('close')">
+  <ModalShell title="Risk-accept this vulnerability" :subtitle="cveId" :width="560" @close="emit('close')">
       <div>
         <div class="ra-anchor">
           <span class="mono-cell strong">{{ cveId }}</span>
-          <span class="ra-anchor-note">A decision anchors on the CVE + scope, so a package bump auto-inherits it.</span>
+          <span class="ra-anchor-note">A decision anchors on the vulnerability + scope, so a package bump auto-inherits it.</span>
         </div>
 
         <UiField label="Scope · namespaces" hint="none selected = cluster-wide">

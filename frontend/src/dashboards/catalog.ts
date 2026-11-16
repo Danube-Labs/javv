@@ -163,9 +163,9 @@ export const PANELS: readonly CatalogPanel[] = [
   },
   {
     id: 'top-cves',
-    name: 'Top CVEs',
+    name: 'Top vulnerabilities',
     group: 'Findings',
-    line: 'The CVEs with the most findings, with their highest severity.',
+    line: 'The vulnerabilities with the most findings, with their highest severity.',
     component: TopCvesPanel,
     defaultWidth: 1,
     heights: { short: 13, tall: 26 },

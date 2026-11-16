@@ -161,7 +161,7 @@ describe('TopCvesPanel (self-contained panel)', () => {
     await flushPromises()
     expect(readMock).not.toHaveBeenCalled()
     expect(w.text()).toContain(
-      'This panel shows only the time now, not the past time that you selected. To see the CVEs, select Back to now.',
+      'This panel shows only the time now, not the past time that you selected. To see the vulnerabilities, select Back to now.',
     )
   })
 
@@ -181,15 +181,15 @@ describe('TopCvesPanel (self-contained panel)', () => {
     let resolve!: (v: unknown) => void
     readMock.mockReturnValueOnce(new Promise((r) => (resolve = r)) as never)
     const { w } = mountPanel()
-    expect(w.find('[aria-label="Loading top CVEs"]').exists()).toBe(true)
-    expect(w.text()).not.toContain('No CVE in the findings') // no claim before evidence
+    expect(w.find('[aria-label="Loading top vulnerabilities"]').exists()).toBe(true)
+    expect(w.text()).not.toContain('No vulnerability in the findings') // no claim before evidence
     resolve(ok({ values: [] }))
     await flushPromises()
-    expect(w.text()).toContain('No CVE in the findings.')
+    expect(w.text()).toContain('No vulnerability in the findings.')
     readMock.mockResolvedValueOnce({ data: null, response: { ok: false, status: 500 } } as never)
     const failed = mountPanel().w
     await flushPromises()
-    expect(failed.text()).toContain('CVE ranking unavailable.')
+    expect(failed.text()).toContain('Vulnerability ranking unavailable.')
   })
 
   it('an OK reply whose body could not be read is a failed read, not a throw (issue 749)', async () => {
@@ -204,6 +204,6 @@ describe('TopCvesPanel (self-contained panel)', () => {
     })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('CVE ranking unavailable.')
+    expect(w.text()).toContain('Vulnerability ranking unavailable.')
   })
 })
