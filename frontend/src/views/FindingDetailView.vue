@@ -328,8 +328,8 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
     </div>
 
     <template v-else>
-      <!-- issue 1205: the head band and the Triage cell share the first row; the cards follow at
-           full width, Decisions and Activity side by side -->
+      <!-- issue 1205: the head band, the evidence and the Triage cell share the first row; the
+           cards follow at full width, Decisions and Activity side by side -->
       <div class="head-row">
         <DetailHead
           :cve-id="cveId"
@@ -338,6 +338,13 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           :kev="kev"
           :disagrees="disagrees"
           :epss="epss"
+        />
+        <EvidenceCard
+          class="head-ev"
+          :evidence="evidence"
+          :missing-scanners="missingScanners"
+          :disagrees="disagrees"
+          :other-packages="otherPackages"
         />
         <TriagePanel
           v-if="primary"
@@ -354,14 +361,6 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           @risk-accept="raOpen = true"
         />
       </div>
-
-      <EvidenceCard
-        class="detail-band"
-        :evidence="evidence"
-        :missing-scanners="missingScanners"
-        :disagrees="disagrees"
-        :other-packages="otherPackages"
-      />
 
       <AffectedCard
         class="detail-band"
@@ -411,11 +410,25 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
   color: var(--coral-text);
 }
 
+/* three panels (operator, 2026-11-16): the head band, the evidence and the Triage cell; the
+   evidence goes under them below 1280 px, and all three stack below 1180 px */
 .head-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 300px;
+  grid-template-areas: 'head ev triage';
   gap: var(--space-4);
   align-items: stretch;
+}
+.head-row > :deep(.detail-head) {
+  grid-area: head;
+}
+.head-ev {
+  grid-area: ev;
+  min-width: 0;
+}
+/* TriagePanel has two roots (the cell and its popover), so this page's scope does not reach it */
+.head-row > :deep(.triage) {
+  grid-area: triage;
 }
 .card-pair {
   display: grid;
@@ -423,8 +436,17 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
   gap: var(--space-4);
   align-items: stretch;
 }
+@media (max-width: 1279px) {
+  .head-row {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas: 'head triage' 'ev ev';
+  }
+}
 @media (max-width: 1180px) {
-  .head-row,
+  .head-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'head' 'triage' 'ev';
+  }
   .card-pair {
     grid-template-columns: minmax(0, 1fr);
   }

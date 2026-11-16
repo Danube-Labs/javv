@@ -113,11 +113,13 @@ const slaTier = computed(() => {
 /* prototype .detail-head family, on tokens. Deviation from the prototype (recorded in the
    original PR): the 4px severity side-stripe is dropped — side-stripe accents are a banned
    pattern; severity is carried by the solid chip in the title row instead. */
+/* the head band is one of three panels, so the CVSS, EPSS and SLA tiles go under the facts
+   (issue 1205, operator 2026-11-16) */
 .detail-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -195,6 +197,7 @@ const slaTier = computed(() => {
    (stat-card grammar per the operator's Nuxt UI reference — ours, on tokens) */
 .risk-band {
   flex: none;
+  align-self: stretch;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--line);
@@ -203,10 +206,11 @@ const slaTier = computed(() => {
 }
 .risk-cell {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 20px;
-  min-width: 104px;
+  padding: 12px 16px;
+  min-width: 0;
 }
 .risk-cell + .risk-cell {
   border-left: 1px solid var(--line2);

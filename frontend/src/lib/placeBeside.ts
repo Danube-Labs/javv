@@ -1,7 +1,9 @@
 /**
  * Where a popover goes next to the element it belongs to: on its right when there is room, else
- * on its left, else over its top edge under the trigger, else above the trigger. Viewport
- * coordinates, as `getBoundingClientRect` gives them, for a `position: fixed` popover.
+ * on its left, else over its top edge under the trigger, else above the trigger. With `under`, the
+ * last two are under the whole element, else above it, so a wide element stays in view (issue
+ * 1205: the Triage cell at full width). Viewport coordinates, as `getBoundingClientRect` gives
+ * them, for a `position: fixed` popover.
  */
 export interface Box {
   left: number
@@ -31,7 +33,7 @@ const ARROW_INSET = 16
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Math.max(lo, hi)))
 
-export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point): Placed {
+export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point, under = false): Placed {
   const point = trigger ?? { x: anchor.right, y: anchor.top + ARROW_INSET }
   let side: Placed['side'] = 'below'
   let left = clamp(anchor.right - size.width, POPOVER_MARGIN, view.width - size.width - POPOVER_MARGIN)
@@ -43,9 +45,16 @@ export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point
     left = anchor.left - POPOVER_GAP - size.width
   }
   if (side === 'below') {
+    // under a wide element the trigger can be anywhere along it: centre on the trigger
+    if (under) left = clamp(point.x - size.width / 2, POPOVER_MARGIN, view.width - size.width - POPOVER_MARGIN)
     const arrow = clamp(point.x - left, ARROW_INSET, size.width - ARROW_INSET)
-    if (anchor.top + POPOVER_GAP + size.height <= view.height - POPOVER_MARGIN) {
-      return { left, top: anchor.top + POPOVER_GAP, side, arrow }
+    const below = under ? anchor.bottom + POPOVER_GAP : anchor.top + POPOVER_GAP
+    if (below + size.height <= view.height - POPOVER_MARGIN) {
+      return { left, top: below, side, arrow }
+    }
+    if (under) {
+      const top = clamp(anchor.top - POPOVER_GAP - size.height, POPOVER_MARGIN, view.height - size.height - POPOVER_MARGIN)
+      return { left, top, side: 'above', arrow }
     }
     // no room under the top edge: above the trigger, the arrow pointing down at it
     const top = clamp(point.y - POPOVER_GAP - size.height, POPOVER_MARGIN, view.height - size.height - POPOVER_MARGIN)

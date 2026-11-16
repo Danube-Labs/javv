@@ -167,6 +167,7 @@ function undoLast() {
   <PopoverShell
     v-if="moreOpen && cell"
     band
+    under
     title="Triage"
     :subtitle="finding.cve_id"
     :anchor="cell"

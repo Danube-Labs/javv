@@ -57,6 +57,27 @@ describe('where the popover goes', () => {
     expect(placed.arrow).toBe(1300 - placed.left)
   })
 
+  it('under the element, when a panel asks for it and no side has room (issue 1205)', () => {
+    // a full-width Triage cell with its trigger at the foot: the popover must not cover the cell
+    const placed = placeBeside(box(270, 300, 1400, 560), size, view, { x: 500, y: 540 }, true)
+    expect(placed.side).toBe('below')
+    expect(placed.top).toBe(560 + POPOVER_GAP)
+    // centred on the trigger, so the arrow points at it and not at the far end of the cell
+    expect(placed.left).toBe(500 - size.width / 2)
+    expect(placed.arrow).toBe(size.width / 2)
+  })
+
+  it('above the element, when a panel asks to go under it but the screen has no room there', () => {
+    const placed = placeBeside(box(270, 500, 1400, 760), size, view, { x: 500, y: 740 }, true)
+    expect(placed.side).toBe('above')
+    expect(placed.top).toBe(500 - POPOVER_GAP - size.height)
+  })
+
+  it('a side wins over the place under the element', () => {
+    const placed = placeBeside(box(850, 340, 1150, 830), size, view, { x: 1000, y: 800 }, true)
+    expect(placed.side).toBe('left')
+  })
+
   it('stays inside the screen when the panel is near an edge', () => {
     const low = placeBeside(box(270, 820, 820, 1300), size, view, { x: 720, y: 812 })
     expect(low.top).toBe(view.height - size.height - POPOVER_MARGIN)

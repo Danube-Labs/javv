@@ -23,6 +23,8 @@ const props = defineProps<{
   width?: number
   /** the dark head of the window heads (issue 1205) */
   band?: boolean
+  /** with no room on a side, go under the whole anchor, not over its top edge (issue 1205) */
+  under?: boolean
 }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -38,6 +40,7 @@ function measure() {
     { width: card.value.offsetWidth, height: card.value.offsetHeight },
     { width: window.innerWidth, height: window.innerHeight },
     t ? { x: t.left + t.width / 2, y: t.top + t.height / 2 } : undefined,
+    props.under,
   )
   headHeight.value = card.value.querySelector<HTMLElement>('.pop-head')?.offsetHeight ?? 0
 }

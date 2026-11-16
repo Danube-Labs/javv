@@ -152,11 +152,14 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     for (const c of pairReads()) expect((c[0] as { query: Record<string, unknown> }).query.locations).toBeUndefined()
   })
 
-  it('the head band and the Triage cell share the first row, the cards follow at full width (issue 1205)', async () => {
+  it('the head band, the evidence and the Triage cell share the first row, the cards follow at full width (issue 1205)', async () => {
     const w = await mountPage()
     const row = w.find('.head-row')
     expect(row.find('.detail-head').exists()).toBe(true)
+    expect(row.text()).toContain('Per-scanner evidence')
     expect(row.find('aside.triage').exists()).toBe(true)
+    // three panels, in this order: the head band, the evidence, the Triage cell (operator, 2026-11-16)
+    expect([...row.element.children].map((c) => c.classList[0])).toEqual(['detail-head', 'card', 'triage'])
     const titles = ['Per-scanner evidence', 'Affected components', 'Decisions on this CVE', 'Activity on this finding']
     const order = w
       .findAll('h2')
