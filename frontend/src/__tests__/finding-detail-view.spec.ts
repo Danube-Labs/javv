@@ -8,6 +8,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
+import AffectedCard from '@/components/finding/AffectedCard.vue'
 import DecisionsCard from '@/components/triage/DecisionsCard.vue'
 import RiskAcceptDialog from '@/components/triage/RiskAcceptDialog.vue'
 import TriagePanel from '@/components/triage/TriagePanel.vue'
@@ -215,6 +216,31 @@ describe('FindingDetailView after a decision (issue 910)', () => {
         ? ok({ data: [row('trivy', state)], total: { value: 1, relation: 'eq' } })
         : ok({ data: [row('trivy', state)], total: { value: 300, relation: 'eq' } })) as never)
     const w = await mountPage()
-    expect(w.text()).toContain('More exist.')
+    expect(w.text()).toContain('To see all of them, search for the CVE ID on the Findings page.')
+  })
+})
+
+describe('FindingDetailView, the Affected card (issue 1205, group 3)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    searchMock.mockResolvedValue(ok({ data: [row('trivy', 'open')], total: { value: 1, relation: 'eq' } }) as never)
+    vi.mocked(listDecisionsApiV1DecisionsGet).mockResolvedValue(ok({ decisions: [] }) as never)
+    vi.mocked(readAuditLogApiV1AuditGet).mockResolvedValue(ok({ data: [] }) as never)
+    vi.mocked(closeCursorApiV1CursorsClosePost).mockResolvedValue(ok({}) as never)
+  })
+
+  it('gets the ID of the page and the name of the selected cluster', async () => {
+    useClusterStore().clusters = [{ cluster_id: 'c-1', cluster_name: 'alpha' }] as never
+    useClusterStore().selectedId = 'c-1'
+    const w = await mountPage()
+    expect(w.findComponent(AffectedCard).props()).toMatchObject({ cveId: 'CVE-2026-0001', clusterName: 'alpha' })
+  })
+
+  it('gets the cluster id when the cluster list does not have the selected cluster', async () => {
+    useClusterStore().clusters = [] as never
+    useClusterStore().selectedId = 'c-1'
+    const w = await mountPage()
+    expect(w.findComponent(AffectedCard).props('clusterName')).toBe('c-1')
   })
 })

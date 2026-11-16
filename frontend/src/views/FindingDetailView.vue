@@ -366,6 +366,8 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
         class="detail-band"
         :affected="affected"
         :truncated="affectedTruncated"
+        :cve-id="cveId"
+        :cluster-name="clusterStore.selected?.cluster_name ?? clusterStore.selectedId ?? ''"
         :failed="affectedFailed"
       />
 
