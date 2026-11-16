@@ -6,6 +6,7 @@ the SDK answers a 2026-07-28 request and an `initialize` of each older version, 
 id. The endpoint is not there when `JAVV_MCP_ENABLED` is off. Real OpenSearch."""
 
 import json
+import re
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -729,6 +730,21 @@ async def test_the_input_schema_of_each_tool_refuses_other_arguments(mcp_on):
     assert {n: s.get("additionalProperties") for n, s in schemas.items()} == dict.fromkeys(
         schemas, False
     )
+
+
+async def test_the_text_that_an_agent_reads_says_vulnerability_not_cve(mcp_on):
+    """Scanners give IDs that are not CVE IDs (GHSA, GO, DLA…), so "CVE" as a word is wrong for
+    them (issue 1224). The text is the answer of tools/list to a token that sees every tool, and
+    the instructions of the server. IDs such as CVE-2026-1234 and names such as cve_id pass."""
+    async with _endpoint() as (http, client):
+        _, raw = await _token(client, level="write_risk_accept")
+        r = await http.post(PATH, **_modern("tools/list", **_bearer(raw)))
+    listed = r.json()["result"]["tools"]
+    assert {t["name"] for t in listed} == {tool.name for tool in mcp_server.TOOLS}
+    texts = {t["name"]: json.dumps({k: v for k, v in t.items() if k != "name"}) for t in listed}
+    texts["instructions"] = mcp_server.INSTRUCTIONS
+    word = re.compile(r"\bCVEs?\b(?!-)")
+    assert {name: word.findall(text) for name, text in texts.items() if word.search(text)} == {}
 
 
 def test_the_strict_tool_changes_only_what_it_does_with_other_arguments():
