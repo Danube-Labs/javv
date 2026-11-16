@@ -436,10 +436,13 @@ scanner. Under the head row, at full width: Affected components, then Decisions 
 by side at equal width. Under 1280 px the evidence goes under the head band and the cell, at full
 width. Under 1180 px each row is one column. With no room beside the cell, the panel of "Note and
 more…" opens under the cell, else above it, so it never covers the cell. When the CVE affects more
-than one package on the image, the package name in the head band is a button with the count ("4
-on this image"). It opens "Packages with this CVE" in the kit popover with the dark head, and a
-click opens the finding of that package (P1 with the look M1, 2026-11-14; the dark head
-2026-11-16). The evidence card then has no line for the other packages. The line under Affected
+than one package on the image, the package name in the head band is a button with the count ("18
+on this image"). It opens the package menu `PackageMenu` on the kit dropdown (S1 with the dark
+blue head, 2026-11-16, in place of the panel M1). The head has the title, the count, the image and
+the close button. A filter box shows for more than 8 packages. The list stops at about 9 rows and
+scrolls. Each row has the package, its version and the scanners that found it, and the current
+package has the coral language. A click opens the finding of that package and version. The
+evidence card then has no line for the other packages. The line under Affected
 components names the ID of the page and the selected cluster: `The scanners also found ID in these
 packages and images of cluster NAME.` The card has no note under the table, except the line of a
 cut list (2026-11-16).
