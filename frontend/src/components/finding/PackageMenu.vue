@@ -43,12 +43,14 @@ const shownPackages = computed(() => {
 })
 const isCurrent = (p: PackageOnImage) =>
   p.name === props.primary?.package_name && p.version === (props.primary?.installed_version ?? null)
-/* the focus goes into the menu on open: the filter box, else the first link (Primer SelectPanel);
-   on a close that leaves the focus nowhere, it goes back to the button */
+/* the focus goes into the menu on open: the filter box, else the first link (Primer SelectPanel),
+   and the list scrolls to the current package, which can be low in a long list. On a close that
+   leaves the focus nowhere, it goes back to the button */
 watch(pkOpen, async (now) => {
   await nextTick()
   if (now) {
-    pkMenu.value?.querySelector<HTMLElement>('.search-box input, a.pk-row')?.focus()
+    pkMenu.value?.querySelector<HTMLElement>('.pk-row.on')?.scrollIntoView({ block: 'nearest' })
+    pkMenu.value?.querySelector<HTMLElement>('.search-box input, a.pk-row')?.focus({ preventScroll: true })
   } else {
     pkQuery.value = ''
     if (!document.activeElement || document.activeElement === document.body) pkBtn.value?.focus()

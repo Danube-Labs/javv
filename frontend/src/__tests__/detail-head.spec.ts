@@ -6,7 +6,7 @@
  */
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import DetailHead from '@/components/finding/DetailHead.vue'
@@ -42,7 +42,11 @@ afterEach(() => {
   for (const w of wrappers.splice(0)) w.unmount()
   document.body.innerHTML = ''
 })
-beforeEach(() => setActivePinia(createPinia()))
+beforeEach(() => {
+  setActivePinia(createPinia())
+  // jsdom has no scrollIntoView; every browser has it
+  Element.prototype.scrollIntoView = () => {}
+})
 
 async function head(packages: PackageOnImage[], packagesCut = false) {
   await router.push('/findings/CVE-2026-0001?digest=sha256:abc&scanner=trivy&pkg=libperl5.32&ver=5.32.1')
@@ -180,6 +184,18 @@ describe('the package menu of the head band (issue 1205, S1)', () => {
     await w.find('.pk-list').trigger('keydown', { key: 'ArrowUp' })
     await w.find('.pk-list').trigger('keydown', { key: 'ArrowUp' })
     expect(document.activeElement).toBe(input.element)
+  })
+
+  it('on open, the list scrolls the current package into view, so a current row low in the list shows', async () => {
+    const seen: string[] = []
+    // a stub records the row that the menu scrolls to
+    const stub = vi.fn<(this: HTMLElement) => void>(function (this: HTMLElement) {
+      seen.push(this.querySelector('.pk-name')?.textContent ?? '')
+    })
+    Element.prototype.scrollIntoView = stub
+    const w = await head(twelve)
+    await open(w)
+    expect(seen).toEqual(['libperl5.32'])
   })
 
   it('a cut list ends with a line that says how many packages the menu shows', async () => {
