@@ -41,7 +41,7 @@ generated client is stale.
 | `npm run lint` | oxlint, ESLint and stylelint. The first two run with `--fix`, so review the diff after |
 | `npm run test:ci` | `vue-tsc` type check, then vitest with the coverage floor. Run this, not `npm run test`, before pushing |
 | `npm run smoke` | the route walk (`scripts/ci-smoke.mjs`): a built app against a seeded backend, desktop viewport, zero console errors, layout checks |
-| `npm run test:e2e` | the Playwright specs in `tests/e2e/`, same environment as the smoke |
+| `npm run test:e2e` | the Playwright specs in `tests/e2e/`, same environment as the smoke. `development/standards/testing.md` §4 tells which specs can also run alone against the dev stack |
 
 The last two need a running backend and `JAVV_BASE`, `JAVV_USER` and `JAVV_PASS`; see the headers
 of `scripts/ci-smoke.mjs` and `playwright.config.ts`. `npm run build` type-checks and builds `dist/`.
