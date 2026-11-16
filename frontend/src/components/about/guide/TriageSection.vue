@@ -18,7 +18,7 @@ const PERSON_STATES = PANEL_TARGETS.map((t) => t.state)
         <span class="state-row"><StateTag v-for="s in PERSON_STATES" :key="s" :state="s" /></span>
       </li>
       <li>
-        <strong>Set by a risk acceptance:</strong> <StateTag state="risk_accepted" />. You accept a CVE for
+        <strong>Set by a risk acceptance:</strong> <StateTag state="risk_accepted" />. You accept a vulnerability for
         a scope (some namespaces or images, or the whole cluster) with an optional expiry. A namespace or
         cluster scope also covers matching findings that appear later; an image scope doesn't.
       </li>

@@ -468,7 +468,7 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     const text = w.text()
     expect(text).not.toContain('No occurrences returned.')
     expect(text).not.toContain('No triage changes yet.')
-    expect(text).not.toContain('No decisions on this CVE yet.')
+    expect(text).not.toContain('No decisions on this vulnerability yet.')
     expect(text.match(/Could not be loaded\./g)).toHaveLength(3)
     expect(w.find('.count-badge').text()).toBe('-')
     const newDecision = w.findAll('button').find((b) => b.text().includes('New decision'))!

@@ -76,7 +76,7 @@ function scopeLabel(d: DecisionRow): string {
 
 <template>
   <DetailCard
-    title="Decisions on this CVE"
+    title="Decisions on this vulnerability"
     sub="Each decision sets Risk accepted or Not affected for a scope. To change a decision, revoke it and make a new one. Activity lists the state changes of this finding."
     flush
   >
@@ -92,7 +92,7 @@ function scopeLabel(d: DecisionRow): string {
         </thead>
         <tbody>
           <tr v-if="rows.length === 0">
-            <td colspan="7" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No decisions on this CVE yet.' }}</td>
+            <td colspan="7" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No decisions on this vulnerability yet.' }}</td>
           </tr>
           <tr v-for="d in shown" :key="d.decision_id" :class="{ 'dec-inactive': d.status !== 'active' }">
             <!-- an ignore rule gives the finding risk_accepted: it wears that tag -->

@@ -224,7 +224,7 @@ describe('the risk acceptance button', () => {
     const lead = panel({ canAcceptFinal: true })
     expect(cell(lead).find('.ui-btn--ghost').exists()).toBe(false)
     await openMore(lead)
-    expect(pop(lead).find('.ui-btn--ghost').text()).toBe('Accept the risk of this CVE…')
+    expect(pop(lead).find('.ui-btn--ghost').text()).toBe('Accept the risk of this vulnerability…')
   })
 
   it('closes the panel and asks the page for the window', async () => {
@@ -292,8 +292,8 @@ describe('the text of the cell and the panel (strict STE, comments 6880398386 an
     const block = pop(w).find('.ro-risk')
     expect(block.find('b').text()).toBe('Set by a decision')
     expect(block.find('span').text()).toBe(
-      'A decision on this CVE sets this state. The decision has a scope, an approver and an expiry date. ' +
-        'To change this state, use Decisions on this CVE.',
+      'A decision on this vulnerability sets this state. The decision has a scope, an approver and an expiry date. ' +
+        'To change this state, use Decisions on this vulnerability.',
     )
   })
 
@@ -397,7 +397,7 @@ describe('the guards of Save and of the panel (review round 1)', () => {
     const w = panel({ historical: true, canAcceptFinal: true })
     await openMore(w)
     expect(disabled(pop(w).find('#triage-notes'))).toBe(true)
-    const risk = pop(w).findAll('button').find((b) => b.text() === 'Accept the risk of this CVE…')!
+    const risk = pop(w).findAll('button').find((b) => b.text() === 'Accept the risk of this vulnerability…')!
     expect(disabled(risk)).toBe(true)
   })
 })

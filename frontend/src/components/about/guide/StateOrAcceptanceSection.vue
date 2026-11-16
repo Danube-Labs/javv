@@ -14,13 +14,13 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
   <GuideProse>
     <p>
       You can handle a finding in two ways. You can set a state on one finding. You can accept the risk of
-      one CVE for a scope.
+      one vulnerability for a scope.
     </p>
 
     <p><strong>Set a state</strong></p>
     <ul>
       <li>
-        A state applies to one finding. A finding is one CVE in one package of one image, from one scanner.
+        A state applies to one finding. A finding is one vulnerability in one package of one image, from one scanner.
       </li>
       <li>
         You set the state in the Triage cell of the finding:
@@ -39,12 +39,12 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
     <p><strong>Accept the risk</strong></p>
     <ul>
       <li>
-        A risk acceptance applies to one CVE in a scope. The scope is some namespaces, some images, or the
+        A risk acceptance applies to one vulnerability in a scope. The scope is some namespaces, some images, or the
         whole cluster.
       </li>
       <li>
         You create a risk acceptance on a finding. Select <span class="ui-name">Note and more…</span>, then
-        <span class="ui-name">Accept the risk of this CVE</span>. You write a reason. You can set an expiry
+        <span class="ui-name">Accept the risk of this vulnerability</span>. You write a reason. You can set an expiry
         date.
       </li>
       <li>To create or revoke a risk acceptance, your role must allow risk acceptance.</li>
@@ -77,7 +77,7 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
       </li>
       <li>
         A revoked risk acceptance is not on the Approval list. It stays on the finding, in
-        <span class="ui-name">Decisions on this CVE</span>, with a line through it.
+        <span class="ui-name">Decisions on this vulnerability</span>, with a line through it.
       </li>
       <li>To see the Approval list, your role must allow risk acceptance.</li>
     </ul>
@@ -95,11 +95,11 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
     <ol>
       <li>Open the finding. Its state is Open.</li>
       <li>Select <span class="ui-name">Note and more…</span>.</li>
-      <li>Select <span class="ui-name">Accept the risk of this CVE</span>.</li>
+      <li>Select <span class="ui-name">Accept the risk of this vulnerability</span>.</li>
       <li>Select the namespace as the scope.</li>
       <li>Write the reason.</li>
       <li>Set an expiry date.</li>
-      <li>Save. JAVV sets Risk accepted on each Open finding of this CVE in that namespace.</li>
+      <li>Save. JAVV sets Risk accepted on each Open finding of this vulnerability in that namespace.</li>
       <li>The risk acceptance is now on the Approval list.</li>
       <li>Before the expiry date, examine the risk acceptance on the Approval list.</li>
       <li>

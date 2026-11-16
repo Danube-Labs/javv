@@ -70,8 +70,8 @@ const noteText = computed({
       <div>
         <b>Set by a decision</b>
         <span>
-          A decision on this CVE sets this state. The decision has a scope, an approver and an expiry date. To
-          change this state, use Decisions on this CVE.
+          A decision on this vulnerability sets this state. The decision has a scope, an approver and an expiry date. To
+          change this state, use Decisions on this vulnerability.
         </span>
       </div>
     </div>
@@ -105,7 +105,7 @@ const noteText = computed({
     <p v-if="draftError" class="draft-error" role="alert">{{ draftError }}</p>
 
     <UiButton v-if="canAcceptFinal" variant="ghost" block class="btn-gap" :disabled="historical" @click="emit('riskAccept')">
-      <AppIcon name="shield" :size="14" />Accept the risk of this CVE…
+      <AppIcon name="shield" :size="14" />Accept the risk of this vulnerability…
     </UiButton>
     <UiButton variant="primary" block class="btn-gap" :disabled="!canSave" @click="emit('save')">
       {{ saving ? 'Saving…' : 'Save' }}

@@ -435,7 +435,7 @@ tiles under the facts. The evidence keeps its shape: one row for each field, one
 scanner. Under the head row, at full width: Affected components, then Decisions and Activity side
 by side at equal width. Under 1280 px the evidence goes under the head band and the cell, at full
 width. Under 1180 px each row is one column. With no room beside the cell, the panel of "Note and
-more…" opens under the cell, else above it, so it never covers the cell. When the CVE affects more
+more…" opens under the cell, else above it, so it never covers the cell. When the vulnerability affects more
 than one package on the image, the package name in the head band is a button with the count ("18
 on this image"). It opens the package menu `PackageMenu` on the kit dropdown (S1 with the dark
 blue head, 2026-11-16, in place of the panel M1). The head has the title, the count, the image and
@@ -463,7 +463,7 @@ cut list (2026-11-16).
 - Triage: `PATCH /api/v1/findings/{finding_key}/triage` — body `{state, vex_justification?,
   assignee?, notes?}`; `vex_justification` (CISA five) **required iff** `state=not_affected`;
   CAS'd, journaled (D17).
-- Decisions on this CVE: `GET /api/v1/decisions?cluster_id=…&cve_id=…` (active / revoked
+- Decisions on this vulnerability: `GET /api/v1/decisions?cluster_id=…&cve_id=…` (active / revoked
   struck-through / expired). Risk-accept: `POST /api/v1/decisions` (type `risk_accepted`
   additionally requires `can_accept_audit_final` — SEC-2 → 403 without); edit =
   `PATCH /api/v1/decisions/{id}` (revoke+new, D40); revoke = `POST …/revoke`.
@@ -768,7 +768,7 @@ conflict 2).
 
 **Columns:** CVE (mono) · type · **scope** (images and/or namespaces; empty = cluster-wide) ·
 justification · approver · **expiry** (expired decisions resurface) · status (active / revoked
-struck-through / expired) · when. Row → finding detail's "Decisions on this CVE".
+struck-through / expired) · when. Row → finding detail's "Decisions on this vulnerability".
 
 **States:** loading; empty ("no pending decisions"); 403 (nav hidden); degraded. A refused read
 keeps the rail's values with "-" for each count, since the counts come with the rows (operator

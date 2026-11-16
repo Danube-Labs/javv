@@ -98,8 +98,8 @@ describe('the package menu of the head band (issue 1205, S1)', () => {
     expect(menu.classes()).toContain('dd-menu')
     // a menu holds no form field (Primer), and this one has a filter box: it is a dialog, as SelectPanel
     expect(menu.attributes('role')).toBe('dialog')
-    expect(menu.attributes('aria-label')).toBe('Packages with this CVE')
-    expect(menu.find('.pk-head .pk-title').text()).toBe('Packages with this CVE · 3')
+    expect(menu.attributes('aria-label')).toBe('Packages with this vulnerability')
+    expect(menu.find('.pk-head .pk-title').text()).toBe('Packages with this vulnerability · 3')
     expect(menu.find('.pk-head .pk-img').text()).toBe('docker.io/library/postgres:13.4')
     expect(menu.find('.pk-head .ui-close').classes()).toContain('ui-close--dark')
     expect(pkBtn(w).attributes('aria-expanded')).toBe('true')
