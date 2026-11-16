@@ -20,10 +20,16 @@ alpha. The pictures are also on branch `visual-assets`, folder `1205/settled/`.
 | Q4 text | The Triage cell and panel (group 2) use the text of comment 6880398386. This includes "Save", the line under Save, "Add a note for Activity…" and "Accept the risk of this CVE…". It also includes the blocks of a Stale finding, of a Risk accepted finding and of a role that cannot change a risk acceptance. "Note and more…" stays. | `text-triage-cell-and-panel.png` | PR C of the plan |
 | Package menu | The menu of P1 has the look M1: the kit panel `PopoverShell` beside the package name. It has an arrow, the title "Packages with this CVE", the image and a close button. The current package has a check mark. The operator rejected the first menu (too close to the card) and M2 (a dropdown with a gap and a deep shadow). | `package-menu-m1.png` | PR C of the plan |
 | PR B, 2026-11-15 | Paths on the Findings list shows by default. A user who moved columns before gets it after Package. A hide of Paths reads nothing, and a show reads the page again only when the rows on screen lack their paths (option 3). | Examples in the session, no picture: the rulings are about reads and order, not looks. | PR 1219 |
+| PR C1, 2026-11-16 | The lines that explain the state go in the panel of "Note and more…" (1B). These are the history line, the two role lines and the blocks of a Risk accepted and a Stale finding. The Undo line and the save error stay in the cell (B2), because they answer a save in the cell. | `c1-ruled-choices.png`, `c1-save-lines-in-cell.png` | PR C1 |
+| PR C1, 2026-11-16 | A click on Not affected in the cell opens the panel at the reason (2A). | `c1-ruled-choices.png` | PR C1 |
+| PR C1, 2026-11-16 | The risk acceptance window keeps the title "Risk-accept this CVE" (3A). | `c1-ruled-choices.png` | PR C1 |
+| PR C1, 2026-11-16 | The head of the "Note and more…" panel is dark blue, as the head of a window. `PopoverShell` gets a property that a panel must turn on, so the other panels keep their light head. When the arrow points from the head, the arrow is dark blue too. | `c1-ruled-choices.png` | PR C1 |
+| PR C1, 2026-11-16 | The text of the state lines in strict STE is the 11 rows of comment 6909666536. The rows include the history line, the role lines, the Undo line and the save errors. | `c1-ruled-choices.png` | PR C1 |
+| PR C2, 2026-11-16 | Affected components, the line under the title: `The scanners also found ID in these packages and images of cluster NAME.` ID is the ID of the page (a CVE, GHSA or GO ID). The note under the table goes. Comment 6910056927. | No picture: a text ruling. | PR C2 |
 
 ## Still open
 
-Nothing in the UI and the text. The operator plans the PRs next.
+Nothing in the UI and the text. The word for an ID that is not a CVE ID is issue 1224.
 
 ## Where the rounds are
 
@@ -34,3 +40,5 @@ Nothing in the UI and the text. The operator plans the PRs next.
 - Round 5: comment 6879978982 (`r5-*.png`).
 - Text round: comments 6880398386, 6880583694 (a correction), 6880711120 and 6881237662 (`t1-*.png`, `t2-*.png`, `t3-*.png`).
 - Package menu: comment 6881679933 (`t4-package-menu.png`).
+- PR C1 questions: comments 6908924347 (kickoff), 6909055761 (pictures `c1-q*.png`), 6909666536
+  (the text table) and 6910056927 (the rulings).
