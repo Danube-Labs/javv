@@ -30,6 +30,7 @@ alpha. The pictures are also on branch `visual-assets`, folder `1205/settled/`.
 | PR C1, 2026-11-16 | "Note and more…" stays on in history and for a role without triage. The panel tells why the controls are off, as for a triager on a Risk accepted finding. | `c1-ruled-choices.png` | PR C1 |
 | PR C2, 2026-11-16 | Affected components, the line under the title: `The scanners also found ID in these packages and images of cluster NAME.` ID is the ID of the page (a CVE, GHSA or GO ID). The note under the table goes. Comment 6910056927. | No picture: a text ruling. | PR C2 |
 | PR C2, 2026-11-16 | The package menu is S1 with the dark blue head, on the kit dropdown, in place of the panel M1. The list stops at about 9 rows and scrolls, with a filter box for more than 8 packages. Each row has the package, its version and its scanners. The fix of issue 1227 goes in the same PR. Comment 6916298620. | `pkmenu-ab-1-open.png`, `pkmenu-ab-2-filter-scroll.png`, `pkmenu-final-1-ab.png` | PR C2 |
+| PR C2, 2026-11-16 | The text and the order of the package menu. The filter box says `Filter packages`, and a filter with no match says `No package matches.` A cut list says `This menu shows N packages. The image has more.`, with a `+` on the count. The list keeps the order of the names and scrolls to the current package. A link to a package that the image does not have names the package and the version. | `pkmenu-text-ab.png` | PR C2 |
 
 ## Still open
 
