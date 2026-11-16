@@ -1570,8 +1570,8 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.</p>
 <p>Obey these rules when you call the tools of JAVV:</p>
 <ul>
 <li>Call <code>list_clusters</code> first. Most other tools need a <code>cluster_id</code> from its answer.</li>
-<li>A finding is one CVE in one package version for one scanner. The results of Trivy and
-  Grype stay apart. Do not add them together, and do not merge them.</li>
+<li>A finding is one vulnerability in one package version for one scanner. The results of
+  Trivy and Grype stay apart. Do not add them together, and do not merge them.</li>
 <li>To get the next page of <code>search_findings</code> or <code>audit_log</code>, send <code>next_cursor</code> back as
   <code>cursor</code>. A new search with the same tool closes the cursor of your last search. Read all
   the pages that you need before you start the next search.</li>
