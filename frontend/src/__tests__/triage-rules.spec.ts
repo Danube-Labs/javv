@@ -35,7 +35,9 @@ describe('triage rules (FR-7 two-field VEX)', () => {
   })
 
   it('stale is system-only; an unchanged state sends nothing', () => {
-    expect(buildTriagePatch({ ...base, targetState: 'stale' }).error).toMatch(/system-set/)
+    expect(buildTriagePatch({ ...base, targetState: 'stale' }).error).toBe(
+      'JAVV sets Stale. Stale clears when the scanner reports this finding again.',
+    )
     const noop = buildTriagePatch({ ...base, targetState: 'open' })
     expect(noop.body).toBeNull()
     expect(noop.error).toBeNull()

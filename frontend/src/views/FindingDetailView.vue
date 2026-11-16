@@ -210,12 +210,12 @@ async function saveTriage(body: TriagePatchBody, undoing = false) {
     }
     toast.success(undoing ? 'Change undone' : 'Triage saved')
   } else if (response.response?.status === 409) {
-    triageError.value = 'Changed by someone else. Reload and retry.'
+    triageError.value = 'Another person changed this finding. Load the page again. Then save your change again.'
   } else if (response.response?.status === 422) {
-    triageError.value = 'The server rejected this transition. Reload and retry.'
+    triageError.value = 'JAVV did not accept this change of state. Load the page again. Then try again.'
     logger.warn('triage_rejected', { status: 422 })
   } else {
-    triageError.value = 'Save failed. Check the backend connection.'
+    triageError.value = 'JAVV did not save the change. The backend did not answer, or it sent an error. Try again.'
     logger.warn('triage_failed', { status: response.response?.status })
   }
 }
@@ -328,47 +328,49 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
     </div>
 
     <template v-else>
-      <DetailHead
-        :cve-id="cveId"
-        :primary="primary"
-        :digest="digest"
-        :kev="kev"
-        :disagrees="disagrees"
-        :epss="epss"
-      />
-
-      <!-- issue-434 ruling: evidence reads left, everything actionable/journal lives in the
-           rail — no full-width cards dangling below the fold -->
-      <div class="detail-grid">
+      <!-- issue 1205: the head band, the evidence and the Triage cell share the first row; the
+           cards follow at full width, Decisions and Activity side by side -->
+      <div class="head-row">
+        <DetailHead
+          :cve-id="cveId"
+          :primary="primary"
+          :digest="digest"
+          :kev="kev"
+          :disagrees="disagrees"
+          :epss="epss"
+          :other-packages="otherPackages"
+        />
         <EvidenceCard
-          class="detail-main"
+          class="head-ev"
           :evidence="evidence"
           :missing-scanners="missingScanners"
           :disagrees="disagrees"
-          :other-packages="otherPackages"
         />
+        <TriagePanel
+          v-if="primary"
+          :finding="primary"
+          :can-triage="auth.hasCapability('can_triage')"
+          :can-accept-final="auth.hasCapability('can_accept_audit_final')"
+          :historical="historical"
+          :saving="saving"
+          :error="triageError"
+          :current-user="auth.user?.username ?? null"
+          :undo="undoOffer"
+          @save="saveTriage"
+          @undo="undoTriage"
+          @risk-accept="raOpen = true"
+        />
+      </div>
 
-        <div class="detail-rail">
-          <TriagePanel
-            v-if="primary"
-            :finding="primary"
-            :can-triage="auth.hasCapability('can_triage')"
-            :can-accept-final="auth.hasCapability('can_accept_audit_final')"
-            :historical="historical"
-            :saving="saving"
-            :error="triageError"
-            :current-user="auth.user?.username ?? null"
-            :undo="undoOffer"
-            @save="saveTriage"
-            @undo="undoTriage"
-            @risk-accept="raOpen = true"
-          />
-        </div>
+      <AffectedCard
+        class="detail-band"
+        :affected="affected"
+        :truncated="affectedTruncated"
+        :failed="affectedFailed"
+      />
 
-        <!-- row 2, same tracks, stretched — decisions and activity sit side by side at
-             equal height (operator, 2026-07-17); the pagers bound their growth -->
+      <div class="card-pair detail-band">
         <DecisionsCard
-          class="detail-main"
           :decisions="decisions"
           :can-accept-final="auth.hasCapability('can_accept_audit_final')"
           :can-triage="auth.hasCapability('can_triage')"
@@ -379,14 +381,6 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
         />
         <ActivityCard :activity="activity" :failed="activityFailed" />
       </div>
-
-      <!-- the widest table gets the full width, below the grid, same edges -->
-      <AffectedCard
-        class="detail-band"
-        :affected="affected"
-        :truncated="affectedTruncated"
-        :failed="affectedFailed"
-      />
 
       <RiskAcceptDialog
         v-if="raOpen && primary"
@@ -416,32 +410,49 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
   color: var(--coral-text);
 }
 
-.detail-grid {
+/* three panels (operator, 2026-11-16): the head band, the evidence and the Triage cell; the
+   evidence goes under them below 1280 px, and all three stack below 1180 px */
+.head-row {
   display: grid;
-  grid-template-columns: 1.55fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 300px;
+  grid-template-areas: 'head ev triage';
   gap: var(--space-4);
-  /* both tracks stretch to the row: evidence and triage are the same height by
-     construction — no dead space under either (operator, 2026-07-17) */
   align-items: stretch;
-  margin-top: var(--space-6); /* the header is its own band — give it air below */
 }
-.detail-main {
+.head-row > :deep(.detail-head) {
+  grid-area: head;
+}
+.head-ev {
+  grid-area: ev;
   min-width: 0;
 }
-@media (max-width: 1180px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
+/* TriagePanel has two roots (the cell and its popover), so this page's scope does not reach it */
+.head-row > :deep(.triage) {
+  grid-area: triage;
+}
+.card-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+@media (max-width: 1279px) {
+  .head-row {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas: 'head triage' 'ev ev';
   }
 }
-/* full-width sections below the grid — same edges as the grid, same rhythm */
+@media (max-width: 1180px) {
+  .head-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'head' 'triage' 'ev';
+  }
+  .card-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .detail-band {
   margin-top: var(--space-4);
-}
-.detail-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
 }
 
 .not-found h1 {

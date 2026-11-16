@@ -428,8 +428,18 @@ server-computed), A-m1 (cursor error states), C-2 (export entry point → Export
 
 ## 4. Finding detail + triage (bolt: **M9b**)
 
-Layout preserved: back-link → header → `grid-2-1` (evidence stack left, sticky triage panel
-right).
+Layout (issue 1205, operator rulings on built pictures: G2 with the quick buttons 2026-11-14,
+three panels 2026-11-16): back-link, then a head row of three panels at the same height: the
+head band, the evidence and a Triage cell of 300 px. The head band puts the CVSS, EPSS and SLA
+tiles under the facts. The evidence keeps its shape: one row for each field, one column for each
+scanner. Under the head row, at full width: Affected components, then Decisions and Activity side
+by side at equal width. Under 1280 px the evidence goes under the head band and the cell, at full
+width. Under 1180 px each row is one column. With no room beside the cell, the panel of "Note and
+more…" opens under the cell, else above it, so it never covers the cell. When the CVE affects more
+than one package on the image, the package name in the head band is a button with the count ("4
+on this image"). It opens "Packages with this CVE" in the kit popover with the dark head, and a
+click opens the finding of that package (P1 with the look M1, 2026-11-14; the dark head
+2026-11-16). The evidence card then has no line for the other packages.
 
 **Data**
 - The finding row (all real fields, see DATA_MODEL) from `GET /api/v1/findings?cluster_id=…&cve_id=…&image=…` —
@@ -466,14 +476,26 @@ with the **per-scanner evidence table** instead.
 **Triage panel (6-state VEX, A-2):** open · acknowledged · not_affected (reveals CISA-five
 justification chips; component/code-not-present chips labeled "False positive") · risk_accepted
 (**read-only here** — comes from the scoped risk-accept dialog, with a manage pointer) ·
-resolved (manual) · stale (**system-set, read-only** + "re-scan to refresh"). Fixed-vs-stale
-explainer kept. Assignee (`assignee`, Assign to me / Reassign) + Notes (escaped, never rendered
+resolved (manual) · stale (**system-set, read-only** + "re-scan to refresh"). Assignee (`assignee`, Assign to me / Reassign) + Notes (escaped, never rendered
 as HTML). **Removed:** Impact / Action / Approver / Task free-text fields (V4-DELTA conflict 1 —
 the model is state + justification + notes + structured decisions).
 
-**Undo (issue 681):** after a save that changed the state, the panel shows "Changed from X to Y
-just now" with an Undo button. Undo sends the earlier state back through the same triage PATCH
-(with the earlier justification for not_affected and a note "Undo: back to X"), so it is
+**The Triage cell and its panel (issue 1205, operator rulings 2026-11-14 and 2026-11-16 on built
+pictures):** the cell holds Assigned to, the four state buttons, "Note and more…" and Save. "Note
+and more…" opens the kit popover (`PopoverShell` with the dark head of a window) next to the
+cell. The panel holds the lines that explain the state (history, a role that cannot triage, a
+role that cannot change a risk acceptance, the Risk accepted and Stale blocks), the reason for
+Not affected, the note, the risk acceptance button, Save and the line under Save. The cell and the
+panel share one draft, so the two Save buttons send the same body, and a save closes the panel.
+A click on Not affected opens the panel at the reason. The Undo line and the save error stay in
+the cell, because they answer a save in the cell. "Note and more…" stays on for a read-only role
+and in history, so that the user can read the line that tells why. The legend box of Fixed and
+Stale is gone: the Guide tells the same in "Scans and freshness". The risk acceptance window keeps
+its title.
+
+**Undo (issue 681):** after a save that changed the state, the cell shows "You changed the state
+from X to Y just now" with an Undo button. Undo sends the earlier state back through the same
+triage PATCH (with the earlier justification for not_affected and a note "Undo: back to X"), so it is
 journaled like any change. Not offered when the earlier state was risk_accepted or stale, or
 when only a note or assignee was saved. It restores the state only, and goes away on undo, on
 the next state change, or on leaving the finding.
@@ -1527,7 +1549,7 @@ grammar is the prototype's — substituting it needs a live ruling (DESIGN.md §
 | global | — | Severity everywhere is the **six-word canonical vocabulary** (D46); verbatim scanner casing is display-only | D46/#274 |
 | 2 | (v4 prototype had no Scan-activity card; the built one duplicated IngestLens) | Scan-activity card **dropped**; slot carries **Top components** (restored prototype card, ≤100-package server board w/ per-scanner unique-CVE counts, now-only read) + **Riskiest images** (ranked running images off the images read, rewindable) — both on the shared table skin + GridPager; Overview goes `wide` | 2026-07-16 §8.5 ruling on built specimens: **keep both** |
 | global | (prototype: `--panel` table heads, dashed ghost add-filter) | **Section identity accents** (`--sect-*` tokens: sidebar group dots + head-card top bar via route `meta.section`), **scanner identity dots** (seg-control options + mix-bar labels wear trivy-teal/grype-violet; coral selection language untouched), **table-head band = solid slate** (`--table-head-bg: var(--slate2)` + parchment text, one token app-wide; third ruling on this surface — panel invisible, bg merged, washes faint/busy), **add-filter on card bg + darkened dashes** | 2026-07-16 §8.5 rulings on built specimens: keep-all accents · band B2 of B1/C/B2 |
-| 6 | (v4 prototype) narrow finding detail: 8-col per-scanner evidence table, stacked full-width cards, sticky triage rail | **Wide route**; evidence table **transposed** (scanners = columns, attributes = rows); grid rows share tracks — evidence \| docked triage (equal height), decisions \| activity side-by-side, affected components full-width; GridPager always visible on all three tables; slate band on triage + activity heads ONLY; sticky removed; "scanners disagree" written out; unassigned chip | 2026-07-17 §8.5 A/B rulings on built specimens (#434): transposed in · docked over slideover · tracks-or-full-width |
+| 4 | (v4 prototype) narrow finding detail: 8-col per-scanner evidence table, stacked full-width cards, sticky triage rail | **Wide route**; evidence table **transposed** (scanners = columns, attributes = rows); a head row of three panels: the head band \| the evidence \| a Triage cell of 300 px, then affected components and decisions \| activity at full width (issue 1205, 2026-11-14 and 2026-11-16; replaces the docked triage at the height of the evidence); GridPager always visible on all three tables; slate band on triage + activity heads ONLY; sticky removed; "scanners disagree" written out; unassigned chip | 2026-07-17 §8.5 A/B rulings on built specimens (#434): transposed in · docked over slideover · tracks-or-full-width |
 | 3 | (prototype pills: include-only, "is / is one of") | **NOT-pill** (issue 349): a negated filter renders the fill/outline duality — hollow body (transparent on the canvas, 1.5px border, no shadow) with ONLY the op words ("is not"/"is none of") in red (`--fpill-not-op`) + bold; the op word doubles as the include⇄exclude toggle; picker gets an is/is-not seg. Red-tint fill specimen (B) built and LOST | 2026-07-17 §8.5 A/B ruling on built specimens: outline wins, keep the red op words only |
 | 3 · 5 · 7 | (the first shipped cut of the value bar: inset from the cell edge, flipped below on row 1, no motion) | **Grid bar reworked against the running Kibana Discover** (issue 349 §2 follow-up): flush on the cell's top-LEFT corner (`left: 0`, as Kibana measures), overhanging UPWARD on **every** row — the first-row flip was built on a false clipping premise and made row 1 unusable, because the seam then held two bars and reaching for either swapped which was lit. Row 1 inverts to a light fill (the slate bar computes 1.17:1 on the head band) and every bar gains a `--chip-hi` hairline. Square corners + a gap between the marks, because at DPR 1 the bar cannot land on the pixel grid (card at x.5, 37.5px rows, percentage columns) so radii stair-step and 1px rules fringe. Reveal now LIFTS (ruled `t-pop`, mirrored) instead of popping | 2026-07-28 §8.5 rulings on built specimens: left corner · invert+hairline · gap over divider · square over 6px/3px |
 | 3 · 5 · 7 | (prototype: filtering is the rail checkbox only — cells and rail rows offer no exclude) | **Value actions** (issue 349 §2): a `+`/`−` pair beside a value in the rail and in the Findings/Images/Audit/Approvals grids, revealed by the row's own hover; `components/filters/ValueActions.vue`, the M9a filter module's third part. An excluded rail row stays LISTED, struck in `--fpill-not-op`, so it can be clicked off. At-rest specimen (B) built and LOST — at 198 glyphs on a 25-row page it wrapped the narrow namespace column and inflated row heights against the §4 density contract. A knowing exception to DESIGN.md §5 "hover-only is not discoverable" and to Nuxt UI's at-rest row actions, bounded: an ACTIVE action always shows, and keyboard focus reveals it. Cells earn the affordance only where the cell value IS the filter value — a multi-namespace row, the shortened image cell and the severity-mix columns get none. The Images rail additionally grows **Image + Tag** as data-driven dims (deliberate: the cell action needs the fields, and listing them keeps an exclusion legible in the rail), capped at 32 by count like the server facets — `q` contains-matches both, so the note's "search reaches the rest" holds | 2026-07-28 §8.5 A/B ruling on built specimens: hover-reveal wins |

@@ -149,16 +149,26 @@ async function forcedStates(page) {
   const naBtn = page.locator('.state-opt', { hasText: 'Not affected' })
   if (await naBtn.count()) {
     if (await naBtn.isDisabled()) {
-      // a viewer principal: the locked panel IS the forced state worth capturing
+      // a viewer principal: the locked cell IS the forced state worth capturing; its line is in the panel
+      await page.getByRole('button', { name: 'Note and more…' }).click()
+      await page.waitForSelector('.pop')
       await shot(page, '46-triage-locked', { dump: true })
+      await page.keyboard.press('Escape')
     } else {
-      await naBtn.click()
-      await page.waitForSelector('.vex-chips')
+      await naBtn.click() // Not affected opens the panel at the reason
+      await page.waitForSelector('.pop .vex-chips')
       await shot(page, '46-triage-vex-draft', { dump: true })
+      await page.keyboard.press('Escape')
       await page.locator('.state-opt', { hasText: 'Open' }).click() // back to a no-op draft
     }
   }
-  const raBtn = page.locator('.ui-btn--ghost', { hasText: 'Risk-accept' })
+  // the risk button is in the panel of "Note and more…"
+  const more = page.getByRole('button', { name: 'Note and more…' })
+  if (await more.count()) {
+    await more.click()
+    await page.waitForSelector('.pop')
+  }
+  const raBtn = page.locator('.pop .ui-btn--ghost', { hasText: 'Accept the risk of this CVE' })
   if ((await raBtn.count()) && !(await raBtn.isDisabled())) {
     await raBtn.click()
     await page.waitForSelector('.modal')

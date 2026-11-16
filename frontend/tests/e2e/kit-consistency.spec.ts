@@ -277,7 +277,9 @@ const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
     '/findings',
     async (p) => {
       await p.locator(`${DATA_ROW} a.row-link`).first().click()
-      await p.getByRole('button', { name: 'Risk-accept this CVE' }).click()
+      // the button is in the panel of "Note and more…"; the window keeps its title (issue 1205)
+      await p.getByRole('button', { name: 'Note and more…' }).click()
+      await p.getByRole('button', { name: 'Accept the risk of this CVE' }).click()
     },
   ],
   ['Invite a user', '/settings/users', (p) => p.getByRole('button', { name: 'Invite user' }).click()],

@@ -14,12 +14,13 @@
 
 ## Steps
 
-1. Open a finding from the Findings table. The triage panel sets the state of this one finding.
-2. Select Not affected. Not affected needs a reason: select one of the five standard reasons.
-3. Select Save to audit trail. The state changes immediately.
-4. Only this finding changes. The finding of the other scanner stays Open.
-5. The Activity card of the finding shows who changed the state and when.
-6. To see all the triage changes, open the Audit log from the side menu. The new entry is at the
+1. Open a finding from the Findings table. The Triage cell sets the state of this one finding.
+2. In the Triage cell, select Not affected. A panel opens next to the cell.
+3. In the panel, select one of the five standard reasons. Not affected needs a reason.
+4. Select Save. The state changes immediately.
+5. Only this finding changes. The finding of the other scanner stays Open.
+6. The Activity card of the finding shows who changed the state and when.
+7. To see all the triage changes, open the Audit log from the side menu. The new entry is at the
    top: when, who, and what changed.
 
 Next: [Accept a risk, with an expiry date](accept-a-risk.md).

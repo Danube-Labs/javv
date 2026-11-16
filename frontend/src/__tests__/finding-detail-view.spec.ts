@@ -11,6 +11,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import DecisionsCard from '@/components/triage/DecisionsCard.vue'
 import RiskAcceptDialog from '@/components/triage/RiskAcceptDialog.vue'
 import TriagePanel from '@/components/triage/TriagePanel.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useClusterStore } from '@/stores/cluster'
 import FindingDetailView from '@/views/FindingDetailView.vue'
 
@@ -24,6 +25,7 @@ vi.mock('@/api/generated', async (importOriginal) =>
     revokeApiV1DecisionsDecisionIdRevokePost: vi.fn<() => Promise<unknown>>(),
     closeCursorApiV1CursorsClosePost: vi.fn<() => Promise<unknown>>(),
     listClustersApiV1ClustersGet: vi.fn<() => Promise<unknown>>(),
+    triageApiV1FindingsFindingKeyTriagePatch: vi.fn<() => Promise<unknown>>(),
   }),
 )
 vi.mock('@/api/client', () => ({ client: {} }))
@@ -34,6 +36,7 @@ import {
   readAuditLogApiV1AuditGet,
   revokeApiV1DecisionsDecisionIdRevokePost,
   searchFindingsApiV1FindingsGet,
+  triageApiV1FindingsFindingKeyTriagePatch,
 } from '@/api/generated'
 
 const searchMock = vi.mocked(searchFindingsApiV1FindingsGet)
@@ -147,6 +150,63 @@ describe('FindingDetailView after a decision (issue 910)', () => {
     expect(occ.length).toBeGreaterThan(0)
     for (const q of occ) expect(q).toMatchObject({ cve_id: ['CVE-2026-0001'], locations: true })
     for (const c of pairReads()) expect((c[0] as { query: Record<string, unknown> }).query.locations).toBeUndefined()
+  })
+
+  it('the head band, the evidence and the Triage cell share the first row, the cards follow at full width (issue 1205)', async () => {
+    const w = await mountPage()
+    const row = w.find('.head-row')
+    expect(row.find('.detail-head').exists()).toBe(true)
+    expect(row.text()).toContain('Per-scanner evidence')
+    expect(row.find('aside.triage').exists()).toBe(true)
+    // three panels, in this order: the head band, the evidence, the Triage cell (operator, 2026-11-16)
+    expect([...row.element.children].map((c) => c.classList[0])).toEqual(['detail-head', 'card', 'triage'])
+    const titles = ['Per-scanner evidence', 'Affected components', 'Decisions on this CVE', 'Activity on this finding']
+    const order = w
+      .findAll('h2')
+      .map((h) => titles.find((t) => h.text().startsWith(t)))
+      .filter(Boolean)
+    expect(order).toEqual(titles)
+    const pair = w.find('.card-pair')
+    expect(pair.text()).toContain('Decisions on this CVE')
+    expect(pair.text()).toContain('Activity on this finding')
+    expect(pair.text()).not.toContain('Affected components')
+  })
+
+  it.each([
+    [409, 'Another person changed this finding. Load the page again. Then save your change again.'],
+    [422, 'JAVV did not accept this change of state. Load the page again. Then try again.'],
+    [500, 'JAVV did not save the change. The backend did not answer, or it sent an error. Try again.'],
+  ])('a save that fails with %i: the cell shows the error line (strict STE)', async (status, line) => {
+    vi.mocked(triageApiV1FindingsFindingKeyTriagePatch).mockResolvedValue({
+      data: undefined,
+      response: { ok: false, status },
+    } as never)
+    const w = await mountPage()
+    w.findComponent(TriagePanel).vm.$emit('save', { state: 'acknowledged' })
+    await flushPromises()
+    expect(w.find('aside.triage [role="alert"]').text()).toBe(line)
+  })
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])('a save from the cell that succeeds (%s): the draft empties only then (review round 1)', async (ok, emptied) => {
+    useAuthStore().user = { username: 'lead', role: 'x', capabilities: ['can_triage'], must_change: false } as never
+    vi.mocked(triageApiV1FindingsFindingKeyTriagePatch).mockResolvedValue(
+      (ok
+        ? { data: { finding: row('trivy', 'acknowledged') }, response: { ok: true, status: 200 } }
+        : { data: undefined, response: { ok: false, status: 409 } }) as never,
+    )
+    const w = await mountPage()
+    const cellSave = () => w.find('aside.triage .ui-btn--primary')
+    await w.findAll('aside.triage .state-opt').find((b) => b.text() === 'Acknowledge')!.trigger('click')
+    await w.findAll('aside.triage button').find((b) => b.text() === 'Note and more…')!.trigger('click')
+    await flushPromises()
+    await w.find('#triage-notes').setValue('checked the image')
+    expect(cellSave().attributes('disabled')).toBeUndefined()
+    await cellSave().trigger('click')
+    await flushPromises()
+    expect(cellSave().attributes('disabled') !== undefined).toBe(emptied)
   })
 
   it('more occurrences than the read holds: the card says so (review F3, the server sends total as an object)', async () => {

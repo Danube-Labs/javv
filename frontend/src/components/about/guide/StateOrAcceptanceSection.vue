@@ -23,7 +23,7 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
         A state applies to one finding. A finding is one CVE in one package of one image, from one scanner.
       </li>
       <li>
-        You set the state in the triage panel of the finding:
+        You set the state in the Triage cell of the finding:
         <span class="state-row"><StateTag v-for="s in PERSON_STATES" :key="s" :state="s" /></span>
       </li>
       <li>To set a state, your role must allow triage.</li>
@@ -43,8 +43,9 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
         whole cluster.
       </li>
       <li>
-        You create a risk acceptance with the button <span class="ui-name">Risk-accept this CVE</span> on a
-        finding. You write a reason. You can set an expiry date.
+        You create a risk acceptance on a finding. Select <span class="ui-name">Note and more…</span>, then
+        <span class="ui-name">Accept the risk of this CVE</span>. You write a reason. You can set an expiry
+        date.
       </li>
       <li>To create or revoke a risk acceptance, your role must allow risk acceptance.</li>
       <li>
@@ -93,7 +94,8 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
     <p><strong>Example 2: the image uses the vulnerable code, and no fix is available</strong></p>
     <ol>
       <li>Open the finding. Its state is Open.</li>
-      <li>Select <span class="ui-name">Risk-accept this CVE</span>.</li>
+      <li>Select <span class="ui-name">Note and more…</span>.</li>
+      <li>Select <span class="ui-name">Accept the risk of this CVE</span>.</li>
       <li>Select the namespace as the scope.</li>
       <li>Write the reason.</li>
       <li>Set an expiry date.</li>

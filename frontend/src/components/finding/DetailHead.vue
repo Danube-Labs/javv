@@ -6,12 +6,13 @@
  * derives FROM the server's due_at (B-5) measured on the D28 display clock — never client math
  * for the deadline itself.
  */
-import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, ref } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 
 import DisagreementBadge from '@/components/chips/DisagreementBadge.vue'
 import SevChip from '@/components/chips/SevChip.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import PopoverShell from '@/components/ui/PopoverShell.vue'
 import { fmtAt, num } from '@/findings/format'
 import type { FindingRow } from '@/stores/findings'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -24,7 +25,17 @@ const props = defineProps<{
   kev: boolean
   disagrees: boolean
   epss: { value: number; scanner: string } | null
+  /** the other packages of this CVE on this image */
+  otherPackages: string[]
 }>()
+
+const route = useRoute()
+// the package menu (issue 1205, P1 with the look M1): each package of this CVE on this image
+const pkBtn = ref<HTMLElement | null>(null)
+const pkOpen = ref(false)
+const imageName = computed(() =>
+  props.primary?.image_repo ? props.primary.image_repo + (props.primary.tag ? ':' + props.primary.tag : '') : undefined,
+)
 
 const timeTravel = useTimeTravelStore()
 
@@ -52,7 +63,39 @@ const slaTier = computed(() => {
       <div class="detail-meta">
         <div class="fact">
           <em>Package</em>
-          <span class="fact-val mono-cell">{{ primary?.package_name }}</span>
+          <template v-if="otherPackages.length">
+            <button ref="pkBtn" type="button" class="pk-btn" :aria-expanded="pkOpen" @click="pkOpen = !pkOpen">
+              <span class="mono-cell">{{ primary?.package_name }}</span>
+              <span class="pk-count">{{ otherPackages.length + 1 }} on this image</span>
+              <AppIcon name="chevron" :size="13" class="pk-chev" :class="{ open: pkOpen }" />
+            </button>
+            <PopoverShell
+              v-if="pkOpen && pkBtn"
+              band
+              title="Packages with this CVE"
+              :subtitle="imageName"
+              :anchor="pkBtn"
+              :trigger="pkBtn"
+              :width="300"
+              @close="pkOpen = false"
+            >
+              <div class="m-list">
+                <span class="m-item m-on">
+                  <AppIcon name="check" :size="14" class="m-check" /><span class="mono-cell">{{ primary?.package_name }}</span>
+                </span>
+                <RouterLink
+                  v-for="p in otherPackages"
+                  :key="p"
+                  class="m-item"
+                  :to="{ query: { ...route.query, pkg: p, ver: undefined } }"
+                  @click="pkOpen = false"
+                >
+                  <span class="m-check" /><span class="mono-cell">{{ p }}</span>
+                </RouterLink>
+              </div>
+            </PopoverShell>
+          </template>
+          <span v-else class="fact-val mono-cell">{{ primary?.package_name }}</span>
         </div>
         <div class="fact">
           <em>Image</em>
@@ -110,14 +153,92 @@ const slaTier = computed(() => {
 </template>
 
 <style scoped>
+.pk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--r-chip);
+  background: none;
+  color: var(--ink);
+  font-size: var(--text-body);
+}
+.pk-btn:hover,
+.pk-btn[aria-expanded='true'] {
+  background: var(--control-hover-bg);
+  border-color: var(--control-hover-line);
+}
+.pk-btn:active {
+  background: var(--control-active-bg);
+}
+.pk-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+.pk-count {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: var(--text-facet-label);
+  font-weight: 600;
+}
+.pk-chev {
+  color: var(--soft);
+  transform: rotate(90deg);
+  transition: transform 0.12s;
+}
+.pk-chev.open {
+  transform: rotate(-90deg);
+}
+.m-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+.m-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--text-body);
+}
+a.m-item:hover {
+  background: var(--control-hover-bg);
+}
+a.m-item:active {
+  background: var(--control-active-bg);
+}
+a.m-item:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+.m-check {
+  flex: none;
+  width: 14px;
+  color: var(--coral-text);
+}
+.m-on {
+  font-weight: 700;
+}
 /* prototype .detail-head family, on tokens. Deviation from the prototype (recorded in the
    original PR): the 4px severity side-stripe is dropped — side-stripe accents are a banned
    pattern; severity is carried by the solid chip in the title row instead. */
+/* the head band is one of three panels, so the CVSS, EPSS and SLA tiles go under the facts
+   (issue 1205, operator 2026-11-16) */
 .detail-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -195,6 +316,7 @@ const slaTier = computed(() => {
    (stat-card grammar per the operator's Nuxt UI reference — ours, on tokens) */
 .risk-band {
   flex: none;
+  align-self: stretch;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--line);
@@ -203,10 +325,11 @@ const slaTier = computed(() => {
 }
 .risk-cell {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 20px;
-  min-width: 104px;
+  padding: 12px 16px;
+  min-width: 0;
 }
 .risk-cell + .risk-cell {
   border-left: 1px solid var(--line2);

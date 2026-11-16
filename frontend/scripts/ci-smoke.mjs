@@ -56,7 +56,7 @@ async function coreLoop(page, issues) {
   const url = page.url()
   const ack = page.locator('.state-opt', { hasText: 'Acknowledge' })
   const open = page.locator('.state-opt', { hasText: 'Open' })
-  const save = page.locator('button', { hasText: 'Save to audit trail' })
+  const save = page.locator('aside.triage').getByRole('button', { name: 'Save', exact: true })
   if (!(await ack.count()) || (await ack.isDisabled())) {
     issues.push('[core-loop] triage panel absent or not actionable for this principal')
     return
