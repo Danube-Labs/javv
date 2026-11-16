@@ -44,9 +44,9 @@ function reasonOf(a: ActivityRow): string | null {
 </script>
 
 <template>
-  <DetailCard title="Activity on this finding" sub="the audit trail: every triage action, who &amp; when" flush dark-head>
+  <DetailCard title="Activity on this finding" sub="Each row is one triage change to this finding, with the person and the time." flush dark-head>
     <div class="act-body">
-    <p v-if="activity.length === 0" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No triage actions yet.' }}</p>
+    <p v-if="activity.length === 0" class="empty-row">{{ failed ? 'Could not be loaded.' : 'No triage changes yet.' }}</p>
     <ul v-else class="act-list">
       <li v-for="a in shown" :key="a.event_id" class="act-row">
         <span class="act-when mono-cell">{{ fmtAt(a['@timestamp']) }}</span>
@@ -75,7 +75,7 @@ function reasonOf(a: ActivityRow): string | null {
         </span>
       </li>
     </ul>
-    <p v-if="activity.length >= 50" class="cap-note">Latest 50 actions. The full trail lives on the Audit screen.</p>
+    <p v-if="activity.length >= 50" class="cap-note">This card shows the latest 50 changes. The Audit log shows all of them.</p>
     </div>
     <GridPager
       :total="activity.length"

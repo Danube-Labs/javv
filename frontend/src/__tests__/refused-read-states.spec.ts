@@ -467,7 +467,7 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     const { w } = await mountDetail()
     const text = w.text()
     expect(text).not.toContain('No occurrences returned.')
-    expect(text).not.toContain('No triage actions yet.')
+    expect(text).not.toContain('No triage changes yet.')
     expect(text).not.toContain('No decisions on this CVE yet.')
     expect(text.match(/Could not be loaded\./g)).toHaveLength(3)
     expect(w.find('.count-badge').text()).toBe('-')
