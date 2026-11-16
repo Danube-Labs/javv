@@ -435,7 +435,11 @@ tiles under the facts. The evidence keeps its shape: one row for each field, one
 scanner. Under the head row, at full width: Affected components, then Decisions and Activity side
 by side at equal width. Under 1280 px the evidence goes under the head band and the cell, at full
 width. Under 1180 px each row is one column. With no room beside the cell, the panel of "Note and
-more…" opens under the cell, else above it, so it never covers the cell.
+more…" opens under the cell, else above it, so it never covers the cell. When the CVE affects more
+than one package on the image, the package name in the head band is a button with the count ("4
+on this image"). It opens "Packages with this CVE" in the kit popover with the dark head, and a
+click opens the finding of that package (P1 with the look M1, 2026-11-14; the dark head
+2026-11-16). The evidence card then has no line for the other packages.
 
 **Data**
 - The finding row (all real fields, see DATA_MODEL) from `GET /api/v1/findings?cluster_id=…&cve_id=…&image=…` —

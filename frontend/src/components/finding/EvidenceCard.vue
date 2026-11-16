@@ -22,7 +22,6 @@ const props = defineProps<{
   evidence: FindingRow[]
   missingScanners: string[]
   disagrees: boolean
-  otherPackages: string[]
 }>()
 
 const columns = computed(() =>
@@ -38,7 +37,7 @@ function verbatimDiffers(r: FindingRow): boolean {
 </script>
 
 <template>
-  <DetailCard title="Per-scanner evidence" sub="raw results, no black box · no cross-scanner merge" flush>
+  <DetailCard title="Per-scanner evidence" sub="Each row shows the values that one scanner sent." flush>
     <div class="tbl-wrap">
       <table class="tbl tbl-dense compare">
         <thead>
@@ -95,19 +94,10 @@ function verbatimDiffers(r: FindingRow): boolean {
         </tbody>
       </table>
     </div>
-    <div class="card-notes">
-      <p v-if="disagrees" class="evidence-note evidence-warn">
-        <AppIcon name="alert" :size="12" /> The scanners disagree. Both verdicts shown
-        verbatim; JAVV never picks a winner.
-      </p>
-      <p v-else class="evidence-note">
-        Scanners agree on severity. Dashboards facet by scanner so this finding is never
-        double-counted.
-      </p>
-      <p v-if="otherPackages.length" class="evidence-note">
-        This CVE also affects
-        <span class="mono-cell sm">{{ otherPackages.slice(0, 5).join(', ') }}</span><template v-if="otherPackages.length > 5"> +{{ otherPackages.length - 5 }} more</template> on this image;
-        open those rows from the grid.
+    <div v-if="disagrees" class="card-notes">
+      <p class="evidence-note evidence-warn">
+        <AppIcon name="alert" :size="12" /> The scanners give different severities. Each row shows the
+        severity that its scanner sent.
       </p>
     </div>
   </DetailCard>

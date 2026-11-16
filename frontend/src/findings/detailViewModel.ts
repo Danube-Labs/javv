@@ -14,7 +14,7 @@ export const SCANNER_ORDER = ['trivy', 'grype'] as const
  * A (cve_id, image_digest) query returns one row per PACKAGE per scanner — finding identity
  * includes the package. The evidence table compares like with like: scope to one package
  * (the clicked row's, carried in the URL; deep links without it scope to the first row's) and
- * surface the rest as "also affects".
+ * list the rest in the package menu of the head band (issue 1205).
  */
 export function scopeToPackage(
   rows: FindingRow[],

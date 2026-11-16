@@ -338,13 +338,13 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
           :kev="kev"
           :disagrees="disagrees"
           :epss="epss"
+          :other-packages="otherPackages"
         />
         <EvidenceCard
           class="head-ev"
           :evidence="evidence"
           :missing-scanners="missingScanners"
           :disagrees="disagrees"
-          :other-packages="otherPackages"
         />
         <TriagePanel
           v-if="primary"
