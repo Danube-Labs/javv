@@ -46,13 +46,13 @@ READ_TOOLS: tuple[Tool, ...] = (
         name="search_findings",
         description=(
             "One page of the findings of one cluster, with the filters of the Findings screen. "
-            "Each finding is one CVE in one package version for one scanner: the scanners stay "
-            "apart. Pass next_cursor back as cursor for the next page. A first page starts a new "
-            "search and closes the cursor of your last search with this tool: read all the pages "
-            "that you need first. as_of reads a past time. With as_of, image_repo, tag, app, "
-            "epss, kev and disagree are null: the history does not record them, and a filter or "
-            "a sort on them is refused. locations_total is the number of files where the "
-            "scanner found the package."
+            "Each finding is one vulnerability in one package version for one scanner: the "
+            "scanners stay apart. Pass next_cursor back as cursor for the next page. A first page "
+            "starts a new search and closes the cursor of your last search with this tool: read "
+            "all the pages that you need first. as_of reads a past time. With as_of, image_repo, "
+            "tag, app, epss, kev and disagree are null: the history does not record them, and a "
+            "filter or a sort on them is refused. locations_total is the number of files where "
+            "the scanner found the package."
         ),
         routes={"": findings.search_findings},
         params={"size": FINDINGS_PAGE},
@@ -94,8 +94,9 @@ READ_TOOLS: tuple[Tool, ...] = (
     Tool(
         name="top_cves",
         description=(
-            "The CVEs of one cluster with the most findings, with the findings and the severities "
-            "of each scanner. At most 100 CVEs, now only. Use scanner to rank by one scanner."
+            "The vulnerabilities of one cluster with the most findings, with the findings and the "
+            "severities of each scanner. At most 100 vulnerabilities, now only. Use scanner to "
+            "rank by one scanner."
         ),
         routes={"": findings.top_values_findings},
         # the route ranks only the CVE now (issue 1176, D5), so the agent never names it

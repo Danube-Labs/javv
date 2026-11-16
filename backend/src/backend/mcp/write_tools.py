@@ -95,8 +95,8 @@ WRITE_TOOLS: tuple[Tool, ...] = (
     Tool(
         name="not_affected_decision",
         description=(
-            "A Not affected decision for a CVE: kind make (payload), change (decision_id and "
-            "body; a change revokes the decision and makes a new one) or revoke (decision_id)."
+            "A Not affected decision for a vulnerability: kind make (payload), change (decision_id "
+            "and body; a change revokes the decision and makes a new one) or revoke (decision_id)."
         ),
         routes=_decision_routes(frozenset({"not_affected"})),
         params={"payload": (NotAffected, _REQUIRED), "body": (NotAffectedEdit, _REQUIRED)},
@@ -105,8 +105,8 @@ WRITE_TOOLS: tuple[Tool, ...] = (
     Tool(
         name="risk_accept_decision",
         description=(
-            "A risk accept decision (type risk_accepted or ignore_rule) for a CVE, with an "
-            "expiry: kind make (payload), change (decision_id and body) or revoke (decision_id)."
+            "A risk accept decision (type risk_accepted or ignore_rule) for a vulnerability, with "
+            "an expiry: kind make (payload), change (decision_id and body) or revoke (decision_id)."
         ),
         routes=_decision_routes(decisions.ACCEPT_TYPES),
         params={"payload": (RiskAccept, _REQUIRED), "body": (RiskAcceptEdit, _REQUIRED)},
