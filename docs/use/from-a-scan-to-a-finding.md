@@ -14,14 +14,14 @@ to JAVV. JAVV keeps the results of each scanner separate. It never merges them.
 
 ## Why JAVV shows fewer findings than the scanner report
 
-A scanner report can show the same CVE in the same package version more than one time. Each entry
-is for a different file that holds the package. JAVV keeps one finding for each CVE, package
-version, image and scanner. Thus the number of findings in JAVV can be smaller than the number of
+A scanner report can show the same vulnerability in the same package version more than one time.
+Each entry is for a different file that holds the package. JAVV keeps one finding for each
+vulnerability, package version, image and scanner. Thus the number of findings in JAVV can be smaller than the number of
 entries in the report.
 
 Example: the Trivy report for rancher/local-path-provisioner v0.0.36 has 371 entries. The Go
-standard library v1.26.3 is in 11 programs of this image. Trivy shows each CVE of this library 11
-times. JAVV shows 101 findings for this image.
+standard library v1.26.3 is in 11 programs of this image. Trivy shows each vulnerability of this
+library 11 times. JAVV shows 101 findings for this image.
 
 What one finding covers:
 
@@ -33,8 +33,8 @@ What one finding covers:
 ## Steps
 
 1. All clusters shows each cluster that sends results to JAVV. Select a cluster to open it.
-2. Open Findings from the side menu. Each row is one finding: one CVE, in one package, in one
-   image, from one scanner.
+2. Open Findings from the side menu. Each row is one finding: one vulnerability, in one package,
+   in one image, from one scanner.
 3. To see the findings of one scanner, use the Scanner filter.
 4. Select a finding to open it. The evidence shows the result of each scanner, side by side.
 5. To see the paths of the package, select the number in the Paths column of Affected

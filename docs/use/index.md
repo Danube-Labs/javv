@@ -7,7 +7,7 @@ decision, and how to put panels on a dashboard. Each page in the table has a sho
 |---|---|
 | [From a scan to a finding](from-a-scan-to-a-finding.md) | How the results of the two scanners get to JAVV, and how to find one finding |
 | [Set the state of a finding](set-the-state-of-a-finding.md) | How to set the state of one finding, and where JAVV records the change |
-| [Accept a risk, with an expiry date](accept-a-risk.md) | How to accept the risk of one CVE in a scope, and how to stop it |
+| [Accept a risk, with an expiry date](accept-a-risk.md) | How to accept the risk of one vulnerability in a scope, and how to stop it |
 | [Change many findings at once](change-many-findings.md) | How to change the state of all the findings that match your filters |
 | [When a scanner stops sending results](when-a-scanner-stops.md) | What JAVV does when a scanner is silent for too long |
 | [See who changed what](who-changed-what.md) | How to find the changes in the Audit log and on a finding |
