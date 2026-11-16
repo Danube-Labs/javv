@@ -151,7 +151,7 @@ function discard() {
       <AppIcon name="layers" :size="14" />
       <span>
         Both scanners run every cycle, and JAVV keeps the results of each scanner apart.
-        <b>All scanners</b> shows Trivy and Grype together: a CVE that both report counts once for each.
+        <b>All scanners</b> shows Trivy and Grype together: a vulnerability that both report counts once for each.
       </span>
     </div>
 

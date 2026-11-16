@@ -305,7 +305,7 @@ one value. A second pick adds the value, and the filter bar reads "is one of". I
 bar reads "is none of", and the grid leaves out the rows with any of the values. Scanner takes one
 value.
 
-**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, CVE and Package
+**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, Vulnerability and Package
 also take more than one value. In the filter bar's edit box, Enter adds the typed value to a list
 under the input, and the box stays open for the next value. A click on a value in the list removes
 it. A pick from a table cell adds the value, and the same pick again removes it. A pasted list with
@@ -775,7 +775,7 @@ keeps the rail's values with "-" for each count, since the counts come with the 
 ruling 2026-10-13, issue 833).
 
 **Filters (issue 952):** Status and Approver take several values. A second pick adds the value,
-and the pill reads "is one of" (or "is none of" in exclude mode). Scanner and the CVE search take
+and the pill reads "is one of" (or "is none of" in exclude mode). Scanner and the vulnerability search take
 one value, as on Findings. The Approver counts leave out the Approver filter, so a picked approver
 does not hide the others. The Status counts follow the pick, as Severity does on Findings. A
 filter stops at 32 values, the API cap, and the rail and the edit box show "A filter takes at most
@@ -1173,8 +1173,8 @@ BLOCKED (D-3).
 ## 15. Global search (bolt: **M9f**)
 
 **Data:** three scoped, server-paged queries against the shipped read — no search endpoint is
-invented: CVE match `GET /api/v1/findings?cluster_id=…&cve_id=<q>` · image match
-`…&image=<q>` · namespace match `…&namespace=<q>`. Grouped dropdown (CVEs → finding detail;
+invented: vulnerability match `GET /api/v1/findings?cluster_id=…&cve_id=<q>` · image match
+`…&image=<q>` · namespace match `…&namespace=<q>`. Grouped dropdown (Vulnerabilities → finding detail;
 images → image detail; namespaces → filtered Findings). Package-name search: the filter family's
 coverage of `package_name` must be **verified at M9f kickoff**; if absent, that result group is
 dropped (not client-filtered).

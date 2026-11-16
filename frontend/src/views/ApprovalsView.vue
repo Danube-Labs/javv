@@ -250,8 +250,8 @@ function onEdited() {
         <UiSearchBox
           card
           :model-value="filters.selections.q?.[0] ?? ''"
-          placeholder="CVE…"
-          aria-label="Search acceptances by CVE (contains match)"
+          placeholder="Vulnerability…"
+          aria-label="Search acceptances by vulnerability (contains match)"
           @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
         />
         <FacetRail

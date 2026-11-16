@@ -97,7 +97,7 @@ describe('the block message names filters as the screen does (issue 962)', () =>
   it('a field gives its label, an exclude key its field label, a flag its label', () => {
     expect(
       filterNames(FINDINGS_FIELDS, ['package_name', 'exclude_cve_id', 'unassigned', 'some_new_dim']),
-    ).toEqual(['Package', 'CVE', 'Unassigned', 'some_new_dim'])
+    ).toEqual(['Package', 'Vulnerability', 'Unassigned', 'some_new_dim'])
   })
 
   it('a filter the schedule lacks is named by its label', () => {

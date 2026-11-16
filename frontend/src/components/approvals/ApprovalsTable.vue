@@ -65,7 +65,7 @@ function revoke(row: ApprovalRow) {
     <table class="tbl tbl-hover">
       <thead>
         <tr>
-          <th>CVE</th>
+          <th>Vulnerability</th>
           <th>Scope</th>
           <th>Scanner</th>
           <th>Justification</th>

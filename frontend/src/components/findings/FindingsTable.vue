@@ -273,7 +273,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
             <ValueActions
               v-if="cellValue('cve', data)"
               class="val-act-reveal"
-              field="CVE"
+              field="Vulnerability"
               :value="cellValue('cve', data)!"
               :active="cellActive('cve', cellValue('cve', data)!)"
               @pick="(m) => emit('pickValue', 'cve', cellValue('cve', data)!, m)"

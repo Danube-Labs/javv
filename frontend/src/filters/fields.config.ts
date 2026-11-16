@@ -176,7 +176,7 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   // issue 492 completes the negation family. Both are exact `term`s server-side and neither
   // is a facet — package cardinality is unbounded, and one CVE per bucket is not a rail dim —
   // so they are bar-and-cell fields, like `image` above.
-  { key: 'cve', label: 'CVE', type: 'text', param: 'cve_id', multi: true, negatable: true },
+  { key: 'cve', label: 'Vulnerability', type: 'text', param: 'cve_id', multi: true, negatable: true },
   { key: 'package', label: 'Package', type: 'text', param: 'package_name', multi: true, negatable: true },
   { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
 ]

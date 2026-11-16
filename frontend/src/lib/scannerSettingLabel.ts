@@ -3,11 +3,11 @@
  * that a newer scanner adds shows as it is until it gets a label here (issue 1140). */
 const LABELS: Record<string, string> = {
   scanners: 'Checks',
-  ignore_unfixed: 'Skip CVEs with no fix',
+  ignore_unfixed: 'Skip vulnerabilities with no fix',
   severities: 'Severities',
   pkg_types: 'Package types',
   timeout: 'Time limit',
-  only_fixed: 'Only CVEs with a fix',
+  only_fixed: 'Only vulnerabilities with a fix',
   scope: 'Image layers',
   scan_timeout: 'Scan time limit (seconds)',
 }
