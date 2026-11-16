@@ -441,7 +441,11 @@ on this image"). It opens the package menu `PackageMenu` on the kit dropdown (S1
 blue head, 2026-11-16, in place of the panel M1). The head has the title, the count, the image and
 the close button. A filter box shows for more than 8 packages. The list stops at about 9 rows and
 scrolls. Each row has the package, its version and the scanners that found it, and the current
-package has the coral language. A click opens the finding of that package and version. The
+package has the coral language. A click opens the finding of that package and version. A long
+package name stays on one line in the head band, with or without the menu: it takes the free
+space and ends with an ellipsis, and its full name is the hover text. The count and the chevron
+of the button never wrap. A row of the menu also ends a long name with an ellipsis, and its full
+name is the hover text (issue 1229, B1 and M1 on built pictures, 2026-11-16). The
 evidence card then has no line for the other packages. The line under Affected
 components names the ID of the page and the selected cluster: `The scanners also found ID in these
 packages and images of cluster NAME.` The card has no note under the table, except the line of a
