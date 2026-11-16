@@ -41,7 +41,9 @@ const vexJustification = ref<string | null>(null)
 const notes = ref('')
 const assignee = ref<string | null>(null)
 const moreOpen = ref(false)
-const sentDraft = ref(false)
+/** the draft as it was sent, until the save ends */
+const sentDraft = ref<string | null>(null)
+const draftKey = () => JSON.stringify([target.value, vexJustification.value, notes.value, assignee.value])
 
 function clearDraft() {
   target.value = null
@@ -54,18 +56,20 @@ watch(
   () => props.finding.finding_key,
   () => {
     clearDraft()
-    sentDraft.value = false
+    sentDraft.value = null
     moreOpen.value = false
   },
 )
 // the note box is out of sight in the panel, so a draft kept after its save would turn Save on
-// again and send the same note twice; a failed save keeps it to try again, and Undo never empties it
+// again and send the same note twice; a failed save keeps it to try again, a change made while
+// the save ran stays, and Undo never empties it
 watch(
   () => props.saving,
   (now, before) => {
-    if (!before || now || !sentDraft.value) return
-    sentDraft.value = false
-    if (!props.error) clearDraft()
+    if (!before || now || sentDraft.value === null) return
+    const unchanged = sentDraft.value === draftKey()
+    sentDraft.value = null
+    if (!props.error && unchanged) clearDraft()
   },
 )
 
@@ -96,7 +100,7 @@ function pickState(s: string) {
 }
 function save() {
   if (!draft.value.body) return
-  sentDraft.value = true
+  sentDraft.value = draftKey()
   emit('save', draft.value.body)
   moreOpen.value = false
 }

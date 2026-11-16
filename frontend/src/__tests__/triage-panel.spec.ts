@@ -352,6 +352,15 @@ describe('the draft after a save (review round 1)', () => {
     expect((pop(w).find('#triage-notes').element as HTMLTextAreaElement).value).toBe('checked the image')
   })
 
+  it('a change made while the save runs stays in the draft (review round 2)', async () => {
+    const w = panel()
+    await saveNote(w)
+    await stateBtn(w, 'Resolve').trigger('click')
+    await w.setProps({ saving: false, error: null })
+    expect(w.find('.state-opt-on').text()).toBe('Resolve')
+    expect(disabled(cellSave(w))).toBe(false)
+  })
+
   it('Undo leaves a typed note in the draft', async () => {
     const w = panel({ undo: { from: 'open', to: 'acknowledged' } })
     await openMore(w)
@@ -388,7 +397,8 @@ describe('the guards of Save and of the panel (review round 1)', () => {
     const w = panel({ historical: true, canAcceptFinal: true })
     await openMore(w)
     expect(disabled(pop(w).find('#triage-notes'))).toBe(true)
-    expect(disabled(pop(w).find('.ui-btn--ghost'))).toBe(true)
+    const risk = pop(w).findAll('button').find((b) => b.text() === 'Accept the risk of this CVE…')!
+    expect(disabled(risk)).toBe(true)
   })
 })
 
