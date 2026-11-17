@@ -444,11 +444,12 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async () => refusedWith(429) as never)
   })
 
-  /** The page reads the finding itself (size 10) and its occurrences (size 200), in no fixed order. */
+  /** The page reads the finding itself (with the package of the link) and its occurrences (size 200), in no fixed order. */
+  const isPair = (opts: unknown) => !!(opts as { query: { package_name?: string[] } }).query.package_name
   function answerSearch(cve: string, occurrences: unknown) {
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(
       async (opts) =>
-        ((opts as { query: { size: number } }).query.size === 10
+        (isPair(opts)
           ? findingsPage(cve, 1, null)
           : occurrences) as never,
     )
@@ -493,8 +494,8 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     const hold = () => new Promise((resolve) => held.push(resolve)) as never
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async (opts) => {
       const q = (opts as { query: { cve_id: string[]; size: number } }).query
-      if (q.cve_id[0] === 'CVE-2026-0001') return q.size === 10 ? (findingsPage('CVE-2026-0001', 1, null) as never) : hold()
-      return (q.size === 10 ? findingsPage('CVE-2026-0009', 1, null) : refusedWith(503)) as never
+      if (q.cve_id[0] === 'CVE-2026-0001') return isPair(opts) ? (findingsPage('CVE-2026-0001', 1, null) as never) : hold()
+      return (isPair(opts) ? findingsPage('CVE-2026-0009', 1, null) : refusedWith(503)) as never
     })
     vi.mocked(listDecisionsApiV1DecisionsGet).mockImplementationOnce(hold)
     vi.mocked(readActivity).mockImplementationOnce(hold)
@@ -516,7 +517,7 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     let answerOld: (v: unknown) => void = () => {}
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(async (opts) => {
       const q = (opts as { query: { cve_id: string[]; size: number } }).query
-      if (q.size !== 10) return ok({ data: [], total: 0 }) as never
+      if (!isPair(opts)) return ok({ data: [], total: 0 }) as never
       if (q.cve_id[0] === 'CVE-2026-0001') return new Promise((resolve) => (answerOld = resolve)) as never
       return findingsPage('CVE-2026-0009', 1, null) as never
     })

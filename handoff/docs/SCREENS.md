@@ -449,7 +449,9 @@ name is the hover text (issue 1229, B1 and M1 on built pictures, 2026-11-16). Th
 evidence card then has no line for the other packages. In the evidence card, the two scanner
 columns have the same width, so both stay in view. A long package name keeps one line, ends with
 an ellipsis and has its full name as the hover text. The other values wrap where they must, so
-the table never scrolls sideways (issue 1231, E1 on built pictures, 2026-11-16). The line under Affected
+the table never scrolls sideways (issue 1231, E1 on built pictures, 2026-11-16). The label column is
+92 px wide, and a cell has 8 px at each side. A state tag and a severity chip then keep one line
+when the three panels share the row at 1280 px (ruling N on built pictures, 2026-11-17). The line under Affected
 components names the ID of the page and the selected cluster: `The scanners also found ID in these
 packages and images of cluster NAME.` The card has no note under the table, except the line of a
 cut list (2026-11-16).

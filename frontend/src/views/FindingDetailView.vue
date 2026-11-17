@@ -29,7 +29,7 @@ import TriagePanel from '@/components/triage/TriagePanel.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useApi } from '@/composables/useApi'
-import { usePackagesOnImage } from '@/composables/usePackagesOnImage'
+import { READ_LIMIT, usePackagesOnImage } from '@/composables/usePackagesOnImage'
 import {
   affectedComponentRows,
   epssOf,
@@ -83,9 +83,9 @@ const pairQuery = computed(() =>
     ? withGlobals({
         cve_id: [cveId.value],
         image_digest: digest.value,
-        // the package of the link, so its rows are always in the read (issue 1227)
-        ...(pkg.value ? { package_name: [pkg.value] } : {}),
-        size: 10,
+        // the package of the link, so its rows are always in the read (issue 1227). The route has
+        // no version filter, so the read takes each version of the package, from both scanners
+        ...(pkg.value ? { package_name: [pkg.value], size: READ_LIMIT } : { size: 10 }),
       })
     : null,
 )

@@ -118,8 +118,16 @@ function verbatimDiffers(r: FindingRow): boolean {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* three panels share the row from 1280px, where a scanner column has about 100px: the label
+   column and the side padding give the room that a state tag or a severity chip needs (issue
+   1231, operator ruling N of 2026-11-17 on built pictures) */
 .compare .attr-col {
-  width: 130px;
+  width: 92px;
+}
+.compare.compare thead th,
+.compare.compare tbody td {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 .compare .attr {
   font-family: var(--font-mono);

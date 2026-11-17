@@ -3,7 +3,7 @@
  * (issue 1227). One read of the findings of the CVE on the image, at the limit of the read (500),
  * so the menu is never cut at the 10 rows of the evidence read. `cut` is true when the image has
  * more findings than that. A refused read gives no packages: the head band then shows the package
- * name alone.
+ * name alone. So does the time before the read of another finding answers.
  */
 import { computed, ref, watch, type Ref } from 'vue'
 
@@ -16,7 +16,7 @@ import { useClusterStore } from '@/stores/cluster'
 import type { FindingRow } from '@/stores/findings'
 
 /** the `size` limit of GET /api/v1/findings */
-const READ_LIMIT = 500
+export const READ_LIMIT = 500
 
 export function usePackagesOnImage(cveId: Ref<string>, digest: Ref<string | null>) {
   const clusterStore = useClusterStore()
@@ -32,6 +32,11 @@ export function usePackagesOnImage(cveId: Ref<string>, digest: Ref<string | null
   watch(
     query,
     async (q, old) => {
+      // another finding or no finding: the packages of the last one are not its packages
+      if (!q || q.cve_id[0] !== old?.cve_id[0] || q.image_digest !== old?.image_digest || q.cluster_id !== old?.cluster_id) {
+        packages.value = []
+        cut.value = false
+      }
       if (!q || JSON.stringify(q) === JSON.stringify(old)) return
       const mine = ++seq
       const response = await searchFindingsApiV1FindingsGet({
