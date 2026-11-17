@@ -8,7 +8,7 @@ import { h, nextTick } from 'vue'
 
 import PopoverShell from '@/components/ui/PopoverShell.vue'
 import { declarations } from '@/__tests__/helpers/componentStyle'
-import { arrowOnHead, placeBeside, POPOVER_GAP, POPOVER_MARGIN } from '@/lib/placeBeside'
+import { arrowOnHead, placeBeside, POPOVER_GAP, POPOVER_MARGIN, pourOrigin } from '@/lib/placeBeside'
 
 const view = { width: 1440, height: 900 }
 const size = { width: 380, height: 300 }
@@ -123,6 +123,17 @@ describe('the edge of the popover (issue 1240, decision 4 E2)', () => {
   })
 })
 
+describe('the genie motion starts at the tip of the arrow (issue 1240, decision 5)', () => {
+  it.each([
+    ['right', '-6px 40px'],
+    ['left', 'calc(100% + 6px) 40px'],
+    ['below', '40px -6px'],
+    ['above', '40px calc(100% + 6px)'],
+  ] as const)('%s: %s', (side, origin) => {
+    expect(pourOrigin({ left: 0, top: 0, side, arrow: 40 })).toBe(origin)
+  })
+})
+
 describe('the popover', () => {
   let wrappers: ReturnType<typeof mount>[] = []
   afterEach(() => {
@@ -216,6 +227,24 @@ describe('the popover', () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+
+  it('opens with the genie motion from the tip of its arrow (issue 1240, decision 5)', async () => {
+    const anchor = document.createElement('div')
+    document.body.append(anchor)
+    const w = mount(PopoverShell, {
+      props: { title: 'Triage', anchor },
+      attachTo: document.body,
+      // the real Transition, so its classes show
+      global: { stubs: { transition: false } },
+    })
+    wrappers.push(w)
+    const card = w.find('[role="dialog"]')
+    expect(card.classes()).toContain('t-pour-enter-active')
+    await nextTick()
+    await nextTick()
+    // jsdom has no layout: the card goes to the right of a box at 0, with the arrow 16px down
+    expect((card.element as HTMLElement).style.getPropertyValue('--pour-origin')).toBe('-6px 16px')
   })
 
   it('gives the focus back to its trigger when it closes', async () => {

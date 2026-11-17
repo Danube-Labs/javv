@@ -2,7 +2,8 @@
 /**
  * THE dropdown behavior shell (DESIGN.md §2 dismiss contract): owns open state,
  * outside-mousedown and document-level Escape, the relative anchor, and the open/close
- * motion (t-pop — every menu animates because every menu routes through here).
+ * motion (t-pop — every menu animates because every menu routes through here). A menu with the
+ * dark head of a window asks for `t-pour`, the genie motion of the popovers (issue 1240).
  * Consumers own the trigger (slot `trigger`, given `open`/`toggle`/`close`) and the menu
  * markup (default slot, given `close`, single root) — positioning and styling stay theirs.
  * `closed` fires after the leave transition — the hook for teardown that must not be
@@ -11,6 +12,7 @@
 import { onMounted, onUnmounted, useTemplateRef } from 'vue'
 
 const open = defineModel<boolean>('open', { default: false })
+const { motion = 't-pop' } = defineProps<{ motion?: 't-pop' | 't-pour' }>()
 const emit = defineEmits<{ closed: [] }>()
 const wrap = useTemplateRef<HTMLElement>('wrap')
 
@@ -39,7 +41,7 @@ onUnmounted(() => {
 <template>
   <div ref="wrap" class="ui-dd">
     <slot name="trigger" :open="open" :toggle="toggle" :close="close" />
-    <Transition name="t-pop" @after-leave="emit('closed')">
+    <Transition :name="motion" @after-leave="emit('closed')">
       <slot v-if="open" :close="close" />
     </Transition>
   </div>

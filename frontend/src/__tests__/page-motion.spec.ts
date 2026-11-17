@@ -46,3 +46,32 @@ describe('page entry motion', () => {
     expect(shell).toMatch(/<main class="content page-motion"/)
   })
 })
+
+/**
+ * The genie motion of the four popovers (issue 1240, decision 5, operator 2026-11-17): a ruled
+ * exception to DESIGN.md §5. It opens in --dur-pour (380 ms) and closes in --dur-panel, it may
+ * animate clip-path next to transform and opacity, and it is the class t-pour.
+ */
+describe('the genie motion t-pour', () => {
+  const tokens = readFileSync(join(SRC, 'styles/tokens.css'), 'utf8')
+  it('its open is --dur-pour, 380 ms, a token of its own', () => {
+    expect(tokens).toMatch(/--dur-pour: 380ms;/)
+  })
+  it('opens in --dur-pour and closes the same way back in --dur-panel, on --ease-out', () => {
+    expect(css).toMatch(/\.t-pour-enter-active \{[^}]*animation: pour var\(--dur-pour\) var\(--ease-out\) both;/)
+    expect(css).toMatch(/\.t-pour-leave-active \{[^}]*animation: pour var\(--dur-panel\) var\(--ease-out\) reverse both;/)
+  })
+  it('starts at the point that the popover gives, the tip of its arrow', () => {
+    expect(css).toMatch(/\.t-pour-enter-active,\n\.t-pour-leave-active \{\n  transform-origin: var\(--pour-origin\);/)
+  })
+  it('the keyframes move only opacity, transform and clip-path', () => {
+    const pour = block(/@keyframes pour \{[\s\S]*?\n\}/)
+    const props = [...pour.matchAll(/([a-z-]+):\s/g)].map((m) => m[1])
+    expect(new Set(props)).toEqual(new Set(['opacity', 'transform', 'clip-path']))
+  })
+  it('reduced motion turns it off', () => {
+    const off = block(/@media \(prefers-reduced-motion: reduce\) \{\s*\.t-pour-enter-active[\s\S]*?\n\}/)
+    expect(off).toContain('.t-pour-leave-active {')
+    expect(off).toContain('animation: none;')
+  })
+})

@@ -24,8 +24,10 @@ operator ruling on a **built specimen** (DESIGN.md §8.5), not an argument in a 
    tokens. **Never the library itself**, never its colors or type. Framework7 is the stronger source
    for motion — press feedback, sheet/slideover entrances, the feel of a transition — which is
    exactly where a screen most often feels unfinished. Land what you borrow on the **existing** motion
-   layer rather than a new curve: `t-pop` = floating panels (dropdowns/popovers), fade + 4px rise,
-   quick both ways; `t-fade` = banners and in-flow appearances, crossfade only, **never animate
+   layer rather than a new curve: `t-pop` = floating panels (dropdowns), fade + 4px rise,
+   quick both ways; `t-pour` = the genie of the four popovers with an arrow (the Triage panel,
+   Panel filters, Panel settings, the package menu), a ruled exception of DESIGN.md §9 (issue
+   1240), not a motion for new panels; `t-fade` = banners and in-flow appearances, crossfade only, **never animate
    height**. Page entry is in the shell, not in the views: `.page-motion` on the main area fades
    each new block in and raises the outer ones 6px (issue 902), so a view adds no entry motion
    of its own. DESIGN.md §9 permits two layout animations: the sidebar collapse and the

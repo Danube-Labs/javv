@@ -74,6 +74,18 @@ function place(anchor: Box, size: Size, view: Size, trigger: Point | undefined, 
 }
 
 /**
+ * The start point of the genie motion: the tip of the arrow, 6px out of the edge that faces the
+ * trigger, as `transform-origin` and the centre of the `clip-path` reveal (issue 1240).
+ */
+export function pourOrigin(placed: Placed): string {
+  const at = `${placed.arrow}px`
+  if (placed.side === 'right') return `-6px ${at}`
+  if (placed.side === 'left') return `calc(100% + 6px) ${at}`
+  if (placed.side === 'below') return `${at} -6px`
+  return `${at} calc(100% + 6px)`
+}
+
+/**
  * True when the arrow points from the head band of the popover, so a dark head gives the arrow
  * its color: below the element the arrow is on the top edge, on a side it is where its middle
  * falls, and above the trigger it is on the bottom edge (issue 1205).

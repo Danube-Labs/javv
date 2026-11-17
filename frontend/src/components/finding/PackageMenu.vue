@@ -71,7 +71,7 @@ function moveFocus(e: KeyboardEvent) {
 </script>
 
 <template>
-  <UiDropdown v-model:open="pkOpen" class="pk-dd">
+  <UiDropdown v-model:open="pkOpen" class="pk-dd" motion="t-pour">
     <template #trigger="{ toggle, open }">
       <button
         ref="pkBtn"
@@ -193,6 +193,8 @@ function moveFocus(e: KeyboardEvent) {
 }
 /* the menu: the list stops at about nine rows and scrolls (DESIGN.md §2, no unbounded panels) */
 .pk-menu {
+  /* the genie motion starts at the button above the menu (issue 1240) */
+  --pour-origin: 40px -6px;
   left: -8px;
   width: 420px;
   border-radius: var(--r-sm);

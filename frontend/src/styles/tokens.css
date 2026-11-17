@@ -311,6 +311,9 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-quick: 120ms;
   --dur-panel: 200ms;
+  /* the open of the genie motion t-pour of the four popovers, a ruled exception to the two
+     durations above (operator 2026-11-17, issue 1240, decision 5) */
+  --dur-pour: 380ms;
 
   /* -- layout ------------------------------------------------------------ */
   --sidebar-w: 226px;

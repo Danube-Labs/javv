@@ -1061,6 +1061,46 @@ button.stat-cell:hover .cell-go,
   opacity: 0;
   transform: translateY(8px) scale(0.98);
 }
+/* t-pour = the genie motion of the four popovers (operator 2026-11-17 on built videos, issue 1240,
+   decision 5), a ruled exception to the rules above (DESIGN.md §5 and §9): the card pours out of
+   the tip of its arrow, its width before its height, with a round clip-path reveal. It opens in
+   --dur-pour (380ms) and closes the same way back in --dur-panel. The popover sets --pour-origin. */
+.t-pour-enter-active,
+.t-pour-leave-active {
+  transform-origin: var(--pour-origin);
+}
+.t-pour-enter-active {
+  animation: pour var(--dur-pour) var(--ease-out) both;
+}
+.t-pour-leave-active {
+  animation: pour var(--dur-panel) var(--ease-out) reverse both;
+}
+@keyframes pour {
+  0% {
+    opacity: 0;
+    transform: scale(0.04, 0.02);
+    clip-path: circle(0% at var(--pour-origin));
+  }
+  30% {
+    opacity: 1;
+    transform: scale(0.35, 0.18);
+  }
+  65% {
+    transform: scale(0.92, 0.8);
+    clip-path: circle(90% at var(--pour-origin));
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    clip-path: circle(160% at var(--pour-origin));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-pour-enter-active,
+  .t-pour-leave-active {
+    animation: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .t-pop-enter-active,
   .t-pop-leave-active,

@@ -610,3 +610,40 @@ describe('style rules: no em dashes in copy', () => {
     expect(stale, `swept, delete from EM_DASH_BASELINE: ${stale.join(', ')}`).toEqual([])
   })
 })
+
+/**
+ * Motion of clip-path is a ruled exception of one motion (issue 1240, decision 5, operator
+ * 2026-11-17): the genie of the four popovers, `@keyframes pour` in base.css. DESIGN.md §5 allows
+ * transform and opacity, so any other keyframes or transition that moves clip-path fails here.
+ */
+const CLIP_MOTION_ALLOWED = 'styles/base.css @keyframes pour'
+function clipMotions(rel: string, css: string): string[] {
+  const hits: string[] = []
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  for (const m of bare.matchAll(/@keyframes\s+([\w-]+)\s*\{((?:[^{}]*\{[^{}]*\})*[^{}]*)\}/g))
+    if (/clip-path\s*:/.test(m[2] ?? '')) hits.push(`${rel} @keyframes ${m[1]}`)
+  for (const m of bare.matchAll(/transition(?:-property)?\s*:[^;}]*/g))
+    if (/clip-path|\ball\b/.test(m[0])) hits.push(`${rel} ${m[0].trim()}`)
+  return hits
+}
+
+describe('style rules: clip-path moves only in the genie motion (issue 1240)', () => {
+  const all = walk(SRC)
+    .map((p) => relative(SRC, p).split('\\').join('/'))
+    .filter((rel) => rel.endsWith('.css') || rel.endsWith('.vue'))
+    .flatMap((rel) => {
+      const source = readFileSync(join(SRC, rel), 'utf8')
+      const css = rel.endsWith('.css') ? source : parseSfc(source).descriptor.styles.map((s) => s.content).join('\n')
+      return clipMotions(rel, css)
+    })
+
+  it('the one motion of clip-path is the genie of base.css', () => {
+    expect(all).toEqual([CLIP_MOTION_ALLOWED])
+  })
+
+  it('the check finds a clip-path in other keyframes and in a transition', () => {
+    expect(clipMotions('x.vue', '@keyframes grow { from { clip-path: inset(50%); } }')).toEqual(['x.vue @keyframes grow'])
+    expect(clipMotions('x.vue', '.a { transition: clip-path 0.2s; }')).toEqual(['x.vue transition: clip-path 0.2s'])
+    expect(clipMotions('x.vue', '@keyframes fade { from { opacity: 0; } }')).toEqual([])
+  })
+})

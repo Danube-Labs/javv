@@ -6,12 +6,13 @@
  * it the dark head of a window, and the arrow takes that color when it points from the head. It
  * carries the ruled dismiss contract (DESIGN.md §2): Escape, a click outside, a visible ✕. A
  * mousedown on the trigger does not close it, so the trigger's own click decides. Focus goes
- * into the card on open and back to the trigger on close.
+ * into the card on open and back to the trigger on close. It opens with the genie motion t-pour
+ * from the tip of its arrow (issue 1240).
  */
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 
 import UiCloseButton from '@/components/ui/UiCloseButton.vue'
-import { arrowOnHead, placeBeside, type Placed } from '@/lib/placeBeside'
+import { arrowOnHead, placeBeside, pourOrigin, type Placed } from '@/lib/placeBeside'
 
 const props = defineProps<{
   title: string
@@ -77,7 +78,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Transition name="t-pop" appear>
+  <Transition name="t-pour" appear>
     <div
       ref="card"
       class="pop"
@@ -90,6 +91,7 @@ onUnmounted(() => {
         left: `${place.left}px`,
         top: `${place.top}px`,
         '--pop-arrow': `${place.arrow}px`,
+        '--pour-origin': pourOrigin(place),
       }"
     >
       <div class="pop-head" :class="{ 'pop-head--band': band }">

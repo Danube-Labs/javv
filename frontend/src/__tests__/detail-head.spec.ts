@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import DetailHead from '@/components/finding/DetailHead.vue'
+import UiDropdown from '@/components/ui/UiDropdown.vue'
 import type { PackageOnImage } from '@/findings/detailViewModel'
 
 import { declarations } from './helpers/componentStyle'
@@ -109,6 +110,8 @@ describe('the package menu of the head band (issue 1205, S1)', () => {
     expect(menu.classes()).toContain('dd-menu')
     // the menu panel with the dark head of a window: no beige line around the head (issue 1240)
     expect(menu.classes()).toContain('dd-menu--band')
+    // the genie motion of the four popovers, from its button (issue 1240, decision 5)
+    expect(w.findComponent(UiDropdown).props('motion')).toBe('t-pour')
     // a menu holds no form field (Primer), and this one has a filter box: it is a dialog, as SelectPanel
     expect(menu.attributes('role')).toBe('dialog')
     expect(menu.attributes('aria-label')).toBe('Packages with this vulnerability')
