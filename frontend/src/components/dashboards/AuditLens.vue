@@ -115,8 +115,4 @@ function onPointClick(params: { dataIndex: number }) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.il-empty {
-  margin: auto 0;
-  font-weight: 500;
-}
 </style>

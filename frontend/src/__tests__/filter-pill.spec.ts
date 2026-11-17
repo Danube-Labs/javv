@@ -19,13 +19,13 @@ describe('FilterPill', () => {
     expect(w.findAll('[role="button"]')).toHaveLength(0)
     const buttons = w.findAll('button')
     expect(buttons.every((b) => b.attributes('tabindex') !== '-1')).toBe(true)
-    expect(buttons.at(-1)!.attributes('aria-label')).toBe('Clear Severity')
+    expect(buttons.at(-1)!.attributes('aria-label')).toBe('Clear severity')
   })
 
   it('opens from the field button, which names the whole filter', async () => {
     const w = mount(FilterPill, { props: { field: field('severity'), values: ['critical', 'high'], mode: 'is' } })
     const open = w.get('.fpill-open')
-    expect(open.attributes('aria-label')).toBe('Edit the filter Severity: is one of critical, high')
+    expect(open.attributes('aria-label')).toBe('Edit the filter severity: is one of critical, high')
     await open.trigger('click')
     expect(w.emitted('open')).toHaveLength(1)
   })

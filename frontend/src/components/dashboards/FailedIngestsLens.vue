@@ -102,7 +102,4 @@ function onPointClick(params: { dataIndex: number }) {
   font-size: var(--text-control);
   color: var(--ink);
 }
-.il-empty {
-  margin: 0;
-}
 </style>

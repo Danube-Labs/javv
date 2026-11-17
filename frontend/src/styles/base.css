@@ -560,8 +560,10 @@ html [class*=' p-'] {
 }
 /* the text of an empty or failed strip reads at body size, never fine print (operator ruling) */
 .il-empty {
+  margin: auto 0;
   padding-bottom: 6px;
   font-size: var(--text-body);
+  font-weight: 500;
   color: var(--ink);
 }
 .ingest-lens > .skel-gap {
@@ -1371,4 +1373,18 @@ textarea.set-input {
 }
 .sys-line.tone-hist .sys-icon {
   color: var(--hist-fg);
+}
+
+/* with reduced motion, these controls change at once: a rule above that adds a transition gets a
+   line here (style-rules.spec.ts fails a transition that has none) */
+@media (prefers-reduced-motion: reduce) {
+  .search-box,
+  .facet-search,
+  .tbl-reorder.tbl-reorder thead th.th-drag,
+  .facet-check,
+  .tbl tbody td:has(.val-act),
+  .set-input,
+  .set-select {
+    transition: none;
+  }
 }

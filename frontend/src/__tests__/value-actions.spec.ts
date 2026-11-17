@@ -21,16 +21,16 @@ describe('ValueActions', () => {
 
   it('names the field AND the value, so the action is never a bare "exclude"', () => {
     const w = mount(ValueActions, { props: base })
-    expect(btns(w)[0]!.attributes('aria-label')).toBe('Filter to Namespace kube-system')
-    expect(btns(w)[1]!.attributes('aria-label')).toBe('Filter out Namespace kube-system')
+    expect(btns(w)[0]!.attributes('aria-label')).toBe('Filter to namespace kube-system')
+    expect(btns(w)[1]!.attributes('aria-label')).toBe('Filter out namespace kube-system')
   })
 
   it('says the display name where the stored value is not what the screen shows', () => {
     const w = mount(ValueActions, {
       props: { field: 'State', value: 'not_affected', shown: 'Not affected' },
     })
-    expect(btns(w)[0]!.attributes('aria-label')).toBe('Filter to State Not affected')
-    expect(btns(w)[1]!.attributes('title')).toBe('Filter out State Not affected')
+    expect(btns(w)[0]!.attributes('aria-label')).toBe('Filter to state Not affected')
+    expect(btns(w)[1]!.attributes('title')).toBe('Filter out state Not affected')
   })
 
   it('the active side reads as pressed, and its label offers the undo', () => {
@@ -38,7 +38,7 @@ describe('ValueActions', () => {
     expect(btns(w)[1]!.classes()).toContain('val-act-on')
     expect(btns(w)[1]!.attributes('aria-pressed')).toBe('true')
     expect(btns(w)[1]!.attributes('aria-label')).toBe(
-      'Clear exclusion of Namespace kube-system',
+      'Clear exclusion of namespace kube-system',
     )
     expect(btns(w)[0]!.attributes('aria-pressed')).toBe('false')
   })
@@ -46,7 +46,7 @@ describe('ValueActions', () => {
   it('drops the include side where the host already owns it (the rail row click)', () => {
     const w = mount(ValueActions, { props: { ...base, excludeOnly: true } })
     expect(btns(w)).toHaveLength(1)
-    expect(btns(w)[0]!.attributes('aria-label')).toBe('Filter out Namespace kube-system')
+    expect(btns(w)[0]!.attributes('aria-label')).toBe('Filter out namespace kube-system')
   })
 
   /** `.fpill-x`, the pattern this follows, is mouse-only. This one must not repeat that. */

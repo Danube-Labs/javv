@@ -22,6 +22,7 @@
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
+import { inText } from '@/filters/typedValues'
 import type { FilterMode } from '@/stores/filters'
 
 const props = defineProps<{
@@ -90,8 +91,8 @@ onBeforeUnmount(() => host?.removeEventListener('mouseenter', snapToPixelGrid))
 /** Clicking the side that is already active clears it — the same toggle the row/pill offer. */
 const label = (mode: FilterMode) =>
   props.active === mode
-    ? `Clear ${mode === 'not' ? 'exclusion of' : 'filter on'} ${props.field} ${props.shown ?? props.value}`
-    : `Filter ${mode === 'not' ? 'out' : 'to'} ${props.field} ${props.shown ?? props.value}`
+    ? `Clear ${mode === 'not' ? 'exclusion of' : 'filter on'} ${inText(props.field)} ${props.shown ?? props.value}`
+    : `Filter ${mode === 'not' ? 'out' : 'to'} ${inText(props.field)} ${props.shown ?? props.value}`
 </script>
 
 <template>
