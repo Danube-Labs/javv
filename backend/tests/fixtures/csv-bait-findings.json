@@ -17,13 +17,22 @@
     "image_repo": "registry.local/team/app",
     "tag": "\tv1.2.3",
     "image_digest": "sha256:golden01",
-    "namespaces": ["default", "=kube-system"],
+    "namespaces": [
+      "default",
+      "=kube-system"
+    ],
     "assignee": "-deref --exec=payload",
     "first_seen_at": "2026-07-01T00:00:00+00:00",
     "last_seen_at": "2026-07-05T00:00:00+00:00",
     "last_scan_at": "2026-07-05T00:00:00+00:00",
     "present": true,
-    "state_decision_id": null
+    "state_decision_id": null,
+    "locations_total": 3,
+    "locations": [
+      "/opt/app;v2/lib.so",
+      "=cmd|' /C calc'!A0",
+      "@evil/node_modules/x"
+    ]
   },
   {
     "finding_key": "fk-benign-2",
@@ -43,12 +52,16 @@
     "image_repo": "registry.local/team/quoted \"name\"",
     "tag": "stable",
     "image_digest": "sha256:golden02",
-    "namespaces": ["prod"],
+    "namespaces": [
+      "prod"
+    ],
     "assignee": null,
     "first_seen_at": "2026-06-20T12:30:00+00:00",
     "last_seen_at": "2026-07-05T00:00:00+00:00",
     "last_scan_at": "2026-07-05T00:00:00+00:00",
     "present": true,
-    "state_decision_id": "dec-42"
+    "state_decision_id": "dec-42",
+    "locations_total": null,
+    "locations": null
   }
 ]

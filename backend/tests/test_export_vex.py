@@ -74,3 +74,47 @@ def test_every_cisa_justification_translates_to_cyclonedx() -> None:
 def test_image_purl_is_percent_encoded() -> None:
     purl = image_purl({"image_repo": "registry.local/team/app", "image_digest": "sha256:abc"})
     assert purl == "pkg:oci/app@sha256%3Aabc?repository_url=registry.local/team/app"
+
+
+def _with_paths() -> list[dict]:
+    docs = _findings()
+    docs[0] = dict(
+        docs[0], locations=["/usr/lib/libssl.so.3", "/opt/app/libssl.so.3"], locations_total=2
+    )
+    return docs
+
+
+def test_cyclonedx_puts_the_paths_in_the_evidence_of_a_component() -> None:
+    """Issue 1245, D2 A: CycloneDX 1.5 `component.evidence.occurrences[].location` holds the paths
+    of a finding. The vulnerability names that component in `affects`, next to the image."""
+    docs = _with_paths()
+    bom = to_cyclonedx(docs, cluster_id="c-vex-paths", scanner="trivy", generated_at=GENERATED_AT)
+    [component] = bom["components"]
+    assert component["bom-ref"] == docs[0]["finding_key"]
+    assert component["type"] == "library"
+    assert component["purl"] == package_purl(docs[0])
+    assert component["evidence"]["occurrences"] == [
+        {"location": "/usr/lib/libssl.so.3"},
+        {"location": "/opt/app/libssl.so.3"},
+    ]
+    first = bom["vulnerabilities"][0]
+    assert first["affects"] == [{"ref": image_purl(docs[0])}, {"ref": docs[0]["finding_key"]}]
+    # a finding with no paths keeps the image as its only reference
+    assert all(
+        v["affects"] == [{"ref": image_purl(d)}]
+        for v, d in zip(bom["vulnerabilities"][1:], docs[1:], strict=True)
+    )
+
+
+def test_cyclonedx_with_no_paths_has_no_components() -> None:
+    bom = to_cyclonedx(_findings(), cluster_id="c", scanner="trivy", generated_at=GENERATED_AT)
+    assert "components" not in bom
+
+
+def test_openvex_has_no_field_for_a_path() -> None:
+    """OpenVEX 0.2.0 has no field for a file path, so its export does not change (issue 1245)."""
+    with_paths = to_openvex(
+        _with_paths(), cluster_id="c", scanner="trivy", generated_at=GENERATED_AT
+    )
+    without = to_openvex(_findings(), cluster_id="c", scanner="trivy", generated_at=GENERATED_AT)
+    assert with_paths == without

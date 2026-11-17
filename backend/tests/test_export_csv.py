@@ -6,12 +6,14 @@ benign values pass through untouched; the golden bait fixture locks the full ser
 (header order + quoting + sanitization) so a refactor can't silently unsanitize a column.
 """
 
+import csv
+import io
 import json
 import pathlib
 
 import pytest
 
-from backend.export.csv_stream import CSV_COLUMNS, csv_line, sanitize_cell
+from backend.export.csv_stream import CSV_COLUMNS, csv_line, csv_row, sanitize_cell
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 
@@ -65,7 +67,26 @@ def test_a_negative_number_is_not_a_formula() -> None:
 def test_golden_bait_findings_serialize_sanitized() -> None:
     """The checked-in bait findings → the checked-in sanitized CSV, byte for byte."""
     docs = json.loads((FIXTURES / "csv-bait-findings.json").read_text())
-    lines = [csv_line(CSV_COLUMNS)] + [csv_line([d.get(c) for c in CSV_COLUMNS]) for d in docs]
+    lines = [csv_line(CSV_COLUMNS)] + [csv_row(d) for d in docs]
     # bytes, not read_text: universal newlines would translate a sanitized CR bait cell
     expected = (FIXTURES / "csv-bait-golden.csv").read_bytes().decode()
     assert "".join(lines) == expected
+
+
+def test_the_paths_go_one_on_each_line_of_one_cell() -> None:
+    """Issue 1245, D1 A: ingest refuses a control character in a path, so a new line splits the
+    paths of the cell with no doubt. A `;` or a `,` is part of a path. Each path is sanitized."""
+    doc = {"locations": ["/opt/a;b,c/lib.so", "=1+1.jar", "/usr/lib/x"], "locations_total": 70}
+    row = next(csv.reader(io.StringIO(csv_row(doc))))
+    assert CSV_COLUMNS[-2:] == ("locations_total", "locations")
+    assert row[-2] == "70"
+    assert row[-1].split("\n") == ["/opt/a;b,c/lib.so", "'=1+1.jar", "/usr/lib/x"]
+
+
+def test_a_finding_with_no_paths_has_empty_cells() -> None:
+    """`null` (a scanner of schema 3 or 4) and `[]` (no path found) both give an empty cell; the
+    count tells them apart: empty for `null`, 0 for `[]`."""
+    unknown = next(csv.reader(io.StringIO(csv_row({"locations": None, "locations_total": None}))))
+    none = next(csv.reader(io.StringIO(csv_row({"locations": [], "locations_total": 0}))))
+    assert unknown[-2:] == ["", ""]
+    assert none[-2:] == ["0", ""]

@@ -4,7 +4,9 @@ Every cell goes through `sanitize_cell`: a STRING whose first character is one o
 `=`, `+`, `-`, `@`, tab, CR would execute as a formula when the CSV lands in a spreadsheet
 (CSV injection), so it's neutralized with a leading apostrophe — the value stays readable,
 the formula never arms. Non-strings can't be formulas and serialize plainly (bools lowercase
-to match the JSON wire shape; lists — `namespaces` — join on `;`).
+to match the JSON wire shape; lists — `namespaces` — join on `;`). The paths of a finding are the
+one list that joins on a new line, one path on each line of the cell: a path can hold a `;` or a
+`,`, and ingest refuses a control character in it (issue 1245).
 
 Rows stream one at a time over the constant-memory sweep (`export/sweep.py`); nothing buffers
 the full result. Scheduled/throttled exports (`system-reports`) are M7 — this is the inline path.
@@ -47,6 +49,8 @@ CSV_COLUMNS = (
     "last_scan_at",
     "present",
     "state_decision_id",
+    "locations_total",
+    "locations",
 )
 
 
@@ -71,10 +75,18 @@ def csv_line(values: list[Any] | tuple[Any, ...]) -> str:
     return buf.getvalue()
 
 
+def csv_row(doc: dict[str, Any]) -> str:
+    """One finding → its sanitized CSV line, in the order of `CSV_COLUMNS`."""
+    paths = doc.get("locations")
+    values = [doc.get(col) for col in CSV_COLUMNS[:-1]]
+    values.append("\n".join(sanitize_cell(p) for p in paths) if paths else None)
+    return csv_line(values)
+
+
 async def stream_csv(
     client: AsyncOpenSearch, *, cluster_id: str, filters: SearchFilters
 ) -> AsyncIterator[str]:
     """Header, then one line per finding in the lens — never the buffered whole."""
     yield csv_line(CSV_COLUMNS)
     async for doc in sweep_findings(client, cluster_id=cluster_id, filters=filters):
-        yield csv_line([doc.get(col) for col in CSV_COLUMNS])
+        yield csv_row(doc)

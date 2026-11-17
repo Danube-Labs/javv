@@ -113,8 +113,23 @@ def to_cyclonedx(
 ) -> dict[str, Any]:
     ts = generated_at.isoformat()
     vulnerabilities = []
+    components = []
     for doc in findings:
         state = doc.get("state", "open")
+        affects = [{"ref": image_purl(doc)}]
+        if paths := doc.get("locations"):
+            # the paths of a finding are the evidence of where its package is (issue 1245)
+            components.append(
+                {
+                    "bom-ref": doc["finding_key"],
+                    "type": "library",
+                    "name": str(doc.get("package_name") or ""),
+                    "version": str(doc.get("installed_version") or ""),
+                    "purl": package_purl(doc),
+                    "evidence": {"occurrences": [{"location": p} for p in paths]},
+                }
+            )
+            affects.append({"ref": doc["finding_key"]})
         analysis: dict[str, Any] = {"state": _CDX_STATE[state]}
         if state == "not_affected":
             analysis["justification"] = _CDX_JUSTIFICATION[doc["vex_justification"]]
@@ -126,10 +141,10 @@ def to_cyclonedx(
                 "id": doc["cve_id"],
                 "source": {"name": scanner},
                 "analysis": analysis,
-                "affects": [{"ref": image_purl(doc)}],
+                "affects": affects,
             }
         )
-    return {
+    bom: dict[str, Any] = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
         "version": 1,
@@ -143,3 +158,6 @@ def to_cyclonedx(
         },
         "vulnerabilities": vulnerabilities,
     }
+    if components:
+        bom["components"] = components
+    return bom
