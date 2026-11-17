@@ -329,19 +329,25 @@ GOOD = {
 }
 
 
+# the name of the image that main() gives each scan, for its log lines
+NAMED: list[str | None] = []
+
+
 @pytest.fixture
 def cycle(settings, docker, monkeypatch):
     """Runs main() against the fake Docker API and a fake JAVV. Records what the scanner got;
     each image ID scans to its own digest unless `digest` says otherwise."""
     scanned: list[str] = []
+    NAMED.clear()
 
     def run(replies=GOOD, digest=lambda image: "sha256:repo-" + image[7:], **env):
         settings(**env)
         javv = FakeJavv(replies)
         monkeypatch.setattr(push.Javv, "call", lambda _api, *a, **k: javv(*a, **k))
 
-        def scan(_s, image):
+        def scan(_s, image, name=None):
             scanned.append(image)
+            NAMED.append(name)
             return digest(image), [], "0.76.2", "2", None
 
         monkeypatch.setattr(push, "scan_trivy", scan)
@@ -429,3 +435,31 @@ def test_a_push_sends_schema_5(cycle):
     assert code == 0
     pushes = [b for _, p, b, _ in calls if p == "/api/v1/ingest/scan"]
     assert pushes and all(b["schema_version"] == 5 for b in pushes)
+
+
+def test_a_cycle_gives_the_scan_the_name_of_the_image_for_its_log_lines(cycle):
+    code, _, scanned = cycle()
+    assert code == 0
+    assert all(image.startswith("sha256:") for image in scanned)
+    assert "nginx:1.27-alpine" in NAMED and None not in NAMED
+
+
+def test_paths_left_out_name_the_image_not_its_id(settings, monkeypatch, caplog):
+    rep = {
+        "Results": [
+            {
+                "Class": "lang-pkgs",
+                "Type": "gobinary",
+                "Target": "usr/bin/app",
+                "Vulnerabilities": [
+                    {"VulnerabilityID": "CVE-1", "PkgName": "a", "PkgPath": "/bin/a\x07b"}
+                ],
+            }
+        ]
+    }
+    monkeypatch.setattr(push, "run", lambda cmd, timeout=None: rep if cmd[1] == "image" else {})
+    with caplog.at_level("WARNING"):
+        push.scan_trivy(settings(), "sha256:d9e853e87e55", "nginx:1.27-alpine")
+    assert [r.getMessage() for r in caplog.records] == [
+        "paths left out of nginx:1.27-alpine: dropped 1, over_cap 0"
+    ]
