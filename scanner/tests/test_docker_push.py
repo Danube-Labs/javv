@@ -276,6 +276,14 @@ SHARED = [
     "scan_grype",
     "expected_count",
     "counts",
+    "PATH_CAP",
+    "PATH_CHARS",
+    "UNSHOWN",
+    "TRIVY_LABEL_TYPES",
+    "clean_paths",
+    "trivy_paths",
+    "grype_paths",
+    "left_out",
 ]
 
 
@@ -414,3 +422,10 @@ def test_a_dry_run_pushes_nothing(cycle):
     code, calls, scanned = cycle(JAVV_DRY_RUN="true")
     assert (code, scanned) == (0, [])
     assert [p for _, p, _, _ in calls] == ["/api/v1/scan-scope"]
+
+
+def test_a_push_sends_schema_5(cycle):
+    code, calls, _ = cycle()
+    assert code == 0
+    pushes = [b for _, p, b, _ in calls if p == "/api/v1/ingest/scan"]
+    assert pushes and all(b["schema_version"] == 5 for b in pushes)
