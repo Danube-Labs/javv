@@ -55,9 +55,9 @@ describe('GlobalTimePicker (single range control)', () => {
     const store = useTimeTravelStore()
     await open(w)
     await w.find('input[aria-label="Range start date"]').setValue('2026-07-01')
-    await w.find('input[aria-label="Range start time (24h)"]').setValue('08:00')
+    await w.find('input[aria-label="Range start time (24-hour clock)"]').setValue('08:00')
     await w.find('input[aria-label="Range end date"]').setValue('2026-07-08')
-    await w.find('input[aria-label="Range end time (24h)"]').setValue('14:30')
+    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue('14:30')
     await w.find('.time-abs .time-apply').trigger('click')
     expect(store.t).toBe(new Date('2026-07-08T14:30:00').toISOString())
     expect(store.windowDays).toBe(7)
@@ -77,9 +77,9 @@ describe('GlobalTimePicker (single range control)', () => {
     const hm = `${pad(future.getHours())}:${pad(future.getMinutes())}`
     await open(w)
     await w.find('input[aria-label="Range start date"]').setValue(d)
-    await w.find('input[aria-label="Range start time (24h)"]').setValue('00:00')
+    await w.find('input[aria-label="Range start time (24-hour clock)"]').setValue('00:00')
     await w.find('input[aria-label="Range end date"]').setValue(d)
-    await w.find('input[aria-label="Range end time (24h)"]').setValue(hm)
+    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue(hm)
     await w.find('.time-abs .time-apply').trigger('click')
     expect(store.t).toBeNull() // ends ahead of now → current state, no as_of
     expect(store.windowLabel).toMatch(/→/) // applied: the custom range label
@@ -90,9 +90,9 @@ describe('GlobalTimePicker (single range control)', () => {
     const w = mount(GlobalTimePicker)
     await open(w)
     await w.find('input[aria-label="Range start date"]').setValue('2026-07-01')
-    await w.find('input[aria-label="Range start time (24h)"]').setValue('25:00') // invalid hour
+    await w.find('input[aria-label="Range start time (24-hour clock)"]').setValue('25:00') // invalid hour
     await w.find('input[aria-label="Range end date"]').setValue('2026-07-02')
-    await w.find('input[aria-label="Range end time (24h)"]').setValue('9:75') // invalid minutes
+    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue('9:75') // invalid minutes
     expect((w.find('.time-abs .time-apply').element as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -154,9 +154,9 @@ describe('a range that ends after today (issue 984)', () => {
   async function pick(w: ReturnType<typeof mount>, fromDay: string, toDay: string) {
     await open(w)
     await w.find('input[aria-label="Range start date"]').setValue(fromDay)
-    await w.find('input[aria-label="Range start time (24h)"]').setValue('00:00')
+    await w.find('input[aria-label="Range start time (24-hour clock)"]').setValue('00:00')
     await w.find('input[aria-label="Range end date"]').setValue(toDay)
-    await w.find('input[aria-label="Range end time (24h)"]').setValue('00:00')
+    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue('00:00')
   }
   const apply = (w: ReturnType<typeof mount>) => w.find('.time-abs .time-apply')
 

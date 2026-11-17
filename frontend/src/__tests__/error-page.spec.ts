@@ -5,13 +5,13 @@ import { describe, expect, it } from 'vitest'
 
 import ErrorPage from '@/components/system/ErrorPage.vue'
 
-const base = { code: 'Error', title: 'This page could not be shown', hint: 'Something went wrong.' }
+const base = { code: 'Error', title: 'JAVV cannot show this page', hint: 'Something went wrong.' }
 
 describe('ErrorPage', () => {
   it('shows the code, the title as the only h1, and the message', () => {
     const w = mount(ErrorPage, { props: base })
     expect(w.findAll('h1')).toHaveLength(1)
-    expect(w.get('h1').text()).toBe('This page could not be shown')
+    expect(w.get('h1').text()).toBe('JAVV cannot show this page')
     expect(w.get('.ep-code').text()).toBe('Error')
     expect(w.get('.ep-code').attributes('aria-hidden')).toBe('true')
     expect(w.get('.ep-hint').text()).toBe('Something went wrong.')

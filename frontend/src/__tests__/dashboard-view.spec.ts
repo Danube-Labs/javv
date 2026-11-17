@@ -364,7 +364,7 @@ describe('the read page', () => {
   it('a refused read says why', async () => {
     vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(429))
     const { w } = await mountView()
-    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.find('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
   })
 
   it('with no cluster, and with no panels, it says so', async () => {

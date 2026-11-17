@@ -19,14 +19,14 @@ export function failureKind(
 
 export const FAILURE_COPY: Record<FailureKind, string> = {
   past_t:
-    "This filter isn't answerable at a past point in time. Return to now, or drop the search/attribute filters.",
+    'JAVV cannot apply this filter at a past time. Go back to now, or remove the search and the attribute filters.',
   // a 1-character search never gets to the server (the search box stops it), so the text names
   // the causes that do
-  bad_filter: "These filters can't be used together, or a value isn't valid. Check the filters.",
-  busy: 'The search backend is busy. Try again in a few seconds.',
+  bad_filter: 'You cannot use these filters together, or a value is not valid. Check the filters.',
+  busy: 'The backend is busy. Try again in a few seconds.',
   // the cursor's search context is gone, so the page cannot be asked for again
   expired: 'These results expired. Reload the page to start again.',
-  backend: 'Findings unavailable. Check the backend connection.',
+  backend: 'JAVV cannot show the findings. Check the backend connection.',
 }
 
 /** Every read's alert (issue 833, G2): a 429 is the per-user search budget, never a broken

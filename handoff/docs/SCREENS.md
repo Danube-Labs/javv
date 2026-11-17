@@ -46,17 +46,17 @@ did not show.
   sections) are **hidden** without the capability.
 - `GET /readyz` (polled) — drives the global **degraded banner**; any API `503` envelope raises it
   too, as does a proxy's `502` or `504`; auto-clears on `200`. The banner and the sidebar footer
-  say what is down (issue 675): a `503` is the backend reporting its store ("Search backend
-  unavailable. Check OpenSearch health.", footer "Store degraded"); no answer or a proxy error is
-  the backend itself ("The backend is not answering. Screens cannot load until it is back.",
+  say what is down (issue 675): a `503` is the backend reporting its store ("The database is
+  not available. Check the health of OpenSearch.", footer "Database degraded"); no answer or a proxy error is
+  the backend itself ("The backend does not answer. Screens cannot load until it answers again.",
   footer "Backend not answering"). A store that answers but cannot serve everything gets the
   **amber** line (`tone-degraded`, `role="status"`) instead of the red one (issue 832; tone and
   read-only copy ruled on the A/B deck 2026-10-12, red copy ruled on the plan 2026-10-13):
   read-only, from `/readyz`'s `checks.store: "read-only"` or a `503` with the problem type
-  `store-read-only`, says "The store is read-only: its disk is full. Reads work; changes are not
-  saved."; red, from `checks.store: "red"`, says "Part of the store is not available. Some screens
-  and changes can fail until it recovers." The footer keeps "Store degraded" for both (ruling:
-  no change).
+  `store-read-only`, says "The database is read-only because its disk is full. You can read the data, but
+  JAVV does not save changes."; red, from `checks.store: "red"`, says "Part of the database is not available. Some screens
+  and changes can fail until it recovers." The footer keeps "Database degraded" for both (ruling:
+  no change). Issue 1247 rewrote these texts in strict STE, with "database" for "store".
 - `GET /api/v1/scanners/freshness?cluster_id=…` — per-(cluster, scanner) `last_ingest_at` +
   `silent_for_seconds`; drives the **ScannerFreshnessBanner** ("data as of T; scanner silent
   since T′") and the sidebar sweep-health chip. Never-ingested → nulls → "no data yet" chip, not
@@ -64,9 +64,9 @@ did not show.
 - The selected cluster's row of `GET /api/v1/clusters` (`last_scan_at`, `warns_at`, `retires_at`)
   drives the **retirement countdown** (issue 765), its own line under the freshness banner, shown
   only inside the cluster's last `warn_days` before automatic retirement: "**beta** has sent no
-  scans for 40 days. It will be retired in 5 days unless a scan arrives." Amber (`role=status`)
+  scans for 40 days. JAVV retires it in 5 days if no scan arrives." Amber (`role=status`)
   while there is time, red (`role=alert`) on the last day and once past its date, when it says
-  the next retirement sweep retires it unless a scan arrives. "No scans for" reads `last_scan_at`.
+  the next retirement sweep retires it if no scan arrives. "No scans for" reads `last_scan_at`.
   The only cluster listed gets no countdown (the sweep never retires it: nothing else shows that
   scans still reach JAVV); its line says so and points at retiring it by hand. The list is
   re-read on the banner's 10-minute tick and after every Settings write that moves a schedule,
@@ -101,7 +101,7 @@ focus. The command palette keeps its own row.
 `ghost` button, and the button that does the work is `primary`.
 
 **Time picker (C-1, D28/FR-23).** Two visibly distinct controls in one group (V4-DELTA conflict 4):
-the **time-travel `T`** (Now / rewind / jump-to-date → amber "Viewing history: as scanned at T"
+the **time-travel `T`** (Now / rewind / jump-to-date → amber "History: the data as the scanners saw it at T"
 banner + Back to now) and the **trend window** (relative to `T`, scopes charts + Contributors).
 - State: **picker-set-but-unsupported** — if M8b hasn't landed, `T<now` reads return `501`; show
   the banner "History available after M8b", keep `T=now` fully working. (Check milestone order at
@@ -137,24 +137,26 @@ case: the backend looks for the name as typed, then in lower case, issue 965),
 **States:** bad-credentials (generic copy), locked-out (429 — "try again later", no countdown
 oracle), forced password change (SEC-6: bootstrap admin / temp password), **server not answering**
 (issue 675: no answer or a `5xx` from the session check, the sign-in or the password change shows
-"The server is not answering. This page checks again on its own." in place of any credential
+"The backend does not answer. This page checks again by itself." in place of any credential
 error; the page asks `/readyz` every 30 seconds, and when the server returns it re-checks the
 session, so a visitor whose session is still good goes straight to Overview. A failed session
 check is not remembered as signed out: the next navigation asks again), **store read-only**
 (issue 832: a sign-in or a forced password change the full disk refuses, a `503` with the
-problem type `store-read-only`, shows "The store is read-only: its disk is full." and starts no
+problem type `store-read-only`, shows "The database is read-only because its disk is full." and starts no
 re-check, since the server answers; the password change by operator ruling on PR 843), **session
 not kept** (issue 869: a sign-in that answers `200` and a session check that finds no session.
 The browser did not keep the cookie. On a page that is not a secure context, plain `http` and
 not `localhost`, the form says "This browser refused the session cookie, because the page uses
-http. Use https, or ask the admin to set JAVV_SESSION_COOKIE_SECURE=false." Else it says "Signed
-in, but this browser did not keep the session. Allow cookies for this site, then sign in again."
+http. Use https, or ask the admin to set JAVV_SESSION_COOKIE_SECURE=false." Else it says "JAVV
+signed you in, but this browser did not keep the session. Allow cookies for this site, then sign
+in again."
 The form stays on sign-in. A server failure on that check stays "not answering". Copy B of two,
 ruled by the operator on built specimens, 2026-10-15).
 **Rulings (operator, on built specimens, 2026-10-02):** the server-down message on the login page
 is the form's plain red line (A of two; B was a tinted box). The banner for a backend that is gone
 reads "The backend is not answering. Screens cannot load until it is back." (A of two; B ended
-"Check that the JAVV backend is running.").
+"Check that the JAVV backend is running."). Issue 1247 rewrote it in strict STE: "The backend
+does not answer. Screens cannot load until it answers again."
 **The password rule** (issue 726): the forced change states it under the fields, as the
 prototype does ("At least 12 characters. Your current password stops working once you set the new
 one."), refuses a shorter password before sending it, and shows the server's own reason for a `422`.
@@ -204,7 +206,7 @@ control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
 **T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1
 metrics rollup" (C-5/D39) — the current-state table is replaced by the notice, never a wrong or
 expensive query.
-The cold-start state ("No clusters registered yet") is the whole page on the nine data routes,
+The cold-start state ("No clusters yet") is the whole page on the nine data routes,
 so its title is the page's one h1 in the page-title style (issue 829; operator ruling
 2026-10-12).
 
@@ -315,8 +317,8 @@ when the list is full.
 **Assignee with Unassigned** (operator ruling 2026-10-23 on a built specimen, issue 975, option
 B): Findings refuses the two filters together, so the last pick wins. A click on Unassigned clears
 the Assignee values. A pick of an Assignee value, or a change of Assignee from "is not" to "is",
-turns Unassigned off. A message tells the user what changed, for example "Assignee cleared.
-Assignee and Unassigned can't be used together." Assignee "is not" with Unassigned stays, because
+turns Unassigned off. A message tells the user what changed, for example "JAVV cleared the filter
+Assignee. You cannot use Assignee and Unassigned together." Assignee "is not" with Unassigned stays, because
 the API accepts it. A link that holds both filters keeps both, and the grid shows the 422 text
 (see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
 another filter, or the removal of an Assignee value, keeps both.
@@ -403,15 +405,16 @@ the user's open searches until the grid closes it.
   query (issue 833 F1). On all four screens an answer to an older request is dropped, so it never
   replaces a newer one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
   current filters answers.
-- **A refused filter, 422** (operator rulings 2026-10-23, issue 975): the alert says "These
-  filters can't be used together, or a value isn't valid. Check the filters." A 1-character search
+- **A refused filter, 422** (operator rulings 2026-10-23, issue 975): the alert says "You
+  cannot use these filters together, or a value is not valid. Check the filters." (strict STE,
+  issue 1247) A 1-character search
   never gets to the server, so no 422 is about a short search. At a past time, a 422 for Assignee
   with Unassigned gets the same text. Any other 422 at a past time keeps the past-time text.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
   the alert says "Filter counts could not be loaded." with the reason, and the rail and the
   add-filter menu keep their values with "-" for each count.
 - **The reason in any read's alert** (issue 833 G2, every screen): a 429 is the per-user search
-  budget and says "The search backend is busy. Try again in a few seconds."; any other failure
+  budget and says "The backend is busy. Try again in a few seconds."; any other failure
   keeps the screen's own copy (`readFailureCopy` in `src/findings/failureCopy.ts`).
 - 403-capability-hidden — bulk-triage bar and row checkboxes absent without `can_triage`.
 - Bulk 413 — inline error offering to narrow the selection.
@@ -1047,7 +1050,7 @@ expired token needs a new token from Create token. Revoke stays on an expired to
 answers 409 to a rotation of a revoked or an expired token.
 The window "Copy this token now" is `components/settings/TokenOnceDialog.vue`, the same window as on
 AI agents (MCP) (§13.9). When the browser blocks the clipboard (a page on plain http that is not
-localhost), Copy shows a toast: *Couldn't copy: the browser blocked the clipboard. Select the text
+localhost), Copy shows a toast: *JAVV could not copy the text, because the browser blocked the clipboard. Select the text
 and copy it.* The card subtitle is *one scoped push token per (cluster, scanner)* (issue 1096, Q4 B
 and Q5 B on built pictures, 2026-11-06).
 

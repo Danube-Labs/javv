@@ -235,7 +235,7 @@ describe('the search box of a list that stopped at its cap (issue 1064)', () => 
     const failed = mountSearch(vi.fn<ValueSearchFn>(async () => null))
     await type(failed, 'team-0')
     await vi.advanceTimersByTimeAsync(300)
-    expect(failed.find('.facet-cap').text()).toBe('Could not search all values. The list shows the top 32.')
+    expect(failed.find('.facet-cap').text()).toBe('JAVV could not search all the values. The list shows the top 32.')
     expect(texts(failed)).toEqual(TOP.map((b) => b.key).filter((k) => k.includes('team-0')))
   })
 

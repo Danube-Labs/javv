@@ -25,21 +25,21 @@ test('a page that throws while it is set up is replaced by the error page', asyn
     }),
   )
   await openAboutFromSidebar(page)
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('This page could not be shown')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('JAVV cannot show this page')
   await expect(page.locator('.sidebar')).toBeVisible()
 
   // the frame still works: the sidebar leaves the broken page
   await page.locator('.sidebar a.side-item[href^="/findings"]').click()
   await expect(page).toHaveURL(/\/findings/)
-  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('This page could not be shown')
+  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('JAVV cannot show this page')
 })
 
 test('a page whose file fails to load shows the error page, and "Try again" recovers', async ({ page }) => {
   await page.route(ABOUT_FILE, (route) => route.abort())
   await openAboutFromSidebar(page)
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('This page could not be shown')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('JAVV cannot show this page')
 
   await page.unroute(ABOUT_FILE)
   await page.getByRole('button', { name: 'Try again' }).click()
-  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('This page could not be shown')
+  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('JAVV cannot show this page')
 })

@@ -17,7 +17,7 @@ const heat = computed(() => (props.v == null ? '' : props.v >= 0.7 ? 'hot' : pro
     <span class="epss-bar"><i :data-heat="heat" :style="{ width: pct + '%' }" /></span>
     <span class="epss-num">{{ pct }}%</span>
   </span>
-  <span v-else class="muted-dash" title="EPSS enrichment arrives with Grype results only">-</span>
+  <span v-else class="muted-dash" title="Only Grype sends the EPSS score.">-</span>
 </template>
 
 <style scoped>

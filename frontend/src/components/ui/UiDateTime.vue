@@ -39,7 +39,7 @@ function set(part: 'date' | 'time', value: string) {
       type="text"
       placeholder="HH:mm"
       maxlength="5"
-      aria-label="Time (24h)"
+      aria-label="Time (24-hour clock)"
       :value="modelValue.time"
       @input="set('time', ($event.target as HTMLInputElement).value)"
     />

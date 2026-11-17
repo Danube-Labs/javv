@@ -153,7 +153,7 @@ describe('the list', () => {
     vi.mocked(listDashboardsApiV1DashboardsGet).mockResolvedValueOnce(refused(429))
     const { w } = await mountList()
     expect(w.find('.head-stat').text()).toBe('- dashboards')
-    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.find('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
     expect(w.text()).not.toContain('No dashboards yet')
   })
 

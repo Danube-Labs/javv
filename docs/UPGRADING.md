@@ -270,7 +270,7 @@ as), see the
 |---|---|---|
 | OpenSearch replies | `GET /readyz` (no sign-in) | `200` |
 | The versions that run | `GET /api/v1/meta` (with a signed-in session) | `{"version": "<release>", "mapping_version": <n>, "envelope_versions": [...]}` |
-| The versions that run, in the web app | The bottom of the sidebar | Three lines: `v<release>`, `store schema v<n>`, `scanner schema v<n>` |
+| The versions that run, in the web app | The bottom of the sidebar | Three lines: `v<release>`, `database schema <n>`, `scanner schema <n>` |
 | What the upgrade did | The backend log, one line for each pod start | The event `bootstrap complete`, with `app_version`, `mapping_version`, and the indices in `created`, `updated` or `unchanged` |
 | The scanners use the new version | The **Scanner status** page, after the next scan cycle | The new scanner version for each cluster |
 

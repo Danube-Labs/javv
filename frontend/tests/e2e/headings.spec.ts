@@ -56,9 +56,9 @@ test('the cold-start screen has its one h1 on every route that shows it', async 
   const wrong: string[] = []
   for (const path of ['/overview', '/findings', '/images', '/scanner-status', '/clusters', '/audit', '/contributors', '/approvals', '/views']) {
     await page.goto(`${BASE}${path}`)
-    await page.getByText('No clusters registered yet').waitFor({ timeout: 20_000 })
+    await page.getByText('No clusters yet').waitFor({ timeout: 20_000 })
     const h1s = await page.locator('main h1').allTextContents()
-    if (h1s.length !== 1 || h1s[0]!.trim() !== 'No clusters registered yet') wrong.push(`${path}: ${JSON.stringify(h1s)}`)
+    if (h1s.length !== 1 || h1s[0]!.trim() !== 'No clusters yet') wrong.push(`${path}: ${JSON.stringify(h1s)}`)
   }
   expect(wrong).toEqual([])
 })

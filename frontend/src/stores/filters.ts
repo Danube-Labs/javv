@@ -56,7 +56,7 @@ export function makeFiltersStore(
       if (flagPicked) s.clearField(pair.field)
       else s.selections[pair.flagField] = (s.selections[pair.flagField] ?? []).filter((v) => v !== pair.flag)
       const cleared = flagPicked ? fieldLabel : flagLabel
-      useToastStore().info(`${cleared} cleared. ${fieldLabel} and ${flagLabel} can't be used together.`)
+      useToastStore().info(`JAVV cleared the filter ${cleared}. You cannot use ${fieldLabel} and ${flagLabel} together.`)
     }
   }
 

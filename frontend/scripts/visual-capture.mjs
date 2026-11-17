@@ -102,9 +102,9 @@ async function forcedStates(page) {
   const d = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())}`
   const hm = `${pad(past.getHours())}:${pad(past.getMinutes())}`
   await page.fill('input[aria-label="Range start date"]', d)
-  await page.fill('input[aria-label="Range start time (24h)"]', '00:00')
+  await page.fill('input[aria-label="Range start time (24-hour clock)"]', '00:00')
   await page.fill('input[aria-label="Range end date"]', d)
-  await page.fill('input[aria-label="Range end time (24h)"]', hm)
+  await page.fill('input[aria-label="Range end time (24-hour clock)"]', hm)
   await page.locator('.time-abs .time-apply').click()
   await page.waitForSelector('.history-banner', { timeout: 5_000 })
   await page.waitForTimeout(700)

@@ -15,8 +15,8 @@ describe('EmptyState title level', () => {
   })
 
   it('is the h1 when the state is the page', () => {
-    const w = mount(EmptyState, { props: { title: 'No clusters registered yet', pageTitle: true } })
-    expect(w.find('h1').text()).toBe('No clusters registered yet')
+    const w = mount(EmptyState, { props: { title: 'No clusters yet', pageTitle: true } })
+    expect(w.find('h1').text()).toBe('No clusters yet')
     expect(w.find('h2').exists()).toBe(false)
   })
 })

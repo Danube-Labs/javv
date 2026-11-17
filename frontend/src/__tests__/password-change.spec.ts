@@ -129,7 +129,7 @@ describe('a password the server refuses', () => {
     const w = mountChange()
     await submit(w, 'x'.repeat(PASSWORD_MIN_LENGTH))
     expect(w.get('[role="alert"]').text()).toBe(
-      `The new password was refused. Use ${PASSWORD_MIN_LENGTH} to ${PASSWORD_MAX_LENGTH} characters.`,
+      `JAVV refused the new password. Use ${PASSWORD_MIN_LENGTH} to ${PASSWORD_MAX_LENGTH} characters.`,
     )
   })
 
@@ -139,7 +139,7 @@ describe('a password the server refuses', () => {
     const w = mountChange()
     await submit(w, 'x'.repeat(PASSWORD_MIN_LENGTH))
     expect(w.get('[role="alert"]').text()).toBe(
-      'Password change failed. Check the current password.',
+      'JAVV did not change the password. Check the current password.',
     )
     expect(w.get('button').text()).toBe('Change password')
   })

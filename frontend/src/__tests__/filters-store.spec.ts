@@ -292,7 +292,7 @@ describe('a pair the API refuses together', () => {
     expect(s.selections.attr).toEqual(['unassigned'])
     expect(s.selections.assignee).toEqual([])
     expect(messages()).toEqual([
-      "info: Assignee cleared. Assignee and Unassigned can't be used together.",
+      "info: JAVV cleared the filter Assignee. You cannot use Assignee and Unassigned together.",
     ])
   })
 
@@ -304,7 +304,7 @@ describe('a pair the API refuses together', () => {
     expect(s.selections.assignee).toEqual(['bob'])
     expect(s.selections.attr).toEqual(['kev'])
     expect(messages()).toEqual([
-      "info: Unassigned cleared. Assignee and Unassigned can't be used together.",
+      "info: JAVV cleared the filter Unassigned. You cannot use Assignee and Unassigned together.",
     ])
     s.toggle('assignee', 'ana') // nothing left to clear, so no second message
     expect(messages()).toHaveLength(1)

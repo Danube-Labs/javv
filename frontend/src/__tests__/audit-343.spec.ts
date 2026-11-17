@@ -27,13 +27,13 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
 
   it('every kind has copy that never blames the backend for user input', () => {
     expect(FAILURE_COPY.bad_filter).not.toMatch(/backend/i)
-    expect(FAILURE_COPY.past_t).toMatch(/past point in time/)
+    expect(FAILURE_COPY.past_t).toMatch(/at a past time/)
   })
 
   // issue 975: a short search never gets to the server, so the 422 text names the causes that do
   it('a 422 names refused filters, never a short search', () => {
     expect(FAILURE_COPY.bad_filter).toBe(
-      "These filters can't be used together, or a value isn't valid. Check the filters.",
+      "You cannot use these filters together, or a value is not valid. Check the filters.",
     )
     expect(FAILURE_COPY.bad_filter).not.toMatch(/characters/)
   })

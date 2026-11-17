@@ -46,7 +46,7 @@ const shown = computed(() =>
       type="button"
       class="fpill-op fpill-op-btn"
       :aria-label="`Switch to ${mode === 'not' ? 'include' : 'exclude'}`"
-      :title="mode === 'not' ? 'Click to include' : 'Click to exclude'"
+      :title="mode === 'not' ? 'Select to include' : 'Select to exclude'"
       @click="emit('toggleMode')"
     >
       {{ opText }}

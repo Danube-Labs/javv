@@ -41,12 +41,12 @@ const COPY: Record<string, Meta> = {
   report_ready: {
     icon: 'download',
     label: 'Export ready',
-    desc: 'Your scheduled export finished. Open to download.',
+    desc: 'Your export in the background is complete. Open it to download the file.',
   },
   sla_breach: {
     icon: 'clock',
     label: 'SLA breached',
-    desc: 'A finding assigned to you ran past its SLA window.',
+    desc: 'A finding that is assigned to you is past its SLA deadline.',
   },
   assignment: {
     icon: 'shield',
@@ -66,11 +66,11 @@ function onDay(iso: string | null): string | null {
 
 function retiringDesc(name: string, iso: string | null): string {
   const day = onDay(iso)
-  if (!day) return `${name} is due to be retired soon unless a scan arrives.`
+  if (!day) return `JAVV retires ${name} soon if no scan arrives.`
   // a cluster held past its date (the sweep retires nothing while no cluster scans)
   return new Date(iso as string).getTime() < Date.now()
-    ? `${name} was due to be retired on ${day} and will be retired unless a scan arrives.`
-    : `${name} is due to be retired on ${day} unless a scan arrives.`
+    ? `${name} was due for retirement on ${day}. JAVV retires it if no scan arrives.`
+    : `JAVV retires ${name} on ${day} if no scan arrives.`
 }
 
 function meta(item: NotificationItem): Meta {
@@ -86,7 +86,7 @@ function meta(item: NotificationItem): Meta {
     return {
       icon: 'alert',
       label: 'Cluster retiring',
-      desc: retired ? `${name} has been retired.` : retiringDesc(name, item.ref),
+      desc: retired ? `JAVV retired ${name}.` : retiringDesc(name, item.ref),
     }
   }
   return COPY[item.type] ?? { icon: 'shield', label: item.type, desc: '' }
@@ -125,7 +125,7 @@ async function openExport(item: NotificationItem) {
   } else {
     expired.value.add(item.notification_id)
     expired.value = new Set(expired.value)
-    toast.info('That export expired. Re-run it from the Findings screen.')
+    toast.info('That export expired. Start the export again from Findings.')
     logger.info('notification_export_expired', { report_id: item.ref })
     void bell.markRead(item.notification_id)
   }
@@ -154,7 +154,7 @@ function onRowClick(item: NotificationItem) {
       <span v-if="bell.badge.value" class="bell-badge">{{ bell.badge.value > 99 ? '99+' : bell.badge.value }}</span>
     </button>
 
-    <SlideoverShell v-if="open" title="Notifications" subtitle="polled · newest first" @close="open = false">
+    <SlideoverShell v-if="open" title="Notifications" subtitle="The newest is at the top." @close="open = false">
       <div class="bell-list">
         <div v-if="bell.items.value.length" class="bell-actions">
           <UiButton v-if="bell.unread.value" variant="mini" @click="bell.markAllRead()">
@@ -163,10 +163,10 @@ function onRowClick(item: NotificationItem) {
           <UiButton variant="mini" @click="bell.clearAll()"><AppIcon name="close" :size="12" />Clear all</UiButton>
         </div>
         <p v-if="bell.failed.value" class="bell-degraded" role="alert">
-          Notifications unavailable. The badge is paused, nothing here is stale.
+          JAVV cannot read the notifications now. The badge shows no count until JAVV can read them again.
         </p>
         <p v-else-if="bell.loaded.value && bell.items.value.length === 0" class="bell-empty" role="status">
-          Nothing yet. SLA breaches, new assignments, ready exports and clusters about to be retired land here.
+          No notifications yet. This list shows SLA breaches, findings assigned to you, exports that are ready and clusters that JAVV will retire soon.
         </p>
         <div
           v-for="item in bell.items.value"
@@ -185,7 +185,7 @@ function onRowClick(item: NotificationItem) {
               <span class="bell-when">{{ fmtAt(item.created_at) }}</span>
             </span>
             <span class="bell-desc">
-              <template v-if="expired.has(item.notification_id)">Expired. Re-run the export from Findings.</template>
+              <template v-if="expired.has(item.notification_id)">This export expired. Start the export again from Findings.</template>
               <template v-else>{{ meta(item).desc }}</template>
             </span>
           </span>

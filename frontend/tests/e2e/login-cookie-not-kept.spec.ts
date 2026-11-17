@@ -37,7 +37,7 @@ test('on plain http, the form names https and the cookie setting', async ({ page
 test('on https or localhost, the form says the session was not kept', async ({ page }) => {
   await signInWithoutTheCookie(page)
   await expect(page.getByRole('alert')).toHaveText(
-    'Signed in, but this browser did not keep the session. Allow cookies for this site, then ' +
+    'JAVV signed you in, but this browser did not keep the session. Allow cookies for this site, then ' +
       'sign in again.',
   )
   expect(page.url()).toContain('/login')

@@ -38,7 +38,7 @@ export function retirementStatus(row: RetirementSchedule, nowMs: number = Date.n
 
 const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? '' : 's'}`
 
-/** The countdown alone: "It will be retired in 5 days unless a scan arrives.", or null. `alone`:
+/** The countdown alone: "JAVV retires it in 5 days if no scan arrives.", or null. `alone`:
  * the only cluster listed, which the sweep never retires (no other cluster can show that scans
  * still reach JAVV), so it gets no countdown. */
 export function retirementCountdown(status: RetirementStatus, alone = false): string | null {
@@ -46,10 +46,10 @@ export function retirementCountdown(status: RetirementStatus, alone = false): st
     return 'As the only cluster, it is not retired automatically. Retire it by hand in Settings if it is gone.'
   }
   if (status.kind === 'warning') {
-    return `It will be retired in ${plural(status.days, 'day')} unless a scan arrives.`
+    return `JAVV retires it in ${plural(status.days, 'day')} if no scan arrives.`
   }
   if (status.kind === 'held') {
-    return 'It is past its retirement date: the next retirement sweep retires it unless a scan arrives, and waits while no cluster is scanning.'
+    return 'It is past its retirement date. The next retirement sweep retires it if no scan arrives. The sweep waits while no cluster sends scans.'
   }
   return null
 }

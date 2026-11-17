@@ -51,8 +51,8 @@ describe('sign-in against a read-only store', () => {
       refused({ type: 'store-read-only', title: 'The store is read-only: its disk is full', status: 503 }),
     )
     const w = await signIn()
-    expect(w.get('[role="alert"]').text()).toBe('The store is read-only: its disk is full.')
-    expect(READ_ONLY_COPY).toBe('The store is read-only: its disk is full.')
+    expect(w.get('[role="alert"]').text()).toBe('The database is read-only because its disk is full.')
+    expect(READ_ONLY_COPY).toBe('The database is read-only because its disk is full.')
     expect(useAuthStore().unreachable).toBe(false)
   })
 

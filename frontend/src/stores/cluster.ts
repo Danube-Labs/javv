@@ -44,7 +44,7 @@ export const useClusterStore = defineStore('cluster', {
         const known = (id: string | null): id is string =>
           id !== null && this.clusters.some((c) => c.cluster_id === id)
         if (preferredId !== null && !known(preferredId)) {
-          useToastStore().info('The link points at a cluster this store does not know. Showing your default.')
+          useToastStore().info('The link points to a cluster that JAVV does not know. JAVV shows your default cluster.')
           logger.warn('url_cluster_unknown', { cluster_id: preferredId })
         }
         const remembered = localStorage.getItem(STORAGE_KEY)

@@ -225,7 +225,7 @@ describe('the AI agents section', () => {
     expect(w.get('[role="status"].empty-note').text()).toContain('No MCP tokens yet')
     vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockResolvedValue({ response: { ok: false, status: 429 } } as never)
     w = await mountView()
-    expect(w.get('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.get('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
     vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockResolvedValue({ response: { ok: false, status: 500 } } as never)
     w = await mountView()
     expect(w.get('.load-error').text()).toBe('The token list is not available. Check the backend connection.')
@@ -414,7 +414,7 @@ describe('the window that shows a token one time', () => {
     copyButton().click()
     await flushPromises()
     expect(useToastStore().toasts.map((t) => t.message)).toEqual([
-      "Couldn't copy: the browser blocked the clipboard. Select the text and copy it.",
+      "JAVV could not copy the text, because the browser blocked the clipboard. Select the text and copy it.",
     ])
     expect(copyButton().textContent?.trim()).toBe('Copy') // not "Copied"
     w.unmount()

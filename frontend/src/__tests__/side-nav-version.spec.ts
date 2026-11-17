@@ -59,7 +59,7 @@ describe('SideNav version line', () => {
       data: { version: '0.6.0', mapping_version: 18, envelope_versions: [3, 4] },
       response: { ok: true, status: 200 },
     } as never)
-    expect(await versionLines()).toEqual(['v0.6.0', 'store schema v18', 'scanner schema v4'])
+    expect(await versionLines()).toEqual(['v0.6.0', 'database schema 18', 'scanner schema 4'])
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
@@ -78,7 +78,7 @@ describe('SideNav version line', () => {
 
   it('says the version is unavailable when the read fails, and logs why', async () => {
     metaMock.mockResolvedValue({ data: undefined, response: { ok: false, status: 503 } } as never)
-    expect(await versionLines()).toEqual(['version unavailable'])
+    expect(await versionLines()).toEqual(['no version'])
     expect(logger.warn).toHaveBeenCalledWith('meta_read_failed', { status: 503 })
   })
 })

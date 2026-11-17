@@ -101,27 +101,27 @@ describe('the cluster_retiring bell row', () => {
   it('names the event, the cluster and the date it is due to be retired', async () => {
     await openBell(notice('c-beta'))
     expect(row().textContent).toContain('Cluster retiring')
-    expect(row().textContent).toContain('beta is due to be retired on 14 Oct unless a scan arrives.')
+    expect(row().textContent).toContain('JAVV retires beta on 14 Oct if no scan arrives.')
   })
 
   it('says a cluster held past its date was due, not that it will be retired then', async () => {
     await openBell(notice('c-beta', '2026-10-01T12:00:00+00:00'))
     expect(row().textContent).toContain(
-      'beta was due to be retired on 1 Oct and will be retired unless a scan arrives.',
+      'beta was due for retirement on 1 Oct. JAVV retires it if no scan arrives.',
     )
   })
 
   it('says a cluster retired since has been retired, by its name, not that it is due', async () => {
     // off the cluster list once retired: the name comes from the feed (issue 787)
     await openBell(notice('c-gone', '2026-10-01T12:00:00+00:00', false, 'payments-prod'))
-    expect(row().textContent).toContain('payments-prod has been retired.')
+    expect(row().textContent).toContain('JAVV retired payments-prod.')
     expect(row().textContent).not.toContain('c-gone')
     expect(row().textContent).not.toContain('due')
   })
 
   it('falls back to the id when the feed has no name', async () => {
     await openBell(notice('c-gone', '2026-10-01T12:00:00+00:00', false, null))
-    expect(row().textContent).toContain('c-gone has been retired.')
+    expect(row().textContent).toContain('JAVV retired c-gone.')
   })
 
   it('opens Settings › Cluster with that cluster selected and closes the drawer', async () => {

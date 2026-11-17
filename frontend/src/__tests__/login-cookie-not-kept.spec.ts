@@ -83,7 +83,7 @@ describe('a sign-in whose cookie the browser did not keep', () => {
     const w = await signIn()
     expect(w.get('[role="alert"]').text()).toBe(SESSION_NOT_KEPT_COPY)
     expect(SESSION_NOT_KEPT_COPY).toBe(
-      'Signed in, but this browser did not keep the session. Allow cookies for this site, then ' +
+      'JAVV signed you in, but this browser did not keep the session. Allow cookies for this site, then ' +
         'sign in again.',
     )
     expect(push).not.toHaveBeenCalled()

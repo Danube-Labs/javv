@@ -85,13 +85,13 @@ describe('a grid whose read is refused says so, and claims no empty answer', () 
   // what each grid showed on a refused read before this change is in the comment
   it.each([
     // alert right, but "0 findings" and "No findings yet. The first committed scan…" under it
-    ['Findings', FindingsView, 'The search backend is busy.', /(?<!\d)0 findings/, ['No findings yet']],
+    ['Findings', FindingsView, 'The backend is busy.', /(?<!\d)0 findings/, ['No findings yet']],
     // "0 events" and "No journaled activity for this cluster yet."
-    ['Audit log', AuditTrailView, 'The search backend is busy.', /(?<!\d)0 events/, ['No journaled activity']],
+    ['Audit log', AuditTrailView, 'The backend is busy.', /(?<!\d)0 events/, ['No journaled activity']],
     // "0 contributors"
-    ['Contributors', ContributorsView, 'The search backend is busy.', /(?<!\d)0 contributors/, []],
+    ['Contributors', ContributorsView, 'The backend is busy.', /(?<!\d)0 contributors/, []],
     // "0 standing acceptances"
-    ['Approvals', ApprovalsView, 'The search backend is busy.', /(?<!\d)0 standing acceptances/, []],
+    ['Approvals', ApprovalsView, 'The backend is busy.', /(?<!\d)0 standing acceptances/, []],
     // already right: no count, no empty claim
     ['Running images', ImagesView, 'Inventory unavailable.', /(?<!\d)0 images/, []],
   ] as const)('%s', async (_name, view, failure, zeroCount, emptyClaims) => {
@@ -158,14 +158,14 @@ describe('Findings: a refused read never leaves the last answer on screen (issue
     filters().toggle('severity', 'critical')
     await flushPromises()
     const text = w.text()
-    expect(text).toContain('The search backend is busy.')
+    expect(text).toContain('The backend is busy.')
     expect(text).toContain('Findings could not be loaded.')
     expect(text).not.toContain('CVE-2026-0001')
     expect(text).not.toMatch(/435/)
   })
 
   it.each([
-    [503, 'Findings unavailable. Check the backend connection.'],
+    [503, 'JAVV cannot show the findings. Check the backend connection.'],
     [410, 'These results expired. Reload the page to start again.'],
   ])('a %s on page 2 stays on page 2, says so, and keeps Prev', async (status, copy) => {
     const w = await mountWithFirstPage()
@@ -194,7 +194,7 @@ describe('Findings: a refused read never leaves the last answer on screen (issue
     answerOld(findingsPage('CVE-2026-0002', 12, null))
     await flushPromises()
     const text = w.text()
-    expect(text).toContain('The search backend is busy.')
+    expect(text).toContain('The backend is busy.')
     expect(text).not.toContain('CVE-2026-0002')
   })
 })
@@ -207,7 +207,7 @@ describe('Findings: only the filter counts refused (issue 833, F9 under G2)', ()
   }
 
   it.each([
-    [429, 'Filter counts could not be loaded. The search backend is busy. Try again in a few seconds.'],
+    [429, 'Filter counts could not be loaded. The backend is busy. Try again in a few seconds.'],
     [503, 'Filter counts could not be loaded. Check the backend connection.'],
   ])('a %s: the rows stay, the alert names the counts, the rail shows "-"', async (status, copy) => {
     vi.mocked(facetFindingsApiV1FindingsFacetsGet)
@@ -302,7 +302,7 @@ describe('Audit log: the same rules as Findings (issue 833)', () => {
     filters().toggle('action', 'triage')
     await flushPromises()
     const text = w.text()
-    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.find('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
     expect(text).toContain('Events could not be loaded.')
     expect(text).not.toContain('alice-old')
     expect(w.find('.head-stat').text()).toBe('- events')
@@ -356,7 +356,7 @@ describe('Contributors and Approvals: the reason, and the newest answer (issue 8
   const approvalsOk = ok({ approvals: [], total: 5, facets: {} })
 
   it.each([
-    [429, 'The search backend is busy. Try again in a few seconds.'],
+    [429, 'The backend is busy. Try again in a few seconds.'],
     [503, 'Contributors unavailable. Check the backend connection.'],
   ])('Contributors, a %s', async (status, copy) => {
     vi.mocked(contributorsApiV1ContributorsGet).mockResolvedValueOnce(refusedWith(status) as never)
@@ -366,7 +366,7 @@ describe('Contributors and Approvals: the reason, and the newest answer (issue 8
   })
 
   it.each([
-    [429, 'The search backend is busy. Try again in a few seconds.'],
+    [429, 'The backend is busy. Try again in a few seconds.'],
     [503, 'Could not load the queue. Check the backend connection.'],
   ])('Approvals, a %s', async (status, copy) => {
     vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValueOnce(refusedWith(status) as never)
@@ -533,15 +533,15 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
 
   it('a busy pair read says busy, not a broken connection (G2)', async () => {
     const { w } = await mountDetail()
-    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.find('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
   })
 })
 
 describe('Scanner status, Saved views and Dashboards: a count that was not read is "-" (issue 833, F5)', () => {
   it.each([
-    ['Scanner status', ScannerStatusView, '- scanners', 'The search backend is busy. Try again in a few seconds.'],
-    ['Saved views', SavedViewsView, '- views', 'The search backend is busy. Try again in a few seconds.'],
-    ['Dashboards', DashboardsView, '- dashboards', 'The search backend is busy. Try again in a few seconds.'],
+    ['Scanner status', ScannerStatusView, '- scanners', 'The backend is busy. Try again in a few seconds.'],
+    ['Saved views', SavedViewsView, '- views', 'The backend is busy. Try again in a few seconds.'],
+    ['Dashboards', DashboardsView, '- dashboards', 'The backend is busy. Try again in a few seconds.'],
   ])('%s, refused with a 429', async (_name, view, count, copy) => {
     const w = await mountRouted(view as Component)
     await flushPromises()
@@ -645,7 +645,7 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     expect(lastQuery().assignee).toBeUndefined()
     expect(lastQuery().unassigned).toBe(true)
     expect(useToastStore().toasts.map((t) => t.message)).toEqual([
-      "Assignee cleared. Assignee and Unassigned can't be used together.",
+      "JAVV cleared the filter Assignee. You cannot use Assignee and Unassigned together.",
     ])
   })
 })

@@ -20,10 +20,10 @@ const partial = computed(() => health.reason === 'read-only' || health.reason ==
       :role="partial ? 'status' : 'alert'"
     >
       <AppIcon :class="{ 'sys-icon': partial }" name="alert" :size="15" />
-      <span v-if="health.reason === 'read-only'">The store is read-only: its disk is full. Reads work; changes are not saved.</span>
-      <span v-else-if="health.reason === 'red'">Part of the store is not available. Some screens and changes can fail until it recovers.</span>
-      <span v-else-if="health.reason === 'backend'">The backend is not answering. Screens cannot load until it is back.</span>
-      <span v-else>Search backend unavailable. Check OpenSearch health.</span>
+      <span v-if="health.reason === 'read-only'">The database is read-only because its disk is full. You can read the data, but JAVV does not save changes.</span>
+      <span v-else-if="health.reason === 'red'">Part of the database is not available. Some screens and changes can fail until it recovers.</span>
+      <span v-else-if="health.reason === 'backend'">The backend does not answer. Screens cannot load until it answers again.</span>
+      <span v-else>The database is not available. Check the health of OpenSearch.</span>
       <UiCloseButton class="dismiss" label="Dismiss" @click="health.dismiss()" />
     </div>
   </Transition>
