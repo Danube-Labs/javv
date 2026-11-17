@@ -77,7 +77,7 @@ describe('RiskAcceptDialog refusals', () => {
   })
 
   it('another failure keeps its own text', async () => {
-    expect(await submitWith(503)).toBe('Could not create the decision. Check the backend connection.')
+    expect(await submitWith(503)).toBe('JAVV did not create the decision. Make sure that the backend is available.')
   })
 })
 
@@ -131,6 +131,64 @@ describe('RiskAcceptDialog expiry (issue 984)', () => {
   })
 
   it('another 422 keeps the general text', async () => {
-    expect(await submitWith(422)).toBe('Could not create the decision. Check the backend connection.')
+    expect(await submitWith(422)).toBe('JAVV did not create the decision. Make sure that the backend is available.')
+  })
+})
+
+describe('RiskAcceptDialog text (issue 1245)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    document.body.innerHTML = ''
+    useClusterStore().clusters = [{ cluster_id: 'c-1', cluster_name: 'c-1' }] as never
+    useClusterStore().selectedId = 'c-1'
+  })
+  const scopeLine = () => document.body.querySelector('.ra-blast')!.textContent!.replace(/\s+/g, ' ').trim()
+  const chips = () => [...document.body.querySelectorAll<HTMLButtonElement>('.ra-chip')]
+  const click = async (w: Awaited<ReturnType<typeof open>>, chip: HTMLButtonElement) => {
+    chip.click()
+    await w.vm.$nextTick()
+  }
+
+  it('the scope line names the scope and what it covers, in each of the three cases', async () => {
+    const w = await open()
+    expect(scopeLine()).toBe(
+      'Scope: the whole cluster, all images. The risk acceptance also applies to new findings in this scope.',
+    )
+    const [ns, image] = chips()
+    await click(w, ns!)
+    expect(scopeLine()).toBe('Scope: 1 namespace. The risk acceptance also applies to new findings in this scope.')
+    await click(w, image!)
+    expect(scopeLine()).toBe(
+      'Scope: 1 image and 1 namespace. The risk acceptance also applies to new findings in this scope.',
+    )
+    await click(w, ns!)
+    expect(scopeLine()).toBe('Scope: 1 image. The risk acceptance does not apply to new images.')
+  })
+
+  it('says what a decision covers and that an edit makes a new decision, with no developer words', async () => {
+    await open()
+    const text = document.body.textContent!.replace(/\s+/g, ' ')
+    expect(text).toContain(
+      'The risk acceptance applies to this vulnerability in the scope. It also applies when the package changes to a different version that has this vulnerability.',
+    )
+    expect(text).toContain(
+      'You cannot change a decision. An edit revokes the decision and creates a new decision. The old decision stays in the history.',
+    )
+    expect(text).toContain('Expiry date')
+    expect(text).toContain('Reason (required)')
+    expect(text).toContain('Trivy only')
+    expect(document.body.querySelector('textarea')!.placeholder).toBe('Write why you accept this risk, and for how long.')
+    for (const old of ['+', ';', 'immutable', 'auto-', 'Blast radius', 'cluster-wide', 'Justification', 'trivy only']) {
+      expect({ old, found: text.includes(old) }).toEqual({ old, found: false })
+    }
+  })
+
+  it('a finding with no namespace says so in a sentence', async () => {
+    mount(RiskAcceptDialog, {
+      props: { cveId: 'CVE-2026-0001', finding: { ...(finding as object), namespaces: [] } as never },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    expect(document.body.querySelector('.ra-none')!.textContent).toBe('This finding has no namespace.')
   })
 })
