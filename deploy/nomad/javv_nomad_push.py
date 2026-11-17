@@ -373,7 +373,7 @@ def left_out(ref: str, dropped: int, over_cap: int) -> None:
         )
 
 
-def scan_trivy(s: Settings, ref: str):
+def scan_trivy(s: Settings, ref: str, name: str | None = None):
     t = s.tuning
     cmd = ["trivy", "image", "--quiet", "--format", "json", "--scanners", t["scanners"]]
     if t["ignore_unfixed"]:
@@ -419,7 +419,8 @@ def scan_trivy(s: Settings, ref: str):
                     "locations": paths,
                 }
             )
-    left_out(ref, dropped, over_cap)
+    # `name` is what the other log lines call the image, when `ref` is not that name
+    left_out(name or ref, dropped, over_cap)
     ver = run(["trivy", "version", "--format", "json"])
     db = ver.get("VulnerabilityDB") or {}
     digest = repo_digest((rep.get("Metadata") or {}).get("RepoDigests") or [])
@@ -432,7 +433,7 @@ def scan_trivy(s: Settings, ref: str):
     )
 
 
-def scan_grype(s: Settings, ref: str):
+def scan_grype(s: Settings, ref: str, name: str | None = None):
     t = s.tuning
     cmd = ["grype", f"{GRYPE_SOURCE}:{ref}", "-o", "json"]
     if t["only_fixed"]:
@@ -471,7 +472,8 @@ def scan_grype(s: Settings, ref: str):
                 "locations": paths,
             }
         )
-    left_out(ref, dropped, over_cap)
+    # `name` is what the other log lines call the image, when `ref` is not that name
+    left_out(name or ref, dropped, over_cap)
     d = rep.get("descriptor") or {}
     st = (d.get("db") or {}).get("status") or {}
     target = (rep.get("source") or {}).get("target") or {}

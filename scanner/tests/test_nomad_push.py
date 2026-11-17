@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from scanner.adapters import trivy as trivy_adapter
 from scanner.adapters.grype import read_grype
 from scanner.adapters.trivy import read_trivy
 from scanner.normalize import clean_paths
@@ -514,6 +515,33 @@ def test_grype_paths_are_those_of_the_scanner_package(settings, monkeypatch, nam
 def test_clean_paths_is_the_rule_of_the_scanner_package(raw):
     want = clean_paths(raw)
     assert push.clean_paths(raw) == (list(want.paths), want.dropped, want.over_cap)
+
+
+def test_the_label_types_are_those_of_the_scanner_package():
+    assert push.TRIVY_LABEL_TYPES == trivy_adapter._LABEL_TYPES
+
+
+@pytest.mark.parametrize("ptype", sorted(trivy_adapter._LABEL_TYPES) + ["gobinary", "pipenv"])
+def test_a_trivy_result_with_no_package_path_is_as_in_the_scanner_package(
+    settings, monkeypatch, ptype
+):
+    """No report fixture has a label type without `PkgPath`, so this holds the rule of the labels:
+    `Target` is a path only when it names a file."""
+    rep = {
+        "Results": [
+            {
+                "Class": "lang-pkgs",
+                "Type": ptype,
+                "Target": "app/Pipfile.lock",
+                "Vulnerabilities": [{"VulnerabilityID": "CVE-1", "PkgName": "a"}],
+            }
+        ]
+    }
+    monkeypatch.setattr(push, "run", lambda cmd, timeout=None: rep if cmd[1] == "image" else {})
+    _, findings, *_ = push.scan_trivy(settings(), "img:1")
+    want = read_trivy(rep).findings
+    assert [f["locations"] for f in findings] == [list(f.locations) for f in want]
+    assert bool(findings[0]["locations"]) == (ptype not in trivy_adapter._LABEL_TYPES)
 
 
 def test_paths_left_out_are_logged_as_counts_only(settings, monkeypatch, caplog):
