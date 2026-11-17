@@ -71,7 +71,7 @@ function moveFocus(e: KeyboardEvent) {
 </script>
 
 <template>
-  <UiDropdown v-model:open="pkOpen" class="pk-dd">
+  <UiDropdown v-model:open="pkOpen" class="pk-dd" motion="t-pour">
     <template #trigger="{ toggle, open }">
       <button
         ref="pkBtn"
@@ -88,7 +88,7 @@ function moveFocus(e: KeyboardEvent) {
       </button>
     </template>
     <template #default="{ close }">
-      <div ref="pkMenu" class="dd-menu pk-menu" role="dialog" aria-label="Packages with this vulnerability" @keydown="moveFocus">
+      <div ref="pkMenu" class="dd-menu dd-menu--band pk-menu" role="dialog" aria-label="Packages with this vulnerability" @keydown="moveFocus">
         <div class="pk-head">
           <div class="pk-head-text">
             <span class="pk-title">Packages with this vulnerability · {{ packages.length }}{{ packagesCut ? '+' : '' }}</span>
@@ -193,6 +193,8 @@ function moveFocus(e: KeyboardEvent) {
 }
 /* the menu: the list stops at about nine rows and scrolls (DESIGN.md §2, no unbounded panels) */
 .pk-menu {
+  /* the genie motion starts at the button above the menu (issue 1240) */
+  --pour-origin: 40px -6px;
   left: -8px;
   width: 420px;
   border-radius: var(--r-sm);

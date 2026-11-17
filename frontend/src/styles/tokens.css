@@ -118,6 +118,10 @@
   --val-act-not-fg: #ef9d92;
   --dd-on-bg: rgba(236, 126, 84, 0.1);
   --dd-shadow: 0 14px 40px -16px rgba(22, 35, 47, 0.4);
+  /* the edge of a popover with no border line (operator ruling 2026-11-17 on built pictures,
+     issue 1240, E2): a filter, not a box shadow, so it follows the arrow too. The 1px part keeps
+     the card apart from a white card under it; the box shadows above give no edge at the top. */
+  --pop-drop: drop-shadow(0 0 1px rgba(22, 35, 47, 0.32)) drop-shadow(0 10px 16px rgba(22, 35, 47, 0.18));
   --control-hover-line: #d8cfc0;
   --control-hover-bg: #f4eee2; /* the visible hover wash — border-shift alone is invisible */
   --control-active-bg: #ece4d3; /* pressed */
@@ -307,6 +311,9 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-quick: 120ms;
   --dur-panel: 200ms;
+  /* the open of the genie motion t-pour of the four popovers, a ruled exception to the two
+     durations above (operator 2026-11-17, issue 1240, decision 5) */
+  --dur-pour: 380ms;
 
   /* -- layout ------------------------------------------------------------ */
   --sidebar-w: 226px;

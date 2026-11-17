@@ -6,12 +6,13 @@
  * it the dark head of a window, and the arrow takes that color when it points from the head. It
  * carries the ruled dismiss contract (DESIGN.md §2): Escape, a click outside, a visible ✕. A
  * mousedown on the trigger does not close it, so the trigger's own click decides. Focus goes
- * into the card on open and back to the trigger on close.
+ * into the card on open and back to the trigger on close. It opens with the genie motion t-pour
+ * from the tip of its arrow (issue 1240).
  */
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 
 import UiCloseButton from '@/components/ui/UiCloseButton.vue'
-import { arrowOnHead, placeBeside, type Placed } from '@/lib/placeBeside'
+import { arrowOnHead, placeBeside, pourOrigin, type Placed } from '@/lib/placeBeside'
 
 const props = defineProps<{
   title: string
@@ -77,7 +78,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Transition name="t-pop" appear>
+  <Transition name="t-pour" appear>
     <div
       ref="card"
       class="pop"
@@ -90,6 +91,7 @@ onUnmounted(() => {
         left: `${place.left}px`,
         top: `${place.top}px`,
         '--pop-arrow': `${place.arrow}px`,
+        '--pour-origin': pourOrigin(place),
       }"
     >
       <div class="pop-head" :class="{ 'pop-head--band': band }">
@@ -105,14 +107,15 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* no border line: the drop shadow is the edge of the card and of its arrow (issue 1240). A filter
+   makes the card the box of any fixed element inside it, so no window opens from inside a popover */
 .pop {
   position: fixed;
   z-index: 70;
   max-width: calc(100vw - 24px);
   background: var(--card);
-  border: 1px solid var(--line);
   border-radius: var(--r);
-  box-shadow: var(--dd-shadow);
+  filter: var(--pop-drop);
 }
 .pop:focus-visible {
   outline: var(--focus-ring);
@@ -128,28 +131,20 @@ onUnmounted(() => {
   transform: rotate(45deg);
 }
 .pop-right::before {
-  left: -7px;
+  left: -6px;
   top: calc(var(--pop-arrow) - 6px);
-  border-left: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
 }
 .pop-left::before {
-  right: -7px;
+  right: -6px;
   top: calc(var(--pop-arrow) - 6px);
-  border-right: 1px solid var(--line);
-  border-top: 1px solid var(--line);
 }
 .pop-below::before {
-  top: -7px;
+  top: -6px;
   left: calc(var(--pop-arrow) - 6px);
-  border-left: 1px solid var(--line);
-  border-top: 1px solid var(--line);
 }
 .pop-above::before {
-  bottom: -7px;
+  bottom: -6px;
   left: calc(var(--pop-arrow) - 6px);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
 }
 .pop-head {
   display: flex;

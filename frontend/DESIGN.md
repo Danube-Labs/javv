@@ -211,7 +211,8 @@ every outside host unanswered. Neither face is on the vendored detector's overus
   facet rail `var(--facet-rail-w)` (218px); section menu `var(--section-nav-w)` (198px,
   `SectionNav`: Settings' sub-pages and the Guide's sections).
 - Motion: `var(--ease-out)` with `var(--dur-quick)` (120ms) / `var(--dur-panel)` (200ms) —
-  the only durations/curves (see §5 "Motion").
+  the only durations/curves (see §5 "Motion"), except `var(--dur-pour)` (380ms), the open of the
+  genie motion of the four popovers (§9, issue 1240).
 - Content: max `var(--screen-max-w)` (1380px) centered, padding `var(--content-pad)`; grid gap `var(--grid-gap)`.
   **Data-dense table screens opt out via route `meta: { wide: true }`** (full viewport width —
   operator ruling 2026-07-09: an internal table scrollbar beside dead margin is worse than a
@@ -242,6 +243,13 @@ every outside host unanswered. Neither face is on the vendored detector's overus
   wide shadow is a known template tell. The token window puts its primary Copy button next to the
   token (`CopyValue` with `primary`) and keeps only Done in the footer. The beige box of a value to
   copy stays: it says that the value is read-only, and the MCP endpoint address uses it too.
+- **A popover has no border line either** (operator ruling 2026-11-17 on built pictures, issue
+  1240, E2). A popover has no backdrop and often sits on a white card, and the box shadows give
+  almost no edge at its top. So its edge is `--pop-drop`, a `filter` with a soft 1px shadow all
+  around and a drop under it, which follows the arrow too. The arrow has no border.
+  `placeBeside` puts the card on whole pixels, so the arrow is not soft or stepped. A menu with the
+  dark head of a window (the package menu of the finding page) wears `.dd-menu--band` in base.css,
+  the same edge. The other menus keep the `.dd-menu` line.
 - **A table card never clips its columns** (issue 652). A hand-built `.tbl` card whose
   columns can outgrow it at the 1024 floor opts into `.tbl-scroll-pin` (base.css): the table
   scrolls sideways inside the card and its first, identity column stays pinned (All clusters,
@@ -307,6 +315,17 @@ form state). Anything non-kit that appears/disappears in-flow (banners) wraps in
 live in `base.css` and collapse under `prefers-reduced-motion`. Animate `transform`/`opacity`
 only; no bounce/elastic; new appear/disappear surfaces use these classes, not new ones.
 
+**The genie motion of the four popovers (operator ruling 2026-11-17 on built videos, issue 1240,
+decision 5), a ruled exception to the paragraph above (§9).** `t-pour` in base.css: the card pours
+out of the tip of its arrow, its width before its height, with a round `clip-path` reveal from the
+tip. It opens in `--dur-pour` (380ms) and closes the same way back in `--dur-panel`, on
+`--ease-out`. The tip is `--pour-origin`: `PopoverShell` sets it from its place
+(`pourOrigin` in `lib/placeBeside.ts`), and the package menu of the finding page sets it at its
+button. `PopoverShell` always opens with it (the Triage panel, Panel filters, Panel settings), and
+the package menu asks `UiDropdown` for it with `motion="t-pour"`. Every other menu keeps `t-pop`.
+Under reduced motion it does not run. `style-rules.spec.ts` fails a motion of `clip-path`
+anywhere else.
+
 **Loading bar (operator decision 2026-10-17 on built prototypes, issue 902, D1 B).** After a
 click, the user must see that the app works. `UiLoadingBar` sits on the bottom edge of the top bar.
 It shows when a page change or an API request is open for more than 250 ms. A bar that shows for
@@ -322,7 +341,9 @@ block of the routed page fades in when the page inserts it (`page-fade`), and th
 rise 6px (`page-rise`). Both run for `--dur-panel` on `--ease-out`. This covers a page change and
 the data that replaces a placeholder, and a view adds no code for it. The selectors have zero
 specificity (`:where()`), so a block with its own animation, such as the skeleton pulse, keeps
-it. Do not add a page-level `<Transition>` on top: two fades on the same blocks gave an empty
+it. They skip a popover with the genie motion (`.pop`, `.dd-menu--band`). It is not a block of the
+page, and when its `t-pour` class came off, the page motion ran on it from opacity 0, so the card
+faded in a second time (issue 1240). Do not add a page-level `<Transition>` on top: two fades on the same blocks gave an empty
 area for about 100 ms in the prototype.
 
 **Header card stretch (operator decision 2026-10-17 on built prototypes, issue 902, D3 A).** A
@@ -346,10 +367,10 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiSelect` | one `select` on the `.set-select` dropdown, `row` for a table row and `small` for the pager. The options are the screen's, in the slot | every dropdown |
 | `UiSearchBox` | the `.search-box` row with the magnifier, `card` for the search card over a filter list (`.facet-search`). The class of the screen goes on the row, the other attributes on the input. `v-model` is optional, so a search that applies on Enter can give the value only | every search box |
 | `UiField` | mono uppercase micro-label + parenthesized `hint`, 14px band / 6px label gap (`first` zeroes the top) | any labeled control |
-| `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
+| `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours); `t-pop` motion, or `t-pour` with `motion="t-pour"` for a menu with the dark head of a window (issue 1240) | any popover menu |
 | `UiCloseButton` | the one "✕" (issue 1140, R2, operator ruling on built pictures): at rest no fill and no line; on hover the kit wash and line with coral text; the press fill and the focus ring. A required `label` is the name for a screen reader and the hover text. `dark` is the look on a slate head (the colors of the sidebar collapse button, issue 1049); `small` fits a chip or a filter pill. `close-buttons-guard.spec.ts` fails a "×" in any template and a "✕" outside this piece | every control that closes something (a window, the side panel, a popover, a toast, a banner, a notification) or clears one value (a chip, a filter). A text button that clears takes the `close` icon of `AppIcon` (Clear all in the bell) |
 | `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049); the card has no border line, only `--shadow` (issue 1127) | every dialog |
-| `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, `t-pop` motion; `band` gives it the dark head of a window, and the arrow takes the head color when it points from the head (`arrowOnHead`, issue 1205); `under` sends it under the whole element when no side has room, centred on its trigger, else above the element | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard; the Triage form of a finding, with `band`) |
+| `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, the genie motion `t-pour` from the tip of its arrow (issue 1240); no border line, the edge is `--pop-drop` and the card sits on whole pixels (issue 1240); `band` gives it the dark head of a window, and the arrow takes the head color when it points from the head (`arrowOnHead`, issue 1205); `under` sends it under the whole element when no side has room, centred on its trigger, else above the element | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard; the Triage form of a finding, with `band`) |
 | `UiLoadingBar` | the 2px coral loading bar on the bottom edge of its positioned parent. It shows only after 250 ms of work and grows more slowly near the end. When the work ends, it fills and fades. It has `role="progressbar"`. The parent owns `busy` | the top bar's sign that the app works, fed by `system/pendingWork.ts` (open page changes and API requests). Also a panel that needs its own sign |
 | `UiSkeleton` | the one loading pulse (`.skel` + `skel-shimmer` in base.css) and its reduced-motion off-switch; `height` is a prop because a skeleton mirrors the panel it stands in for, `label` only when it is its own loading region | every loading placeholder. The style rules test fails any view that grows its own shimmer |
 | `AppIcon` | the stroke icon set | every icon |
@@ -389,7 +410,8 @@ style rules test refuses a copy of either outside base.css.
 **One card frame, card heading and menu panel** (issue 1181): base.css holds the values that
 were equal in every component copy. `.card` is the frame (background, line, corner, shadow).
 `.card-head` is the layout of a card heading, and `.card-head h2` is its title. `.dd-menu` is the
-panel of a menu in `UiDropdown`, and `.dd-head` is a small label in it. `.skel-pad` is the space
+panel of a menu in `UiDropdown`, and `.dd-head` is a small label in it. `.dd-menu--band` is the
+panel of a menu with the dark head of a window: no line, the popover edge (issue 1240). `.skel-pad` is the space
 around the loading skeleton of a card table, and `.load-error` is the color and size of a failure
 line. A component adds its own padding, alignment, margin, side or width. It does not set a
 shared property again: the style rules test reads the properties from base.css and fails a copy.
@@ -585,6 +607,7 @@ reflex defaults (operator ruling 2026-07-09):
 | `cramped-padding` on `tbl-wrap` | Full-bleed table inside the card is the prototype's design. |
 | `layout-transition: width` on `.sidebar` | The collapse rail (226↔64px) — a deliberate layout animation: user-initiated, rare, and the standard sidebar pattern (Nuxt UI reference does the same). Nothing else animates layout except the header card stretch below — the `t-*` classes are transform/opacity only. **Enforced, not just stated:** `style-rules.spec.ts` fails any other width/height/padding/margin transition in `src/` (issue 484 — the triage meter had been breaking this sentence unnoticed). |
 | width animation in `composables/useStretchWidth.ts` | The header card stretch (operator decision 2026-10-17, issue 902). It runs only when a card gets wider, for `--dur-panel`, and not with reduced motion. It moves one small card, not the page. `style-rules.spec.ts` permits it in this one file, and also fails a layout animation from script (`element.animate()`) anywhere else. |
+| The genie motion `t-pour` (issue 1240, decision 5) | Ruled 2026-11-17 on built videos: the four popovers open in 380ms (`--dur-pour`), a duration outside the two of §4, and animate `clip-path` next to `transform` and `opacity`, in a motion class of their own. It changes no layout. `style-rules.spec.ts` fails a `clip-path` motion outside `@keyframes pour` in base.css, and `page-motion.spec.ts` holds its tokens and its reduced-motion off switch. |
 | No keyboard way to move a dashboard panel (issue 440, R11) | Ruled 2026-10-24 with R10 and Q5: in edit mode a user moves a panel with the mouse, on gridstack, and nobody resizes a panel. The Move tab is a button, so it takes focus, but no key moves the panel. The width and the height are in the panel settings, which the keyboard reaches. gridstack runs with `animate: false`, so the other panels jump to their places and no layout animation is added to the two above. |
 | `ai-color-palette` purple/violet | The `--scanner-grype-*` identity tokens (chip language A) — Grype's brand tone, deliberately distinct from Trivy's teal. Fires on every dump because tokens.css ships globally; not an accent choice. |
 

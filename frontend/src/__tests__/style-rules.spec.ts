@@ -192,6 +192,8 @@ const SHARED_RULES = [
   '.ingest-lens > .skel-gap',
   // the line under a cut list and the line of an empty list (issue 1214)
   '.cap-note', '.empty-note',
+  // the menu panel with the dark head of a window: the popover edge, no border line (issue 1240)
+  '.dd-menu--band',
 ]
 
 /**
@@ -257,6 +259,14 @@ describe('style rules: one shared card, menu panel and error text', () => {
   it('base.css has each shared rule', () => {
     for (const selector of SHARED_RULES)
       expect(shared.get(selector)?.size, `${selector} is not in base.css`).toBeGreaterThan(0)
+  })
+
+  it('a menu panel keeps its line, and the menu with the dark head of a window has the popover edge (issue 1240)', () => {
+    expect(all.get('.dd-menu')).toContain('border')
+    const band = readFileSync(join(SRC, 'styles/base.css'), 'utf8').match(/\n\.dd-menu--band \{([^}]*)\}/)?.[1] ?? ''
+    expect(band).toMatch(/border: 0;/)
+    expect(band).toMatch(/box-shadow: none;/)
+    expect(band).toMatch(/filter: var\(--pop-drop\);/)
   })
 
   it('no component sets a shared property again', () => {
@@ -598,5 +608,51 @@ describe('style rules: no em dashes in copy', () => {
     const names = offenders.map((f) => f.rel)
     const stale = [...EM_DASH_BASELINE].filter((f) => !names.includes(f))
     expect(stale, `swept, delete from EM_DASH_BASELINE: ${stale.join(', ')}`).toEqual([])
+  })
+})
+
+/**
+ * Motion of clip-path is a ruled exception of one motion (issue 1240, decision 5, operator
+ * 2026-11-17): the genie of the four popovers, `@keyframes pour` in base.css. DESIGN.md §5 allows
+ * transform and opacity, so any other keyframes, transition or `element.animate()` that moves
+ * clip-path fails here. `transition: all` fails too, because it moves clip-path with the rest.
+ */
+const CLIP_MOTION_ALLOWED = 'styles/base.css @keyframes pour'
+function clipMotions(rel: string, css: string): string[] {
+  const hits: string[] = []
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  for (const m of bare.matchAll(/@keyframes\s+([\w-]+)\s*\{((?:[^{}]*\{[^{}]*\})*[^{}]*)\}/g))
+    if (/clip-path\s*:/.test(m[2] ?? '')) hits.push(`${rel} @keyframes ${m[1]}`)
+  for (const m of bare.matchAll(/transition(?:-property)?\s*:[^;}]*/g))
+    if (/clip-path|\ball\b/.test(m[0])) hits.push(`${rel} ${m[0].trim()}`)
+  return hits
+}
+
+describe('style rules: clip-path moves only in the genie motion (issue 1240)', () => {
+  const all = walk(SRC)
+    .map((p) => relative(SRC, p).split('\\').join('/'))
+    .filter((rel) => rel.endsWith('.css') || rel.endsWith('.vue'))
+    .flatMap((rel) => {
+      const source = readFileSync(join(SRC, rel), 'utf8')
+      const css = rel.endsWith('.css') ? source : parseSfc(source).descriptor.styles.map((s) => s.content).join('\n')
+      return clipMotions(rel, css)
+    })
+
+  it('the one motion of clip-path is the genie of base.css', () => {
+    expect(all).toEqual([CLIP_MOTION_ALLOWED])
+  })
+
+  it('no script moves clip-path with element.animate()', () => {
+    const hits = walk(SRC)
+      .map((p) => relative(SRC, p).split('\\').join('/'))
+      .filter((rel) => /\.(ts|vue)$/.test(rel))
+      .filter((rel) => /\.animate\([\s\S]{0,400}?\bclipPath\b/.test(readFileSync(join(SRC, rel), 'utf8')))
+    expect(hits).toEqual([])
+  })
+
+  it('the check finds a clip-path in other keyframes and in a transition', () => {
+    expect(clipMotions('x.vue', '@keyframes grow { from { clip-path: inset(50%); } }')).toEqual(['x.vue @keyframes grow'])
+    expect(clipMotions('x.vue', '.a { transition: clip-path 0.2s; }')).toEqual(['x.vue transition: clip-path 0.2s'])
+    expect(clipMotions('x.vue', '@keyframes fade { from { opacity: 0; } }')).toEqual([])
   })
 })

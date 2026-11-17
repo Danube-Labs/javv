@@ -33,7 +33,22 @@ const ARROW_INSET = 16
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Math.max(lo, hi)))
 
+/**
+ * The place on whole pixels: the boxes of a page come in part pixels, and a card on a part pixel
+ * draws its edge and its arrow soft and stepped (issue 1240).
+ */
 export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point, under = false): Placed {
+  const placed = place(anchor, size, view, trigger, under)
+  const left = Math.round(placed.left)
+  const top = Math.round(placed.top)
+  // the arrow moves with the rounded edge, so its tip stays within half a pixel of the trigger
+  const across = placed.side === 'below' || placed.side === 'above'
+  const shift = across ? placed.left - left : placed.top - top
+  const length = across ? size.width : size.height
+  return { ...placed, left, top, arrow: clamp(Math.round(placed.arrow + shift), ARROW_INSET, length - ARROW_INSET) }
+}
+
+function place(anchor: Box, size: Size, view: Size, trigger: Point | undefined, under: boolean): Placed {
   const point = trigger ?? { x: anchor.right, y: anchor.top + ARROW_INSET }
   let side: Placed['side'] = 'below'
   let left = clamp(anchor.right - size.width, POPOVER_MARGIN, view.width - size.width - POPOVER_MARGIN)
@@ -62,6 +77,18 @@ export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point
   }
   const top = clamp(point.y - ARROW_INSET - 6, POPOVER_MARGIN, view.height - size.height - POPOVER_MARGIN)
   return { left, top, side, arrow: clamp(point.y - top, ARROW_INSET, size.height - ARROW_INSET) }
+}
+
+/**
+ * The start point of the genie motion: the tip of the arrow, 6px out of the edge that faces the
+ * trigger, as `transform-origin` and the centre of the `clip-path` reveal (issue 1240).
+ */
+export function pourOrigin(placed: Placed): string {
+  const at = `${placed.arrow}px`
+  if (placed.side === 'right') return `-6px ${at}`
+  if (placed.side === 'left') return `calc(100% + 6px) ${at}`
+  if (placed.side === 'below') return `${at} -6px`
+  return `${at} calc(100% + 6px)`
 }
 
 /**

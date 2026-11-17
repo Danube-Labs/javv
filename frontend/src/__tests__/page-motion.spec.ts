@@ -25,8 +25,12 @@ describe('page entry motion', () => {
   })
 
   it('the outer blocks rise and the blocks inside them fade, on the motion tokens, without holding the end values', () => {
-    expect(css).toContain(':where(.page-motion) > * > * {\n  animation: page-rise var(--dur-panel) var(--ease-out) backwards;')
-    expect(css).toContain(':where(.page-motion) > * > * > * {\n  animation: page-fade var(--dur-panel) var(--ease-out) backwards;')
+    expect(css).toContain(
+      ':where(.page-motion) > * > :where(:not(.pop, .dd-menu--band)) {\n  animation: page-rise var(--dur-panel) var(--ease-out) backwards;',
+    )
+    expect(css).toContain(
+      ':where(.page-motion) > * > * > :where(:not(.pop, .dd-menu--band)) {\n  animation: page-fade var(--dur-panel) var(--ease-out) backwards;',
+    )
   })
 
   it('no selector of the page motion has a specificity above zero', () => {
@@ -44,5 +48,41 @@ describe('page entry motion', () => {
 
   it('the app shell puts the class on its main area', () => {
     expect(shell).toMatch(/<main class="content page-motion"/)
+  })
+})
+
+/**
+ * The genie motion of the four popovers (issue 1240, decision 5, operator 2026-11-17): a ruled
+ * exception to DESIGN.md §5. It opens in --dur-pour (380 ms) and closes in --dur-panel, it may
+ * animate clip-path next to transform and opacity, and it is the class t-pour.
+ */
+describe('the genie motion t-pour', () => {
+  const tokens = readFileSync(join(SRC, 'styles/tokens.css'), 'utf8')
+  it('its open is --dur-pour, 380 ms, a token of its own', () => {
+    expect(tokens).toMatch(/--dur-pour: 380ms;/)
+  })
+  it('opens in --dur-pour and closes the same way back in --dur-panel, on --ease-out', () => {
+    expect(css).toMatch(/\.t-pour-enter-active \{[^}]*animation: pour var\(--dur-pour\) var\(--ease-out\) both;/)
+    expect(css).toMatch(/\.t-pour-leave-active \{[^}]*animation: pour var\(--dur-panel\) var\(--ease-out\) reverse both;/)
+  })
+  it('starts at the point that the popover gives, the tip of its arrow', () => {
+    expect(css).toMatch(/\.t-pour-enter-active,\n\.t-pour-leave-active \{\n  transform-origin: var\(--pour-origin\);/)
+  })
+  it('a popover with the genie motion takes no page entry motion, so it does not fade in again after its open', () => {
+    // the Triage panel sits 3 levels under the main area and Panel settings 2: a page-rise or
+    // page-fade on them started from opacity 0 when the t-pour class came off (issue 1240)
+    const page = [...css.matchAll(/^(:where\(\.page-motion\)[^{]*)\{\n  animation: page-/gm)].map((m) => m[1]!)
+    expect(page).toHaveLength(2)
+    for (const s of page) expect(s).toContain(':where(:not(.pop, .dd-menu--band))')
+  })
+  it('the keyframes move only opacity, transform and clip-path', () => {
+    const pour = block(/@keyframes pour \{[\s\S]*?\n\}/)
+    const props = [...pour.matchAll(/([a-z-]+):\s/g)].map((m) => m[1])
+    expect(new Set(props)).toEqual(new Set(['opacity', 'transform', 'clip-path']))
+  })
+  it('reduced motion turns it off', () => {
+    const off = block(/@media \(prefers-reduced-motion: reduce\) \{\s*\.t-pour-enter-active[\s\S]*?\n\}/)
+    expect(off).toContain('.t-pour-leave-active {')
+    expect(off).toContain('animation: none;')
   })
 })
