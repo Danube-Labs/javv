@@ -11,6 +11,7 @@ import { computed } from 'vue'
 
 import UiCloseButton from '@/components/ui/UiCloseButton.vue'
 import { isNegatable, valueLabel, type FilterField } from '@/filters/fields.config'
+import { inText } from '@/filters/typedValues'
 import type { FilterMode } from '@/stores/filters'
 
 const props = defineProps<{ field: FilterField; values: readonly string[]; mode: FilterMode }>()
@@ -33,7 +34,7 @@ const shown = computed(() =>
     <button
       type="button"
       class="fpill-open fpill-field"
-      :aria-label="`Edit the filter ${field.label}: ${opText} ${labels.join(', ')}`"
+      :aria-label="`Edit the filter ${inText(field.label)}: ${opText} ${labels.join(', ')}`"
       @click="emit('open')"
     >
       {{ field.label }}
@@ -53,7 +54,7 @@ const shown = computed(() =>
     <span v-else class="fpill-op">{{ opText }}</span>
     <!-- a long image repo hides the "+N"; the title holds every value -->
     <span class="fpill-vals" :title="labels.join(', ')">{{ shown }}</span>
-    <UiCloseButton class="fpill-x" small :label="`Clear ${field.label}`" @click="emit('clear')" />
+    <UiCloseButton class="fpill-x" small :label="`Clear ${inText(field.label)}`" @click="emit('clear')" />
   </div>
 </template>
 

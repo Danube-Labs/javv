@@ -189,7 +189,7 @@ describe('the search box of a list that stopped at its cap (issue 1064)', () => 
   it('is there on a list at its cap, and the note points to it', async () => {
     const w = mountSearch(vi.fn<ValueSearchFn>())
     expect(w.find('.facet-vsearch input').attributes('placeholder')).toBe('Find a namespace…')
-    expect(w.find('.facet-vsearch input').attributes('aria-label')).toBe('Find a value of Namespace')
+    expect(w.find('.facet-vsearch input').attributes('aria-label')).toBe('Find a value of namespace')
     await w.find('.facet-more').trigger('click')
     expect(w.find('.facet-cap').text()).toBe('Top 32 by count. The box above finds the other values.')
   })

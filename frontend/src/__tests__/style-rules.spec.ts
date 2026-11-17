@@ -367,12 +367,18 @@ describe('style rules: one shared card, menu panel and error text', () => {
     ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.ingest-lens: background', '.ingest-lens: padding', '.il-quiet: border-color', '.il-head: gap',
-      '.il-title: text-transform', '.il-sub: color', '.il-sub b: font-weight', '.il-empty: font-size',
+      '.il-title: text-transform', '.il-sub: color', '.il-sub b: font-weight', '.il-empty: margin',
+      '.il-empty: font-size',
       '.ingest-lens > .skel-gap: margin-bottom',
     ])
-    // what a strip adds: how it fills its row, how its line wraps, the space of its empty text
-    const additions = '.ingest-lens { flex: 1 1 auto; }\n.il-sub { white-space: nowrap; overflow: hidden; }\n.il-empty { margin: 0; font-weight: 500; }'
+    // what a strip adds: how it fills its row and how its line wraps
+    const additions = '.ingest-lens { flex: 1 1 auto; }\n.il-sub { white-space: nowrap; overflow: hidden; }'
     expect(sharedRuleCopies(additions, shared)).toEqual([])
+    // the empty text of all four strips has one margin and one weight (issue 1245, option B)
+    expect(sharedRuleCopies('.il-empty { margin: 0; font-weight: 400; }', shared)).toEqual([
+      '.il-empty: margin',
+      '.il-empty: font-weight',
+    ])
   })
 
   it('the check finds a planted copy of each note line and lets a margin pass (issue 1214)', () => {
@@ -654,5 +660,51 @@ describe('style rules: clip-path moves only in the genie motion (issue 1240)', (
     expect(clipMotions('x.vue', '@keyframes grow { from { clip-path: inset(50%); } }')).toEqual(['x.vue @keyframes grow'])
     expect(clipMotions('x.vue', '.a { transition: clip-path 0.2s; }')).toEqual(['x.vue transition: clip-path 0.2s'])
     expect(clipMotions('x.vue', '@keyframes fade { from { opacity: 0; } }')).toEqual([])
+  })
+})
+
+/**
+ * Reduced motion (issue 1245): each rule of base.css that sets a transition has a reduced-motion
+ * rule for the same selector that sets `transition: none`. `.facet-check` and six other controls
+ * kept their fades with reduced motion on.
+ */
+describe('base.css: reduced motion stops every transition', () => {
+  type Block = { prelude: string; body: string }
+  const blocks = (css: string): Block[] => {
+    const out: Block[] = []
+    let depth = 0
+    let start = 0
+    let open = 0
+    for (let i = 0; i < css.length; i++) {
+      if (css[i] === '{') {
+        if (depth === 0) open = i
+        depth++
+      } else if (css[i] === '}') {
+        depth--
+        if (depth === 0) {
+          out.push({ prelude: css.slice(start, open).trim(), body: css.slice(open + 1, i) })
+          start = i + 1
+        }
+      } else if (css[i] === ';' && depth === 0) start = i + 1
+    }
+    return out
+  }
+  const selectors = (prelude: string) => prelude.split(',').map((s) => s.replace(/\s+/g, ' ').trim())
+
+  it('each selector with a transition has transition: none under reduced motion', () => {
+    const css = readFileSync(join(SRC, 'styles/base.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    const moving = new Set<string>()
+    const calm = new Set<string>()
+    const rules = (list: Block[], reduced: boolean) => {
+      for (const b of list) {
+        if (b.prelude.startsWith('@media')) rules(blocks(b.body), reduced || /prefers-reduced-motion:\s*reduce/.test(b.prelude))
+        else if (b.prelude.startsWith('@')) continue
+        else if (reduced && /(^|;)\s*transition\s*:\s*none/.test(b.body)) selectors(b.prelude).forEach((s) => calm.add(s))
+        else if (!reduced && /(^|;)\s*transition\s*:\s*(?!none)/.test(b.body)) selectors(b.prelude).forEach((s) => moving.add(s))
+      }
+    }
+    rules(blocks(css), false)
+    expect(moving.size).toBeGreaterThan(10)
+    expect([...moving].filter((s) => !calm.has(s))).toEqual([])
   })
 })

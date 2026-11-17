@@ -320,6 +320,20 @@ describe('FilterBar several typed values', () => {
     expect(bar.find('.filter-clear-field').text()).toBe('Clear vulnerability')
   })
 
+  it('the pill and the menu say Clear in one style (issue 1245)', async () => {
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: { ...emptySelections(FINDINGS_FIELDS), cve: ['CVE-1'] },
+        facets: FACETS,
+      },
+    })
+    const pillClear = bar.find('.fpill .fpill-x').attributes('aria-label')
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.text().includes('Vulnerability'))?.trigger('click')
+    expect(pillClear).toBe(bar.find('.filter-clear-field').text())
+  })
+
   it('the pill reads "is one of" for two typed values', () => {
     const bar = mount(FilterBar, {
       props: {

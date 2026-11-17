@@ -106,7 +106,7 @@ describe('Approvals: Status and Approver take several values', () => {
       ok({ approvals: [row('1', 'ann'), row('2', 'bob')], total: 2, facets: {} }) as never,
     )
     const w = await mountAt(ApprovalsView, { approver: 'ann' })
-    await w.find('[aria-label="Filter to Approver bob"]').trigger('click')
+    await w.find('[aria-label="Filter to approver bob"]').trigger('click')
     await flushPromises()
     expect(lastQuery(approvalListApiV1DecisionsApprovalsGet).created_by).toEqual(['ann', 'bob'])
   })
