@@ -92,6 +92,9 @@ describe('a long value stays in the evidence card (issue 1231, E1 on built pictu
   it('gives both scanner columns the same width and wraps the other values where they must', () => {
     const file = 'components/finding/EvidenceCard.vue'
     expect(declarations(file, '.compare')).toMatchObject({ 'table-layout': 'fixed' })
+    // the room for a state tag and a severity chip at 1280px (ruling N, a browser probe measured it)
+    expect(declarations(file, '.compare .attr-col')).toMatchObject({ width: '92px' })
+    expect(declarations(file, '.compare.compare tbody td')).toMatchObject({ 'padding-left': '8px', 'padding-right': '8px' })
     expect(declarations(file, '.compare tbody td')).toMatchObject({ 'overflow-wrap': 'anywhere' })
     expect(declarations(file, '.compare .cell-cut')).toMatchObject({
       overflow: 'hidden',

@@ -253,9 +253,12 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
   /** 18 packages on the image; the read of one package answers with that package only */
   const names = Array.from({ length: 18 }, (_, i) => `pkg-${String(i).padStart(2, '0')}`)
   let listAnswer: () => unknown
-  const listReads = () => searchMock.mock.calls.filter((c) => (c[0] as Q).query.size === 500)
+  /** the list read is the one at the limit with no package filter; the read of the finding has a
+   *  package filter, or 10 rows for a link with no package */
+  const isList = (q: Q['query']) => q.size === 500 && !q.package_name
+  const listReads = () => searchMock.mock.calls.filter((c) => isList((c[0] as Q).query))
   const evidenceReads = () =>
-    searchMock.mock.calls.filter((c) => (c[0] as Q).query.image_digest && (c[0] as Q).query.size !== 500)
+    searchMock.mock.calls.filter((c) => (c[0] as Q).query.image_digest && !isList((c[0] as Q).query))
 
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -265,10 +268,10 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
     const all = names.flatMap((n) => [pkgRow(n, 'trivy'), pkgRow(n, 'grype')])
     listAnswer = () => ok({ data: all, total: { value: all.length, relation: 'eq' } })
     searchMock.mockImplementation((async (opts: Q) => {
-      if (opts.query.size === 500) return listAnswer()
+      if (isList(opts.query)) return listAnswer()
       if (opts.query.image_digest) {
         const want = opts.query.package_name?.[0]
-        const data = want ? all.filter((r: { package_name: string }) => r.package_name === want) : all.slice(0, 10)
+        const data = (want ? all.filter((r: { package_name: string }) => r.package_name === want) : all).slice(0, opts.query.size)
         return ok({ data, total: { value: data.length, relation: 'eq' } })
       }
       return ok({ data: [], total: { value: 0, relation: 'eq' } })
@@ -289,6 +292,18 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
     const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc&pkg=pkg-15&ver=10.2.1-6')
     expect((evidenceReads().at(-1)![0] as Q).query.package_name).toEqual(['pkg-15'])
     expect(w.findComponent(TriagePanel).props('finding')).toMatchObject({ package_name: 'pkg-15' })
+  })
+
+  it('a package with more rows than 10 on the image: the version of the link still shows', async () => {
+    // 7 versions from 2 scanners are 14 rows of one package; the link names the last version
+    const versions = Array.from({ length: 7 }, (_, i) => `1.${i}.0`)
+    const many = versions.flatMap((v) => [pkgRow('stdlib', 'trivy', v), pkgRow('stdlib', 'grype', v)])
+    searchMock.mockImplementation((async (opts: Q) => {
+      const data = opts.query.package_name ? many.slice(0, opts.query.size) : []
+      return ok({ data, total: { value: many.length, relation: 'eq' } })
+    }) as never)
+    const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc&pkg=stdlib&ver=1.6.0')
+    expect(w.findComponent(TriagePanel).props('finding')).toMatchObject({ package_name: 'stdlib', installed_version: '1.6.0' })
   })
 
   it('a second read lists each package of the CVE on the image, with no package filter', async () => {
@@ -332,5 +347,19 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
     searchMock.mockResolvedValue(ok({ data: [], total: { value: 0, relation: 'eq' } }) as never)
     const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc')
     expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('No current finding for this vulnerability on this image.')
+  })
+
+  // the last test of the file: a change of the image makes each page that an earlier test left mounted read again
+  it('a link to another finding: the head band does not keep the packages of the last one', async () => {
+    const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc&pkg=pkg-15&ver=10.2.1-6')
+    expect(w.findComponent(DetailHead).props('packages')).toHaveLength(18)
+    let answer: (v: unknown) => void = () => {}
+    listAnswer = () => new Promise((r) => (answer = r))
+    await router.push('/findings/CVE-2026-0001?digest=sha256:other&pkg=pkg-15&ver=10.2.1-6')
+    await flushPromises()
+    expect(w.findComponent(DetailHead).props('packages')).toEqual([])
+    answer(ok({ data: [pkgRow('pkg-15', 'trivy'), pkgRow('pkg-16', 'trivy')], total: { value: 2, relation: 'eq' } }))
+    await flushPromises()
+    expect(w.findComponent(DetailHead).props('packages')).toHaveLength(2)
   })
 })

@@ -200,9 +200,10 @@ describe('one-shot reads close their walk at once', () => {
   const DETAIL_ROUTES = [{ path: '/findings/:cveId', name: 'finding', component: FindingDetailView }]
 
   it('Finding detail: the pair, the occurrences, the packages on the image and the activity', async () => {
-    const label: Record<number, string> = { 10: 'pair', 500: 'packages' } // packages: issue 1227
+    // the pair has the package of the link; the packages read (issue 1227) is at the limit with no package
+    const label = (q: { size: number; package_name?: string[] }) => (q.package_name ? 'pair' : q.size === 500 ? 'packages' : 'occ')
     vi.mocked(searchFindingsApiV1FindingsGet).mockImplementation(
-      async (opts) => findingsPage(label[(opts as { query: { size: number } }).query.size] ?? 'occ') as never,
+      async (opts) => findingsPage(label((opts as { query: { size: number; package_name?: string[] } }).query)) as never,
     )
     vi.mocked(readAuditLogApiV1AuditGet).mockResolvedValue(auditPage('activity') as never)
     await mountApp(DETAIL_ROUTES, DETAIL)
