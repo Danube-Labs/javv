@@ -142,7 +142,7 @@ async function loadRows(q: typeof rowsQuery.value) {
 const failureMessage = computed(() =>
   grid.failed
     ? readFailureCopy(grid.failedStatus, 'Audit log unavailable. Check the backend connection, then retry.')
-    : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
+    : `JAVV could not load the filter counts. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 watch(
   rowsQuery,

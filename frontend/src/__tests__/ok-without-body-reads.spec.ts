@@ -87,7 +87,7 @@ describe('a component whose OK reply has a body that could not be read shows its
     ['ContributorsView', ContributorsView, {}, 'Contributors unavailable.'],
     ['IngestFailuresTable', IngestFailuresTable, { clusterId: CLUSTER, scanner: 'trivy', t: null }, 'Failed ingests unavailable.'],
     ['ScannerStatusView', ScannerStatusView, {}, 'Scanner status unavailable.'],
-    ['SavedViewsView', SavedViewsView, {}, 'Saved views unavailable.'],
+    ['SavedViewsView', SavedViewsView, {}, 'JAVV cannot show the saved views.'],
     ['DashboardsView', DashboardsView, {}, 'Dashboards unavailable.'],
     ['ScanScopeView', ScanScopeView, {}, 'Scan scope unavailable.'],
     ['ScanningView', ScanningView, {}, 'Staleness timers unavailable.'],
@@ -97,7 +97,7 @@ describe('a component whose OK reply has a body that could not be read shows its
     // these three did not throw: they showed a loaded page with nothing, or with old data, in it
     ['TopComponentsCard', TopComponentsCard, { scanner: 'all' }, 'Component ranking unavailable.'],
     ['DataOpenSearchView', DataOpenSearchView, {}, 'Data settings unavailable.'],
-    ['ApprovalsView', ApprovalsView, {}, 'Could not load the queue.'],
+    ['ApprovalsView', ApprovalsView, {}, 'JAVV cannot show the Approval list.'],
   ] as const)('%s', async (_name, component, props, copy) => {
     const w = mountAll(component as Component, props)
     await flushPromises()

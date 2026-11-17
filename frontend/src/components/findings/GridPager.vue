@@ -46,7 +46,7 @@ const range = computed(() => {
         </UiSelect>
       </label>
       <div class="pager-btns">
-        <UiButton class="pager-btn" :disabled="!hasPrev" @click="emit('prev')">Prev</UiButton>
+        <UiButton class="pager-btn" :disabled="!hasPrev" @click="emit('prev')">Previous</UiButton>
         <UiButton class="pager-btn" :disabled="!hasNext" @click="emit('next')">Next</UiButton>
       </div>
     </div>

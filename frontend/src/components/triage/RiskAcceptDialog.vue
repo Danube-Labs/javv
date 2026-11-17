@@ -91,7 +91,7 @@ async function submit() {
         ? 'Only a Security Lead or an admin can accept a risk.'
         : (response.error as { type?: unknown } | undefined)?.type === EXPIRY_PASSED_TYPE
           ? EXPIRY_REFUSED
-          : 'JAVV did not create the decision. Make sure that the backend is available.'
+          : 'JAVV did not create the decision. Check the backend connection, then try again.'
     logger.warn('decision_create_failed', { status })
   }
 }

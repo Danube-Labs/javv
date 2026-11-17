@@ -205,7 +205,7 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
         </span>
         <span class="stat-sub"
           ><template v-if="inventoryRow?.namespaces.length">{{ inventoryRow.namespaces.join(', ') }} · </template
-          ><template v-if="inventoryKnown === false">no inventory at this T</template
+          ><template v-if="inventoryKnown === false">no inventory at this time</template
           ><template v-else-if="inventoryAt">from the inventory of {{ lastDataAt(inventoryAt) }}</template
           ><template v-else>runtime inventory</template></span
         >
@@ -261,12 +261,12 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
       <div class="card-head">
         <div>
           <h2>Build history</h2>
-          <p class="card-sub">{{ scanner }}'s committed scans of this tag · a rebuilt tag is a new digest</p>
+          <p class="card-sub">The scans of this tag by {{ scanner }}. A rebuilt tag has a new digest.</p>
         </div>
       </div>
       <div class="card-body">
         <p v-if="timelineFailed" class="load-error" role="alert">
-          {{ readFailureCopy(timelineFailedStatus, 'Build history unavailable. Check the backend connection.') }}
+          {{ readFailureCopy(timelineFailedStatus, 'JAVV cannot show the build history. Check the backend connection.') }}
         </p>
         <DigestSubTimeline
           v-else
@@ -281,8 +281,8 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
     <div v-if="notYetScanned" class="card first-run">
       <h2>Not yet scanned then</h2>
       <p>
-        No committed {{ scanner }} scan of this tag exists at or before this T. Reach is bounded
-        by this cluster's retained data.
+        {{ scanner }} has no scan of this tag at or before this time. JAVV keeps the data of this
+        cluster for its retention period only.
       </p>
     </div>
 

@@ -54,10 +54,10 @@ describe('expiryStatus (the chip contract)', () => {
 
 describe('scope + scanner labels', () => {
   it('empty scope is cluster-wide; ns/img compact with +N', () => {
-    expect(scopeLabel({ namespaces: [], images: [] })).toBe('cluster-wide')
-    expect(scopeLabel({ namespaces: ['prod'], images: [] })).toBe('ns: prod')
+    expect(scopeLabel({ namespaces: [], images: [] })).toBe('whole cluster')
+    expect(scopeLabel({ namespaces: ['prod'], images: [] })).toBe('namespace: prod')
     expect(scopeLabel({ namespaces: ['prod', 'stage'], images: ['nginx'] })).toBe(
-      'ns: prod +1 · img: nginx',
+      'namespace: prod +1 · image: nginx',
     )
   })
 

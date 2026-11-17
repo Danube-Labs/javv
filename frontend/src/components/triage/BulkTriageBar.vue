@@ -92,13 +92,13 @@ async function apply() {
     // the server names the reason, e.g. how many selected findings are risk-accepted (issue 892)
     error.value =
       (response.error as { title?: string } | undefined)?.title ??
-      'You may not change the state of these findings.'
+      'Your role does not allow you to change the state of these findings.'
   } else if (response.response?.status === 413) {
     error.value = 'Too many findings match for one bulk action. Narrow the filters.'
   } else if (response.response?.status === 422) {
     error.value = 'JAVV did not accept this change. Check the state and, for Not affected, the reason.'
   } else {
-    error.value = 'Bulk failed. Check the backend connection.'
+    error.value = 'JAVV did not change the findings. Check the backend connection, then try again.'
     logger.warn('bulk_triage_failed', { status: response.response?.status })
   }
 }
@@ -113,7 +113,7 @@ async function apply() {
     <ModalShell
       v-if="open"
       title="Bulk triage"
-      subtitle="one action, one audit row, for every finding that matches your filters"
+      subtitle="One change for each finding that matches your filters. The audit log records one row."
       @close="open = false"
     >
       <div>
@@ -144,14 +144,14 @@ async function apply() {
               <UiTextBox id="bulk-assignee" v-model="assignee" placeholder="username" />
             </UiField>
 
-            <UiField label="Note" hint="one note on every target" for="bulk-notes">
-              <UiTextArea id="bulk-notes" v-model="notes" prose rows="2" placeholder="Why this bulk action…" />
+            <UiField label="Note" hint="JAVV adds this note to each finding." for="bulk-notes">
+              <UiTextArea id="bulk-notes" v-model="notes" prose rows="2" placeholder="Write why you make this change…" />
             </UiField>
 
             <p v-if="draft.error" class="bulk-error" role="alert">{{ draft.error }}</p>
             <p v-if="error" class="bulk-error" role="alert">{{ error }}</p>
             <p v-if="done !== null" class="bulk-done">
-              <AppIcon name="check" :size="13" /> Applied to {{ done }} finding(s), one audit row.
+              <AppIcon name="check" :size="13" /> JAVV changed {{ done }} finding{{ done === 1 ? '' : 's' }}. The audit log has one row for this change.
             </p>
           </template>
       </div>

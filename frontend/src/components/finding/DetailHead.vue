@@ -53,7 +53,7 @@ const slaTier = computed(() => {
       <div class="detail-cve">
         <h1>{{ cveId }}</h1>
         <SevChip v-if="primary" :level="primary.severity_canonical" />
-        <DisagreementBadge v-if="disagrees" label="scanners disagree" title="Scanners disagree on severity" />
+        <DisagreementBadge v-if="disagrees" label="scanners disagree" title="The scanners do not agree on the severity." />
         <span v-if="kev" class="kev-lg">KEV · known-exploited</span>
       </div>
       <div class="detail-meta">
@@ -71,7 +71,7 @@ const slaTier = computed(() => {
               path: `/images/${digest}`,
               query: { repo: primary.image_repo, ...(primary.tag ? { tag: primary.tag } : {}) },
             }"
-            title="Open this image's detail"
+            title="Open the page of this image"
             >{{ primary.image_repo }}{{ primary.tag ? ':' + primary.tag : ''
             }}<AppIcon class="fact-go" name="chevron" :size="11"
           /></RouterLink>

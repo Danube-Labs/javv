@@ -43,14 +43,14 @@ describe('lensToSelector (bulk never widens the lens)', () => {
   it('blocks multi-value severity/state (the selector takes exactly one)', () => {
     const r = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical', 'high'] }))
     expect(r.selector).toBeNull()
-    expect(r.blocked).toMatch(/exactly one/)
+    expect(r.blocked).toMatch(/one value at a time/)
   })
 
   // issue 949: assignee takes several values now; the selector still takes exactly one
   it('blocks two assignees, as it blocks two severities', () => {
     const r = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical'], assignee: ['ana', 'bob'] }))
     expect(r.selector).toBeNull()
-    expect(r.blocked).toBe('Pick a single Assignee value. Bulk triage works on exactly one at a time.')
+    expect(r.blocked).toBe('Select one Assignee value only. Bulk triage uses one value at a time.')
   })
 
   it('refuses an empty lens — whole-cluster bulk is never offered', () => {

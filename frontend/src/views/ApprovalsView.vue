@@ -98,8 +98,8 @@ const { exporting, run: runExport } = useCsvExport({
   onFailed: (status) =>
     toast.error(
       status
-        ? `Export failed (${status}). Check the backend connection.`
-        : 'Export failed. Check the backend connection.',
+        ? `JAVV could not export the file (${status}). Check the backend connection.`
+        : 'JAVV could not export the file. Check the backend connection.',
     ),
   onDone: (name) => toast.success(`Export downloaded · ${name}`),
 })
@@ -204,16 +204,16 @@ async function revoke(row: ApprovalRow) {
   busy.value = false
   if (response.response?.ok) {
     logger.info('decision_revoked', { decision_id: row.decision_id })
-    toast.success('Acceptance revoked. Its findings are Open again.')
+    toast.success('JAVV revoked the risk acceptance. Its findings are Open again.')
     await fetchQueue()
   } else {
     logger.warn('decision_revoke_failed', { status: response.response?.status })
-    toast.error('Revoke failed. Check the backend connection')
+    toast.error('JAVV did not revoke the risk acceptance. Check the backend connection, then try again.')
   }
 }
 
 function onEdited() {
-  toast.success('Decision re-issued (revoke + new)')
+  toast.success('JAVV revoked the decision and created a new decision.')
   void fetchQueue()
 }
 
@@ -223,26 +223,26 @@ function onEdited() {
   <div class="screen">
     <div class="screen-head screen-head-band">
       <div class="head-card">
-        <h1>Approvals</h1>
+        <h1>Approval list</h1>
         <p class="head-stat">
           <template v-if="timeTravel.isNow && !failed">{{ fmt(total) }}</template
           ><span v-else class="muted-dash">-</span
-          ><span class="head-unit"> standing acceptance{{ total === 1 && timeTravel.isNow && !failed ? '' : 's' }}</span>
+          ><span class="head-unit"> active risk acceptance{{ total === 1 && timeTravel.isNow && !failed ? '' : 's' }}</span>
         </p>
-        <p class="head-note">review queue · active risk-accepts, soonest expiry first · revoked never listed</p>
+        <p class="head-note">The risk acceptances that apply now. The next expiry date is first. The list does not show revoked decisions.</p>
       </div>
       <AuditLens
         :query="lensQuery"
         title="Decision activity"
-        sub="risk-accept creates + revokes journaled in this range. The queue below is current state"
+        sub="The risk acceptances that people created or revoked in this range. The list below shows the state now."
       />
     </div>
 
     <LimitedHistoricalNotice
       v-if="!timeTravel.isNow"
       title="The Approval list shows now only"
-      body="JAVV keeps no history of the standing acceptances. The chart of decisions above shows the
-        past time. Go back to now to review the list."
+      body="JAVV keeps no history of the active risk acceptances. The chart of decisions above shows the
+        past time. Go back to now to see the list."
     />
 
     <div v-else class="findings-layout">
@@ -251,7 +251,7 @@ function onEdited() {
           card
           :model-value="filters.selections.q?.[0] ?? ''"
           placeholder="Vulnerability…"
-          aria-label="Search acceptances by vulnerability (contains match)"
+          aria-label="Search the risk acceptances by vulnerability"
           @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
         />
         <FacetRail
@@ -299,7 +299,7 @@ function onEdited() {
 
       <UiSkeleton v-if="!settled" :height="220" label="Loading approvals" class="skel-gap" />
       <p v-else-if="failed" class="load-error" role="alert">
-        {{ readFailureCopy(failedStatus, 'Could not load the queue. Check the backend connection.') }}
+        {{ readFailureCopy(failedStatus, 'JAVV cannot show the Approval list. Check the backend connection.') }}
       </p>
       <section v-else class="card queue-card">
         <ApprovalsTable

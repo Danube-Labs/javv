@@ -483,7 +483,7 @@ These settings apply only when you build the frontend image yourself.
 |---|---|---|
 | `VITE_LOG_LEVEL` | `debug` in a dev build, `warn` in a production build | The level of the logger in the browser console: `debug`, `info`, `warn` or `error`. An unknown value gives the default. |
 | `VITE_DB_AGE_WARN_DAYS` | `7` | Days after which the scanner card shows the vulnerability database as old: amber `· N days old` next to **Database built**. A scanner with an old database finds fewer vulnerabilities. To fix it, use a newer scanner image. A value that is not a number above 0 gives the default. |
-| `VITE_EXPIRY_WARN_DAYS` | `7` | Days before a risk acceptance expires when its chip in the Approval list turns amber: `expires in Nd`. At the expiry, the chip turns red, and the findings of the acceptance open again. A value that is not a number above 0 gives the default. |
+| `VITE_EXPIRY_WARN_DAYS` | `7` | Days before a risk acceptance expires when its chip in the Approval list turns amber: `expires in N days`. At the expiry, the chip turns red, and the findings of the acceptance open again. A value that is not a number above 0 gives the default. |
 | `VITE_CLIENT_EVENTS` | not set: on in a production build, off in a dev build | When it is on, the browser also sends each `logger.warn` and `logger.error` to `POST /api/v1/client-events`. Thus an error stays in the log after the user closes the tab. `false` or `0` turns it off. Each other value turns it on. See the [browser warnings](#browser-warnings-and-errors) below. |
 
 #### Browser warnings and errors

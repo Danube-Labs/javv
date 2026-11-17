@@ -113,8 +113,8 @@ const { exporting, run: runExport } = useCsvExport({
   },
   onFailed: (status) => {
     error.value = status
-      ? `Export failed (${status}). Check the backend connection.`
-      : 'Export failed. Check the backend connection.'
+      ? `JAVV could not export the file (${status}). Check the backend connection.`
+      : 'JAVV could not export the file. Check the backend connection.'
   },
   onDone: (name) => {
     logger.info('export_downloaded', { format: format.value })
@@ -133,7 +133,7 @@ async function runNow() {
 function expiresIn(iso?: string): string {
   if (!iso) return ''
   const h = Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 3_600_000))
-  return `expires in ~${h}h`
+  return `expires in about ${h}h`
 }
 async function schedule() {
   busy.value = true
@@ -156,7 +156,7 @@ async function schedule() {
     pollFailures = 0
     poll = setInterval(() => void checkReport(), 5_000)
   } else {
-    error.value = 'Could not schedule. Check the backend connection.'
+    error.value = 'JAVV could not start the export in the background. Check the backend connection.'
     logger.warn('export_schedule_failed', { status: response.response?.status })
   }
 }
@@ -177,12 +177,12 @@ async function checkReport() {
       stopPolling()
       error.value =
         status === 401 || status === 403
-          ? 'Session expired while waiting. Sign in again: the report keeps running and rings the bell.'
-          : 'The scheduled report is gone (expired or removed). Re-run the export.'
+          ? 'Your session expired. Sign in again. JAVV continues to make the file, and the bell tells you when it is ready.'
+          : 'The file is not available any more, because it expired or somebody deleted it. Start the export again.'
       logger.warn('export_poll_terminal', { status, report_id: report.value.id })
     } else if (++pollFailures >= POLL_MAX_FAILURES) {
       stopPolling()
-      error.value = 'Lost contact with the backend while polling. The bell will ring when the report is ready.'
+      error.value = 'JAVV lost the connection to the backend. The bell tells you when the file is ready.'
       logger.warn('export_poll_gave_up', { status, report_id: report.value.id })
     }
     return
@@ -219,7 +219,7 @@ const downloadHref = computed(() =>
     <ModalShell
       v-if="open"
       title="Export"
-      subtitle="what you are looking at now · a VEX file holds the results of one scanner"
+      subtitle="The file holds the rows that you see now. A VEX file holds the results of one scanner."
       :width="480"
       @close="close"
     >
@@ -258,10 +258,10 @@ const downloadHref = computed(() =>
                   <span class="ex-dim">{{ expiresIn(report.expires_at) }}</span>
                 </template>
                 <template v-else-if="report.status === 'failed'">
-                  <AppIcon name="alert" :size="13" /> Report failed. Re-run the export.
+                  <AppIcon name="alert" :size="13" /> JAVV could not make the file. Start the export again.
                 </template>
                 <template v-else>
-                  <AppIcon name="clock" :size="13" /> Scheduled, status: {{ report.status }}…
+                  <AppIcon name="clock" :size="13" /> In the background. Status: {{ report.status }}…
                 </template>
               </div>
             </template>

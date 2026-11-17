@@ -52,7 +52,7 @@ function verbatimDiffers(r: FindingRow): boolean {
             <td v-for="c in columns" :key="c.scanner">
               <template v-if="c.row">
                 <SevChip :level="c.row.severity_canonical" />
-                <span v-if="verbatimDiffers(c.row)" class="mono-cell sm verbatim" :title="'verbatim from ' + c.scanner">“{{ c.row.severity }}”</span>
+                <span v-if="verbatimDiffers(c.row)" class="mono-cell sm verbatim" :title="'as sent by ' + c.scanner">“{{ c.row.severity }}”</span>
               </template>
               <span v-else class="absent-note">no current finding</span>
             </td>

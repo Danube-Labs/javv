@@ -24,10 +24,10 @@ const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12)
 <template>
   <div class="subtl">
     <p v-if="notYet" class="subtl-empty">
-      Not yet scanned then: this T predates {{ scanner }}'s first committed scan of this tag.
+      Not yet scanned then: the first scan of this tag by {{ scanner }} is after this time.
     </p>
     <p v-else-if="eras.length === 0" class="subtl-empty">
-      No committed {{ scanner }} scans of this tag yet.
+      {{ scanner }} has no scan of this tag yet.
     </p>
     <ol v-else class="subtl-list">
       <template v-for="(era, i) in eras" :key="`${era.digest}-${era.firstAt}`">
@@ -38,14 +38,14 @@ const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12)
             <span v-if="era.digest === currentDigest" class="subtl-badge">this digest</span>
             <span class="subtl-meta">
               {{ lastDataAt(era.firstAt) }}<template v-if="era.lastAt !== era.firstAt"> → {{ lastDataAt(era.lastAt) }}</template>
-              · {{ era.runs }} run{{ era.runs === 1 ? '' : 's' }} · {{ fmt(era.totalAtLast) }} findings at last scan
+              · {{ era.runs }} scan{{ era.runs === 1 ? '' : 's' }} · {{ fmt(era.totalAtLast) }} findings at last scan
             </span>
           </div>
         </li>
         <li v-if="i < eras.length - 1" class="subtl-marker" aria-hidden="false">
           {{ eras[i + 1]!.digest !== era.digest ? 'image build changed' : '' }}<template
             v-if="era.gapBefore"
-          ><template v-if="eras[i + 1]!.digest !== era.digest"> · </template>cycles missed</template>
+          ><template v-if="eras[i + 1]!.digest !== era.digest"> · </template>missed scan cycles</template>
         </li>
       </template>
     </ol>

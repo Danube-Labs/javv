@@ -71,12 +71,12 @@ export function exportBlockMessage(
   if (choice.schedule) {
     const offenders = unrepresentableKeys(query)
     if (offenders.length)
-      return `A schedule cannot use these filters: ${filterNames(fields, offenders).join(', ')}. ${choice.historical ? 'Clear them.' : 'Clear them, or use Run now.'}`
+      return `An export in the background cannot use these filters: ${filterNames(fields, offenders).join(', ')}. ${choice.historical ? 'Clear them.' : 'Clear them, or use Run now.'}`
     const unrecorded = choice.historical
       ? PAST_TIME_UNRECORDED_KEYS.filter((key) => query[key] !== undefined)
       : []
     if (unrecorded.length)
-      return `At a past time, a schedule cannot use these filters: ${filterNames(fields, unrecorded).join(', ')}. Clear them.`
+      return `At a past time, an export in the background cannot use these filters: ${filterNames(fields, unrecorded).join(', ')}. Clear them.`
   }
   if (hasAssigneeWithUnassigned(query))
     return `An export cannot use ${filterNames(fields, ['assignee', 'unassigned']).join(' and ')} together. Clear one of them.`
@@ -84,7 +84,7 @@ export function exportBlockMessage(
     if (query.exclude_scanner !== undefined)
       return 'A VEX file covers one scanner. Clear the Scanner filter first.'
     if (query.scanner !== undefined && query.scanner !== choice.vexScanner)
-      return `This screen shows ${String(query.scanner)} findings only. Pick ${String(query.scanner)} for the VEX file.`
+      return `This screen shows ${String(query.scanner)} findings only. Select ${String(query.scanner)} for the VEX file.`
   }
   return null
 }

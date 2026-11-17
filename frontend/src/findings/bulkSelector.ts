@@ -60,14 +60,14 @@ export function lensToSelector(
       selector: null,
       blocked:
         `Remove ${inexpressible.length === 1 ? 'this filter' : 'these filters'} first: ` +
-        `${inexpressible.join(', ')}. Bulk triage only follows Severity, State, Assignee and Digest, ` +
+        `${inexpressible.join(', ')}. Bulk triage uses only the Severity, State, Assignee and Digest filters, ` +
         'so it would change more findings than you see.',
     }
   }
   if (multi) {
     return {
       selector: null,
-      blocked: `Pick a single ${multi} value. Bulk triage works on exactly one at a time.`,
+      blocked: `Select one ${multi} value only. Bulk triage uses one value at a time.`,
     }
   }
   if (Object.keys(selector).length === 0) {

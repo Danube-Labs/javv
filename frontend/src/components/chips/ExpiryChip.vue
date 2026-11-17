@@ -21,7 +21,7 @@ const label = computed(() => {
       return 'expired'
     case 'expiring': {
       const d = daysUntil(props.expiry as string, props.nowMs)
-      return d <= 0 ? 'expires today' : `expires in ${d}d`
+      return d <= 0 ? 'expires today' : `expires in ${d} day${d === 1 ? '' : 's'}`
     }
     default:
       return 'active'

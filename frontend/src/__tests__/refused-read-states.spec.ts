@@ -93,7 +93,7 @@ describe('a grid whose read is refused says so, and claims no empty answer', () 
     // "0 standing acceptances"
     ['Approvals', ApprovalsView, 'The backend is busy.', /(?<!\d)0 standing acceptances/, []],
     // already right: no count, no empty claim
-    ['Running images', ImagesView, 'Inventory unavailable.', /(?<!\d)0 images/, []],
+    ['Running images', ImagesView, 'JAVV cannot show the inventory.', /(?<!\d)0 images/, []],
   ] as const)('%s', async (_name, view, failure, zeroCount, emptyClaims) => {
     const w = await mountRouted(view as Component)
     await flushPromises()
@@ -178,7 +178,7 @@ describe('Findings: a refused read never leaves the last answer on screen (issue
     expect(text).toContain('Showing 26–50 of 435')
     // the total is still this query's, from page 1 (operator ruling 2026-10-13)
     expect(w.find('.head-stat').text()).toBe('435 findings')
-    const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Prev')!
+    const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Previous')!
     expect(prev.attributes('disabled')).toBeUndefined()
   })
 
@@ -207,8 +207,8 @@ describe('Findings: only the filter counts refused (issue 833, F9 under G2)', ()
   }
 
   it.each([
-    [429, 'Filter counts could not be loaded. The backend is busy. Try again in a few seconds.'],
-    [503, 'Filter counts could not be loaded. Check the backend connection.'],
+    [429, 'JAVV could not load the filter counts. The backend is busy. Try again in a few seconds.'],
+    [503, 'JAVV could not load the filter counts. Check the backend connection.'],
   ])('a %s: the rows stay, the alert names the counts, the rail shows "-"', async (status, copy) => {
     vi.mocked(facetFindingsApiV1FindingsFacetsGet)
       .mockResolvedValueOnce(facetsOk as never)
@@ -246,7 +246,7 @@ describe('Findings: only the filter counts refused (issue 833, F9 under G2)', ()
     await flushPromises()
     answerOld(facetsOk)
     await flushPromises()
-    expect(w.find('.load-error').text()).toContain('Filter counts could not be loaded.')
+    expect(w.find('.load-error').text()).toContain('JAVV could not load the filter counts.')
     expect(w.findAll('.facet-count').map((c) => c.text())).toEqual(Array(6).fill('-'))
   })
 })
@@ -319,7 +319,7 @@ describe('Audit log: the same rules as Findings (issue 833)', () => {
     expect(w.find('.load-error').text()).toBe(copy)
     expect(w.text()).toContain('Showing 26–50 of 60')
     expect(w.find('.head-stat').text()).toBe('60 events')
-    const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Prev')!
+    const prev = w.findAll('.pager-btn').find((b) => b.text() === 'Previous')!
     expect(prev.attributes('disabled')).toBeUndefined()
   })
 
@@ -329,7 +329,7 @@ describe('Audit log: the same rules as Findings (issue 833)', () => {
     vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValueOnce(refusedWith(503) as never)
     filters().toggle('action', 'triage')
     await flushPromises()
-    expect(w.find('.load-error').text()).toBe('Filter counts could not be loaded. Check the backend connection.')
+    expect(w.find('.load-error').text()).toBe('JAVV could not load the filter counts. Check the backend connection.')
     expect(w.text()).toContain('bob-new')
     expect(w.findAll('.facet-count').map((c) => c.text())).toContain('-')
   })
@@ -367,7 +367,7 @@ describe('Contributors and Approvals: the reason, and the newest answer (issue 8
 
   it.each([
     [429, 'The backend is busy. Try again in a few seconds.'],
-    [503, 'Could not load the queue. Check the backend connection.'],
+    [503, 'JAVV cannot show the Approval list. Check the backend connection.'],
   ])('Approvals, a %s', async (status, copy) => {
     vi.mocked(approvalListApiV1DecisionsApprovalsGet).mockResolvedValueOnce(refusedWith(status) as never)
     const w = await mountRouted(ApprovalsView as Component)
@@ -459,7 +459,7 @@ describe('Finding detail: a refused card read says so (issue 833, F2)', () => {
     const { w } = await mountDetail('/findings/CVE-2026-0001')
     expect(w.find('[aria-busy="true"]').exists()).toBe(false)
     expect(w.find('.not-found h1').text()).toBe('CVE-2026-0001')
-    expect(w.text()).toContain('This link is missing the image identity. Open the finding from the grid.')
+    expect(w.text()).toContain('This link names no image. Open the finding from the Findings table.')
   })
 
   it('each card says "Could not be loaded.", the badge shows "-", New decision is off', async () => {

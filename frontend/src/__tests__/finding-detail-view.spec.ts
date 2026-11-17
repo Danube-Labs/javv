@@ -346,7 +346,7 @@ describe('FindingDetailView, the reads of the finding and its packages (issue 12
   it('a link with no package keeps the line of the CVE on the image', async () => {
     searchMock.mockResolvedValue(ok({ data: [], total: { value: 0, relation: 'eq' } }) as never)
     const w = await mountAt('/findings/CVE-2026-0001?digest=sha256:abc')
-    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('No current finding for this vulnerability on this image.')
+    expect(w.find('.not-found p').text().replace(/\s+/g, ' ')).toContain('This image has no current finding for this vulnerability.')
   })
 
   // the last test of the file: a change of the image makes each page that an earlier test left mounted read again

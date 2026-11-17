@@ -77,7 +77,7 @@ describe('RiskAcceptDialog refusals', () => {
   })
 
   it('another failure keeps its own text', async () => {
-    expect(await submitWith(503)).toBe('JAVV did not create the decision. Make sure that the backend is available.')
+    expect(await submitWith(503)).toBe('JAVV did not create the decision. Check the backend connection, then try again.')
   })
 })
 
@@ -131,7 +131,7 @@ describe('RiskAcceptDialog expiry (issue 984)', () => {
   })
 
   it('another 422 keeps the general text', async () => {
-    expect(await submitWith(422)).toBe('JAVV did not create the decision. Make sure that the backend is available.')
+    expect(await submitWith(422)).toBe('JAVV did not create the decision. Check the backend connection, then try again.')
   })
 })
 

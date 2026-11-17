@@ -204,7 +204,7 @@ async function loadRows(q: typeof rowsQuery.value) {
 const failureMessage = computed(() =>
   grid.failed
     ? FAILURE_COPY[failedKind.value]
-    : `Filter counts could not be loaded. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
+    : `JAVV could not load the filter counts. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 /**
  * `q` differs from `old` only in `locations`: the Columns menu hid or showed Paths. A hide needs no
@@ -333,7 +333,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           <template v-if="grid.totalKnown">{{ grid.total.toLocaleString('en-US') }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> findings</span>
         </p>
-        <p class="head-note">Trivy and Grype count apart: a vulnerability that both report counts once for each</p>
+        <p class="head-note">Trivy and Grype count apart. A vulnerability that both report counts once for each.</p>
       </div>
       <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
     </div>
@@ -344,7 +344,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           card
           :model-value="filters.selections.q?.[0] ?? ''"
           placeholder="Vuln, image, namespace…"
-          aria-label="Search findings (contains match)"
+          aria-label="Search the findings"
           @keydown.enter="applySearch(($event.target as HTMLInputElement).value)"
         />
       <FacetRail

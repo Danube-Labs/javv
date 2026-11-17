@@ -380,10 +380,10 @@ dropped (contract is cursor paging).
 
 **The open search** (operator rulings on the issue 832 plan, 2026-10-13): each walk holds one of
 the user's open searches until the grid closes it.
-- Prev from the last page works: the grid reads with `keep_open`, so the last page keeps the search.
+- Previous from the last page works: the grid reads with `keep_open`, so the last page keeps the search.
 - Opening a finding keeps the walk, so Back lands on the same page.
 - Leaving for any other screen closes it: the grid comes back on page 1, with its filters and sort.
-- A change of filter, sort, page size, cluster or T, and Prev back to page 1, close it too: each
+- A change of filter, sort, page size, cluster or T, and Previous back to page 1, close it too: each
   starts a new walk.
 - A reload or a closed tab closes it as the page goes.
 
@@ -391,7 +391,7 @@ the user's open searches until the grid closes it.
 - loading — skeleton rows; empty/first-run — "no sweep yet" friendly state; filtered-empty —
   "no findings match" + clear-filters.
 - **A refused later page stays where it is** (operator ruling 2026-10-12, issue 833 G1): the
-  alert, the grid's "could not be loaded" row, and the pager still on that page's range with Prev
+  alert, the grid's "could not be loaded" row, and the pager still on that page's range with Previous
   usable. The head count keeps the total, which page 1 of the same query gave (operator ruling
   2026-10-13). A **410** (the page's search expired after the keep-alive) says "These results expired.
   Reload the page to start again.", since its cursor cannot be asked for again. **503**: the same,
@@ -411,7 +411,7 @@ the user's open searches until the grid closes it.
   never gets to the server, so no 422 is about a short search. At a past time, a 422 for Assignee
   with Unassigned gets the same text. Any other 422 at a past time keeps the past-time text.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
-  the alert says "Filter counts could not be loaded." with the reason, and the rail and the
+  the alert says "JAVV could not load the filter counts." with the reason, and the rail and the
   add-filter menu keep their values with "-" for each count.
 - **The reason in any read's alert** (issue 833 G2, every screen): a 429 is the per-user search
   budget and says "The backend is busy. Try again in a few seconds."; any other failure
@@ -600,12 +600,12 @@ JAVV has no off-peak window: the report drain builds a queued export when it run
 **States (C-2 — all drawn):** run-now streaming progress · **413 over
 `JAVV_EXPORT_MAX_ROWS` (50k)** → "Too many rows to download now. Narrow the filters, or make the file in the background."
 (switch to the In the background tab) ·
-scheduled-pending → bell on done · **"expires in Xh"** on the bell item and the download row
+scheduled-pending → bell on done · **"expires in about X hours"** on the bell item and the download row
 (`JAVV_EXPORT_TTL_HOURS`, default 24 h) · **410 expired** → "download expired — re-run the
 export" · 429 PIT cap with `Retry-After` · **export blocked** (issue 962; `exportBlockMessage`
 in `findings/exportParams.ts`). The button of the open tab (Download or Schedule) stays off and
 the dialog says why:
-  - Schedule, a filter the schedule cannot carry → "A schedule cannot use these filters: <filter
+  - Schedule, a filter the schedule cannot carry → "An export in the background cannot use these filters: <filter
     names>. Clear them, or use Run now." (at a past time: "… Clear them.", as Run now is hidden).
   - Schedule at a past time, a filter the scan history does not record (Search, KEV, Scanners
     disagree, Image, New in range) → "At a past time, a schedule cannot use these filters:
@@ -775,12 +775,14 @@ EPSS/KEV null on Trivy rows enforced here too (V4-DELTA-5); M8b dependency made 
 Re-pointed from the old justification/impact/action shape to **`system-decisions`** (V4-DELTA
 conflict 2).
 
+The head of the screen says "Approval list", the name in the side bar (issue 1247).
+
 **Data:** `GET /api/v1/decisions/approvals?cluster_id=…` — **gated by
 `can_accept_audit_final`; the nav item is hidden without it** (403-capability-hidden). Row detail
 + actions: `GET /api/v1/decisions`, `POST /api/v1/decisions/{id}/revoke`,
 `PATCH /api/v1/decisions/{id}` (revoke+new, D40).
 
-**Columns:** CVE (mono) · type · **scope** (images and/or namespaces; empty = cluster-wide) ·
+**Columns:** CVE (mono) · type · **scope** (images and/or namespaces; empty = the whole cluster, shown as "whole cluster"; issue 1247) ·
 justification · approver · **expiry** (expired decisions resurface) · status (active / revoked
 struck-through / expired) · when. Row → finding detail's "Decisions on this vulnerability".
 
@@ -864,7 +866,7 @@ retention`. A test fails when the backend writes an action with no name or with 
 Paging and the open search follow the Findings rules in §3 (issue 832): Back from a finding
 keeps the page, and leaving for another screen brings the log back on page 1.
 A refused read follows the Findings rules in §3 (issue 833): the rows clear, a refused later
-page stays put with Prev, a 429 says busy and a 410 says the results expired, an older answer
+page stays put with Previous, a 429 says busy and a 410 says the results expired, an older answer
 never replaces a newer one, and refused filter counts alone leave the rows and show "-" in the
 rail (operator ruling 2026-10-12: F9's rule applies here too).
 

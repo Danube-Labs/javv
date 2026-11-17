@@ -321,12 +321,12 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
     </div>
 
     <p v-else-if="failed" class="load-error" role="alert">
-      {{ readFailureCopy(failedStatus, 'Finding unavailable. Check the backend connection.') }}
+      {{ readFailureCopy(failedStatus, 'JAVV cannot show the finding. Check the backend connection.') }}
     </p>
 
     <div v-else-if="!digest" class="not-found">
       <h1 class="mono">{{ cveId }}</h1>
-      <p>This link is missing the image identity. Open the finding from the grid.</p>
+      <p>This link names no image. Open the finding from the Findings table.</p>
     </div>
 
     <div v-else-if="evidence.length === 0" class="not-found">
@@ -339,8 +339,8 @@ watch([primary, () => clusterStore.selectedId], () => void fetchActivity(), { im
         found it.
       </p>
       <p v-else>
-        No current finding for this vulnerability on this image. It may have been resolved by a newer
-        scan, or the selected range ends before it was first seen.
+        This image has no current finding for this vulnerability. A newer scan may no longer report it.
+        Or the selected time range may end before a scan found it.
       </p>
     </div>
 

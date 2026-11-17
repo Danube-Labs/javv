@@ -48,7 +48,7 @@ async function save() {
       open.value = false
     } else {
       logger.warn('view_save_failed', { status: response?.status })
-      toast.error(response?.status === 422 ? 'These filters can\'t be saved as a view.' : 'Saving the view failed. Try again.')
+      toast.error(response?.status === 422 ? 'You cannot save these filters as a view.' : 'JAVV did not save the view. Try again.')
     }
   } finally {
     saving.value = false
@@ -58,10 +58,10 @@ async function save() {
 
 <template>
   <UiButton variant="control" @click="show">Save view</UiButton>
-  <ModalShell v-if="open" title="Save this view" subtitle="Filters, columns and time window, reusable by everyone" :width="440" @close="open = false">
+  <ModalShell v-if="open" title="Save this view" subtitle="All users can use the filters, the columns and the time range of this view." :width="440" @close="open = false">
     <p class="svd-summary">{{ summary }}</p>
     <UiField label="Name" for="svd-name">
-      <SettingsInput id="svd-name" v-model="name" prose :maxlength="128" placeholder="e.g. Critical KEV backlog" @keydown.enter="save" />
+      <SettingsInput id="svd-name" v-model="name" prose :maxlength="128" placeholder="For example: Critical KEV backlog" @keydown.enter="save" />
     </UiField>
     <UiField label="Description" hint="optional" for="svd-description">
       <SettingsInput

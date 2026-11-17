@@ -37,7 +37,7 @@ const KEPT_RAW: { selector: string; reason: string }[] = [
  *  test, so it goes into WINDOWS, or into the list of windows the walk does not open, by a decision.
  *  Six are not opened, because the CI store has no data that opens them; the lint rule and
  *  `window-footer-buttons.spec.ts` still read their source:
- *  - Edit risk-acceptance (EditDecisionDialog): needs a risk-acceptance decision
+ *  - Edit the risk acceptance (EditDecisionDialog): needs a risk-acceptance decision
  *  - Copy this token now (TokenOnceDialog): needs a newly made token
  *  - Rotate and Revoke of an MCP token (McpTokensView): need an MCP token
  *  - Restore snapshot (SnapshotsCard): needs a snapshot repository
