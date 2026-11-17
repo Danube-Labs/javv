@@ -34,9 +34,11 @@ What one finding covers:
 
 1. All clusters shows each cluster that sends results to JAVV. Select a cluster to open it.
 2. Open Findings from the side menu. Each row is one finding: one vulnerability, in one package,
-   in one image, from one scanner.
+   in one image, from one scanner. The Paths column counts the files that hold the package.
+   Select the number to see the paths under the row.
 3. To see the findings of one scanner, use the Scanner filter.
-4. Select a finding to open it. The evidence shows the result of each scanner, side by side.
+4. Select a finding to open it. Per-scanner evidence shows one row for each scanner, with the
+   values that it sent.
 5. To see the paths of the package, select the number in the Paths column of Affected
    components. The paths of each scanner open under the row. For an OS package, Trivy gives no
    path. Grype lists the files that record the package as installed.

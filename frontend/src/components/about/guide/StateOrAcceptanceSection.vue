@@ -97,9 +97,12 @@ const FIRST_REASON = CISA_JUSTIFICATIONS[0].label
       <li>Select <span class="ui-name">Note and more…</span>.</li>
       <li>Select <span class="ui-name">Accept the risk of this vulnerability</span>.</li>
       <li>Select the namespace as the scope.</li>
-      <li>Write the reason.</li>
       <li>Set an expiry date.</li>
-      <li>Save. JAVV sets Risk accepted on each Open finding of this vulnerability in that namespace.</li>
+      <li>Write the reason.</li>
+      <li>
+        Select <span class="ui-name">Create decision</span>. JAVV sets Risk accepted on each Open finding of this
+        vulnerability in that namespace.
+      </li>
       <li>The risk acceptance is now on the Approval list.</li>
       <li>Before the expiry date, examine the risk acceptance on the Approval list.</li>
       <li>

@@ -167,7 +167,8 @@ await beat('findings', async () => {
 
 // 4. one CVE, and its own audit trail (the differentiator)
 await beat('cve detail + per-finding audit', async () => {
-  await click(page, page.locator('table tbody tr').first(), { settle: 1500 })
+  // by the link of the row: the middle of a row can be under the hidden filter bar of the next row
+  await click(page, page.locator('table tbody tr').first().locator('a').first(), { settle: 1500 })
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
   await sleep(800)
   await drift(page, 420, 900) // down to the per-finding activity/history
