@@ -14,6 +14,9 @@ for f in hanken-grotesk-latin-{400,500,600,700}-normal spline-sans-mono-latin-{4
 done
 cp "$REPO/frontend/src/assets/brand/icon.svg" public/icon.svg
 [ -d node_modules ] || npm ci
+# the spotlight lights only its own screen and stays at most 2.5 s; a problem stops the render
+node_modules/.bin/esbuild src/plan.check.ts --bundle --platform=node --log-level=error --outfile=out/plan-check.cjs
+node out/plan-check.cjs
 
 names=(from-a-scan-to-a-finding set-the-state-of-a-finding accept-a-risk change-many-findings
   when-a-scanner-stops who-changed-what build-a-dashboard)

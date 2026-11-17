@@ -76,6 +76,8 @@ const STAGE = { w: 1536, h: 864 }
 const TITLE_F = 78
 const CAM_F = 34 // the camera move at the start of a beat; the spotlight waits for it
 const SPOT_IN = 10
+const SPOT_OUT = 6
+const SPOT_MAX = 75 // the longest a spotlight stays, with its fades
 const GLIDE_F = 28
 const HOVER_F = 12
 const RESULT_F = 38 // the new screen stays, with no spotlight, before the next beat
@@ -220,7 +222,9 @@ export function plan(v: Video): Plan {
       }
       // a new page fades in; a change inside the page switches fast, as in the app: a slow
       // crossfade between two layouts that shifted shows a double image
-      p.segments.push({ shot: b.click.to, from: s, fade: b.click.page ? 10 : 3 })
+      const fade = b.click.page ? 10 : 3
+      p.segments.push({ shot: b.click.to, from: s + fade, fade })
+      s += fade
       end = Math.max(s, press + 30) + RESULT_F
     } else {
       end = Math.max(capFrom + read, spotFrom + 40) + 14
@@ -228,7 +232,7 @@ export function plan(v: Video): Plan {
     }
     p.pointer.push({ f: end, ...ptr })
     p.captions.push({ from: capFrom, to: end, step: b.step, text: b.caption })
-    if (b.spot) p.spots.push({ from: spotFrom, to: spotTo, shot: b.shot, box: b.spot })
+    if (b.spot) p.spots.push({ from: Math.max(spotFrom, spotTo - SPOT_MAX), to: spotTo, shot: b.shot, box: b.spot })
     t = end
   }
   p.camera.push({ f: t + END_F, ...cam })
@@ -288,7 +292,7 @@ function Screen({ p, dir }: { p: Plan; dir: string }) {
   const pointerOn = interpolate(f, [p.pointer[0].f - 10, p.pointer[0].f, p.end, p.end + 14], [0, 1, 1, 0], clamp)
   const pressing = p.clicks.some((c) => f >= c - 3 && f <= c + 4) || p.drags.some((d) => f >= d.from && f <= d.to)
 
-  const spot = p.spots.find((sp) => f >= sp.from && f <= sp.to + 8)
+  const spot = p.spots.find((sp) => f >= sp.from && f <= sp.to)
   let spotEl = null
   if (spot) {
     const b = p.shots[spot.shot].boxes[spot.box]
@@ -296,7 +300,7 @@ function Screen({ p, dir }: { p: Plan; dir: string }) {
     const a = toStage(b.x - pad, b.y - pad)
     const w = (b.w + pad * 2) * s
     const h = (b.h + pad * 2) * s
-    const o = interpolate(f, [spot.from, spot.from + SPOT_IN, spot.to, spot.to + 8], [0, 1, 1, 0], clamp)
+    const o = interpolate(f, [spot.from, spot.from + SPOT_IN, spot.to - SPOT_OUT, spot.to], [0, 1, 1, 0], clamp)
     const grow = interpolate(f, [spot.from, spot.from + SPOT_IN + 4], [10, 0], { easing: Easing.out(Easing.cubic), ...clamp })
     spotEl = (
       <svg width={STAGE.w} height={STAGE.h} style={{ position: 'absolute', inset: 0, opacity: o }}>
