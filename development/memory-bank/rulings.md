@@ -145,6 +145,10 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-17 | The label column of the evidence card on the finding page is 92 px wide, and a cell has 8 px at each side (N, on built pictures). At 1280 px, a state tag and a severity chip then keep one line, and the table does not scroll sideways. The other options were a state tag on two lines (W) and three panels only from 1440 px (B). | 1231 |
 | 2026-11-17 | The Nomad and Docker push scripts send schema 5 with the file paths of a finding. They use the path rules of the scanner package. When a script drops paths, it logs one warning `paths left out of <image>` with two counts and no path (P1). The proof of the change ran both scripts on a live Docker host and a live Nomad 2.1.1 agent (L2). | 1199 |
 | 2026-11-15 | `.cap-note` is the line under a list cut at a limit. `.empty-note` is the line of a list with no rows. `base.css` holds only their color and the size of `.cap-note` (option 2). Each place keeps its own margin, because the margin follows the place of the line. No user sees a change. | 1214 |
+| 2026-11-17 | The text of the app is in strict STE, with one name for each thing: the term list of `docs-voice.md` (D1). The database is "the database", not "the store". The panel titles "Scan ingest activity" and "Failed ingests" stay. | 1247 |
+| 2026-11-17 | A hint, a note or an empty text in the app is a full sentence. A label, a column head and a button keep a short form, in plain words (D2 A). | 1247 |
+| 2026-11-17 | The text of the app keeps "check" as a verb (D3 B). | 1247 |
+| 2026-11-17 | The videos and the README GIF get one new recording, after the last slice of the text pass. That recording has its own PR (D4 A). | 1247 |
 
 ## AI vulnerability research (alpha)
 
