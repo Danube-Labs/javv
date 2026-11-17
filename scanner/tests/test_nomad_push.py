@@ -4,9 +4,14 @@ the settings that the script refuses. The script is a standalone file: the test 
 """
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
+
+from scanner.adapters.grype import read_grype
+from scanner.adapters.trivy import read_trivy
+from scanner.normalize import clean_paths
 
 SCRIPT = Path(__file__).resolve().parents[2] / "deploy" / "nomad" / "javv_nomad_push.py"
 spec = importlib.util.spec_from_file_location("javv_nomad_push", SCRIPT)
@@ -456,3 +461,94 @@ def test_two_names_of_one_digest_in_one_allocation_count_once(cycle, monkeypatch
     assert code == 0
     pushes = [b for _, p, b, _ in calls if p == "/api/v1/ingest/scan"]
     assert [b["replicas"] for b in pushes] == [2]
+
+
+# The file paths of a finding (issue 1199): the script copies the rules of the scanner package,
+# because it is a standalone file. These tests hold the copy to the package.
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def report(name: str) -> dict:
+    return json.loads((FIXTURES / name).read_text())
+
+
+@pytest.mark.parametrize("name", ["trivy-paths.json", "trivy-python-3.9.16-slim.json"])
+def test_trivy_paths_are_those_of_the_scanner_package(settings, monkeypatch, name):
+    rep = report(name)
+    monkeypatch.setattr(push, "run", lambda cmd, timeout=None: rep if cmd[1] == "image" else {})
+    _, findings, *_ = push.scan_trivy(settings(), "img:1")
+    want = read_trivy(rep).findings
+    assert [f["locations"] for f in findings] == [list(f.locations) for f in want]
+    if name == "trivy-paths.json":
+        assert any(f["locations"] for f in findings)
+
+
+@pytest.mark.parametrize(
+    "name", ["grype-paths.json", "grype-alpine-3.14.json", "grype-python-3.9.16-slim.json"]
+)
+def test_grype_paths_are_those_of_the_scanner_package(settings, monkeypatch, name):
+    rep = report(name)
+    monkeypatch.setattr(push, "run", lambda cmd, timeout=None: rep)
+    _, findings, *_ = push.scan_grype(settings(JAVV_SCANNER="grype"), "img:1")
+    want = read_grype(rep).findings
+    assert [f["locations"] for f in findings] == [list(f.locations) for f in want]
+    assert any(f["locations"] for f in findings)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        ["usr/bin/go"],
+        ["/bin/a\x07b"],
+        ["/bin/a​b"],
+        ["/bin/a b"],
+        [""],
+        ["/" + "a" * 1024],
+        ["a" * 1024],
+        ["/" + "a" * 1023],
+        ["/b", "b", "/a", "/b"],
+        [f"/p{i:02}" for i in range(70)],
+        [None, 3, "/ok"],
+    ],
+)
+def test_clean_paths_is_the_rule_of_the_scanner_package(raw):
+    want = clean_paths(raw)
+    assert push.clean_paths(raw) == (list(want.paths), want.dropped, want.over_cap)
+
+
+def test_paths_left_out_are_logged_as_counts_only(settings, monkeypatch, caplog):
+    rep = {
+        "Results": [
+            {
+                "Class": "lang-pkgs",
+                "Type": "gobinary",
+                "Target": "usr/bin/app",
+                "Vulnerabilities": [
+                    {"VulnerabilityID": "CVE-1", "PkgName": "a", "PkgPath": "/bin/secret\x07name"},
+                    {"VulnerabilityID": "CVE-2", "PkgName": "b"},
+                ],
+            }
+        ]
+    }
+    monkeypatch.setattr(push, "run", lambda cmd, timeout=None: rep if cmd[1] == "image" else {})
+    with caplog.at_level("WARNING", logger="javv-nomad"):
+        _, findings, *_ = push.scan_trivy(settings(), "app:1")
+    assert [f["locations"] for f in findings] == [[], ["/usr/bin/app"]]
+    assert [r.getMessage() for r in caplog.records] == [
+        "paths left out of app:1: dropped 1, over_cap 0"
+    ]
+
+
+def test_no_line_when_no_path_is_left_out(settings, monkeypatch, caplog):
+    rep = report("trivy-paths.json")
+    monkeypatch.setattr(push, "run", lambda cmd, timeout=None: rep if cmd[1] == "image" else {})
+    with caplog.at_level("WARNING", logger="javv-nomad"):
+        push.scan_trivy(settings(), "img:1")
+    assert not [r for r in caplog.records if "paths left out" in r.getMessage()]
+
+
+def test_a_push_sends_schema_5(cycle):
+    code, calls = cycle()
+    assert code == 0
+    pushes = [b for _, p, b, _ in calls if p == "/api/v1/ingest/scan"]
+    assert pushes and all(b["schema_version"] == 5 for b in pushes)

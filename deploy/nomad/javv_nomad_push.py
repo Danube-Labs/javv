@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -315,6 +316,63 @@ def run(cmd: list[str], timeout: int | None = None) -> dict:
     )
 
 
+# The path rules of the JAVV scanners (INGEST-CONTRACT page). JAVV refuses the whole envelope for a
+# path that breaks them, and a file name comes from the image, so this drops a bad path instead.
+PATH_CAP = 64
+PATH_CHARS = 1024
+# a control character, a line or paragraph separator, a format character, and a lone surrogate
+UNSHOWN = frozenset({"Cc", "Cf", "Zl", "Zp", "Cs"})
+# Trivy puts these labels in `Target` when the packages of a type come from many files
+TRIVY_LABEL_TYPES = frozenset(
+    {"python-pkg", "conda-pkg", "gemspec", "node-pkg", "jar", "kubernetes"}
+)
+
+
+def clean_paths(raw) -> tuple[list[str], int, int]:
+    """The paths of one entry as JAVV takes them, the count dropped and the count past the cap:
+    each starts with `/`, no repeats, the first 64 in sorted order."""
+    kept, dropped = set(), 0
+    for path in raw:
+        if isinstance(path, str) and path and not path.startswith("/"):
+            path = "/" + path
+        if (
+            isinstance(path, str)
+            and 0 < len(path) <= PATH_CHARS
+            and not any(unicodedata.category(c) in UNSHOWN for c in path)
+        ):
+            kept.add(path)
+        else:
+            dropped += 1
+    ordered = sorted(kept)
+    return ordered[:PATH_CAP], dropped, max(0, len(ordered) - PATH_CAP)
+
+
+def trivy_paths(res: dict, vuln: dict) -> list:
+    """`PkgPath`, else the `Target` of a language result that names a file (a Go binary, a lock
+    file). An OS package has none: its `Target` is the name of the image."""
+    if vuln.get("PkgPath"):
+        return [vuln["PkgPath"]]
+    if res.get("Class") == "lang-pkgs" and res.get("Type") not in TRIVY_LABEL_TYPES:
+        return [res["Target"]] if res.get("Target") else []
+    return []
+
+
+def grype_paths(art: dict) -> list:
+    """Each `path` of `artifact.locations`, also the package database files of an OS package."""
+    locations = art.get("locations")
+    if not isinstance(locations, list):
+        return []
+    return [loc.get("path") for loc in locations if isinstance(loc, dict)]
+
+
+def left_out(ref: str, dropped: int, over_cap: int) -> None:
+    """As the JAVV scanners: the counts only, never a path, since a path comes from the image."""
+    if dropped or over_cap:
+        log.warning(
+            "paths left out of %s: dropped %d, over_cap %d", ref, dropped, over_cap
+        )
+
+
 def scan_trivy(s: Settings, ref: str):
     t = s.tuning
     cmd = ["trivy", "image", "--quiet", "--format", "json", "--scanners", t["scanners"]]
@@ -329,6 +387,7 @@ def scan_trivy(s: Settings, ref: str):
             cmd += [opt, t[key]]
     rep = run(cmd + [ref])
     findings = []
+    dropped = over_cap = 0
     for res in rep.get("Results") or []:
         ptype = (
             "os"
@@ -338,6 +397,8 @@ def scan_trivy(s: Settings, ref: str):
         for v in res.get("Vulnerabilities") or []:
             if not v.get("VulnerabilityID") or not v.get("PkgName"):
                 continue
+            paths, bad, past_cap = clean_paths(trivy_paths(res, v))
+            dropped, over_cap = dropped + bad, over_cap + past_cap
             cvss = list((v.get("CVSS") or {}).values())
             scores = [c["V3Score"] for c in cvss if c.get("V3Score")] or [
                 c["V2Score"] for c in cvss if c.get("V2Score")
@@ -355,8 +416,10 @@ def scan_trivy(s: Settings, ref: str):
                     "epss": None,
                     "kev": False,
                     "ptype": ptype,
+                    "locations": paths,
                 }
             )
+    left_out(ref, dropped, over_cap)
     ver = run(["trivy", "version", "--format", "json"])
     db = ver.get("VulnerabilityDB") or {}
     digest = repo_digest((rep.get("Metadata") or {}).get("RepoDigests") or [])
@@ -378,11 +441,14 @@ def scan_grype(s: Settings, ref: str):
         cmd += ["--scope", t["scope"]]
     rep = run(cmd, timeout=t["scan_timeout"])
     findings = []
+    dropped = over_cap = 0
     for m in rep.get("matches") or []:
         vul, art = m["vulnerability"], m["artifact"]
         if not vul.get("id") or not art.get("name"):
             continue
         fix = vul.get("fix") or {}
+        paths, bad, past_cap = clean_paths(grype_paths(art))
+        dropped, over_cap = dropped + bad, over_cap + past_cap
         scores = [
             c["metrics"]["baseScore"]
             for c in vul.get("cvss") or []
@@ -402,8 +468,10 @@ def scan_grype(s: Settings, ref: str):
                 "epss": epss[0]["epss"] if epss else None,
                 "kev": bool(vul.get("knownExploited")),
                 "ptype": (art.get("type") or "").lower() or None,
+                "locations": paths,
             }
         )
+    left_out(ref, dropped, over_cap)
     d = rep.get("descriptor") or {}
     st = (d.get("db") or {}).get("status") or {}
     target = (rep.get("source") or {}).get("target") or {}
@@ -514,7 +582,7 @@ def main() -> int:
     for digest, e in sorted(by_digest.items()):
         findings, ver, dbv, built = e["result"]
         envelope = {
-            "schema_version": 4,
+            "schema_version": 5,
             "cluster_id": s.cluster,
             "scanner": s.scanner,
             "image_digest": digest,
