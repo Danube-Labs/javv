@@ -196,6 +196,10 @@ async function submit() {
   padding: 9px 12px;
   margin-bottom: 4px;
 }
+/* the id keeps one line: the note beside it wraps */
+.ra-anchor .mono-cell {
+  white-space: nowrap;
+}
 .ra-anchor-note {
   font-size: var(--text-sm);
   color: var(--soft);
