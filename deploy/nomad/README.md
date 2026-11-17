@@ -19,6 +19,10 @@ images `javv-scanner-trivy:0.76.2` and `javv-scanner-grype:0.121.1`.
 - It gets the digest of each image from the output of the scanner.
 - It pushes one scan cycle to JAVV, as [Push from your own script](../../docs/INGEST-CONTRACT.md)
   tells.
+- Each finding has the files in the image where the scanner found the package. JAVV 0.9.10 or
+  later takes them. An older JAVV refuses the push, so upgrade JAVV before the jobs.
+- The job leaves out a path that JAVV refuses, and the paths of a finding past the first 64.
+  Then the log has a warning `paths left out of <image>` with the two numbers, not the paths.
 - It does not scan a job with the meta `javv_scan = "true"`. The two scan jobs have this meta.
   The log names each job that the scan skips for this reason.
 
