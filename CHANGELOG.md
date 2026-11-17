@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.9.10](https://github.com/Danube-Labs/javv/compare/v0.9.9...v0.9.10) (2026-11-17)
+
+
+### Features
+
+* ingest and the findings read carry the files of a finding ([#1198](https://github.com/Danube-Labs/javv/issues/1198)) ([b436fab](https://github.com/Danube-Labs/javv/commit/b436fab5de657cb20310ab042768a415e632a832))
+* the app calls the ID of a finding a vulnerability (issue 1224) ([#1228](https://github.com/Danube-Labs/javv/issues/1228)) ([10a5a91](https://github.com/Danube-Labs/javv/commit/10a5a91aae3471632620342d390c5df7014869a6))
+* the card text and the package menu of the finding page (issue 1205, issue 1227) ([#1226](https://github.com/Danube-Labs/javv/issues/1226)) ([b220264](https://github.com/Danube-Labs/javv/commit/b220264091f16c283384e77972ba3e0b76a78aad))
+* the finding page and the image page show the files of a finding ([#1203](https://github.com/Danube-Labs/javv/issues/1203)) ([8e598e4](https://github.com/Danube-Labs/javv/commit/8e598e46b88eb5071e31c3520e321c840aa98638))
+* the findings exports carry the paths of a finding (issue 1245) ([#1250](https://github.com/Danube-Labs/javv/issues/1250)) ([8b1eeef](https://github.com/Danube-Labs/javv/commit/8b1eeefccfe3bc31cca8a238c176ff3ace986d56))
+* the four popovers get clean edges and a genie open motion from their arrow (issue 1240) ([#1241](https://github.com/Danube-Labs/javv/issues/1241)) ([72dd76e](https://github.com/Danube-Labs/javv/commit/72dd76e405ca0465a3ab5c0745e3da18c2252e7c))
+* the head row and the triage cell of the finding page (issue 1205) ([#1225](https://github.com/Danube-Labs/javv/issues/1225)) ([fb50cc8](https://github.com/Danube-Labs/javv/commit/fb50cc85cf320dda2f869a1d5c0a1190ef658072))
+* the mcp tools call the ID of a finding a vulnerability (issue 1224) ([#1230](https://github.com/Danube-Labs/javv/issues/1230)) ([a21e108](https://github.com/Danube-Labs/javv/commit/a21e108b3f8abbcfbc3783d41c6414be419bc9fe))
+* the nomad and docker scans send the file paths of a finding (issue 1199) ([#1235](https://github.com/Danube-Labs/javv/issues/1235)) ([29c96e7](https://github.com/Danube-Labs/javv/commit/29c96e73c6359f329764161430ea18d31f6033df))
+* the overview chart vulnerabilities over time is a dashboard panel ([#1178](https://github.com/Danube-Labs/javv/issues/1178)) ([9c70816](https://github.com/Danube-Labs/javv/commit/9c70816b66b5d9d033cb6872fc38518031a6d235))
+* the paths column on the findings list (issue 1205) ([#1219](https://github.com/Danube-Labs/javv/issues/1219)) ([9ad86a2](https://github.com/Danube-Labs/javv/commit/9ad86a223ebb73edba27758327ab717a5f192069))
+* the paths text of an os package and the notes in the table heads (issue 1205) ([#1218](https://github.com/Danube-Labs/javv/issues/1218)) ([bfafad6](https://github.com/Danube-Labs/javv/commit/bfafad67d2a0fc4fb9e8883448c0b1ee47dfbc9a))
+* the scanner sends the files of a finding ([#1200](https://github.com/Danube-Labs/javv/issues/1200)) ([8b7acf1](https://github.com/Danube-Labs/javv/commit/8b7acf1c04939781cc96bdf58138eb9843190f42))
+* top cves is a dashboard panel on a ranked read, with the mcp tool top_cves ([#1179](https://github.com/Danube-Labs/javv/issues/1179)) ([aaa2973](https://github.com/Danube-Labs/javv/commit/aaa2973b9a95629e7f73e2077b0c5350b71a668b))
+
+
+### Bug Fixes
+
+* a long package name stays in the head band of the finding page (issue 1229) ([#1232](https://github.com/Danube-Labs/javv/issues/1232)) ([38c864d](https://github.com/Danube-Labs/javv/commit/38c864d27fe68edff9f008f47a1dc68ca22fc83d))
+* a long value stays in the evidence card of the finding page (issue 1231) ([#1233](https://github.com/Danube-Labs/javv/issues/1233)) ([0586a00](https://github.com/Danube-Labs/javv/commit/0586a003b097cafd0725733322b30876002cb27a))
+* filter labels in one style, reduced motion on seven controls, one empty text for the strips (issue 1245) ([#1249](https://github.com/Danube-Labs/javv/issues/1249)) ([f575a78](https://github.com/Danube-Labs/javv/commit/f575a78ab35b0b8d636fa8288b483e75cd483cfd))
+* the clock drift tests run without a sync, so uv fetches nothing at +90 days ([#1183](https://github.com/Danube-Labs/javv/issues/1183)) ([3432fc9](https://github.com/Danube-Labs/javv/commit/3432fc983c26ad957c232ba69f93767ceabebfaa))
+* the docker scan names the image in its paths warning, and a test holds the label rule ([#1237](https://github.com/Danube-Labs/javv/issues/1237)) ([23b3517](https://github.com/Danube-Labs/javv/commit/23b35178652b9edb212d5e70d41be5045ebf104f))
+* the final stage of each image upgrades its os packages ([#1173](https://github.com/Danube-Labs/javv/issues/1173)) ([b608a81](https://github.com/Danube-Labs/javv/commit/b608a8177a95fe320d6bcbf799a55c96d775f10a)), closes [#1172](https://github.com/Danube-Labs/javv/issues/1172)
+* the finding page keeps its evidence in the card at 1280 px and reads each version ([#1238](https://github.com/Danube-Labs/javv/issues/1238)) ([16f4298](https://github.com/Danube-Labs/javv/commit/16f4298d5bc13ff46ed2da60da16357cc6bace2c))
+* the risk-accept window says what a decision covers, in plain words (issue 1245) ([#1248](https://github.com/Danube-Labs/javv/issues/1248)) ([190e24f](https://github.com/Danube-Labs/javv/commit/190e24f445c24596f099d6b83bae0da9df58067c))
+* the video spotlight goes at the click, stays at most 2.5 s, and goes around its control (issue 1220) ([#1242](https://github.com/Danube-Labs/javv/issues/1242)) ([06b6aed](https://github.com/Danube-Labs/javv/commit/06b6aed57a767f14f4aabf16c389e31d8a42b793))
+
 ## [0.9.9](https://github.com/Danube-Labs/javv/compare/v0.9.8...v0.9.9) (2026-11-09)
 
 
