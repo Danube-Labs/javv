@@ -20,6 +20,7 @@ import {
   type ValueSearchFn,
 } from '@/filters/facets'
 import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
+import { inText } from '@/filters/typedValues'
 import { fmt } from '@/lib/format'
 import type { FilterMode, Modes } from '@/stores/filters'
 
@@ -127,8 +128,8 @@ function toggleOpen(g: Group) {
         v-if="searchable(g)"
         class="facet-vsearch"
         :model-value="textOf(g)"
-        :placeholder="`Find ${article(g.field.label)} ${g.field.label.toLowerCase()}…`"
-        :aria-label="`Find a value of ${g.field.label}`"
+        :placeholder="`Find ${article(g.field.label)} ${inText(g.field.label)}…`"
+        :aria-label="`Find a value of ${inText(g.field.label)}`"
         @update:model-value="(t: string) => typeIn(g, t)"
       />
       <div class="facet-body" :class="{ 'facet-body-open': isOpen(g) || searching(g) }">
