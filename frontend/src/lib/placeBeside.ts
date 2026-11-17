@@ -33,7 +33,16 @@ const ARROW_INSET = 16
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Math.max(lo, hi)))
 
+/**
+ * The place on whole pixels: the boxes of a page come in part pixels, and a card on a part pixel
+ * draws its edge and its arrow soft and stepped (issue 1240).
+ */
 export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point, under = false): Placed {
+  const placed = place(anchor, size, view, trigger, under)
+  return { ...placed, left: Math.round(placed.left), top: Math.round(placed.top), arrow: Math.round(placed.arrow) }
+}
+
+function place(anchor: Box, size: Size, view: Size, trigger: Point | undefined, under: boolean): Placed {
   const point = trigger ?? { x: anchor.right, y: anchor.top + ARROW_INSET }
   let side: Placed['side'] = 'below'
   let left = clamp(anchor.right - size.width, POPOVER_MARGIN, view.width - size.width - POPOVER_MARGIN)

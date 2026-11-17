@@ -107,6 +107,8 @@ describe('the package menu of the head band (issue 1205, S1)', () => {
     const menu = await open(w)
     expect(menu.exists()).toBe(true)
     expect(menu.classes()).toContain('dd-menu')
+    // the menu panel with the dark head of a window: no beige line around the head (issue 1240)
+    expect(menu.classes()).toContain('dd-menu--band')
     // a menu holds no form field (Primer), and this one has a filter box: it is a dialog, as SelectPanel
     expect(menu.attributes('role')).toBe('dialog')
     expect(menu.attributes('aria-label')).toBe('Packages with this vulnerability')

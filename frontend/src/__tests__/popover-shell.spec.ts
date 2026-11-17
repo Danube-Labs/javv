@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { h, nextTick } from 'vue'
 
 import PopoverShell from '@/components/ui/PopoverShell.vue'
+import { declarations } from '@/__tests__/helpers/componentStyle'
 import { arrowOnHead, placeBeside, POPOVER_GAP, POPOVER_MARGIN } from '@/lib/placeBeside'
 
 const view = { width: 1440, height: 900 }
@@ -85,6 +86,40 @@ describe('where the popover goes', () => {
     expect(high.top).toBe(POPOVER_MARGIN)
     // the arrow never leaves the rounded edge of the card
     expect(high.arrow).toBeGreaterThanOrEqual(16)
+  })
+})
+
+describe('the popover sits on whole pixels (issue 1240)', () => {
+  // the boxes of a page with a scrolled grid and a .5 column edge, as the browser gives them
+  const cases: [string, ReturnType<typeof box>, { x: number; y: number }, boolean][] = [
+    ['right', box(270.4, 340.6, 820.3, 830.2), { x: 720.7, y: 332.3 }, false],
+    ['left', box(850.5, 340.25, 1400.5, 830.75), { x: 1300.5, y: 332.5 }, false],
+    ['below', box(270.4, 340.6, 1400.3, 600.2), { x: 1300.7, y: 332.3 }, false],
+    ['above', box(270.4, 860.6, 1400.3, 1300.2), { x: 1300.7, y: 852.3 }, false],
+    ['below the element', box(270.4, 300.6, 1400.3, 560.2), { x: 500.7, y: 540.3 }, true],
+    ['above the element', box(270.4, 500.6, 1400.3, 760.2), { x: 500.7, y: 740.3 }, true],
+  ]
+  it.each(cases)('%s: left, top and the arrow are whole numbers', (_name, anchor, trigger, under) => {
+    const placed = placeBeside(anchor, size, view, trigger, under)
+    expect([placed.left, placed.top, placed.arrow].filter((n) => !Number.isInteger(n))).toEqual([])
+  })
+})
+
+describe('the edge of the popover (issue 1240, decision 4 E2)', () => {
+  it('has no border line: a drop shadow follows the card and its arrow', () => {
+    const card = declarations('components/ui/PopoverShell.vue', '.pop')
+    expect(card).not.toHaveProperty('border')
+    expect(card).not.toHaveProperty('box-shadow')
+    expect(card.filter).toBe('var(--pop-drop)')
+  })
+  it('draws the arrow with no border on each of the four sides', () => {
+    const sides = ['.pop::before', '.pop-right::before', '.pop-left::before', '.pop-below::before', '.pop-above::before']
+    const borders = sides.flatMap((sel) =>
+      Object.keys(declarations('components/ui/PopoverShell.vue', sel))
+        .filter((k) => k.startsWith('border'))
+        .map((k) => `${sel} ${k}`),
+    )
+    expect(borders).toEqual([])
   })
 })
 

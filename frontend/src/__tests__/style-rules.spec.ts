@@ -192,6 +192,8 @@ const SHARED_RULES = [
   '.ingest-lens > .skel-gap',
   // the line under a cut list and the line of an empty list (issue 1214)
   '.cap-note', '.empty-note',
+  // the menu panel with the dark head of a window: the popover edge, no border line (issue 1240)
+  '.dd-menu--band',
 ]
 
 /**
@@ -257,6 +259,14 @@ describe('style rules: one shared card, menu panel and error text', () => {
   it('base.css has each shared rule', () => {
     for (const selector of SHARED_RULES)
       expect(shared.get(selector)?.size, `${selector} is not in base.css`).toBeGreaterThan(0)
+  })
+
+  it('a menu panel keeps its line, and the menu with the dark head of a window has the popover edge (issue 1240)', () => {
+    expect(all.get('.dd-menu')).toContain('border')
+    const band = readFileSync(join(SRC, 'styles/base.css'), 'utf8').match(/\n\.dd-menu--band \{([^}]*)\}/)?.[1] ?? ''
+    expect(band).toMatch(/border: 0;/)
+    expect(band).toMatch(/box-shadow: none;/)
+    expect(band).toMatch(/filter: var\(--pop-drop\);/)
   })
 
   it('no component sets a shared property again', () => {

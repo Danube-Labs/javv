@@ -105,14 +105,15 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* no border line: the drop shadow is the edge of the card and of its arrow (issue 1240). A filter
+   makes the card the box of any fixed element inside it, so no window opens from inside a popover */
 .pop {
   position: fixed;
   z-index: 70;
   max-width: calc(100vw - 24px);
   background: var(--card);
-  border: 1px solid var(--line);
   border-radius: var(--r);
-  box-shadow: var(--dd-shadow);
+  filter: var(--pop-drop);
 }
 .pop:focus-visible {
   outline: var(--focus-ring);
@@ -128,28 +129,20 @@ onUnmounted(() => {
   transform: rotate(45deg);
 }
 .pop-right::before {
-  left: -7px;
+  left: -6px;
   top: calc(var(--pop-arrow) - 6px);
-  border-left: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
 }
 .pop-left::before {
-  right: -7px;
+  right: -6px;
   top: calc(var(--pop-arrow) - 6px);
-  border-right: 1px solid var(--line);
-  border-top: 1px solid var(--line);
 }
 .pop-below::before {
-  top: -7px;
+  top: -6px;
   left: calc(var(--pop-arrow) - 6px);
-  border-left: 1px solid var(--line);
-  border-top: 1px solid var(--line);
 }
 .pop-above::before {
-  bottom: -7px;
+  bottom: -6px;
   left: calc(var(--pop-arrow) - 6px);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
 }
 .pop-head {
   display: flex;

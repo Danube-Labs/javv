@@ -242,6 +242,13 @@ every outside host unanswered. Neither face is on the vendored detector's overus
   wide shadow is a known template tell. The token window puts its primary Copy button next to the
   token (`CopyValue` with `primary`) and keeps only Done in the footer. The beige box of a value to
   copy stays: it says that the value is read-only, and the MCP endpoint address uses it too.
+- **A popover has no border line either** (operator ruling 2026-11-17 on built pictures, issue
+  1240, E2). A popover has no backdrop and often sits on a white card, and the box shadows give
+  almost no edge at its top. So its edge is `--pop-drop`, a `filter` with a soft 1px shadow all
+  around and a drop under it, which follows the arrow too. The arrow has no border.
+  `placeBeside` puts the card on whole pixels, so the arrow is not soft or stepped. A menu with the
+  dark head of a window (the package menu of the finding page) wears `.dd-menu--band` in base.css,
+  the same edge. The other menus keep the `.dd-menu` line.
 - **A table card never clips its columns** (issue 652). A hand-built `.tbl` card whose
   columns can outgrow it at the 1024 floor opts into `.tbl-scroll-pin` (base.css): the table
   scrolls sideways inside the card and its first, identity column stays pinned (All clusters,
@@ -349,7 +356,7 @@ the raw markup/CSS they encapsulate is a review failure — extend the component
 | `UiDropdown` | open state + outside-mousedown + document Escape + relative anchor; `trigger`/default slots (menu markup stays yours) | any popover menu |
 | `UiCloseButton` | the one "✕" (issue 1140, R2, operator ruling on built pictures): at rest no fill and no line; on hover the kit wash and line with coral text; the press fill and the focus ring. A required `label` is the name for a screen reader and the hover text. `dark` is the look on a slate head (the colors of the sidebar collapse button, issue 1049); `small` fits a chip or a filter pill. `close-buttons-guard.spec.ts` fails a "×" in any template and a "✕" outside this piece | every control that closes something (a window, the side panel, a popover, a toast, a banner, a notification) or clears one value (a chip, a filter). A text button that clears takes the `close` icon of `AppIcon` (Clear all in the bell) |
 | `ModalShell` | backdrop + card + head/✕/actions, Escape + outside-click dismiss. The head is the slate band of the table heads (issue 1049); the card has no border line, only `--shadow` (issue 1127) | every dialog |
-| `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, `t-pop` motion; `band` gives it the dark head of a window, and the arrow takes the head color when it points from the head (`arrowOnHead`, issue 1205); `under` sends it under the whole element when no side has room, centred on its trigger, else above the element | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard; the Triage form of a finding, with `band`) |
+| `PopoverShell` | a card with an arrow next to the element it belongs to (`lib/placeBeside.ts`: right, else left, else over its top edge, else above the trigger), no backdrop, head/✕, Escape + outside-mousedown dismiss (a mousedown on its trigger leaves the decision to the trigger), focus in on open and back to the trigger on close, `t-pop` motion; no border line, the edge is `--pop-drop` and the card sits on whole pixels (issue 1240); `band` gives it the dark head of a window, and the arrow takes the head color when it points from the head (`arrowOnHead`, issue 1205); `under` sends it under the whole element when no side has room, centred on its trigger, else above the element | a few settings for one thing on the page that must stay in view while the user changes it (the panel settings of a dashboard; the Triage form of a finding, with `band`) |
 | `UiLoadingBar` | the 2px coral loading bar on the bottom edge of its positioned parent. It shows only after 250 ms of work and grows more slowly near the end. When the work ends, it fills and fades. It has `role="progressbar"`. The parent owns `busy` | the top bar's sign that the app works, fed by `system/pendingWork.ts` (open page changes and API requests). Also a panel that needs its own sign |
 | `UiSkeleton` | the one loading pulse (`.skel` + `skel-shimmer` in base.css) and its reduced-motion off-switch; `height` is a prop because a skeleton mirrors the panel it stands in for, `label` only when it is its own loading region | every loading placeholder. The style rules test fails any view that grows its own shimmer |
 | `AppIcon` | the stroke icon set | every icon |
@@ -389,7 +396,8 @@ style rules test refuses a copy of either outside base.css.
 **One card frame, card heading and menu panel** (issue 1181): base.css holds the values that
 were equal in every component copy. `.card` is the frame (background, line, corner, shadow).
 `.card-head` is the layout of a card heading, and `.card-head h2` is its title. `.dd-menu` is the
-panel of a menu in `UiDropdown`, and `.dd-head` is a small label in it. `.skel-pad` is the space
+panel of a menu in `UiDropdown`, and `.dd-head` is a small label in it. `.dd-menu--band` is the
+panel of a menu with the dark head of a window: no line, the popover edge (issue 1240). `.skel-pad` is the space
 around the loading skeleton of a card table, and `.load-error` is the color and size of a failure
 line. A component adds its own padding, alignment, margin, side or width. It does not set a
 shared property again: the style rules test reads the properties from base.css and fails a copy.

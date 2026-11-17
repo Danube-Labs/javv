@@ -88,7 +88,7 @@ function moveFocus(e: KeyboardEvent) {
       </button>
     </template>
     <template #default="{ close }">
-      <div ref="pkMenu" class="dd-menu pk-menu" role="dialog" aria-label="Packages with this vulnerability" @keydown="moveFocus">
+      <div ref="pkMenu" class="dd-menu dd-menu--band pk-menu" role="dialog" aria-label="Packages with this vulnerability" @keydown="moveFocus">
         <div class="pk-head">
           <div class="pk-head-text">
             <span class="pk-title">Packages with this vulnerability · {{ packages.length }}{{ packagesCut ? '+' : '' }}</span>

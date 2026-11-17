@@ -247,6 +247,13 @@ html [class*=' p-'] {
   border: 1px solid var(--line);
   box-shadow: var(--dd-shadow);
 }
+/* a menu with the dark head of a window takes the edge of a popover: the beige line framed the
+   dark head (issue 1240, E2) */
+.dd-menu--band {
+  border: 0;
+  box-shadow: none;
+  filter: var(--pop-drop);
+}
 .dd-head {
   padding: 8px 12px 6px;
   font-family: var(--font-mono);
