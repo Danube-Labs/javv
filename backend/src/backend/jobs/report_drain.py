@@ -108,6 +108,8 @@ async def _rows_at(
         sort="severity_rank",
         order="desc",
         prefix=prefix,
+        # an export holds the paths of each row, as the live export reads them (issue 1245)
+        locations=True,
     )
     for row in rows:
         yield row
@@ -116,11 +118,11 @@ async def _rows_at(
 async def _csv_pieces_at(
     client: AsyncOpenSearch, *, cluster_id: str, t: datetime, filters: SearchFilters, prefix: str
 ) -> AsyncIterator[str]:
-    from backend.export.csv_stream import CSV_COLUMNS, csv_line
+    from backend.export.csv_stream import CSV_COLUMNS, csv_line, csv_row
 
     yield csv_line(CSV_COLUMNS)
     async for doc in _rows_at(client, cluster_id=cluster_id, t=t, filters=filters, prefix=prefix):
-        yield csv_line([doc.get(col) for col in CSV_COLUMNS])
+        yield csv_row(doc)
 
 
 async def _vex_pieces(

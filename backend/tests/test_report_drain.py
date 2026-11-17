@@ -213,6 +213,60 @@ async def test_as_of_t_export_reconstructs_history(client) -> None:
     assert "CVE-2005-2541" in csv_text  # a golden CVE made it through the reconstruction
 
 
+async def _drained_csv(client, report_id: str) -> list[list[str]]:
+    import csv as _csv
+    import io as _io
+
+    job = await claim_next(client, worker="w-drain", report_id=report_id)
+    assert job is not None
+    assert await run_job(client, job) is True
+    doc = await _report(client, report_id)
+    assert doc["status"] == DONE
+    text = "".join([d async for d in stream_chunks(client, report_id, doc["attempt_id"])])
+    return list(_csv.reader(_io.StringIO(text)))
+
+
+async def test_a_scheduled_export_has_the_paths_of_a_finding_now_and_at_a_past_time(client) -> None:
+    """Issue 1245: both exports read the paths. The live sweep reads the stored finding, and the
+    past reader returns the paths only on request, so the drain asks for them."""
+    import json as _json
+    from pathlib import Path
+
+    from backend.models.envelope import IngestEnvelope
+    from backend.services.ingest import ingest_envelope
+
+    paths = ["usr/local/go/bin/go", "/opt/app;v2/bin/go"]
+    golden = _json.loads(
+        (Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text()
+    )
+    cluster_id = f"c-drainpaths-{uuid.uuid4().hex[:8]}"
+    golden |= {
+        "cluster_id": cluster_id,
+        "schema_version": 5,
+        "findings": [
+            dict(f, locations=paths) if i == 0 else f for i, f in enumerate(golden["findings"])
+        ],
+    }
+    await ingest_envelope(client, IngestEnvelope.model_validate(golden))
+    for index in (f"javv-scan-events-{cluster_id}-*", "javv-finding-occurrences-*", "findings"):
+        await client.indices.refresh(index=index, params={"ignore_unavailable": "true"})
+
+    for as_of_t in (None, datetime.now(UTC).isoformat()):
+        rows = await _drained_csv(client, await _enqueue(client, cluster_id, as_of_t=as_of_t))
+        header, body = rows[0], rows[1:]
+        cells = [dict(zip(header, r, strict=True)) for r in body]
+        with_paths = [c for c in cells if c["locations"]]
+        assert len(with_paths) == 1, as_of_t
+        assert sorted(with_paths[0]["locations"].split("\n")) == sorted(paths), as_of_t
+        assert with_paths[0]["locations_total"] == "2", as_of_t
+        # in a schema 5 report, an entry with no path stores [] and 0: no path found
+        assert all(
+            c["locations"] == "" and c["locations_total"] == "0"
+            for c in cells
+            if c not in with_paths
+        )
+
+
 async def test_as_of_t_export_with_an_unanswerable_filter_fails_loud(client) -> None:
     # kev is not recorded in per-scan history — the reader raises, the job fails with the reason
     cluster_id = f"c-drainasofkev-{uuid.uuid4().hex[:8]}"
