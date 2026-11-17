@@ -30,13 +30,13 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="JAVV walkthrough: the cluster fleet, the findings of one cluster, and one CVE with the evidence of each scanner. Then the approvals queue and the audit log" width="880">
+  <img src="docs/assets/demo.gif" alt="JAVV walkthrough: the cluster fleet, the findings of one cluster, and one vulnerability with the evidence of each scanner. Then the approval list and the audit log" width="880">
 </p>
 
 <p align="center">
   <sub>
-    The fleet · the findings of one cluster · one CVE, with the evidence of each scanner and its
-    own audit trail · the approvals queue · the audit log. Made-up data from two clusters.
+    The fleet · the findings of one cluster · one vulnerability, with the evidence of each scanner
+    and its own audit trail · the approval list · the audit log. Made-up data from two clusters.
   </sub>
 </p>
 
@@ -52,15 +52,15 @@ over what runs in your clusters now.
 What JAVV gives you:
 
 - **Two scanners, never merged.** Trivy and Grype scan each image, and their results stay side by
-  side. JAVV keeps the CVE of each scanner, also when the other scanner reports it too. It **flags where they
-  disagree**, so you see what one scanner alone misses.
+  side. JAVV keeps the finding of each scanner, also when the other scanner reports the same
+  vulnerability. It **flags where they disagree**, so you see what one scanner alone misses.
 - **Dashboards that you build.** Make your own dashboards from a catalog of panels. Share each
   dashboard with everyone or with some roles. Copy a dashboard to a different JAVV as a file.
 - **Triage of many findings at once.** Filter the findings, then change the state of all the
   matching findings in one step. JAVV adds your note to each finding. The audit log records the
   change.
 - **CSV exports for your reports.** Export the findings, the audit log, the contributors and the
-  approvals queue as CSV files. For a file that is too large, make an export report.
+  approval list as CSV files. For a file that is too large, make an export report.
 - **An MCP server for AI agents.** Connect an agent such as Claude Code or Codex. The agent reads
   and triages the findings. Each MCP token has one level: read, write, or write and risk accept.
   The audit log records each tool call.
