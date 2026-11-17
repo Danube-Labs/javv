@@ -36,8 +36,8 @@ const imgSel = ref<Set<string>>(new Set())
 const applyTo = ref<'both' | 'trivy' | 'grype'>('both')
 const APPLY_OPTS = [
   { value: 'both', label: 'Both scanners' },
-  { value: 'trivy', label: 'trivy only' },
-  { value: 'grype', label: 'grype only' },
+  { value: 'trivy', label: 'Trivy only' },
+  { value: 'grype', label: 'Grype only' },
 ] as const
 const expiry = ref('')
 const justification = ref('')
@@ -49,6 +49,12 @@ function toggle(set: Set<string>, v: string) {
   else set.add(v)
 }
 const clusterWide = computed(() => nsSel.value.size === 0 && imgSel.value.size === 0)
+const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
+const scopeText = computed(() =>
+  [imgSel.value.size && count(imgSel.value.size, 'image'), nsSel.value.size && count(nsSel.value.size, 'namespace')]
+    .filter(Boolean)
+    .join(' and '),
+)
 // a date before it is refused by the server; the field's `min` alone does not stop a typed one
 const minExpiry = firstExpiryDate(Date.now())
 const expiryOk = computed(() => expiry.value === '' || expiry.value >= minExpiry)
@@ -85,7 +91,7 @@ async function submit() {
         ? 'Only a Security Lead or an admin can accept a risk.'
         : (response.error as { type?: unknown } | undefined)?.type === EXPIRY_PASSED_TYPE
           ? EXPIRY_REFUSED
-          : 'Could not create the decision. Check the backend connection.'
+          : 'JAVV did not create the decision. Make sure that the backend is available.'
     logger.warn('decision_create_failed', { status })
   }
 }
@@ -97,12 +103,15 @@ async function submit() {
       <div>
         <div class="ra-anchor">
           <span class="mono-cell strong">{{ cveId }}</span>
-          <span class="ra-anchor-note">A decision anchors on the vulnerability + scope, so a package bump auto-inherits it.</span>
+          <span class="ra-anchor-note">
+            The risk acceptance applies to this vulnerability in the scope. It also applies when the package
+            changes to a different version that has this vulnerability.
+          </span>
         </div>
 
-        <UiField label="Scope · namespaces" hint="none selected = cluster-wide">
+        <UiField label="Scope · namespaces">
           <div class="ra-chips">
-            <span v-if="namespaces.length === 0" class="ra-none">no namespaces on this finding</span>
+            <span v-if="namespaces.length === 0" class="ra-none">This finding has no namespace.</span>
             <button
               v-for="ns in namespaces"
               :key="ns"
@@ -132,16 +141,16 @@ async function submit() {
         <div class="ra-blast">
           <AppIcon name="layers" :size="14" />
           <span>
-            Blast radius:
-            <b v-if="clusterWide">cluster-wide, every image</b>
-            <b v-else>{{ imgSel.size }} image(s) + {{ nsSel.size }} namespace(s)</b>
-            <em v-if="clusterWide || nsSel.size > 0"> · namespace/cluster scope auto-applies to NEW matching findings</em>
-            <em v-else> · image scope does not cascade to new images</em>
+            Scope:
+            <b v-if="clusterWide">the whole cluster, all images.</b>
+            <b v-else>{{ scopeText }}.</b>
+            <em v-if="clusterWide || nsSel.size > 0"> The risk acceptance also applies to new findings in this scope.</em>
+            <em v-else> The risk acceptance does not apply to new images.</em>
           </span>
         </div>
 
         <div class="fld-2">
-          <UiField label="Expiry" :hint="expiryOk ? 'immutable: change = revoke + new' : EXPIRY_REFUSED" for="ra-expiry">
+          <UiField label="Expiry date" :hint="expiryOk ? undefined : EXPIRY_REFUSED" for="ra-expiry">
             <UiTextBox id="ra-expiry" v-model="expiry" type="date" :min="minExpiry" :invalid="!expiryOk" />
           </UiField>
           <UiField label="Apply to">
@@ -149,19 +158,20 @@ async function submit() {
           </UiField>
         </div>
 
-        <UiField label="Justification (required)" for="ra-just">
+        <UiField label="Reason (required)" for="ra-just">
           <UiTextArea
             id="ra-just"
             v-model="justification"
             prose
             rows="3"
-            placeholder="Why is this risk acceptable, and for how long?"
+            placeholder="Write why you accept this risk, and for how long."
           />
         </UiField>
 
         <p class="ra-note">
           <AppIcon name="info" :size="12" />
-          Decisions are immutable. Editing later revokes and re-creates; the old one stays in history.
+          You cannot change a decision. An edit revokes the decision and creates a new decision. The old decision
+          stays in the history.
         </p>
         <p v-if="error" class="ra-error" role="alert">{{ error }}</p>
       </div>
