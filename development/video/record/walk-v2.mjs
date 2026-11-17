@@ -10,9 +10,9 @@ await record('v2', async ({ page, shot, hoverShot, settle, stateRow, pickBothOpe
   fs.mkdirSync(STATE, { recursive: true })
   fs.writeFileSync(`${STATE}/v2-cve.txt`, cve ?? '')
   await shot('findings', { row })
-  await hoverShot('findings', row)
+  await hoverShot('findings', row.locator('a'))
 
-  await row.click()
+  await row.locator('a').first().click()
   await page.waitForSelector('aside.triage', { timeout: 15000 })
   await settle()
   const panel = page.locator('aside.triage')
@@ -20,20 +20,24 @@ await record('v2', async ({ page, shot, hoverShot, settle, stateRow, pickBothOpe
   await shot('finding', { panel, na, evidenceState: stateRow() })
   await hoverShot('finding', na)
 
+  // Not affected opens the panel of "Note and more…" with the reasons and its own Save
   await na.click()
   await settle()
-  const firstReason = page.locator('.vex-chip').first()
-  await shot('not-affected', { panel, reasons: page.locator('.vex-chips'), firstReason })
+  const pop = page.locator('.pop')
+  const firstReason = pop.locator('.vex-chip').first()
+  await shot('not-affected', { panel, pop, reasons: pop.locator('.vex-chips'), firstReason })
   await hoverShot('not-affected', firstReason)
 
   await firstReason.click()
   await settle()
-  const save = page.getByRole('button', { name: /Save to audit trail/ })
-  await shot('reason', { panel, save })
+  const save = pop.getByRole('button', { name: /^Save$/ })
+  await shot('reason', { panel, pop, save })
   await hoverShot('reason', save)
 
   await save.click()
   await page.locator('aside.triage .triage-head').getByText(/Not affected/).waitFor({ timeout: 10000 })
+  // the toast "Triage saved" sits over the Activity card that the next steps light
+  await page.locator('.toast').first().waitFor({ state: 'detached', timeout: 20000 })
   await settle()
   const auditLink = page.getByRole('link', { name: /^Audit log$/ })
   const activity = page.locator('section.card').filter({ hasText: 'Activity on this finding' })

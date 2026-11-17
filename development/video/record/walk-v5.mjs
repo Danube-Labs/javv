@@ -26,10 +26,19 @@ await record('v5', async ({ page, shot, hoverShot, settle, stateRow }) => {
   await settle()
   await page.waitForTimeout(600)
   await shot('findings2', { row: page.locator('table tbody tr').first() })
-  await hoverShot('findings2', page.locator('table tbody tr').first())
+  await hoverShot('findings2', page.locator('table tbody tr').first().locator('a'))
 
-  await page.locator('table tbody tr').first().click()
+  await page.locator('table tbody tr').first().locator('a').first().click()
   await page.waitForSelector('aside.triage', { timeout: 15000 })
   await settle()
-  await shot('finding', { panel: page.locator('aside.triage'), note: page.locator('.ro-stale').first(), evidenceState: stateRow(), state: page.locator('aside.triage .triage-head') })
+  const panel = page.locator('aside.triage')
+  const more = panel.getByRole('button', { name: /Note and more/ })
+  await shot('finding', { panel, more, evidenceState: stateRow(), state: page.locator('aside.triage .triage-head') })
+  await hoverShot('finding', more)
+
+  // the note on Stale is in the panel of "Note and more…"
+  await more.click()
+  await settle()
+  const pop = page.locator('.pop')
+  await shot('more', { panel, pop, note: pop.locator('.ro-stale') })
 })

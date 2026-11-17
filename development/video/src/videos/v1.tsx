@@ -144,10 +144,10 @@ export const v1: Video = {
     { shot: 'clusters', step: 2, caption: 'All clusters shows each cluster that sends results to JAVV.', spot: 'table', wide: true },
     { shot: 'clusters', step: 2, caption: 'Select a cluster to open it.', spot: 'cluster', wide: true, click: { box: 'cluster', to: 'overview', page: true } },
     { shot: 'overview', step: 2, caption: 'Open Findings from the side menu.', spot: 'findingsLink', click: { box: 'findingsLink', to: 'findings', page: true } },
-    { shot: 'findings', step: 3, caption: 'Each row is one finding: one CVE, in one package, in one image, from one scanner.', spot: 'row', wide: true },
+    { shot: 'findings', step: 3, caption: 'Each row is one finding: one vulnerability, in one package, in one image, from one scanner.', spot: 'row', wide: true },
     { shot: 'findings', step: 3, caption: 'Filter the findings by scanner here.', spot: 'scannerFacet' },
     { shot: 'findings', step: 3, caption: 'Select a finding to open it.', spot: 'row', wide: true, click: { box: 'row', to: 'finding', page: true } },
-    { shot: 'finding', step: 4, caption: 'The evidence shows the result of each scanner, side by side.', spot: 'evidence' },
+    { shot: 'finding', step: 4, caption: 'Per-scanner evidence shows one row for each scanner, with the values that it sent.', spot: 'evidence' },
     { shot: 'finding', step: 4, caption: 'Set the state of the finding in the triage panel. The next video shows how.', spot: 'panel', hold: 'panel' },
   ],
 }

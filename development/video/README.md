@@ -79,7 +79,17 @@ history of all three. Walk 7 shows these changes on a dashboard. For walk 5, the
   selector changes, change it in the walk.
 - A caption tells only what the screen shows.
 - The engine sets the pace. A caption shows for a time that it calculates from the number of
-  words. The spotlight comes after the camera move, and it goes at the click.
+  words. The spotlight comes after the camera move and shows for at most 2.5 s. It is gone at
+  the click, and the next screen shows only after the click.
+- `render.sh` first runs `src/plan.check.ts`. The check fails when a spotlight is over a screen
+  that is not its own, or stays more than 2.5 s. A failure stops the render.
+- The recorder tests the center of each box: the element on top must be the control or a part
+  of it. The plan check fails when another element covers a box that a spotlight lights or the
+  pointer clicks, for example a toast. A box out of the window is not tested.
+- The focus ring of a field is coral, as the spotlight is. After a walk types in a field, it
+  moves the focus away before the shot of the next step.
+- A walk opens a row of a table by its link. A click at the middle of a row can hit the filter
+  bar of the next row, which waits there at opacity 0.
 - A beat can start on a screen that no click opened, for example after the walk went back a page.
   The engine then shows that screen first, and the spotlight comes after it. The camera shows the
   spotlight and the control to click together. If they do not fit together, use two beats.

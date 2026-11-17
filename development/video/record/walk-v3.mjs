@@ -16,18 +16,26 @@ await record('v3', async ({ page, shot, hoverShot, settle, pickBothOpen }) => {
   const { row, cve } = await pickBothOpen(0, avoid)
   console.log('cve', cve)
   await shot('findings', { row })
-  await hoverShot('findings', row)
+  await hoverShot('findings', row.locator('a'))
 
-  await row.click()
+  await row.locator('a').first().click()
   await page.waitForSelector('aside.triage', { timeout: 15000 })
   await settle()
   const panel = page.locator('aside.triage')
-  const accept = page.getByRole('button', { name: /Risk-accept this CVE/ })
-  await shot('finding', { panel, accept })
-  await hoverShot('finding', accept)
+  // the accept button is in the panel of "Note and more…", next to the cell
+  const more = panel.getByRole('button', { name: /Note and more/ })
+  await shot('finding', { panel, more })
+  await hoverShot('finding', more)
+
+  await more.click()
+  await settle()
+  const pop = page.locator('.pop')
+  const accept = pop.getByRole('button', { name: /Accept the risk of this vulnerability/ })
+  await shot('more', { panel, pop, accept })
+  await hoverShot('more', accept)
 
   await accept.click()
-  const dialog = page.getByRole('dialog').first()
+  const dialog = page.getByRole('dialog', { name: /Risk-accept/ })
   await dialog.waitFor({ timeout: 10000 })
   await settle()
   const nsField = dialog.locator('.fld, div').filter({ has: page.getByText(/Scope · namespaces/) }).last()
@@ -47,6 +55,8 @@ await record('v3', async ({ page, shot, hoverShot, settle, pickBothOpen }) => {
 
   await expiry.click()
   await expiry.fill(EXPIRY)
+  // the focus ring of a field is coral too: no field keeps it under the spotlight of the next step
+  await expiry.blur()
   await settle()
   await shot('dialog-expiry', targets())
   await hoverShot('dialog-expiry', reason)
@@ -56,6 +66,7 @@ await record('v3', async ({ page, shot, hoverShot, settle, pickBothOpen }) => {
   const words = REASON.split(' ')
   for (let i = 1; i <= words.length; i++) {
     await reason.fill(words.slice(0, i).join(' '))
+    if (i === words.length) await reason.blur()
     await page.mouse.move(5, 5)
     await sleep(60)
     await shot(`type-${i}`, i === words.length ? targets() : {})
@@ -68,7 +79,7 @@ await record('v3', async ({ page, shot, hoverShot, settle, pickBothOpen }) => {
   await sleep(800)
   await settle()
   const approvalsLink = page.getByRole('link', { name: /^Approval list$/ })
-  const decisions = page.locator('section.card').filter({ hasText: 'Decisions on this CVE' })
+  const decisions = page.locator('section.card').filter({ hasText: 'Decisions on this vulnerability' })
   await shot('accepted', { panel, decisions, decisionRow: decisions.locator('tbody tr').first(), approvalsLink })
   await hoverShot('accepted', approvalsLink)
 

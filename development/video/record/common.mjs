@@ -63,7 +63,21 @@ export async function record(dir, walk, { view: VIEW = DEFAULT_VIEW } = {}) {
         left = Math.max(left, c.left)
         right = Math.min(right, c.right)
       }
-      return { x: left, y: r.top + window.scrollY, w: right - left, h: r.height }
+      // the spotlight must go around this control: the element on top at the center of the box
+      // must be the control or a part of it. A point outside the window cannot be tested.
+      const cx = (left + right) / 2
+      const cy = r.top + r.height / 2
+      // an element at opacity 0 (a hover bar of the next row) is not drawn, so it covers nothing
+      const drawn = (e) => {
+        for (let p = e; p; p = p.parentElement) if (getComputedStyle(p).opacity === '0') return false
+        return true
+      }
+      let covered
+      if (cx >= 0 && cx < innerWidth && cy >= 0 && cy < innerHeight) {
+        const top = document.elementsFromPoint(cx, cy).find(drawn)
+        covered = !(top && el.contains(top))
+      }
+      return { x: left, y: r.top + window.scrollY, w: right - left, h: r.height, covered }
     })
     if (!(b.w > 0 && b.h > 0)) throw new Error('no box for a locator')
     return b
@@ -96,7 +110,7 @@ export async function record(dir, walk, { view: VIEW = DEFAULT_VIEW } = {}) {
     for (let i = 0; i < 40; i++) {
       const text = await openRows.nth(i).innerText()
       if (avoidCves.some((c) => text.includes(c))) continue
-      await openRows.nth(i).click()
+      await openRows.nth(i).locator('a').first().click()
       await page.waitForSelector('aside.triage', { timeout: 15000 })
       await settle()
       const both = (await stateRow().getByText(/^Open$/).count()) === 2

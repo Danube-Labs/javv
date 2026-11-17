@@ -112,7 +112,8 @@ export const v5: Video = {
     { shot: 'status', step: 2, caption: 'Scanner status shows when each scanner sent its last results.', spot: 'lanes', wide: true },
     { shot: 'status', step: 3, caption: 'Go back to Findings.', spot: 'findingsLink', click: { box: 'findingsLink', to: 'findings2', page: true } },
     { shot: 'findings2', step: 3, caption: 'Open a Stale finding.', spot: 'row', wide: true, click: { box: 'row', to: 'finding', page: true } },
-    { shot: 'finding', step: 3, caption: 'JAVV set this state, because the scanner is silent. A state that a person sets replaces it.', spot: 'note', hold: 'panel' },
     { shot: 'finding', step: 3, caption: 'The finding of each scanner is Stale, because both scanners are silent.', spot: 'evidenceState' },
+    { shot: 'finding', step: 3, caption: 'To see why, select Note and more.', spot: 'more', hold: 'panel', click: { box: 'more', to: 'more' } },
+    { shot: 'more', step: 3, caption: 'JAVV set this state, because the scanner is silent. A state that a person sets replaces it.', spot: 'note', hold: 'panel' },
   ],
 }

@@ -26,9 +26,9 @@ await record('v1', async ({ page, shot, hoverShot, settle }) => {
   const scannerCol = page.locator('table thead th').filter({ hasText: /scanner/i }).first()
   await shot('findings', { row, scannerFacet, table: page.locator('table').first(), head: page.locator('.head-card').first() })
   console.log('scanner column found:', await scannerCol.count())
-  await hoverShot('findings', row)
+  await hoverShot('findings', row.locator('a'))
 
-  await row.click()
+  await row.locator('a').first().click()
   await page.waitForSelector('aside.triage', { timeout: 15000 })
   await settle()
   const evidence = page.locator('section.card').filter({ hasText: 'Per-scanner evidence' })
