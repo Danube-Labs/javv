@@ -43,6 +43,8 @@ await record('v4', async ({ page, shot, hoverShot, settle }) => {
   const words = NOTE.split(' ')
   for (let i = 1; i <= words.length; i++) {
     await notes.fill(words.slice(0, i).join(' '))
+    // the focus ring of a field is coral too: it leaves before the spotlight of the next step
+    if (i === words.length) await notes.blur()
     await page.mouse.move(5, 5)
     await sleep(60)
     await shot(`type-${i}`, i === words.length ? targets() : {})

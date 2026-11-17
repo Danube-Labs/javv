@@ -69,6 +69,8 @@ await record('v7', async ({ page: first, shot, hoverShot, settle, switchUser }) 
     await sleep(60)
     await shot(`type-${i}`)
   }
+  // the focus ring of a field is coral too: it leaves before the spotlight of the next step
+  await name.blur()
   await shot('named', { dialog: dialog(), someRoles })
   await hoverShot('named', someRoles)
   await someRoles.click()

@@ -31,7 +31,8 @@ export const C = {
 export const SANS = "'Hanken Grotesk', sans-serif"
 export const MONO = "'Spline Sans Mono', monospace"
 
-type Box = { x: number; y: number; w: number; h: number }
+// covered: the recorder found another element on top at the center of the box
+type Box = { x: number; y: number; w: number; h: number; covered?: boolean }
 export type Shot = { name: string; file: string; size: { w: number; h: number }; boxes: Record<string, Box> }
 export type ShotSet = { view: { width: number; height: number }; shots: Shot[] }
 
