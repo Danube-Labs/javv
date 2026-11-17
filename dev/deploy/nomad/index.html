@@ -1501,8 +1501,8 @@ shows a Kubernetes cluster.</p>
 <p>The two jobs are examples. Change them for your cluster: for example, the source of the JAVV
 token, the cache volumes or the schedule. The script <code>javv_nomad_push.py</code> does the work. It reads
 the running images from the Nomad API, scans them and pushes the results to JAVV.</p>
-<p><strong>Tested with:</strong> JAVV 0.9.8, Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the
-images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.1</code>.</p>
+<p><strong>Tested with:</strong> JAVV 0.9.10, Nomad 2.1.1 (one agent, ACLs on), the Docker task driver, and the
+images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.3</code>.</p>
 <h2 id="how-the-jobs-work">How the jobs work<a class="headerlink" href="#how-the-jobs-work" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Each job is a periodic batch job. It runs every 6 hours.</li>
@@ -1511,6 +1511,10 @@ images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121
 <li>It gets the digest of each image from the output of the scanner.</li>
 <li>It pushes one scan cycle to JAVV, as <a href="../../docs/INGEST-CONTRACT/">Push from your own script</a>
   tells.</li>
+<li>Each finding has the files in the image where the scanner found the package. JAVV 0.9.10 or
+  later takes them. An older JAVV refuses the push, so upgrade JAVV before the jobs.</li>
+<li>The job leaves out a path that JAVV refuses, and the paths of a finding past the first 64.
+  Then the log has a warning <code>paths left out of &lt;image&gt;</code> with the two numbers, not the paths.</li>
 <li>It does not scan a job with the meta <code>javv_scan = "true"</code>. The two scan jobs have this meta.
   The log names each job that the scan skips for this reason.</li>
 </ul>

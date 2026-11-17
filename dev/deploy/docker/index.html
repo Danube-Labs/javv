@@ -1501,8 +1501,8 @@ Kubernetes cluster.</p>
 <p>The Compose file is an example. Change it for your host: for example, the schedule, the source of
 the tokens or the cache volumes. The script <code>javv_docker_push.py</code> does the work. It reads the
 running containers from the Docker API, scans their images and pushes the results to JAVV.</p>
-<p><strong>Tested with:</strong> JAVV 0.9.8, Docker 29.9.3 with the containerd image store, Docker Compose 5.7.0,
-and the images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.1</code>.</p>
+<p><strong>Tested with:</strong> JAVV 0.9.10, Docker 29.10.0 with the containerd image store, Docker Compose 5.7.1,
+and the images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-grype:0.121.3</code>.</p>
 <h2 id="how-the-containers-work">How the containers work<a class="headerlink" href="#how-the-containers-work" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Each container runs one scan cycle when it starts, then one cycle every 6 hours.</li>
@@ -1512,6 +1512,10 @@ and the images <code>javv-scanner-trivy:0.76.2</code> and <code>javv-scanner-gry
 <li>It gets the digest of each image from the output of the scanner.</li>
 <li>It pushes one scan cycle to JAVV, as <a href="../../docs/INGEST-CONTRACT/">Push from your own script</a>
   tells.</li>
+<li>Each finding has the files in the image where the scanner found the package. JAVV 0.9.10 or
+  later takes them. An older JAVV refuses the push, so upgrade JAVV before the containers.</li>
+<li>The container leaves out a path that JAVV refuses, and the paths of a finding past the first 64.
+  Then the log has a warning <code>paths left out of &lt;image&gt;</code> with the two numbers, not the paths.</li>
 <li>It does not scan a container with the label <code>javv.scan=true</code>. The two scan containers have this
   label. The log names each container that the scan skips for this reason.</li>
 </ul>
