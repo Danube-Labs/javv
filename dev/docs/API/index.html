@@ -3804,13 +3804,13 @@ A different type gets 415.</p>
 <td>GET</td>
 <td><code>/api/v1/findings/export.csv</code></td>
 <td><code>can_export</code></td>
-<td>The findings of the <a href="#filters">filters</a> as CSV. More than <code>JAVV_EXPORT_MAX_ROWS</code> (50000) rows get 413. Make the filter narrower, or use a report.</td>
+<td>The findings of the <a href="#filters">filters</a> as CSV. More than <code>JAVV_EXPORT_MAX_ROWS</code> (50000) rows get 413. Make the filter narrower, or use a report. The last two columns are <code>locations_total</code> and <code>locations</code>. The <code>locations</code> cell has the paths that JAVV stores for the finding, at most 64, one path on each line of the cell. A scanner that sends schema 3 or 4 does not report paths, so both cells are empty. A finding with no path found has 0 and an empty cell. A scheduled export at a past time has the same two columns.</td>
 </tr>
 <tr>
 <td>GET</td>
 <td><code>/api/v1/findings/export.vex</code></td>
 <td><code>can_export</code></td>
-<td>The findings as an OpenVEX or CycloneDX document, for one scanner. <code>scanner</code> is necessary. The row limit is the same.</td>
+<td>The findings as an OpenVEX or CycloneDX document, for one scanner. <code>scanner</code> is necessary. The row limit is the same. In CycloneDX, a finding with paths adds one component of type <code>library</code>. Its <code>bom-ref</code> is the <code>finding_key</code>, and <code>evidence.occurrences[].location</code> holds the paths. The vulnerability names that component in <code>affects</code>, after the image. OpenVEX has no field for a file path, so the OpenVEX document has no paths.</td>
 </tr>
 <tr>
 <td>POST</td>
