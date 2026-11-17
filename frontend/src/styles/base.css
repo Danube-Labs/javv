@@ -1132,10 +1132,13 @@ button.stat-cell:hover .cell-go,
     opacity: 0;
   }
 }
-:where(.page-motion) > * > * {
+/* a popover with the genie motion is not a block of the page: when its t-pour class comes off,
+   this animation would take its place and run from opacity 0, so the card faded in a second
+   time after its open (issue 1240) */
+:where(.page-motion) > * > :where(:not(.pop, .dd-menu--band)) {
   animation: page-rise var(--dur-panel) var(--ease-out) backwards;
 }
-:where(.page-motion) > * > * > * {
+:where(.page-motion) > * > * > :where(:not(.pop, .dd-menu--band)) {
   animation: page-fade var(--dur-panel) var(--ease-out) backwards;
 }
 @media (prefers-reduced-motion: reduce) {

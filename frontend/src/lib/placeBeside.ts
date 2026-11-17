@@ -39,7 +39,13 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Ma
  */
 export function placeBeside(anchor: Box, size: Size, view: Size, trigger?: Point, under = false): Placed {
   const placed = place(anchor, size, view, trigger, under)
-  return { ...placed, left: Math.round(placed.left), top: Math.round(placed.top), arrow: Math.round(placed.arrow) }
+  const left = Math.round(placed.left)
+  const top = Math.round(placed.top)
+  // the arrow moves with the rounded edge, so its tip stays within half a pixel of the trigger
+  const across = placed.side === 'below' || placed.side === 'above'
+  const shift = across ? placed.left - left : placed.top - top
+  const length = across ? size.width : size.height
+  return { ...placed, left, top, arrow: clamp(Math.round(placed.arrow + shift), ARROW_INSET, length - ARROW_INSET) }
 }
 
 function place(anchor: Box, size: Size, view: Size, trigger: Point | undefined, under: boolean): Placed {

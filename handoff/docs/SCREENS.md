@@ -440,7 +440,7 @@ than one package on the image, the package name in the head band is a button wit
 on this image"). It opens the package menu `PackageMenu` on the kit dropdown (S1 with the dark
 blue head, 2026-11-16, in place of the panel M1). The head has the title, the count, the image and
 the close button. The menu has the edge of a popover, with no border line (`.dd-menu--band`, issue
-1240, E2). A filter box shows for more than 8 packages. The list stops at about 9 rows and
+1240, E2). It opens with the genie motion of the popovers from its button (`t-pour`, decision 5). A filter box shows for more than 8 packages. The list stops at about 9 rows and
 scrolls. Each row has the package, its version and the scanners that found it, and the current
 package has the coral language. A click opens the finding of that package and version. A long
 package name stays on one line in the head band, with or without the menu: it takes the free
@@ -509,7 +509,7 @@ the model is state + justification + notes + structured decisions).
 pictures):** the cell holds Assigned to, the four state buttons, "Note and more…" and Save. "Note
 and more…" opens the kit popover (`PopoverShell` with the dark head of a window) next to the
 cell. The popover has no border line: its edge is a soft shadow that follows its arrow (issue
-1240, E2). The panel holds the lines that explain the state (history, a role that cannot triage, a
+1240, E2). It opens with the genie motion from the tip of its arrow (`t-pour`, decision 5). The panel holds the lines that explain the state (history, a role that cannot triage, a
 role that cannot change a risk acceptance, the Risk accepted and Stale blocks), the reason for
 Not affected, the note, the risk acceptance button, Save and the line under Save. The cell and the
 panel share one draft, so the two Save buttons send the same body, and a save closes the panel.
@@ -1421,7 +1421,8 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   over a button in the head of the panel (operator 2026-10-31, option B). A click opens `PopoverShell` "Panel
   filters" next to the panel: one tag for each filter, and **Open in Findings**, which also
   carries the scanner of a pinned panel. A panel with no filters shows no button. Edit mode shows
-  the same button in the tab over the top right corner of the panel, before **Settings**.
+  the same button in the tab over the top right corner of the panel, before **Settings**. The
+  popover has the edge and the genie motion of each `PopoverShell` (issue 1240).
 - **Filters field (issue 999, decision 3 B):** in edit mode, the panel settings of such a panel
   have a Filters field: the Findings `FilterBar` with `menu-up`, so its Add filter menu opens
   above the bar. The fields are the Findings fields less Scanner, and less the filters the panel
@@ -1432,9 +1433,7 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   closes only the menu. Apply puts the filters in the draft, or takes them off after Clear all,
   and a change of filters makes the save bar show unsaved changes. "New in range" counts in the
   range of the dashboard, not in the days that the panel stores with the filter (operator,
-  2026-10-31). The popover takes its place again when it grows, so Apply stays on the screen. Like
-  each `PopoverShell`, it has no border line: its edge is a soft shadow that follows its arrow
-  (issue 1240, E2).
+  2026-10-31). The popover takes its place again when it grows, so Apply stays on the screen.
 - **Audit log filters (issue 1063, decision D2 A):** Triage activity keeps Audit log filters in
   its own field, `audit_filters`, and never findings filters. Its counts read
   `GET /api/v1/audit/facets` with `entity_type` finding and decision and the filters of the
@@ -1499,7 +1498,9 @@ page.
 - **Panel settings (`PopoverShell`, ruling of 2026-10-26, option B):** a popover with an arrow
   next to the panel, on its right, else on its left, else over its top edge under Settings, else
   above Settings. The page has no backdrop, and the panel keeps a coral outline while its
-  settings are open. The head names the panel and has a ✕. The scanner (Follow the dashboard, trivy or grype) for a panel with
+  settings are open. Like each `PopoverShell`, it has no border line: its edge is a soft shadow
+  that follows its arrow (issue 1240, E2). It opens with the genie motion from the tip of its
+  arrow (`t-pour`, decision 5). The head names the panel and has a ✕. The scanner (Follow the dashboard, trivy or grype) for a panel with
   scanner data, the width (Half or Full) and the height (Short or Tall) for a panel with two
   heights. Apply changes the draft. A Full panel goes to the left column.
 - **Save:** the settings `SaveBar`. A save sends the revision that the page read, the details

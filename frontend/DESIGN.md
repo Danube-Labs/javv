@@ -341,7 +341,9 @@ block of the routed page fades in when the page inserts it (`page-fade`), and th
 rise 6px (`page-rise`). Both run for `--dur-panel` on `--ease-out`. This covers a page change and
 the data that replaces a placeholder, and a view adds no code for it. The selectors have zero
 specificity (`:where()`), so a block with its own animation, such as the skeleton pulse, keeps
-it. Do not add a page-level `<Transition>` on top: two fades on the same blocks gave an empty
+it. They skip a popover with the genie motion (`.pop`, `.dd-menu--band`). It is not a block of the
+page, and when its `t-pour` class came off, the page motion ran on it from opacity 0, so the card
+faded in a second time (issue 1240). Do not add a page-level `<Transition>` on top: two fades on the same blocks gave an empty
 area for about 100 ms in the prototype.
 
 **Header card stretch (operator decision 2026-10-17 on built prototypes, issue 902, D3 A).** A

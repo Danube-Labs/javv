@@ -614,7 +614,8 @@ describe('style rules: no em dashes in copy', () => {
 /**
  * Motion of clip-path is a ruled exception of one motion (issue 1240, decision 5, operator
  * 2026-11-17): the genie of the four popovers, `@keyframes pour` in base.css. DESIGN.md §5 allows
- * transform and opacity, so any other keyframes or transition that moves clip-path fails here.
+ * transform and opacity, so any other keyframes, transition or `element.animate()` that moves
+ * clip-path fails here. `transition: all` fails too, because it moves clip-path with the rest.
  */
 const CLIP_MOTION_ALLOWED = 'styles/base.css @keyframes pour'
 function clipMotions(rel: string, css: string): string[] {
@@ -639,6 +640,14 @@ describe('style rules: clip-path moves only in the genie motion (issue 1240)', (
 
   it('the one motion of clip-path is the genie of base.css', () => {
     expect(all).toEqual([CLIP_MOTION_ALLOWED])
+  })
+
+  it('no script moves clip-path with element.animate()', () => {
+    const hits = walk(SRC)
+      .map((p) => relative(SRC, p).split('\\').join('/'))
+      .filter((rel) => /\.(ts|vue)$/.test(rel))
+      .filter((rel) => /\.animate\([\s\S]{0,400}?\bclipPath\b/.test(readFileSync(join(SRC, rel), 'utf8')))
+    expect(hits).toEqual([])
   })
 
   it('the check finds a clip-path in other keyframes and in a transition', () => {

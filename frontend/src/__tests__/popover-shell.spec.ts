@@ -103,6 +103,12 @@ describe('the popover sits on whole pixels (issue 1240)', () => {
     const placed = placeBeside(anchor, size, view, trigger, under)
     expect([placed.left, placed.top, placed.arrow].filter((n) => !Number.isInteger(n))).toEqual([])
   })
+  it.each(cases)('%s: the tip of the arrow stays within half a pixel of the trigger', (_name, anchor, trigger, under) => {
+    const placed = placeBeside(anchor, size, view, trigger, under)
+    const across = placed.side === 'below' || placed.side === 'above'
+    const tip = across ? placed.left + placed.arrow : placed.top + placed.arrow
+    expect(Math.abs(tip - (across ? trigger.x : trigger.y))).toBeLessThanOrEqual(0.5)
+  })
 })
 
 describe('the edge of the popover (issue 1240, decision 4 E2)', () => {
@@ -231,6 +237,9 @@ describe('the popover', () => {
 
   it('opens with the genie motion from the tip of its arrow (issue 1240, decision 5)', async () => {
     const anchor = document.createElement('div')
+    // near the right edge of the 1024px test window: the card must go on the left, which is not
+    // the place it starts from before it measures (right), so the origin proves the measure
+    anchor.getBoundingClientRect = () => ({ ...box(900, 100, 1000, 200), width: 100, height: 100 }) as DOMRect
     document.body.append(anchor)
     const w = mount(PopoverShell, {
       props: { title: 'Triage', anchor },
@@ -243,8 +252,8 @@ describe('the popover', () => {
     expect(card.classes()).toContain('t-pour-enter-active')
     await nextTick()
     await nextTick()
-    // jsdom has no layout: the card goes to the right of a box at 0, with the arrow 16px down
-    expect((card.element as HTMLElement).style.getPropertyValue('--pour-origin')).toBe('-6px 16px')
+    // jsdom has no layout, so the card is 0px tall and the arrow sits at its 16px inset
+    expect((card.element as HTMLElement).style.getPropertyValue('--pour-origin')).toBe('calc(100% + 6px) 16px')
   })
 
   it('gives the focus back to its trigger when it closes', async () => {

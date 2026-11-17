@@ -12,7 +12,7 @@
 import { onMounted, onUnmounted, useTemplateRef } from 'vue'
 
 const open = defineModel<boolean>('open', { default: false })
-const { motion = 't-pop' } = defineProps<{ motion?: 't-pop' | 't-pour' }>()
+const props = withDefaults(defineProps<{ motion?: 't-pop' | 't-pour' }>(), { motion: 't-pop' })
 const emit = defineEmits<{ closed: [] }>()
 const wrap = useTemplateRef<HTMLElement>('wrap')
 
@@ -41,7 +41,7 @@ onUnmounted(() => {
 <template>
   <div ref="wrap" class="ui-dd">
     <slot name="trigger" :open="open" :toggle="toggle" :close="close" />
-    <Transition :name="motion" @after-leave="emit('closed')">
+    <Transition :name="props.motion" @after-leave="emit('closed')">
       <slot v-if="open" :close="close" />
     </Transition>
   </div>

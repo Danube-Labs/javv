@@ -25,8 +25,12 @@ describe('page entry motion', () => {
   })
 
   it('the outer blocks rise and the blocks inside them fade, on the motion tokens, without holding the end values', () => {
-    expect(css).toContain(':where(.page-motion) > * > * {\n  animation: page-rise var(--dur-panel) var(--ease-out) backwards;')
-    expect(css).toContain(':where(.page-motion) > * > * > * {\n  animation: page-fade var(--dur-panel) var(--ease-out) backwards;')
+    expect(css).toContain(
+      ':where(.page-motion) > * > :where(:not(.pop, .dd-menu--band)) {\n  animation: page-rise var(--dur-panel) var(--ease-out) backwards;',
+    )
+    expect(css).toContain(
+      ':where(.page-motion) > * > * > :where(:not(.pop, .dd-menu--band)) {\n  animation: page-fade var(--dur-panel) var(--ease-out) backwards;',
+    )
   })
 
   it('no selector of the page motion has a specificity above zero', () => {
@@ -63,6 +67,13 @@ describe('the genie motion t-pour', () => {
   })
   it('starts at the point that the popover gives, the tip of its arrow', () => {
     expect(css).toMatch(/\.t-pour-enter-active,\n\.t-pour-leave-active \{\n  transform-origin: var\(--pour-origin\);/)
+  })
+  it('a popover with the genie motion takes no page entry motion, so it does not fade in again after its open', () => {
+    // the Triage panel sits 3 levels under the main area and Panel settings 2: a page-rise or
+    // page-fade on them started from opacity 0 when the t-pour class came off (issue 1240)
+    const page = [...css.matchAll(/^(:where\(\.page-motion\)[^{]*)\{\n  animation: page-/gm)].map((m) => m[1]!)
+    expect(page).toHaveLength(2)
+    for (const s of page) expect(s).toContain(':where(:not(.pop, .dd-menu--band))')
   })
   it('the keyframes move only opacity, transform and clip-path', () => {
     const pour = block(/@keyframes pour \{[\s\S]*?\n\}/)
