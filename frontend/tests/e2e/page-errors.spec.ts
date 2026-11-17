@@ -37,9 +37,13 @@ test('a page error, an app error and an uncaught rejection are each caught', asy
   })
   await expect.poll(() => codeErrors.length, { timeout: 10_000 }).toBe(3)
 
+  // Vue names the hook in a development build and gives a link to its error reference in a
+  // production build, so the spec passes on the dev server and on the built app (issue 1223)
   expect([...codeErrors].sort()).toEqual([
     'app error on /about (unhandled rejection): forced rejection',
-    'page error on /about (https://vuejs.org/error-reference/#runtime-m): forced in mounted',
+    expect.stringMatching(
+      /^page error on \/about \((mounted hook|https:\/\/vuejs\.org\/error-reference\/#runtime-m)\): forced in mounted$/,
+    ),
     'uncaught: forced rejection',
   ])
   codeErrors.length = 0 // they were caused on purpose

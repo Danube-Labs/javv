@@ -73,9 +73,18 @@ line, corner, fill and type face, and its fill and line both change under the po
 (`kit-consistency.spec.ts`, issue 1055, and `frontend/DESIGN.md` §5). Selectors and login come from
 `scripts/walk.mjs` (still the one owner).
 
+**Where the suite must pass (issue 1223, D1).** The gate is the built app against the seeded
+store, as in CI. A spec that reads only must also pass when it runs alone against the dev stack:
+the dev server runs a development build of Vue, and the dev store has other data than the seed.
 To run one spec against the dev stack, from `frontend/`:
 `JAVV_BASE=http://127.0.0.1:5173 JAVV_USER=admin JAVV_PASS=<password> npx playwright test tests/e2e/kit-consistency.spec.ts`.
 The dev store must have the seeded viewer `smoke-viewer` (`development/scripts/seed-smoke.sh`).
+
+Never run these specs against the dev store, because they write to it:
+- `inspect.spec.ts` runs a real staleness sweep. On 2026-11-14 it marked 82,820 dev findings stale.
+- `triage-loop.spec.ts` saves a triage decision and then reverts it. The journal keeps both.
+- `dashboards.spec.ts` creates dashboards and deletes them. The audit log keeps them.
+- `fresh-install.spec.ts` creates a scanner token.
 
 **A code error fails the test (issue 749).** Every spec takes `test` and `expect` from
 `tests/e2e/helpers.ts`, whose `test` fails a test whose page logs `page error` or `app error`,
