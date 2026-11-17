@@ -367,12 +367,18 @@ describe('style rules: one shared card, menu panel and error text', () => {
     ].join('\n')
     expect(sharedRuleCopies(planted, shared)).toEqual([
       '.ingest-lens: background', '.ingest-lens: padding', '.il-quiet: border-color', '.il-head: gap',
-      '.il-title: text-transform', '.il-sub: color', '.il-sub b: font-weight', '.il-empty: font-size',
+      '.il-title: text-transform', '.il-sub: color', '.il-sub b: font-weight', '.il-empty: margin',
+      '.il-empty: font-size',
       '.ingest-lens > .skel-gap: margin-bottom',
     ])
-    // what a strip adds: how it fills its row, how its line wraps, the space of its empty text
-    const additions = '.ingest-lens { flex: 1 1 auto; }\n.il-sub { white-space: nowrap; overflow: hidden; }\n.il-empty { margin: 0; font-weight: 500; }'
+    // what a strip adds: how it fills its row and how its line wraps
+    const additions = '.ingest-lens { flex: 1 1 auto; }\n.il-sub { white-space: nowrap; overflow: hidden; }'
     expect(sharedRuleCopies(additions, shared)).toEqual([])
+    // the empty text of all four strips has one margin and one weight (issue 1245, option B)
+    expect(sharedRuleCopies('.il-empty { margin: 0; font-weight: 400; }', shared)).toEqual([
+      '.il-empty: margin',
+      '.il-empty: font-weight',
+    ])
   })
 
   it('the check finds a planted copy of each note line and lets a margin pass (issue 1214)', () => {

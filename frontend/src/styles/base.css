@@ -560,8 +560,10 @@ html [class*=' p-'] {
 }
 /* the text of an empty or failed strip reads at body size, never fine print (operator ruling) */
 .il-empty {
+  margin: auto 0;
   padding-bottom: 6px;
   font-size: var(--text-body);
+  font-weight: 500;
   color: var(--ink);
 }
 .ingest-lens > .skel-gap {
