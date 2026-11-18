@@ -54,10 +54,10 @@ describe('expiryStatus (the chip contract)', () => {
 
 describe('scope + scanner labels', () => {
   it('empty scope is cluster-wide; ns/img compact with +N', () => {
-    expect(scopeLabel({ namespaces: [], images: [] })).toBe('cluster-wide')
-    expect(scopeLabel({ namespaces: ['prod'], images: [] })).toBe('ns: prod')
+    expect(scopeLabel({ namespaces: [], images: [] })).toBe('whole cluster')
+    expect(scopeLabel({ namespaces: ['prod'], images: [] })).toBe('namespace: prod')
     expect(scopeLabel({ namespaces: ['prod', 'stage'], images: ['nginx'] })).toBe(
-      'ns: prod +1 · img: nginx',
+      'namespace: prod +1 · image: nginx',
     )
   })
 
@@ -121,7 +121,7 @@ describe('the past-time notice of the Approval list', () => {
   it('says Approval list, with no queue, endpoint, seam or lens', () => {
     const src = readFileSync(join(__dirname, '..', 'views/ApprovalsView.vue'), 'utf8')
     const notice = src.slice(src.indexOf('<LimitedHistoricalNotice'), src.indexOf('/>', src.indexOf('<LimitedHistoricalNotice')))
-    expect(notice).toContain('title="The Approval list shows now only"')
+    expect(notice).toContain('title="The Approval list shows the time now only"')
     expect(notice).not.toMatch(/queue|endpoint|seam|lens/)
   })
 })

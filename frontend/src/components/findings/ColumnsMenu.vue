@@ -87,7 +87,7 @@ function onDragEnd() {
         :options="DENSITY_OPTS"
         @update:model-value="(v) => emit('update:dense', v === 'compact')"
       />
-      <div class="dd-head">Columns<span v-if="props.reorderable" class="dd-head-hint">drag to reorder</span></div>
+      <div class="dd-head">Columns<span v-if="props.reorderable" class="dd-head-hint">Drag a column to change the order.</span></div>
       <button
         v-for="([key, label], index) in cols"
         :key="key"

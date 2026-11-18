@@ -102,17 +102,17 @@ function openLeft(severity: string) {
     <UiSkeleton v-for="i in 3" :key="i" :height="22" radius="sm" />
   </div>
   <p v-else-if="failed" class="load-error" role="alert">
-    Triage progress unavailable. Check the backend connection.
+    JAVV cannot show the triage progress. Check the backend connection.
   </p>
   <p v-else-if="rows.length === 0" class="prog-empty" role="status">
-    No findings in the store yet. Progress appears after the first committed scan.
+    No findings yet. JAVV shows the progress after the first scan.
   </p>
   <div v-else class="prog">
     <button
       v-for="r in rows"
       :key="r.severity"
       class="prog-row"
-      :title="`Open the ${fmt(r.total - r.done)} untriaged ${r.severity} findings`"
+      :title="`Open the ${fmt(r.total - r.done)} ${r.severity} findings that are not triaged`"
       @click="openLeft(r.severity)"
     >
       <span class="prog-sev"><SevChip :level="r.severity" /></span>

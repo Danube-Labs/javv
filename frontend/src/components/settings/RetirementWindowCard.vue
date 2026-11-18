@@ -41,8 +41,8 @@ const scannerDown = computed<number | null>(() => {
 const form = useRetirementWindow(toRef(clusterStore, 'selectedId'), scannerDown)
 const scannerDownNote = computed(() =>
   scannerDown.value === null
-    ? 'Must be longer than the scanner-down timer.'
-    : `Must be longer than the scanner-down timer (${scannerDown.value} days).`,
+    ? 'The window must be longer than the scanner-down timer.'
+    : `The window must be longer than the scanner-down timer (${scannerDown.value} days).`,
 )
 
 const MODES = [
@@ -56,7 +56,7 @@ async function save() {
     toast.error(error)
     return
   }
-  toast.success('Retirement window saved. The next retirement sweep applies it')
+  toast.success('JAVV saved the retirement window. The next retirement sweep applies it.')
   // the countdown banner reads the schedule off the cluster list
   await clusterStore.refresh()
 }
@@ -65,16 +65,16 @@ async function save() {
 <template>
   <SettingsCard
     title="Cluster retirement"
-    subtitle="a cluster that stops sending scans leaves the cluster list, with its data kept"
+    subtitle="When a cluster stops sending scans, it leaves the cluster list. JAVV keeps its data."
   >
     <UiSkeleton v-if="form.loading.value" :height="96" radius="sm" label="Loading retirement" />
     <p v-else-if="form.failed.value" class="load-error" role="alert">
-      Retirement window unavailable. Check the backend connection.
+      JAVV cannot show the retirement window. Check the backend connection.
     </p>
     <template v-else>
       <SettingsRow
         label="Retire a silent cluster"
-        :hint="`A cluster that sends no scans this long leaves the cluster list. Its data is kept, and a new scan brings it back. ${scannerDownNote}`"
+        :hint="`A cluster that sends no scans for this time leaves the cluster list. JAVV keeps its data. A new scan brings the cluster back. ${scannerDownNote}`"
       >
         <div class="retire-ctl">
           <UiSegControl v-model="form.mode.value" :options="MODES" label="Retire a silent cluster" />

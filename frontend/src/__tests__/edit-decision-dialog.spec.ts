@@ -34,7 +34,7 @@ const decision = (expiry: string | null): ApprovalRow => ({
 })
 
 const saveButton = () =>
-  [...document.body.querySelectorAll('button')].find((b) => b.textContent!.includes('Revoke + re-issue'))!
+  [...document.body.querySelectorAll('button')].find((b) => b.textContent!.includes('Revoke and create'))!
 
 async function open(expiry: string | null, edit: { expiry?: string; justification?: string } = {}) {
   const w = mount(EditDecisionDialog, { props: { decision: decision(expiry) }, attachTo: document.body })

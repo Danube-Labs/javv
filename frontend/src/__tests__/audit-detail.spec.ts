@@ -76,7 +76,7 @@ describe('auditDetail, the Detail column of the Audit log', () => {
           result_count: 3,
         },
       }),
-    ).toBe('State → Not affected · Reason → Component not present · Note → Not shipped: 3 findings (frozen set)')
+    ).toBe('State → Not affected · Reason → Component not present · Note → Not shipped: 3 findings (the set at the time of the action)')
   })
 })
 

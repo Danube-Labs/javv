@@ -98,7 +98,7 @@ describe('the mint dialog', () => {
     const w = await mountTokens([])
     const open = w.findAll('button').find((b) => b.text() === 'Create token' && !b.element.closest('.modal'))!
     expect(open.classes()).toContain('ui-btn--control')
-    expect(w.get('[role="dialog"]').attributes('aria-label')).toBe('Create a push token')
+    expect(w.get('[role="dialog"]').attributes('aria-label')).toBe('Create a scanner token')
     expect(w.text()).not.toMatch(/\bMint/)
   })
 
@@ -245,11 +245,11 @@ describe('paging (issue 1190, row 13)', () => {
 
   it('a new number of rows per page shows page 1 with that number of rows', async () => {
     const w = await mountWith(30)
-    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 10 of 30')
     await nextPage(w)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
     await pickRowsPerPage(w, 25)
-    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
     expect(bodyRows(w)).toBe(25)
     w.unmount()
   })
@@ -266,7 +266,7 @@ describe('paging (issue 1190, row 13)', () => {
       expect.objectContaining({ path: { token_id: 't-15' } }),
     )
     expect(sdk.listTokensApiV1AdminTokensGet).toHaveBeenCalledTimes(2)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
     w.unmount()
   })
 })

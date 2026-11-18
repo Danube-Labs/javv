@@ -77,84 +77,84 @@ const READS: Record<
     empty: [{ facets: {} }],
     loading: 'Loading findings summary',
     emptyCopy: 'No findings at this time.',
-    errorCopy: 'Findings summary unavailable.',
+    errorCopy: 'JAVV cannot show the findings summary. Check the backend connection.',
   },
   'findings-over-time': {
     calls: ['findingsTrendApiV1TrendsFindingsGet'],
     empty: [{ new: {}, resolved: {} }],
     loading: 'Loading vulnerabilities over time',
     emptyCopy: 'No new or resolved findings in this range.',
-    errorCopy: 'Vulnerability trend unavailable.',
+    errorCopy: 'JAVV cannot show the findings over time. Check the backend connection.',
   },
   'package-type': {
     calls: ['facetFindingsApiV1FindingsFacetsGet'],
     empty: [{ facets: {} }],
     loading: 'Loading package types',
-    emptyCopy: 'Awaiting package-type data.',
-    errorCopy: 'Package-type counts unavailable.',
+    emptyCopy: 'No package types yet.',
+    errorCopy: 'JAVV cannot show the package types. Check the backend connection.',
   },
   'findings-by-namespace': {
     calls: ['facetFindingsApiV1FindingsFacetsGet'],
     empty: [{ facets: {} }],
     loading: 'Loading namespaces',
-    emptyCopy: 'No namespace data in range.',
-    errorCopy: 'Namespace counts unavailable.',
+    emptyCopy: 'No namespaces in this range.',
+    errorCopy: 'JAVV cannot show the namespaces. Check the backend connection.',
   },
   'riskiest-images': {
     calls: ['listRunningImagesApiV1ImagesGet'],
     empty: [{ inventory: INVENTORY, images: [] }],
     loading: 'Loading riskiest images',
-    emptyCopy: 'No image findings in the running inventory.',
-    errorCopy: 'Riskiest images unavailable.',
+    emptyCopy: 'The running images have no findings.',
+    errorCopy: 'JAVV cannot show the riskiest images. Check the backend connection.',
   },
   'handled-findings': {
     calls: ['contributorsApiV1ContributorsGet'],
     empty: [{ handled_over_time: [] }],
     loading: 'Loading handled findings',
-    emptyCopy: 'No findings were handled in this window.',
-    errorCopy: 'Handled-findings activity unavailable.',
+    emptyCopy: 'Nobody handled a finding in this range.',
+    errorCopy: 'JAVV cannot show the handled findings. Check the backend connection.',
   },
   'top-components': {
     calls: ['topComponentsFindingsApiV1FindingsTopComponentsGet'],
     empty: [{ components: [] }],
     loading: 'Loading top components',
-    emptyCopy: 'No component data yet.',
-    errorCopy: 'Component ranking unavailable.',
+    emptyCopy: 'No components yet.',
+    errorCopy: 'JAVV cannot show the top components. Check the backend connection.',
   },
   'top-cves': {
     calls: ['topValuesFindingsApiV1FindingsTopValuesGet'],
     empty: [{ by: 'cve_id', values: [] }],
     loading: 'Loading top vulnerabilities',
-    emptyCopy: 'No vulnerability in the findings.',
-    errorCopy: 'Vulnerability ranking unavailable.',
+    emptyCopy: 'No vulnerabilities yet.',
+    errorCopy: 'JAVV cannot show the top vulnerabilities. Check the backend connection.',
   },
   'scan-ingest': {
     calls: ['scansTrendApiV1TrendsScansGet', 'scannerFreshnessApiV1ScannersFreshnessGet'],
     empty: [{ series: {} }, { scanners: [] }],
-    loading: 'Loading ingest activity',
-    emptyCopy: 'No scans committed in this range',
-    errorCopy: 'Ingest activity unavailable.',
+    loading: 'Loading the scans',
+    emptyCopy: 'No scans in this range',
+    errorCopy: 'JAVV cannot show the scans. Check the backend connection.',
   },
   'failed-ingests': {
     calls: ['ingestFailuresTrendApiV1TrendsIngestFailuresGet'],
     empty: [{ series: {} }],
-    loading: 'Loading failed ingests',
-    emptyCopy: 'No refused pushes in this range.',
-    errorCopy: 'Failed-ingest activity unavailable.',
+    loading: 'Loading the refused scans',
+    emptyCopy: 'No refused scans in this range.',
+    errorCopy: 'JAVV cannot show the refused scans. Check the backend connection.',
   },
   'triage-activity': {
     calls: ['auditFacetsApiV1AuditFacetsGet'],
     empty: [{ activity: [] }],
     loading: 'Loading audit activity',
     emptyCopy: 'Nobody changed a finding in this range.',
-    errorCopy: 'Audit activity unavailable.',
+    errorCopy: 'JAVV cannot show the audit activity. Check the backend connection.',
   },
   'triage-progress': {
     calls: ['facetFindingsApiV1FindingsFacetsGet'],
     empty: [{ facets: { severity: [] } }],
     loading: 'Loading triage progress',
-    emptyCopy: 'No findings in the store yet.',
-    errorCopy: 'Triage progress unavailable.',
+    emptyCopy: 'No findings yet.',
+    errorCopy: 'JAVV cannot show the triage progress.',
   },
 }
 
@@ -446,7 +446,7 @@ describe('a panel that its screen can feed', () => {
     await flushPromises()
     expect(fn('contributorsApiV1ContributorsGet')).not.toHaveBeenCalled()
     // on Contributors the board under the strip is empty too; a dashboard has no board
-    expect(w.text()).toContain('The board below is empty too.')
+    expect(w.text()).toContain('The leaderboard below is empty too.')
   })
 
   it('Handled findings on a dashboard reads the window and says nothing of a board', async () => {
@@ -499,7 +499,7 @@ describe('a table panel takes its rows from its height', () => {
     const w = mountPanel(panelById('findings-by-namespace')!, ctx({ height }))
     await flushPromises()
     expect(w.findAll('tbody tr')).toHaveLength(rows)
-    expect(w.text()).toContain(`top ${rows} by findings`)
+    expect(w.text()).toContain(`The ${rows} namespaces with the most findings.`)
   })
 
   it.each([
@@ -615,7 +615,7 @@ describe('a newer read wins: a slow answer for the old cluster never shows under
     await flushPromises()
     a.resolve(ok({ handled_over_time: [{ date: '2026-10-01T00:00:00.000Z', count: 5 }] }))
     await flushPromises()
-    expect(w.text()).toContain('No findings were handled in this window.')
+    expect(w.text()).toContain('Nobody handled a finding in this range.')
   })
 
   it('a facets panel', async () => {
@@ -718,7 +718,7 @@ describe('a read still open when no read is due never lands later', () => {
     await flushPromises()
     await w.setProps(panel.props(ctx()))
     await flushPromises()
-    expect(w.text()).not.toContain('No findings were handled in this window.')
+    expect(w.text()).not.toContain('Nobody handled a finding in this range.')
     expect(w.find('[aria-label="Loading handled findings"]').exists()).toBe(true)
   })
 })
@@ -728,7 +728,7 @@ describe('Riskiest images with no committed inventory', () => {
     fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(ok({ inventory: null, images: [] }))
     const w = mountPanel(panelById('riskiest-images')!)
     await flushPromises()
-    expect(w.text()).toContain('No inventory committed yet. Images show once a scanner cycle completes.')
+    expect(w.text()).toContain('No inventory yet. JAVV shows the images when a scanner completes a scan cycle.')
     expect(w.text()).not.toContain('No image findings')
   })
 
@@ -739,7 +739,7 @@ describe('Riskiest images with no committed inventory', () => {
     await flushPromises()
     timeTravel.rewindTo('2026-10-01T00:00:00.000Z')
     await flushPromises()
-    expect(w.text()).toContain('No inventory committed yet.')
+    expect(w.text()).toContain('No inventory yet.')
     expect(w.text()).not.toContain('at this point in time')
   })
 
@@ -749,10 +749,10 @@ describe('Riskiest images with no committed inventory', () => {
       .mockResolvedValueOnce(ok({ inventory: INVENTORY, images: [] }))
     const w = mountPanel(panelById('riskiest-images')!)
     await flushPromises()
-    expect(w.text()).toContain('No inventory committed yet.')
+    expect(w.text()).toContain('No inventory yet.')
     useClusterStore().selectedId = 'c-other'
     await flushPromises()
-    expect(w.text()).toContain('No image findings in the running inventory.')
+    expect(w.text()).toContain('The running images have no findings.')
     expect(w.text()).not.toContain('No inventory committed')
   })
 
@@ -762,7 +762,7 @@ describe('Riskiest images with no committed inventory', () => {
     await flushPromises()
     useClusterStore().selectedId = 'c-other'
     await flushPromises()
-    expect(w.text()).toContain('Riskiest images unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the riskiest images. Check the backend connection.')
     expect(w.text()).not.toContain('No inventory committed')
   })
 
@@ -772,7 +772,7 @@ describe('Riskiest images with no committed inventory', () => {
     fn('listRunningImagesApiV1ImagesGet').mockResolvedValue(ok({ inventory: null, images: [] }))
     const w = mountPanel(panelById('riskiest-images')!, ctx({ t: '2026-10-01T00:00:00.000Z' }))
     await flushPromises()
-    expect(w.text()).toContain('No inventory committed at this point in time.')
+    expect(w.text()).toContain('No inventory at this time.')
   })
 })
 

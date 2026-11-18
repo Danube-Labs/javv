@@ -45,11 +45,11 @@ const versionFailed = ref(false)
    wraps mid-phrase */
 const versionLines = computed((): string[] => {
   const r = running.value
-  if (!r) return versionFailed.value ? ['version unavailable'] : []
+  if (!r) return versionFailed.value ? ['no version'] : []
   return [
     `v${r.version}`,
-    `store schema v${r.mapping_version}`,
-    `scanner schema v${Math.max(...r.envelope_versions)}`,
+    `database schema ${r.mapping_version}`,
+    `scanner schema ${Math.max(...r.envelope_versions)}`,
   ]
 })
 onMounted(async () => {
@@ -98,7 +98,7 @@ onMounted(async () => {
     <div class="side-foot">
       <div
         class="sweep"
-        :title="collapsed ? `${health.statusLabel} · ${clusterStore.clusters.length} cluster(s)` : undefined"
+        :title="collapsed ? `${health.statusLabel} · ${clusterStore.clusters.length} cluster${clusterStore.clusters.length === 1 ? '' : 's'}` : undefined"
       >
         <span class="sweep-dot" :class="{ down: health.degraded }" aria-hidden="true" />
         <div v-if="!collapsed">
@@ -110,7 +110,7 @@ onMounted(async () => {
         v-if="!collapsed && versionLines.length"
         to="/about"
         class="side-version"
-        title="JAVV release · store schema (index layout) · newest scanner schema accepted. The full stack is on About."
+        title="The JAVV release, the database schema and the newest scanner schema that JAVV accepts. About shows all the versions."
       >
         <span v-for="line in versionLines" :key="line">{{ line }}</span>
       </RouterLink>

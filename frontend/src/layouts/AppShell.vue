@@ -129,12 +129,12 @@ onUnmounted(() => {
       <ScannerFreshnessBanner />
       <RetirementCountdownBanner />
       <p v-if="clusterStore.failed && clusterStore.clusters.length === 0" class="load-error" role="alert">
-        Cluster list unavailable, and every read needs it. Check the backend, then reload.
+        JAVV cannot show the cluster list. Each screen needs it. Check the backend connection, then reload the page.
       </p>
       <Transition name="t-fade">
         <div v-if="!timeTravel.isNow" class="sys-line tone-hist" role="status">
           <AppIcon class="sys-icon" name="rewind" :size="15" />
-          Viewing history: as scanned at
+          History: the data as the scanners saw it at
           <span class="mono">{{ new Date(timeTravel.t as string).toLocaleString(undefined, { hour12: false }) }}</span>
           <button class="back-to-now" @click="timeTravel.backToNow()">Back to now</button>
         </div>
@@ -145,8 +145,8 @@ onUnmounted(() => {
           v-if="coldStart"
           page-title
           icon="layers"
-          title="No clusters registered yet"
-          hint="JAVV fills in once the first scanner envelope lands. Create a scanner token, deploy the scanner CronJobs to a cluster, and the first committed cycle appears here."
+          title="No clusters yet"
+          hint="Create a scanner token, then deploy the scanners. JAVV shows the data when the first scan arrives."
         >
           <UiButton
             v-if="auth.hasCapability('can_manage_tokens')"

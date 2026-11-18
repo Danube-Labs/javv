@@ -37,7 +37,7 @@ const KEPT_RAW: { selector: string; reason: string }[] = [
  *  test, so it goes into WINDOWS, or into the list of windows the walk does not open, by a decision.
  *  Six are not opened, because the CI store has no data that opens them; the lint rule and
  *  `window-footer-buttons.spec.ts` still read their source:
- *  - Edit risk-acceptance (EditDecisionDialog): needs a risk-acceptance decision
+ *  - Edit the risk acceptance (EditDecisionDialog): needs a risk-acceptance decision
  *  - Copy this token now (TokenOnceDialog): needs a newly made token
  *  - Rotate and Revoke of an MCP token (McpTokensView): need an MCP token
  *  - Restore snapshot (SnapshotsCard): needs a snapshot repository
@@ -287,7 +287,7 @@ const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Change role?', '/settings/users', (p) => p.getByRole('combobox', { name: 'Role for smoke-viewer' }).selectOption('triager')],
   ['Disable this user?', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Disable', exact: true }).click()],
   ['Reset smoke-viewer\'s password', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Reset password' }).click()],
-  ['Create a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Create token' }).click()],
+  ['Create a scanner token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Create token' }).click()],
   ['Rotate this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Rotate', exact: true }).first().click()],
   ['Revoke this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Revoke', exact: true }).first().click()],
   ['Create an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Create token' }).click()],

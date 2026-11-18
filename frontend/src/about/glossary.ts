@@ -52,7 +52,8 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     chip: 'disagree',
     body:
       'Trivy and Grype report the same vulnerability in the same package of this image, with different ' +
-      'severities. Both findings stay as reported; JAVV doesn’t decide which one is right.',
+      'severities. JAVV keeps the two findings as the scanners reported them. It does not decide which one ' +
+      'is right.',
   },
   {
     term: { filter: 'overdue' },
@@ -81,7 +82,8 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     term: { text: 'Present' },
     body:
       'Reported by the latest complete scan of its image. The findings tables list present ' +
-      'findings only; one the next scan no longer reports leaves them at once.',
+      'findings only. When the next scan does not report a finding, the finding leaves the tables at ' +
+      'once.',
   },
   {
     term: { text: 'Stale' },

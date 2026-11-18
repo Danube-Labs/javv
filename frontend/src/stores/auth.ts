@@ -29,11 +29,11 @@ export function serverFailed(status: number | undefined): boolean {
   return status === undefined || status >= 500
 }
 
-export const SERVER_DOWN_COPY = 'The server is not answering. This page checks again on its own.'
+export const SERVER_DOWN_COPY = 'The backend does not answer. This page checks again by itself.'
 
 /** Sign-in and the password change write, so a store whose disk is full refuses them (issue 832,
  * ruled copy). The server answers; it only cannot save. */
-export const READ_ONLY_COPY = 'The store is read-only: its disk is full.'
+export const READ_ONLY_COPY = 'The database is read-only because its disk is full.'
 
 const refusedReadOnly = (error: unknown): boolean =>
   (error as { type?: unknown } | undefined)?.type === STORE_READ_ONLY_TYPE
@@ -48,8 +48,8 @@ export const COOKIE_REFUSED_ON_HTTP_COPY =
   'This browser refused the session cookie, because the page uses http. Use https, or ask the ' +
   'admin to set JAVV_SESSION_COOKIE_SECURE=false.'
 export const SESSION_NOT_KEPT_COPY =
-  'Signed in, but this browser did not keep the session. Allow cookies for this site, then sign ' +
-  'in again.'
+  'JAVV signed you in. This browser did not keep the session. Allow cookies for this site, ' +
+  'then sign in again.'
 
 /** Mirror `MIN_LENGTH` and `MAX_LENGTH` in `backend/src/backend/auth/passwords.py`
  * (CONFIGURATION.md, "Fixed values"), so the form can say the rule and refuse a short password
@@ -132,7 +132,7 @@ export const useAuthStore = defineStore('auth', {
       if (this.unreachable) return SERVER_DOWN_COPY
       if (response?.status === 422) {
         const rule = `Use ${PASSWORD_MIN_LENGTH} to ${PASSWORD_MAX_LENGTH} characters.`
-        return detailOr(error, `The new password was refused. ${rule}`)
+        return detailOr(error, `JAVV refused the new password. ${rule}`)
       }
       if (response?.status === 401) {
         // a wrong current password and an ended session are the same 401; the session check
@@ -141,7 +141,7 @@ export const useAuthStore = defineStore('auth', {
         if (this.unreachable) return SERVER_DOWN_COPY
         if (this.user === null) return SESSION_ENDED_COPY
       }
-      if (!response?.ok) return 'Password change failed. Check the current password.'
+      if (!response?.ok) return 'JAVV did not change the password. Check the current password.'
       logger.info('password changed')
       await this.fetchMe()
       // the change landed, but the server could not make the new session (a 200 with no cookie)

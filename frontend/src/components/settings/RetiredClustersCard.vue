@@ -43,7 +43,7 @@ async function bringBack(row: FleetCluster) {
     // issue 778)
     toast.success(
       row.retirement_mode === 'manual'
-        ? `${row.cluster_name} is back on the cluster list. Its tokens were revoked when it was retired: create a new one for its scanners.`
+        ? `${row.cluster_name} is back on the cluster list. JAVV revoked its scanner tokens when it retired the cluster. Create a new scanner token for its scanners.`
         : `${row.cluster_name} is back on the cluster list`,
     )
     await clusterStore.refresh()
@@ -65,14 +65,14 @@ async function onDeleted() {
 </script>
 
 <template>
-  <SettingsCard title="Retired clusters" subtitle="off the cluster list, with their data kept">
+  <SettingsCard title="Retired clusters" subtitle="These clusters are not on the cluster list. JAVV keeps their data.">
     <UiSkeleton v-if="fleet.loading.value" :height="64" radius="sm" label="Loading retired clusters" />
     <p v-else-if="fleet.failed.value" class="load-error" role="alert">
-      Retired clusters unavailable. Check the backend connection.
+      JAVV cannot show the retired clusters. Check the backend connection.
     </p>
     <p v-else-if="retired.length === 0" class="empty-note" role="status">
-      No retired clusters. A cluster that sends no scans for its retirement window is retired
-      automatically and listed here.
+      No retired clusters. When a cluster sends no scans for its retirement window, JAVV retires
+      the cluster and shows it here.
     </p>
     <div v-else class="set-flush">
       <div class="tbl-wrap">
@@ -93,8 +93,8 @@ async function onDeleted() {
                 }}</span>
                 <span v-if="row.delete_started" class="unfinished-cell">{{
                   canDelete
-                    ? 'Its delete did not finish. Delete it again.'
-                    : 'Its delete did not finish. Someone who can delete clusters must delete it again.'
+                    ? 'JAVV did not finish its delete. Delete the cluster again.'
+                    : 'JAVV did not finish its delete. A person whose role can delete clusters must delete it again.'
                 }}</span>
               </td>
               <td class="fit mono-cell sm nowrap" :title="row.last_scan_at ?? undefined">

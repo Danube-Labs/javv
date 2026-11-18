@@ -157,7 +157,7 @@ describe('CrashBoundary', () => {
   it('replaces a page that throws while it is set up, and logs it', async () => {
     const w = inBoundary(() => h(ThrowsInSetup))
     await nextTick()
-    expect(w.get('h1').text()).toBe('This page could not be shown')
+    expect(w.get('h1').text()).toBe('JAVV cannot show this page')
     expect(w.find('.page').exists()).toBe(false)
     expect(logged).toHaveBeenCalledWith('page crashed', {
       route: '/findings',
@@ -174,7 +174,7 @@ describe('CrashBoundary', () => {
     fail.value = true
     await nextTick()
     await nextTick()
-    expect(w.get('h1').text()).toBe('This page could not be shown')
+    expect(w.get('h1').text()).toBe('JAVV cannot show this page')
     expect(logged.mock.calls[0]![0]).toBe('page crashed')
   })
 
@@ -206,7 +206,7 @@ describe('CrashBoundary', () => {
     await nextTick()
     await w.findAll('button').find((b) => b.text() === 'Try again')!.trigger('click')
     await nextTick()
-    expect(w.get('h1').text()).toBe('This page could not be shown')
+    expect(w.get('h1').text()).toBe('JAVV cannot show this page')
     expect(logged).toHaveBeenCalledTimes(2)
   })
 
@@ -234,6 +234,6 @@ describe('CrashBoundary', () => {
     const w = inBoundary(() => h(ThrowsInSetup))
     pageCrashed.value = true
     await nextTick()
-    expect(w.get('h1').text()).toBe('This page could not be shown')
+    expect(w.get('h1').text()).toBe('JAVV cannot show this page')
   })
 })

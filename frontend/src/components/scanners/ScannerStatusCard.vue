@@ -72,28 +72,28 @@ const dbAgeLabel = computed(() =>
     </div>
 
     <p v-if="!provenance" class="scan-none">
-      No committed run yet: this scanner has never reported for this cluster.
+      No scan yet. This scanner has not sent a scan for this cluster.
     </p>
     <template v-else>
       <div class="scan-stats">
         <div class="scan-stat">
           <span class="scan-num">{{ fmt(lastRun()?.images ?? 0) }}</span>
-          <span class="scan-lbl">images · last run</span>
+          <span class="scan-lbl">images · last scan</span>
         </div>
         <div class="scan-stat">
           <span class="scan-num">{{ fmt(lastRun()?.findings_total ?? 0) }}</span>
-          <span class="scan-lbl">findings · last run</span>
+          <span class="scan-lbl">findings · last scan</span>
         </div>
         <div class="scan-stat">
           <span class="scan-num">{{ fmt(lastRun()?.fixable_total ?? 0) }}</span>
-          <span class="scan-lbl">fixable · last run</span>
+          <span class="scan-lbl">fixable · last scan</span>
         </div>
         <div class="scan-stat">
           <span class="scan-num scan-num-sm" :title="freshness?.last_ingest_at ?? ''">{{
             lastDataAt(freshness?.last_ingest_at ?? null)
           }}</span>
           <span class="scan-lbl"
-            >last ingest<template v-if="freshness?.silent_for_seconds != null">
+            >last scan<template v-if="freshness?.silent_for_seconds != null">
               · {{ silentFor(freshness.silent_for_seconds) }} ago</template
             ></span
           >
@@ -113,7 +113,7 @@ const dbAgeLabel = computed(() =>
           <span
             v-if="dbStale"
             class="db-stale"
-            title="A running scanner with a stale vulnerability database quietly under-reports. Refresh the published image"
+            title="A scanner with an old vulnerability database does not find the newest vulnerabilities. Update the scanner image."
             >· {{ dbAgeLabel }} old</span
           ></span
         >

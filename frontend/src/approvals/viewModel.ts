@@ -56,16 +56,16 @@ export function firstExpiryDate(nowMs: number): string {
 }
 
 /** What a dialog says when an expiry is before `firstExpiryDate`, or the server refuses one. */
-export const EXPIRY_REFUSED = 'Pick an expiry date after today.'
+export const EXPIRY_REFUSED = 'Select an expiry date after today.'
 
-/** "cluster-wide" | "ns: a, b" | "img: nginx +2" — the D22 scope, compact. */
+/** "whole cluster" | "namespace: a +1" | "image: nginx +2" — the D22 scope, compact. */
 export function scopeLabel(scope: ApprovalRow['scope']): string {
   const ns = scope.namespaces ?? []
   const img = scope.images ?? []
-  if (ns.length === 0 && img.length === 0) return 'cluster-wide'
+  if (ns.length === 0 && img.length === 0) return 'whole cluster'
   const parts: string[] = []
-  if (ns.length > 0) parts.push(`ns: ${ns[0]}${ns.length > 1 ? ` +${ns.length - 1}` : ''}`)
-  if (img.length > 0) parts.push(`img: ${img[0]}${img.length > 1 ? ` +${img.length - 1}` : ''}`)
+  if (ns.length > 0) parts.push(`namespace: ${ns[0]}${ns.length > 1 ? ` +${ns.length - 1}` : ''}`)
+  if (img.length > 0) parts.push(`image: ${img[0]}${img.length > 1 ? ` +${img.length - 1}` : ''}`)
   return parts.join(' · ')
 }
 

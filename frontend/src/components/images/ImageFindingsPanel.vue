@@ -119,7 +119,7 @@ function openFinding(row: FindingRow) {
 
 <template>
   <p v-if="failed" class="load-error" role="alert">
-    Image findings unavailable. Check the backend connection.
+    JAVV cannot show the findings of this image. Check the backend connection.
   </p>
 
   <div v-else-if="!loading && rows.length === 0" class="card first-run">

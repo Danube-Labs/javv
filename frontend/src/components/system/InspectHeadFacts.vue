@@ -19,7 +19,7 @@ defineProps<{ indexCount: number | null; storeBytes: number; health: string }>()
       <AppIcon name="database" :size="15" class="fact-icon" /><template v-if="storeBytes">{{
         fmtBytes(storeBytes)
       }}</template
-      ><span v-else class="muted-dash">-</span><span class="head-unit"> store</span>
+      ><span v-else class="muted-dash">-</span><span class="head-unit"> on disk</span>
     </p>
     <p class="head-stat" :class="health ? `health-${health}` : undefined">
       <i v-if="health" class="health-dot" aria-hidden="true" /><template v-if="health">{{ health }}</template

@@ -78,13 +78,13 @@ describe('ExportDialog blocks what the backend refuses', () => {
     expect(blockText()).toBeUndefined()
     button('trivy').click()
     await flushPromises()
-    expect(blockText()).toBe('This screen shows grype findings only. Pick grype for the VEX file.')
+    expect(blockText()).toBe('This screen shows grype findings only. Select grype for the VEX file.')
     expect(button('Download').disabled).toBe(true)
   })
 
   it('at a past time, Search blocks the schedule', async () => {
     await openWith({ q: ['openssl'] }, {}, true)
-    expect(blockText()).toBe('At a past time, a schedule cannot use these filters: Search. Clear them.')
+    expect(blockText()).toBe('At a past time, an export in the background cannot use these filters: Search. Clear them.')
     expect(button('Schedule').disabled).toBe(true)
   })
 })
@@ -106,7 +106,7 @@ describe('ExportDialog words', () => {
   it('the two tabs say Run now and In the background, and no note uses the old words', async () => {
     await openWith({})
     expect(button('Run now')).toBeTruthy()
-    expect(dialogText()).toContain('a VEX file holds the results of one scanner')
+    expect(dialogText()).toContain('A VEX file holds the results of one scanner')
     expect(dialogText()).not.toMatch(STALE)
     button('In the background').click()
     await flushPromises()

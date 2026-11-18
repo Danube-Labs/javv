@@ -61,9 +61,9 @@ const needAttention = computed(
       <div ref="headCard" class="head-card head-card-fluid">
         <h1>All clusters</h1>
         <p class="head-note">
-          <template v-if="fleet.limited">Historical fleet view, limited until the v1.1 rollup</template>
+          <template v-if="fleet.limited">This page shows the time now only.</template>
           <template v-else>
-            Fleet current state
+            The state of all clusters now
             <!-- the counts are not known while the fleet loads: no "0 clusters" in the meantime -->
             <template v-if="!fleet.loading">
               · <b class="mono-cell">{{ fleet.rows.length }}</b>
@@ -89,14 +89,14 @@ const needAttention = computed(
     </div>
 
     <p v-else-if="fleet.failed" class="load-error" role="alert">
-      Cluster list unavailable. Check the backend connection.
+      JAVV cannot show the clusters. Check the backend connection.
     </p>
 
     <div v-else-if="fleet.rows.length === 0" class="first-run">
       <h2>No clusters yet</h2>
       <p>
-        A cluster appears here once its scanner token is minted and the first sweep lands.
-        Tokens are minted in Settings.
+        A cluster shows here when its first scan arrives. Create a scanner token in Settings, then
+        deploy the scanners.
       </p>
     </div>
 

@@ -270,7 +270,7 @@ as), see the
 |---|---|---|
 | OpenSearch replies | `GET /readyz` (no sign-in) | `200` |
 | The versions that run | `GET /api/v1/meta` (with a signed-in session) | `{"version": "<release>", "mapping_version": <n>, "envelope_versions": [...]}` |
-| The versions that run, in the web app | The bottom of the sidebar | Three lines: `v<release>`, `store schema v<n>`, `scanner schema v<n>` |
+| The versions that run, in the web app | The bottom of the sidebar | Three lines: `v<release>`, `database schema <n>`, `scanner schema <n>` |
 | What the upgrade did | The backend log, one line for each pod start | The event `bootstrap complete`, with `app_version`, `mapping_version`, and the indices in `created`, `updated` or `unchanged` |
 | The scanners use the new version | The **Scanner status** page, after the next scan cycle | The new scanner version for each cluster |
 
@@ -344,7 +344,7 @@ already running. But the second run is work for no result.
 
 A release gets an entry here when it needs something from you. These are the conditions:
 
-- The store schema changed (`mapping_version`).
+- The database schema changed (`mapping_version`).
 - The report formats that the backend accepts changed (`envelope_versions`).
 - The scanner images must be published again, or changed together with the release.
 - The OpenSearch chart (`javv-opensearch`) changed. Then do the `store` upgrade.
@@ -352,7 +352,7 @@ A release gets an entry here when it needs something from you. These are the con
 The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.
 
-| Release | Store schema | Report formats accepted | What to do |
+| Release | Database schema | Report formats accepted | What to do |
 |---|---|---|---|
 | 0.9.10 | 23 | 3, 4 and 5 | Nothing. The backend adds two fields to the store on the first start: the files of a finding. Upgrade the backend before the scanner images, because a backend of an earlier release refuses the reports of format 5. |
 | 0.9.6 | 22 | 3 and 4 | Nothing. The backend makes the new index `system-mcp-tokens` on the first start. The `javv` role of an OpenSearch of your own already has access to it, because its name starts with `system-`. |
@@ -365,7 +365,7 @@ applied it automatically on the first start.
 | 0.6.2 | 18 | 3 and 4 | The note **JAVV retires clusters that send no scans** below |
 | 0.6.0 | 18 | 3 and 4 | The note **How the backend connects to OpenSearch** below |
 
-No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
+No release from 0.4.8 to 0.8.0 changed the database schema (18) or the report formats that the
 backend accepts (3 and 4).
 
 No release up to and including 0.9.9 changed the OpenSearch chart in a way that needs the `store`
@@ -431,7 +431,7 @@ its admin.
 A user needs the permission `can_edit_dashboards` to make a dashboard. The `viewer` role does not
 get it.
 
-The store schema is now 19. At its first start, the backend makes the new index
+The database schema is now 19. At its first start, the backend makes the new index
 `system-dashboards`. You do not do a step for it. The `javv` role of an OpenSearch of your own
 already has access to it, because its name starts with `system-`.
 

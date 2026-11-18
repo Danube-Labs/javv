@@ -13,14 +13,14 @@ import GuideProse from './GuideProse.vue'
         quiet, the table stays full.
       </li>
       <li>
-        <strong>Charts show what happened inside the range,</strong> like the ingest strip above the
-        tables, which counts the scans as they arrived.
+        <strong>Charts show what happened inside the range,</strong> for example the Scan ingest strip
+        above the tables. It counts the scans when they arrived.
       </li>
       <li>
-        <strong>Move the end into the past to see history.</strong> Screens then show JAVV as it was
-        scanned at that moment, triage included. Clicking a day on the ingest strip does the same for
-        the end of that day. A banner says you're viewing history, and
-        <span class="ui-name">Back to now</span> returns. The few screens that only make sense now, like
+        <strong>Move the end into the past to see history.</strong> The screens then show JAVV as the
+        scans saw it at that time, with the triage of that time. A click on a day of the Scan ingest strip
+        does the same for the end of that day. A banner tells you that you see history.
+        <span class="ui-name">Back to now</span> goes back to the time now. The few screens that only make sense now, like
         the <span class="ui-name">Approval list</span>, tell you so.
       </li>
     </ul>

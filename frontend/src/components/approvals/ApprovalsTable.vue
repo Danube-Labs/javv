@@ -68,7 +68,7 @@ function revoke(row: ApprovalRow) {
           <th>Vulnerability</th>
           <th>Scope</th>
           <th>Scanner</th>
-          <th>Justification</th>
+          <th>Reason</th>
           <th>Approver</th>
           <th class="fit">Expires</th>
           <th class="fit">Status</th>
@@ -82,7 +82,7 @@ function revoke(row: ApprovalRow) {
             <RowLink :to="findingsRoute(row)" @open="emit('open', row)"><span class="mono-cell strong nowrap cve-link">{{ row.cve_id }}</span></RowLink>
           </td>
           <td>
-            <span class="scope-cell" :class="{ 'scope-wide': scopeLabel(row.scope) === 'cluster-wide' }">
+            <span class="scope-cell" :class="{ 'scope-wide': scopeLabel(row.scope) === 'whole cluster' }">
               {{ scopeLabel(row.scope) }}
             </span>
           </td>
@@ -114,7 +114,7 @@ function revoke(row: ApprovalRow) {
             </span>
           </td>
           <td class="fit">
-            <span class="mono-cell sm nowrap" :title="row.expiry ?? 'no expiry set'">
+            <span class="mono-cell sm nowrap" :title="row.expiry ?? 'No expiry date'">
               <template v-if="row.expiry">{{ lastDataAt(row.expiry) }}</template><span v-else class="muted-dash">-</span>
             </span>
           </td>

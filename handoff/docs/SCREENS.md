@@ -46,17 +46,17 @@ did not show.
   sections) are **hidden** without the capability.
 - `GET /readyz` (polled) — drives the global **degraded banner**; any API `503` envelope raises it
   too, as does a proxy's `502` or `504`; auto-clears on `200`. The banner and the sidebar footer
-  say what is down (issue 675): a `503` is the backend reporting its store ("Search backend
-  unavailable. Check OpenSearch health.", footer "Store degraded"); no answer or a proxy error is
-  the backend itself ("The backend is not answering. Screens cannot load until it is back.",
+  say what is down (issue 675): a `503` is the backend reporting its store ("The database is
+  not available. Check the health of OpenSearch.", footer "Database degraded"); no answer or a proxy error is
+  the backend itself ("The backend does not answer. Screens cannot load until it answers again.",
   footer "Backend not answering"). A store that answers but cannot serve everything gets the
   **amber** line (`tone-degraded`, `role="status"`) instead of the red one (issue 832; tone and
   read-only copy ruled on the A/B deck 2026-10-12, red copy ruled on the plan 2026-10-13):
   read-only, from `/readyz`'s `checks.store: "read-only"` or a `503` with the problem type
-  `store-read-only`, says "The store is read-only: its disk is full. Reads work; changes are not
-  saved."; red, from `checks.store: "red"`, says "Part of the store is not available. Some screens
-  and changes can fail until it recovers." The footer keeps "Store degraded" for both (ruling:
-  no change).
+  `store-read-only`, says "The database is read-only because its disk is full. You can read the data, but
+  JAVV does not save changes."; red, from `checks.store: "red"`, says "Part of the database is not available. Some screens
+  and changes can fail until it recovers." The footer keeps "Database degraded" for both (ruling:
+  no change). Issue 1247 rewrote these texts in strict STE, with "database" for "store".
 - `GET /api/v1/scanners/freshness?cluster_id=…` — per-(cluster, scanner) `last_ingest_at` +
   `silent_for_seconds`; drives the **ScannerFreshnessBanner** ("data as of T; scanner silent
   since T′") and the sidebar sweep-health chip. Never-ingested → nulls → "no data yet" chip, not
@@ -64,9 +64,9 @@ did not show.
 - The selected cluster's row of `GET /api/v1/clusters` (`last_scan_at`, `warns_at`, `retires_at`)
   drives the **retirement countdown** (issue 765), its own line under the freshness banner, shown
   only inside the cluster's last `warn_days` before automatic retirement: "**beta** has sent no
-  scans for 40 days. It will be retired in 5 days unless a scan arrives." Amber (`role=status`)
+  scans for 40 days. JAVV retires it in 5 days if no scan arrives." Amber (`role=status`)
   while there is time, red (`role=alert`) on the last day and once past its date, when it says
-  the next retirement sweep retires it unless a scan arrives. "No scans for" reads `last_scan_at`.
+  the next retirement sweep retires it if no scan arrives. "No scans for" reads `last_scan_at`.
   The only cluster listed gets no countdown (the sweep never retires it: nothing else shows that
   scans still reach JAVV); its line says so and points at retiring it by hand. The list is
   re-read on the banner's 10-minute tick and after every Settings write that moves a schedule,
@@ -101,7 +101,7 @@ focus. The command palette keeps its own row.
 `ghost` button, and the button that does the work is `primary`.
 
 **Time picker (C-1, D28/FR-23).** Two visibly distinct controls in one group (V4-DELTA conflict 4):
-the **time-travel `T`** (Now / rewind / jump-to-date → amber "Viewing history: as scanned at T"
+the **time-travel `T`** (Now / rewind / jump-to-date → amber "History: the data as the scanners saw it at T"
 banner + Back to now) and the **trend window** (relative to `T`, scopes charts + Contributors).
 - State: **picker-set-but-unsupported** — if M8b hasn't landed, `T<now` reads return `501`; show
   the banner "History available after M8b", keep `T=now` fully working. (Check milestone order at
@@ -137,24 +137,26 @@ case: the backend looks for the name as typed, then in lower case, issue 965),
 **States:** bad-credentials (generic copy), locked-out (429 — "try again later", no countdown
 oracle), forced password change (SEC-6: bootstrap admin / temp password), **server not answering**
 (issue 675: no answer or a `5xx` from the session check, the sign-in or the password change shows
-"The server is not answering. This page checks again on its own." in place of any credential
+"The backend does not answer. This page checks again by itself." in place of any credential
 error; the page asks `/readyz` every 30 seconds, and when the server returns it re-checks the
 session, so a visitor whose session is still good goes straight to Overview. A failed session
 check is not remembered as signed out: the next navigation asks again), **store read-only**
 (issue 832: a sign-in or a forced password change the full disk refuses, a `503` with the
-problem type `store-read-only`, shows "The store is read-only: its disk is full." and starts no
+problem type `store-read-only`, shows "The database is read-only because its disk is full." and starts no
 re-check, since the server answers; the password change by operator ruling on PR 843), **session
 not kept** (issue 869: a sign-in that answers `200` and a session check that finds no session.
 The browser did not keep the cookie. On a page that is not a secure context, plain `http` and
 not `localhost`, the form says "This browser refused the session cookie, because the page uses
-http. Use https, or ask the admin to set JAVV_SESSION_COOKIE_SECURE=false." Else it says "Signed
-in, but this browser did not keep the session. Allow cookies for this site, then sign in again."
+http. Use https, or ask the admin to set JAVV_SESSION_COOKIE_SECURE=false." Else it says "JAVV
+signed you in. This browser did not keep the session. Allow cookies for this site, then sign
+in again."
 The form stays on sign-in. A server failure on that check stays "not answering". Copy B of two,
 ruled by the operator on built specimens, 2026-10-15).
 **Rulings (operator, on built specimens, 2026-10-02):** the server-down message on the login page
 is the form's plain red line (A of two; B was a tinted box). The banner for a backend that is gone
 reads "The backend is not answering. Screens cannot load until it is back." (A of two; B ended
-"Check that the JAVV backend is running.").
+"Check that the JAVV backend is running."). Issue 1247 rewrote it in strict STE: "The backend
+does not answer. Screens cannot load until it answers again."
 **The password rule** (issue 726): the forced change states it under the fields, as the
 prototype does ("At least 12 characters. Your current password stops working once you set the new
 one."), refuses a shorter password before sending it, and shows the server's own reason for a `422`.
@@ -180,10 +182,10 @@ and OIDC (#131) moves those passwords to the identity provider.
 
 Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 
-**Header card (issue 902).** While the fleet loads, the note says only "Fleet current state".
+**Header card (issue 902).** While the fleet loads, the note says only "The state of all clusters now".
 When the counts arrive, it adds "· 34 clusters · 33 need attention" (or "all healthy"), and the
 card stretches to the right. Before, it showed "0 clusters" while it loaded. Overview's card
-stretches the same way when "last sweep" arrives. The scanner switch in the head is a screen head
+stretches the same way when "The last scan arrived at" arrives. The scanner switch in the head is a screen head
 control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
 
 **Data**
@@ -193,7 +195,7 @@ control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
 - Per-cluster severity mix + KPI strip: `GET /api/v1/findings/facets?cluster_id=<id>` — one call
   per cluster row; buckets are **per-scanner** — the MixBar renders one bar per scanner (or a
   scanner toggle), never a merged bar.
-- Health chip + Last sweep: `GET /api/v1/scanners/freshness?cluster_id=<id>`.
+- Health chip + Last scan: `GET /api/v1/scanners/freshness?cluster_id=<id>`.
 - Retirement countdown (issue 765): a status chip under the cluster's name, "retires in 5 days"
   (amber) or, on the last day and past its date, red ("retirement due" once past it), from the
   cluster list's `warns_at` / `retires_at`; nothing outside the warning window, and none for the
@@ -201,10 +203,10 @@ control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
   so a cluster that scans again loses its chip without a reload.
 
 **States:** loading (skeleton rows); empty (no clusters registered — cold-start copy); degraded;
-**T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1
-metrics rollup" (C-5/D39) — the current-state table is replaced by the notice, never a wrong or
+**T<now → `LimitedHistoricalNotice`**: "This page cannot show a past time"
+(C-5/D39) — the current-state table is replaced by the notice, never a wrong or
 expensive query.
-The cold-start state ("No clusters registered yet") is the whole page on the nine data routes,
+The cold-start state ("No clusters yet") is the whole page on the nine data routes,
 so its title is the page's one h1 in the page-title style (issue 829; operator ruling
 2026-10-12).
 
@@ -227,7 +229,8 @@ so its title is the page's one h1 in the page-title style (issue 829; operator r
   Cards remain click-through → Findings pre-filtered (deep-link preset preserved).
 - Vulnerabilities over time: `GET /api/v1/trends/findings?cluster_id=…&range=…` — faceted by
   scanner (two series sets, never merged). Note: `resolved_semantics: "scan_resolved"` — any
-  "resolved" series is **scan-observed** resolution, labeled as such (A-m9).
+  "resolved" series is **scan-observed** resolution, labeled as such (A-m9): "resolved by a scan"
+  in the legend, "Resolved: a scan did not find the finding again." in the card sub.
 - Scan activity: `GET /api/v1/trends/scans?cluster_id=…&range=…`.
 - Per-namespace table: namespace buckets from `GET /api/v1/findings/facets` (rows → Findings
   filtered by ns; deep-link preserved).
@@ -235,14 +238,14 @@ so its title is the page's one h1 in the page-title style (issue 829; operator r
 **Cut / changed widgets**
 - **Package-type donut — RULED (B-1, 2026-07-07): KEEP, per the v4 design.** Backed by the
   **M8d** envelope change (`ptype` field + facet bucket). Until M8d lands + a rescan cycle
-  repopulates, the donut shows the "awaiting package-type data" placeholder; pre-M8d findings
+  repopulates, the donut shows the "No package types yet." placeholder; pre-M8d findings
   aggregate as `unknown` ptype until re-observed by a scan.
 - **Top components** + **Language-specific binaries** tables — **cut** (B-6, no backing agg);
   layout slots left.
 - **Newly published** bar chart — **cut** (B-2: no `published` field exists); slot reused by the
   scan-activity trend.
 
-**States:** loading (skeletons per card); empty/first-run ("no sweep has landed yet"); degraded;
+**States:** loading (skeletons per card); empty/first-run ("No scans yet"); degraded;
 scanner-silent banner; `T<now` history banner (single-cluster rewind is fully supported once M8b
 lands; 501-state before that, C-1).
 
@@ -251,11 +254,11 @@ Riskiest images cards are panels of the dashboard catalog (`src/dashboards/catal
 §10). Overview reads the findings facets once and passes them to the stat bands, Package type and
 Per namespace, so their numbers agree, as before. Top components and Riskiest images get their own
 data: each shows the loading shimmer until its answer comes, and its own error text if the read
-fails ("Component ranking unavailable.", "Riskiest images unavailable."). Before, both showed their
+fails ("JAVV cannot show the top components. ...", "JAVV cannot show the riskiest images. ..."). Before, both showed their
 "no data" text while the read was open, and Riskiest images also showed it when the read failed.
 When the cluster has no committed inventory yet (`inventory: null`), Riskiest images says "No
-inventory committed yet. Images show once a scanner cycle completes." (at a past time: "No
-inventory committed at this point in time."), not "No image findings in the running inventory.":
+inventory yet. Images show here when a scanner completes a scan cycle." (at a past time: "No
+inventory at this time."), not "The running images have no findings.":
 JAVV does not know what runs there, which is not a clean cluster. Operator ruling 2026-10-25 on the
 A/B picture `visual-assets/440/440-riskiest-unknown-ab.png`.
 
@@ -266,7 +269,7 @@ A): the split by severity is a read at the time now only, and a panel shows each
 gives both scanners at a past time, so the panel picks the lines of the selected scanner from the
 answer, and the scanner switch starts no read. The panel takes no findings filters, because
 `/trends/findings` takes none. States: the loading shimmer, "No new or resolved findings in this
-range.", "Vulnerability trend unavailable." and, for a range of less than 1 day, the note of the
+range.", "JAVV cannot show the findings over time. ..." and, for a range of less than 1 day, the note of the
 Overview card.
 
 **Changed vs SCREENS.md:** A-1 (lowercase + negligible), B-1 (donut kept, fed by M8d ptype),
@@ -315,8 +318,8 @@ when the list is full.
 **Assignee with Unassigned** (operator ruling 2026-10-23 on a built specimen, issue 975, option
 B): Findings refuses the two filters together, so the last pick wins. A click on Unassigned clears
 the Assignee values. A pick of an Assignee value, or a change of Assignee from "is not" to "is",
-turns Unassigned off. A message tells the user what changed, for example "Assignee cleared.
-Assignee and Unassigned can't be used together." Assignee "is not" with Unassigned stays, because
+turns Unassigned off. A message tells the user what changed, for example "JAVV cleared the filter
+Assignee. You cannot use Assignee and Unassigned together." Assignee "is not" with Unassigned stays, because
 the API accepts it. A link that holds both filters keeps both, and the grid shows the 422 text
 (see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
 another filter, or the removal of an Assignee value, keeps both.
@@ -378,10 +381,10 @@ dropped (contract is cursor paging).
 
 **The open search** (operator rulings on the issue 832 plan, 2026-10-13): each walk holds one of
 the user's open searches until the grid closes it.
-- Prev from the last page works: the grid reads with `keep_open`, so the last page keeps the search.
+- Previous from the last page works: the grid reads with `keep_open`, so the last page keeps the search.
 - Opening a finding keeps the walk, so Back lands on the same page.
 - Leaving for any other screen closes it: the grid comes back on page 1, with its filters and sort.
-- A change of filter, sort, page size, cluster or T, and Prev back to page 1, close it too: each
+- A change of filter, sort, page size, cluster or T, and Previous back to page 1, close it too: each
   starts a new walk.
 - A reload or a closed tab closes it as the page goes.
 
@@ -389,7 +392,7 @@ the user's open searches until the grid closes it.
 - loading — skeleton rows; empty/first-run — "no sweep yet" friendly state; filtered-empty —
   "no findings match" + clear-filters.
 - **A refused later page stays where it is** (operator ruling 2026-10-12, issue 833 G1): the
-  alert, the grid's "could not be loaded" row, and the pager still on that page's range with Prev
+  alert, the grid's "could not be loaded" row, and the pager still on that page's range with Previous
   usable. The head count keeps the total, which page 1 of the same query gave (operator ruling
   2026-10-13). A **410** (the page's search expired after the keep-alive) says "These results expired.
   Reload the page to start again.", since its cursor cannot be asked for again. **503**: the same,
@@ -403,15 +406,16 @@ the user's open searches until the grid closes it.
   query (issue 833 F1). On all four screens an answer to an older request is dropped, so it never
   replaces a newer one (F3). The bulk dialog says "count unknown" and keeps Apply disabled until a read for the
   current filters answers.
-- **A refused filter, 422** (operator rulings 2026-10-23, issue 975): the alert says "These
-  filters can't be used together, or a value isn't valid. Check the filters." A 1-character search
+- **A refused filter, 422** (operator rulings 2026-10-23, issue 975): the alert says "You
+  cannot use these filters together, or a value is not valid. Check the filters." (strict STE,
+  issue 1247) A 1-character search
   never gets to the server, so no 422 is about a short search. At a past time, a 422 for Assignee
   with Unassigned gets the same text. Any other 422 at a past time keeps the past-time text.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
-  the alert says "Filter counts could not be loaded." with the reason, and the rail and the
+  the alert says "JAVV cannot show the filter counts." with the reason, and the rail and the
   add-filter menu keep their values with "-" for each count.
 - **The reason in any read's alert** (issue 833 G2, every screen): a 429 is the per-user search
-  budget and says "The search backend is busy. Try again in a few seconds."; any other failure
+  budget and says "The backend is busy. Try again in a few seconds."; any other failure
   keeps the screen's own copy (`readFailureCopy` in `src/findings/failureCopy.ts`).
 - 403-capability-hidden — bulk-triage bar and row checkboxes absent without `can_triage`.
 - Bulk 413 — inline error offering to narrow the selection.
@@ -464,8 +468,8 @@ cut list (2026-11-16).
   The call also has `package_name` from the link, so the rows are those of the package of the link
   (issue 1227). If no row has that package and version, the page never shows another package. It
   names the package and the version it looked for: `This image has no finding of CVE-2023-4039 in
-  libasan6 10.2.1-6 at the selected time.`, then `A newer scan may no longer report it.` and `Or
-  the selected time range may end before a scan found it.`
+  libasan6 10.2.1-6 at the selected time.`, then `Possible causes: a newer scan does not report it, or the
+  selected time range ends before a scan found it.`
 - The package menu of the head band: `GET /api/v1/findings?cluster_id=…&cve_id=…&image_digest=…&size=500`
   (500 is the limit of the read). One row for each package and version, with the scanners that
   found it (`packagesOnImage`). When the image has more findings, the count has a `+` and the
@@ -597,12 +601,12 @@ JAVV has no off-peak window: the report drain builds a queued export when it run
 **States (C-2 — all drawn):** run-now streaming progress · **413 over
 `JAVV_EXPORT_MAX_ROWS` (50k)** → "Too many rows to download now. Narrow the filters, or make the file in the background."
 (switch to the In the background tab) ·
-scheduled-pending → bell on done · **"expires in Xh"** on the bell item and the download row
+scheduled-pending → bell on done · **"expires in about X hours"** on the bell item and the download row
 (`JAVV_EXPORT_TTL_HOURS`, default 24 h) · **410 expired** → "download expired — re-run the
 export" · 429 PIT cap with `Retry-After` · **export blocked** (issue 962; `exportBlockMessage`
 in `findings/exportParams.ts`). The button of the open tab (Download or Schedule) stays off and
 the dialog says why:
-  - Schedule, a filter the schedule cannot carry → "A schedule cannot use these filters: <filter
+  - Schedule, a filter the schedule cannot carry → "An export in the background cannot use these filters: <filter
     names>. Clear them, or use Run now." (at a past time: "… Clear them.", as Run now is hidden).
   - Schedule at a past time, a filter the scan history does not record (Search, KEV, Scanners
     disagree, Image, New in range) → "At a past time, a schedule cannot use these filters:
@@ -772,12 +776,14 @@ EPSS/KEV null on Trivy rows enforced here too (V4-DELTA-5); M8b dependency made 
 Re-pointed from the old justification/impact/action shape to **`system-decisions`** (V4-DELTA
 conflict 2).
 
+The head of the screen says "Approval list", the name in the side bar (issue 1247).
+
 **Data:** `GET /api/v1/decisions/approvals?cluster_id=…` — **gated by
 `can_accept_audit_final`; the nav item is hidden without it** (403-capability-hidden). Row detail
 + actions: `GET /api/v1/decisions`, `POST /api/v1/decisions/{id}/revoke`,
 `PATCH /api/v1/decisions/{id}` (revoke+new, D40).
 
-**Columns:** CVE (mono) · type · **scope** (images and/or namespaces; empty = cluster-wide) ·
+**Columns:** CVE (mono) · type · **scope** (images and/or namespaces; empty = the whole cluster, shown as "whole cluster"; issue 1247) ·
 justification · approver · **expiry** (expired decisions resurface) · status (active / revoked
 struck-through / expired) · when. Row → finding detail's "Decisions on this vulnerability".
 
@@ -800,7 +806,7 @@ of the box are the Findings ones in §3.
 
 **Edit dialog and the expiry (issue 984):** an edit keeps the current expiry unless it sets a
 new one. The date field takes tomorrow in UTC or later. A decision whose expiry is in the past
-needs a new date. Until the user sets one, "Revoke + re-issue" stays disabled, and the hint says
+needs a new date. Until the user sets one, "Revoke and create" stays disabled, and the hint says
 *Pick an expiry date after today.* That text also shows when the server refuses the date.
 
 **Changed vs SCREENS.md:** decisions shape replaces approval fields (V4-DELTA-2); capability
@@ -861,7 +867,7 @@ retention`. A test fails when the backend writes an action with no name or with 
 Paging and the open search follow the Findings rules in §3 (issue 832): Back from a finding
 keeps the page, and leaving for another screen brings the log back on page 1.
 A refused read follows the Findings rules in §3 (issue 833): the rows clear, a refused later
-page stays put with Prev, a 429 says busy and a 410 says the results expired, an older answer
+page stays put with Previous, a 429 says busy and a 410 says the results expired, an older answer
 never replaces a newer one, and refused filter counts alone leave the rows and show "-" in the
 rail (operator ruling 2026-10-12: F9's rule applies here too).
 
@@ -948,8 +954,8 @@ dead-letter feed — retries and dead-lettering stay scanner-local; JAVV only se
 scanner, between that scanner's card and its committed-runs table (what needs attention before the
 history; operator, 2026-09-26) — the screen's per-scanner columns carry it, so
 no count mixes scanners (the prototype's single full-width table with a Scanner column is replaced).
-Columns: When · Image (`-` when the push carried no image JAVV could read) · Stage · Error (HTTP
-status + the server's message). Server-paged with the shared pager; empty = "No failed ingests in
+Columns: When · Image (`-` when the scan had no image that JAVV could read) · Stage · Error (HTTP
+status + the server's message). Server-paged with the shared pager; empty = "No refused scans in
 this range." A self-contained panel (DESIGN.md §10), so it can sit on a composed dashboard.
 
 **Scanner lanes (operator ruling 2026-09-27, on built A/B/C specimens — B chosen, plus C on narrow):**
@@ -961,10 +967,10 @@ Trivy | Grype picker shows one lane at a time. Rejected: tinted lane backgrounds
 warm canvas) and one-at-a-time on wide screens (loses the side-by-side comparison).
 
 **States:** loading; never-ingested; scanner-silent (chip + global banner agree); degraded;
-`T<now` → "history for scanner status is limited until the v1.1 metrics rollup" (C-1/D39). The
+`T<now` → "This page cannot show the scanner status of a past time" (C-1/D39). The
 head count shows "-" until both reads answer, and after a refused one, never "0 scanners" (issue
 833 F5); the alert follows the G2 rule (§3). The ingest strip on this and the other data screens
-shows "last ingest -" when its freshness read is refused, never the previous read's time
+shows "last scan -" when its freshness read is refused, never the previous read's time
 (operator ruling 2026-10-12).
 
 **Changed vs SCREENS.md:** C-3 (whole-screen redesign), A-7/D-4 (retry/dead-letter feed cut), issue 357 (JAVV-side refusals reinstated), D41
@@ -1040,15 +1046,16 @@ backend's ID rule. On a fresh install it is the only choice. A cluster is listed
 token exists, so after that mint the cluster list is re-read and the new cluster shows in the
 switcher at once (operator ruling 2026-10-11 on a built A/B, option A; issue 817).
 If a mint or rotate succeeds but its reply arrives with a body that could not be read, the token
-exists and its value is lost. An error toast then says: *The token was created, but its value did
-not reach this page. Rotate it to get a value you can copy.* (operator ruling 2026-10-10, issue 749).
+exists and its value is lost. An error toast then says: *JAVV created the token, but its value did
+not reach this page. Rotate the token to get a value that you can copy.* (operator ruling 2026-10-10, issue 749;
+words changed by issue 1247).
 Rotate shows on an active token only (issue 984). The new token takes the old expiry, so an
 expired token needs a new token from Create token. Revoke stays on an expired token. The server
 answers 409 to a rotation of a revoked or an expired token.
 The window "Copy this token now" is `components/settings/TokenOnceDialog.vue`, the same window as on
 AI agents (MCP) (§13.9). When the browser blocks the clipboard (a page on plain http that is not
-localhost), Copy shows a toast: *Couldn't copy: the browser blocked the clipboard. Select the text
-and copy it.* The card subtitle is *one scoped push token per (cluster, scanner)* (issue 1096, Q4 B
+localhost), Copy shows a toast: *The browser blocked the clipboard, so JAVV did not copy the text. Select the text,
+then copy it.* The card subtitle is *One scanner token for each cluster and scanner.* (issue 1096, Q4 B
 and Q5 B on built pictures, 2026-11-06).
 
 ### 13.6 Users & roles — editable (shipped)
@@ -1117,7 +1124,7 @@ retention/rollover offered **only** for time-partitioned append families; the mu
   name is typed, and cannot be closed while the delete runs; `DELETE /api/v1/clusters/{cluster_id}`,
   503 = finish it by deleting again, 409 = it was brought back meanwhile (the list reloads).
   A cluster whose delete did not finish (`delete_started`, issue 778) offers only `Delete…`, with
-  "Its delete did not finish. Delete it again." under its name; un-retiring it is refused (409).
+  "JAVV did not finish its delete. Delete the cluster again." under its name; un-retiring it is refused (409).
   Bringing back a cluster retired by hand (`retirement_mode: manual`) says its tokens were revoked
   and its scanners need a new one; an automatic retire left them working, so its toast does not.
 
@@ -1128,7 +1135,7 @@ Menu icon `cpu` (a chip with pins). Built on the parts of Access & tokens (§13.
 pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5 B.
 - **Endpoint card:** Status, `on` or `off` (`DotWord`), and when off the line *To turn it on, set
   JAVV_MCP_ENABLED to true on the backend and start the backend again.* A failed `/meta` read shows
-  *unknown: the status could not be read*. **Endpoint URL** (hint *AI agents connect to this
+  *unknown: JAVV cannot read the status*. **Endpoint URL** (hint *AI agents connect to this
   address.*): the address of the page plus `/api/v1/mcp`, in the mono box with a Copy button
   (`components/settings/CopyValue.vue`).
 - **Tokens card:** the table skin with `GridPager` (display pages of one server answer), in
@@ -1143,7 +1150,7 @@ pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5
   uses `readFailureCopy` (a 429 says the backend is busy).
 - **Create an MCP token:** Name (the username rule: 3 to 64 lower-case letters, digits, dots,
   underscores or hyphens; the Audit log names the agent `mcp:<name>`), Level (`UiSegControl`:
-  Read, Write, Write and risk accept, with a line that says what the level can do), Expiry (a date
+  Read, Write, Write and accept risks, with a line that says what the level can do), Expiry (a date
   box as in the risk accept window: tomorrow to 90 days, the day in 30 days already in it). Make
   stays off until the name and the day are valid. A name in use (409) is said in the window.
 - **Rotate {name}?:** the old token stops at once, so the window asks for a new expiry (same box).

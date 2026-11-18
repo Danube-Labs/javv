@@ -76,13 +76,13 @@ const SCOPE_LABEL: Record<string, string> = {
             </div>
           </template>
           <p v-if="scopeUnrestricted" class="cfg-empty">
-            no restrictions: the whole cluster is scanned
+            No limits. The scanner scans the whole cluster.
           </p>
         </div>
       </template>
       <p v-else class="cfg-empty">
-        No committed run carries a config stamp yet. The display fills after the scanner's next
-        push (schema v3+).
+        No scan has the settings of this scanner yet. They show here after its next scan. An
+        older scanner image does not send them.
       </p>
     </div>
   </section>

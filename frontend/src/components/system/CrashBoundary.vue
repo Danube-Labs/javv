@@ -45,8 +45,8 @@ function toOverview() {
   <ErrorPage
     v-if="pageCrashed"
     code="Error"
-    title="This page could not be shown"
-    hint="Something went wrong while showing this page. Your data is not affected. Try again, or go back to Overview."
+    title="JAVV cannot show this page"
+    hint="An error occurred when JAVV showed this page. Your data did not change. Try again, or go back to Overview."
   >
     <UiButton variant="primary" @click="pageCrashed = false">Try again</UiButton>
     <UiButton variant="control" @click="toOverview">Back to Overview</UiButton>

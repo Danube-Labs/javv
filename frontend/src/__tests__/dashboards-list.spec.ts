@@ -153,7 +153,7 @@ describe('the list', () => {
     vi.mocked(listDashboardsApiV1DashboardsGet).mockResolvedValueOnce(refused(429))
     const { w } = await mountList()
     expect(w.find('.head-stat').text()).toBe('- dashboards')
-    expect(w.find('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.find('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
     expect(w.text()).not.toContain('No dashboards yet')
   })
 
@@ -358,7 +358,7 @@ describe('the words of a result', () => {
 
   it('a failure that stops the import says that the lines before it were made, and what a retry does', () => {
     expect(importFailureCopy(429, true)).toBe(
-      'The search backend was busy, so the import stopped. The lines before the failure made their dashboards. ' +
+      'The database was busy, so the import stopped. The lines before the failure made their dashboards. ' +
         'If you import the file again with Make copies, JAVV makes those dashboards a second time.',
     )
     expect(importFailureCopy(503, false)).toBe(

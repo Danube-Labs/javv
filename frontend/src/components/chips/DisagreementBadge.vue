@@ -12,7 +12,7 @@ defineProps<{ title?: string; label?: string }>()
 </script>
 
 <template>
-  <span class="disagree-tag" :title="title ?? 'Scanners disagree on this finding'">
+  <span class="disagree-tag" :title="title ?? 'The scanners do not agree on this finding.'">
     <AppIcon name="alert" :size="11" />±<span v-if="label" class="dt-label">{{ label }}</span>
   </span>
 </template>

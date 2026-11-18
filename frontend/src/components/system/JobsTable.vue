@@ -16,17 +16,17 @@ const COPY: Record<string, { icon: IconName; label: string; desc: string }> = {
   rebuild_state: {
     icon: 'rescan',
     label: 'Rebuild state',
-    desc: 'Re-derives every materialized row from the append history: the crash self-heal. Safe to run any time; history is never touched.',
+    desc: 'Builds each current row again from the history. This repairs the data after a crash. You can run it at any time. It never changes the history.',
   },
   staleness_sweep: {
     icon: 'clock',
     label: 'Staleness sweep',
-    desc: 'Re-evaluates stale flags now instead of waiting for the scheduled run.',
+    desc: 'Sets the stale marks now. It does not wait for the scheduled run.',
   },
   lifecycle_sweep: {
     icon: 'trash',
     label: 'Lifecycle sweep',
-    desc: 'Starts a new history index when the old one is full or old, and drops whole indices past the retention window. Nothing else deletes history.',
+    desc: 'Starts a new history index when the old one is full or old. It deletes the indices that are older than the retention window. No other job deletes history.',
   },
   report_drain: {
     icon: 'download',
@@ -36,17 +36,17 @@ const COPY: Record<string, { icon: IconName; label: string; desc: string }> = {
   report_sweep: {
     icon: 'clock',
     label: 'Export cleanup',
-    desc: 'Deletes finished and failed exports past their keep time, and the pieces left over from interrupted ones.',
+    desc: 'Deletes complete and failed exports after their keep time. It also deletes the parts of exports that stopped.',
   },
   findings_cleanup: {
     icon: 'trash',
     label: 'Old findings cleanup',
-    desc: 'Removes findings that have been gone for longer than the retention window.',
+    desc: 'Deletes the findings that are gone for longer than the findings cleanup window.',
   },
   session_sweep: {
     icon: 'key',
     label: 'Expired sessions',
-    desc: 'Removes sign-in sessions that have expired.',
+    desc: 'Deletes the sign-in sessions that expired.',
   },
 }
 </script>

@@ -149,6 +149,10 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-17 | A hint, a note or an empty text in the app is a full sentence. A label, a column head and a button keep a short form, in plain words (D2 A). | 1247 |
 | 2026-11-17 | The text of the app keeps "check" as a verb (D3 B). | 1247 |
 | 2026-11-17 | The videos and the README GIF get one new recording, after the last slice of the text pass. That recording has its own PR (D4 A). | 1247 |
+| 2026-11-17 | The text pass of issue 1247 replaces the words of some older copy rulings. These are the four health banners (2026-10-02, 2026-10-12, 2026-10-13) and the alert of a refused filter (2026-10-23). The sign-in line of a session that the browser did not keep (2026-10-15) is one too. The new texts are in strict STE and say "database". The tone, the place and the behaviour of each ruling stay. | 1247 |
+| 2026-11-18 | The text of the app makes no promises. It says what a page does now, and it names no future release. The notices for a past time on All clusters and Scanner status say that the page cannot show a past time. | 1247 |
+| 2026-11-18 | Slices S1 to S3 of issue 1247 go up as one PR of 146 files. One review page holds every changed string, with the pictures of main and of the change. | 1247 |
+| 2026-11-18 | Slices S4 and S5 of issue 1247 join the same PR. One PR of 204 files holds all of the text pass. The text test then has no exceptions. | 1247 |
 
 ## AI vulnerability research (alpha)
 

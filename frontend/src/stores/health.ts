@@ -75,7 +75,7 @@ export const useHealthStore = defineStore('health', {
     bannerVisible: (s) => s.degraded && !s.dismissed,
     /** The sidebar footer's one-line status. */
     statusLabel: (s) =>
-      !s.degraded ? 'Store healthy' : s.reason === 'backend' ? 'Backend not answering' : 'Store degraded',
+      !s.degraded ? 'Database healthy' : s.reason === 'backend' ? 'Backend not answering' : 'Database degraded',
   },
   actions: {
     markDegraded(reason: DownReason, source: 'api' | 'readyz') {

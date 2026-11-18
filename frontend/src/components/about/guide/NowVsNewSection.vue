@@ -16,9 +16,9 @@ const newInRange = filterLabel(FINDINGS_FIELDS, 'new')
         the latest scans still report.
       </li>
       <li>
-        <strong>What arrived in this range?</strong> The ingest strip, and the
-        <span class="ui-name">{{ newInRange }}</span> filter, which keeps only findings first seen inside
-        the range. A quiet range honestly shows 0.
+        <strong>What arrived in this range?</strong> The Scan ingest strip and the
+        <span class="ui-name">{{ newInRange }}</span> filter. The filter keeps only the findings that JAVV
+        first saw in the range. A quiet range shows 0.
       </li>
     </ul>
   </GuideProse>

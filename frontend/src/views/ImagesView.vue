@@ -176,10 +176,10 @@ const inventoryAt = computed(() =>
             · {{ fmt(totalReplicas) }}<span class="head-unit"> replicas</span>
           </p>
           <p class="head-note">
-            <template v-if="inventoryAt">inventory as of <span class="mono-cell">{{ inventoryAt }}</span> · </template>one row for each image digest
+            <template v-if="inventoryAt">The inventory of <span class="mono-cell">{{ inventoryAt }}</span>. </template>The table shows one row for each image digest.
           </p>
         </template>
-        <p v-else class="head-note">the latest committed inventory, per digest</p>
+        <p v-else class="head-note">The latest inventory. The table shows one row for each image digest.</p>
       </div>
       <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
     </div>
@@ -189,14 +189,14 @@ const inventoryAt = computed(() =>
     </div>
 
     <p v-else-if="images.failed" class="load-error" role="alert">
-      Inventory unavailable. Check the backend connection.
+      JAVV cannot show the inventory. Check the backend connection.
     </p>
 
     <div v-else-if="images.unknown" class="first-run">
-      <h2>No inventory committed{{ timeTravel.isNow ? ' yet' : ' at this point in time' }}</h2>
+      <h2>No inventory{{ timeTravel.isNow ? ' yet' : ' at this time' }}</h2>
       <p>
-        Images appear once a scanner cycle completes and certifies its inventory.
-        <template v-if="!timeTravel.isNow">This T predates the first committed run.</template>
+        JAVV shows the images when a scanner completes a scan cycle and sends its inventory.
+        <template v-if="!timeTravel.isNow">The selected time is before the first scan.</template>
       </p>
     </div>
 
@@ -206,7 +206,7 @@ const inventoryAt = computed(() =>
           card
           :model-value="filters.selections.q?.[0] ?? ''"
           placeholder="image, registry, namespace…"
-          aria-label="Search images (contains match)"
+          aria-label="Search the images"
           @keydown.enter="filters.setText('q', ($event.target as HTMLInputElement).value)"
         />
         <FacetRail

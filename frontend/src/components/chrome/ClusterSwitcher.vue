@@ -26,7 +26,7 @@ const glyph = (name: string) => (name[0] ?? '?').toUpperCase()
     </template>
     <template #default="{ close }">
       <div class="menu">
-        <div class="head">Clusters · by cluster_id</div>
+        <div class="head">Clusters · by ID</div>
         <button
           v-for="c in clusterStore.clusters"
           :key="c.cluster_id"

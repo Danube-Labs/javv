@@ -115,7 +115,7 @@ const laneOptions = computed(() =>
           <template v-if="!loading && !failed">{{ scanners.length }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> scanners</span>
         </p>
-        <p class="head-note">committed runs only · versions are read-only provenance</p>
+        <p class="head-note">This page counts only complete scans. Each scan records the version of its scanner. JAVV does not change the version.</p>
       </div>
       <!-- one joined band: a day lines up across both strips, each on its own scale -->
       <div v-if="clusterStore.selectedId" class="lens-stack">
@@ -130,9 +130,9 @@ const laneOptions = computed(() =>
 
     <LimitedHistoricalNotice
       v-if="timeTravel.t !== null"
-      title="Historical scanner status is limited until the v1.1 metrics rollup"
-      body="Freshness and provenance answer for now. The committed-run history you can rewind
-        lives in the ingest lens above. Return to now for live scanner health."
+      title="This page cannot show the scanner status of a past time"
+      body="This page shows the last scan and the scanner versions for the time now only. The
+        chart of scans above shows the past time. To see the scanner status now, select Back to now."
     />
 
     <template v-else>
@@ -142,11 +142,11 @@ const laneOptions = computed(() =>
       </div>
 
       <p v-else-if="failed" class="load-error" role="alert">
-        {{ readFailureCopy(failedStatus, 'Scanner status unavailable. Check the backend connection.') }}
+        {{ readFailureCopy(failedStatus, 'JAVV cannot show the scanner status. Check the backend connection.') }}
       </p>
 
       <div v-else-if="scanners.length === 0" class="not-found" role="status">
-        <p>No scanner has reported for this cluster yet. The first committed run lands here.</p>
+        <p>No scanner has sent a scan for this cluster yet. The first scan shows here.</p>
       </div>
 
       <template v-else>

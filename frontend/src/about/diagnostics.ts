@@ -47,14 +47,14 @@ export function buildDiagnostics(input: {
     `JAVV diagnostics · ${formatUtc(input.now)}`,
     `JAVV release (backend): ${meta?.version ?? UNAVAILABLE}`,
     `Frontend build: ${input.frontendVersion}`,
-    `Store schema: ${meta ? `v${meta.mapping_version}` : UNAVAILABLE}`,
+    `Database schema: ${meta ? `v${meta.mapping_version}` : UNAVAILABLE}`,
     `Scanner report formats accepted: ${
       meta ? meta.envelope_versions.map((v) => `v${v}`).join(', ') : UNAVAILABLE
     }`,
     `OpenSearch: ${meta?.opensearch_version ?? UNAVAILABLE}`,
     `Python: ${meta?.python_version ?? UNAVAILABLE}`,
     `Cluster: ${cluster ? `${cluster.name} (${cluster.id})` : 'none selected'}`,
-    ...(input.scanners.length ? input.scanners.map(scannerLine) : ['Scanners: no committed run']),
+    ...(input.scanners.length ? input.scanners.map(scannerLine) : ['Scanners: no scan yet']),
     `Browser: ${input.userAgent}`,
   ]
   return lines.join('\n')
@@ -64,7 +64,7 @@ export function buildDiagnostics(input: {
 export function readFailureCopy(status: number | undefined): string {
   if (status === 429) return 'The backend is busy. Try again in a few seconds.'
   if (status === undefined || status >= 500) {
-    return "The backend didn't answer, so these versions can't be shown right now."
+    return 'The backend did not answer, so JAVV cannot show these versions now.'
   }
   return `The backend refused this read (HTTP ${status}).`
 }

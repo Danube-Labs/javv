@@ -161,14 +161,14 @@ export function editRefusal(
 /** The toast of a save that the backend did not take. A lost answer can come after the save
  * was done, so it does not say that nothing changed. */
 export function saveFailureCopy(status: number, readOnly: boolean): string {
-  if (readOnly) return 'The store is read-only: its disk is full. JAVV did not save the dashboard.'
+  if (readOnly) return 'The database is read-only because its disk is full. JAVV did not save the dashboard.'
   if (status === 403) return `${NO_EDIT_NOTE} JAVV did not save your changes.`
   if (status === 404) return 'Somebody removed this dashboard. JAVV did not save your changes.'
   if (status === 409)
     return 'Somebody changed this dashboard after you opened it. JAVV did not save your changes. Reload the page to see the dashboard as it is now.'
   if (status === 422) return 'JAVV cannot use a value of this dashboard. JAVV did not save your changes.'
-  if (status === 429) return 'The store is busy. JAVV did not save your changes. Try again in a few seconds.'
+  if (status === 429) return 'The database is busy. JAVV did not save your changes. Try again in a few seconds.'
   if (status === 0 || status === 504)
     return 'JAVV did not answer. Your changes are possibly saved. Reload the page to see the dashboard as it is now.'
-  return 'JAVV did not save your changes. Check the backend, then try again.'
+  return 'JAVV did not save your changes. Check the backend connection, then try again.'
 }

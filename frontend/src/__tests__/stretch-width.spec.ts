@@ -61,8 +61,8 @@ async function grow(w: ReturnType<typeof mount>, text: string, to: number) {
 
 describe('useStretchWidth', () => {
   it('stretches from the old width to the new one, on the motion tokens', async () => {
-    const w = mount(Card, { props: { text: 'Fleet current state' } })
-    await grow(w, 'Fleet current state · 34 clusters · 33 need attention', 300)
+    const w = mount(Card, { props: { text: 'The state of all clusters now' } })
+    await grow(w, 'The state of all clusters now · 34 clusters · 33 need attention', 300)
     expect(runs).toHaveLength(1)
     expect(runs[0]!.keyframes).toEqual([{ width: '120px' }, { width: '300px' }])
     expect(runs[0]!.options.duration).toBe(200)

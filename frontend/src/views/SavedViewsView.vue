@@ -133,7 +133,7 @@ function apply(v: ViewDoc) {
   if (wb?.order) grid.order = wb.order as SortOrder
   if (wb?.window_days) {
     const days = wb.window_days
-    timeTravel.setWindow(days, days >= 1 ? `Last ${days} day${days === 1 ? '' : 's'}` : 'Custom window')
+    timeTravel.setWindow(days, days >= 1 ? `Last ${days} day${days === 1 ? '' : 's'}` : 'Custom range')
   }
   logger.debug('view_applied', { view_id: v.view_id })
   void router.push({ path: '/findings', query: presetToRouteQuery(FINDINGS_FIELDS, v.preset) })
@@ -162,19 +162,19 @@ function summary(v: ViewDoc): string {
           <template v-if="loaded && !failed">{{ views.length }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> views</span>
         </p>
-        <p class="head-note">fleet-global lenses · counts are live for the selected cluster</p>
+        <p class="head-note">All users see these views. The counts are for the selected cluster now.</p>
       </div>
     </div>
 
     <p v-if="failed" class="load-error" role="alert">
-      {{ readFailureCopy(failedStatus, 'Saved views unavailable. Check the backend, then reload.') }}
+      {{ readFailureCopy(failedStatus, 'JAVV cannot show the saved views. Check the backend connection, then reload the page.') }}
     </p>
 
     <EmptyState
       v-else-if="loaded && views.length === 0"
       icon="layers"
       title="No saved views yet"
-      hint="Set up Findings the way you want it (filters, columns, density, time window), then use “Save view” to keep it here for everyone."
+      hint="On Findings, set the filters, the columns, the density and the time range. Then select Save view to keep the view here for all users."
     >
       <UiButton variant="primary" @click="router.push('/findings')">Go to Findings</UiButton>
     </EmptyState>

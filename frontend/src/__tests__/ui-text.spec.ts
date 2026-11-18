@@ -109,50 +109,8 @@ function walk(dir: string): string[] {
   })
 }
 
-/** The files with hits before issue 1247 changed them, and their number of hits. Only shrinks. */
-const BASELINE: Record<string, number> = {
-  'components/about/RunningStackCard.vue': 2,
-  'components/about/guide/ImagesSection.vue': 1,
-  'components/about/guide/NowVsNewSection.vue': 1,
-  'components/about/guide/ScansSection.vue': 1,
-  'components/about/guide/TimeRangeSection.vue': 3,
-  'components/about/guide/TriageSection.vue': 6,
-  'components/about/guide/TwoScannersSection.vue': 3,
-  'components/approvals/EditDecisionDialog.vue': 3,
-  'components/audit/AuditTable.vue': 2,
-  'components/chrome/SideNav.vue': 3,
-  'components/contributors/ProgressPanel.vue': 1,
-  'components/dashboards/FailedIngestsLens.vue': 4,
-  'components/dashboards/FleetTable.vue': 1,
-  'components/dashboards/ImportDashboardsDialog.vue': 1,
-  'components/dashboards/IngestLens.vue': 4,
-  'components/findings/GridPager.vue': 1,
-  'components/findings/SaveViewDialog.vue': 1,
-  'components/overview/OverviewStatBands.vue': 1,
-  'components/scanners/IngestFailuresTable.vue': 4,
-  'components/scanners/ScannerStatusCard.vue': 1,
-  'components/settings/ClusterDeleteDialog.vue': 1,
-  'components/settings/RolesCard.vue': 1,
-  'components/settings/ScannerConfigCard.vue': 2,
-  'components/settings/SnapshotsCard.vue': 2,
-  'components/system/BackendHealthBanner.vue': 3,
-  'components/system/InspectHeadFacts.vue': 1,
-  'components/system/InspectRail.vue': 1,
-  'components/system/RepairActionsCard.vue': 1,
-  'components/system/ScannerFreshnessBanner.vue': 3,
-  'components/triage/BulkTriageBar.vue': 1,
-  'layouts/AppShell.vue': 1,
-  'views/ApprovalsView.vue': 6,
-  'views/AuditTrailView.vue': 1,
-  'views/InspectView.vue': 6,
-  'views/ScannerStatusView.vue': 3,
-  'views/settings/ClusterView.vue': 9,
-  'views/settings/DataOpenSearchView.vue': 2,
-  'views/settings/ScanningView.vue': 2,
-  'views/settings/SettingsLayout.vue': 1,
-  'views/settings/TokensView.vue': 7,
-  'views/settings/UsersRolesView.vue': 6,
-}
+/** Files that may keep hits, with their number of hits. Empty since issue 1247: any hit fails. */
+const BASELINE: Record<string, number> = {}
 
 describe('text rules: the rules catch what they must, and only that', () => {
   it.each([

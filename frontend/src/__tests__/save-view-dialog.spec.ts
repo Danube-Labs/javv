@@ -42,7 +42,7 @@ describe('Save this view (issue 1050)', () => {
       const box = document.getElementById(id) as HTMLInputElement
       expect({ id, classes: [...box.classList] }).toEqual({ id, classes: ['set-input', 'set-input--prose'] })
     }
-    expect((document.getElementById('svd-name') as HTMLInputElement).placeholder).toBe('e.g. Critical KEV backlog')
+    expect((document.getElementById('svd-name') as HTMLInputElement).placeholder).toBe('For example: Critical KEV backlog')
     expect((document.getElementById('svd-name') as HTMLInputElement).maxLength).toBe(128)
     expect((document.getElementById('svd-description') as HTMLInputElement).maxLength).toBe(1024)
   })

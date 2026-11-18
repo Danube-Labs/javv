@@ -74,18 +74,18 @@ watch(
 const installRows = computed(() => {
   const m = meta.value
   return [
-    { label: 'JAVV release', hint: 'the backend build answering this page', value: m && `v${m.version}` },
+    { label: 'JAVV release', hint: 'the backend build that answers this page', value: m && `v${m.version}` },
     {
-      label: 'Store schema',
-      hint: 'index layout version; the backend upgrades it at startup',
+      label: 'Database schema',
+      hint: 'the version of the database schema. The backend upgrades it when it starts.',
       value: m && `v${m.mapping_version}`,
     },
     {
       label: 'Scanner report formats',
-      hint: 'report versions the backend accepts from scanners',
+      hint: 'the report versions that the backend accepts from scanners',
       value: m && m.envelope_versions.map((v) => `v${v}`).join(', '),
     },
-    { label: 'OpenSearch', hint: 'read live from the store', value: m && (m.opensearch_version ?? 'unavailable') },
+    { label: 'OpenSearch', hint: 'read now from OpenSearch', value: m && (m.opensearch_version ?? 'unavailable') },
     { label: 'Python', hint: 'the backend runtime', value: m && m.python_version },
   ]
 })
@@ -105,17 +105,17 @@ async function copyDiagnostics() {
     // absent outside a secure context (plain http on a non-localhost host)
     if (!navigator.clipboard) throw new DOMException('no clipboard', 'NotSupportedError')
     await navigator.clipboard.writeText(text)
-    toast.success('Diagnostics copied. Paste them into your bug report.')
+    toast.success('JAVV copied the diagnostics. Paste them into your bug report.')
   } catch (exc) {
     const reason = exc instanceof DOMException ? exc.name : 'unknown'
     logger.warn('diagnostics_copy_failed', { reason })
-    toast.error("Couldn't copy the diagnostics: the browser blocked the clipboard.")
+    toast.error('The browser blocked the clipboard, so JAVV did not copy the diagnostics.')
   }
 }
 </script>
 
 <template>
-  <SettingsCard title="Running stack" subtitle="read live from this install; nothing here is typed in">
+  <SettingsCard title="Running stack" subtitle="JAVV reads these versions from this install now. Nobody types them in.">
     <template #action>
       <UiButton variant="control" class="stack-copy" @click="copyDiagnostics">Copy diagnostics</UiButton>
     </template>
@@ -140,7 +140,7 @@ async function copyDiagnostics() {
         </template>
       </template>
       <!-- known locally, so it shows even when the backend read fails -->
-      <SettingsRow class="stack-row" label="Frontend build" hint="this page's own build; matches the release except mid-rollout">
+      <SettingsRow class="stack-row" label="Frontend build" hint="The build of this page. It is the same as the release, except during an upgrade.">
         <span class="stack-value">v{{ APP_VERSION }}</span>
       </SettingsRow>
     </div>
@@ -153,7 +153,7 @@ async function copyDiagnostics() {
       <UiSkeleton v-else-if="provLoading" :height="96" label="Loading the scanner versions" />
       <p v-else-if="provError" class="stack-error" role="alert">{{ provError }}</p>
       <p v-else-if="!scanners.length" class="stack-empty">
-        No committed scan for this cluster yet, so no scanner version is known.
+        No scan of this cluster yet, so JAVV does not know the scanner version.
       </p>
       <template v-else>
         <SettingsRow v-for="s in scanners" :key="s.scanner" class="stack-row">

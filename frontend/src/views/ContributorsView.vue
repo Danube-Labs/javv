@@ -124,12 +124,12 @@ const { exporting, run: runExport } = useCsvExport({
   path: '/api/v1/contributors/export.csv',
   filename: (stamp) => `javv-contributors-${stamp}.csv`,
   event: 'contributors_export_failed',
-  onCapped: () => toast.info('Too many rows to export at once. Narrow the window first.'),
+  onCapped: () => toast.info('Too many rows to export at once. Select a shorter time range first.'),
   onFailed: (status) =>
     toast.error(
       status
-        ? `Export failed (${status}). Check the backend connection.`
-        : 'Export failed. Check the backend connection.',
+        ? `JAVV did not export the file (${status}). Check the backend connection.`
+        : 'JAVV did not export the file. Check the backend connection.',
     ),
   onDone: (name) => toast.success(`Export downloaded · ${name}`),
 })
@@ -157,7 +157,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
             contributor{{ board.length === 1 && !failed ? '' : 's' }}</span
           >
         </p>
-        <p class="head-note">derived from the audit trail · triage actions, not scan deltas</p>
+        <p class="head-note">JAVV counts the triage actions of people from the audit log. It does not count the changes that scans make.</p>
       </div>
       <ContributorsLens :series="handledSeries" :settled="settled" :failed="failed" />
     </div>
@@ -168,11 +168,11 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
     </div>
 
     <p v-else-if="failed" class="load-error" role="alert">
-      {{ readFailureCopy(failedStatus, 'Contributors unavailable. Check the backend connection.') }}
+      {{ readFailureCopy(failedStatus, 'JAVV cannot show the contributors. Check the backend connection.') }}
     </p>
 
     <div v-else-if="board.length === 0" class="not-found" role="status">
-      <p>No triage activity in this window. Handled findings chart contributors here.</p>
+      <p>No triage in this range. This page shows the people who handle findings.</p>
     </div>
 
     <template v-else>
@@ -181,27 +181,27 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
       <!-- count cells click through to the audit rows they were derived from (the podium
            provenance rule); median/SLA stay static — derived numbers, no row set IS them -->
       <div v-if="totals" class="stat-band stat-band--stat">
-        <button class="stat-cell" title="Open resolve actions in the audit log" @click="goAudit('resolve')">
+        <button class="stat-cell" title="Open the resolve actions in the audit log" @click="goAudit('resolve')">
           <span class="stat-label"><i class="stat-dot" style="background: var(--state-resolved-solid)" />resolved<AppIcon class="cell-go" name="chevron" :size="11" /></span>
           <span class="stat-num">{{ fmt(totals.by_action['resolve'] ?? 0) }}</span>
           <span class="stat-sub">{{ windowLabel }}</span>
         </button>
-        <button class="stat-cell" title="Open acknowledge actions in the audit log" @click="goAudit('acknowledge')">
+        <button class="stat-cell" title="Open the acknowledge actions in the audit log" @click="goAudit('acknowledge')">
           <span class="stat-label"><i class="stat-dot" style="background: var(--state-ack-solid)" />acknowledged<AppIcon class="cell-go" name="chevron" :size="11" /></span>
           <span class="stat-num">{{ fmt(totals.by_action['acknowledge'] ?? 0) }}</span>
           <span class="stat-sub">{{ windowLabel }}</span>
         </button>
         <div class="stat-cell">
-          <span class="stat-label"><i class="stat-dot" style="background: var(--teal)" />median time-to-resolve</span>
+          <span class="stat-label"><i class="stat-dot" style="background: var(--teal)" />median time to resolve</span>
           <span class="stat-num">{{ fmtMedian(totals.median_ttr_seconds) }}</span>
-          <span class="stat-sub">pooled across the team</span>
+          <span class="stat-sub">for all people together</span>
         </div>
         <div class="stat-cell">
           <span class="stat-label"><i class="stat-dot" style="background: var(--slate2)" />SLA met</span>
           <span class="stat-num">{{ teamSla }}</span>
-          <span class="stat-sub">of SLA-bearing handled findings</span>
+          <span class="stat-sub">of the handled findings with an SLA</span>
         </div>
-        <button class="stat-cell" title="Open resolve actions in the audit log: all severities. This count is criticals only" @click="goAudit('resolve')">
+        <button class="stat-cell" title="Open the resolve actions in the audit log, of all severities. This number counts the critical findings only." @click="goAudit('resolve')">
           <span class="stat-label"><i class="stat-dot" style="background: var(--sev-critical-solid)" />critical cleared<AppIcon class="cell-go" name="chevron" :size="11" /></span>
           <span class="stat-num">{{ fmt(totals.critical_cleared) }}</span>
           <span class="stat-sub">{{ windowLabel }}</span>
@@ -213,7 +213,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           <section class="card-section">
             <div class="contrib-head">
               <h2>Top contributors</h2>
-              <p class="card-sub">most findings resolved · {{ windowLabel }}</p>
+              <p class="card-sub">The people who resolved the most findings · {{ windowLabel }}.</p>
             </div>
             <div class="podiums" :class="{ 'podiums-full': podium.length === 3 }">
               <PodiumCard v-for="p in podium" :key="p.row.actor" :row="p.row" :rank="p.rank" />
@@ -223,7 +223,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           <section class="card-section card-flush">
             <div class="contrib-head">
               <h2>Leaderboard</h2>
-              <p class="card-sub">all contributors · ranked by resolved</p>
+              <p class="card-sub">All contributors, with the most resolved findings first.</p>
               <UiButton
                 class="card-action"
                 variant="control"
@@ -245,7 +245,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           <section class="card-section">
             <div class="contrib-head">
               <h2>Triage progress</h2>
-              <p class="card-sub">now · Trivy and Grype together</p>
+              <p class="card-sub">The state now for Trivy and Grype together.</p>
             </div>
             <ProgressPanel :query="query" />
           </section>
@@ -253,7 +253,7 @@ const windowLabel = computed(() => timeTravel.windowLabel.toLowerCase())
           <section class="card-section">
             <div class="contrib-head">
               <h2>Recent activity</h2>
-              <p class="card-sub">from the audit trail</p>
+              <p class="card-sub">The newest triage actions in the audit log.</p>
             </div>
             <ActivityFeed :query="query" />
           </section>

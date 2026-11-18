@@ -12,14 +12,14 @@ const template = (path: string) =>
 describe('internal words in head notes', () => {
   it('Running images says one row for each image digest', () => {
     const src = template('views/ImagesView.vue')
-    expect(src).toContain('</template>one row for each image digest </p>')
+    expect(src).toContain('</template>The table shows one row for each image digest. </p>')
     expect(src).not.toContain('deduped')
   })
 
   it('the OpenSearch runtime card says who sets its settings', () => {
     const src = template('components/settings/OpensearchRuntimeCard.vue')
     expect(src).toContain(
-      'subtitle="read-only: the install of JAVV sets these settings, and the card shows each one that it can read"',
+      'subtitle="The install of JAVV sets these settings. You cannot change them here. The card shows each setting that it can read."',
     )
     expect(src).not.toMatch(/GitOps|deploy-owned|displayable/)
   })

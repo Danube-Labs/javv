@@ -36,7 +36,7 @@ const range = computed(() => {
   <!-- nothing to page and nowhere to go back to: the table's own empty message stands alone -->
   <div v-if="total > 0 || hasPrev" class="pager">
     <span class="pager-info">
-      {{ range ? `Showing ${fmt(range.start)}–${fmt(range.end)} of ${fmt(total)}` : 'No results' }}
+      {{ range ? `Rows ${fmt(range.start)} to ${fmt(range.end)} of ${fmt(total)}` : 'No results' }}
     </span>
     <div class="pager-right">
       <label class="pager-size">
@@ -46,7 +46,7 @@ const range = computed(() => {
         </UiSelect>
       </label>
       <div class="pager-btns">
-        <UiButton class="pager-btn" :disabled="!hasPrev" @click="emit('prev')">Prev</UiButton>
+        <UiButton class="pager-btn" :disabled="!hasPrev" @click="emit('prev')">Previous</UiButton>
         <UiButton class="pager-btn" :disabled="!hasNext" @click="emit('next')">Next</UiButton>
       </div>
     </div>

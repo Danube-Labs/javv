@@ -55,12 +55,12 @@ function onDonutClick(e: { name?: string }) {
     <div class="card-head">
       <div>
         <h2>Package type</h2>
-        <p class="card-sub">share of findings</p>
+        <p class="card-sub">The share of the findings in each package type.</p>
       </div>
     </div>
     <div class="card-body">
       <UiSkeleton v-if="!settled" :height="188" radius="sm" label="Loading package types" />
-      <p v-else-if="failed" class="empty-row" role="alert">Package-type counts unavailable.</p>
+      <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the package types. Check the backend connection.</p>
       <template v-else-if="ptypeBuckets.length">
         <EChart :option="donutOption" :height="188" @click="onDonutClick" />
         <div class="donut-legend">
@@ -68,7 +68,7 @@ function onDonutClick(e: { name?: string }) {
             v-for="(b, i) in ptypeBuckets.slice(0, 6)"
             :key="b.key"
             class="donut-row"
-            :title="`Open ${b.key} findings`"
+            :title="`Open the ${b.key} findings`"
             @click="goFindings(b.key)"
           >
             <i :style="{ background: CHART_PTYPE_RAMP[i % CHART_PTYPE_RAMP.length] }" />
@@ -77,7 +77,7 @@ function onDonutClick(e: { name?: string }) {
         </div>
       </template>
       <p v-else class="empty-row">
-        Awaiting package-type data. Populates as the next scan cycles re-observe images.
+        No package types yet. JAVV shows them after the next scan cycles find the images again.
       </p>
     </div>
   </section>

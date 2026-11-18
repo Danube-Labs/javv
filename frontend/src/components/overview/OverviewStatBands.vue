@@ -68,7 +68,7 @@ function goFindings(query: Record<string, string>) {
 
 <template>
   <UiSkeleton v-if="!settled" :height="242" label="Loading findings summary" />
-  <p v-else-if="failed" class="empty-row" role="alert">Findings summary unavailable.</p>
+  <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the findings summary. Check the backend connection.</p>
   <p v-else-if="!hasData" class="empty-row">No findings at this time.</p>
   <!-- KPI band: joined, hairline-divided (Nuxt stat grammar on our tokens) -->
   <div v-if="settled && !failed && hasData" class="stat-band">
@@ -76,30 +76,30 @@ function goFindings(query: Record<string, string>) {
       v-for="s in KPI_SEVERITIES"
       :key="s"
       class="stat-cell"
-      :title="`Open findings filtered to ${s}`"
+      :title="`Open the ${s} findings`"
       @click="goFindings({ severity: s })"
     >
       <span class="stat-label"><i class="stat-dot" :style="{ background: CHART_SEV[s] }" />{{ s }}<AppIcon class="cell-go" name="chevron" :size="11" /></span>
       <span class="stat-num">{{ fmt(sevCount(s)) }}</span>
     </button>
-    <button class="stat-cell" title="Open findings with a fix available" @click="goFindings({ attr: 'fixable' })">
+    <button class="stat-cell" title="Open the findings with a fix" @click="goFindings({ attr: 'fixable' })">
       <span class="stat-label"><i class="stat-dot" style="background: var(--teal)" />fix available<AppIcon class="cell-go" name="chevron" :size="11" /></span>
       <span class="stat-num">{{ fixPct }}%</span>
-      <span class="stat-sub">{{ fmt(fixableCount) }} findings patchable today</span>
+      <span class="stat-sub">{{ fmt(fixableCount) }} findings have a fix now</span>
     </button>
   </div>
 
   <!-- signal band (1b): urgency + quality quick views, same joined grammar -->
   <div v-if="settled && !failed && hasData" class="stat-band signal-band">
-    <button class="stat-cell" title="Open known-exploited findings" @click="goFindings({ attr: 'kev' })">
+    <button class="stat-cell" title="Open the known-exploited findings" @click="goFindings({ attr: 'kev' })">
       <span class="stat-label"><i class="stat-dot" style="background: var(--kev-bg)" />KEV · known-exploited<AppIcon class="cell-go" name="chevron" :size="11" /></span>
       <span class="stat-num" :class="{ 'stat-num--alarm': kevCount > 0 }">{{ fmt(kevCount) }}</span>
     </button>
-    <button class="stat-cell" title="Open findings where the scanners disagree" @click="goFindings({ attr: 'disagree' })">
+    <button class="stat-cell" title="Open the findings where the scanners do not agree" @click="goFindings({ attr: 'disagree' })">
       <span class="stat-label"><i class="stat-dot" style="background: var(--sev-medium-solid)" />scanners disagree<AppIcon class="cell-go" name="chevron" :size="11" /></span>
       <span class="stat-num">{{ fmt(disagreeCount) }}</span>
     </button>
-    <button class="stat-cell" title="Open the untriaged queue" @click="goFindings({ state: 'open' })">
+    <button class="stat-cell" title="Open the findings that are not triaged" @click="goFindings({ state: 'open' })">
       <span class="stat-label"><i class="stat-dot" style="background: var(--state-resolved-fg)" />triage progress<AppIcon class="cell-go" name="chevron" :size="11" /></span>
       <span class="stat-num"><span v-if="triage.total === 0" class="muted-dash">-</span><template v-else>{{ `${Math.round(triage.pct(triage.handled + triage.ack))}%` }}</template></span>
       <span class="progress-bar" aria-hidden="true">
@@ -108,7 +108,7 @@ function goFindings(query: Record<string, string>) {
         <i class="seg-handled" :style="{ width: `${triage.pct(triage.handled)}%` }" />
         <i class="seg-stale" :style="{ width: `${triage.pct(triage.stale)}%` }" />
       </span>
-      <span class="stat-sub">{{ fmt(triage.open) }} open · {{ fmt(triage.ack) }} ack · {{ fmt(triage.handled) }} handled<template v-if="triage.stale"> · {{ fmt(triage.stale) }} stale</template></span>
+      <span class="stat-sub">{{ fmt(triage.open) }} open · {{ fmt(triage.ack) }} acknowledged · {{ fmt(triage.handled) }} handled<template v-if="triage.stale"> · {{ fmt(triage.stale) }} stale</template></span>
     </button>
   </div>
 </template>

@@ -62,7 +62,7 @@ const buttonLabel = computed(() =>
 // hover answers "which exact instant?" in the URL's own frame — the local↔UTC bridge. At now
 // it carries the range in full: a long custom range truncates on one line (issue 647).
 const buttonTitle = computed(() =>
-  timeTravel.t === null ? timeTravel.windowLabel : `Viewing state at ${timeTravel.t} (UTC)`,
+  timeTravel.t === null ? timeTravel.windowLabel : `The state at ${timeTravel.t} (UTC)`,
 )
 
 function applyPreset(label: string, days: number) {
@@ -144,8 +144,9 @@ function backToNow() {
 
     <div class="dd-menu time-menu">
       <div class="tt-note">
-        One range drives the whole app: <b>tables show state at the end of the range</b> (a past
-        end = as-scanned history) · charts aggregate the span.
+        One range applies to all screens. <b>A table shows the state at the end of the range.</b>
+        If the end is in the past, the table shows the data as the scanners saw it then. A chart
+        shows the full range.
       </div>
 
       <div class="dd-head">Quick select</div>
@@ -181,7 +182,7 @@ function backToNow() {
         </button>
       </div>
 
-      <div class="dd-head">Absolute range (24h)</div>
+      <div class="dd-head">Exact range (24-hour clock)</div>
       <div class="time-abs">
         <UiTextBox v-model="fromDate" class="text-input" type="date" :max="today()" aria-label="Range start date" />
         <UiTextBox
@@ -190,7 +191,7 @@ function backToNow() {
           type="text"
           placeholder="HH:mm"
           maxlength="5"
-          aria-label="Range start time (24h)"
+          aria-label="Range start time (24-hour clock)"
         />
         <span class="time-arrow">→</span>
         <UiTextBox v-model="toDate" class="text-input" type="date" :max="today()" aria-label="Range end date" />
@@ -200,7 +201,7 @@ function backToNow() {
           type="text"
           placeholder="HH:mm"
           maxlength="5"
-          aria-label="Range end time (24h)"
+          aria-label="Range end time (24-hour clock)"
         />
         <UiButton variant="quiet" class="time-apply" :disabled="!customValid" @click="applyCustom">Apply</UiButton>
       </div>

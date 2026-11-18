@@ -60,7 +60,7 @@ function goFindings(query: Record<string, string>) {
     <div class="card-head">
       <div>
         <h2>Per namespace</h2>
-        <p class="card-sub">top {{ limit }} by findings</p>
+        <p class="card-sub">The {{ limit }} namespaces with the most findings.</p>
       </div>
       <UiButton variant="mini" @click="router.push('/images')">View inventory</UiButton>
     </div>
@@ -71,8 +71,8 @@ function goFindings(query: Record<string, string>) {
       radius="sm"
       label="Loading namespaces"
     />
-    <p v-else-if="failed" class="empty-row" role="alert">Namespace counts unavailable.</p>
-    <p v-else-if="namespaces.length === 0" class="empty-row">No namespace data in range.</p>
+    <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the namespaces. Check the backend connection.</p>
+    <p v-else-if="namespaces.length === 0" class="empty-row">No namespaces in this range.</p>
     <div v-else class="tbl-wrap">
       <table class="tbl tbl-dense tbl-hover">
         <thead>
@@ -85,7 +85,7 @@ function goFindings(query: Record<string, string>) {
           <tr
             v-for="n in namespaces"
             :key="n.key"
-            :title="`Open findings in ${n.key}`"
+            :title="`Open the findings in ${n.key}`"
             @click="goFindings({ namespace: n.key })"
           >
             <td class="mono-cell ns-link">

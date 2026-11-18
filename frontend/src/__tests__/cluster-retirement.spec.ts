@@ -171,7 +171,7 @@ describe('RetiredClustersCard, issue 778', () => {
     await flushPromises()
     const [beta, gamma] = w.findAll('tbody tr')
     expect(beta!.findAll('button').map((b) => b.text())).toEqual(['Delete…'])
-    expect(beta!.text()).toContain('Its delete did not finish. Delete it again.')
+    expect(beta!.text()).toContain('JAVV did not finish its delete. Delete the cluster again.')
     expect(gamma!.findAll('button').map((b) => b.text())).toEqual(['Bring back', 'Delete…'])
     expect(gamma!.text()).not.toContain('did not finish')
   })
@@ -184,7 +184,7 @@ describe('RetiredClustersCard, issue 778', () => {
     const row = w.find('tbody tr')
     expect(row.findAll('button')).toHaveLength(0)
     expect(row.text()).toContain(
-      'Its delete did not finish. Someone who can delete clusters must delete it again.',
+      'JAVV did not finish its delete. A person whose role can delete clusters must delete it again.',
     )
   })
 
@@ -197,7 +197,7 @@ describe('RetiredClustersCard, issue 778', () => {
     await buttons(w, 'Bring back')[0]!.trigger('click')
     await flushPromises()
     expect(await toasts()).toContain(
-      'beta is back on the cluster list. Its tokens were revoked when it was retired: create a new one for its scanners.',
+      'beta is back on the cluster list. JAVV revoked its scanner tokens when it retired the cluster. Create a new scanner token for its scanners.',
     )
   })
 
@@ -226,7 +226,7 @@ describe('RetiredClustersCard, issue 778', () => {
     await flushPromises()
     await buttons(w, 'Bring back')[0]!.trigger('click')
     await flushPromises()
-    expect(await toasts()).toContain('Its delete did not finish. Delete it again.')
+    expect(await toasts()).toContain('JAVV did not finish its delete. Delete the cluster again.')
   })
 
   it('says it is not retired any more for a 409 without that type', async () => {
@@ -241,7 +241,7 @@ describe('RetiredClustersCard, issue 778', () => {
     await flushPromises()
     await buttons(w, 'Bring back')[0]!.trigger('click')
     await flushPromises()
-    expect(await toasts()).toContain('It is not retired any more.')
+    expect(await toasts()).toContain('It is not retired now.')
     expect(await toasts()).not.toContain('delete')
   })
 })
@@ -289,10 +289,10 @@ describe('ClusterDeleteDialog', () => {
   })
 
   it.each([
-    [503, /Delete it again to finish it/],
-    [409, /not retired any more/],
-    [403, /needs the can_manage_retention capability/],
-    [500, /Deleting failed/],
+    [503, /Delete the cluster again to finish it/],
+    [409, /so it is not retired now/],
+    [403, /It needs the permission can_manage_retention/],
+    [500, /JAVV did not delete the cluster/],
   ])('a %i says what to do and keeps the dialog open', async (code, message) => {
     vi.mocked(sdk.deleteRetiredClusterApiV1ClustersClusterIdDelete).mockResolvedValue(status(code))
     const w = mountDialog()
@@ -500,7 +500,7 @@ describe('ClusterView retire', () => {
   it('asks before retiring, and says a scan on a new token brings it back', async () => {
     const w = await mountView()
     await buttons(w, 'Retire cluster…')[0]!.trigger('click')
-    expect(w.text()).toContain('the first scan on a new token brings it')
+    expect(w.text()).toContain('The first scan with a new token brings the cluster back')
     expect(sdk.retireApiV1ClustersClusterIdRetirePost).not.toHaveBeenCalled()
   })
 
@@ -594,7 +594,7 @@ describe('minting for a retired cluster', () => {
     expect(w.text()).not.toContain('is retired. Its first scan')
 
     await w.find('select#mint-cluster').setValue('c-old-01')
-    expect(w.text()).toContain('old is retired. Its first scan on this token brings it back')
+    expect(w.text()).toContain('old is retired. Its first scan with this token brings it back')
     await buttons(w, 'Create token').at(-1)!.trigger('click')
     await flushPromises()
     expect(sdk.mintApiV1AdminTokensPost).toHaveBeenCalledWith(

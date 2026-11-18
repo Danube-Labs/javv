@@ -21,9 +21,9 @@ describe('UiSkeleton', () => {
   })
 
   it('announces itself only when it is its own loading region', () => {
-    const own = mount(UiSkeleton, { props: { height: 84, label: 'Loading ingest activity' } })
+    const own = mount(UiSkeleton, { props: { height: 84, label: 'Loading the scans' } })
     expect(own.attributes('aria-busy')).toBe('true')
-    expect(own.attributes('aria-label')).toBe('Loading ingest activity')
+    expect(own.attributes('aria-label')).toBe('Loading the scans')
 
     // inside a labelled group the wrapper announces; the children must stay silent
     const child = mount(UiSkeleton, { props: { height: 34 } })

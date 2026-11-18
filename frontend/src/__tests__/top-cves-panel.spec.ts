@@ -129,9 +129,9 @@ describe('TopCvesPanel (self-contained panel)', () => {
       const { w } = mountPanel()
       await flushPromises()
       await nextPage(w)
-      expect(pagerText(w)).toBe('Showing 11–20 of 30')
+      expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
       await pickRowsPerPage(w, 25)
-      expect(pagerText(w)).toBe('Showing 1–25 of 30')
+      expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
       expect(bodyRows(w)).toBe(25)
     })
 
@@ -143,7 +143,7 @@ describe('TopCvesPanel (self-contained panel)', () => {
       readMock.mockResolvedValue(ok({ values: many(40) }))
       await w.setProps({ scanner: 'grype' })
       await flushPromises()
-      expect(pagerText(w)).toBe('Showing 1–10 of 40')
+      expect(pagerText(w)).toBe('Rows 1 to 10 of 40')
     })
 
     it('a panel of a new height shows page 1 with its rows', async () => {
@@ -152,7 +152,7 @@ describe('TopCvesPanel (self-contained panel)', () => {
       await flushPromises()
       await nextPage(w)
       await w.setProps({ pageSize: 25 })
-      expect(pagerText(w)).toBe('Showing 1–25 of 30')
+      expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
     })
   })
 
@@ -185,11 +185,11 @@ describe('TopCvesPanel (self-contained panel)', () => {
     expect(w.text()).not.toContain('No vulnerability in the findings') // no claim before evidence
     resolve(ok({ values: [] }))
     await flushPromises()
-    expect(w.text()).toContain('No vulnerability in the findings.')
+    expect(w.text()).toContain('No vulnerabilities yet.')
     readMock.mockResolvedValueOnce({ data: null, response: { ok: false, status: 500 } } as never)
     const failed = mountPanel().w
     await flushPromises()
-    expect(failed.text()).toContain('Vulnerability ranking unavailable.')
+    expect(failed.text()).toContain('JAVV cannot show the top vulnerabilities. Check the backend connection.')
   })
 
   it('an OK reply whose body could not be read is a failed read, not a throw (issue 749)', async () => {
@@ -204,6 +204,6 @@ describe('TopCvesPanel (self-contained panel)', () => {
     })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('Vulnerability ranking unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the top vulnerabilities. Check the backend connection.')
   })
 })

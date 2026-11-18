@@ -222,11 +222,11 @@ const nsLabel = (r: ImageRow) =>
           />
           <template v-else-if="key === 'mixTrivy'">
             <MixBar v-if="mixFor(data, 'trivy')" :counts="mixFor(data, 'trivy')!" numbers attribution="trivy" class="mix-sized" />
-            <span v-else class="muted-dash" title="No committed trivy scan of this digest">-</span>
+            <span v-else class="muted-dash" title="Trivy has no scan of this digest.">-</span>
           </template>
           <template v-else-if="key === 'mixGrype'">
             <MixBar v-if="mixFor(data, 'grype')" :counts="mixFor(data, 'grype')!" numbers attribution="grype" class="mix-sized" />
-            <span v-else class="muted-dash" title="No committed grype scan of this digest">-</span>
+            <span v-else class="muted-dash" title="Grype has no scan of this digest.">-</span>
           </template>
           <span v-else-if="key === 'seen'" class="mono-cell sm nowrap">{{ lastDataAt(data['@timestamp']) }}</span>
         </template>

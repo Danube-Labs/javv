@@ -110,10 +110,10 @@ describe('AllClustersView (M9c slice 2)', () => {
     const w = mountView()
     await flushPromises()
     const note = () => w.get('.head-note').text().replace(/\s+/g, ' ')
-    expect(note()).toBe('Fleet current state')
+    expect(note()).toBe('The state of all clusters now')
     answer(ok({ facets: {} }))
     await flushPromises()
-    expect(note()).toMatch(/^Fleet current state · 1 cluster · /)
+    expect(note()).toMatch(/^The state of all clusters now · 1 cluster · /)
   })
 
   it('no clusters → the cold-start copy, not an empty table', async () => {

@@ -14,10 +14,10 @@ import GuideProse from './GuideProse.vue'
       report counts once for each. JAVV never averages or merges their results.
     </p>
     <p>
-      The two often differ, because each uses its own vulnerability data. One may report a vulnerability the other
-      doesn't, or rate it differently. When both report the same vulnerability in the same package of an image with
-      different severities, the finding is marked <DisagreementBadge />. JAVV shows the disagreement; it
-      doesn't decide who is right.
+      The two often differ, because each uses its own vulnerability data. One scanner can report a vulnerability
+      that the other does not report, or give it a different severity. When the two scanners report the same
+      vulnerability in the same package of an image with different severities, JAVV marks the finding
+      <DisagreementBadge />. JAVV shows the disagreement. It does not decide which scanner is right.
     </p>
     <p>Some details come from one scanner only: KEV and EPSS are reported by Grype.</p>
     <p class="count-unit">

@@ -112,15 +112,15 @@ function goFindings(cve: string) {
     <div class="card-head">
       <div>
         <h2>Top vulnerabilities</h2>
-        <p class="card-sub">by findings</p>
+        <p class="card-sub">The vulnerabilities with the most findings.</p>
       </div>
     </div>
     <p v-if="t !== null" class="empty-row">
       This panel shows only the time now, not the past time that you selected. To see the vulnerabilities, select Back to now.
     </p>
     <UiSkeleton v-else-if="!settled" class="skel-pad" :height="220" radius="sm" label="Loading top vulnerabilities" />
-    <p v-else-if="failed" class="empty-row" role="alert">Vulnerability ranking unavailable.</p>
-    <p v-else-if="rows.length === 0" class="empty-row">No vulnerability in the findings.</p>
+    <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the top vulnerabilities. Check the backend connection.</p>
+    <p v-else-if="rows.length === 0" class="empty-row">No vulnerabilities yet.</p>
     <template v-else>
       <div class="tbl-wrap">
         <table class="tbl tbl-dense tbl-hover">

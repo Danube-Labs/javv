@@ -970,9 +970,9 @@ Also:
 
 While the backend stops for an upgrade or a restart:
 
-- An open app shows the banner "The backend is not answering. Screens cannot load until it is
-  back." The banner goes away when the backend answers again.
-- The sign-in page says that the server is not answering, and tries again on its own.
+- An open app shows the banner "The backend does not answer. Screens cannot load until it
+  answers again." The banner goes away when the backend answers again.
+- The sign-in page says that the backend does not answer. The page tries again by itself.
 - A scanner tries each push again, for at most `JAVV_PUSH_RETRY_BUDGET_SECONDS` in each cycle. A
   cycle that starts while the backend does not run scans nothing. The next cycle scans all the
   images again.

@@ -141,7 +141,7 @@ describe('the job rows (issue 556)', () => {
       detail: 'boom',
       bad: true,
     })
-    expect(jobLastRun(job({ status: 'failed' }), fmt).detail).toBe('see backend logs')
+    expect(jobLastRun(job({ status: 'failed' }), fmt).detail).toBe('see the backend log')
     expect(jobLastRun(job({ status: 'running', requested_by: 'scheduled' }), fmt)).toEqual({
       line: 'running since <S>',
       detail: 'by scheduled',
@@ -149,7 +149,7 @@ describe('the job rows (issue 556)', () => {
     })
     expect(jobLastRun(job({ status: 'running', stale: true }), fmt)).toEqual({
       line: 'no heartbeat since <S>',
-      detail: 'Reclaimable, run again',
+      detail: 'You can run it again',
       bad: true,
     })
     expect(jobLastRun(job({ status: 'idle' }), fmt)).toEqual({ line: 'never', detail: '', bad: false })

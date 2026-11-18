@@ -59,8 +59,8 @@ const dirty = computed(() =>
 const invalid = computed(() => draft.value !== null && policyFromDraft(draft.value) === null)
 
 const SAVE_FAILURE: Record<number, string> = {
-  403: 'Saving needs the can_manage_settings capability.',
-  422: 'The policy was rejected. Every window must be a positive number of days.',
+  403: 'Your role cannot change the settings. It needs the permission can_manage_settings.',
+  422: 'JAVV refused the policy. Each window must be a number of days more than 0.',
 }
 
 async function save() {
@@ -73,13 +73,13 @@ async function save() {
   if (!response?.ok) {
     logger.warn('sla_policy_save_failed', { status: response?.status })
     toast.error(
-      SAVE_FAILURE[response?.status ?? 0] ?? 'Saving the SLA policy failed. Nothing was changed.',
+      SAVE_FAILURE[response?.status ?? 0] ?? 'JAVV did not save the SLA policy. Nothing changed.',
     )
     return
   }
   saved.value = body
   draft.value = draftFromPolicy(body)
-  toast.success('SLA policy saved. Deadlines recompute immediately')
+  toast.success('JAVV saved the SLA policy. The deadlines change at once.')
 }
 
 function discard() {
@@ -91,7 +91,7 @@ function discard() {
   <div>
     <SettingsCard
       title="SLA policy"
-      subtitle="remediation deadlines per severity: drives the SLA column and overdue flags"
+      subtitle="The deadline for each severity. It sets the SLA column and the overdue marks."
     >
       <UiSkeleton
         v-if="loading"
@@ -102,7 +102,7 @@ function discard() {
       />
 
       <p v-else-if="failed" class="load-error" role="alert">
-        SLA policy unavailable. Check the backend connection.
+        JAVV cannot show the SLA policy. Check the backend connection.
       </p>
 
       <template v-else-if="draft">
@@ -111,7 +111,7 @@ function discard() {
           :key="row.key"
           :hint="
             row.key === 'critical_days'
-              ? 'Clock starts when the finding first appears in a committed scan.'
+              ? 'The clock starts when a scan first finds the finding.'
               : undefined
           "
         >
@@ -126,7 +126,7 @@ function discard() {
         </SettingsRow>
         <SettingsRow
           label="KEV override"
-          hint="Known-exploited findings ignore the table above and get this tighter window. Fractions work: 0.5 is 12 hours."
+          hint="Known-exploited findings get this shorter window, not the table above. You can use a fraction: 0.5 is 12 hours."
         >
           <SettingsInput
             v-model="draft.kev_days"
@@ -139,8 +139,8 @@ function discard() {
         <div class="sla-note">
           <AppIcon name="info" :size="13" />
           <span>
-            Changes apply immediately: deadlines are computed live from this policy, existing
-            findings included. <b>negligible</b> and <b>unknown</b> severities carry no SLA.
+            A change applies at once. JAVV calculates each deadline from this policy, also for the
+            findings that exist now. The severities <b>negligible</b> and <b>unknown</b> have no SLA.
           </span>
         </div>
       </template>

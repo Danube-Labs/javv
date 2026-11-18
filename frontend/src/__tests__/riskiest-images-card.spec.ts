@@ -53,17 +53,17 @@ describe('RiskiestImagesCard paging', () => {
 
   it('shows 10 images, then the next 10', async () => {
     const w = await mountCard()
-    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 10 of 30')
     expect(bodyRows(w)).toBe(10)
     await nextPage(w)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
   })
 
   it('a new number of rows per page shows page 1 with that number of rows', async () => {
     const w = await mountCard()
     await nextPage(w)
     await pickRowsPerPage(w, 25)
-    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
     expect(bodyRows(w)).toBe(25)
   })
 
@@ -71,12 +71,12 @@ describe('RiskiestImagesCard paging', () => {
     const w = await mountCard()
     await nextPage(w)
     await w.setProps({ scanner: 'grype' })
-    expect(pagerText(w)).toBe('Showing 1–10 of 12')
+    expect(pagerText(w)).toBe('Rows 1 to 10 of 12')
   })
 
   it('a tall dashboard panel opens with its own number of rows', async () => {
     const w = await mountCard({ pageSize: 25 })
-    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
     expect(bodyRows(w)).toBe(25)
   })
 
@@ -84,6 +84,6 @@ describe('RiskiestImagesCard paging', () => {
     const w = await mountCard()
     await nextPage(w)
     await w.setProps({ pageSize: 25 })
-    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
   })
 })

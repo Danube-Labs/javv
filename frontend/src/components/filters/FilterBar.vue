@@ -233,7 +233,7 @@ function onKeydown(e: KeyboardEvent) {
             />
             <p v-if="searched?.more" class="filter-note" role="status">More values match. Type more letters.</p>
             <p v-else-if="remote.failed.value" class="filter-note" role="status">
-              Could not search all values. The list shows the top {{ capOf(editField) }}.
+              JAVV searched only part of the values. The list shows the top {{ capOf(editField) }}.
             </p>
           </template>
 

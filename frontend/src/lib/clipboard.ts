@@ -11,7 +11,7 @@ export async function copyText(text: string): Promise<boolean> {
     return true
   } catch {
     logger.warn('clipboard_blocked')
-    useToastStore().error("Couldn't copy: the browser blocked the clipboard. Select the text and copy it.")
+    useToastStore().error('The browser blocked the clipboard, so JAVV did not copy the text. Select the text, then copy it.')
     return false
   }
 }

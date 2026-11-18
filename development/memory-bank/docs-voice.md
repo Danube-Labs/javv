@@ -72,6 +72,14 @@ Some text keeps a word of the list:
 - The Risk-accept window keeps its title "Risk-accept this vulnerability" (issue 1205).
 - "Push" stays where an image tag goes to a registry, because that is not a scan sent to JAVV.
 
+A line that tells of a failure has one of two forms:
+- A read that failed: "JAVV cannot show the Approval list. Check the backend connection."
+- An action that failed: "JAVV did not revoke the risk acceptance. Check the backend connection,
+  then try again."
+
+The line says "did not", never "could not". The text of the app makes no promises: it says what
+a page does now, and it names no future release (operator, 2026-11-18).
+
 The text rules test (`frontend/src/__tests__/ui-text.spec.ts`) holds a part of this list for the
 templates. Its `ALLOWED` list holds the text above.
 

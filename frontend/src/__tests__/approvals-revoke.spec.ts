@@ -87,6 +87,6 @@ describe('ApprovalsView revoke toast (issue 911)', () => {
 
     expect(revokeApiV1DecisionsDecisionIdRevokePost).toHaveBeenCalledOnce()
     const messages = useToastStore().toasts.map((t) => t.message)
-    expect(messages).toEqual(['Acceptance revoked. Its findings are Open again.'])
+    expect(messages).toEqual(['JAVV revoked the risk acceptance. Its findings are Open again.'])
   })
 })

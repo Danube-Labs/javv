@@ -39,7 +39,7 @@ const segments = computed(() =>
 const title = computed(() => {
   const parts = entries.value.filter((e) => e.n > 0).map((e) => `${e.sev} ${fmt(e.n)}`)
   const who = props.attribution ?? props.label
-  return `${parts.length ? parts.join(' · ') : 'no findings'}${who ? `, ${who}'s committed scan` : ''}`
+  return `${parts.length ? parts.join(' · ') : 'no findings'}${who ? `, last scan of ${who}` : ''}`
 })
 </script>
 

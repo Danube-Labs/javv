@@ -156,7 +156,7 @@ function open(row: ImageRow) {
     <div class="card-head">
       <div>
         <h2>Riskiest images</h2>
-        <p class="card-sub">ranked by critical, then high</p>
+        <p class="card-sub">The images in order of their critical findings, then their high findings.</p>
       </div>
       <UiButton variant="mini" @click="router.push('/images')">View inventory</UiButton>
     </div>
@@ -167,16 +167,16 @@ function open(row: ImageRow) {
       radius="sm"
       label="Loading riskiest images"
     />
-    <p v-else-if="failed" class="empty-row" role="alert">Riskiest images unavailable.</p>
+    <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the riskiest images. Check the backend connection.</p>
     <p v-else-if="ordered.length === 0 && unknown" class="empty-row">
       {{
         unknownAt === null
-          ? 'No inventory committed yet. Images show once a scanner cycle completes.'
-          : 'No inventory committed at this point in time.'
+          ? 'No inventory yet. JAVV shows the images when a scanner completes a scan cycle.'
+          : 'No inventory at this time.'
       }}
     </p>
     <p v-else-if="ordered.length === 0" class="empty-row">
-      No image findings in the running inventory.
+      The running images have no findings.
     </p>
     <template v-else>
       <div class="tbl-wrap">

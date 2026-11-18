@@ -94,58 +94,58 @@ export interface FamilyRow {
 export const FAMILY_ROWS: FamilyRow[] = [
   {
     pattern: 'javv-finding-occurrences-*',
-    purpose: 'per-scan vulnerability snapshots: the history, which bounds how far back time-travel reaches',
+    purpose: 'the findings of each scan: the history. It sets how far back a past time can go.',
     kind: 'append',
   },
   {
     pattern: 'javv-scan-events-*',
-    purpose: 'commit catalog + trend charts',
+    purpose: 'the list of complete scans and the trend charts',
     kind: 'append',
   },
   {
     pattern: 'javv-images-*',
-    purpose: 'inventory snapshots: running-images history',
+    purpose: 'the history of the running images',
     kind: 'append',
   },
   {
     pattern: 'javv-inventory-runs-*',
-    purpose: 'inventory commit manifests',
+    purpose: 'the record of each complete inventory',
     kind: 'append',
   },
   {
     pattern: 'javv-ingest-failures-*',
-    purpose: 'pushes the backend refused after checking their token',
+    purpose: 'the scans that the backend refused after it checked their token',
     kind: 'append',
   },
   {
     pattern: 'system-audit-log-*',
-    purpose: 'who-did-what journal',
+    purpose: 'who did what, and when',
     kind: 'protected',
-    why: 'rolls on the fleet thresholds but is NEVER dropped: audit history has no expiry in MVP',
+    why: 'It rolls over on the thresholds for all clusters, but JAVV never deletes it. The audit history has no expiry.',
   },
   {
     pattern: 'findings',
-    purpose: 'the mutable "now" cache',
+    purpose: 'the current findings',
     kind: 'protected',
-    why: 'rebuildable cache, not history: cleaned only by the long cleanup window below, never a retention drop',
+    why: 'JAVV can build it again, so it is not history. Only the findings cleanup window below cleans it, never the retention.',
   },
   {
     pattern: 'javv-scan-watermarks',
-    purpose: 'per-digest commit watermarks',
+    purpose: 'the newest complete scan of each digest',
     kind: 'protected',
-    why: 'bounded by the live fleet; its rows prune together with the findings cleanup',
+    why: 'It holds one row for each digest in the clusters now. The findings cleanup also deletes its old rows.',
   },
   {
     pattern: 'javv-scan-orders',
-    purpose: 'per-scanner order counters',
+    purpose: 'the scan counter of each scanner',
     kind: 'protected',
     why:
-      'the counter that orders every scan. Deleting it could give a new scan the number already handed to one still in flight, and JAVV could no longer tell which is newer',
+      'The counter gives each scan its order. If you delete it, a new scan can get the number of a scan that is still in progress. Then JAVV cannot tell which scan is newer.',
   },
   {
     pattern: 'system-*',
     purpose: 'config · users · tokens · decisions · views · reports',
     kind: 'protected',
-    why: 'small mutable state: snapshotted for durability except the sessions (a restored copy could revive an ended one), never expired (reports TTL-swept separately)',
+    why: 'Small data that changes. The snapshots hold it, but not the sessions, because a restored copy can make an ended session work again. It never expires. A separate sweep deletes old reports.',
   },
 ]

@@ -49,12 +49,12 @@ async function confirm() {
     if (code === 409) emit('changed')
     error.value =
       code === 503
-        ? 'The delete did not finish. Delete it again to finish it.'
+        ? 'JAVV did not finish the delete. Delete the cluster again to finish it.'
         : code === 409
-          ? 'It is not retired any more: it was brought back. Nothing was deleted.'
+          ? 'Somebody brought the cluster back, so it is not retired now. JAVV deleted nothing.'
           : code === 403
-            ? 'Deleting a cluster needs the can_manage_retention capability.'
-            : 'Deleting failed. Check the backend connection and try again.'
+            ? 'Your role cannot delete a cluster. It needs the permission can_manage_retention.'
+            : 'JAVV did not delete the cluster. Check the backend connection, then try again.'
     return
   }
   emit('deleted')
@@ -62,16 +62,16 @@ async function confirm() {
 </script>
 
 <template>
-  <ModalShell :title="`Delete ${clusterName}?`" subtitle="this cannot be undone" :width="480" @close="close">
+  <ModalShell :title="`Delete ${clusterName}?`" subtitle="You cannot undo this." :width="480" @close="close">
     <p class="confirm-copy">This deletes, for <strong class="mono">{{ clusterName }}</strong>:</p>
     <ul class="gone-list">
       <li>its findings and triage decisions</li>
-      <li>its scan history, so time travel no longer reaches it</li>
-      <li>its push tokens, so a scanner still running is refused</li>
+      <li>its scan history, so a past time no longer shows the cluster</li>
+      <li>its scanner tokens, so JAVV refuses the scans of a scanner that still runs</li>
       <li>its settings and scan scope</li>
       <li>its reports and notifications</li>
     </ul>
-    <p class="keep-note">Kept: its audit history. Snapshots taken before now still hold the data.</p>
+    <p class="keep-note">JAVV keeps its audit history. The older snapshots still hold its data.</p>
     <UiField label="Type the cluster's name to confirm" for="delete-confirm">
       <SettingsInput id="delete-confirm" v-model="typed" :invalid="typed !== '' && !matches" />
     </UiField>

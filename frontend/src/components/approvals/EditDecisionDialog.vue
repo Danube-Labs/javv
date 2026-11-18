@@ -65,10 +65,10 @@ async function submit() {
   } else {
     error.value =
       response.response?.status === 409
-        ? 'This decision was already revoked. Refresh the queue.'
+        ? 'Somebody revoked this decision already. Reload the Approval list.'
         : (response.error as { type?: unknown } | undefined)?.type === EXPIRY_PASSED_TYPE
           ? EXPIRY_REFUSED
-          : 'Could not apply the edit. Check the backend connection.'
+          : 'JAVV did not save the edit. Check the backend connection, then try again.'
     logger.warn('decision_edit_failed', { status: response.response?.status })
   }
 }
@@ -76,26 +76,26 @@ async function submit() {
 
 <template>
   <ModalShell
-    title="Edit risk-acceptance"
+    title="Edit the risk acceptance"
     :subtitle="decision.cve_id"
     :width="520"
     @close="emit('close')"
   >
     <p class="ed-note">
-      An edit is <b>revoke + new</b> (decisions are immutable): the current decision is
-      revoked and a new one takes effect atomically, keeping the audit trail causal.
+      You cannot change a decision. An edit revokes this decision and creates a new decision. The
+      old decision stays in the history.
     </p>
-    <UiField label="Justification" for="ed-just">
+    <UiField label="Reason" for="ed-just">
       <UiTextArea id="ed-just" v-model="justification" prose rows="4" />
     </UiField>
-    <UiField label="Expiry" :hint="expiryOk ? 'empty keeps the current expiry' : EXPIRY_REFUSED" for="ed-expiry">
+    <UiField label="Expiry date" :hint="expiryOk ? 'If you leave it empty, the current expiry date stays.' : EXPIRY_REFUSED" for="ed-expiry">
       <UiTextBox id="ed-expiry" v-model="expiry" type="date" :min="minExpiry" :invalid="!expiryOk" />
     </UiField>
     <p v-if="error" class="modal-error" role="alert">{{ error }}</p>
     <template #actions>
       <UiButton variant="ghost" @click="emit('close')">Cancel</UiButton>
       <UiButton variant="primary" :disabled="!valid || submitting" @click="submit">
-        {{ submitting ? 'Saving…' : 'Revoke + re-issue' }}
+        {{ submitting ? 'Saving…' : 'Revoke and create' }}
       </UiButton>
     </template>
   </ModalShell>

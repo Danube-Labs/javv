@@ -107,11 +107,11 @@ describe('the block message names filters as the screen does (issue 962)', () =>
     ]
     const query = { cluster_id: 'c-1', base_image: 'alpine' }
     expect(exportBlockMessage(fields, query, SCHEDULE)).toBe(
-      'A schedule cannot use these filters: Base image. Clear them, or use Run now.',
+      'An export in the background cannot use these filters: Base image. Clear them, or use Run now.',
     )
     // at a past time Run now is not offered
     expect(exportBlockMessage(fields, query, { ...SCHEDULE, historical: true })).toBe(
-      'A schedule cannot use these filters: Base image. Clear them.',
+      'An export in the background cannot use these filters: Base image. Clear them.',
     )
     // Run now takes any filter on the screen
     expect(exportBlockMessage(fields, query, RUN_NOW)).toBeNull()
@@ -144,7 +144,7 @@ describe('a VEX file covers the one scanner the screen shows', () => {
 
   it('a VEX scanner other than the screen scanner blocks, the same one passes', () => {
     expect(block({ scanner: 'trivy' }, vex('grype'))).toBe(
-      'This screen shows trivy findings only. Pick trivy for the VEX file.',
+      'This screen shows trivy findings only. Select trivy for the VEX file.',
     )
     expect(block({ scanner: 'trivy' }, vex('grype', false))).not.toBeNull()
     expect(block({ scanner: 'trivy' }, vex('trivy'))).toBeNull()
@@ -157,10 +157,10 @@ describe('a schedule at a past time', () => {
 
   it('names each filter the scan history does not record', () => {
     expect(block({ q: 'openssl', kev: true, image_repo: ['nginx'] }, PAST)).toBe(
-      'At a past time, a schedule cannot use these filters: KEV, Image, Search. Clear them.',
+      'At a past time, an export in the background cannot use these filters: KEV, Image, Search. Clear them.',
     )
     expect(block({ new_within_days: 30, disagree: true }, PAST)).toBe(
-      'At a past time, a schedule cannot use these filters: Scanners disagree, New in range. Clear them.',
+      'At a past time, an export in the background cannot use these filters: Scanners disagree, New in range. Clear them.',
     )
   })
 

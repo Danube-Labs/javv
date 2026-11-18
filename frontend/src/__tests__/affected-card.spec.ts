@@ -131,7 +131,7 @@ describe('AffectedCard Paths column (issue 1077)', () => {
     expect(w.findComponent(FindingPaths).exists()).toBe(true)
     const next = w.findAll('button').find((b) => b.text() === 'Next')!
     await next.trigger('click')
-    const prev = w.findAll('button').find((b) => b.text() === 'Prev')!
+    const prev = w.findAll('button').find((b) => b.text() === 'Previous')!
     await prev.trigger('click')
     expect(w.findComponent(FindingPaths).exists()).toBe(false)
   })

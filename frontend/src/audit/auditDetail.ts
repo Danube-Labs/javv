@@ -31,7 +31,7 @@ export function auditDetail(e: Change): string {
     const patch = Object.entries(bulk.patch ?? {})
       .map(([k, v]) => `${fieldLabel(k)} → ${fieldValue(k, String(v))}`)
       .join(' · ')
-    return `${patch}: ${bulk.result_count ?? '?'} findings (frozen set)`
+    return `${patch}: ${bulk.result_count ?? '?'} findings (the set at the time of the action)`
   }
   const field = e.field
   if (field == null) return ''

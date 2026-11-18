@@ -89,7 +89,7 @@ describe('MCP_NAME', () => {
 describe('levels', () => {
   it('offers the three levels of the backend, in order', () => {
     expect(MCP_LEVELS.map((l) => l.value)).toEqual(['read', 'write', 'write_risk_accept'])
-    expect(levelLabel('write_risk_accept')).toBe('Write and risk accept')
+    expect(levelLabel('write_risk_accept')).toBe('Write and accept risks')
     expect(levelLabel('later')).toBe('later')
   })
 })
@@ -216,7 +216,7 @@ describe('the AI agents section', () => {
   it('says when the status could not be read', async () => {
     answer([], 'fail')
     const w = await mountView()
-    expect(w.text()).toContain('unknown: the status could not be read')
+    expect(w.text()).toContain('unknown: JAVV cannot read the status')
   })
 
   it('has an empty state, and a failure that names a busy store', async () => {
@@ -225,10 +225,10 @@ describe('the AI agents section', () => {
     expect(w.get('[role="status"].empty-note').text()).toContain('No MCP tokens yet')
     vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockResolvedValue({ response: { ok: false, status: 429 } } as never)
     w = await mountView()
-    expect(w.get('.load-error').text()).toBe('The search backend is busy. Try again in a few seconds.')
+    expect(w.get('.load-error').text()).toBe('The backend is busy. Try again in a few seconds.')
     vi.mocked(sdk.listTokensApiV1AdminMcpTokensGet).mockResolvedValue({ response: { ok: false, status: 500 } } as never)
     w = await mountView()
-    expect(w.get('.load-error').text()).toBe('The token list is not available. Check the backend connection.')
+    expect(w.get('.load-error').text()).toBe('JAVV cannot show the token list. Check the backend connection.')
   })
 
   it('lists the level in words, and Rotate on an active token only', async () => {
@@ -239,7 +239,7 @@ describe('the AI agents section', () => {
     ])
     const w = await mountView()
     const rows = w.findAll('tbody tr')
-    expect(rows[0]!.text()).toContain('Write and risk accept')
+    expect(rows[0]!.text()).toContain('Write and accept risks')
     expect(rows.map((tr) => tr.findAll('.row-actions button').map((b) => b.text()))).toEqual([
       ['Rotate', 'Revoke'],
       ['Revoke'],
@@ -336,7 +336,7 @@ describe('the AI agents section', () => {
     await flushPromises()
     expect(sdk.revokeApiV1AdminMcpTokensNameRevokePost).toHaveBeenCalledWith(expect.objectContaining({ path: { name: 'live' } }))
     expect(useToastStore().toasts.map((t) => t.message)).toEqual([
-      'Token live revoked. The agent that uses it is refused from now on.',
+      'JAVV revoked the token live. JAVV refuses the agent that uses it from now on.',
     ])
     expect(sdk.listTokensApiV1AdminMcpTokensGet).toHaveBeenCalledTimes(2)
   })
@@ -358,11 +358,11 @@ describe('the AI agents section: paging (issue 1190, row 13)', () => {
   it('a new number of rows per page shows page 1 with that number of rows', async () => {
     answer(thirty())
     const w = await mountView()
-    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 10 of 30')
     await nextPage(w)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
     await pickRowsPerPage(w, 25)
-    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
     expect(bodyRows(w)).toBe(25)
   })
 
@@ -384,7 +384,7 @@ describe('the AI agents section: paging (issue 1190, row 13)', () => {
       expect.objectContaining({ path: { name: 'agent-15' } }),
     )
     expect(sdk.listTokensApiV1AdminMcpTokensGet).toHaveBeenCalledTimes(2)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
   })
 })
 
@@ -414,7 +414,7 @@ describe('the window that shows a token one time', () => {
     copyButton().click()
     await flushPromises()
     expect(useToastStore().toasts.map((t) => t.message)).toEqual([
-      "Couldn't copy: the browser blocked the clipboard. Select the text and copy it.",
+      "The browser blocked the clipboard, so JAVV did not copy the text. Select the text, then copy it.",
     ])
     expect(copyButton().textContent?.trim()).toBe('Copy') // not "Copied"
     w.unmount()

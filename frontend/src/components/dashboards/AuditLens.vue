@@ -32,7 +32,7 @@ const props = withDefaults(
   {
     title: 'Audit activity',
     sub: '',
-    emptyNote: 'No journaled activity in this range. Older events are still in the table below.',
+    emptyNote: 'No events in this range. The table below still shows the older events.',
   },
 )
 const timeTravel = useTimeTravelStore()
@@ -90,16 +90,16 @@ function onPointClick(params: { dataIndex: number }) {
       <h2 class="il-title">{{ props.title }}</h2>
       <span v-if="props.sub" class="il-sub">{{ props.sub }}</span>
       <span v-else class="il-sub"
-        >events per {{ interval }} · {{ timeTravel.windowLabel.toLowerCase() }} · under the
-        current filters · the table lists <b>all</b> events up to the range end</span
+        >Events that match the filters, for each {{ interval }} · {{
+        timeTravel.windowLabel.toLowerCase() }}. The table shows <b>all</b> events up to the end of the range.</span
       >
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (a quiet range is an
          ANSWER; before the response lands there is none) -->
     <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading audit activity" class="skel-gap" />
-    <p v-else-if="failed" class="il-empty">Audit activity unavailable.</p>
+    <p v-else-if="failed" class="il-empty">JAVV cannot show the audit activity. Check the backend connection.</p>
     <p v-else-if="totalEvents === 0" class="il-empty">{{ props.emptyNote }}</p>
-    <div v-else title="Click a bucket to view the whole app as of its end">
+    <div v-else title="Select a bar to see the app as it was at the end of that bar">
       <EChart :option="option" :height="84" @point-click="onPointClick" />
     </div>
   </section>

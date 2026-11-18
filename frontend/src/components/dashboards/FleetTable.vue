@@ -114,14 +114,14 @@ const overviewRoute = (row: ClusterRow) => ({ path: '/overview', query: { cluste
             <th class="r">Triage</th>
             <th class="r">Images</th>
             <th class="r">Replicas</th>
-            <th class="r">Last sweep</th>
+            <th class="r">Last scan</th>
           </tr>
         </thead>
         <tbody>
           <tr
             v-for="row in fleet.rows"
             :key="row.cluster_id"
-            :title="`Open ${row.cluster_name} overview`"
+            :title="`Open the overview of ${row.cluster_name}`"
             @click="open(row)"
           >
             <td>
@@ -181,8 +181,8 @@ const overviewRoute = (row: ClusterRow) => ({ path: '/overview', query: { cluste
   </section>
   <p class="fleet-note">
     <AppIcon name="layers" :size="13" />
-    Each cluster's scanner module pushes independently over HTTPS with its own API token:
-    a cluster going quiet shows up here, not as missing data downstream.
+    The scanners of each cluster send their scans over HTTPS with a scanner token of that
+    cluster. When a cluster stops sending scans, this table shows it.
   </p>
 </template>
 

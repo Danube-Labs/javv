@@ -84,13 +84,13 @@ const clusterName = computed(() => clusterStore.selected?.cluster_name ?? cluste
     <div v-if="silent.length" class="sys-line tone-down" role="alert">
       <AppIcon class="sys-icon" name="alert" :size="15" />
       <span>
-        Data may be stale on <strong class="mono">{{ clusterName }}</strong>:
+        The data of <strong class="mono">{{ clusterName }}</strong> can be old:
         <template v-for="(row, i) in silent" :key="row.scanner">
           <template v-if="i > 0"> · </template>
-          <strong>{{ row.scanner }}</strong> silent {{ silentFor(row.silent_for_seconds) }}
+          <strong>{{ row.scanner }}</strong> sent no data for {{ silentFor(row.silent_for_seconds) }}
           (last data <span class="mono">{{ lastDataAt(row.last_ingest_at) }}</span>)</template
         >.
-        <template v-if="lastChecked"> Last checked {{ lastChecked }}; the latest check failed.</template>
+        <template v-if="lastChecked"> JAVV last checked at {{ lastChecked }}. The latest check failed.</template>
         <GuideLink section="scans-and-freshness" label="What this means" />
       </span>
     </div>
@@ -99,12 +99,12 @@ const clusterName = computed(() => clusterStore.selected?.cluster_name ?? cluste
     <div v-else-if="check.kind === 'failed' || lastChecked" class="sys-line tone-degraded" role="status">
       <AppIcon class="sys-icon" name="alert" :size="15" />
       <span v-if="check.kind === 'failed'"
-        >Couldn't check scanner freshness on <strong class="mono">{{ clusterName }}</strong>. JAVV retries
-        every 10 minutes.</span
+        >The last check of the scanner freshness of <strong class="mono">{{ clusterName }}</strong> failed.
+        JAVV tries again every 10 minutes.</span
       >
       <span v-else
-        >Scanner freshness last checked {{ lastChecked }}; the latest check failed. JAVV retries every 10
-        minutes.</span
+        >JAVV last checked the scanner freshness at {{ lastChecked }}. The latest check failed. JAVV tries
+        again every 10 minutes.</span
       >
     </div>
   </Transition>

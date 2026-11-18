@@ -43,7 +43,7 @@ const scopeNote = computed(() => {
       <div class="head-card head-card-fluid">
         <h1>Settings</h1>
         <p class="head-note">
-          each section notes whether it applies per cluster, per scanner, or organization-wide
+          Each section tells if it applies to one cluster, to each scanner or to the whole organization.
         </p>
       </div>
     </div>

@@ -52,7 +52,7 @@ export const NEW_CLUSTER = '+new'
 export const CLUSTER_ID = /^[a-z0-9][a-z0-9-]{7,63}$/
 
 export const CLUSTER_ID_PROBLEM =
-  'A cluster ID is 8 to 64 characters: lowercase letters, digits and dashes, starting with a letter or digit.'
+  'A cluster ID has 8 to 64 characters: lowercase letters, digits and dashes. The first character is a letter or a digit.'
 
 /** The cluster a mint targets: the picked one, or the typed id once it is well-formed. */
 export function mintClusterId(choice: string, typed: string): string | null {

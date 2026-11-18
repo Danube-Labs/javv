@@ -88,9 +88,9 @@ describe('the countdown copy', () => {
   it('says how long it has been silent and how long is left', () => {
     const s = retirementStatus(row(5), NOW)
     expect(silenceClause(s)).toBe('has sent no scans for 40 days.')
-    expect(retirementCountdown(s)).toBe('It will be retired in 5 days unless a scan arrives.')
+    expect(retirementCountdown(s)).toBe('JAVV retires it in 5 days if no scan arrives.')
     expect(silenceClause(retirementStatus(row(1, { last_scan_at: null }), NOW))).toBe('has never sent a scan.')
-    expect(retirementCountdown(retirementStatus(row(1), NOW))).toBe('It will be retired in 1 day unless a scan arrives.')
+    expect(retirementCountdown(retirementStatus(row(1), NOW))).toBe('JAVV retires it in 1 day if no scan arrives.')
   })
 
   it('says nothing outside the window', () => {
@@ -196,7 +196,7 @@ describe('RetirementCountdownBanner', () => {
     select(row(5))
     const w = mount(RetirementCountdownBanner)
     const line = w.find('.retire-line')
-    expect(line.text()).toBe('beta has sent no scans for 40 days. It will be retired in 5 days unless a scan arrives.')
+    expect(line.text()).toBe('beta has sent no scans for 40 days. JAVV retires it in 5 days if no scan arrives.')
     expect(line.classes()).toContain('tone-degraded')
     expect(line.attributes('role')).toBe('status')
     w.unmount()
@@ -223,7 +223,7 @@ describe('RetirementCountdownBanner', () => {
     const w = mount(RetirementCountdownBanner)
     const line = w.find('.retire-line')
     expect(line.attributes('role')).toBe('alert')
-    expect(line.text()).toContain('the next retirement sweep retires it unless a scan arrives')
+    expect(line.text()).toContain('The next retirement sweep retires it if no scan arrives.')
     w.unmount()
   })
 

@@ -32,7 +32,7 @@ describe('UiSegControl', () => {
 
   it('the All scanners option of the scanner switch says that it adds the two scanners (issue 1140, R4)', () => {
     const all = SCANNER_SWITCH_OPTS.find((o) => o.value === 'all')!
-    expect(all.title).toBe('Trivy and Grype together. A vulnerability that both report counts once for each.')
+    expect(all.title).toBe('This option shows the findings of Trivy and Grype together. When the two scanners report a vulnerability, it counts once for each scanner.')
     expect(SCANNER_SWITCH_OPTS.filter((o) => 'title' in o)).toHaveLength(1)
   })
 

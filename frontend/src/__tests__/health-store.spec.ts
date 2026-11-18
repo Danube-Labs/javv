@@ -52,7 +52,7 @@ describe('the /readyz poll', () => {
     await health.check()
     expect(health.degraded).toBe(true)
     expect(health.reason).toBe('store')
-    expect(health.statusLabel).toBe('Store degraded')
+    expect(health.statusLabel).toBe('Database degraded')
     expect(warned).toHaveBeenCalledWith('backend degraded', { source: 'readyz', reason: 'store' })
   })
 
@@ -77,7 +77,7 @@ describe('the /readyz poll', () => {
     await health.check()
     expect(health.degraded).toBe(false)
     expect(health.reason).toBeNull()
-    expect(health.statusLabel).toBe('Store healthy')
+    expect(health.statusLabel).toBe('Database healthy')
   })
 
   it('logs once per reason, not once per poll', async () => {
@@ -159,18 +159,18 @@ describe('BackendHealthBanner', () => {
   it('names the backend when the backend is gone', () => {
     useHealthStore().markDegraded('backend', 'api')
     const text = mount(BackendHealthBanner).get('[role="alert"]').text()
-    expect(text).toContain('The backend is not answering')
+    expect(text).toContain('The backend does not answer')
     expect(text).not.toContain('OpenSearch')
   })
 
   it('names OpenSearch when the store is down', () => {
     useHealthStore().markDegraded('store', 'api')
-    expect(mount(BackendHealthBanner).get('[role="alert"]').text()).toContain('Check OpenSearch health')
+    expect(mount(BackendHealthBanner).get('[role="alert"]').text()).toContain('Check the health of OpenSearch')
   })
 
   it.each([
-    ['read-only', 'The store is read-only: its disk is full. Reads work; changes are not saved.'],
-    ['red', 'Part of the store is not available. Some screens and changes can fail until it recovers.'],
+    ['read-only', 'The database is read-only because its disk is full. You can read the data, but JAVV does not save changes.'],
+    ['red', 'Part of the database is not available. Some screens and changes can fail until it recovers.'],
   ] as const)('a %s store is the amber line with its ruled copy', (reason, copy) => {
     useHealthStore().markDegraded(reason, 'readyz')
     const line = mount(BackendHealthBanner).get('.sys-line')
