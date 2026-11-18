@@ -8,6 +8,10 @@ they cause cost a debugging session each.
 Two kinds of guard live here:
 - **String guards** (`offending_reason`): the command is refused on sight — `git add -A`,
   `pkill -f`. Pure, so `test_guard_bash.py` can cover them exhaustively.
+- **The lint-gate guard** (`lint_gate_reason`): a chain that publishes (commit, push, a gh
+  post) is refused when the exit code of the text linter cannot stop it: the linter is piped
+  (`ste-lint.py F | tail && gh ...` gates on `tail`), or followed by `;`, `||` or `&`. Each
+  form posted or pushed text with a hard finding, eleven times by 2026-11-18.
 - **The index-lock guard** (`index_lock_blocker`): git commands that take `.git/index.lock`
   are SERIALIZED rather than refused. Two git commands issued as parallel Bash calls in one
   turn race for that lock; the loser dies with "Unable to create '.git/index.lock'", and when
@@ -58,25 +62,49 @@ GUARDS = [
     (
         ("git", "add"),
         {"-A", "--all", "."},
-        "`git add -A` / `git add .` has swept gitignored files into commits here.\n"
-        "Stage explicit paths instead:  git add path/one path/two",
+        (
+            "`git add -A` / `git add .` has swept gitignored files into commits here.\n"
+            "Stage explicit paths instead:  git add path/one path/two"
+        ),
     ),
     (
         ("pkill",),
         {"-f"},
-        "`pkill -f` matches the Bash tool's own wrapper process — it kills the shell running\n"
-        "it, or hangs a wait-loop forever. Find the PID and kill that:  ss -ltnp | grep <port>",
+        (
+            "`pkill -f` matches the Bash tool's own wrapper process — it kills the shell running\n"
+            "it, or hangs a wait-loop forever. Find the PID and kill that:  ss -ltnp | grep <port>"
+        ),
     ),
     (
         ("pgrep",),
         {"-f"},
-        "`pgrep -f` matches the Bash tool's own wrapper, so it always reports a match and an\n"
-        "`until ! pgrep -f ...` loop never exits. Use `ss -ltnp` or match without -f.",
+        (
+            "`pgrep -f` matches the Bash tool's own wrapper, so it always reports a match and an\n"
+            "`until ! pgrep -f ...` loop never exits. Use `ss -ltnp` or match without -f."
+        ),
     ),
 ]
 
 # Anything after a heredoc marker is data (a commit message, a PR body), not commands to run.
 SEPARATORS = {"&&", "||", "|", ";", "&", "(", ")", "{", "}"}
+
+# Linters whose exit code is the only gate for public text (ste-lint exits 1 on a hard finding).
+TEXT_LINTERS = {"ste-lint.py", "check-release-notes.py"}
+# Separators after which the linter's failure no longer stops the next command.
+UNGATED_AFTER_LINT = {"|", "|&", ";", "||", "&"}
+GH_PUBLISH = {
+    ("pr", "create"),
+    ("pr", "edit"),
+    ("pr", "comment"),
+    ("pr", "merge"),
+    ("pr", "review"),
+    ("issue", "create"),
+    ("issue", "edit"),
+    ("issue", "comment"),
+    ("release", "create"),
+    ("release", "edit"),
+}
+GH_API_WRITE_METHODS = {"POST", "PATCH", "PUT", "DELETE"}
 
 # git subcommands that take `.git/index.lock`. Read-only ones (status, log, diff, show) are
 # deliberately absent — they never contend, and waiting on them would tax every poll.
@@ -176,6 +204,83 @@ def index_lock_blocker(cwd: str, wait_seconds: float = LOCK_WAIT_SECONDS) -> str
     return None
 
 
+def _chain(command: str) -> list[tuple[list[str], str]]:
+    """Each command of the chain with the separator that follows it ("" at the end).
+
+    Unlike `_segments`, this keeps the separators, and splits on `|` or `;` even without
+    spaces around them. A newline separates commands like `;` does.
+    """
+    body = command.split("<<", 1)[0].replace("\n", " ; ")
+    lexer = shlex.shlex(body, posix=True, punctuation_chars=True)
+    lexer.whitespace_split = True
+    lexer.commenters = "#"
+    try:
+        tokens = list(lexer)
+    except ValueError:
+        return []
+    out, segment = [], []
+    for tok in tokens:
+        if tok in SEPARATORS or tok == "|&":
+            out.append((segment, tok))
+            segment = []
+        else:
+            segment.append(tok)
+    out.append((segment, ""))
+    return out
+
+
+def _strip_noise(segment: list[str]) -> list[str]:
+    while segment and (ENV_ASSIGNMENT.match(segment[0]) or segment[0] in LEADING_NOISE):
+        segment = segment[1:]
+    return segment
+
+
+def _publishes(segment: list[str]) -> bool:
+    seg = _strip_noise(segment)
+    if _git_subcommand(seg) in {"push", "commit"}:
+        return True
+    if not seg or seg[0] != "gh":
+        return False
+    if tuple(seg[1:3]) in GH_PUBLISH:
+        return True
+    if len(seg) > 1 and seg[1] == "api":
+        for i, tok in enumerate(seg):
+            if tok in {"-X", "--method"} and i + 1 < len(seg):
+                method = seg[i + 1]
+            elif tok.startswith("--method="):
+                method = tok.split("=", 1)[1]
+            else:
+                continue
+            if method.upper() in GH_API_WRITE_METHODS:
+                return True
+    return False
+
+
+def lint_gate_reason(command: str) -> str | None:
+    """Refuse a publishing chain whose text linter cannot stop the publish."""
+    chain = _chain(command)
+    if not any(_publishes(seg) for seg, _ in chain):
+        return None
+    for i, (segment, sep) in enumerate(chain):
+        if not any(Path(tok).name in TEXT_LINTERS for tok in segment):
+            continue
+        following = chain[i + 1][0] if i + 1 < len(chain) else []
+        if sep == ";" and following[:1] == ["then"]:
+            continue  # `if lint F; then gh ...; fi` gates on the linter itself
+        if sep in UNGATED_AFTER_LINT:
+            return (
+                f"The text linter is followed by `{sep}` in a chain that commits, pushes or\n"
+                "posts. Its exit code then does not stop the publish: a pipe gates on the LAST\n"
+                "command, and `;`, `||` or `&` run the next command anyway. This posted or pushed\n"
+                "text with a hard finding eleven times by 2026-11-18.\n\n"
+                "Gate on the linter itself, with no pipe:\n"
+                "  python3 development/scripts/ste-lint.py F && gh issue comment N --body-file F\n"
+                "  if python3 development/scripts/ste-lint.py F; then git push; fi\n"
+                "Or run the linter in its own call, read the exit code, then publish."
+            )
+    return None
+
+
 def offending_reason(command: str) -> str | None:
     # shlex has already collapsed quoted strings into single tokens, so a literal
     # "git add -A" inside a commit message cannot trigger this
@@ -196,7 +301,7 @@ def main() -> int:
     if payload.get("tool_name") != "Bash":
         return 0
     command = payload.get("tool_input", {}).get("command", "")
-    reason = offending_reason(command)
+    reason = offending_reason(command) or lint_gate_reason(command)
     if reason is None and takes_index_lock(command):
         # serialize rather than refuse: a lock held by a sibling call clears on its own
         reason = index_lock_blocker(payload.get("cwd", ""))
