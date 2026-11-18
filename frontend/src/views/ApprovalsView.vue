@@ -98,8 +98,8 @@ const { exporting, run: runExport } = useCsvExport({
   onFailed: (status) =>
     toast.error(
       status
-        ? `JAVV could not export the file (${status}). Check the backend connection.`
-        : 'JAVV could not export the file. Check the backend connection.',
+        ? `JAVV did not export the file (${status}). Check the backend connection.`
+        : 'JAVV did not export the file. Check the backend connection.',
     ),
   onDone: (name) => toast.success(`Export downloaded · ${name}`),
 })
@@ -229,20 +229,20 @@ function onEdited() {
           ><span v-else class="muted-dash">-</span
           ><span class="head-unit"> active risk acceptance{{ total === 1 && timeTravel.isNow && !failed ? '' : 's' }}</span>
         </p>
-        <p class="head-note">The risk acceptances that apply now. The next expiry date is first. The list does not show revoked decisions.</p>
+        <p class="head-note">This list shows the risk acceptances that apply now. The next expiry date is first. The list does not show revoked decisions.</p>
       </div>
       <AuditLens
         :query="lensQuery"
         title="Decision activity"
-        sub="The risk acceptances that people created or revoked in this range. The list below shows the state now."
+        sub="The chart shows the risk acceptances that people created or revoked in this range. The list below shows the state now."
       />
     </div>
 
     <LimitedHistoricalNotice
       v-if="!timeTravel.isNow"
-      title="The Approval list shows now only"
+      title="The Approval list shows the time now only"
       body="JAVV keeps no history of the active risk acceptances. The chart of decisions above shows the
-        past time. Go back to now to see the list."
+        past time. To see the list, select Back to now."
     />
 
     <div v-else class="findings-layout">

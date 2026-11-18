@@ -65,7 +65,7 @@ async function submit() {
   } else {
     error.value =
       response.response?.status === 409
-        ? 'This decision is revoked already. Reload the Approval list.'
+        ? 'Somebody revoked this decision already. Reload the Approval list.'
         : (response.error as { type?: unknown } | undefined)?.type === EXPIRY_PASSED_TYPE
           ? EXPIRY_REFUSED
           : 'JAVV did not save the edit. Check the backend connection, then try again.'

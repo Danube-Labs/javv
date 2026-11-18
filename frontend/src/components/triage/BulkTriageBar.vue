@@ -113,7 +113,7 @@ async function apply() {
     <ModalShell
       v-if="open"
       title="Bulk triage"
-      subtitle="One change for each finding that matches your filters. The audit log records one row."
+      subtitle="JAVV changes each finding that matches your filters. The audit log records one row for all of them."
       @close="open = false"
     >
       <div>

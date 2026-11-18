@@ -204,7 +204,7 @@ async function loadRows(q: typeof rowsQuery.value) {
 const failureMessage = computed(() =>
   grid.failed
     ? FAILURE_COPY[failedKind.value]
-    : `JAVV could not load the filter counts. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
+    : `JAVV cannot show the filter counts. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 /**
  * `q` differs from `old` only in `locations`: the Columns menu hid or showed Paths. A hide needs no
@@ -333,7 +333,7 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
           <template v-if="grid.totalKnown">{{ grid.total.toLocaleString('en-US') }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> findings</span>
         </p>
-        <p class="head-note">Trivy and Grype count apart. A vulnerability that both report counts once for each.</p>
+        <p class="head-note">JAVV counts the findings of Trivy and Grype apart. When the two scanners report a vulnerability, it counts once for each scanner.</p>
       </div>
       <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
     </div>

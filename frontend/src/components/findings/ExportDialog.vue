@@ -113,8 +113,8 @@ const { exporting, run: runExport } = useCsvExport({
   },
   onFailed: (status) => {
     error.value = status
-      ? `JAVV could not export the file (${status}). Check the backend connection.`
-      : 'JAVV could not export the file. Check the backend connection.'
+      ? `JAVV did not export the file (${status}). Check the backend connection.`
+      : 'JAVV did not export the file. Check the backend connection.'
   },
   onDone: (name) => {
     logger.info('export_downloaded', { format: format.value })
@@ -156,7 +156,7 @@ async function schedule() {
     pollFailures = 0
     poll = setInterval(() => void checkReport(), 5_000)
   } else {
-    error.value = 'JAVV could not start the export in the background. Check the backend connection.'
+    error.value = 'JAVV did not start the export in the background. Check the backend connection, then try again.'
     logger.warn('export_schedule_failed', { status: response.response?.status })
   }
 }
@@ -177,7 +177,7 @@ async function checkReport() {
       stopPolling()
       error.value =
         status === 401 || status === 403
-          ? 'Your session expired. Sign in again. JAVV continues to make the file, and the bell tells you when it is ready.'
+          ? 'Your session expired. Sign in again. JAVV continues to make the file. The bell tells you when it is ready.'
           : 'The file is not available any more, because it expired or somebody deleted it. Start the export again.'
       logger.warn('export_poll_terminal', { status, report_id: report.value.id })
     } else if (++pollFailures >= POLL_MAX_FAILURES) {
@@ -258,7 +258,7 @@ const downloadHref = computed(() =>
                   <span class="ex-dim">{{ expiresIn(report.expires_at) }}</span>
                 </template>
                 <template v-else-if="report.status === 'failed'">
-                  <AppIcon name="alert" :size="13" /> JAVV could not make the file. Start the export again.
+                  <AppIcon name="alert" :size="13" /> JAVV did not make the file. Start the export again.
                 </template>
                 <template v-else>
                   <AppIcon name="clock" :size="13" /> In the background. Status: {{ report.status }}…

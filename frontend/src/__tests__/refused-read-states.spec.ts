@@ -207,8 +207,8 @@ describe('Findings: only the filter counts refused (issue 833, F9 under G2)', ()
   }
 
   it.each([
-    [429, 'JAVV could not load the filter counts. The backend is busy. Try again in a few seconds.'],
-    [503, 'JAVV could not load the filter counts. Check the backend connection.'],
+    [429, 'JAVV cannot show the filter counts. The backend is busy. Try again in a few seconds.'],
+    [503, 'JAVV cannot show the filter counts. Check the backend connection.'],
   ])('a %s: the rows stay, the alert names the counts, the rail shows "-"', async (status, copy) => {
     vi.mocked(facetFindingsApiV1FindingsFacetsGet)
       .mockResolvedValueOnce(facetsOk as never)
@@ -246,7 +246,7 @@ describe('Findings: only the filter counts refused (issue 833, F9 under G2)', ()
     await flushPromises()
     answerOld(facetsOk)
     await flushPromises()
-    expect(w.find('.load-error').text()).toContain('JAVV could not load the filter counts.')
+    expect(w.find('.load-error').text()).toContain('JAVV cannot show the filter counts.')
     expect(w.findAll('.facet-count').map((c) => c.text())).toEqual(Array(6).fill('-'))
   })
 })
@@ -329,7 +329,7 @@ describe('Audit log: the same rules as Findings (issue 833)', () => {
     vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValueOnce(refusedWith(503) as never)
     filters().toggle('action', 'triage')
     await flushPromises()
-    expect(w.find('.load-error').text()).toBe('JAVV could not load the filter counts. Check the backend connection.')
+    expect(w.find('.load-error').text()).toBe('JAVV cannot show the filter counts. Check the backend connection.')
     expect(w.text()).toContain('bob-new')
     expect(w.findAll('.facet-count').map((c) => c.text())).toContain('-')
   })

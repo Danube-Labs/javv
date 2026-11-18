@@ -24,7 +24,7 @@ const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12)
 <template>
   <div class="subtl">
     <p v-if="notYet" class="subtl-empty">
-      Not yet scanned then: the first scan of this tag by {{ scanner }} is after this time.
+      No scan at this time. The first scan of this tag by {{ scanner }} is after this time.
     </p>
     <p v-else-if="eras.length === 0" class="subtl-empty">
       {{ scanner }} has no scan of this tag yet.

@@ -411,7 +411,7 @@ the user's open searches until the grid closes it.
   never gets to the server, so no 422 is about a short search. At a past time, a 422 for Assignee
   with Unassigned gets the same text. Any other 422 at a past time keeps the past-time text.
 - **Only the filter counts refused** (operator ruling 2026-10-12, issue 833 F9): the rows stay,
-  the alert says "JAVV could not load the filter counts." with the reason, and the rail and the
+  the alert says "JAVV cannot show the filter counts." with the reason, and the rail and the
   add-filter menu keep their values with "-" for each count.
 - **The reason in any read's alert** (issue 833 G2, every screen): a 429 is the per-user search
   budget and says "The backend is busy. Try again in a few seconds."; any other failure
@@ -467,8 +467,8 @@ cut list (2026-11-16).
   The call also has `package_name` from the link, so the rows are those of the package of the link
   (issue 1227). If no row has that package and version, the page never shows another package. It
   names the package and the version it looked for: `This image has no finding of CVE-2023-4039 in
-  libasan6 10.2.1-6 at the selected time.`, then `A newer scan may no longer report it.` and `Or
-  the selected time range may end before a scan found it.`
+  libasan6 10.2.1-6 at the selected time.`, then `Possible causes: a newer scan does not report it, or the
+  selected time range ends before a scan found it.`
 - The package menu of the head band: `GET /api/v1/findings?cluster_id=…&cve_id=…&image_digest=…&size=500`
   (500 is the limit of the read). One row for each package and version, with the scanners that
   found it (`packagesOnImage`). When the image has more findings, the count has a `+` and the

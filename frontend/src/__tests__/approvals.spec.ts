@@ -121,7 +121,7 @@ describe('the past-time notice of the Approval list', () => {
   it('says Approval list, with no queue, endpoint, seam or lens', () => {
     const src = readFileSync(join(__dirname, '..', 'views/ApprovalsView.vue'), 'utf8')
     const notice = src.slice(src.indexOf('<LimitedHistoricalNotice'), src.indexOf('/>', src.indexOf('<LimitedHistoricalNotice')))
-    expect(notice).toContain('title="The Approval list shows now only"')
+    expect(notice).toContain('title="The Approval list shows the time now only"')
     expect(notice).not.toMatch(/queue|endpoint|seam|lens/)
   })
 })

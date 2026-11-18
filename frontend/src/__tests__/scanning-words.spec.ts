@@ -27,7 +27,7 @@ describe('the words about the two scanners', () => {
   it('the head note of Findings says how the two scanners count, in plain words (issue 1152)', () => {
     const src = read('views/FindingsView.vue').split('<template>')[1]!
     expect(src).toContain(
-      '<p class="head-note">Trivy and Grype count apart. A vulnerability that both report counts once for each.</p>',
+      '<p class="head-note">JAVV counts the findings of Trivy and Grype apart. When the two scanners report a vulnerability, it counts once for each scanner.</p>',
     )
     expect(src).not.toMatch(/cross-merge|per-scanner/)
   })

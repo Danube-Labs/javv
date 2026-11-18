@@ -176,10 +176,10 @@ const inventoryAt = computed(() =>
             · {{ fmt(totalReplicas) }}<span class="head-unit"> replicas</span>
           </p>
           <p class="head-note">
-            <template v-if="inventoryAt">The inventory of <span class="mono-cell">{{ inventoryAt }}</span>. </template>One row for each image digest.
+            <template v-if="inventoryAt">The inventory of <span class="mono-cell">{{ inventoryAt }}</span>. </template>The table shows one row for each image digest.
           </p>
         </template>
-        <p v-else class="head-note">The latest inventory. One row for each image digest.</p>
+        <p v-else class="head-note">The latest inventory. The table shows one row for each image digest.</p>
       </div>
       <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
     </div>
@@ -195,7 +195,7 @@ const inventoryAt = computed(() =>
     <div v-else-if="images.unknown" class="first-run">
       <h2>No inventory{{ timeTravel.isNow ? ' yet' : ' at this time' }}</h2>
       <p>
-        Images show here when a scanner completes a scan cycle and sends its inventory.
+        JAVV shows the images when a scanner completes a scan cycle and sends its inventory.
         <template v-if="!timeTravel.isNow">The selected time is before the first scan.</template>
       </p>
     </div>
