@@ -287,7 +287,7 @@ const WINDOWS: [string, string, (page: Page) => Promise<void>][] = [
   ['Change role?', '/settings/users', (p) => p.getByRole('combobox', { name: 'Role for smoke-viewer' }).selectOption('triager')],
   ['Disable this user?', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Disable', exact: true }).click()],
   ['Reset smoke-viewer\'s password', '/settings/users', (p) => viewerRow(p).getByRole('button', { name: 'Reset password' }).click()],
-  ['Create a push token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Create token' }).click()],
+  ['Create a scanner token', '/settings/tokens', (p) => p.getByRole('button', { name: 'Create token' }).click()],
   ['Rotate this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Rotate', exact: true }).first().click()],
   ['Revoke this token?', '/settings/tokens', (p) => p.getByRole('button', { name: 'Revoke', exact: true }).first().click()],
   ['Create an MCP token', '/settings/ai-agents', (p) => p.getByRole('button', { name: 'Create token' }).click()],

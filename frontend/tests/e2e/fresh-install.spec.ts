@@ -49,7 +49,7 @@ test('the mint dialog opens on a new cluster with its ID field', async ({ page }
 for (const path of ['scan-scope', 'scanning', 'data-opensearch']) {
   test(`settings/${path} says why it is empty instead of loading forever`, async ({ page }) => {
     await page.goto(`${BASE}/settings/${path}`)
-    await expect(page.getByText('Settings for a cluster appear once it has a scanner token.')).toBeVisible()
+    await expect(page.getByText('No cluster settings yet')).toBeVisible()
     await expect(page.locator('.skel')).toHaveCount(0)
   })
 }
