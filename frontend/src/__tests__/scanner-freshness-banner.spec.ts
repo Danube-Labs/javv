@@ -114,7 +114,7 @@ describe('ScannerFreshnessBanner when the read fails (issue 651)', () => {
     expect(logger.warn).toHaveBeenCalledWith('scanner_freshness_fetch_failed', { status: 500 })
     expect(w.find('[role=alert]').exists()).toBe(false)
     const line = w.find('[role=status]')
-    expect(line.text()).toMatch(/^JAVV could not check the scanner freshness of c-1\. JAVV tries again every 10 minutes\.$/)
+    expect(line.text()).toMatch(/^The last check of the scanner freshness of c-1 failed\. JAVV tries again every 10 minutes\.$/)
     expect(line.text()).not.toContain('—')
     w.unmount()
   })

@@ -148,7 +148,7 @@ not kept** (issue 869: a sign-in that answers `200` and a session check that fin
 The browser did not keep the cookie. On a page that is not a secure context, plain `http` and
 not `localhost`, the form says "This browser refused the session cookie, because the page uses
 http. Use https, or ask the admin to set JAVV_SESSION_COOKIE_SECURE=false." Else it says "JAVV
-signed you in, but this browser did not keep the session. Allow cookies for this site, then sign
+signed you in. This browser did not keep the session. Allow cookies for this site, then sign
 in again."
 The form stays on sign-in. A server failure on that check stays "not answering". Copy B of two,
 ruled by the operator on built specimens, 2026-10-15).
@@ -1050,8 +1050,8 @@ expired token needs a new token from Create token. Revoke stays on an expired to
 answers 409 to a rotation of a revoked or an expired token.
 The window "Copy this token now" is `components/settings/TokenOnceDialog.vue`, the same window as on
 AI agents (MCP) (§13.9). When the browser blocks the clipboard (a page on plain http that is not
-localhost), Copy shows a toast: *JAVV could not copy the text, because the browser blocked the clipboard. Select the text
-and copy it.* The card subtitle is *one scoped push token per (cluster, scanner)* (issue 1096, Q4 B
+localhost), Copy shows a toast: *The browser blocked the clipboard, so JAVV did not copy the text. Select the text,
+then copy it.* The card subtitle is *one scoped push token per (cluster, scanner)* (issue 1096, Q4 B
 and Q5 B on built pictures, 2026-11-06).
 
 ### 13.6 Users & roles — editable (shipped)

@@ -129,7 +129,7 @@ onUnmounted(() => {
       <ScannerFreshnessBanner />
       <RetirementCountdownBanner />
       <p v-if="clusterStore.failed && clusterStore.clusters.length === 0" class="load-error" role="alert">
-        JAVV cannot show the cluster list, and each screen needs it. Check the backend connection, then reload the page.
+        JAVV cannot show the cluster list. Each screen needs it. Check the backend connection, then reload the page.
       </p>
       <Transition name="t-fade">
         <div v-if="!timeTravel.isNow" class="sys-line tone-hist" role="status">
@@ -146,7 +146,7 @@ onUnmounted(() => {
           page-title
           icon="layers"
           title="No clusters yet"
-          hint="JAVV shows data when the first scan arrives. Create a scanner token, then deploy the scanners. The first scans then show here."
+          hint="Create a scanner token, then deploy the scanners. JAVV shows the data when the first scan arrives."
         >
           <UiButton
             v-if="auth.hasCapability('can_manage_tokens')"

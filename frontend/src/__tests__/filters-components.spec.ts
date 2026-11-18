@@ -395,7 +395,7 @@ describe('FilterBar value search', () => {
 
   it('a failed search says so and keeps the listed values that match', async () => {
     const bar = await typeIn(CAPPED, async () => null, 'ns-1')
-    expect(bar.find('.filter-note').text()).toBe('JAVV could not search all the values. The list shows the top 32.')
+    expect(bar.find('.filter-note').text()).toBe('JAVV searched only part of the values. The list shows the top 32.')
     expect(rows(bar)).toContain('ns-1')
   })
 

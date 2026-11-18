@@ -46,7 +46,7 @@ const COPY: Record<string, Meta> = {
   sla_breach: {
     icon: 'clock',
     label: 'SLA breached',
-    desc: 'A finding that is assigned to you is past its SLA deadline.',
+    desc: 'You are the assignee of a finding that is past its SLA deadline.',
   },
   assignment: {
     icon: 'shield',

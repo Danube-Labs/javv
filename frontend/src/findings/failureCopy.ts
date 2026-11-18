@@ -22,7 +22,7 @@ export const FAILURE_COPY: Record<FailureKind, string> = {
     'JAVV cannot apply this filter at a past time. Go back to now, or remove the search and the attribute filters.',
   // a 1-character search never gets to the server (the search box stops it), so the text names
   // the causes that do
-  bad_filter: 'You cannot use these filters together, or a value is not valid. Check the filters.',
+  bad_filter: 'JAVV refused the filters. Two of the filters cannot go together, or a value is not valid. Check the filters.',
   busy: 'The backend is busy. Try again in a few seconds.',
   // the cursor's search context is gone, so the page cannot be asked for again
   expired: 'These results expired. Reload the page to start again.',

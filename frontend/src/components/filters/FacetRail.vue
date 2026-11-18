@@ -175,7 +175,7 @@ function toggleOpen(g: Group) {
       <template v-if="searching(g)">
         <p v-if="searched(g)?.more" class="facet-cap" role="status">More values match. Type more letters.</p>
         <p v-else-if="remote.failed.value" class="facet-cap" role="status">
-          JAVV could not search all the values. The list shows the top {{ capOf(g.field) }}.
+          JAVV searched only part of the values. The list shows the top {{ capOf(g.field) }}.
         </p>
       </template>
       <p v-else-if="isOpen(g) && capped(g)" class="facet-cap">

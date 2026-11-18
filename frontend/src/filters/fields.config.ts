@@ -138,8 +138,8 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
         param: 'overdue',
         label: 'SLA breached',
         hint:
-          'Findings that are past their SLA deadline under the current policy. These are the rows ' +
-          'that show overdue in the SLA column. JAVV does not count findings that are risk ' +
+          'This filter keeps the findings that are past their SLA deadline under the current policy. ' +
+          'The SLA column shows these rows as overdue. JAVV does not count findings that are risk ' +
           'accepted, not affected or resolved.',
       },
       {
@@ -147,8 +147,8 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
         param: 'unassigned',
         label: 'Unassigned',
         hint:
-          'Findings that are not assigned to a person yet. The filter "Assignee is not <name>" ' +
-          'also keeps these findings, so only this filter finds them.',
+          'This filter keeps the findings that have no assignee yet. The filter "Assignee is not ' +
+          '<name>" also keeps these findings. To see only these findings, use this filter.',
       },
       // first_seen_at within the global range — the event view of the state table
       {
@@ -157,7 +157,7 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
         label: 'New in range',
         window: true,
         hint:
-          'Only the findings that JAVV first saw in the selected time range. A range with no new ' +
+          'This filter keeps only the findings that JAVV first saw in the selected time range. A range with no new ' +
           'findings shows 0. When this filter is off, the table shows all the findings that are present now.',
       },
     ],

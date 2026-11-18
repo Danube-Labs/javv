@@ -414,7 +414,7 @@ describe('the window that shows a token one time', () => {
     copyButton().click()
     await flushPromises()
     expect(useToastStore().toasts.map((t) => t.message)).toEqual([
-      "JAVV could not copy the text, because the browser blocked the clipboard. Select the text and copy it.",
+      "The browser blocked the clipboard, so JAVV did not copy the text. Select the text, then copy it.",
     ])
     expect(copyButton().textContent?.trim()).toBe('Copy') // not "Copied"
     w.unmount()

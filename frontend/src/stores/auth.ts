@@ -48,7 +48,7 @@ export const COOKIE_REFUSED_ON_HTTP_COPY =
   'This browser refused the session cookie, because the page uses http. Use https, or ask the ' +
   'admin to set JAVV_SESSION_COOKIE_SECURE=false.'
 export const SESSION_NOT_KEPT_COPY =
-  'JAVV signed you in, but this browser did not keep the session. Allow cookies for this site, ' +
+  'JAVV signed you in. This browser did not keep the session. Allow cookies for this site, ' +
   'then sign in again.'
 
 /** Mirror `MIN_LENGTH` and `MAX_LENGTH` in `backend/src/backend/auth/passwords.py`

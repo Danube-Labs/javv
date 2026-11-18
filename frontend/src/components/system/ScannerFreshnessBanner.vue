@@ -99,8 +99,8 @@ const clusterName = computed(() => clusterStore.selected?.cluster_name ?? cluste
     <div v-else-if="check.kind === 'failed' || lastChecked" class="sys-line tone-degraded" role="status">
       <AppIcon class="sys-icon" name="alert" :size="15" />
       <span v-if="check.kind === 'failed'"
-        >JAVV could not check the scanner freshness of <strong class="mono">{{ clusterName }}</strong>. JAVV
-        tries again every 10 minutes.</span
+        >The last check of the scanner freshness of <strong class="mono">{{ clusterName }}</strong> failed.
+        JAVV tries again every 10 minutes.</span
       >
       <span v-else
         >JAVV last checked the scanner freshness at {{ lastChecked }}. The latest check failed. JAVV tries

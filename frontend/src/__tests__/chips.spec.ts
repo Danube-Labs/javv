@@ -97,7 +97,7 @@ describe('CountDisagree', () => {
     const w = mount(CountDisagree, { props: { trivy: 55, grype: 55, total: 55 } })
     expect(marks(w)).toEqual(['trivy', 'grype'])
     expect(w.text()).toBe('TG55')
-    expect(w.attributes('title')).toBe('Trivy and Grype both report 55.')
+    expect(w.attributes('title')).toBe('Trivy and Grype report the same number: 55.')
   })
 
   /** The defect this replaced: one scanner counting alone rendered exactly like two agreeing. */

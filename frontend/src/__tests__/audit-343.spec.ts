@@ -33,7 +33,7 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
   // issue 975: a short search never gets to the server, so the 422 text names the causes that do
   it('a 422 names refused filters, never a short search', () => {
     expect(FAILURE_COPY.bad_filter).toBe(
-      "You cannot use these filters together, or a value is not valid. Check the filters.",
+      "JAVV refused the filters. Two of the filters cannot go together, or a value is not valid. Check the filters.",
     )
     expect(FAILURE_COPY.bad_filter).not.toMatch(/characters/)
   })
