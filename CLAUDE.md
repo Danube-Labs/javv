@@ -138,8 +138,10 @@ process before debugging behaviour (`ps -o lstart -p <pid>`), and confirm what i
 
 ## Hard-won reflexes (each line has bitten ≥ 2 sessions — check them, don't rediscover them)
 
-> Two of these are now **mechanical**, not advisory: `.claude/hooks/guard_bash.py` (a PreToolUse hook,
+> Three of these are now **mechanical**, not advisory: `.claude/hooks/guard_bash.py` (a PreToolUse hook,
 > set up in `.claude/settings.json`) refuses `git add -A|.` and `pkill|pgrep -f` before they run. It
+> also refuses a commit, push or `gh` post chained after `ste-lint.py` (or `check-release-notes.py`)
+> with `|`, `;`, `||` or `&`: the linter's exit code must gate the publish. It
 > tokenizes properly, so those strings are still fine inside a commit message or a heredoc. Cases:
 > `python3 .claude/hooks/test_guard_bash.py`.
 

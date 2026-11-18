@@ -10,7 +10,12 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from guard_bash import index_lock_blocker, offending_reason, takes_index_lock  # noqa: E402
+from guard_bash import (
+    index_lock_blocker,
+    lint_gate_reason,
+    offending_reason,
+    takes_index_lock,
+)
 
 MUST_BLOCK = [
     "git add -A",
@@ -46,6 +51,31 @@ MUST_ALLOW = [
     # unrelated commands that happen to contain the substrings
     "echo 'git add -A' >> notes.md",
     "rg 'pkill -f' docs/",
+]
+
+
+# A publish whose text linter cannot stop it. Each shape is one that really posted or pushed.
+LINT_UNGATED = [
+    "python3 s/ste-lint.py c.md | grep violations && gh issue comment 1 --body-file c.md",
+    "python3 s/ste-lint.py c.md | tail -2 | head -1 && gh issue comment 1 --body-file c.md",
+    "python3 s/ste-lint.py F|tail -2 && git push",
+    "python3 s/ste-lint.py c.md; gh issue comment 1 --body-file c.md",
+    "python3 s/ste-lint.py F | tail -2 && git add F && git commit -m 'docs: x'",
+    "python3 s/ste-lint.py F || gh pr edit 2 --body-file F",
+    "python3 s/check-release-notes.py b.md | tail -1 && gh pr edit 3 --body-file b.md",
+    "python3 s/ste-lint.py F | tail\ngh issue create --title t --body-file F",
+    "python3 s/ste-lint.py F | tail && gh api -X PATCH repos/o/r/issues/comments/1 -F body=@F",
+]
+
+# A linter that gates correctly, or a pipe with nothing published.
+LINT_GATED = [
+    "python3 s/ste-lint.py c.md && gh issue comment 1 --body-file c.md",
+    "if python3 s/ste-lint.py c.md >/dev/null; then gh issue comment 1 --body-file c.md; fi",
+    "python3 s/ste-lint.py F | tail -5",
+    "python3 s/ste-lint.py F > out.txt; echo rc=$?",
+    "git push origin main",
+    "gh api repos/o/r/pulls/1 | jq .title && python3 s/ste-lint.py F | tail",
+    "git commit -m 'never pipe ste-lint.py into tail before a push'",
 ]
 
 
@@ -109,6 +139,12 @@ def main() -> int:
         reason = offending_reason(cmd)
         if reason is not None:
             failures.append(f"  SHOULD ALLOW but blocked: {cmd!r}")
+    for cmd in LINT_UNGATED:
+        if lint_gate_reason(cmd) is None:
+            failures.append(f"  SHOULD BLOCK the ungated lint but allowed: {cmd!r}")
+    for cmd in LINT_GATED:
+        if lint_gate_reason(cmd) is not None:
+            failures.append(f"  SHOULD ALLOW the gated lint but blocked: {cmd!r}")
     for cmd in TAKES_LOCK:
         if not takes_index_lock(cmd):
             failures.append(f"  SHOULD WAIT on the index lock: {cmd!r}")
@@ -121,7 +157,8 @@ def main() -> int:
         print("\n".join(failures))
         return 1
     print(
-        f"guard-bash: {len(MUST_BLOCK)} blocked, {len(MUST_ALLOW)} allowed, "
+        f"guard-bash: {len(MUST_BLOCK) + len(LINT_UNGATED)} blocked, "
+        f"{len(MUST_ALLOW) + len(LINT_GATED)} allowed, "
         f"{len(TAKES_LOCK)} serialized, {len(NO_LOCK)} unaffected — all as expected"
     )
     return 0
