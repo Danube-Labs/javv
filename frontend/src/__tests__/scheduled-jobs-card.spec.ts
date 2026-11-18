@@ -110,13 +110,13 @@ describe('the Scheduled jobs card', () => {
 
   it('names the timezone the schedules are read in', async () => {
     const w = await card(ON)
-    expect(w.find('section.scheduled .repair-sub').text()).toContain('server timezone (Europe/Bucharest)')
-    expect(w.find('section.scheduled .repair-sub').text()).not.toContain('switched off')
+    expect(w.find('section.scheduled .repair-sub').text()).toContain('time zone of the backend (Europe/Bucharest)')
+    expect(w.find('section.scheduled .repair-sub').text()).not.toContain('The scheduler of this backend is off')
   })
 
   it('says so when the scheduler is switched off on this backend', async () => {
     const w = await card({ enabled: false, timezone: 'UTC' })
-    expect(w.find('section.scheduled .repair-sub').text()).toContain('The scheduler is switched off')
+    expect(w.find('section.scheduled .repair-sub').text()).toContain('The scheduler of this backend is off')
   })
 
   it('is not drawn when the route lists no scheduled-only job', async () => {

@@ -147,10 +147,10 @@ const budgetPct = computed(() =>
       <div class="head-card head-card-fluid">
         <h1>Data inspector</h1>
         <p class="screen-sub">
-          Raw read-only queries against the OpenSearch store: verify mappings, debug ingest,
-          answer "what is actually in the index". Every query is journaled. Spans
-          <b>all clusters</b>. The topbar cluster picker does not scope this console; filter
-          on <code>cluster_id</code> in the query itself.
+          Read-only queries to OpenSearch. Use them to check the index settings, to find why a
+          scan failed, or to see what an index holds. The audit log records each query. A query
+          reads <b>all clusters</b>. The cluster switcher in the top bar does not limit this
+          console. To limit a query, filter on <code>cluster_id</code> in the query.
         </p>
       </div>
       <InspectHeadFacts :index-count="indexCount" :store-bytes="storeBytes" :health="health" />
@@ -172,7 +172,7 @@ const budgetPct = computed(() =>
             v-model="path"
             class="pathbox"
             spellcheck="false"
-            aria-label="Store path"
+            aria-label="OpenSearch path"
             placeholder="findings/_search · _cat/indices · _cluster/health"
             @keydown="onEditorKeydown"
           />
@@ -208,7 +208,7 @@ const budgetPct = computed(() =>
               <span v-if="tookMs !== null" class="quiet">took {{ tookMs }} ms</span>
             </div>
             <pre v-if="responseText" class="response">{{ responseText }}</pre>
-            <p v-else class="response-empty">Run a query. The untransformed store response lands here.</p>
+            <p v-else class="response-empty">Run a query. The answer of OpenSearch shows here, as OpenSearch sends it.</p>
             <div v-if="capBytes" class="budget">
               <div class="budget-row">
                 <span>response budget</span>
@@ -220,8 +220,8 @@ const budgetPct = computed(() =>
         </div>
 
         <p class="journal-note">
-          <b>recorded</b> Every query you run here lands in the audit log: who ran it, against
-          what, and when. Nothing on this page is anonymous.
+          <b>recorded</b> The audit log records each query that you run here: who ran it, on what
+          and when. Nothing on this page is anonymous.
         </p>
       </section>
     </div>

@@ -126,12 +126,12 @@ export function jobLastRun(
   fmt: (iso: unknown) => string,
 ): { line: string; detail: string; bad: boolean } {
   if (job.status === 'running' && job.stale)
-    return { line: `no heartbeat since ${fmt(job.started_at)}`, detail: 'Reclaimable, run again', bad: true }
+    return { line: `no heartbeat since ${fmt(job.started_at)}`, detail: 'You can run it again', bad: true }
   if (job.status === 'running')
     return { line: `running since ${fmt(job.started_at)}`, detail: `by ${job.requested_by}`, bad: false }
   if (job.status === 'done') return { line: fmt(job.finished_at), detail: fmtJobResult(job.result), bad: false }
   if (job.status === 'failed')
-    return { line: `failed ${fmt(job.finished_at)}`, detail: job.error ?? 'see backend logs', bad: true }
+    return { line: `failed ${fmt(job.finished_at)}`, detail: job.error ?? 'see the backend log', bad: true }
   return { line: 'never', detail: '', bad: false }
 }
 

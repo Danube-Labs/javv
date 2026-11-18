@@ -89,7 +89,7 @@ describe('This install', () => {
     const w = await mountCard()
     expect(rowValue(w, 'JAVV release')).toBe('v0.6.0')
     expect(rowValue(w, 'Frontend build')).toBe(`v${APP_VERSION}`)
-    expect(rowValue(w, 'Store schema')).toBe('v18')
+    expect(rowValue(w, 'Database schema')).toBe('v18')
     expect(rowValue(w, 'Scanner report formats')).toBe('v3, v4')
     expect(rowValue(w, 'OpenSearch')).toBe('3.8.0')
     expect(rowValue(w, 'Python')).toBe('3.12.13')
@@ -154,7 +154,7 @@ describe('Scanners', () => {
       expect.objectContaining({ query: { cluster_id: 'c-2', runs: 1 } }),
     )
     expect(w.find('.stack-scanners .stack-group-title').text()).toContain('staging')
-    expect(w.find('.stack-scanners').text()).toMatch(/No committed scan/)
+    expect(w.find('.stack-scanners').text()).toMatch(/No scan of this cluster yet/)
   })
 
   it('drops a slow answer for a cluster that is no longer selected', async () => {
@@ -167,7 +167,7 @@ describe('Scanners', () => {
     await flushPromises()
     answerOld(ok({ scanners: [TRIVY] })) // c-1's read lands last
     await flushPromises()
-    expect(w.find('.stack-scanners').text()).toMatch(/No committed scan/)
+    expect(w.find('.stack-scanners').text()).toMatch(/No scan of this cluster yet/)
     expect(w.find('.stack-scanners').text()).not.toContain('0.74.0')
   })
 
@@ -175,7 +175,7 @@ describe('Scanners', () => {
     metaMock.mockResolvedValue(ok(META))
     provMock.mockResolvedValue(ok({ scanners: [] }))
     const w = await mountCard()
-    expect(w.find('.stack-scanners').text()).toMatch(/No committed scan/)
+    expect(w.find('.stack-scanners').text()).toMatch(/No scan of this cluster yet/)
   })
 
   it('asks for a cluster instead of reading nothing', async () => {
@@ -189,7 +189,7 @@ describe('Scanners', () => {
     metaMock.mockResolvedValue(ok(META))
     provMock.mockResolvedValue(failed(503))
     const w = await mountCard()
-    expect(w.find('.stack-scanners .stack-error').text()).toMatch(/didn't answer/)
+    expect(w.find('.stack-scanners .stack-error').text()).toMatch(/did not answer/)
     expect(logger.warn).toHaveBeenCalledWith('about_provenance_failed', { status: 503 })
   })
 })

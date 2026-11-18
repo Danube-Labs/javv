@@ -46,7 +46,7 @@ describe('buildDiagnostics', () => {
       'JAVV diagnostics · 2026-09-29 19:05 UTC',
       'JAVV release (backend): 0.6.0',
       'Frontend build: 0.6.0',
-      'Store schema: v18',
+      'Database schema: v18',
       'Scanner report formats accepted: v3, v4',
       'OpenSearch: 3.8.0',
       'Python: 3.12.13',
@@ -69,7 +69,7 @@ describe('buildDiagnostics', () => {
     expect(text).toContain('JAVV release (backend): unavailable')
     expect(text).toContain('OpenSearch: unavailable')
     expect(text).toContain('Cluster: none selected')
-    expect(text).toContain('Scanners: no committed run')
+    expect(text).toContain('Scanners: no scan yet')
     expect(text).toContain('Frontend build: 0.6.0') // known locally, so never lost with the read
   })
 
@@ -90,9 +90,9 @@ describe('buildDiagnostics', () => {
 describe('readFailureCopy', () => {
   it('names the cause: busy, down, or refused', () => {
     expect(readFailureCopy(429)).toMatch(/busy/)
-    expect(readFailureCopy(503)).toMatch(/didn't answer/)
-    expect(readFailureCopy(500)).toMatch(/didn't answer/)
-    expect(readFailureCopy(undefined)).toMatch(/didn't answer/) // no response at all
+    expect(readFailureCopy(503)).toMatch(/did not answer/)
+    expect(readFailureCopy(500)).toMatch(/did not answer/)
+    expect(readFailureCopy(undefined)).toMatch(/did not answer/) // no response at all
     expect(readFailureCopy(403)).toMatch(/refused.*403/)
   })
 })

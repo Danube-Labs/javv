@@ -87,7 +87,7 @@ async function run(job: JobDoc) {
     await refresh()
   } else {
     const problem = (r.error ?? null) as { title?: string } | null
-    toast.info(problem?.title ?? `${LABEL[job.kind] ?? job.kind} could not start.`)
+    toast.info(problem?.title ?? `${LABEL[job.kind] ?? job.kind} did not start.`)
     logger.warn('repair_job_rejected', { kind: job.kind, status: r.response?.status })
     await refresh() // a 409 means someone else is running it — show that truth
   }
@@ -105,16 +105,16 @@ async function dryRun(job: JobDoc) {
     })
     if (r.response?.status === 200 && r.data) {
       const { rolled, dropped, errors } = (r.data as { result: Record<string, number> }).result
-      const trouble = errors ? ` ${errors} series could not be checked.` : ''
+      const trouble = errors ? ` JAVV did not check ${errors} series.` : ''
       toast.info(
         rolled || dropped
-          ? `Dry run: the sweep would roll over ${rolled} and delete ${dropped} indices.${trouble} Nothing was changed.`
-          : `Dry run: nothing is due to roll over or be deleted.${trouble}`,
+          ? `Dry run: the sweep rolls over ${rolled} and deletes ${dropped} indices.${trouble} Nothing changed.`
+          : `Dry run: the sweep has nothing to roll over or delete.${trouble}`,
       )
       logger.info('repair_job_dry_run', { kind: job.kind, rolled, dropped, errors })
     } else {
       const problem = (r.error ?? null) as { title?: string } | null
-      toast.info(problem?.title ?? 'The dry run could not start.')
+      toast.info(problem?.title ?? 'The dry run did not start.')
       logger.warn('repair_job_dry_run_rejected', { kind: job.kind, status: r.response?.status })
     }
   } finally {
@@ -131,12 +131,12 @@ function canRun(job: JobDoc): boolean {
   <section class="tbl-card repair">
     <h2 class="panel-band">Repair actions</h2>
     <p class="repair-sub">
-      If the data on screen looks wrong, these are the safe, built-in fixes. They recompute
-      from the stored scan history instead of editing anything by hand. Every run is recorded
-      in the audit log.
+      If the data on the screen looks wrong, use these safe repairs. They calculate the data
+      again from the scan history, so nobody changes data by hand. The audit log records each
+      run.
     </p>
     <p v-if="failed" class="load-error" role="alert">
-      Job status unavailable. The triggers are disabled until it loads.
+      JAVV cannot show the job status. The buttons stay off until it loads.
     </p>
     <JobsTable v-else-if="loaded" :jobs="jobs">
       <template #actions="{ job }">
@@ -145,7 +145,7 @@ function canRun(job: JobDoc): boolean {
             v-if="job.kind === 'lifecycle_sweep'"
             variant="control"
             :disabled="!canRun(job) || dryRunning"
-            :title="canRun(job) ? 'See what the sweep would delete. Changes nothing' : `Requires ${job.capability}`"
+            :title="canRun(job) ? 'See what the sweep deletes. This changes nothing.' : `Your role needs the permission ${job.capability}.`"
             @click="dryRun(job)"
           >
             {{ dryRunning ? 'Checking…' : 'Dry run' }}
@@ -153,7 +153,7 @@ function canRun(job: JobDoc): boolean {
           <UiButton
             :variant="job.status === 'running' && !job.stale ? 'control' : 'primary'"
             :disabled="!canRun(job) || (job.status === 'running' && !job.stale)"
-            :title="canRun(job) ? undefined : `Requires ${job.capability}`"
+            :title="canRun(job) ? undefined : `Your role needs the permission ${job.capability}.`"
             @click="requestRun(job)"
           >
             {{ job.status === 'running' && !job.stale ? 'Running…' : 'Run' }}
@@ -164,11 +164,11 @@ function canRun(job: JobDoc): boolean {
 
     <ModalShell v-if="confirming" title="Run the lifecycle sweep?" @close="confirming = null">
       <p class="confirm-body">
-        This applies retention by <b>deleting whole aged indices</b>: findings history past each
-        cluster's retention window is gone for good, and time-travel can no longer reach it.
-        The sweep is journaled and follows the same rules as the scheduled run. Not sure?
-        Cancel and press <b>Dry run</b> first: it shows what would be deleted without
-        changing anything.
+        The sweep applies the retention. It <b>deletes each index that is too old</b>. The findings
+        history that is older than the retention window of a cluster is then gone, and a past
+        time cannot show it. The audit log records the sweep. It follows the same rules as the
+        scheduled run. If you are not sure, select Cancel and do a <b>Dry run</b> first. A dry
+        run shows what the sweep deletes, and it changes nothing.
       </p>
       <template #actions>
         <UiButton variant="ghost" @click="confirming = null">Cancel</UiButton>
@@ -180,11 +180,11 @@ function canRun(job: JobDoc): boolean {
   <section v-if="loaded && !failed && scheduled.length" class="tbl-card repair scheduled">
     <h2 class="panel-band">Scheduled jobs</h2>
     <p class="repair-sub">
-      The backend runs these on its own. Schedules are cron expressions set in the
-      deployment<template v-if="scheduler"> and read in the server timezone ({{ scheduler.timezone }})</template
+      The backend runs these jobs by itself. The deployment sets each schedule as a cron
+      expression<template v-if="scheduler">, in the time zone of the backend ({{ scheduler.timezone }})</template
       >.
       <b v-if="scheduler && !scheduler.enabled">
-        The scheduler is switched off on this backend, so nothing here runs on its own.
+        The scheduler of this backend is off, so no job here runs by itself.
       </b>
     </p>
     <JobsTable :jobs="scheduled" />

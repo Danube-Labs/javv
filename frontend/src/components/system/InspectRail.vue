@@ -10,8 +10,8 @@ defineProps<{ groups: RailGroups; activePattern: string; failed: boolean }>()
 const emit = defineEmits<{ pick: [pattern: string] }>()
 
 const SECTIONS: { key: keyof RailGroups; label: string }[] = [
-  { key: 'history', label: 'append history' },
-  { key: 'state', label: 'materialized state' },
+  { key: 'history', label: 'history' },
+  { key: 'state', label: 'current state' },
   { key: 'system', label: 'system' },
 ]
 
@@ -24,7 +24,7 @@ function entries(groups: RailGroups, key: keyof RailGroups): RailEntry[] {
   <aside class="card rail" aria-label="Indices">
     <h2 class="panel-band">Indices</h2>
     <p v-if="failed" class="load-error" role="alert">
-      Index list unavailable. The console still works with a typed path.
+      JAVV cannot show the index list. You can still type a path in the console.
     </p>
     <template v-else>
       <div v-for="s in SECTIONS" :key="s.key" class="rail-group">
@@ -46,8 +46,8 @@ function entries(groups: RailGroups, key: keyof RailGroups): RailEntry[] {
         </template>
       </div>
       <p class="rail-foot">
-        Counts from <code>_cat/indices</code>; credential indices are not inspectable.
-        Click inserts the pattern.
+        The counts come from <code>_cat/indices</code>. You cannot inspect the credential
+        indices. Select a pattern to put it in the path.
       </p>
     </template>
   </aside>

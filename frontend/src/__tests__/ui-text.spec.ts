@@ -111,17 +111,12 @@ function walk(dir: string): string[] {
 
 /** The files with hits before issue 1247 changed them, and their number of hits. Only shrinks. */
 const BASELINE: Record<string, number> = {
-  'components/about/RunningStackCard.vue': 2,
   'components/about/guide/ImagesSection.vue': 1,
   'components/about/guide/NowVsNewSection.vue': 1,
   'components/about/guide/ScansSection.vue': 1,
   'components/about/guide/TimeRangeSection.vue': 3,
   'components/about/guide/TriageSection.vue': 6,
   'components/about/guide/TwoScannersSection.vue': 3,
-  'components/system/InspectHeadFacts.vue': 1,
-  'components/system/InspectRail.vue': 1,
-  'components/system/RepairActionsCard.vue': 1,
-  'views/InspectView.vue': 6,
 }
 
 describe('text rules: the rules catch what they must, and only that', () => {
