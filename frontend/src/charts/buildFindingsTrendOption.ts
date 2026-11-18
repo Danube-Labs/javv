@@ -61,7 +61,7 @@ export function buildFindingsTrendOption(data: FindingsTrendData): EChartsOption
     const resolvedRows = data.resolved[scanner]
     if (resolvedRows?.length) {
       series.push({
-        name: `resolved (scan-observed) · ${scanner}`,
+        name: `resolved by a scan · ${scanner}`,
         type: 'line',
         cursor: 'default',
         smooth: true,

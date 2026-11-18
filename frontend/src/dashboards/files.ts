@@ -58,7 +58,7 @@ export function importFailureCopy(status: number, copy: boolean): string {
     return `The answer took too long, but JAVV can still be at work on the file. Read the list again in a minute. ${again}`
   // a store failure stops the import, and the lines before it keep their dashboards (docs/API.md)
   if (status === 429 || status >= 500) {
-    const why = status === 429 ? 'The search backend was busy, so the import stopped.' : 'The import stopped.'
+    const why = status === 429 ? 'The database was busy, so the import stopped.' : 'The import stopped.'
     return `${why} The lines before the failure made their dashboards. ${again}`
   }
   return 'JAVV did not import the file. No dashboard was made.'

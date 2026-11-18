@@ -83,18 +83,18 @@ function goPrev() {
 </script>
 
 <template>
-  <section class="tbl-card" :aria-label="`Failed ingests for ${scanner}`">
+  <section class="tbl-card" :aria-label="`Failed ingests of ${scanner}`">
     <div class="tbl-card-head">
       <div>
         <h3>Failed ingests</h3>
-        <p class="tbl-card-sub">pushes the backend refused in this range · retries stay with the scanner</p>
+        <p class="tbl-card-sub">The scans that the backend refused in this range. Only the scanner can send a scan again.</p>
       </div>
     </div>
-    <div v-if="!settled" class="skel-rows" aria-busy="true" aria-label="Loading failed ingests">
+    <div v-if="!settled" class="skel-rows" aria-busy="true" aria-label="Loading the refused scans">
       <UiSkeleton :height="120" />
     </div>
-    <p v-else-if="failed" class="empty-row" role="alert">Failed ingests unavailable.</p>
-    <p v-else-if="total === 0" class="empty-row">No failed ingests in this range.</p>
+    <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the refused scans. Check the backend connection.</p>
+    <p v-else-if="total === 0" class="empty-row">No refused scans in this range.</p>
     <template v-else>
       <div class="tbl-wrap">
         <table class="tbl tbl-dense tbl-hover">
@@ -117,7 +117,7 @@ function goPrev() {
                 <span v-if="row.image_ref" class="mono-cell sm clip" :title="row.image_ref">{{
                   row.image_ref
                 }}</span>
-                <span v-else class="muted-dash" title="the push carried no image JAVV could read">-</span>
+                <span v-else class="muted-dash" title="The scan has no image that JAVV can read.">-</span>
               </td>
               <td class="fit">
                 <span class="mono-cell sm">{{ row.stage }}</span>

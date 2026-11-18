@@ -101,18 +101,18 @@ describe('FailedIngestsLens (self-contained lens)', () => {
     const w = mount(FailedIngestsLens, { props, global: { stubs } })
     await flushPromises()
     expect(w.findComponent(EChart).exists()).toBe(false)
-    expect(w.text()).toContain('No refused pushes in this range')
+    expect(w.text()).toContain('No refused scans in this range')
   })
 
   it('shows a loading shimmer before the answer and a plain error when the read fails', async () => {
     let resolve!: (v: unknown) => void
     trendMock.mockReturnValue(new Promise((r) => (resolve = r)) as never)
     const w = mount(FailedIngestsLens, { props, global: { stubs } })
-    expect(w.find('[aria-label="Loading failed ingests"]').exists()).toBe(true)
-    expect(w.text()).not.toContain('No refused pushes') // no claim before evidence
+    expect(w.find('[aria-label="Loading the refused scans"]').exists()).toBe(true)
+    expect(w.text()).not.toContain('No refused scans') // no claim before evidence
     resolve({ data: null, response: { ok: false, status: 500 } })
     await flushPromises()
-    expect(w.text()).toContain('Failed-ingest activity unavailable')
+    expect(w.text()).toContain('JAVV cannot show the refused scans')
   })
 
   it('an OK reply whose body could not be read is a failed read, not a throw (issue 749)', async () => {
@@ -124,7 +124,7 @@ describe('FailedIngestsLens (self-contained lens)', () => {
     })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('Failed-ingest activity unavailable')
+    expect(w.text()).toContain('JAVV cannot show the refused scans')
   })
 
   it('clicking a day rewinds the whole app to the end of that day', async () => {

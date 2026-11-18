@@ -80,17 +80,17 @@ function onPointClick(params: { dataIndex: number }) {
     <div class="il-head">
       <h2 class="il-title">Handled findings</h2>
       <span class="il-sub"
-        >settling actions per day · {{ timeTravel.windowLabel.toLowerCase() }} · resolved ·
-        not affected · risk accepted · acknowledged</span
+        >Findings that people resolved, marked not affected, risk accepted or acknowledged, for
+        each day · {{ timeTravel.windowLabel.toLowerCase() }}.</span
       >
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (issue 355) -->
     <UiSkeleton v-if="!isSettled" :height="84" radius="sm" label="Loading handled findings" class="skel-gap" />
-    <p v-else-if="isFailed" class="il-empty">Handled-findings activity unavailable.</p>
+    <p v-else-if="isFailed" class="il-empty">JAVV cannot show the handled findings. Check the backend connection.</p>
     <p v-else-if="totalHandled === 0" class="il-empty">
-      No findings were handled in this window.<template v-if="fed"> The board below is empty too.</template>
+      Nobody handled a finding in this range.<template v-if="fed"> The leaderboard below is empty too.</template>
     </p>
-    <div v-else title="Click a bucket to view the whole app as of its end">
+    <div v-else title="Select a bar to see the app as it was at the end of that bar">
       <EChart :option="option" :height="84" @point-click="onPointClick" />
     </div>
   </section>

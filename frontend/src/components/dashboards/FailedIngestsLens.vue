@@ -76,15 +76,15 @@ function onPointClick(params: { dataIndex: number }) {
   <section class="ingest-lens" aria-label="Failed ingest activity">
     <div class="il-head">
       <h2 class="il-title">Failed ingests</h2>
-      <span class="il-sub">pushes the backend refused per {{ interval }}</span>
+      <span class="il-sub">The scans that the backend refused, for each {{ interval }}.</span>
       <span v-if="settled && !failed && refused > 0" class="fl-total mono-cell"
         >{{ refused }} in this range</span
       >
     </div>
-    <UiSkeleton v-if="!settled" :height="56" radius="sm" label="Loading failed ingests" class="skel-gap" />
-    <p v-else-if="failed" class="il-empty">Failed-ingest activity unavailable.</p>
-    <p v-else-if="refused === 0" class="il-empty">No refused pushes in this range.</p>
-    <div v-else title="Click a day to view the whole app as of the end of that day">
+    <UiSkeleton v-if="!settled" :height="56" radius="sm" label="Loading the refused scans" class="skel-gap" />
+    <p v-else-if="failed" class="il-empty">JAVV cannot show the refused scans. Check the backend connection.</p>
+    <p v-else-if="refused === 0" class="il-empty">No refused scans in this range.</p>
+    <div v-else title="Select a day to see the app as it was at the end of that day">
       <EChart :option="option" :height="56" @point-click="onPointClick" />
     </div>
   </section>

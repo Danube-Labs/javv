@@ -13,7 +13,7 @@ describe('the too-big export message', () => {
   it.each([
     ['ApprovalsView.vue', 'Too many rows to export at once. Narrow the filters first.'],
     ['AuditTrailView.vue', 'Too many rows to export at once. Narrow the filters first.'],
-    ['ContributorsView.vue', 'Too many rows to export at once. Narrow the window first.'],
+    ['ContributorsView.vue', 'Too many rows to export at once. Select a shorter time range first.'],
   ])('%s says what happened and what to do', (name, message) => {
     expect(capped(view(name))).toBe(message)
   })

@@ -73,7 +73,7 @@ describe('IngestFailuresTable (self-contained panel)', () => {
     const w = mountTable()
     await flushPromises()
     expect(w.find('[aria-busy="true"]').exists()).toBe(true)
-    expect(w.text()).not.toContain('No failed ingests')
+    expect(w.text()).not.toContain('No refused scans')
   })
 
   it('renders one row per failure, newest first as served, with the full text on hover', async () => {
@@ -85,7 +85,7 @@ describe('IngestFailuresTable (self-contained panel)', () => {
     expect(trs[0]!.text()).toContain('registry.example.com/team/api:v2')
     expect(trs[0]!.text()).toContain('422')
     expect(trs[0]!.find('[title^="422 ·"]').attributes('title')).toContain('findings.3.severity')
-    // the push carried no image JAVV could read: nothing to show, and no invented one
+    // the scan had no image that JAVV could read: nothing to show, and no invented one
     expect(trs[1]!.find('.muted-dash').text()).toBe('-')
     expect(trs[1]!.text()).toContain('decode')
     expect(w.text()).not.toMatch(/retry/i) // read-only by ruling: no retry column or action
@@ -95,7 +95,7 @@ describe('IngestFailuresTable (self-contained panel)', () => {
     failuresMock.mockResolvedValue(page([], 0, null))
     const w = mountTable()
     await flushPromises()
-    expect(w.text()).toContain('No failed ingests in this range.')
+    expect(w.text()).toContain('No refused scans in this range.')
     expect(w.find('table').exists()).toBe(false)
   })
 
@@ -103,8 +103,8 @@ describe('IngestFailuresTable (self-contained panel)', () => {
     failuresMock.mockResolvedValue({ data: undefined, response: { ok: false, status: 503 } } as never)
     const w = mountTable()
     await flushPromises()
-    expect(w.find('[role="alert"]').text()).toBe('Failed ingests unavailable.')
-    expect(w.text()).not.toContain('No failed ingests')
+    expect(w.find('[role="alert"]').text()).toBe('JAVV cannot show the refused scans. Check the backend connection.')
+    expect(w.text()).not.toContain('No refused scans')
   })
 
   it('pages on the server cursor and walks back on the remembered one', async () => {

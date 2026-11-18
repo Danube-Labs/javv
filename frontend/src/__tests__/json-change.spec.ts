@@ -128,7 +128,7 @@ describe('the Audit log and the feed use it for JSON-only rows', () => {
       field: 'bulk_patch',
       new_value_json: { patch: { state: 'acknowledged' }, result_count: 2, target_ids: ['a', 'b'] },
     }
-    expect(auditDetail(bulk)).toBe('State → Acknowledged: 2 findings (frozen set)')
+    expect(auditDetail(bulk)).toBe('State → Acknowledged: 2 findings (the set at the time of the action)')
     expect(feedDetail(bulk)).toBe('Bulk change → updated')
   })
 })

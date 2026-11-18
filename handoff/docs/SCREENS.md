@@ -182,10 +182,10 @@ and OIDC (#131) moves those passwords to the identity provider.
 
 Fleet landing page; layout preserved (KPI strip → cluster table with MixBar).
 
-**Header card (issue 902).** While the fleet loads, the note says only "Fleet current state".
+**Header card (issue 902).** While the fleet loads, the note says only "The state of all clusters now".
 When the counts arrive, it adds "· 34 clusters · 33 need attention" (or "all healthy"), and the
 card stretches to the right. Before, it showed "0 clusters" while it loaded. Overview's card
-stretches the same way when "last sweep" arrives. The scanner switch in the head is a screen head
+stretches the same way when "The last scan arrived at" arrives. The scanner switch in the head is a screen head
 control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
 
 **Data**
@@ -195,7 +195,7 @@ control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
 - Per-cluster severity mix + KPI strip: `GET /api/v1/findings/facets?cluster_id=<id>` — one call
   per cluster row; buckets are **per-scanner** — the MixBar renders one bar per scanner (or a
   scanner toggle), never a merged bar.
-- Health chip + Last sweep: `GET /api/v1/scanners/freshness?cluster_id=<id>`.
+- Health chip + Last scan: `GET /api/v1/scanners/freshness?cluster_id=<id>`.
 - Retirement countdown (issue 765): a status chip under the cluster's name, "retires in 5 days"
   (amber) or, on the last day and past its date, red ("retirement due" once past it), from the
   cluster list's `warns_at` / `retires_at`; nothing outside the warning window, and none for the
@@ -203,8 +203,8 @@ control: 30px high, with the 1px edge under it (issue 1039, DESIGN.md §5).
   so a cluster that scans again loses its chip without a reload.
 
 **States:** loading (skeleton rows); empty (no clusters registered — cold-start copy); degraded;
-**T<now → `LimitedHistoricalNotice`**: "Historical all-clusters view is limited until the v1.1
-metrics rollup" (C-5/D39) — the current-state table is replaced by the notice, never a wrong or
+**T<now → `LimitedHistoricalNotice`**: "This page cannot show a past time"
+(C-5/D39) — the current-state table is replaced by the notice, never a wrong or
 expensive query.
 The cold-start state ("No clusters yet") is the whole page on the nine data routes,
 so its title is the page's one h1 in the page-title style (issue 829; operator ruling
@@ -229,7 +229,8 @@ so its title is the page's one h1 in the page-title style (issue 829; operator r
   Cards remain click-through → Findings pre-filtered (deep-link preset preserved).
 - Vulnerabilities over time: `GET /api/v1/trends/findings?cluster_id=…&range=…` — faceted by
   scanner (two series sets, never merged). Note: `resolved_semantics: "scan_resolved"` — any
-  "resolved" series is **scan-observed** resolution, labeled as such (A-m9).
+  "resolved" series is **scan-observed** resolution, labeled as such (A-m9): "resolved by a scan"
+  in the legend, "Resolved: a scan did not find the finding again." in the card sub.
 - Scan activity: `GET /api/v1/trends/scans?cluster_id=…&range=…`.
 - Per-namespace table: namespace buckets from `GET /api/v1/findings/facets` (rows → Findings
   filtered by ns; deep-link preserved).
@@ -237,14 +238,14 @@ so its title is the page's one h1 in the page-title style (issue 829; operator r
 **Cut / changed widgets**
 - **Package-type donut — RULED (B-1, 2026-07-07): KEEP, per the v4 design.** Backed by the
   **M8d** envelope change (`ptype` field + facet bucket). Until M8d lands + a rescan cycle
-  repopulates, the donut shows the "awaiting package-type data" placeholder; pre-M8d findings
+  repopulates, the donut shows the "No package types yet." placeholder; pre-M8d findings
   aggregate as `unknown` ptype until re-observed by a scan.
 - **Top components** + **Language-specific binaries** tables — **cut** (B-6, no backing agg);
   layout slots left.
 - **Newly published** bar chart — **cut** (B-2: no `published` field exists); slot reused by the
   scan-activity trend.
 
-**States:** loading (skeletons per card); empty/first-run ("no sweep has landed yet"); degraded;
+**States:** loading (skeletons per card); empty/first-run ("No scans yet"); degraded;
 scanner-silent banner; `T<now` history banner (single-cluster rewind is fully supported once M8b
 lands; 501-state before that, C-1).
 
@@ -253,11 +254,11 @@ Riskiest images cards are panels of the dashboard catalog (`src/dashboards/catal
 §10). Overview reads the findings facets once and passes them to the stat bands, Package type and
 Per namespace, so their numbers agree, as before. Top components and Riskiest images get their own
 data: each shows the loading shimmer until its answer comes, and its own error text if the read
-fails ("Component ranking unavailable.", "Riskiest images unavailable."). Before, both showed their
+fails ("JAVV cannot show the top components. ...", "JAVV cannot show the riskiest images. ..."). Before, both showed their
 "no data" text while the read was open, and Riskiest images also showed it when the read failed.
 When the cluster has no committed inventory yet (`inventory: null`), Riskiest images says "No
-inventory committed yet. Images show once a scanner cycle completes." (at a past time: "No
-inventory committed at this point in time."), not "No image findings in the running inventory.":
+inventory yet. Images show here when a scanner completes a scan cycle." (at a past time: "No
+inventory at this time."), not "The running images have no findings.":
 JAVV does not know what runs there, which is not a clean cluster. Operator ruling 2026-10-25 on the
 A/B picture `visual-assets/440/440-riskiest-unknown-ab.png`.
 
@@ -268,7 +269,7 @@ A): the split by severity is a read at the time now only, and a panel shows each
 gives both scanners at a past time, so the panel picks the lines of the selected scanner from the
 answer, and the scanner switch starts no read. The panel takes no findings filters, because
 `/trends/findings` takes none. States: the loading shimmer, "No new or resolved findings in this
-range.", "Vulnerability trend unavailable." and, for a range of less than 1 day, the note of the
+range.", "JAVV cannot show the findings over time. ..." and, for a range of less than 1 day, the note of the
 Overview card.
 
 **Changed vs SCREENS.md:** A-1 (lowercase + negligible), B-1 (donut kept, fed by M8d ptype),
@@ -953,8 +954,8 @@ dead-letter feed — retries and dead-lettering stay scanner-local; JAVV only se
 scanner, between that scanner's card and its committed-runs table (what needs attention before the
 history; operator, 2026-09-26) — the screen's per-scanner columns carry it, so
 no count mixes scanners (the prototype's single full-width table with a Scanner column is replaced).
-Columns: When · Image (`-` when the push carried no image JAVV could read) · Stage · Error (HTTP
-status + the server's message). Server-paged with the shared pager; empty = "No failed ingests in
+Columns: When · Image (`-` when the scan had no image that JAVV could read) · Stage · Error (HTTP
+status + the server's message). Server-paged with the shared pager; empty = "No refused scans in
 this range." A self-contained panel (DESIGN.md §10), so it can sit on a composed dashboard.
 
 **Scanner lanes (operator ruling 2026-09-27, on built A/B/C specimens — B chosen, plus C on narrow):**
@@ -966,10 +967,10 @@ Trivy | Grype picker shows one lane at a time. Rejected: tinted lane backgrounds
 warm canvas) and one-at-a-time on wide screens (loses the side-by-side comparison).
 
 **States:** loading; never-ingested; scanner-silent (chip + global banner agree); degraded;
-`T<now` → "history for scanner status is limited until the v1.1 metrics rollup" (C-1/D39). The
+`T<now` → "This page cannot show the scanner status of a past time" (C-1/D39). The
 head count shows "-" until both reads answer, and after a refused one, never "0 scanners" (issue
 833 F5); the alert follows the G2 rule (§3). The ingest strip on this and the other data screens
-shows "last ingest -" when its freshness read is refused, never the previous read's time
+shows "last scan -" when its freshness read is refused, never the previous read's time
 (operator ruling 2026-10-12).
 
 **Changed vs SCREENS.md:** C-3 (whole-screen redesign), A-7/D-4 (retry/dead-letter feed cut), issue 357 (JAVV-side refusals reinstated), D41

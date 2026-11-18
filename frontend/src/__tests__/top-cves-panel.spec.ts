@@ -185,11 +185,11 @@ describe('TopCvesPanel (self-contained panel)', () => {
     expect(w.text()).not.toContain('No vulnerability in the findings') // no claim before evidence
     resolve(ok({ values: [] }))
     await flushPromises()
-    expect(w.text()).toContain('No vulnerability in the findings.')
+    expect(w.text()).toContain('No vulnerabilities yet.')
     readMock.mockResolvedValueOnce({ data: null, response: { ok: false, status: 500 } } as never)
     const failed = mountPanel().w
     await flushPromises()
-    expect(failed.text()).toContain('Vulnerability ranking unavailable.')
+    expect(failed.text()).toContain('JAVV cannot show the top vulnerabilities. Check the backend connection.')
   })
 
   it('an OK reply whose body could not be read is a failed read, not a throw (issue 749)', async () => {
@@ -204,6 +204,6 @@ describe('TopCvesPanel (self-contained panel)', () => {
     })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('Vulnerability ranking unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the top vulnerabilities. Check the backend connection.')
   })
 })

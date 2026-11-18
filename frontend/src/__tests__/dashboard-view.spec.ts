@@ -358,7 +358,7 @@ describe('the read page', () => {
   it('an OK answer with no body it can read says the dashboard is unavailable', async () => {
     vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200))
     const { w } = await mountView()
-    expect(w.find('.load-error').text()).toContain('The dashboard is unavailable')
+    expect(w.find('.load-error').text()).toContain('JAVV cannot show the dashboard')
   })
 
   it('a refused read says why', async () => {

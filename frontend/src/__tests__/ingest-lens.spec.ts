@@ -129,26 +129,26 @@ describe('IngestLens head (issue 341: the guide popover, plain copy)', () => {
     tt.setWindow(0.25, 'Last 6 hours')
     const w = await mountLens({ trivy: pts([1]) })
     const sub = w.find('.il-sub').text()
-    expect(sub).toContain('daily bars: covers the last 1 day')
+    expect(sub).toContain('The chart has one bar for each day. It shows all of the last day')
     expect(sub).not.toContain('—')
   })
 
   it('a refused freshness read drops the old "last ingest" time for "-" (issue 833, F5)', async () => {
     const w = await mountLens({ trivy: pts([1]) })
-    expect(w.find('.il-last').text()).toMatch(/^last ingest trivy/)
+    expect(w.find('.il-last').text()).toMatch(/^last scan trivy/)
     vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue({
       error: {},
       response: { ok: false, status: 503 },
     } as never)
     useTimeTravelStore().setWindow(7, 'Last 7 days')
     await flushPromises()
-    expect(w.find('.il-last').text()).toBe('last ingest -')
+    expect(w.find('.il-last').text()).toBe('last scan -')
   })
 
   it('a quiet range at now says when the table was last updated, without an em dash', async () => {
     const w = await mountLens({})
     const empty = w.find('.il-empty').text()
-    expect(empty).toMatch(/^No scans committed in this range: the table shows the state last updated/)
+    expect(empty).toMatch(/^No scans in this range\. The table shows the state of the last scan/)
     expect(empty).not.toContain('—')
   })
 })
@@ -171,6 +171,6 @@ describe('IngestLens read', () => {
     })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.find('.il-empty').text()).toBe('Ingest activity unavailable.')
+    expect(w.find('.il-empty').text()).toBe('JAVV cannot show the scans. Check the backend connection.')
   })
 })

@@ -141,7 +141,7 @@ async function loadRows(q: typeof rowsQuery.value) {
 // the rows' failure names the whole log; the counts alone failing leaves the rows standing
 const failureMessage = computed(() =>
   grid.failed
-    ? readFailureCopy(grid.failedStatus, 'Audit log unavailable. Check the backend connection, then retry.')
+    ? readFailureCopy(grid.failedStatus, 'JAVV cannot show the audit log. Check the backend connection, then try again.')
     : `JAVV cannot show the filter counts. ${readFailureCopy(facetsFailedStatus.value, 'Check the backend connection.')}`,
 )
 watch(
@@ -215,8 +215,8 @@ const { exporting, run: runExport } = useCsvExport({
   onFailed: (status) =>
     toast.error(
       status
-        ? `Export failed (${status}). Check the backend connection.`
-        : 'Export failed. Check the backend connection.',
+        ? `JAVV did not export the file (${status}). Check the backend connection.`
+        : 'JAVV did not export the file. Check the backend connection.',
     ),
   onDone: (name) => toast.success(`Export downloaded · ${name}`),
 })
@@ -237,7 +237,7 @@ async function exportCsv() {
           <template v-if="grid.totalKnown">{{ totalLabel }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> events</span>
         </p>
-        <p class="head-note">immutable, per user · window bounded by audit-log retention</p>
+        <p class="head-note">Nobody can change or delete an event. The log keeps the events for its retention period.</p>
       </div>
       <AuditLens :query="facetsQuery" />
     </div>

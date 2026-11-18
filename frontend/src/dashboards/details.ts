@@ -105,23 +105,23 @@ export function roleOptions(listed: readonly string[], chosen: readonly string[]
 
 /** The message of a delete that the backend did not do. */
 export function removeFailureCopy(status: number, readOnly: boolean): string {
-  if (readOnly) return 'The store is read-only: its disk is full. JAVV did not delete the dashboard.'
+  if (readOnly) return 'The database is read-only because its disk is full. JAVV did not delete the dashboard.'
   if (status === 403) return 'Only the owner or an admin can delete this dashboard.'
   if (status === 409)
     return 'Somebody changed this dashboard after you opened it. JAVV did not delete it. Reload the page, then try again.'
-  if (status === 429) return 'The store is busy. JAVV did not delete the dashboard. Try again in a few seconds.'
+  if (status === 429) return 'The database is busy. JAVV did not delete the dashboard. Try again in a few seconds.'
   if (status === 0 || status === 504)
     return 'JAVV did not answer. The dashboard is possibly deleted. Reload the page to see.'
-  return 'JAVV did not delete the dashboard. Check the backend, then try again.'
+  return 'JAVV did not delete the dashboard. Check the backend connection, then try again.'
 }
 
 /** The message of a new dashboard that the backend did not make. */
 export function createFailureCopy(status: number, readOnly: boolean): string {
-  if (readOnly) return 'The store is read-only: its disk is full. JAVV did not make the dashboard.'
+  if (readOnly) return 'The database is read-only because its disk is full. JAVV did not make the dashboard.'
   if (status === 403) return 'Your role cannot make dashboards.'
   if (status === 422) return 'JAVV cannot use a value of this dashboard, for example a role that it does not have.'
-  if (status === 429) return 'The store is busy. JAVV did not make the dashboard. Try again in a few seconds.'
+  if (status === 429) return 'The database is busy. JAVV did not make the dashboard. Try again in a few seconds.'
   if (status === 0 || status === 504)
     return 'JAVV did not answer. The dashboard is possibly made. Close this window and look at the list.'
-  return 'JAVV did not make the dashboard. Check the backend, then try again.'
+  return 'JAVV did not make the dashboard. Check the backend connection, then try again.'
 }

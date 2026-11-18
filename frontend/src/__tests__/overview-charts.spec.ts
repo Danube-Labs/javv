@@ -48,19 +48,19 @@ describe('buildFindingsTrendOption (per-scanner sacred)', () => {
     expect(series.map((s) => s.name)).toEqual([
       'new · trivy',
       'new · grype',
-      'resolved (scan-observed) · grype',
+      'resolved by a scan · grype',
     ])
     // the counts pass through verbatim — no client math
     expect(series[0]!.data).toEqual([1, 2, 3])
     expect(series[1]!.data).toEqual([4, 5, 6])
   })
 
-  it('series colors are the pinned scanner literals; resolved is dashed + labeled scan-observed', () => {
+  it('series colors are the pinned scanner literals; resolved is dashed + labeled resolved by a scan', () => {
     const series = buildFindingsTrendOption(data).series as LineSeriesOption[]
     expect(series[0]!.lineStyle?.color).toBe(CHART_SCANNER.trivy)
     expect(series[1]!.lineStyle?.color).toBe(CHART_SCANNER.grype)
     expect(series[2]!.lineStyle?.type).toBe('dashed')
-    expect(String(series[2]!.name)).toContain('scan-observed')
+    expect(String(series[2]!.name)).toContain('resolved by a scan')
   })
 })
 

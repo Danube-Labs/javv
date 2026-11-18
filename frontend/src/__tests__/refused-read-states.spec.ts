@@ -273,7 +273,7 @@ const auditPage = (actor: string, total: number, next: string | null) => ({
 describe('Audit log: the same rules as Findings (issue 833)', () => {
   const read = () => vi.mocked(readAuditLogApiV1AuditGet)
   const filters = () => makeFiltersStore('audit-filters', AUDIT_FIELDS)()
-  const ROWS_DOWN = 'Audit log unavailable. Check the backend connection, then retry.'
+  const ROWS_DOWN = 'JAVV cannot show the audit log. Check the backend connection, then try again.'
 
   async function mountWithFirstPage() {
     read().mockResolvedValueOnce(auditPage('alice-old', 60, 'cur-2') as never)
@@ -357,7 +357,7 @@ describe('Contributors and Approvals: the reason, and the newest answer (issue 8
 
   it.each([
     [429, 'The backend is busy. Try again in a few seconds.'],
-    [503, 'Contributors unavailable. Check the backend connection.'],
+    [503, 'JAVV cannot show the contributors. Check the backend connection.'],
   ])('Contributors, a %s', async (status, copy) => {
     vi.mocked(contributorsApiV1ContributorsGet).mockResolvedValueOnce(refusedWith(status) as never)
     const w = await mountRouted(ContributorsView as Component)

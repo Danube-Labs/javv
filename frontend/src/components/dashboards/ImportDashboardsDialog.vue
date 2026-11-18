@@ -77,7 +77,7 @@ async function run() {
 </script>
 
 <template>
-  <ModalShell title="Import dashboards" subtitle="A file from Export: one dashboard on each line" :width="620" @close="emit('close')">
+  <ModalShell title="Import dashboards" subtitle="A file from Export, with one dashboard on each line" :width="620" @close="emit('close')">
     <template v-if="!outcome">
       <UiField label="File" first>
         <div class="imp-file">
@@ -87,7 +87,7 @@ async function run() {
           <input ref="picker" class="imp-input" type="file" accept=".ndjson,application/x-ndjson" @change="pick" />
         </div>
       </UiField>
-      <UiField label="IDs" hint="a copy gets a new ID; an ID that exists is not made again">
+      <UiField label="IDs" hint="A copy gets a new ID. If a dashboard ID exists, JAVV does not make that dashboard again.">
         <UiSegControl v-model="mode" :options="MODE_OPTS" label="IDs" />
       </UiField>
       <p class="imp-note">You become the owner of each dashboard that the import makes.</p>

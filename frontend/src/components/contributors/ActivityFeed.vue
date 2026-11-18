@@ -79,10 +79,10 @@ function openFinding(row: AuditEvent) {
     <UiSkeleton v-for="i in 4" :key="i" :height="34" radius="sm" />
   </div>
   <p v-else-if="failed" class="load-error" role="alert">
-    Recent activity unavailable. Check the backend connection.
+    JAVV cannot show the recent activity. Check the backend connection.
   </p>
   <p v-else-if="rows.length === 0" class="feed-empty" role="status">
-    No journaled activity yet. Triage actions land here as they happen.
+    No activity yet. This list shows each triage action when it occurs.
   </p>
   <div v-else class="feed">
     <component

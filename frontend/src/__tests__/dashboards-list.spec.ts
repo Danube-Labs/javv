@@ -358,7 +358,7 @@ describe('the words of a result', () => {
 
   it('a failure that stops the import says that the lines before it were made, and what a retry does', () => {
     expect(importFailureCopy(429, true)).toBe(
-      'The search backend was busy, so the import stopped. The lines before the failure made their dashboards. ' +
+      'The database was busy, so the import stopped. The lines before the failure made their dashboards. ' +
         'If you import the file again with Make copies, JAVV makes those dashboards a second time.',
     )
     expect(importFailureCopy(503, false)).toBe(

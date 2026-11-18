@@ -38,8 +38,8 @@ const atCap = computed(() => props.runs.length >= props.cap)
     <table class="tbl tbl-dense tbl-hover">
       <thead>
         <tr>
-          <th class="fit">Committed{{ atCap ? ` · last ${cap}` : '' }}</th>
-          <th>Run</th>
+          <th class="fit">Completed{{ atCap ? ` · last ${cap}` : '' }}</th>
+          <th>Scan</th>
           <th class="mix-col">Mix</th>
           <th class="fit">Images</th>
           <th class="fit">Findings</th>

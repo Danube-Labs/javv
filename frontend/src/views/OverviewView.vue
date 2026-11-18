@@ -114,8 +114,8 @@ function goFindings(query: Record<string, string>) {
       <div ref="headCard" class="head-card head-card-fluid">
         <h1>Overview</h1>
         <p class="head-note">
-          Current state across <b class="mono-cell"><template v-if="clusterStore.selected?.cluster_name">{{ clusterStore.selected.cluster_name }}</template><span v-else class="muted-dash">-</span></b>
-          <template v-if="lastSweep"> · last sweep <span class="mono-cell">{{ lastSweep }}</span></template>
+          The state of <b class="mono-cell"><template v-if="clusterStore.selected?.cluster_name">{{ clusterStore.selected.cluster_name }}</template><span v-else class="muted-dash">-</span></b> now.
+          <template v-if="lastSweep"> The last scan arrived at <span class="mono-cell">{{ lastSweep }}</span>.</template>
         </p>
       </div>
       <div class="head-actions">
@@ -139,14 +139,14 @@ function goFindings(query: Record<string, string>) {
     </div>
 
     <p v-else-if="overview.failed" class="load-error" role="alert">
-      Overview unavailable. Check the backend connection.
+      JAVV cannot show the overview. Check the backend connection.
     </p>
 
     <EmptyState
       v-else-if="overview.empty"
       icon="pulse"
-      title="No sweep has landed yet"
-      hint="KPIs and trends appear after the first scanner cycle commits. Scanner status shows per-scanner progress."
+      title="No scans yet"
+      hint="JAVV shows the numbers and the charts when a scanner completes its first scan cycle. Scanner status shows the progress of each scanner."
     />
 
     <template v-else>
@@ -160,9 +160,9 @@ function goFindings(query: Record<string, string>) {
             <div>
               <h2>Vulnerabilities over time</h2>
               <p class="card-sub">
-                new per day · {{ timeTravel.windowLabel.toLowerCase() }}<template
+                New findings for each day · {{ timeTravel.windowLabel.toLowerCase() }}<template
                   v-if="trendLens === 'scanner'"
-                > · resolved = scan-observed</template>
+                >. Resolved: a scan did not find the finding again.</template>
               </p>
             </div>
             <UiSegControl
@@ -176,7 +176,7 @@ function goFindings(query: Record<string, string>) {
             <p v-if="trendNote" class="empty-row trend-empty">{{ trendNote }}</p>
             <EChart v-else :option="trendOption" :height="250" />
             <p v-if="subDayNote" class="chart-note">
-              Trend at daily resolution: chart covers the last 1 day.
+              The chart has one bar for each day. It shows all of the last day.
             </p>
           </div>
         </section>

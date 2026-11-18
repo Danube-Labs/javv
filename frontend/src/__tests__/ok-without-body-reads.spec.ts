@@ -81,21 +81,21 @@ afterEach(() => {
 
 describe('a component whose OK reply has a body that could not be read shows its failure copy', () => {
   it.each([
-    ['ActivityFeed', ActivityFeed, { query }, 'Recent activity unavailable.'],
-    ['ProgressPanel', ProgressPanel, { query }, 'Triage progress unavailable.'],
-    ['AuditLens', AuditLens, { query }, 'Audit activity unavailable.'],
-    ['ContributorsView', ContributorsView, {}, 'Contributors unavailable.'],
-    ['IngestFailuresTable', IngestFailuresTable, { clusterId: CLUSTER, scanner: 'trivy', t: null }, 'Failed ingests unavailable.'],
-    ['ScannerStatusView', ScannerStatusView, {}, 'Scanner status unavailable.'],
+    ['ActivityFeed', ActivityFeed, { query }, 'JAVV cannot show the recent activity.'],
+    ['ProgressPanel', ProgressPanel, { query }, 'JAVV cannot show the triage progress.'],
+    ['AuditLens', AuditLens, { query }, 'JAVV cannot show the audit activity. Check the backend connection.'],
+    ['ContributorsView', ContributorsView, {}, 'JAVV cannot show the contributors.'],
+    ['IngestFailuresTable', IngestFailuresTable, { clusterId: CLUSTER, scanner: 'trivy', t: null }, 'JAVV cannot show the refused scans. Check the backend connection.'],
+    ['ScannerStatusView', ScannerStatusView, {}, 'JAVV cannot show the scanner status.'],
     ['SavedViewsView', SavedViewsView, {}, 'JAVV cannot show the saved views.'],
-    ['DashboardsView', DashboardsView, {}, 'Dashboards unavailable.'],
+    ['DashboardsView', DashboardsView, {}, 'JAVV cannot show the dashboards.'],
     ['ScanScopeView', ScanScopeView, {}, 'Scan scope unavailable.'],
     ['ScanningView', ScanningView, {}, 'Staleness timers unavailable.'],
     ['SlaPolicyView', SlaPolicyView, {}, 'SLA policy unavailable.'],
     ['TokensView', TokensView, {}, 'Token list unavailable.'],
     ['UsersRolesView', UsersRolesView, {}, 'User list unavailable.'],
     // these three did not throw: they showed a loaded page with nothing, or with old data, in it
-    ['TopComponentsCard', TopComponentsCard, { scanner: 'all' }, 'Component ranking unavailable.'],
+    ['TopComponentsCard', TopComponentsCard, { scanner: 'all' }, 'JAVV cannot show the top components. Check the backend connection.'],
     ['DataOpenSearchView', DataOpenSearchView, {}, 'Data settings unavailable.'],
     ['ApprovalsView', ApprovalsView, {}, 'JAVV cannot show the Approval list.'],
   ] as const)('%s', async (_name, component, props, copy) => {
@@ -122,7 +122,7 @@ describe('a component with two reads, only one of which has a body that could no
     const w = mountAll(ProgressPanel, { query })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('Triage progress unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the triage progress.')
   })
 
   it.each(['freshness', 'provenance'] as const)('ScannerStatusView, with %s whole', async (whole) => {
@@ -132,7 +132,7 @@ describe('a component with two reads, only one of which has a body that could no
     const w = mountAll(ScannerStatusView)
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('Scanner status unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the scanner status.')
   })
 
   it.each(['users', 'roles'] as const)('UsersRolesView, with %s whole', async (whole) => {

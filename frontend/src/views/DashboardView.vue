@@ -136,8 +136,8 @@ const exporter = useCsvExport({
   path: EXPORT_PATH,
   filename: () => `dashboard-${dash.value?.dashboard_id ?? 'export'}.ndjson`,
   event: 'dashboard_export_failed',
-  onCapped: () => toast.error('The export failed. Try again.'),
-  onFailed: (status) => toast.error(readFailureCopy(status, 'The export failed. Check the backend, then try again.')),
+  onCapped: () => toast.error('JAVV did not export the file. Try again.'),
+  onFailed: (status) => toast.error(readFailureCopy(status, 'JAVV did not export the file. Check the backend connection, then try again.')),
   onDone: (name) => toast.success(`Saved ${name}`),
 })
 
@@ -336,7 +336,7 @@ async function save() {
     <UiSkeleton v-if="!dash && failedStatus === null" :height="220" label="Loading the dashboard" />
 
     <p v-else-if="!dash" class="load-error" role="alert">
-      {{ readFailureCopy(failedStatus, 'The dashboard is unavailable. Check the backend, then reload.') }}
+      {{ readFailureCopy(failedStatus, 'JAVV cannot show the dashboard. Check the backend connection, then reload the page.') }}
     </p>
 
     <template v-else>

@@ -114,11 +114,11 @@ function goFindings(pkg: string) {
     <div class="card-head">
       <div>
         <h2>Top components</h2>
-        <p class="card-sub">by unique vulnerabilities</p>
+        <p class="card-sub">The packages with the most vulnerabilities.</p>
       </div>
     </div>
     <p v-if="!timeTravel.isNow" class="empty-row">
-      Component ranking is a current-state read, unavailable at a rewound T.
+      This panel shows only the time now, not the past time that you selected. To see the components, select Back to now.
     </p>
     <UiSkeleton
       v-else-if="!settled"
@@ -127,22 +127,22 @@ function goFindings(pkg: string) {
       radius="sm"
       label="Loading top components"
     />
-    <p v-else-if="failed" class="empty-row" role="alert">Component ranking unavailable.</p>
-    <p v-else-if="ordered.length === 0" class="empty-row">No component data yet.</p>
+    <p v-else-if="failed" class="empty-row" role="alert">JAVV cannot show the top components. Check the backend connection.</p>
+    <p v-else-if="ordered.length === 0" class="empty-row">No components yet.</p>
     <template v-else>
       <div class="tbl-wrap">
         <table class="tbl tbl-dense tbl-hover">
           <thead>
             <tr>
               <th>Component</th>
-              <th class="r fit">Unique vulns</th>
+              <th class="r fit">Vulnerabilities</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="x in shown"
               :key="x.row.package_name"
-              :title="`Open findings mentioning ${x.row.package_name}`"
+              :title="`Open the findings of ${x.row.package_name}`"
               @click="goFindings(x.row.package_name)"
             >
               <td class="mono-cell pkg-link">

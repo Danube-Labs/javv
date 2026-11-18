@@ -37,7 +37,7 @@ const atCap = computed(() => props.rows.length >= props.cap)
           <th class="fit">#</th>
           <th>Person{{ atCap ? ` · top ${cap}` : '' }}</th>
           <th class="r fit">Resolved</th>
-          <th class="r fit">Ack.</th>
+          <th class="r fit">Acknowledged</th>
           <th class="r fit">Actions</th>
           <th class="r fit">Median</th>
           <th class="r fit">SLA</th>

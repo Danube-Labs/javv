@@ -76,8 +76,8 @@ const exporter = useCsvExport({
   path: EXPORT_PATH,
   filename: (stamp) => (exportOne.value ? `dashboard-${exportOne.value.dashboard_id}.ndjson` : `dashboards-${stamp}.ndjson`),
   event: 'dashboards_export_failed',
-  onCapped: () => toast.error('The export failed. Try again.'),
-  onFailed: (status) => toast.error(readFailureCopy(status, 'The export failed. Check the backend, then try again.')),
+  onCapped: () => toast.error('JAVV did not export the file. Try again.'),
+  onFailed: (status) => toast.error(readFailureCopy(status, 'JAVV did not export the file. Check the backend connection, then try again.')),
   onDone: (name) => toast.success(`Saved ${name}`),
 })
 
@@ -126,7 +126,7 @@ function exportDashboard(d: DashboardDoc) {
           <template v-if="loaded && !failed">{{ dashboards.length }}</template
           ><span v-else class="muted-dash">-</span><span class="head-unit"> dashboards</span>
         </p>
-        <p class="head-note">the dashboards that you can see · each panel reads the selected cluster</p>
+        <p class="head-note">The dashboards that you can see. Each panel shows the data of the selected cluster.</p>
       </div>
       <div class="head-actions">
         <UiButton
@@ -157,7 +157,7 @@ function exportDashboard(d: DashboardDoc) {
     <UiSkeleton v-if="!loaded" :height="160" label="Loading dashboards" class="skel-gap" />
 
     <p v-else-if="failed" class="load-error" role="alert">
-      {{ readFailureCopy(failedStatus, 'Dashboards unavailable. Check the backend, then reload.') }}
+      {{ readFailureCopy(failedStatus, 'JAVV cannot show the dashboards. Check the backend connection, then reload the page.') }}
     </p>
 
     <EmptyState

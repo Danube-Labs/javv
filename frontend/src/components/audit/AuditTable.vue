@@ -120,7 +120,7 @@ function onRowClick(row: AuditEvent) {
             <span
               v-if="data.revision != null && data.field != null"
               class="rev-badge"
-              title="Revision: same-field edits replay in this order, not by timestamp, because the revision is the finding's version when the edit landed, so a retried or near-simultaneous edit can't jump ahead."
+              title="Revision: the version of the finding when this change arrived. Changes to one field apply in the order of their revisions, not of their times. Thus a change that arrives late, or at the same time, cannot go before another change."
               >rev {{ data.revision }}</span
             >
           </span>
@@ -139,7 +139,7 @@ function onRowClick(row: AuditEvent) {
           </span>
           <span v-else-if="data.decision" class="audit-target">
             <span class="mono-cell strong sm nowrap">{{ data.decision.cve_id }}</span>
-            <span class="target-kind">{{ data.decision.type === 'risk_accepted' ? 'risk accept' : (data.decision.type ?? 'decision') }}</span>
+            <span class="target-kind">{{ data.decision.type === 'risk_accepted' ? 'risk acceptance' : (data.decision.type ?? 'decision') }}</span>
             <span class="target-kind">{{ data.decision.apply_both_scanners ? 'both scanners' : (data.decision.scanner ?? '') }}</span>
           </span>
           <span v-else class="audit-target">

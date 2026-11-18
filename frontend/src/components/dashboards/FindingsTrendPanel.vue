@@ -82,16 +82,16 @@ const subDay = computed(() => isSubDayWindow(props.windowDays))
       <div>
         <h2>Vulnerabilities over time</h2>
         <p class="card-sub">
-          new per day · {{ timeTravel.windowLabel.toLowerCase() }} · resolved = scan-observed
+          New findings for each day · {{ timeTravel.windowLabel.toLowerCase() }}. Resolved: a scan did not find the finding again.
         </p>
       </div>
     </div>
     <div class="card-body">
       <UiSkeleton v-if="!settled" :height="250" radius="sm" label="Loading vulnerabilities over time" />
-      <p v-else-if="failed" class="empty-row trend-empty" role="alert">Vulnerability trend unavailable.</p>
+      <p v-else-if="failed" class="empty-row trend-empty" role="alert">JAVV cannot show the findings over time. Check the backend connection.</p>
       <p v-else-if="note" class="empty-row trend-empty">{{ note }}</p>
       <EChart v-else :option="option" :height="250" />
-      <p v-if="subDay" class="chart-note">Trend at daily resolution: chart covers the last 1 day.</p>
+      <p v-if="subDay" class="chart-note">The chart has one bar for each day. It shows all of the last day.</p>
     </div>
   </section>
 </template>

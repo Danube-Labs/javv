@@ -52,7 +52,7 @@ describe('trendForScanner (pure)', () => {
     expect(picked.resolved[other]).toBeUndefined()
     expect(names(buildFindingsTrendOption(picked))).toEqual([
       `new · ${scanner}`,
-      `resolved (scan-observed) · ${scanner}`,
+      `resolved by a scan · ${scanner}`,
     ])
   })
 
@@ -83,9 +83,9 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     })
     expect(names(w.findComponent(EChart).props('option'))).toEqual([
       'new · trivy',
-      'resolved (scan-observed) · trivy',
+      'resolved by a scan · trivy',
       'new · grype',
-      'resolved (scan-observed) · grype',
+      'resolved by a scan · grype',
     ])
   })
 
@@ -101,7 +101,7 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     })
     expect(names(w.findComponent(EChart).props('option'))).toEqual([
       'new · grype',
-      'resolved (scan-observed) · grype',
+      'resolved by a scan · grype',
     ])
   })
 
@@ -114,7 +114,7 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     expect(trendMock).toHaveBeenCalledTimes(1)
     expect(names(w.findComponent(EChart).props('option'))).toEqual([
       'new · trivy',
-      'resolved (scan-observed) · trivy',
+      'resolved by a scan · trivy',
     ])
   })
 
@@ -135,7 +135,7 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     const w = mount(FindingsTrendPanel, { props: { ...props, windowDays: 0.25 }, global: { stubs } })
     await flushPromises()
     expect(trendMock.mock.calls[0]![0]).toMatchObject({ query: { days: 1 } })
-    expect(w.text()).toContain('Trend at daily resolution: chart covers the last 1 day.')
+    expect(w.text()).toContain('The chart has one bar for each day. It shows all of the last day.')
   })
 
   it('a range with no lines is quiet copy, never an empty chart', async () => {
@@ -154,7 +154,7 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     expect(w.text()).not.toContain('No new or resolved findings') // no claim before evidence
     resolve({ data: null, response: { ok: false, status: 500 } })
     await flushPromises()
-    expect(w.text()).toContain('Vulnerability trend unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the findings over time. Check the backend connection.')
   })
 
   it('an OK reply whose body could not be read is a failed read, not a throw (issue 749)', async () => {
@@ -166,6 +166,6 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     })
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('Vulnerability trend unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the findings over time. Check the backend connection.')
   })
 })

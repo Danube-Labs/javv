@@ -101,7 +101,7 @@ function apply() {
         </template>
         <p class="dd-help">An admin can see each dashboard.</p>
       </UiField>
-      <UiField label="Opens on" hint="the scanner switch when the page opens">
+      <UiField label="Opens on" hint="The scanner that the page shows first.">
         <UiSegControl v-model="form.scanner" :options="SCANNER_SWITCH_OPTS" label="Opens on" />
       </UiField>
       <p v-if="problem" id="dd-problem" class="dd-help">{{ problem }}</p>

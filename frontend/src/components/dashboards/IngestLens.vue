@@ -43,6 +43,8 @@ const props = withDefaults(
   { subject: 'the table' },
 )
 const timeTravel = useTimeTravelStore()
+/** the subject starts a sentence in the strip text */
+const subjectCap = computed(() => props.subject.charAt(0).toUpperCase() + props.subject.slice(1))
 
 const series = ref<ScanActivityData>({})
 const freshness = ref<FreshnessRow[]>([])
@@ -115,29 +117,29 @@ function onPointClick(params: { dataIndex: number }) {
     <div class="il-head">
       <h2 class="il-title">Scan ingest</h2>
       <span class="il-sub"
-        >runs per {{ interval }} · {{ timeTravel.windowLabel.toLowerCase()
-        }}<template v-if="subDay"> (daily bars: covers the last 1 day)</template> ·
-        {{ subject }} shows the state at the <b>end</b> of this range</span
+        >Scans for each {{ interval }} · {{ timeTravel.windowLabel.toLowerCase()
+        }}<template v-if="subDay">. The chart has one bar for each day. It shows all of the last day</template>.
+        {{ subjectCap }} shows the state at the <b>end</b> of this range.</span
       >
       <GuideLink class="il-help" section="time-range" variant="popover" />
       <span v-if="timeTravel.isNow && latest" class="il-last mono-cell">
-        last ingest {{ latest.scanner }} · {{ lastDataAt(latest.last_ingest_at) }} ({{
+        last scan {{ latest.scanner }} · {{ lastDataAt(latest.last_ingest_at) }} ({{
           silentFor(latest.silent_for_seconds)
         }} ago)
       </span>
-      <span v-else-if="timeTravel.isNow && freshnessFailed" class="il-last mono-cell">last ingest -</span>
+      <span v-else-if="timeTravel.isNow && freshnessFailed" class="il-last mono-cell">last scan -</span>
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (a quiet range is an
          ANSWER; before the response lands there is none) -->
-    <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading ingest activity" class="skel-gap" />
-    <p v-else-if="failed" class="il-empty">Ingest activity unavailable.</p>
+    <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading the scans" class="skel-gap" />
+    <p v-else-if="failed" class="il-empty">JAVV cannot show the scans. Check the backend connection.</p>
     <p v-else-if="totalRuns === 0" class="il-empty">
-      No scans committed in this range<template v-if="timeTravel.isNow && latest"
-        >: {{ subject }} shows the state last updated {{ lastDataAt(latest.last_ingest_at) }},
-        {{ silentFor(latest.silent_for_seconds) }} ago</template
-      >.
+      No scans in this range. <template v-if="timeTravel.isNow && latest"
+        >{{ subjectCap }} shows the state of the last scan, {{ lastDataAt(latest.last_ingest_at) }},
+        {{ silentFor(latest.silent_for_seconds) }} ago.</template
+      >
     </p>
-    <div v-else title="Click a day to view the whole app as of the end of that day">
+    <div v-else title="Select a day to see the app as it was at the end of that day">
       <EChart :option="option" :height="84" @point-click="onPointClick" />
     </div>
   </section>

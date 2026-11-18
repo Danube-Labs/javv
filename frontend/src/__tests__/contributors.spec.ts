@@ -156,6 +156,6 @@ describe('the subtitle of Triage progress', () => {
     const src = readFileSync(join(__dirname, '..', 'views/ContributorsView.vue'), 'utf8')
     const at = src.indexOf('<h2>Triage progress</h2>')
     const sub = /<p class="card-sub">([^<]*)<\/p>/.exec(src.slice(at))![1]!
-    expect(sub).toBe('now · Trivy and Grype together')
+    expect(sub).toBe('The state now for Trivy and Grype together.')
   })
 })
