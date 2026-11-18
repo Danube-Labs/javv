@@ -22,9 +22,12 @@ export const v7: Video = {
     { shot: 'roles-on', step: 1, caption: 'Select Create. The dashboard opens in edit mode, with no panels.', spot: 'createBtn', hold: 'dialog', click: { box: 'createBtn', to: 'empty', page: true } },
     // 2. add
     { shot: 'empty', step: 2, caption: 'Select Add panel.', spot: 'addPanel', click: { box: 'addPanel', to: 'catalog', page: true } },
-    { shot: 'catalog', step: 2, caption: 'The catalog shows the panels in groups. Select a panel.', spot: 'list', hold: 'cat', click: { box: 'row', to: 'p1-picked' } },
+    // the whole list is taller than the view, so the spotlight lights the row that the pointer selects
+    { shot: 'catalog', step: 2, caption: 'The catalog shows the panels in groups. Select a panel.', spot: 'row', hold: 'cat', click: { box: 'row', to: 'p1-picked' } },
     { shot: 'p1-picked', step: 2, caption: 'The preview shows the panel with the data of the selected cluster.', spot: 'preview', hold: 'cat' },
-    { shot: 'p1-picked', step: 2, caption: 'Set the width. Some panels also have a height or a scanner to set. Then select Add panel.', spot: 'opts', hold: 'cat', click: { box: 'add', to: 'p1-added', page: true } },
+    // two beats: the options and the Add panel button are too far apart for one view
+    { shot: 'p1-picked', step: 2, caption: 'Set the width. Some panels also have a height or a scanner to set.', spot: 'opts', hold: 'cat' },
+    { shot: 'p1-picked', step: 2, caption: 'Select Add panel.', spot: 'add', hold: 'cat', click: { box: 'add', to: 'p1-added', page: true } },
     { shot: 'p1-added', step: 2, caption: 'Add two more panels.', spot: 'addPanel', click: { box: 'addPanel', to: 'p2-picked', page: true } },
     { shot: 'p2-picked', step: 2, caption: 'Here, Findings by namespace. Select Add panel.', spot: 'add', hold: 'cat', click: { box: 'add', to: 'p2-added', page: true } },
     { shot: 'p2-added', step: 2, caption: 'Each new panel goes under the other panels.', spot: 'added' },
