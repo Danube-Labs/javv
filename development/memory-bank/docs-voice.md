@@ -39,6 +39,42 @@ and from Simplified Technical English (STE). The operator accepted it.
   "vulnerability". "CVE" stays only in a fact that is true of CVE IDs only, such as the EPSS
   entry of the glossary.
 
+## Terms
+
+The text of the app uses one name for each thing. The operator ruled this list on 2026-11-17
+(issue 1247, D1). The Guide and the docs pages use the same names.
+
+| Thing | Name | Do not write |
+|---|---|---|
+| One CVE in one package version, in one image, from one scanner | finding | vuln, issue |
+| The ID of a finding | vulnerability ("vuln" only in the three labels above) | CVE, except in a fact about CVE IDs only |
+| The decision that accepts a risk | risk acceptance. The state label is "Risk accepted". | "risk accept" or "risk-accepts" as a noun |
+| A triage record: a risk acceptance, not affected and the other states | decision | |
+| One scan of one image that JAVV receives | scan | run, committed run, scan run. "Run" stays for a job: Run now, Dry run. |
+| What a scanner does with a scan | send | push, ingest |
+| A scan that JAVV did not accept | refused scan | failed push, failed ingest |
+| The token that a scanner sends with a scan | scanner token | push token, API token, scoped token |
+| The token of an AI agent | MCP token | |
+| The data of JAVV in OpenSearch | the database | the store |
+| The product OpenSearch | OpenSearch, only where the operator works on OpenSearch itself: the runtime, the snapshots, the keystore and its health | search backend |
+| The server process of JAVV | the backend | server, server-side. "MCP server" is a product name and stays. |
+| The list of active risk acceptances | Approval list | queue, review queue, approvals |
+| A cluster that JAVV stops tracking | retire, retired | un-retired |
+
+These words do not go in the text of the app: envelope, payload, idempotent, atomically,
+immutable, PIT, upsert, GitOps, provenance, server-side, CAS, mapping, index layout and "schema
+vN". Words that start with "auto-" or end in "-wide" do not go in it either, for example
+"auto-applies" and "cluster-wide".
+
+Some text keeps a word of the list:
+- The panel titles "Scan ingest activity", "Scan ingest", "Failed ingest activity" and "Failed
+  ingests" stay as they are (operator, issue 1247).
+- The Risk-accept window keeps its title "Risk-accept this vulnerability" (issue 1205).
+- "Push" stays where an image tag goes to a registry, because that is not a scan sent to JAVV.
+
+The text rules test (`frontend/src/__tests__/ui-text.spec.ts`) holds a part of this list for the
+templates. Its `ALLOWED` list holds the text above.
+
 ## Simplified Technical English
 
 All new text is in Simplified Technical English (ASD-STE100). The rules of STE are in two groups.
@@ -121,6 +157,7 @@ linter, but it does not tell what JAVV counts.
 | Text | Check |
 |---|---|
 | The Guide (`frontend/src/components/about/guide/`) | `frontend/src/__tests__/guide-sections.spec.ts`: the expression `NOT_THE_READER` finds "we", "our", "us", "I", "a user", "the user", "an admin", "admins" and "a person". It is case sensitive after the first letter, so the User column does not match. |
+| The text of the app templates | `frontend/src/__tests__/ui-text.spec.ts`. It fails a semicolon, an em dash or en dash, ` + `, `(s)`, "e.g.", "i.e." and a contraction. It also fails the words that the Terms section bans. Of the "Do not write" column, it fails push, ingest, store, queue, server and risk accept. `BASELINE` counts the hits that each file still has, and it only shrinks. The test does not read the strings of `<script>` blocks or `.ts` modules. |
 | The docs site pages | `backend/tests/test_docs_site.py`: `test_published_pages_tell_tests_without_the_first_person`, `test_published_pages_carry_no_em_dash` and `test_published_docs_pages_pass_the_ste_linter`. |
 | All new text | `development/scripts/ste-lint.py`: sentence length, semicolons, phrasal verbs, actions as nouns, marketing words, synonym rotation and list items that end in "and". It also tells the passive voice and the present perfect, as advice only. It never flags a hedge. |
 | The release notes | `development/scripts/check-release-notes.py`, and the `Release notes` workflow. |
