@@ -3237,9 +3237,9 @@ kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </sp
 <h3 id="upgrades-and-restarts">Upgrades and restarts<a class="headerlink" href="#upgrades-and-restarts" title="Permanent link">&para;</a></h3>
 <p>While the backend stops for an upgrade or a restart:</p>
 <ul>
-<li>An open app shows the banner "The backend is not answering. Screens cannot load until it is
-  back." The banner goes away when the backend answers again.</li>
-<li>The sign-in page says that the server is not answering, and tries again on its own.</li>
+<li>An open app shows the banner "The backend does not answer. Screens cannot load until it
+  answers again." The banner goes away when the backend answers again.</li>
+<li>The sign-in page says that the backend does not answer. The page tries again by itself.</li>
 <li>A scanner tries each push again, for at most <code>JAVV_PUSH_RETRY_BUDGET_SECONDS</code> in each cycle. A
   cycle that starts while the backend does not run scans nothing. The next cycle scans all the
   images again.</li>

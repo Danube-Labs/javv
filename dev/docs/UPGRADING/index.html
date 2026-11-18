@@ -2066,7 +2066,7 @@ as), see the
 <tr>
 <td>The versions that run, in the web app</td>
 <td>The bottom of the sidebar</td>
-<td>Three lines: <code>v&lt;release&gt;</code>, <code>store schema v&lt;n&gt;</code>, <code>scanner schema v&lt;n&gt;</code></td>
+<td>Three lines: <code>v&lt;release&gt;</code>, <code>database schema &lt;n&gt;</code>, <code>scanner schema &lt;n&gt;</code></td>
 </tr>
 <tr>
 <td>What the upgrade did</td>
@@ -2147,7 +2147,7 @@ already running. But the second run is work for no result.</p>
 <h2 id="version-notes">Version notes<a class="headerlink" href="#version-notes" title="Permanent link">&para;</a></h2>
 <p>A release gets an entry here when it needs something from you. These are the conditions:</p>
 <ul>
-<li>The store schema changed (<code>mapping_version</code>).</li>
+<li>The database schema changed (<code>mapping_version</code>).</li>
 <li>The report formats that the backend accepts changed (<code>envelope_versions</code>).</li>
 <li>The scanner images must be published again, or changed together with the release.</li>
 <li>The OpenSearch chart (<code>javv-opensearch</code>) changed. Then do the <code>store</code> upgrade.</li>
@@ -2158,7 +2158,7 @@ applied it automatically on the first start.</p>
 <thead>
 <tr>
 <th>Release</th>
-<th>Store schema</th>
+<th>Database schema</th>
 <th>Report formats accepted</th>
 <th>What to do</th>
 </tr>
@@ -2226,7 +2226,7 @@ applied it automatically on the first start.</p>
 </tr>
 </tbody>
 </table>
-<p>No release from 0.4.8 to 0.8.0 changed the store schema (18) or the report formats that the
+<p>No release from 0.4.8 to 0.8.0 changed the database schema (18) or the report formats that the
 backend accepts (3 and 4).</p>
 <p>No release up to and including 0.9.9 changed the OpenSearch chart in a way that needs the <code>store</code>
 upgrade. Each release changed its version number. Some releases also changed other parts of the
@@ -2281,7 +2281,7 @@ its admin.</p>
 <h3 id="089-a-new-permission-for-dashboards">0.8.9: a new permission for dashboards<a class="headerlink" href="#089-a-new-permission-for-dashboards" title="Permanent link">&para;</a></h3>
 <p>A user needs the permission <code>can_edit_dashboards</code> to make a dashboard. The <code>viewer</code> role does not
 get it.</p>
-<p>The store schema is now 19. At its first start, the backend makes the new index
+<p>The database schema is now 19. At its first start, the backend makes the new index
 <code>system-dashboards</code>. You do not do a step for it. The <code>javv</code> role of an OpenSearch of your own
 already has access to it, because its name starts with <code>system-</code>.</p>
 <p>A new store gives the permission to the <code>triager</code>, <code>security_lead</code> and <code>admin</code> roles. On a store
