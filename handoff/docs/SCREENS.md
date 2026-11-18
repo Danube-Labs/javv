@@ -806,7 +806,7 @@ of the box are the Findings ones in §3.
 
 **Edit dialog and the expiry (issue 984):** an edit keeps the current expiry unless it sets a
 new one. The date field takes tomorrow in UTC or later. A decision whose expiry is in the past
-needs a new date. Until the user sets one, "Revoke + re-issue" stays disabled, and the hint says
+needs a new date. Until the user sets one, "Revoke and create" stays disabled, and the hint says
 *Pick an expiry date after today.* That text also shows when the server refuses the date.
 
 **Changed vs SCREENS.md:** decisions shape replaces approval fields (V4-DELTA-2); capability

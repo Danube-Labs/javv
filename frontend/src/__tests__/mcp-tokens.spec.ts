@@ -358,11 +358,11 @@ describe('the AI agents section: paging (issue 1190, row 13)', () => {
   it('a new number of rows per page shows page 1 with that number of rows', async () => {
     answer(thirty())
     const w = await mountView()
-    expect(pagerText(w)).toBe('Showing 1–10 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 10 of 30')
     await nextPage(w)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
     await pickRowsPerPage(w, 25)
-    expect(pagerText(w)).toBe('Showing 1–25 of 30')
+    expect(pagerText(w)).toBe('Rows 1 to 25 of 30')
     expect(bodyRows(w)).toBe(25)
   })
 
@@ -384,7 +384,7 @@ describe('the AI agents section: paging (issue 1190, row 13)', () => {
       expect.objectContaining({ path: { name: 'agent-15' } }),
     )
     expect(sdk.listTokensApiV1AdminMcpTokensGet).toHaveBeenCalledTimes(2)
-    expect(pagerText(w)).toBe('Showing 11–20 of 30')
+    expect(pagerText(w)).toBe('Rows 11 to 20 of 30')
   })
 })
 

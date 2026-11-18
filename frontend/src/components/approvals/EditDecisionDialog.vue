@@ -95,7 +95,7 @@ async function submit() {
     <template #actions>
       <UiButton variant="ghost" @click="emit('close')">Cancel</UiButton>
       <UiButton variant="primary" :disabled="!valid || submitting" @click="submit">
-        {{ submitting ? 'Saving…' : 'Revoke + re-issue' }}
+        {{ submitting ? 'Saving…' : 'Revoke and create' }}
       </UiButton>
     </template>
   </ModalShell>

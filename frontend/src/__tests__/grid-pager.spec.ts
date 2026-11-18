@@ -15,7 +15,7 @@ const pager = (over: Partial<InstanceType<typeof GridPager>['$props']>) =>
 describe('GridPager', () => {
   it('shows the range and both buttons when there are rows', () => {
     const w = pager({})
-    expect(w.find('.pager-info').text()).toBe('Showing 1–25 of 40')
+    expect(w.find('.pager-info').text()).toBe('Rows 1 to 25 of 40')
     expect(w.findAll('.pager-btn')).toHaveLength(2)
   })
 
@@ -26,13 +26,13 @@ describe('GridPager', () => {
 
   it('keeps a refused page in place: its range and Prev, with no rows shown (issue 833)', () => {
     const w = pager({ total: 435, page: 1, shown: 0, hasPrev: true, hasNext: false, failed: true })
-    expect(w.find('.pager-info').text()).toBe('Showing 26–50 of 435')
+    expect(w.find('.pager-info').text()).toBe('Rows 26 to 50 of 435')
     expect(w.findAll('.pager-btn')[0]!.attributes('disabled')).toBeUndefined()
   })
 
   it('caps a refused last page at the total', () => {
     const w = pager({ total: 40, page: 1, shown: 0, hasPrev: true, hasNext: false, failed: true })
-    expect(w.find('.pager-info').text()).toBe('Showing 26–40 of 40')
+    expect(w.find('.pager-info').text()).toBe('Rows 26 to 40 of 40')
   })
 
   it('the rows-per-page list is the small kit dropdown, and a pick gives the size as a number (issue 1055)', async () => {
