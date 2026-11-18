@@ -146,6 +146,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-17 | The Nomad and Docker push scripts send schema 5 with the file paths of a finding. They use the path rules of the scanner package. When a script drops paths, it logs one warning `paths left out of <image>` with two counts and no path (P1). The proof of the change ran both scripts on a live Docker host and a live Nomad 2.1.1 agent (L2). | 1199 |
 | 2026-11-15 | `.cap-note` is the line under a list cut at a limit. `.empty-note` is the line of a list with no rows. `base.css` holds only their color and the size of `.cap-note` (option 2). Each place keeps its own margin, because the margin follows the place of the line. No user sees a change. | 1214 |
 | 2026-11-17 | The text pass of issue 1247 replaces the words of some older copy rulings. These are the four health banners (2026-10-02, 2026-10-12, 2026-10-13) and the alert of a refused filter (2026-10-23). The sign-in line of a session that the browser did not keep (2026-10-15) is one too. The new texts are in strict STE and say "database". The tone, the place and the behaviour of each ruling stay. | 1247 |
+| 2026-11-18 | The text of the app makes no promises. It says what a page does now, and it names no future release. The notices for a past time on All clusters and Scanner status say that the page cannot show a past time. | 1247 |
+| 2026-11-18 | Slices S1 to S3 of issue 1247 go up as one PR of 146 files. One review page holds every changed string, with the pictures of main and of the change. | 1247 |
 
 ## AI vulnerability research (alpha)
 
