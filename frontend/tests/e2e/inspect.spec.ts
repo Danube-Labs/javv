@@ -161,7 +161,7 @@ test('the lifecycle sweep cannot fire from one click, and cancel changes nothing
   await row.locator('button', { hasText: /^(Run|Running…)$/ }).click()
   const modal = page.locator('[role="dialog"]', { hasText: 'Run the lifecycle sweep?' })
   await expect(modal).toBeVisible()
-  await expect(modal).toContainText('deleting whole aged indices')
+  await expect(modal).toContainText('deletes each index that is too old')
 
   await modal.locator('button', { hasText: 'Cancel' }).click()
   await expect(modal).toHaveCount(0)
