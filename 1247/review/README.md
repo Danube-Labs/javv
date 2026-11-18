@@ -12,7 +12,7 @@
 - **S4 scope.** The plan names Settings for S4. S4 also holds the Data inspector, the jobs table and About, because they are the last screens outside the Guide.
 - **S4 renamed labels.** The MCP level "Write and risk accept" is now "Write and accept risks" (the MCP user page too). "Ingest endpoint" is now "Scan endpoint". "Temp password" is now "Temporary password". About says "Database schema" for "Store schema", and so does UPGRADING.md.
 - **S4 marks.** In the Roles table, the "no" mark is now "-" in place of an en dash, as in the other tables.
-- **S5 and the text test.** After S5, the text test has no exceptions: its `BASELINE` is empty, so any new hit in the text of the app fails.
+- **S5 and the text test.** After S5, the text test has no exceptions. Its `BASELINE` is empty, so any new hit in the text of the app fails.
 - **Kept as it is.** The panel titles "Scan ingest", "Failed ingests" and "Vulnerabilities over time" stay. The refused-scans table still names no retry action.
 
 | # | Slice | Picture | File | Before | After |
