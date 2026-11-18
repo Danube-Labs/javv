@@ -98,7 +98,7 @@ describe('the mint dialog', () => {
     const w = await mountTokens([])
     const open = w.findAll('button').find((b) => b.text() === 'Create token' && !b.element.closest('.modal'))!
     expect(open.classes()).toContain('ui-btn--control')
-    expect(w.get('[role="dialog"]').attributes('aria-label')).toBe('Create a push token')
+    expect(w.get('[role="dialog"]').attributes('aria-label')).toBe('Create a scanner token')
     expect(w.text()).not.toMatch(/\bMint/)
   })
 

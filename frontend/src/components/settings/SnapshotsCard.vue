@@ -69,12 +69,12 @@ async function snapshotNow() {
     logger.warn('snapshot_take_failed', { status: response?.status })
     toast.error(
       response?.status === 409
-        ? 'No snapshot repository configured. Register one via the deploy first.'
-        : 'Taking the snapshot failed.',
+        ? 'JAVV has no snapshot repository. Register a repository in the deployment first.'
+        : 'JAVV did not take the snapshot. Check the backend connection, then try again.',
     )
     return
   }
-  toast.success(`Snapshot ${(data as { snapshot: string }).snapshot} started`)
+  toast.success(`JAVV started the snapshot ${(data as { snapshot: string }).snapshot}.`)
   void load()
 }
 
@@ -92,12 +92,12 @@ async function confirmRestore() {
     logger.warn('snapshot_restore_failed', { status: response?.status, snapshot: name })
     toast.error(
       response?.status === 403
-        ? 'Restore needs the can_restore_snapshot capability.'
-        : 'Restore failed. The live indices are untouched.',
+        ? 'Your role cannot restore a snapshot. It needs the permission can_restore_snapshot.'
+        : 'JAVV did not restore the snapshot. The live indices did not change.',
     )
     return
   }
-  toast.success(`Restoring ${name} into restored-* copies: nothing live is overwritten`)
+  toast.success(`JAVV restores ${name} into restored-* copies. The live data does not change.`)
 }
 
 function tone(state: string | null): 'ok' | 'warn' | 'down' | 'muted' {
@@ -111,12 +111,12 @@ function tone(state: string | null): 'ok' | 'warn' | 'down' | 'muted' {
 <template>
   <SettingsCard
     title="Snapshots"
-    subtitle="native OpenSearch snapshot/restore of the current findings, running images and settings (not the scan history)"
+    subtitle="OpenSearch snapshots of the current findings, the running images and the settings. A snapshot does not hold the scan history."
   >
     <template v-if="!configured">
       <p class="snap-unconfigured">
-        No snapshot repository is configured. Register one via the deploy: credentials live in
-        the OpenSearch keystore, and only the non-secret repo reference lands in system-config.
+        JAVV has no snapshot repository. Register a repository in the deployment. The credentials
+        stay in the OpenSearch keystore. JAVV keeps only the name of the repository.
       </p>
     </template>
     <template v-else>
@@ -125,7 +125,7 @@ function tone(state: string | null): 'ok' | 'warn' | 'down' | 'muted' {
       </SettingsRow>
       <SettingsRow
         label="Manual snapshot"
-        hint="Snapshots the current-state + config indices on demand; the scheduled policy keeps running either way."
+        hint="Take a snapshot of the current findings, the running images and the settings now. The scheduled snapshots continue as before."
       >
         <UiButton variant="control" :disabled="busy" @click="snapshotNow">
           <AppIcon name="database" :size="13" />
@@ -175,9 +175,10 @@ function tone(state: string | null): 'ok' | 'warn' | 'down' | 'muted' {
       @close="restoreTarget = null"
     >
       <p class="restore-copy">
-        Restores every index in <span class="mono">{{ restoreTarget }}</span> into fresh
-        <span class="mono">restored-*</span> copies. <b>Nothing live is overwritten</b>:
-        promoting a restored copy is a deliberate manual step. The action is journaled.
+        JAVV restores each index of <span class="mono">{{ restoreTarget }}</span> into new
+        <span class="mono">restored-*</span> copies. <b>The live data does not change.</b> To
+        use a restored copy, an operator must replace the live index by hand. The audit log records
+        the restore.
       </p>
       <div class="restore-actions">
         <UiButton variant="quiet" @click="restoreTarget = null">Cancel</UiButton>

@@ -155,8 +155,8 @@ async function submitMint() {
     logger.warn('token_mint_failed', { status: response?.status })
     mintError.value =
       response?.status === 403
-        ? 'Creating a token needs the can_manage_tokens capability.'
-        : 'The token was not created.'
+        ? 'Your role cannot create a token. It needs the permission can_manage_tokens.'
+        : 'JAVV did not create the token. Check the backend connection, then try again.'
     return
   }
   mintOpen.value = false
@@ -174,7 +174,7 @@ function showMinted(data: unknown) {
     return
   }
   logger.warn('token_value_lost')
-  toast.error('The token was created, but its value did not reach this page. Rotate it to get a value you can copy.')
+  toast.error('JAVV created the token, but its value did not reach this page. Rotate the token to get a value that you can copy.')
 }
 
 // ── rotate / revoke (confirm-first — both are destructive to the OLD token) ────────────
@@ -191,13 +191,13 @@ async function runConfirmed() {
   confirmAction.value = null
   if (!response?.ok) {
     logger.warn('token_mutation_failed', { kind: action.kind, status: response?.status })
-    toast.error(`Token ${action.kind} failed. Nothing was changed.`)
+    toast.error(`JAVV did not ${action.kind} the token. Nothing changed.`)
     return
   }
   if (action.kind === 'rotate') {
     showMinted(data)
   } else {
-    toast.success('Token revoked. Its next push will be rejected')
+    toast.success('JAVV revoked the token. JAVV refuses its next scan.')
   }
   await load()
 }
@@ -212,7 +212,7 @@ const fmt = (iso: string | null) =>
   <div class="stack">
     <SettingsCard
       title="Access & tokens"
-      subtitle="one scoped push token per (cluster, scanner)"
+      subtitle="One scanner token for each cluster and scanner."
     >
       <template #action>
         <UiButton variant="control" :disabled="busy" @click="openMint"><AppIcon name="plus" :size="13" />Create token</UiButton>
@@ -226,13 +226,13 @@ const fmt = (iso: string | null) =>
         class="skel-gap"
       />
       <p v-else-if="failed" class="load-error" role="alert">
-        Token list unavailable. Check the backend connection.
+        JAVV cannot show the token list. Check the backend connection.
       </p>
       <p v-else-if="rows.length === 0" class="empty-note" role="status">
-        No push tokens yet. Create one for each scanner, so that the cluster can push its scans.
+        No scanner tokens yet. Create a token for each scanner, so that the cluster can send its scans.
       </p>
       <p v-else-if="total > rows.length" class="cap-note">
-        Showing the {{ rows.length }} newest of {{ total }} tokens.
+        The list shows the {{ rows.length }} newest of {{ total }} tokens.
       </p>
 
       <div v-if="!loading && !failed && rows.length" class="set-flush">
@@ -293,7 +293,7 @@ const fmt = (iso: string | null) =>
     </SettingsCard>
 
     <!-- mint dialog -->
-    <ModalShell v-if="mintOpen" title="Create a push token" subtitle="scoped to one (cluster, scanner) pair" @close="mintOpen = false">
+    <ModalShell v-if="mintOpen" title="Create a scanner token" subtitle="For one cluster and one scanner." @close="mintOpen = false">
       <UiField label="Cluster" first for="mint-cluster">
         <UiSelect id="mint-cluster" v-model="mintCluster">
           <option v-for="c in activeClusters" :key="c.cluster_id" :value="c.cluster_id">
@@ -308,13 +308,13 @@ const fmt = (iso: string | null) =>
         </UiSelect>
       </UiField>
       <p v-if="mintRetired" class="fld-hint" role="status">
-        {{ mintRetired.cluster_name }} is retired. Its first scan on this token brings it back to the cluster
+        {{ mintRetired.cluster_name }} is retired. Its first scan with this token brings it back to the cluster
         list.
       </p>
       <UiField
         v-if="mintCluster === NEW_CLUSTER"
         label="Cluster ID"
-        hint="the UID of its kube-system namespace"
+        hint="Use the UID of its kube-system namespace."
         for="mint-cluster-id"
       >
         <SettingsInput id="mint-cluster-id" v-model="mintNewId" :invalid="mintIdProblem !== null" />
@@ -322,13 +322,13 @@ const fmt = (iso: string | null) =>
         <p class="fld-hint">Run this in the cluster to print it:</p>
         <div class="raw-token mono-cell sm cmd">{{ CLUSTER_ID_COMMAND }}</div>
       </UiField>
-      <UiField label="Scanner" hint="per-scanner is sacred: one token each">
+      <UiField label="Scanner" hint="Each scanner needs its own token.">
         <UiSegControl v-model="mintScanner" :options="SCANNER_OPTS" label="Scanner" />
       </UiField>
-      <UiField label="Expiry" hint="optional: must be in the future; ingest rejects the token past it">
+      <UiField label="Expiry" hint="Optional. It must be in the future. After that time, JAVV refuses the token.">
         <UiDateTime v-model="mintExpiryParts" id-prefix="mint-expiry" :invalid="mintExpiryInvalid" />
       </UiField>
-      <p class="fld-hint">Leave both fields empty for a non-expiring token. Time is 24h, your local zone.</p>
+      <p class="fld-hint">For a token with no expiry, leave the two fields empty. The time uses the 24-hour clock and your time zone.</p>
       <p v-if="mintError" class="modal-error" role="alert">{{ mintError }}</p>
       <template #actions>
         <UiButton variant="ghost" @click="mintOpen = false">Cancel</UiButton>
@@ -342,7 +342,7 @@ const fmt = (iso: string | null) =>
     <TokenOnceDialog
       v-if="minted"
       :token="minted.token"
-      subtitle="it is shown once and cannot be recovered: a lost token is a rotate"
+      subtitle="JAVV shows it one time only. If you lose the token, rotate it."
       @close="minted = null"
     />
 
@@ -354,12 +354,12 @@ const fmt = (iso: string | null) =>
     >
       <p class="confirm-copy">
         <template v-if="confirmAction.kind === 'rotate'">
-          A replacement is minted first (inheriting the expiry), then this token is disabled,
-          so the scanner is never token-less. You'll get the new raw token once.
+          JAVV first creates a new token with the same expiry. Then it disables this token, so the
+          scanner always has a token. You see the new token one time.
         </template>
         <template v-else>
-          The scanner's next push with this token will be rejected. Revocation is journaled and
-          cannot be undone. A revoked token stays listed for the audit trail.
+          JAVV refuses the next scan that the scanner sends with this token. The audit log records
+          the revoke. You cannot undo it. A revoked token stays in the list for the audit log.
         </template>
       </p>
       <template #actions>

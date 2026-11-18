@@ -1046,15 +1046,16 @@ backend's ID rule. On a fresh install it is the only choice. A cluster is listed
 token exists, so after that mint the cluster list is re-read and the new cluster shows in the
 switcher at once (operator ruling 2026-10-11 on a built A/B, option A; issue 817).
 If a mint or rotate succeeds but its reply arrives with a body that could not be read, the token
-exists and its value is lost. An error toast then says: *The token was created, but its value did
-not reach this page. Rotate it to get a value you can copy.* (operator ruling 2026-10-10, issue 749).
+exists and its value is lost. An error toast then says: *JAVV created the token, but its value did
+not reach this page. Rotate the token to get a value that you can copy.* (operator ruling 2026-10-10, issue 749;
+words changed by issue 1247).
 Rotate shows on an active token only (issue 984). The new token takes the old expiry, so an
 expired token needs a new token from Create token. Revoke stays on an expired token. The server
 answers 409 to a rotation of a revoked or an expired token.
 The window "Copy this token now" is `components/settings/TokenOnceDialog.vue`, the same window as on
 AI agents (MCP) (§13.9). When the browser blocks the clipboard (a page on plain http that is not
 localhost), Copy shows a toast: *The browser blocked the clipboard, so JAVV did not copy the text. Select the text,
-then copy it.* The card subtitle is *one scoped push token per (cluster, scanner)* (issue 1096, Q4 B
+then copy it.* The card subtitle is *One scanner token for each cluster and scanner.* (issue 1096, Q4 B
 and Q5 B on built pictures, 2026-11-06).
 
 ### 13.6 Users & roles — editable (shipped)
@@ -1123,7 +1124,7 @@ retention/rollover offered **only** for time-partitioned append families; the mu
   name is typed, and cannot be closed while the delete runs; `DELETE /api/v1/clusters/{cluster_id}`,
   503 = finish it by deleting again, 409 = it was brought back meanwhile (the list reloads).
   A cluster whose delete did not finish (`delete_started`, issue 778) offers only `Delete…`, with
-  "Its delete did not finish. Delete it again." under its name; un-retiring it is refused (409).
+  "JAVV did not finish its delete. Delete the cluster again." under its name; un-retiring it is refused (409).
   Bringing back a cluster retired by hand (`retirement_mode: manual`) says its tokens were revoked
   and its scanners need a new one; an automatic retire left them working, so its toast does not.
 
@@ -1134,7 +1135,7 @@ Menu icon `cpu` (a chip with pins). Built on the parts of Access & tokens (§13.
 pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5 B.
 - **Endpoint card:** Status, `on` or `off` (`DotWord`), and when off the line *To turn it on, set
   JAVV_MCP_ENABLED to true on the backend and start the backend again.* A failed `/meta` read shows
-  *unknown: the status could not be read*. **Endpoint URL** (hint *AI agents connect to this
+  *unknown: JAVV cannot read the status*. **Endpoint URL** (hint *AI agents connect to this
   address.*): the address of the page plus `/api/v1/mcp`, in the mono box with a Copy button
   (`components/settings/CopyValue.vue`).
 - **Tokens card:** the table skin with `GridPager` (display pages of one server answer), in
@@ -1149,7 +1150,7 @@ pictures, 2026-11-06 (issue 1096 comment 6678721567): Q1 B, Q2 A, Q3 B, Q4 B, Q5
   uses `readFailureCopy` (a 429 says the backend is busy).
 - **Create an MCP token:** Name (the username rule: 3 to 64 lower-case letters, digits, dots,
   underscores or hyphens; the Audit log names the agent `mcp:<name>`), Level (`UiSegControl`:
-  Read, Write, Write and risk accept, with a line that says what the level can do), Expiry (a date
+  Read, Write, Write and accept risks, with a line that says what the level can do), Expiry (a date
   box as in the risk accept window: tomorrow to 90 days, the day in 30 days already in it). Make
   stays off until the name and the day are valid. A name in use (409) is said in the window.
 - **Rotate {name}?:** the old token stops at once, so the window asks for a new expiry (same box).

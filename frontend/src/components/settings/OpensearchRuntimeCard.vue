@@ -57,7 +57,7 @@ function healthTone(status: string | null): 'ok' | 'warn' | 'down' | 'muted' {
   <SettingsCard
     v-if="runtime"
     title="OpenSearch runtime"
-    subtitle="read-only: the install of JAVV sets these settings, and the card shows each one that it can read"
+    subtitle="The install of JAVV sets these settings. You cannot change them here. The card shows each setting that it can read."
   >
     <div class="stat-band stat-band--stat rt-band">
       <div class="stat-cell">

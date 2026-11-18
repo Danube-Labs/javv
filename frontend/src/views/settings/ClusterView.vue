@@ -62,12 +62,12 @@ async function save() {
     logger.warn('cluster_rename_failed', { status: response?.status })
     toast.error(
       response?.status === 503
-        ? 'The registry is contended. Try again.'
-        : 'Renaming failed. The cluster keeps its current name.',
+        ? 'Somebody else changes the cluster list now. JAVV did not rename the cluster. Try again.'
+        : 'JAVV did not rename the cluster. The cluster keeps its current name.',
     )
     return
   }
-  toast.success('Cluster renamed: display only, queries still key on the immutable id')
+  toast.success('JAVV renamed the cluster. JAVV uses the name only to show the cluster. It still finds the data by the cluster ID.')
   await clusterStore.refresh()
 }
 
@@ -94,7 +94,7 @@ async function retire() {
     toast.error(error)
     return
   }
-  toast.success(`${name} retired. Bring it back from Retired clusters`)
+  toast.success(`JAVV retired ${name}. To bring it back, use Retired clusters.`)
   await clusterStore.refresh({ quiet: true })
   await retiredCard.value?.reload()
 }
@@ -102,32 +102,32 @@ async function retire() {
 
 <template>
   <div class="stack">
-    <SettingsCard title="Cluster" subtitle="identity & ingest contract">
-      <SettingsRow label="cluster_id" hint="The immutable tenant key: indices and every query route on it." stack>
+    <SettingsCard title="Cluster" subtitle="The identity of the cluster and the address where its scanners send scans.">
+      <SettingsRow label="cluster_id" hint="The ID of the cluster. It cannot change. JAVV keeps and finds all data of the cluster by this ID." stack>
         <div class="static-row">
           <span class="static-value mono-sm"><template v-if="clusterStore.selectedId != null">{{ clusterStore.selectedId }}</template><span v-else class="muted-dash">-</span></span>
-          <span class="lock-tag">immutable</span>
+          <span class="lock-tag">cannot change</span>
         </div>
       </SettingsRow>
       <SettingsRow
         label="cluster_name"
-        hint="Relabelable display name, never a query key. Renames are journaled."
+        hint="The name that the app shows. You can change it. JAVV does not use it to find data. The audit log records each rename."
         stack
       >
         <SettingsInput id="cluster-name" v-model="draft" :invalid="invalid && draft !== ''" />
       </SettingsRow>
-      <SettingsRow label="Ingest endpoint" hint="Scanners push signed envelopes here over HTTPS with their scoped token." stack>
+      <SettingsRow label="Scan endpoint" hint="The scanners send their scans to this address over HTTPS, each with its scanner token." stack>
         <span class="static-value mono-sm">{{ ingestEndpoint }}</span>
       </SettingsRow>
       <SettingsRow label="API version">
         <span class="static-value mono-sm">/v1</span>
       </SettingsRow>
-      <SettingsRow label="schema_version" hint="The envelope contract version this backend accepts.">
+      <SettingsRow label="schema_version" hint="The version of the scan format that this backend accepts.">
         <span class="static-value mono-sm">{{ SCHEMA_VERSION }}</span>
       </SettingsRow>
       <SettingsRow
         label="Retire"
-        hint="Takes this cluster off the cluster list and revokes its push tokens. Its data is kept. It comes back by hand, or on its first scan with a new token."
+        hint="Retire takes this cluster off the cluster list and revokes its scanner tokens. JAVV keeps its data. You can bring the cluster back, or its first scan with a new scanner token brings it back."
       >
         <UiButton :disabled="busy || clusterStore.selectedId == null" @click="retireOpen = true">
           Retire cluster…
@@ -144,13 +144,13 @@ async function retire() {
     <ModalShell
       v-if="retireOpen"
       :title="`Retire ${clusterStore.selected?.cluster_name ?? ''}?`"
-      subtitle="you can bring it back"
+      subtitle="You can bring it back later."
       @close="retireOpen = false"
     >
       <p class="confirm-copy">
-        It leaves the cluster list, the switcher and All clusters. Its push tokens are revoked, so
-        its scanners are refused until you mint new ones, and the first scan on a new token brings it
-        back. Its findings and history are kept.
+        The cluster leaves the cluster list, the cluster switcher and All clusters. JAVV revokes its
+        scanner tokens and refuses the scans of its scanners. Create new scanner tokens for them. The
+        first scan with a new token brings the cluster back. JAVV keeps its findings and its history.
       </p>
       <template #actions>
         <UiButton variant="ghost" @click="retireOpen = false">Cancel</UiButton>

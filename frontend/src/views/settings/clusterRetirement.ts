@@ -55,8 +55,8 @@ export function useFleetClusters() {
     if (response?.ok) return null
     logger.warn('cluster_retire_failed', { status: response?.status })
     if (response?.status === 409) return 'It is already retired.'
-    if (response?.status === 403) return 'Retiring a cluster needs the can_manage_settings capability.'
-    return 'Retiring failed. The cluster is unchanged.'
+    if (response?.status === 403) return 'Your role cannot retire a cluster. It needs the permission can_manage_settings.'
+    return 'JAVV did not retire the cluster. The cluster did not change.'
   }
 
   async function unretire(clusterId: string): Promise<string | null> {
@@ -68,10 +68,10 @@ export function useFleetClusters() {
     logger.warn('cluster_unretire_failed', { status: response?.status })
     // a delete started since the list was read (issue 778): its tokens and part of its data are gone
     if (response?.status === 409 && (error as { type?: unknown } | undefined)?.type === DELETE_UNFINISHED_TYPE)
-      return 'Its delete did not finish. Delete it again.'
-    if (response?.status === 409) return 'It is not retired any more.'
-    if (response?.status === 403) return 'Bringing a cluster back needs the can_manage_settings capability.'
-    return 'Bringing it back failed. The cluster stays retired.'
+      return 'JAVV did not finish its delete. Delete the cluster again.'
+    if (response?.status === 409) return 'It is not retired now.'
+    if (response?.status === 403) return 'Your role cannot bring a cluster back. It needs the permission can_manage_settings.'
+    return 'JAVV did not bring the cluster back. The cluster stays retired.'
   }
 
   return { rows, loading, failed, load, retire, unretire }

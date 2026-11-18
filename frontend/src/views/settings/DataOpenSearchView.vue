@@ -157,7 +157,7 @@ async function save() {
   busy.value = false
   if (!allOk) {
     logger.warn('data_settings_save_failed', {})
-    toast.error('Saving failed. The store keeps the previous values. Reload to see what landed.')
+    toast.error('JAVV did not save all the settings. Some settings can keep their previous values. Reload the page to see the values that JAVV saved.')
     if (clusterId) void loadSettings(clusterId) // partial saves must not fake a clean state
     return
   }
@@ -169,7 +169,7 @@ async function save() {
     cleanup_days: p.cleanup_days!,
     report_ttl_hours: p.report_ttl_hours!,
   }
-  toast.success('Data settings saved. The daily sweeps apply them on their next run')
+  toast.success('JAVV saved the data settings. The daily sweeps apply them at their next run.')
 }
 
 function discard() {
@@ -183,24 +183,24 @@ function discard() {
     <div class="scanner-banner">
       <AppIcon name="database" :size="14" />
       JAVV deletes history one whole index at a time, when the newest data in the index is older
-      than the retention. The lifecycle sweep runs once a day by default and reads these settings
+      than the retention. The lifecycle sweep runs once a day by default. It reads these settings
       each time, so a change applies at its next run.
     </div>
 
     <NoClusterState v-if="clusterStore.none" />
     <UiSkeleton v-else-if="loading" :height="180" radius="sm" label="Loading data settings" />
     <p v-else-if="failed" class="load-error" role="alert">
-      Data settings unavailable. Check the backend connection.
+      JAVV cannot show the data settings. Check the backend connection.
     </p>
 
     <template v-else>
       <SettingsCard
         title="Retention"
-        subtitle="one window per cluster for the history data: how far back history and time travel reach"
+        subtitle="One window for each cluster. It sets how far back the history and a past time can go."
       >
         <SettingsRow
           label="History retention"
-          hint="Applies to the five history indices below. The daily sweep drops whole indices once they expire."
+          hint="It applies to the five history indices below. The daily sweep deletes each index when it expires."
         >
           <SettingsInput
             id="ret-days"
@@ -237,24 +237,24 @@ function discard() {
         </table>
         </div>
         <p class="scope-src">
-          <b>Why one window, not per-family?</b> Time-travel rebuilds any past moment from
-          occurrences, images and inventory runs <em>together</em>, so the app only reaches as
-          far back as the <em>shortest</em> window. Separate per-family windows would silently
-          truncate reach to the minimum while still paying storage for the rest. Protected families take no retention window at all: hover a
-          <em>protected</em> tag for why.
+          <b>Why one window for all families?</b> To show a past time, JAVV reads occurrences,
+          images and inventory runs <em>together</em>. So the app goes back only as far as the
+          <em>shortest</em> window. A separate window for each family would cut the reach to the
+          shortest one, and the other families would still use storage. Protected families have no
+          retention window. To see why, hold the pointer on a <em>protected</em> tag.
         </p>
         <p class="scope-src">
           {{
             override
-              ? "Editing THIS cluster's override. The fleet default stays untouched."
-              : 'Editing the fleet-wide default (no override exists for this cluster).'
+              ? 'You change the setting of this cluster only. The default for all clusters does not change.'
+              : 'You change the default for all clusters. This cluster has no setting of its own.'
           }}
         </p>
       </SettingsCard>
 
       <SettingsCard
         title="Rollover thresholds"
-        subtitle="when a write index rolls to a new one, whichever trips first"
+        subtitle="JAVV starts a new write index when the index reaches the first of these limits."
       >
         <div class="roll-grid">
           <SettingsRow label="Max age" stack>
@@ -289,11 +289,11 @@ function discard() {
 
       <SettingsCard
         title="Cleanup & report retention"
-        subtitle="fleet-wide windows, independent of the per-cluster retention above"
+        subtitle="These windows apply to all clusters. They do not depend on the retention of a cluster above."
       >
         <SettingsRow
           label="Findings cleanup window"
-          hint="Cache rows whose image has been gone this long are deleted (history is untouched). Follows the per-cluster override toggle: each cluster can carry its own window."
+          hint="JAVV deletes the current findings of an image that is gone for this time. The history does not change. As with the retention, each cluster can have its own window."
         >
           <SettingsInput
             id="cleanup-days"
@@ -305,7 +305,7 @@ function discard() {
         </SettingsRow>
         <SettingsRow
           label="Report/export retention"
-          hint="A completed export is deleted this long after it finishes; a download past it returns 410."
+          hint="JAVV deletes a complete export after this time. A download after that time gets the answer 410."
         >
           <SettingsInput
             id="report-ttl"

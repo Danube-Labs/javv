@@ -112,12 +112,12 @@ async function submitInvite() {
     logger.warn('user_create_failed', { status: response?.status })
     inviteError.value = detailOr(
       error,
-      'Rejected: a username has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. You cannot use system or fleet.',
+      'JAVV refused the username. A username has 3 to 64 lower-case letters, digits, dots, underscores or hyphens. You cannot use system or fleet.',
     )
     return
   }
   inviteOpen.value = false
-  toast.success(`${inviteName.value.trim()} created. They must change the temp password at first login`)
+  toast.success(`JAVV created ${inviteName.value.trim()}. They must change the temporary password when they first sign in.`)
   await load()
 }
 
@@ -144,13 +144,13 @@ async function submitRoleChange() {
     logger.warn('role_change_failed', { status: response?.status })
     rowError.value = {
       username: change.user.username,
-      message: detailOr(error, 'Role change failed. Nothing was changed.'),
+      message: detailOr(error, 'JAVV did not change the role. Nothing changed.'),
     }
     await load() // resets the select to the server truth
     return
   }
   rowError.value = null
-  toast.success(`${change.user.username} is now ${roleLabel(change.to)}. Their sessions were revoked`)
+  toast.success(`${change.user.username} is now ${roleLabel(change.to)}. JAVV ended their sessions.`)
   await load()
 }
 
@@ -170,12 +170,12 @@ async function setDisabled(user: UserRow, disabled: boolean) {
     logger.warn('user_disable_failed', { status: response?.status })
     rowError.value = {
       username: user.username,
-      message: detailOr(error, 'The change failed. Nothing was changed.'),
+      message: detailOr(error, 'JAVV did not make the change. Nothing changed.'),
     }
     return
   }
   rowError.value = null
-  toast.success(disabled ? `${user.username} disabled. Their sessions were revoked` : `${user.username} re-enabled`)
+  toast.success(disabled ? `JAVV disabled ${user.username} and ended their sessions.` : `JAVV enabled ${user.username} again.`)
   await load()
 }
 
@@ -201,10 +201,10 @@ async function submitReset() {
   busy.value = false
   if (!response?.ok) {
     logger.warn('pwd_reset_failed', { status: response?.status })
-    resetError.value = detailOr(error, 'The reset failed. The old password still works.')
+    resetError.value = detailOr(error, 'JAVV did not reset the password. The old password still works.')
     return
   }
-  toast.success(`${resetTarget.value.username} must change the new temp password at next login`)
+  toast.success(`${resetTarget.value.username} must change the new temporary password when they next sign in.`)
   resetTarget.value = null
 }
 
@@ -215,7 +215,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
   <div class="stack">
     <SettingsCard
       title="Users"
-      subtitle="role is granted per user, enforced on every API call, not just hidden in the UI"
+      subtitle="Each user has one role. The backend checks the role on each request, not only the screens."
     >
       <template #action>
         <span class="head-actions">
@@ -232,7 +232,7 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
         class="skel-gap"
       />
       <p v-else-if="failed" class="load-error" role="alert">
-        User list unavailable. Check the backend connection.
+        JAVV cannot show the user list. Check the backend connection.
       </p>
 
       <div v-if="!loading && !failed" class="set-flush">
@@ -307,11 +307,11 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
     <RolesCard :roles="roles" :permissions="permissions" :ready="!loading && !failed" />
 
     <!-- invite -->
-    <ModalShell v-if="inviteOpen" title="Invite a user" subtitle="they log in with the temp password and must change it" @close="inviteOpen = false">
-      <UiField label="Username" first hint="3 to 64 lower-case letters, digits, dots, underscores or hyphens" for="inv-name">
+    <ModalShell v-if="inviteOpen" title="Invite a user" subtitle="The user signs in with the temporary password and must change it." @close="inviteOpen = false">
+      <UiField label="Username" first hint="Use 3 to 64 lower-case letters, digits, dots, underscores or hyphens." for="inv-name">
         <SettingsInput id="inv-name" v-model="inviteName" />
       </UiField>
-      <UiField label="Temp password" hint="policy-checked server-side; forced change at first login" for="inv-pass">
+      <UiField label="Temporary password" hint="The backend checks it against the password policy. The user must change it at the first sign-in." for="inv-pass">
         <SettingsInput id="inv-pass" v-model="invitePassword" />
       </UiField>
       <UiField label="Role" for="inv-role">
@@ -332,8 +332,8 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
     <ModalShell v-if="roleChange" title="Change role?" @close="roleChange = null; void load()">
       <p class="confirm-copy">
         <span class="mono-cell sm">{{ roleChange.user.username }}</span> becomes
-        <b>{{ roleLabel(roleChange.to) }}</b>. Their capabilities change immediately and
-        <b>every active session is signed out</b>: a new role never rides an old session.
+        <b>{{ roleLabel(roleChange.to) }}</b>. Their permissions change at once. JAVV <b>signs out
+        each active session</b>, so an old session never keeps the old role.
       </p>
       <template #actions>
         <UiButton variant="ghost" @click="roleChange = null; void load()">Cancel</UiButton>
@@ -346,9 +346,9 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
     <!-- disable confirm -->
     <ModalShell v-if="disableTarget" title="Disable this user?" @close="disableTarget = null">
       <p class="confirm-copy">
-        <span class="mono-cell sm">{{ disableTarget.username }}</span> is signed out everywhere and can no
-        longer log in. Nothing is deleted: their triage history stays attributable, and you can
-        re-enable them any time.<template v-if="isSelf(disableTarget)"> <b>This is your own account.</b></template>
+        JAVV signs <span class="mono-cell sm">{{ disableTarget.username }}</span> out of each session.
+        The user cannot sign in after that. JAVV deletes nothing: the history still shows their
+        triage, and you can enable the user again at any time.<template v-if="isSelf(disableTarget)"> <b>This is your own account.</b></template>
       </p>
       <template #actions>
         <UiButton variant="ghost" @click="disableTarget = null">Cancel</UiButton>
@@ -362,10 +362,10 @@ const isSelf = (user: UserRow) => user.username === auth.user?.username
     <ModalShell
       v-if="resetTarget"
       :title="`Reset ${resetTarget.username}'s password`"
-      subtitle="their sessions are revoked; the temp password must be changed at next login"
+      subtitle="JAVV ends their sessions. They must change the temporary password at the next sign-in."
       @close="resetTarget = null"
     >
-      <UiField label="Temp password" first hint="policy-checked server-side" for="rst-pass">
+      <UiField label="Temporary password" first hint="The backend checks it against the password policy." for="rst-pass">
         <SettingsInput id="rst-pass" v-model="resetPassword" />
       </UiField>
       <p v-if="resetError" class="modal-error" role="alert">{{ resetError }}</p>

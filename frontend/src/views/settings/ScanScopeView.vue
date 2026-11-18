@@ -95,8 +95,8 @@ async function save() {
     logger.warn('scan_scope_save_failed', { status: response?.status })
     toast.error(
       response?.status === 403
-        ? 'Saving needs the can_manage_settings capability.'
-        : 'Saving the scan scope failed. The scanner keeps the current one.',
+        ? 'Your role cannot change the settings. It needs the permission can_manage_settings.'
+        : 'JAVV did not save the scan scope. The scanner keeps the current scope.',
     )
     return
   }
@@ -108,14 +108,14 @@ async function save() {
     exclude_images: draft.value.exclude_images.length,
     ignore_kinds: draft.value.ignore_kinds,
   })
-  toast.success('Scan scope saved. The scanner applies it at its next cycle start')
+  toast.success('JAVV saved the scan scope. The scanner applies it when its next cycle starts.')
 }
 
 function addIgnoreChip(value: string) {
   // the fail-closed footgun: with globs live, a bare '*' in ignore = scan NOTHING, silently.
   // The server rejects it too — this just keeps the mistake out of the draft.
   if (value.trim() === '*') {
-    toast.error("A bare '*' in the ignore list would stop all scanning. Narrow the include list instead.")
+    toast.error("A single '*' in the ignore list stops all scans. Make the include list smaller instead.")
     return
   }
   draft.value.ignore_namespaces = addChip(draft.value.ignore_namespaces, value)
@@ -128,7 +128,7 @@ function discard() {
 
 <template>
   <div>
-    <SettingsCard title="Scan scope" subtitle="what the scanner module discovers and scans">
+    <SettingsCard title="Scan scope" subtitle="What the scanners find and scan.">
       <NoClusterState v-if="clusterStore.none" />
       <UiSkeleton
         v-else-if="loading"
@@ -138,19 +138,19 @@ function discard() {
         class="skel-gap"
       />
       <p v-else-if="failed" class="load-error" role="alert">
-        Scan scope unavailable. Check the backend connection.
+        JAVV cannot show the scan scope. Check the backend connection.
       </p>
 
       <template v-else>
         <SettingsRow
           label="Running workloads only"
-          hint="Only running images are scanned. The scanner lists what runs now: the pods in Kubernetes, the allocations in Nomad or the containers of a Docker host. It scans each image digest once, however many copies run it."
+          hint="The scanner scans only running images. It lists what runs now: the pods in Kubernetes, the allocations in Nomad or the containers of a Docker host. It scans each image digest one time, for any number of copies that run it."
         >
           <span class="static-fact mono-cell">always on</span>
         </SettingsRow>
         <SettingsRow
           label="Included namespaces"
-          hint="Only matching namespaces are scanned: names or glob patterns (kube* covers every kube- namespace). Empty = every namespace."
+          hint="The scanner scans only the namespaces that match: names or glob patterns. For example, kube* matches each kube- namespace. If the list is empty, the scanner scans each namespace."
           stack
         >
           <ChipsInput
@@ -163,7 +163,7 @@ function discard() {
         </SettingsRow>
         <SettingsRow
           label="Ignored namespaces"
-          hint="Namespaces the scanner skips: names or globs. Ignore wins over include. A bare * is rejected: it would silently stop all scanning."
+          hint="The scanner does not scan these namespaces: names or glob patterns. This list wins over the include list. JAVV refuses a single *, because it stops all scans."
           stack
         >
           <ChipsInput
@@ -176,12 +176,12 @@ function discard() {
         </SettingsRow>
         <div v-if="bothListsActive" class="scope-note-banner">
           <AppIcon name="layers" :size="13" />
-          Both lists active: the include list is applied first, then ignored namespaces are
-          subtracted from it.
+          The two lists apply. The scanner uses the include list first, then leaves out the ignored
+          namespaces.
         </div>
         <SettingsRow
           label="Excluded image patterns"
-          hint="Glob patterns against the full image reference."
+          hint="The scanner compares these glob patterns with the full image reference."
           stack
         >
           <ChipsInput

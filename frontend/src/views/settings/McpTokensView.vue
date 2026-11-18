@@ -85,7 +85,7 @@ async function load() {
   failed.value =
     response?.ok && data
       ? null
-      : readFailureCopy(response?.status ?? null, 'The token list is not available. Check the backend connection.')
+      : readFailureCopy(response?.status ?? null, 'JAVV cannot show the token list. Check the backend connection.')
   if (failed.value !== null) {
     logger.warn('mcp_tokens_load_failed', { status: response?.status })
     return
@@ -116,7 +116,7 @@ function showToken(data: unknown) {
   }
   // the token exists once the reply is OK, but its value comes only in the body
   logger.warn('mcp_token_value_lost')
-  toast.error('The token was made, but its value did not reach this page. Rotate it to get a value you can copy.')
+  toast.error('JAVV created the token, but its value did not reach this page. Rotate the token to get a value that you can copy.')
 }
 
 // ── make ───────────────────────────────────────────────────────────────────────────────────
@@ -157,8 +157,8 @@ async function submitMake() {
       response?.status === 409
         ? 'A token with this name exists. Choose another name.'
         : response?.status === 403
-          ? 'Creating a token needs the can_manage_tokens permission.'
-          : 'The token was not created.'
+          ? 'Your role cannot create a token. It needs the permission can_manage_tokens.'
+          : 'JAVV did not create the token. Check the backend connection, then try again.'
     return
   }
   makeOpen.value = false
@@ -195,7 +195,7 @@ async function submitRotate() {
     toast.error(
       response?.status === 409
         ? 'The token is revoked or has expired. Create a new token.'
-        : 'The rotate failed. The old token still works.',
+        : 'JAVV did not rotate the token. The old token still works.',
     )
     await load()
     return
@@ -213,17 +213,17 @@ async function submitRevoke() {
   revokeRow.value = null
   if (!response?.ok) {
     logger.warn('mcp_token_revoke_failed', { status: response?.status })
-    toast.error('The revoke failed. The token still works.')
+    toast.error('JAVV did not revoke the token. The token still works.')
     return
   }
-  toast.success(`Token ${row.name} revoked. The agent that uses it is refused from now on.`)
+  toast.success(`JAVV revoked the token ${row.name}. JAVV refuses the agent that uses it from now on.`)
   await load()
 }
 </script>
 
 <template>
   <div class="stack">
-    <SettingsCard title="Endpoint" subtitle="where an AI agent connects to JAVV">
+    <SettingsCard title="Endpoint" subtitle="The address where an AI agent connects to JAVV.">
       <SettingsRow
         label="Status"
         :hint="
@@ -233,7 +233,7 @@ async function submitRevoke() {
         "
       >
         <UiSkeleton v-if="enabled === null && !metaFailed" :height="20" radius="sm" label="Loading the status" />
-        <DotWord v-else-if="metaFailed" tone="warn" label="unknown: the status could not be read" />
+        <DotWord v-else-if="metaFailed" tone="warn" label="unknown: JAVV cannot read the status" />
         <DotWord v-else :tone="enabled ? 'ok' : 'muted'" :label="enabled ? 'on' : 'off'" />
       </SettingsRow>
       <SettingsRow label="Endpoint URL" hint="AI agents connect to this address." stack>
@@ -241,7 +241,7 @@ async function submitRevoke() {
       </SettingsRow>
     </SettingsCard>
 
-    <SettingsCard title="Tokens" subtitle="one token for each AI agent, with a level and an expiry">
+    <SettingsCard title="Tokens" subtitle="One token for each AI agent, with a level and an expiry date.">
       <template #action>
         <UiButton variant="control" :disabled="busy" @click="openMake"><AppIcon name="plus" :size="13" />Create token</UiButton>
       </template>
@@ -252,7 +252,7 @@ async function submitRevoke() {
         No MCP tokens yet. Create one for each AI agent that connects.
       </p>
       <p v-else-if="total > rows.length" class="cap-note">
-        Showing the {{ rows.length }} newest of {{ total }} tokens.
+        The list shows the {{ rows.length }} newest of {{ total }} tokens.
       </p>
 
       <div v-if="!loading && !failed && rows.length" class="set-flush">
@@ -358,12 +358,12 @@ async function submitRevoke() {
     <ModalShell
       v-if="rotateRow"
       :title="`Rotate ${rotateRow.name}?`"
-      subtitle="a new token with a new expiry"
+      subtitle="JAVV makes a new token with a new expiry date."
       @close="rotateRow = null"
     >
       <p class="confirm-copy">
-        The old token stops at once. The agent is refused until you give it the new token, which you
-        see one time. The name and the level stay.
+        The old token stops at once. JAVV refuses the agent until you give it the new token. You see
+        the new token one time. The name and the level stay.
       </p>
       <UiField label="New expiry" :hint="EXPIRY_HINT" for="mcp-rotate-expiry">
         <UiTextBox
@@ -386,8 +386,8 @@ async function submitRevoke() {
 
     <ModalShell v-if="revokeRow" title="Revoke this token?" @close="revokeRow = null">
       <p class="confirm-copy">
-        The agent that uses {{ revokeRow.name }} is refused from now on. A revoke cannot be undone. The
-        token stays in the list for the Audit log.
+        JAVV refuses the agent that uses {{ revokeRow.name }} from now on. You cannot undo a revoke.
+        The token stays in the list for the Audit log.
       </p>
       <template #actions>
         <UiButton variant="ghost" @click="revokeRow = null">Cancel</UiButton>
@@ -398,7 +398,7 @@ async function submitRevoke() {
     <TokenOnceDialog
       v-if="shownToken"
       :token="shownToken"
-      subtitle="it is shown one time and cannot be recovered: a lost token is a rotate"
+      subtitle="JAVV shows it one time only. If you lose the token, rotate it."
       @close="shownToken = null"
     />
   </div>

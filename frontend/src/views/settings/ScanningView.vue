@@ -125,15 +125,15 @@ async function save() {
     logger.warn('staleness_save_failed', { status: response?.status })
     toast.error(
       response?.status === 403
-        ? 'Saving needs the can_manage_settings capability.'
-        : 'Saving the timers failed. The sweep keeps the current ones.',
+        ? 'Your role cannot change the settings. It needs the permission can_manage_settings.'
+        : 'JAVV did not save the timers. The sweep keeps the current timers.',
     )
     return
   }
   savedTimers.value = { freshness_days: parsedN.value, scanner_down_days: parsedM.value }
   // the freshness banner thresholds on these timers live — drop its cache so it re-reads
   useStalenessStore().invalidate()
-  toast.success('Staleness timers saved. The next daily sweep applies them')
+  toast.success('JAVV saved the staleness timers. The next daily sweep applies them.')
   // the scanner-down timer bounds the retirement window: the countdown banner re-reads it
   await clusterStore.refresh()
 }
@@ -151,13 +151,13 @@ function discard() {
       <AppIcon name="layers" :size="14" />
       <span>
         Both scanners run every cycle, and JAVV keeps the results of each scanner apart.
-        <b>All scanners</b> shows Trivy and Grype together: a vulnerability that both report counts once for each.
+        <b>All scanners</b> shows Trivy and Grype together. When the two scanners report a vulnerability, it counts once for each scanner.
       </span>
     </div>
 
     <SettingsCard
       title="Staleness timers"
-      subtitle="the two-timer model: drives the stale state and the inventory banners"
+      subtitle="Two timers. They set the stale state and the banners of the inventory."
     >
       <NoClusterState v-if="clusterStore.none" />
       <UiSkeleton
@@ -168,12 +168,12 @@ function discard() {
         class="skel-gap"
       />
       <p v-else-if="failed" class="load-error" role="alert">
-        Staleness timers unavailable. Check the backend connection.
+        JAVV cannot show the staleness timers. Check the backend connection.
       </p>
       <template v-else>
         <SettingsRow
           label="Per-finding freshness"
-          hint="A finding not re-seen within this window goes stale."
+          hint="A finding that no scan finds again in this window becomes stale."
         >
           <SettingsInput
             id="stale-n"
@@ -185,7 +185,7 @@ function discard() {
         </SettingsRow>
         <SettingsRow
           label="Scanner-down escalation"
-          hint="A scanner silent this long stales ALL its findings. Must not undercut the freshness window."
+          hint="When a scanner sends no scans for this time, all its findings become stale. This window must not be shorter than the freshness window."
         >
           <SettingsInput
             id="stale-m"
@@ -198,20 +198,20 @@ function discard() {
         <div class="stale-note">
           <AppIcon name="info" :size="13" />
           <span v-if="parsedN !== null && parsedM !== null && parsedM >= parsedN">
-            Preview: a finding unseen for <b>{{ parsedN }}d</b> goes stale, but between
-            <b>{{ parsedN }}d</b> and <b>{{ parsedM }}d</b> of scanner silence the per-finding
-            timer is <b>held</b> (a brief outage won't mass-stale everything) and the inventory
-            shows a "scanner silent" banner; past <b>{{ parsedM }}d</b> every finding of that
-            scanner is stale. Editing timers never deletes anything: stale is only a flag. Findings are deleted only by the
-            cleanup window in Data &amp; OpenSearch, once their image has been gone that long.
+            Preview: a finding that no scan finds for <b>{{ parsedN }}d</b> becomes stale. While a
+            scanner sends nothing for <b>{{ parsedN }}d</b> to <b>{{ parsedM }}d</b>, JAVV <b>holds</b>
+            the timer of each finding. So a short outage does not make all findings stale. The
+            inventory then shows a "scanner silent" banner. After <b>{{ parsedM }}d</b>, each finding
+            of that scanner is stale. A change of the timers deletes nothing: stale is only a flag. Only
+            the cleanup window in Data &amp; OpenSearch deletes findings, when their image is gone for that time.
           </span>
-          <span v-else>Both windows must be positive, with escalation ≥ freshness.</span>
+          <span v-else>Both windows must be more than 0. The scanner-down window must not be shorter than the freshness window.</span>
         </div>
         <p class="scope-src">
           {{
             override
-              ? 'Editing THIS cluster\'s override. The fleet default stays untouched.'
-              : 'Editing the fleet-wide default (no override exists for this cluster).'
+              ? 'You change the setting of this cluster only. The default for all clusters does not change.'
+              : 'You change the default for all clusters. This cluster has no setting of its own.'
           }}
         </p>
       </template>

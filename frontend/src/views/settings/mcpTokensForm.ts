@@ -27,7 +27,7 @@ export const MCP_LEVELS: { value: McpLevel; label: string; note: string }[] = [
   },
   {
     value: 'write_risk_accept',
-    label: 'Write and risk accept',
+    label: 'Write and accept risks',
     note: 'Also accepts a risk, and changes or revokes a risk acceptance.',
   },
 ]
@@ -64,7 +64,7 @@ export function expiryIso(day: string, nowMs: number): string | null {
 }
 
 export const EXPIRY_HINT = `at most ${MAX_EXPIRY_DAYS} days. The token stops at 00:00 UTC on this day`
-export const EXPIRY_PROBLEM = `Pick a day after today and at most ${MAX_EXPIRY_DAYS} days from today.`
+export const EXPIRY_PROBLEM = `Select a day after today and at most ${MAX_EXPIRY_DAYS} days from today.`
 
 /** The path of the endpoint (`mcp/server.py`). The frontend server sends each `/api` request to the
  *  backend, so the address of this page plus the path is the URL an agent uses. */

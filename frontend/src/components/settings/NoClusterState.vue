@@ -10,7 +10,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 <template>
   <EmptyState
     icon="layers"
-    title="Settings for a cluster appear once it has a scanner token."
-    hint="Create one under Access & tokens."
+    title="No cluster settings yet"
+    hint="This page shows the settings of a cluster when the cluster has a scanner token. Create a scanner token in Access & tokens."
   />
 </template>

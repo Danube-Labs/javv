@@ -176,7 +176,7 @@ This client is not tested with JAVV. Its settings come from its own documentatio
 |---|---|
 | Read | Read the data of all clusters. It changes nothing. |
 | Write | Read. Also set the state, the assignee and the note of findings, also in bulk. Make, change and revoke "Not affected" decisions. |
-| Write and risk accept | Write. Also accept a risk, and change or revoke a risk acceptance. |
+| Write and accept risks | Write. Also accept a risk, and change or revoke a risk acceptance. |
 
 No token can change users, roles, settings or tokens. No token can delete data. A change by an
 agent gets the same checks as the same change on a screen. For example, a Write token cannot

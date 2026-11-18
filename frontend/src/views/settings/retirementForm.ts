@@ -37,10 +37,10 @@ export function windowProblem(
   warn: number | null,
   scannerDownDays: number | null,
 ): WindowProblem | null {
-  if (warn === null) return { field: 'warn', message: 'The warning needs a positive number of days.' }
+  if (warn === null) return { field: 'warn', message: 'The warning needs a number of days more than 0.' }
   if (mode === 'never') return null
   if (after === null) {
-    return { field: 'after', message: 'The retirement window needs a positive number of days.' }
+    return { field: 'after', message: 'The retirement window needs a number of days more than 0.' }
   }
   if (scannerDownDays !== null && after <= scannerDownDays) {
     return {
@@ -115,7 +115,7 @@ export function useRetirementWindow(clusterId: Ref<string | null>, scannerDownDa
   /** null on success, else the message to show. */
   async function save(): Promise<string | null> {
     const body = draft.value
-    if (body === null) return problem.value?.message ?? 'The warning needs a positive number of days.'
+    if (body === null) return problem.value?.message ?? 'The warning needs a number of days more than 0.'
     const forCluster = clusterId.value
     busy.value = true
     const { response, error } = await putRetirementApiV1SettingsRetirementPut({
@@ -125,11 +125,11 @@ export function useRetirementWindow(clusterId: Ref<string | null>, scannerDownDa
     busy.value = false
     if (!response?.ok) {
       logger.warn('retirement_window_save_failed', { status: response?.status })
-      if (response?.status === 403) return 'Saving needs the can_manage_settings capability.'
+      if (response?.status === 403) return 'Your role cannot change the settings. It needs the permission can_manage_settings.'
       const refused = response?.status === 422 ? detailOr(error, '') : ''
       return refused
         ? `${sentence(refused)} The sweep keeps the current window.`
-        : 'Saving the retirement window failed. The sweep keeps the current one.'
+        : 'JAVV did not save the retirement window. The sweep keeps the current window.'
     }
     // the form moved on to another cluster meanwhile: its saved values are that cluster's
     if (clusterId.value === forCluster) saved.value = body

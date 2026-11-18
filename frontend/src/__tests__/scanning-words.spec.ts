@@ -19,7 +19,7 @@ describe('the words about the two scanners', () => {
   it('the banner of Scanning says what All scanners counts', () => {
     const banner = read('views/settings/ScanningView.vue').split('class="scanner-banner"')[1]!.split('</div>')[0]!
     expect(banner.replace(/\s+/g, ' ')).toContain(
-      '<b>All scanners</b> shows Trivy and Grype together: a vulnerability that both report counts once for each.',
+      '<b>All scanners</b> shows Trivy and Grype together. When the two scanners report a vulnerability, it counts once for each scanner.',
     )
     expect(banner).not.toMatch(/never merged|double-counting/)
   })

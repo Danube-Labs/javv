@@ -89,14 +89,14 @@ describe('a component whose OK reply has a body that could not be read shows its
     ['ScannerStatusView', ScannerStatusView, {}, 'JAVV cannot show the scanner status.'],
     ['SavedViewsView', SavedViewsView, {}, 'JAVV cannot show the saved views.'],
     ['DashboardsView', DashboardsView, {}, 'JAVV cannot show the dashboards.'],
-    ['ScanScopeView', ScanScopeView, {}, 'Scan scope unavailable.'],
-    ['ScanningView', ScanningView, {}, 'Staleness timers unavailable.'],
-    ['SlaPolicyView', SlaPolicyView, {}, 'SLA policy unavailable.'],
-    ['TokensView', TokensView, {}, 'Token list unavailable.'],
-    ['UsersRolesView', UsersRolesView, {}, 'User list unavailable.'],
+    ['ScanScopeView', ScanScopeView, {}, 'JAVV cannot show the scan scope.'],
+    ['ScanningView', ScanningView, {}, 'JAVV cannot show the staleness timers.'],
+    ['SlaPolicyView', SlaPolicyView, {}, 'JAVV cannot show the SLA policy.'],
+    ['TokensView', TokensView, {}, 'JAVV cannot show the token list.'],
+    ['UsersRolesView', UsersRolesView, {}, 'JAVV cannot show the user list.'],
     // these three did not throw: they showed a loaded page with nothing, or with old data, in it
     ['TopComponentsCard', TopComponentsCard, { scanner: 'all' }, 'JAVV cannot show the top components. Check the backend connection.'],
-    ['DataOpenSearchView', DataOpenSearchView, {}, 'Data settings unavailable.'],
+    ['DataOpenSearchView', DataOpenSearchView, {}, 'JAVV cannot show the data settings.'],
     ['ApprovalsView', ApprovalsView, {}, 'JAVV cannot show the Approval list.'],
   ] as const)('%s', async (_name, component, props, copy) => {
     const w = mountAll(component as Component, props)
@@ -142,7 +142,7 @@ describe('a component with two reads, only one of which has a body that could no
     const w = mountAll(UsersRolesView)
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).toContain('User list unavailable.')
+    expect(w.text()).toContain('JAVV cannot show the user list.')
   })
 
   it('ScanningView, with the timers whole: the page loads its timers', async () => {
@@ -153,7 +153,7 @@ describe('a component with two reads, only one of which has a body that could no
     const w = mountAll(ScanningView)
     await flushPromises()
     expect(thrown).toEqual([])
-    expect(w.text()).not.toContain('Staleness timers unavailable.')
+    expect(w.text()).not.toContain('JAVV cannot show the staleness timers.')
     // loaded, not merely not failed: the form holds the timers the read returned
     expect((w.find('input').element as HTMLInputElement).value).toBe('7')
   })
@@ -190,7 +190,7 @@ describe('a composable whose OK reply has a body that could not be read reports 
 
 // ruling 3 on the issue: the token exists, but its value never reached the page
 describe('a mint or rotate whose OK reply has a body that could not be read', () => {
-  const LOST = 'The token was created, but its value did not reach this page. Rotate it to get a value you can copy.'
+  const LOST = 'JAVV created the token, but its value did not reach this page. Rotate the token to get a value that you can copy.'
   const ROW = { id: 't-1', cluster_id: CLUSTER, scanner: 'trivy', enabled: true, created_at: null, expires_at: null, last_used_at: null }
 
   async function tokensWithOneRow() {

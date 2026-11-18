@@ -177,7 +177,7 @@ describe('Settings > Users and roles (issue 990)', () => {
     expect(vi.mocked(setRoleApiV1AdminUsersUsernameRolePatch)).toHaveBeenCalledWith(
       expect.objectContaining({ path: { username: 'tri' }, body: { role: 'security_lead' } }),
     )
-    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['tri is now security lead. Their sessions were revoked'])
+    expect(useToastStore().toasts.map((t) => t.message)).toEqual(['tri is now security lead. JAVV ended their sessions.'])
   })
 
   it('shows the Source of a user in the UI font, as a plain word', async () => {

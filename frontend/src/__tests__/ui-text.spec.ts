@@ -118,20 +118,10 @@ const BASELINE: Record<string, number> = {
   'components/about/guide/TimeRangeSection.vue': 3,
   'components/about/guide/TriageSection.vue': 6,
   'components/about/guide/TwoScannersSection.vue': 3,
-  'components/settings/ClusterDeleteDialog.vue': 1,
-  'components/settings/RolesCard.vue': 1,
-  'components/settings/ScannerConfigCard.vue': 2,
-  'components/settings/SnapshotsCard.vue': 2,
   'components/system/InspectHeadFacts.vue': 1,
   'components/system/InspectRail.vue': 1,
   'components/system/RepairActionsCard.vue': 1,
   'views/InspectView.vue': 6,
-  'views/settings/ClusterView.vue': 9,
-  'views/settings/DataOpenSearchView.vue': 2,
-  'views/settings/ScanningView.vue': 2,
-  'views/settings/SettingsLayout.vue': 1,
-  'views/settings/TokensView.vue': 7,
-  'views/settings/UsersRolesView.vue': 6,
 }
 
 describe('text rules: the rules catch what they must, and only that', () => {

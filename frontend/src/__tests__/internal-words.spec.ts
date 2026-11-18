@@ -19,7 +19,7 @@ describe('internal words in head notes', () => {
   it('the OpenSearch runtime card says who sets its settings', () => {
     const src = template('components/settings/OpensearchRuntimeCard.vue')
     expect(src).toContain(
-      'subtitle="read-only: the install of JAVV sets these settings, and the card shows each one that it can read"',
+      'subtitle="The install of JAVV sets these settings. You cannot change them here. The card shows each setting that it can read."',
     )
     expect(src).not.toMatch(/GitOps|deploy-owned|displayable/)
   })

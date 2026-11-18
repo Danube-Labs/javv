@@ -61,7 +61,7 @@ const has = (r: RoleRow, id: string) => holdsAll(r) || r.capabilities.includes(i
                 <span v-if="has(r, p.id)" role="img" class="perm-yes" :aria-label="`${roleLabel(r.role)}: yes`">
                   <AppIcon name="check" :size="15" />
                 </span>
-                <span v-else role="img" class="perm-no" :aria-label="`${roleLabel(r.role)}: no`">–</span>
+                <span v-else role="img" class="perm-no" :aria-label="`${roleLabel(r.role)}: no`">-</span>
               </td>
             </tr>
           </tbody>
