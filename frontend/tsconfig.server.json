@@ -1,7 +1,7 @@
 // The frontend container's Node server (server/, issue 452): plain .mjs with JSDoc types, so it
 // runs with no build step, and is type-checked here like the rest of the tree.
 {
-  "extends": "@tsconfig/node24/tsconfig.json",
+  "extends": "@tsconfig/node26/tsconfig.json",
   "include": ["server/**/*.mjs"],
   "compilerOptions": {
     "allowJs": true,
