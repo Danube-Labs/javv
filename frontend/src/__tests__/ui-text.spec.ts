@@ -109,15 +109,8 @@ function walk(dir: string): string[] {
   })
 }
 
-/** The files with hits before issue 1247 changed them, and their number of hits. Only shrinks. */
-const BASELINE: Record<string, number> = {
-  'components/about/guide/ImagesSection.vue': 1,
-  'components/about/guide/NowVsNewSection.vue': 1,
-  'components/about/guide/ScansSection.vue': 1,
-  'components/about/guide/TimeRangeSection.vue': 3,
-  'components/about/guide/TriageSection.vue': 6,
-  'components/about/guide/TwoScannersSection.vue': 3,
-}
+/** Files that may keep hits, with their number of hits. Empty since issue 1247: any hit fails. */
+const BASELINE: Record<string, number> = {}
 
 describe('text rules: the rules catch what they must, and only that', () => {
   it.each([

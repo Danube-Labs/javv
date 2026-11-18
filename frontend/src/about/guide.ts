@@ -16,7 +16,7 @@ export const GUIDE_SECTIONS = [
   {
     id: 'time-range',
     title: 'The time range',
-    summary: 'Tables show the state at the end of the range; charts show what happened inside it.',
+    summary: 'Tables show the state at the end of the range. Charts show what happened in the range.',
     icon: 'clock',
   },
   {
@@ -34,13 +34,13 @@ export const GUIDE_SECTIONS = [
   {
     id: 'scans-and-freshness',
     title: 'Scans and freshness',
-    summary: 'A scan counts once it is complete; a quiet scanner keeps its last results.',
+    summary: 'A scan counts when it is complete. A quiet scanner keeps its last results.',
     icon: 'check',
   },
   {
     id: 'images',
     title: 'Images are digests',
-    summary: 'A tag is a pointer; rebuilding a tag makes a new image.',
+    summary: 'A tag is a pointer. A rebuild of a tag makes a new image.',
     icon: 'cube',
   },
   {
