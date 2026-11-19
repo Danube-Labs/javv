@@ -75,6 +75,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-13 | The Grype adapter sends all the locations of a match, also the package database files of an OS package. The Trivy adapter reads `PkgPath`, else the `Target` of a language result that names a file, never a label `Target`. The Nomad and Docker scan scripts get paths later, not in 0.9.10 (issue 1199). | 1077 |
 | 2026-11-17 | The findings exports have the paths of a finding. The CSV has the columns `locations_total` and `locations`, with one path on each line of the cell (D1 A). Ingest refuses a control character in a path, so a new line splits the paths with no doubt. CycloneDX puts the paths in `component.evidence.occurrences[].location` (D2 A). OpenVEX has no field for a path and stays as it is. No new size limit (D3). | 1245 |
 | 2026-11-07 | The docs give no Ingress example. The `javv` chart makes no Ingress, and the docs tell the user to put one in front (D3). | 1126 |
+| 2026-11-19 | Before sign-in, `GET /auth/me` answers 401, and the browser logs one console line for it. The line stays: a 401 is the correct answer when the browser has no session, and the API does not change for it. | 1246 |
 
 ## UI copy and look
 
@@ -153,6 +154,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-18 | The text of the app makes no promises. It says what a page does now, and it names no future release. The notices for a past time on All clusters and Scanner status say that the page cannot show a past time. | 1247 |
 | 2026-11-18 | Slices S1 to S3 of issue 1247 go up as one PR of 146 files. One review page holds every changed string, with the pictures of main and of the change. | 1247 |
 | 2026-11-18 | Slices S4 and S5 of issue 1247 join the same PR. One PR of 204 files holds all of the text pass. The text test then has no exceptions. | 1247 |
+| 2026-11-19 | The camera rule of the videos stays. After a click, the new screen shows at the old zoom for the result hold, and then the camera moves to the next box. A window can be partly out of the view for that time. | 1246 |
 
 ## AI vulnerability research (alpha)
 

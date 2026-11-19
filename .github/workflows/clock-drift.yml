@@ -76,7 +76,10 @@ jobs:
       # ci.yml's split (serial-marked tests alone, after the parallel pass), no coverage floor.
       # --no-sync: the tests use the environment of the step above, built on the real clock. On
       # ubuntu-26.04, a plain `uv run` under faketime builds the local packages again and fetches
-      # hatchling from pypi.org, whose certificate is past its end at +90 days (issue 1182).
+      # hatchling from pypi.org, whose certificate is past its end at +90 days (issue 1182). The
+      # libfaketime of 26.04 also shifts the file times that stat() returns (24.04's does not), so
+      # uv sees pyproject.toml as newer than its install and calls the packages "not fresh".
+      # NO_FAKE_STAT=1 stops that too; --no-sync skips the check (issue 1246).
       - name: Pytest at +90 days
         working-directory: backend
         run: |
