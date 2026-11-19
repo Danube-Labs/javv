@@ -141,11 +141,11 @@ src=backend/.python-version
 check "scanner .python-version" "$python" scanner/.python-version \
   '^\K[0-9.]+' "s/^[0-9.]+$/$python/"
 check "Dockerfile.trivy python" "$python" scanner/Dockerfile.trivy \
-  'FROM python:\K[0-9.]+(?=-slim)' "s/^FROM python:[^ ]+/FROM python:$python-slim/"
+  'FROM python:\K[0-9.]+(?=-alpine)' "s/^FROM python:[^ ]+/FROM python:$python-alpine/"
 check "Dockerfile.grype python" "$python" scanner/Dockerfile.grype \
-  'FROM python:\K[0-9.]+(?=-slim)' "s/^FROM python:[^ ]+/FROM python:$python-slim/"
+  'FROM python:\K[0-9.]+(?=-alpine)' "s/^FROM python:[^ ]+/FROM python:$python-alpine/"
 check "backend Dockerfile python" "$python" backend/Dockerfile \
-  'FROM python:\K[0-9.]+(?=-slim)' "s/^FROM python:[^ ]+/FROM python:$python-slim/"
+  'FROM python:\K[0-9.]+(?=-alpine)' "s/^FROM python:[^ ]+/FROM python:$python-alpine/"
 
 # The self-scan grype is pinned by digest (issue 833), so --fix cannot move it: a new tag needs
 # its own digest. Renovate moves it with scanners.grype.current; a hand edit gets the command.

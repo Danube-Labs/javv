@@ -5,7 +5,7 @@
 # and the defaults live in core/settings.py, so a second copy here could only drift.
 
 # tag + digest: the digest makes the build reproducible; Renovate updates both
-FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS build
+FROM python:3.12-alpine@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89 AS build
 WORKDIR /app
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
@@ -20,15 +20,15 @@ COPY backend/src ./src
 # needs the venv alone, not the sources
 RUN uv sync --frozen --no-dev --no-editable
 
-FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+FROM python:3.12-alpine@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89
 # the digest pins the start; the upgrade adds the OS security fixes released after it (issue 1172)
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+RUN apk upgrade --no-cache
 # the apps run from their venv, so the base image's pip only brings findings (issue 1263); `rm`,
 # not `pip uninstall`, which leaves 4.6 MB of files that it writes while it runs
 RUN rm -rf /usr/local/lib/python3*/site-packages/pip /usr/local/lib/python3*/site-packages/pip-*.dist-info \
     /usr/local/bin/pip*
-RUN groupadd --system --gid 65532 javv \
- && useradd --system --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent javv
+RUN addgroup -S -g 65532 javv \
+ && adduser -S -D -H -u 65532 -G javv -h /nonexistent javv
 COPY --from=build /app/.venv /app/.venv
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1

@@ -15,13 +15,12 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 
-DEBIAN = "RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*"
 ALPINE = "RUN apk upgrade --no-cache"
 IMAGES = {
-    "backend/Dockerfile": DEBIAN,
+    "backend/Dockerfile": ALPINE,
     "frontend/Dockerfile": ALPINE,
-    "scanner/Dockerfile.trivy": DEBIAN,
-    "scanner/Dockerfile.grype": DEBIAN,
+    "scanner/Dockerfile.trivy": ALPINE,
+    "scanner/Dockerfile.grype": ALPINE,
 }
 
 NO_PIP = (
@@ -81,3 +80,19 @@ def test_the_final_stage_removes_the_package_manager_of_its_base_before_user(pat
     user = [i for i, line in enumerate(stage) if re.match(r"USER\b", line)]
     assert user, f"{path}: the final stage sets no USER"
     assert stage.index(REMOVALS[path]) < user[0], f"{path}: the removal runs after USER"
+
+
+PYTHON_IMAGES = ("backend/Dockerfile", "scanner/Dockerfile.trivy", "scanner/Dockerfile.grype")
+
+
+@pytest.mark.parametrize("path", PYTHON_IMAGES)
+def test_every_python_stage_uses_the_one_alpine_base(path: str) -> None:
+    """The Python images are on Alpine (issue 1263): its musl wheels in the venv of a build stage
+    only run on a final stage with the same base, so every stage names the same image."""
+    bases = {
+        line.split()[1]
+        for line in (ROOT / path).read_text().splitlines()
+        if line.startswith("FROM python:")
+    }
+    assert len(bases) == 1, f"{path}: the stages use other bases {sorted(bases)}"
+    assert re.match(r"python:[0-9.]+-alpine@sha256:[0-9a-f]{64}$", bases.pop())
