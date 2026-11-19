@@ -17,6 +17,10 @@ RUN npm run build
 FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
 # the digest pins the start; the upgrade adds the OS security fixes released after it (issue 1172)
 RUN apk upgrade --no-cache
+# the server has no runtime packages, so the package managers of the base image (npm, npx,
+# corepack, yarn) only bring findings (issue 1263)
+RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v* /usr/local/bin/npm /usr/local/bin/npx \
+    /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY frontend/server ./server
