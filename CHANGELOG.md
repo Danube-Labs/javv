@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.11](https://github.com/Danube-Labs/javv/compare/v0.9.10...v0.9.11) (2026-11-19)
+
+
+### Features
+
+* the text of the app in strict STE, slices s1 to s5 (issue 1247) ([#1255](https://github.com/Danube-Labs/javv/issues/1255)) ([66df15a](https://github.com/Danube-Labs/javv/commit/66df15a28354d24101146795e4b2a754a50a92db))
+
+
+### Bug Fixes
+
+* one page load before sign-in, a typed test fixture, and why uv builds again (issue 1246) ([#1259](https://github.com/Danube-Labs/javv/issues/1259)) ([56d3d3a](https://github.com/Danube-Labs/javv/commit/56d3d3af8e36aedabc2b6154fb568e066004bec5))
+
 ## [0.9.10](https://github.com/Danube-Labs/javv/compare/v0.9.9...v0.9.10) (2026-11-17)
 
 
