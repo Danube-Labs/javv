@@ -2,9 +2,10 @@
 The base images are pinned by digest, so without the upgrade a security fix waits until Renovate
 moves the digest and the next build. The upgrade must run before USER: the image user can't.
 
-The final stage also removes the package manager that the base image brings and the app never
-runs (issue 1263): pip in the Python images, npm and npx in the Node image. Their packages were
-findings in every scan of JAVV's own images. The removal also needs root, so it runs before USER.
+The final stage also removes the package managers that the base image brings and the app never
+runs (issue 1263): pip in the Python images, and npm, npx, corepack and yarn in the Node image.
+Their packages were findings in every scan of JAVV's own images. The removal also needs root, so
+it runs before USER.
 """
 
 import re
@@ -24,7 +25,10 @@ IMAGES = {
 }
 
 NO_PIP = "RUN python -m pip uninstall --yes --no-cache-dir pip"
-NO_NPM = "RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx"
+NO_NPM = (
+    "RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v* /usr/local/bin/npm /usr/local/bin/npx"
+    " /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg"
+)
 REMOVALS = {
     "backend/Dockerfile": NO_PIP,
     "frontend/Dockerfile": NO_NPM,
@@ -43,7 +47,13 @@ def test_every_dockerfile_of_the_repository_is_listed() -> None:
 
 
 def final_stage(path: str) -> list[str]:
-    lines = (ROOT / path).read_text().splitlines()
+    """The instructions of the last stage, with each continued line joined to its instruction."""
+    lines: list[str] = []
+    for raw in (ROOT / path).read_text().splitlines():
+        if lines and lines[-1].endswith("\\"):
+            lines[-1] = lines[-1][:-1].rstrip() + " " + raw.strip()
+        else:
+            lines.append(raw)
     final = max(i for i, line in enumerate(lines) if line.startswith("FROM "))
     return lines[final:]
 
