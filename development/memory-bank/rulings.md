@@ -191,3 +191,4 @@ The plan of the agent skill is in issue 1193. The issue body has the current sta
 | standing | No stacked PRs. Each PR bases on `main`. | `development/standards/git-workflow.md` |
 | standing | No tool attribution and no session links in commits, PRs or issues. | `development/standards/git-workflow.md` |
 | 2026-11-06 | The docs and the issues can name an agent client that a user connects to JAVV, for example Claude Code, Codex, VS Code or Cursor. They still name no model, and no tool as the author or the reviewer of the work. | 1110 |
+| 2026-11-19 | Each new image build gets a test of the old and the new images side by side. The test covers function, logs, speed and the rest. The rig is `development/e2e/image-ab.sh`, run by hand for now. Its report goes in the PR body. | 1263 |
