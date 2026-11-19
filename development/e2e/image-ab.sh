@@ -97,8 +97,9 @@ cleanup() {
 trap cleanup EXIT
 
 # the scanners run as the image user (65532), as in a deployment: the caches must be theirs
-for pair in "$TRIVY_CACHE:$INSTRUMENT_TRIVY:/var/cache/javv/trivy" "$GRYPE_CACHE:$INSTRUMENT_GRYPE:/var/cache/javv/grype"; do
-  IFS=: read -r vol img dir <<<"$pair"
+# `|` splits the parts: an image reference holds `:`
+for set in "$TRIVY_CACHE|$INSTRUMENT_TRIVY|/var/cache/javv/trivy" "$GRYPE_CACHE|$INSTRUMENT_GRYPE|/var/cache/javv/grype"; do
+  IFS='|' read -r vol img dir <<<"$set"
   docker run --rm --user 0 -v "$vol:$dir" --entrypoint chown "$img" -R 65532:65532 "$dir"
 done
 say "update the scanner databases once, for both runs"
