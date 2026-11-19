@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { useClusterStore } from '@/stores/cluster'
+import type { FindingRow } from '@/stores/findings'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { historySummary } from '@/images/subTimeline'
 import ImageDetailView from '@/views/ImageDetailView.vue'
@@ -38,25 +39,29 @@ const searchMock = vi.mocked(searchFindingsApiV1FindingsGet)
 const inventoryMock = vi.mocked(listRunningImagesApiV1ImagesGet)
 const timelineMock = vi.mocked(imageTimelineApiV1ImagesTimelineGet)
 
-const row = (key: string, scanner: string) =>
-  ({
-    finding_key: key,
-    cve_id: 'CVE-1',
-    scanner,
-    severity: 'High',
-    severity_canonical: 'high',
-    state: 'open',
-    package_name: 'curl',
-    installed_version: '7.74.0',
-    fixed_version: null,
-    fixable: false,
-    namespaces: ['ns'],
-    epss: null,
-    kev: false,
-    disagree: false,
-    image_repo: 'docker.io/library/nginx',
-    tag: '1.21.6',
-  }) as never
+// typed, not cast: a field the API always sends and the fixture leaves out fails the type check,
+// where the table would only warn at run time (issue 1246: `due_at` was missing)
+const row = (key: string, scanner: string): FindingRow => ({
+  finding_key: key,
+  cve_id: 'CVE-1',
+  scanner,
+  severity: 'High',
+  severity_canonical: 'high',
+  state: 'open',
+  package_name: 'curl',
+  installed_version: '7.74.0',
+  fixed_version: null,
+  fixable: false,
+  ptype: null,
+  namespaces: ['ns'],
+  epss: null,
+  kev: false,
+  disagree: false,
+  overdue: false,
+  due_at: null,
+  image_repo: 'docker.io/library/nginx',
+  tag: '1.21.6',
+})
 
 const router = createRouter({
   history: createMemoryHistory(),
