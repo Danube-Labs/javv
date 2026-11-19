@@ -12,7 +12,12 @@ then search, the bell, saved views, RBAC and empty states - 0.4.0, #449), plus t
 wave (#450). M10 (polish + deploy, #41) shipped the compose stack and the three Helm charts, and the
 MVP releases followed. **0.8.0** (2026-10-14) holds the bug hunt (#790), **0.8.9** (2026-10-26) the
 composable dashboards (#440), marked as the minor release 0.9.0. The bolts are frozen as history (#1012): work after M10 follows one
-issue per feature. **Now:** the 1.0.0 hardening milestone. #555 has the roadmap and its burn order.
+issue per feature. The 0.9 releases added the MCP server for AI agents (0.9.6, #1096), the scans of a
+Nomad cluster and a Docker Compose host (0.9.9, #1155), the files where a scanner found a finding
+(0.9.10, #1077) and the app text in strict STE (0.9.11, #1247). The newest release is **0.9.11**
+(2026-11-19), and `development/memory-bank/timeline.md` has each release. **Now:** the 1.0.0 hardening
+milestone. #555 has the roadmap and its burn order, and the open work is in
+`development/memory-bank/active-context.md`.
 
 ## Start here (reading order)
 1. [`README.md`](README.md) - what JAVV is, stack, toolchain table, license.
@@ -63,7 +68,7 @@ capabilities, the always-applied `cluster_id` filter) · `triage/` · `decisions
 `admin/` · `jobs/` · `mcp/` (the MCP endpoint for AI agents at `/api/v1/mcp`: the token gate, and
 the read and write tools made from the route functions, issue 1096) · `tools/` (`export_openapi`). Tests in
 `backend/tests/`
-(157 test files, about 2,760 tests on 2026-11-13; session-scoped bootstrap in `conftest.py` - new test files must NOT
+(157 test files, 2,808 tests on 2026-11-19; session-scoped bootstrap in `conftest.py` - new test files must NOT
 re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in app code;
 `tests/security/test_rbac_idor_contract.py` is the **capability registry of record**;
 `test_mapping_additive.py` compares the mappings with the newest release tag and with `main`, and
