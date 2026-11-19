@@ -152,6 +152,16 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
     the filter labels, reduced motion on seven controls, and the paths in the CSV and CycloneDX
     exports.
   - These changes shipped in 0.9.10 (2026-11-17).
+- **The work for 0.9.11** (2026-11-17 to 2026-11-19).
+  - The text of the app in strict STE, with one name for each thing (issue 1247). A test holds the
+    template text to the rules (PR 1252). All screens changed in one PR (PR 1255). The seven videos
+    and the README GIF show the new text, and the video "Build a dashboard" keeps each spotlight
+    in the view (PR 1258).
+  - A local hook refuses a commit, a push or a post that runs even when the text linter fails (PR
+    1257).
+  - Older items (issue 1246, PR 1259): one page load before sign-in, a typed test fixture with no
+    `dueAt` warnings, and why `uv run` builds again under faketime on Ubuntu 26.04.
+  - These changes shipped in 0.9.11 (2026-11-19).
 
 ## 6. Releases
 
@@ -159,6 +169,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.11 | 2026-11-19 | The text of the app is in strict STE, with one name for each thing (issue 1247). Some labels have new names, for example the MCP level "Write and accept risks". The page loads one time before sign-in (issue 1246). The videos and the README walkthrough show the new text. The database schema stays 23 |
 | 0.9.10 | 2026-11-17 | A finding shows the files where the scanner found it, on the screens and in the CSV and CycloneDX exports (issues 1077, 1199 and 1245). Two dashboard panels (issue 1176). A new layout for the finding page (issue 1205). The app says "vulnerability" (issue 1224). The popovers open from their arrow (issue 1240). Each image upgrades its OS packages (issue 1172). Grype 0.121.3. The store schema is 23, and the backend takes reports of format 5 |
 | 0.9.9 | 2026-11-09 | Pages and jobs to scan a Nomad cluster and a Docker Compose host (issue 1155). The image page has one band of three columns, and Findings has a Digest filter. A saved view asks first, in a window. One close button and plain words on each screen (issues 1140 and 1152). Five new Guide sections that address you (issue 1142). The scanner images use Trivy 0.76.2 |
 | 0.9.8 | 2026-11-07 | The Images CSV has the counts of each scanner (issue 1127). The Settings menu, the scope bar and the Roles table are easier to read. Windows have no border line. The install docs check the signatures of the images and charts before they run them. They tell how scanners in a different cluster get to JAVV (issues 1125 and 1126) |
