@@ -16,7 +16,8 @@
 #   4. every GET route without a path value, ROUNDS times each: status, body, time
 #   5. one scan cycle of each scanner image of that run with deploy/docker/javv_docker_push.py,
 #      on one fixed container, then the findings that JAVV holds for it
-#   6. the memory of each container, then the logs of the backend, the frontend and the scans
+#   6. the peak memory of each container (cgroup memory.peak), then the logs of the backend,
+#      the frontend and the scans
 # Then development/e2e/image_ab.py writes OUT/report.md, and the exit code is its exit code.
 #
 # The scanner databases update once at the start and stay the same for both runs, so the two scan
@@ -215,10 +216,14 @@ EOF
   done
   rm -f "$jar"
 
-  local mem
-  mem=$(docker stats --no-stream --format '{{.Name}}|{{.MemUsage}}' | awk -F'|' -v p="javv-ab-$side-" \
-    'index($1, p) == 1 {split($2, m, " / "); sub(p, "", $1); sub(/-[0-9]+$/, "", $1); print $1 "\t" m[1]}' \
-    | jq -R 'split("\t") | {("memory_" + .[0]): .[1]}' | jq -s 'add // {}')
+  # the peak memory of each container since its start: the kernel's own record (cgroup v2), not a
+  # sample of one moment
+  local mem="{}"
+  for c in backend frontend opensearch; do
+    local id; id=$("${dc[@]}" ps -q "$c")
+    local peak; peak=$(cat "/sys/fs/cgroup/system.slice/docker-$id.scope/memory.peak" 2>/dev/null || echo 0)
+    mem=$(jq --arg c "$c" --argjson v "$((peak / 1048576))" '. + {("memory_peak_mib_" + $c): $v}' <<<"$mem")
+  done
   for c in backend frontend; do "${dc[@]}" logs --no-color --no-log-prefix "$c" > "$dir/logs/$c.log" 2>&1; done
   jq -n --argjson up "$up" --argjson seed "$seed" --argjson reads "$reads" --argjson scans "$scans" \
     --argjson mem "$mem" '{start_seconds: $up, seed_seconds: $seed, reads_seconds: $reads} + $scans + $mem' \

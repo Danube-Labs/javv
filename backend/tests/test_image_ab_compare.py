@@ -112,6 +112,12 @@ def test_plain_lines_that_differ_only_in_their_values_do_not_fail() -> None:
     assert ab.compare_logs(old, new)["failing"] == []
 
 
+def test_the_project_names_of_the_two_runs_are_the_same_shape() -> None:
+    old = ["2026-11-19 14:26:08,545 INFO skipped: {'project': ['javv-ab-old', 'setup']}"]
+    new = ["2026-11-19 14:27:54,797 INFO skipped: {'project': ['javv-ab-new', 'setup']}"]
+    assert ab.compare_logs(old, new)["failing"] == []
+
+
 def test_a_plain_line_with_other_words_fails() -> None:
     old = ["2026-11-19 14:26:08,545 INFO cycle done"]
     new = ["2026-11-19 14:27:54,797 ERROR scan failed: pip not found"]

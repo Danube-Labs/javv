@@ -47,6 +47,8 @@ PLAIN_VALUES = [
         "<uuid>",
     ),
     (re.compile(r"sha256:[0-9a-f]+"), "<digest>"),
+    # the compose project of each run: image-ab.sh names them
+    (re.compile(r"javv-ab-(old|new)"), "javv-ab-<run>"),
     (re.compile(r"\b[a-z]+_[a-z]+\b(?=')"), "<name>"),
     (re.compile(r"\d+(\.\d+)?"), "<n>"),
 ]
