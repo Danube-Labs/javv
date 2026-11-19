@@ -76,6 +76,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-17 | The findings exports have the paths of a finding. The CSV has the columns `locations_total` and `locations`, with one path on each line of the cell (D1 A). Ingest refuses a control character in a path, so a new line splits the paths with no doubt. CycloneDX puts the paths in `component.evidence.occurrences[].location` (D2 A). OpenVEX has no field for a path and stays as it is. No new size limit (D3). | 1245 |
 | 2026-11-07 | The docs give no Ingress example. The `javv` chart makes no Ingress, and the docs tell the user to put one in front (D3). | 1126 |
 | 2026-11-19 | Before sign-in, `GET /auth/me` answers 401, and the browser logs one console line for it. The line stays: a 401 is the correct answer when the browser has no session, and the API does not change for it. | 1246 |
+| 2026-11-19 | The backend and the two scanner images use the base `python:3.12-alpine`, not `python:3.12-slim`. On Debian, each image had about 227 OS findings with no fix. The images also leave out the package managers of their bases. | 1263 |
 
 ## UI copy and look
 
