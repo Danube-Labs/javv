@@ -23,8 +23,10 @@ RUN uv sync --frozen --no-dev --no-editable
 FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 # the digest pins the start; the upgrade adds the OS security fixes released after it (issue 1172)
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
-# the apps run from their venv, so the base image's pip only brings findings (issue 1263)
-RUN python -m pip uninstall --yes --no-cache-dir pip
+# the apps run from their venv, so the base image's pip only brings findings (issue 1263); `rm`,
+# not `pip uninstall`, which leaves 4.6 MB of files that it writes while it runs
+RUN rm -rf /usr/local/lib/python3*/site-packages/pip /usr/local/lib/python3*/site-packages/pip-*.dist-info \
+    /usr/local/bin/pip*
 RUN groupadd --system --gid 65532 javv \
  && useradd --system --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent javv
 COPY --from=build /app/.venv /app/.venv

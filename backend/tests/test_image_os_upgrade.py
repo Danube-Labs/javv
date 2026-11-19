@@ -24,7 +24,10 @@ IMAGES = {
     "scanner/Dockerfile.grype": DEBIAN,
 }
 
-NO_PIP = "RUN python -m pip uninstall --yes --no-cache-dir pip"
+NO_PIP = (
+    "RUN rm -rf /usr/local/lib/python3*/site-packages/pip"
+    " /usr/local/lib/python3*/site-packages/pip-*.dist-info /usr/local/bin/pip*"
+)
 NO_NPM = (
     "RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v* /usr/local/bin/npm /usr/local/bin/npx"
     " /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg"
