@@ -126,6 +126,16 @@ from Playwright directly.
   route-settle pacing); deep interactions (dialogs, forced states, drafts) stay in the rig, out of
   the gate; the walk's PIT-budget env raise is documented in `docs/CONFIGURATION.md`, "CI gate values".
 
+### 5. Image A/B - the old and the new images side by side
+Each change to an image (a Dockerfile, a base image, the packages in it) gets one run of
+`development/e2e/image-ab.sh` before review (operator, 2026-11-19, issue 1263).
+CI builds the images and starts them, but a base or package change can still break an image
+without breaking a test. The rig runs the published images and the new build one after the
+other, each on a new store, and compares the image facts, the start, sign-in, ingest, every GET
+route, a scan cycle of each scanner image, the log events, the times and the memory. Its
+`report.md` goes in the PR body. The rig exits 1 when the two runs work differently, and the
+cases of `backend/tests/test_image_ab_compare.py` hold what fails it.
+
 ## Conventions
 - **Deterministic:** freeze time; no calls to real registries/vuln-DBs; seed any randomness.
 - **No fixed date where code compares it to the real clock (issue 533).** Such a test passes
