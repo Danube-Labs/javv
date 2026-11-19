@@ -1,6 +1,10 @@
 """Each JAVV image upgrades the OS packages of its base image in its final stage (issue 1172).
 The base images are pinned by digest, so without the upgrade a security fix waits until Renovate
 moves the digest and the next build. The upgrade must run before USER: the image user can't.
+
+The final stage also removes the package manager that the base image brings and the app never
+runs (issue 1263): pip in the Python images, npm and npx in the Node image. Their packages were
+findings in every scan of JAVV's own images. The removal also needs root, so it runs before USER.
 """
 
 import re
@@ -19,6 +23,15 @@ IMAGES = {
     "scanner/Dockerfile.grype": DEBIAN,
 }
 
+NO_PIP = "RUN python -m pip uninstall --yes --no-cache-dir pip"
+NO_NPM = "RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx"
+REMOVALS = {
+    "backend/Dockerfile": NO_PIP,
+    "frontend/Dockerfile": NO_NPM,
+    "scanner/Dockerfile.trivy": NO_PIP,
+    "scanner/Dockerfile.grype": NO_PIP,
+}
+
 
 def test_every_dockerfile_of_the_repository_is_listed() -> None:
     found = {
@@ -29,12 +42,29 @@ def test_every_dockerfile_of_the_repository_is_listed() -> None:
     assert found == set(IMAGES)
 
 
-@pytest.mark.parametrize("path", sorted(IMAGES))
-def test_the_final_stage_upgrades_its_os_packages_before_user(path: str) -> None:
+def final_stage(path: str) -> list[str]:
     lines = (ROOT / path).read_text().splitlines()
     final = max(i for i, line in enumerate(lines) if line.startswith("FROM "))
-    stage = lines[final:]
+    return lines[final:]
+
+
+@pytest.mark.parametrize("path", sorted(IMAGES))
+def test_the_final_stage_upgrades_its_os_packages_before_user(path: str) -> None:
+    stage = final_stage(path)
     assert IMAGES[path] in stage, f"{path}: the final stage has no `{IMAGES[path]}`"
     user = [i for i, line in enumerate(stage) if re.match(r"USER\b", line)]
     assert user, f"{path}: the final stage sets no USER"
     assert stage.index(IMAGES[path]) < user[0], f"{path}: the upgrade runs after USER"
+
+
+def test_every_image_removes_a_package_manager() -> None:
+    assert set(REMOVALS) == set(IMAGES)
+
+
+@pytest.mark.parametrize("path", sorted(REMOVALS))
+def test_the_final_stage_removes_the_package_manager_of_its_base_before_user(path: str) -> None:
+    stage = final_stage(path)
+    assert REMOVALS[path] in stage, f"{path}: the final stage has no `{REMOVALS[path]}`"
+    user = [i for i, line in enumerate(stage) if re.match(r"USER\b", line)]
+    assert user, f"{path}: the final stage sets no USER"
+    assert stage.index(REMOVALS[path]) < user[0], f"{path}: the removal runs after USER"

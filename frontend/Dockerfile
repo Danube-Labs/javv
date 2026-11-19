@@ -17,6 +17,8 @@ RUN npm run build
 FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
 # the digest pins the start; the upgrade adds the OS security fixes released after it (issue 1172)
 RUN apk upgrade --no-cache
+# the server has no runtime packages, so the base image's npm only brings findings (issue 1263)
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY frontend/server ./server
