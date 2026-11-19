@@ -36,17 +36,42 @@ VOLATILE = re.compile(
     r"(^|_)(at|time|timestamp|took|ms|seconds|cursor|pit|session|token|expires|date|day|"
     r"created|updated|started|finished|heartbeat|until|since)$|^(id|uuid|etag|ts|scan_order)$|_ids?$"
 )
+# live measures: they change while the same code runs
+MEASURE = re.compile(r"_(used|free)(_mb|_bytes)?$")
 NOT_FAILING_LEVELS = {"debug", "info"}
+# the values in a line of plain text that change from run to run
+PLAIN_VALUES = [
+    (re.compile(r"\d{4}-\d{2}-\d{2}[T ][\d:.,]+Z?"), "<time>"),
+    (
+        re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"),
+        "<uuid>",
+    ),
+    (re.compile(r"sha256:[0-9a-f]+"), "<digest>"),
+    (re.compile(r"\b[a-z]+_[a-z]+\b(?=')"), "<name>"),
+    (re.compile(r"\d+(\.\d+)?"), "<n>"),
+]
+
+
+def plain_shape(line: str) -> str:
+    """A line of plain text without the values that change from run to run."""
+    for pattern, placeholder in PLAIN_VALUES:
+        line = pattern.sub(placeholder, line)
+    return line
 
 
 def normalize(value):
     """The body without the values that change between two runs of the same code."""
     if isinstance(value, dict):
         return {
-            k: normalize(v) for k, v in sorted(value.items()) if not VOLATILE.search(k)
+            k: normalize(v)
+            for k, v in sorted(value.items())
+            if not VOLATILE.search(k) and not MEASURE.search(k)
         }
     if isinstance(value, list):
         return [normalize(v) for v in value]
+    # a container ID (the node name of the store): each stack has its own
+    if isinstance(value, str) and re.fullmatch(r"[0-9a-f]{12}", value):
+        return "<container>"
     if isinstance(value, str) and re.fullmatch(
         r"\d{4}-\d{2}-\d{2}([T ][\d:.]+)?(Z|[+-]\d{2}:?\d{2})?", value
     ):
@@ -66,10 +91,10 @@ def log_shape(lines):
         try:
             rec = json.loads(line)
         except ValueError:
-            plain.append(line)
+            plain.append(plain_shape(line))
             continue
         if not isinstance(rec, dict):
-            plain.append(line)
+            plain.append(plain_shape(line))
             continue
         name = str(rec.get("event", "<no event>"))
         events.setdefault(name, set()).update(rec)
@@ -176,6 +201,10 @@ def compare_scan(old, new):
     return {"old": len(a), "new": len(b), "same": a == b}, failing
 
 
+def _ms(t) -> str:
+    return f"{t['median']}, {t['p95']}" if t else "-"
+
+
 def _cell(v):
     if isinstance(v, (dict, list)):
         return json.dumps(v, sort_keys=True)
@@ -214,9 +243,8 @@ def report(run: Path) -> tuple[str, list[str]]:
         "|---|---|---|---|---|---|",
     ]
     for path, sa, sb, same, ta, tb in rows:
-        fmt = lambda t: f"{t['median']}, {t['p95']}" if t else "-"
         out.append(
-            f"| `{path}` | {sa} | {sb} | {'yes' if same else '**no**'} | {fmt(ta)} | {fmt(tb)} |"
+            f"| `{path}` | {sa} | {sb} | {'yes' if same else '**no**'} | {_ms(ta)} | {_ms(tb)} |"
         )
     out.append("")
 

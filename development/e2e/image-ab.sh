@@ -202,7 +202,9 @@ EOF
     local vol=$TRIVY_CACHE; [ "$s" = grype ] && vol=$GRYPE_CACHE
     t0=$(now)
     local code=0
-    docker run --rm --network host --group-add "$SOCK_GID" -v /var/run/docker.sock:/var/run/docker.sock \
+    # the label keeps the scan container out of its own scan, as in deploy/docker/compose.yaml
+    docker run --rm --label javv.scan=true --network host --group-add "$SOCK_GID" \
+      -v /var/run/docker.sock:/var/run/docker.sock \
       -v "$ROOT/deploy/docker/javv_docker_push.py:/javv/javv_docker_push.py:ro" -v "$vol:/var/cache/javv/$s" \
       "${FROZEN[@]}" -e JAVV_BACKEND_URL="$BASE" -e JAVV_CLUSTER_ID="$SCAN_CLUSTER" -e JAVV_SCANNER="$s" \
       -e JAVV_TOKEN="$token" -e JAVV_DOCKER_SKIP_PROJECTS="$skip" --entrypoint python3 \

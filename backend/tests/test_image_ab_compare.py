@@ -51,6 +51,13 @@ def test_normalize_keeps_a_version_that_is_no_time() -> None:
     assert ab.normalize({"mapping_version": 23}) == {"mapping_version": 23}
 
 
+def test_normalize_drops_a_live_measure_and_a_container_id() -> None:
+    a = {"nodes": [{"name": "577d460c601b", "heap_used_mb": 329, "heap_max_mb": 1024}]}
+    b = {"nodes": [{"name": "0b1c2d3e4f5a", "heap_used_mb": 325, "heap_max_mb": 1024}]}
+    assert ab.normalize(a) == ab.normalize(b)
+    assert ab.normalize(a) != ab.normalize({"nodes": [{"name": "x", "heap_max_mb": 2048}]})
+
+
 # --- logs
 
 
@@ -89,6 +96,26 @@ def test_a_new_line_that_is_not_json_fails() -> None:
     )
     assert out["new_plain"] == ["Traceback (most recent call last):"]
     assert out["failing"]
+
+
+def test_plain_lines_that_differ_only_in_their_values_do_not_fail() -> None:
+    old = [
+        "2026-11-19 14:26:08,545 INFO 2 images to scan: x in ['sharp_wright'] x1",
+        "2026-11-19 14:26:10,014 INFO cycle a68f1622-f439-45fa-9d25-fe1e7255ef44: committed",
+        "2026-11-19 14:26:09,684 INFO push r sha256:08c63d5d7201: 233 findings",
+    ]
+    new = [
+        "2026-11-19 14:27:54,797 INFO 2 images to scan: x in ['elated_rubin'] x1",
+        "2026-11-19 14:27:56,588 INFO cycle a1206d83-2e55-4075-97e4-d002a46becb6: committed",
+        "2026-11-19 14:27:56,270 INFO push r sha256:8731945dc00a: 231 findings",
+    ]
+    assert ab.compare_logs(old, new)["failing"] == []
+
+
+def test_a_plain_line_with_other_words_fails() -> None:
+    old = ["2026-11-19 14:26:08,545 INFO cycle done"]
+    new = ["2026-11-19 14:27:54,797 ERROR scan failed: pip not found"]
+    assert ab.compare_logs(old, new)["failing"] == ["1 new lines that are not JSON"]
 
 
 def test_a_key_that_an_event_lost_is_reported() -> None:
