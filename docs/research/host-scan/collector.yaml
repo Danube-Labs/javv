@@ -1,0 +1,80 @@
+# Phase 0 of issue 1239: the collector, one pod on each node. A research manifest, not the chart.
+# The namespace needs the Privileged level of the Pod Security Standards: Baseline forbids hostPath.
+# The pod needs no privileged flag, no hostPID and no host network. It runs as the scanner image's
+# user, with a read-only root filesystem, and every host mount is read-only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: host-collector
+  namespace: javv-hostscan
+spec:
+  clusterIP: None # headless: the DNS name lists each collector pod, so the scan needs no RBAC
+  selector:
+    app: host-collector
+  ports:
+    - name: http
+      port: 8080
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: host-collector
+  namespace: javv-hostscan
+spec:
+  selector:
+    matchLabels:
+      app: host-collector
+  template:
+    metadata:
+      labels:
+        app: host-collector
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: collector
+          image: local1/javv-scanner-trivy:0.76.2-hostscan
+          imagePullPolicy: Never
+          command: ["python", "/collector/collector.py"]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /meta.json
+              port: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 128Mi }
+          volumeMounts:
+            - { name: script, mountPath: /collector, readOnly: true }
+            - { name: dpkg-status, mountPath: /host/var/lib/dpkg/status, readOnly: true }
+            - { name: os-release, mountPath: /host/etc/os-release, readOnly: true }
+            - { name: usr-os-release, mountPath: /host/usr/lib/os-release, readOnly: true }
+            - { name: lsb-release, mountPath: /host/etc/lsb-release, readOnly: true }
+      volumes:
+        - name: script
+          configMap:
+            name: host-collector-script
+        - name: dpkg-status
+          hostPath: { path: /var/lib/dpkg/status, type: File }
+        - name: os-release
+          hostPath: { path: /etc/os-release, type: File }
+        - name: usr-os-release
+          hostPath: { path: /usr/lib/os-release, type: File }
+        - name: lsb-release
+          hostPath: { path: /etc/lsb-release, type: File }

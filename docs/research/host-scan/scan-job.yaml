@@ -1,0 +1,58 @@
+# Phase 0 of issue 1239: the central scan, one Job for each scanner. A research manifest, not the
+# chart. run.sh fills SCANNER (trivy or grype) and IMAGE. The init container downloads the
+# vulnerability database, so the main container's memory peak and time are the scan alone.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: host-scan-SCANNER
+  namespace: javv-hostscan
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: database
+          image: IMAGE
+          imagePullPolicy: Never
+          command: ["sh", "-c", "DBCOMMAND"]
+          securityContext: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - { name: cache, mountPath: /var/cache/javv/SCANNER }
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: scan
+          image: IMAGE
+          imagePullPolicy: Never
+          command: ["python", "/scan/scan.py"]
+          env:
+            - { name: PYTHONDONTWRITEBYTECODE, value: "1" }
+            - { name: GRYPE_DB_AUTO_UPDATE, value: "false" }
+            - { name: GRYPE_CHECK_FOR_APP_UPDATE, value: "false" }
+          securityContext: *locked
+          resources:
+            requests: { cpu: 500m, memory: 512Mi }
+            limits: { memory: 4Gi }
+          volumeMounts:
+            - { name: script, mountPath: /scan, readOnly: true }
+            - { name: cache, mountPath: /var/cache/javv/SCANNER }
+            - { name: work, mountPath: /work }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: script
+          configMap:
+            name: host-scan-script
+        - { name: cache, emptyDir: {} }
+        - { name: work, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }

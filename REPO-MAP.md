@@ -85,7 +85,7 @@ re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in
 | **`docs/use/`** | Pages for users, published on the docs site as Use JAVV: one page for each video, with its steps in text, the page `use-the-mcp-server.md` with no video (issue 1096), and `videos/` with the seven MP4 files (each under the size limit in `backend/tests/test_docs_site.py`; issues 699 and 1009) |
 | `docs/assets/` | `demo.gif`, the walkthrough in `README.md` |
 | **`docs/audits/`** | `remaining_audit_items.md` = **the one live audit backlog**; archived point-in-time reports, and the finished 2026-07-07 hygiene audit (`major_audit/`), in `.deprecated/docs/audits/` |
-| **`docs/research/`** | Backing research. `STACK-BEST-PRACTICES` (day-one engineering rules) · `TOOLING-AND-MCP` (MCP servers + install) · `K8S-DEV-CLUSTER` (k3d/remote options) · `INDEPENDENT-AUDIT-v3` · `SNAPSHOT-MODEL-VALIDATION` · `OPENSEARCH-DYNAMIC-CONFIG` |
+| **`docs/research/`** | Backing research. `STACK-BEST-PRACTICES` (day-one engineering rules) · `TOOLING-AND-MCP` (MCP servers + install) · `K8S-DEV-CLUSTER` (k3d/remote options) · `INDEPENDENT-AUDIT-v3` · `SNAPSHOT-MODEL-VALIDATION` · `OPENSEARCH-DYNAMIC-CONFIG` · `host-scan/` (issue 1239 Phase 0: the collector test and its results) |
 | `.deprecated/` | Frozen V1/V2/V3 docs + original notes (evolution trail; `.deprecated/docs/deprecated/original_notes_for_app.md` is **read-only**) |
 
 ## `development/` - how to build it
