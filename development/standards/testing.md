@@ -151,7 +151,9 @@ from Playwright directly.
     fix the test per this rule. Reproduce locally with libfaketime:
     `uv sync --all-extras --dev` on the real clock, then `faketime -f '+90d' uv run --no-sync
     pytest …`. The `-f` is required. Without `--no-sync`, uv can build the local packages again
-    under the shifted clock, and the fetch from pypi.org then fails (issue 1182). **Never against
+    under the shifted clock, and the fetch from pypi.org then fails (issue 1182). That happens
+    where libfaketime also shifts file times (Ubuntu 26.04, not 24.04): uv then sees
+    `pyproject.toml` as newer than the install (issue 1246). **Never against
     the shared dev store:** the admin-jobs tests run the real staleness sweep over it, and at a
     shifted clock every scanner looks silent, so every real finding goes `stale` (it happened
     2026-09-26: 60,355 findings). Point `JAVV_OPENSEARCH_URL` at a throwaway OpenSearch (tests

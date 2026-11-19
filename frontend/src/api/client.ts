@@ -22,7 +22,10 @@ client.setConfig({
   fetch: countedFetch((req) => req.method === 'GET' && BACKGROUND_POLLS.has(req.path)),
 })
 
-client.interceptors.response.use(async (response) => {
+/** The auth routes live at /auth/*, outside /api/v1: their 401 is an answer, not a lost session. */
+const isAuthRoute = (url: string) => new URL(url, window.location.origin).pathname.startsWith('/auth/')
+
+client.interceptors.response.use(async (response, request) => {
   if (await isReadOnlyRefusal(response)) {
     useHealthStore().markDegraded('read-only', 'api')
   } else if (response.status === 503 || response.status === 502 || response.status === 504) {
@@ -30,10 +33,11 @@ client.interceptors.response.use(async (response) => {
   }
   // expired/invalid session: every screen would degrade into generic "unavailable" copy —
   // land on login instead (audit 343). Full navigation on purpose: it also resets stale state.
-  // Auth's own endpoints are exempt (login failures ARE 401s the form must render).
+  // Auth's own endpoints are exempt: a failed sign-in and the signed-out session check answer
+  // 401, and a page load on that answer would load the page again (issue 1246).
   if (
     response.status === 401 &&
-    !response.url.includes('/api/v1/auth/') &&
+    !isAuthRoute(request.url) &&
     window.location.pathname !== '/login'
   ) {
     window.location.assign('/login')
