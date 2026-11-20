@@ -162,6 +162,16 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   - Older items (issue 1246, PR 1259): one page load before sign-in, a typed test fixture with no
     `dueAt` warnings, and why `uv run` builds again under faketime on Ubuntu 26.04.
   - These changes shipped in 0.9.11 (2026-11-19).
+- **The work for 0.9.12** (2026-11-19 to 2026-11-20): fewer vulnerabilities in the JAVV images
+  (issue 1263).
+  - A rig runs the old and the new images side by side after each image build (PR 1264).
+  - The images leave out the package managers of their bases: pip, npm, npx, corepack and yarn
+    (PR 1265).
+  - The backend and the two scanner images moved from `python:3.12-slim` to `python:3.12-alpine`
+    (PR 1267), then to `python:3.14-alpine` (PR 1269).
+  - The CI test CA passes the strict TLS check of Python 3.13 and later (PR 1268). The scanner
+    logs why the scope request failed. Ingest refuses JSON nested deeper than 64 levels (PR 1269).
+  - These changes wait for release 0.9.12.
 
 ## 6. Releases
 

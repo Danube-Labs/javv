@@ -1,6 +1,6 @@
 # Active context
 
-As of: 2026-11-19
+As of: 2026-11-20
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
@@ -10,10 +10,18 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 - The last release is 0.9.11 (2026-11-19): the text of the app in strict STE, and one page load
   before sign-in.
 - The phase is hardening for 1.0 (issue 555, phase 3).
+- `main` holds the work of issue 1263 for the next release (0.9.12). The backend and the two scanner
+  images run on `python:3.14-alpine` and leave out the package managers of their bases. The four
+  images and both scanners have 88 findings, against 1,517 on 0.9.11 (one scanner database for both,
+  2026-11-20). Python 3.14 checks TLS certificates more strictly, and `docs/UPGRADING.md` has a note
+  for it. Ingest refuses JSON nested deeper than 64 levels.
 
 ## Next
 
-No issue is next. The operator chooses the next step from the tables below.
+- Release 0.9.12 (PR 1266), on the word of the operator.
+- Then issue 1263 closes after a new scan of the deployment that reported the 1,360 findings.
+
+Apart from these, the operator chooses the next step from the tables below.
 
 Each step starts on the word of the operator.
 
@@ -36,6 +44,14 @@ Small items that no issue tracks.
   look for "could not" (after issue 1247).
 - On the dev machine, `vitest run` shows no console output of a passing test without
   `--silent=false`. CI shows it. The cause is not known (issue 1246).
+- `/readyz` logs nothing when the ping to OpenSearch fails. A certificate that changes after the
+  start shows only as 503 `unreachable` (after issue 1263).
+- The docs do not tell how a scanner trusts a private CA for an `https` backend (after issue 1263).
+- Two library warnings stop a run of the suite with `-W error::DeprecationWarning`: the unset
+  `asyncio_default_fixture_loop_scope` of pytest-asyncio, and `enable_cleanup_closed`, which
+  opensearch-py passes to aiohttp (after issue 1263).
+- In the A/B rig of issue 1263, the peak memory of the backend on Python 3.14 was 238 MiB, against
+  216 MiB on 3.12, in one run. The cause is not known.
 
 ## Open, in the 1.0.0 milestone
 

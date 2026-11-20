@@ -68,7 +68,7 @@ capabilities, the always-applied `cluster_id` filter) · `triage/` · `decisions
 `admin/` · `jobs/` · `mcp/` (the MCP endpoint for AI agents at `/api/v1/mcp`: the token gate, and
 the read and write tools made from the route functions, issue 1096) · `tools/` (`export_openapi`). Tests in
 `backend/tests/`
-(157 test files, 2,808 tests on 2026-11-19; session-scoped bootstrap in `conftest.py` - new test files must NOT
+(159 test files, 2,857 tests on 2026-11-20; session-scoped bootstrap in `conftest.py` - new test files must NOT
 re-bootstrap; `test_logging_discipline.py` build-bans `print()`/`getLogger()` in app code;
 `tests/security/test_rbac_idor_contract.py` is the **capability registry of record**;
 `test_mapping_additive.py` compares the mappings with the newest release tag and with `main`, and
