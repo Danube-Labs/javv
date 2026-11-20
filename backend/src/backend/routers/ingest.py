@@ -2,16 +2,18 @@
 
 Order of defenses: rate limit → bearer token (peppered-SHA-256 lookup, constant-time) → streamed
 compressed-size cap (Content-Length is never trusted) → gzip decompression cap (zip bomb) → JSON
-parse → full-envelope `extra="forbid"` validation → token↔payload scope binding (a team-A token
-cannot push team-B data) → commit-then-cache writes. 401 is generic (no token-existence oracle);
-tokens are never logged. Every rejection past the token check is also recorded for the
+depth cap → JSON parse → full-envelope `extra="forbid"` validation → token↔payload scope binding (a
+team-A token cannot push team-B data) → commit-then-cache writes. 401 is generic (no token-existence
+oracle); tokens are never logged. Every rejection past the token check is also recorded for the
 failed-ingests table (`services/ingest_failures.py`, issue 357) without changing the response.
 """
 
 import json
+import re
 import uuid
 import zlib
 from datetime import UTC, datetime, timedelta
+from itertools import accumulate
 from typing import Any, TypedDict, cast
 
 import structlog
@@ -105,6 +107,27 @@ def _first_error(exc: ValidationError) -> str:
     first = exc.errors()[0]
     loc = ".".join(clean_text(str(part))[:64] for part in first["loc"])
     return f"{loc}: {first['type']}" if loc else first["type"]
+
+
+# The deepest JSON that ingest parses, the cap of docs/INGEST-CONTRACT.md; an envelope needs about
+# 8 levels. Since Python 3.13, json.loads stops at the end of the stack, not at a fixed count, so
+# without this cap the depth that fails would depend on the stack of the process (issue 1263).
+MAX_JSON_DEPTH = 64
+# a JSON string, unrolled so that an unterminated one cannot backtrack
+_JSON_STRING = re.compile(rb'"[^"\\]*(?:\\.[^"\\]*)*"', re.DOTALL)
+_NOT_A_BRACKET = bytes(b for b in range(256) if b not in b"[]{}")
+# an opener as the signed byte +1, a closer as -1
+_TO_STEPS = bytes.maketrans(b"[{]}", b"\x01\x01\xff\xff")
+
+
+def json_too_deep(raw: bytes, limit: int = MAX_JSON_DEPTH) -> bool:
+    """True when the brackets of `raw` nest deeper than `limit`. Brackets in a string do not
+    count. The depth is the highest running sum of the brackets, one pass in C whatever the shape
+    of the body: about 1 s for 60 MiB of brackets."""
+    brackets = _JSON_STRING.sub(b"", raw).translate(None, _NOT_A_BRACKET)
+    if brackets.count(b"[") + brackets.count(b"{") <= limit:
+        return False
+    return max(accumulate(memoryview(brackets.translate(_TO_STEPS)).cast("b"))) > limit
 
 
 _MAPPING_REFUSALS = frozenset({"mapper_parsing_exception", "document_parsing_exception"})
@@ -292,9 +315,13 @@ async def _ingest_authenticated(
             scope=scope,
         )
 
+    if json_too_deep(raw):
+        raise _reject(
+            400, "bad_json", f"body nests deeper than {MAX_JSON_DEPTH} levels", scope=scope
+        )
     try:
         parsed = json.loads(raw)
-    # RecursionError: valid JSON nested past the decoder's limit, which no envelope needs
+    # RecursionError: a body the cap above let through that still ends the stack
     except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
         raise _reject(400, "bad_json", "body is not valid JSON", scope=scope) from exc
     try:

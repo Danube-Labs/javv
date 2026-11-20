@@ -25,11 +25,14 @@ The only endpoint that parses data a monitored cluster produces. What protects i
    unauthenticated sender can't choose our log volume (`.claude/rules/logging.md`).
 3. **Size caps**, compressed and after decompression (`JAVV_INGEST_MAX_COMPRESSED_BYTES`,
    `JAVV_INGEST_MAX_BODY_BYTES`): a zip bomb stops at the cap with a 413.
-4. **Strict schema:** the envelope model is `extra="forbid"` (`models/envelope.py`), so unknown
+4. **Depth cap:** JSON nested deeper than 64 levels is a 400 before the parse (`json_too_deep` in
+   `routers/ingest.py`, issue 1263). Since Python 3.13 the parser stops at the end of the stack,
+   so without the cap the depth that fails would depend on the host.
+5. **Strict schema:** the envelope model is `extra="forbid"` (`models/envelope.py`), so unknown
    fields are a 422, and scanner vocabulary is canonicalized at the boundary.
-5. **Scope binding:** a token belongs to one `(cluster, scanner)`; a payload claiming another is
+6. **Scope binding:** a token belongs to one `(cluster, scanner)`; a payload claiming another is
    refused (`scope_mismatch`). Everything is routed on the **token's** scope, never the payload's.
-6. **Refusals past the token check are recorded** for the failed-ingests view (issue 357), with
+7. **Refusals past the token check are recorded** for the failed-ingests view (issue 357), with
    sender-chosen text capped and stripped of control characters.
 
 JAVV never writes to the clusters it monitors; the scanners push to it.

@@ -77,7 +77,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-07 | The docs give no Ingress example. The `javv` chart makes no Ingress, and the docs tell the user to put one in front (D3). | 1126 |
 | 2026-11-19 | Before sign-in, `GET /auth/me` answers 401, and the browser logs one console line for it. The line stays: a 401 is the correct answer when the browser has no session, and the API does not change for it. | 1246 |
 | 2026-11-19 | The backend and the two scanner images use the Alpine base of Python (`python:3.12-alpine`, since slice 5 `python:3.14-alpine`), not `python:3.12-slim`. On Debian, each image had about 227 OS findings with no fix. The images also leave out the package managers of their bases. | 1263 |
-| 2026-11-19 | The backend and the two scanner images run Python 3.14, not 3.13: since 2026-10, 3.13 gets only security fixes, as 3.12 does, and 3.14 still gets bug fixes (end of life 2030-10). `requires-python` stays `>=3.12`, so ruff keeps its target. The stricter TLS check of Python 3.13 and later gets a note in `docs/UPGRADING.md` and no setting to turn it off. | 1263 |
+| 2026-11-19 | The backend and the two scanner images run Python 3.14, not 3.13. Since 2026-10, 3.13 gets only security fixes, as 3.12 does. 3.14 still gets bug fixes (end of life 2030-10). `requires-python` stays `>=3.12`, so ruff keeps its target. The stricter TLS check of Python 3.13 and later gets a note in `docs/UPGRADING.md` and no setting to turn it off. | 1263 |
+| 2026-11-20 | Ingest refuses JSON nested deeper than 64 levels with 400 `bad_json`, before the parse (`json_too_deep`). Python 3.14 limits `json.loads` by the stack, so the cap gives one answer on each host. The cap is a rule of the ingest contract, not a setting. | 1263 |
 
 ## UI copy and look
 
