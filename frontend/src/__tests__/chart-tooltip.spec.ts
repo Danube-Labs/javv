@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EChartsOption } from 'echarts'
 
 import { buildAuditLensOption } from '@/charts/buildAuditLensOption'
@@ -15,12 +17,23 @@ const axisParams: TooltipParam[] = [
   { axisValueLabel: '1 Nov', seriesName: 'new · grype', color: CHART_SCANNER.grype, value: null },
 ]
 
+/** The tooltip of a list of rows. A list with rows always gives an element. */
+const tipOf = (params: TooltipParam | TooltipParam[]): HTMLElement => {
+  const root = tooltipContent(params)
+  if (root === '') throw new Error('the tooltip is empty')
+  return root
+}
+
 const texts = (root: HTMLElement, cls: string) =>
   [...root.querySelectorAll(`.${cls}`)].map((el) => el.textContent)
 
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
 describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => {
   it('an axis tooltip shows the axis label, then a row for each series with a dot, a name and a value', () => {
-    const root = tooltipContent(axisParams)
+    const root = tipOf(axisParams)
     expect(root.classList.contains('chart-tip')).toBe(true)
     expect(texts(root, 'chart-tip-head')).toEqual(['1 Nov'])
     expect(root.querySelectorAll('.chart-tip-row')).toHaveLength(2)
@@ -30,7 +43,7 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
   })
 
   it('each dot gets the color of its series', () => {
-    const dots = [...tooltipContent(axisParams).querySelectorAll<HTMLElement>('.chart-tip-dot')]
+    const dots = [...tipOf(axisParams).querySelectorAll<HTMLElement>('.chart-tip-dot')]
     expect(dots.map((d) => d.style.backgroundColor)).toEqual([
       hexToRgb(CHART_SCANNER.trivy),
       hexToRgb(CHART_SCANNER.grype),
@@ -38,7 +51,7 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
   })
 
   it('an item tooltip of the donut is one row with a dot, a name, a value and a share, and has no head', () => {
-    const root = tooltipContent({ name: 'os', color: '#1f8e84', value: 31627, percent: 72.03 })
+    const root = tipOf({ name: 'os', color: '#1f8e84', value: 31627, percent: 72.03 })
     expect(root.querySelector('.chart-tip-head')).toBeNull()
     expect(root.querySelectorAll('.chart-tip-row')).toHaveLength(1)
     expect(texts(root, 'chart-tip-name')).toEqual(['os'])
@@ -48,14 +61,14 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
 
   it('a name with HTML in it stays text, so scanner data never becomes markup', () => {
     const evil = '<img src=x onerror="alert(1)">'
-    const root = tooltipContent([{ axisValueLabel: evil, seriesName: evil, color: '#000', value: 1 }])
+    const root = tipOf([{ axisValueLabel: evil, seriesName: evil, color: '#000', value: 1 }])
     expect(root.querySelector('img')).toBeNull()
     expect(texts(root, 'chart-tip-head')).toEqual([evil])
     expect(texts(root, 'chart-tip-name')).toEqual([evil])
   })
 
-  it('only the dots have a style, and it is only their color, which the policy allows', () => {
-    const root = tooltipContent(axisParams)
+  it('only the dots have a style, and it is only their color', () => {
+    const root = tipOf(axisParams)
     const styled = [...root.querySelectorAll('[style]'), ...(root.hasAttribute('style') ? [root] : [])]
     expect(styled.every((el) => el.classList.contains('chart-tip-dot'))).toBe(true)
     for (const el of styled as HTMLElement[]) {
@@ -63,8 +76,33 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
     }
   })
 
+  it('writes no style attribute and no HTML, which the policy refuses', () => {
+    // A property of element.style and a style attribute leave the same DOM, so the test watches
+    // the calls. The policy allows the property and refuses the attribute.
+    const setAttribute = vi.spyOn(Element.prototype, 'setAttribute')
+    const innerHTML = vi.spyOn(Element.prototype, 'innerHTML', 'set')
+    const adjacentHTML = vi.spyOn(Element.prototype, 'insertAdjacentHTML')
+    tipOf(axisParams)
+    tipOf({ name: 'os', color: '#1f8e84', value: 1, percent: 50 })
+    expect(setAttribute.mock.calls.filter(([name]) => name.toLowerCase() === 'style')).toEqual([])
+    expect(innerHTML).not.toHaveBeenCalled()
+    expect(adjacentHTML).not.toHaveBeenCalled()
+  })
+
+  it('an empty list of rows gives no tooltip, so ECharts shows no empty box', () => {
+    expect(tooltipContent([])).toBe('')
+  })
+
+  it('a share that is not a finite number is not shown', () => {
+    for (const percent of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      const root = tipOf({ name: 'os', color: '#1f8e84', value: 3, percent })
+      expect(root.querySelector('.chart-tip-share')).toBeNull()
+      expect(texts(root, 'chart-tip-val')).toEqual(['3'])
+    }
+  })
+
   it('a color that is not a string, for example a gradient, gives the dot no color', () => {
-    const root = tooltipContent([{ axisValueLabel: 'a', seriesName: 's', color: { type: 'linear' }, value: 2 }])
+    const root = tipOf([{ axisValueLabel: 'a', seriesName: 's', color: { type: 'linear' }, value: 2 }])
     expect(root.querySelector<HTMLElement>('.chart-tip-dot')?.style.backgroundColor).toBe('')
   })
 })
@@ -89,6 +127,30 @@ describe('each chart builder uses the shared tooltip', () => {
     expect(tooltip.backgroundColor).toBe(CHART_UI.tooltipBg)
     // With a named position on an item tooltip, ECharts adds its arrow as HTML with a style attribute.
     expect(typeof tooltip.position).not.toBe('string')
+  })
+})
+
+const SRC = join(__dirname, '..')
+const sources = (dir: string): string[] =>
+  readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name)
+    if (statSync(path).isDirectory()) return name === '__tests__' ? [] : sources(path)
+    return /\.(ts|vue)$/.test(name) ? [path] : []
+  })
+
+describe('no chart has a tooltip of its own', () => {
+  it('each ECharts tooltip in src/ is chartTooltip', () => {
+    // A builder that the list above does not name is caught here, for example a new chart.
+    const own = sources(SRC)
+      .filter((path) => !path.endsWith(join('charts', 'chartTooltip.ts')))
+      .flatMap((path) =>
+        readFileSync(path, 'utf8')
+          .split('\n')
+          .map((line, i) => ({ line, at: `${relative(SRC, path)}:${i + 1}` }))
+          .filter(({ line }) => /\btooltip\s*:/.test(line) && !/\btooltip\s*:\s*chartTooltip\(/.test(line))
+          .map(({ at }) => at),
+      )
+    expect(own).toEqual([])
   })
 })
 
