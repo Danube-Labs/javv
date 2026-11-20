@@ -51,7 +51,18 @@ Small items that no issue tracks.
   `asyncio_default_fixture_loop_scope` of pytest-asyncio, and `enable_cleanup_closed`, which
   opensearch-py passes to aiohttp (after issue 1263).
 - In the A/B rig of issue 1263, the peak memory of the backend on Python 3.14 was 238 MiB, against
-  216 MiB on 3.12, in one run. The cause is not known.
+  216 MiB on 3.12, in one run. A second run gave 240 MiB, against 225 MiB on 0.9.11. The cause is
+  not known.
+- The OpenSearch of the `javv-opensearch` chart logs 14 warnings of its security plugin at start.
+  The folders `config` and `config/certs` have "insecure file permissions (should be 0700)". The
+  files of `opensearch-security/` get the same warning with 0600. The deploy test of 2026-11-20
+  found them. No chart changed after 0.9.11, so 0.9.11 most likely has them too. No issue, by the
+  word of the operator (after issue 1263).
+- `helm uninstall` leaves the four `helm test` pods, because their hook policy is
+  `before-hook-creation`. The docs name only the OpenSearch volume that stays (after issue 1263).
+- The push line of `javv_docker_push.py` says "135 findings" for an image that has 67 findings in
+  JAVV. The line counts the entries of the scanner report. JAVV keeps one finding for each CVE,
+  package and version (after issue 1263).
 
 ## Open, in the 1.0.0 milestone
 
