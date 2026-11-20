@@ -49,7 +49,7 @@ explains the non-obvious thing may name where it was settled — `issue 540`, `D
 comment whose *content is* the history; an anchor with no explanation next to it is that.
 
 ## Stack (fixed)
-Backend: **Python 3.12 · FastAPI (async) · AsyncOpenSearch (opensearch-py) · Pydantic v2**. Frontend:
+Backend: **Python 3.14 · FastAPI (async) · AsyncOpenSearch (opensearch-py) · Pydantic v2**. Frontend:
 **Vue 3 (`<script setup lang="ts">`) · PrimeVue · vue-echarts · Pinia · Vue Router**. Store: **OpenSearch,
 single store**. Deploy: **docker compose, or Helm → k3s**. Scanners: **Trivy + Grype** (per-scanner, **never merged**).
 

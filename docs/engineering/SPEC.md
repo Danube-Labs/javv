@@ -267,7 +267,7 @@ change the password on first login - FR-18.)
 - **NFR-7 Ingest hardening.** `AsyncOpenSearch` + `_bulk` (inspect per-item errors; backoff on 429/503);
   `refresh=wait_for` on **triage writes**; per-token rate-limit (`SlidingWindowLimiter`,
   in-proc) → 429; **max compressed (10 MiB) + streamed decompressed
-  (60 MiB) caps** → 413 (gzip-bomb guard; `JAVV_INGEST_MAX_COMPRESSED_BYTES`, `JAVV_INGEST_MAX_BODY_BYTES`); Pydantic v2 `extra="forbid"` + per-field `max_length` + bounded
+  (60 MiB) caps** → 413 (gzip-bomb guard; `JAVV_INGEST_MAX_COMPRESSED_BYTES`, `JAVV_INGEST_MAX_BODY_BYTES`); a JSON depth cap of 64 levels → 400 (issue 1263); Pydantic v2 `extra="forbid"` + per-field `max_length` + bounded
   arrays; **structured query bodies, never string-concat**; **do not sanitize field values** (UTF-8/emoji
   safe - risk is field-names/`query_string`/`script`); bearer tokens 256-bit random, **peppered
   SHA-256**-hashed, `hmac.compare_digest`, rotatable (D38/M14). MCP tokens (FR-26) are minted and

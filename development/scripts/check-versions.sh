@@ -140,6 +140,8 @@ check "frontend Dockerfile node" "$node" frontend/Dockerfile \
 src=backend/.python-version
 check "scanner .python-version" "$python" scanner/.python-version \
   '^\K[0-9.]+' "s/^[0-9.]+$/$python/"
+check "javv-common .python-version" "$python" libs/javv-common/.python-version \
+  '^\K[0-9.]+' "s/^[0-9.]+$/$python/"
 check "Dockerfile.trivy python" "$python" scanner/Dockerfile.trivy \
   'FROM python:\K[0-9.]+(?=-alpine)' "s/^FROM python:[^ ]+/FROM python:$python-alpine/"
 check "Dockerfile.grype python" "$python" scanner/Dockerfile.grype \

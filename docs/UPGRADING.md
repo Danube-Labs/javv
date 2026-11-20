@@ -348,12 +348,14 @@ A release gets an entry here when it needs something from you. These are the con
 - The report formats that the backend accepts changed (`envelope_versions`).
 - The scanner images must be published again, or changed together with the release.
 - The OpenSearch chart (`javv-opensearch`) changed. Then do the `store` upgrade.
+- The check of TLS certificates in the backend or in the scanners changed.
 
 The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.
 
 | Release | Database schema | Report formats accepted | What to do |
 |---|---|---|---|
+| 0.9.12 | 23 | 3, 4 and 5 | The note **A stricter check of TLS certificates** below |
 | 0.9.10 | 23 | 3, 4 and 5 | Nothing. The backend adds two fields to the store on the first start: the files of a finding. Upgrade the backend before the scanner images, because a backend of an earlier release refuses the reports of format 5. |
 | 0.9.6 | 22 | 3 and 4 | Nothing. The backend makes the new index `system-mcp-tokens` on the first start. The `javv` role of an OpenSearch of your own already has access to it, because its name starts with `system-`. |
 | 0.9.5 | 21 | 3 and 4 | Nothing. The backend adds a field to the store on the first start. From the first scan after the upgrade, the counts of a scan count findings, not the entries of the scanner report. The scans before the upgrade keep their counts. Until both scanners scan an image again, the count pair of the image can compare a findings count with an entries count. |
@@ -377,6 +379,46 @@ chart, but not OpenSearch:
 - 0.9.2 changed the links to the repository in `Chart.yaml`.
 - 0.8.7 changed the test pod of the chart (`helm test store`). The pod can now run in a namespace
   with the `restricted` level of the pod security standards.
+
+### 0.9.12: a stricter check of TLS certificates
+
+The backend and the scanner images run on Python 3.14. The earlier releases used Python 3.12. Python
+3.14 applies a stricter check to a TLS certificate. Thus a certificate chain that the earlier
+release accepts can fail after the upgrade.
+
+The stricter check applies in two places:
+
+- The backend applies the check to the certificate of OpenSearch when the URL is `https` and
+  `JAVV_OPENSEARCH_VERIFY_CERTS` is `true`.
+- A scanner applies the check to the certificate of the backend when the backend URL of the scanner
+  is `https`.
+
+Before you upgrade, use OpenSSL to examine each chain. This command applies the same strict check as
+the backend and the scanners:
+
+```bash
+openssl verify -x509_strict -partial_chain -CAfile ca.crt server.crt
+```
+
+- `ca.crt` is the CA file that JAVV uses. For OpenSearch, it is the file in
+  `JAVV_OPENSEARCH_CA_BUNDLE`.
+- `server.crt` is the certificate of OpenSearch, or the certificate of the backend for the scanners.
+- When the command writes `server.crt: OK`, the chain passes.
+
+If the command writes `CA cert does not include key usage extension`, make the CA again with the
+`basicConstraints` and `keyUsage` extensions. Then sign the server certificate again with the new
+CA. For example, give `openssl req -x509` these options: `-addext
+"basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign"`.
+
+If a chain fails after the upgrade:
+
+- The backend stops at start. Its error message starts with "OpenSearch unreachable at startup:" and
+  gives the reason of the check.
+- A scanner logs `scan scope request failed` at `warning`, with the reason in `error`. Then the
+  scanner skips the cycle.
+
+To go back, use the images of the earlier release ([Go back to a previous
+release](#go-back-to-a-previous-release)). The upgrade does not change the data.
 
 ### 0.8.9: a new permission for the export files
 

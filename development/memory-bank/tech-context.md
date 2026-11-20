@@ -7,7 +7,7 @@ that holds them, not the numbers.
 
 | Part | Technology | Where to look |
 |---|---|---|
-| Backend | Python 3.12, FastAPI (async), AsyncOpenSearch (`opensearch-py`), Pydantic v2 | [`backend/pyproject.toml`](../../backend/pyproject.toml) |
+| Backend | Python 3.14, FastAPI (async), AsyncOpenSearch (`opensearch-py`), Pydantic v2 | [`backend/pyproject.toml`](../../backend/pyproject.toml) |
 | Frontend | Vue 3 (`<script setup lang="ts">`), PrimeVue, vue-echarts, Pinia, Vue Router, Vite | [`frontend/package.json`](../../frontend/package.json) |
 | Store | OpenSearch, the only store | [`versions.yaml`](../../versions.yaml), [`docs/engineering/INDEX-MAP.md`](../../docs/engineering/INDEX-MAP.md) |
 | Scanners | Trivy and Grype, in our own images | [`scanner/`](../../scanner/), [`versions.yaml`](../../versions.yaml) |

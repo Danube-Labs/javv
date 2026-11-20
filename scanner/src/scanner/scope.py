@@ -12,7 +12,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 import httpx
+import structlog
 from pydantic import BaseModel, ConfigDict
+
+log = structlog.get_logger()
 
 
 def _matches_any(value: str, globs: Iterable[str]) -> bool:
@@ -71,5 +74,8 @@ def fetch_scan_scope(http: httpx.Client, *, token: str | None) -> ScanScope | No
         resp = http.get("/api/v1/scan-scope", headers=headers)
         resp.raise_for_status()
         return ScanScope.model_validate(resp.json())
-    except Exception:
+    except Exception as exc:
+        # the cause, such as a certificate that the TLS check refuses (issue 1263): the caller's
+        # line says only that the cycle stops
+        log.warning("scan scope request failed", error=f"{type(exc).__name__}: {exc}")
         return None

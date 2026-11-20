@@ -5,7 +5,7 @@
 # and the defaults live in core/settings.py, so a second copy here could only drift.
 
 # tag + digest: the digest makes the build reproducible; Renovate updates both
-FROM python:3.12-alpine@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89 AS build
+FROM python:3.14-alpine@sha256:5862d971d1f0ae26b258cefa4e893556b1d3aba81bd2ff30888704ad378bab67 AS build
 WORKDIR /app
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
@@ -20,7 +20,7 @@ COPY backend/src ./src
 # needs the venv alone, not the sources
 RUN uv sync --frozen --no-dev --no-editable
 
-FROM python:3.12-alpine@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89
+FROM python:3.14-alpine@sha256:5862d971d1f0ae26b258cefa4e893556b1d3aba81bd2ff30888704ad378bab67
 # the digest pins the start; the upgrade adds the OS security fixes released after it (issue 1172)
 RUN apk upgrade --no-cache
 # the apps run from their venv, so the base image's pip only brings findings (issue 1263); `rm`,

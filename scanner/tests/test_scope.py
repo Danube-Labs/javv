@@ -224,3 +224,23 @@ def test_fetch_returns_none_on_backend_error() -> None:
 
     with _client(boom) as http:
         assert fetch_scan_scope(http, token="tok") is None
+
+
+def test_a_failed_fetch_logs_its_cause_at_warning() -> None:
+    import structlog.testing
+
+    from scanner import scope
+
+    scope.log = structlog.get_logger()  # fresh proxy: an earlier main() cached the pipeline
+
+    def refused(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("certificate verify failed: CA cert does not include key usage")
+
+    with _client(refused) as http, structlog.testing.capture_logs() as logs:
+        assert fetch_scan_scope(http, token="tok") is None
+    lines = [e for e in logs if e["event"] == "scan scope request failed"]
+    assert len(lines) == 1
+    assert lines[0]["log_level"] == "warning"
+    assert lines[0]["error"] == (
+        "ConnectError: certificate verify failed: CA cert does not include key usage"
+    )

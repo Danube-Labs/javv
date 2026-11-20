@@ -834,7 +834,7 @@ entry, and it counts the finding one time.
 | Status | When |
 |---|---|
 | 202 | The backend accepted the envelope: `{accepted, findings, commit}`. `findings` is the number of findings that the backend wrote. |
-| 400 | The body is not valid gzip, or not valid JSON. |
+| 400 | The body is not valid gzip, not valid JSON, or deeper than 64 levels. |
 | 401 | The token is missing, not valid, disabled or expired. Each of these gets the same answer. |
 | 403 | The `cluster_id` or the `scanner` of the envelope is not the one of the token. |
 | 413 | The compressed body or the body after gzip is larger than its limit. |

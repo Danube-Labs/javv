@@ -6,7 +6,7 @@
   <a href="https://github.com/Danube-Labs/javv/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Danube-Labs/javv?sort=semver&color=EC7E54"></a>
   <a href="https://github.com/Danube-Labs/javv/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Danube-Labs/javv/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="License: BSL 1.1" src="https://img.shields.io/badge/license-BSL--1.1-blue"></a>
-  <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white">
+  <img alt="Python 3.14" src="https://img.shields.io/badge/python-3.14-3776AB?logo=python&logoColor=white">
   <img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white">
 </p>
 
@@ -186,7 +186,7 @@ version shows the files on `main`.
 
 ## Stack & toolchain
 
-Python 3.12 · FastAPI (async) · AsyncOpenSearch · Pydantic v2 · Vue 3 (`<script setup>`) · PrimeVue ·
+Python 3.14 · FastAPI (async) · AsyncOpenSearch · Pydantic v2 · Vue 3 (`<script setup>`) · PrimeVue ·
 Pinia · vue-echarts. OpenSearch is the single store. Open-source components throughout.
 
 The versions of the gate tools decide the lint, type and test results, so that a local run gives

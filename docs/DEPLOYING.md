@@ -495,7 +495,8 @@ Install `javv-opensearch` and `javv` in the same namespace, in this sequence.
     <!-- x-release-please-end -->
     If OpenSearch uses its own certificate, also add `--set opensearch.caSecret.name=<the Secret with
     its ca.crt>`. With cert-manager, this Secret is `store-javv-opensearch-tls`. The backend then
-    verifies the certificate.
+    verifies the certificate. The CA must have the `keyUsage` extension. The note for 0.9.12 in
+    [Version notes](UPGRADING.md#version-notes) tells how to examine a chain.
 5. **Sign in** through the `javv` Service on port 8080, as `admin`, with the bootstrap password.
     - Nothing is in front of the Service. For `https`, put your own Ingress, gateway or load
       balancer in front of it, and keep the session cookie `Secure`

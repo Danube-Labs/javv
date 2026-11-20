@@ -668,3 +668,39 @@ async def test_a_failed_record_leaves_the_rejection_byte_identical(
     assert unrecorded.status_code == recorded.status_code == status
     assert unrecorded.content == recorded.content
     assert missed._value.get() == before + 1  # the miss is counted, not just logged
+
+
+# --- the JSON depth cap (issue 1263) ------------------------------------------------------------
+
+
+def _nested(depth: int) -> bytes:
+    return ('{"a":' * depth + "1" + "}" * depth).encode()
+
+
+@pytest.mark.parametrize(
+    ("raw", "too_deep"),
+    [
+        (_nested(64), False),
+        (_nested(65), True),
+        (b"[" * 40 + _nested(30) + b"]" * 40, True),  # 70 levels of arrays and objects
+        (b'{"a":"' + b"[" * 1000 + b'"}', False),  # brackets in a string do not count
+        (b'{"a":"\\"' + b"{" * 1000 + b'"}', False),  # nor after an escaped quote
+        (b'{"a":[1,2,{"b":[]}],"c":{}}', False),
+        (b"{not json", False),  # json.loads refuses it as not valid JSON
+        (b"[" * 100_000, True),  # deep, and not valid JSON either
+        (b"]" * 100_000, False),  # json.loads refuses it as not valid JSON
+        (_nested(100_000), True),
+    ],
+)
+def test_json_too_deep_counts_the_brackets_outside_strings(raw: bytes, too_deep: bool) -> None:
+    assert ingest_mod.json_too_deep(raw) is too_deep
+
+
+async def test_a_body_deeper_than_the_cap_is_400_before_the_json_parse() -> None:
+    """Python 3.14 stops json.loads at the end of the stack, so only the cap gives one answer on
+    every stack: the title names the cap, not the parse."""
+    t = mint_token()
+    async with app_with(FakeOS(token_doc(t))) as c:
+        r = await post(c, gz(_nested(65).decode()), t)
+    assert r.status_code == 400
+    assert r.json()["title"] == "body nests deeper than 64 levels"
