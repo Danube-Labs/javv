@@ -9,31 +9,44 @@ import type { Locator, Page } from '@playwright/test'
 
 import { BASE, expect, login, requirePolicy, test } from './helpers'
 
-/** Moves the pointer along the middle of a chart until its tooltip shows, then gives the tooltip. */
-async function tooltipOf(page: Page, chart: Locator): Promise<Locator> {
+/** What a tooltip shows: its rows, and the size and the color of each dot. */
+interface TipLook {
+  rows: number
+  dots: { width: number; color: string }[]
+}
+
+/** Moves the pointer along the middle of a chart until the tooltip of that chart shows, and reads
+ *  it in one step. ECharts puts the tooltip in the root of its chart (`.echarts-host`). The
+ *  tooltip of the chart before it can still fade out somewhere on the page, so the spec reads
+ *  only the root of this chart. */
+async function tooltipOf(page: Page, chart: Locator): Promise<TipLook> {
   const box = await chart.boundingBox()
   if (!box) throw new Error('the chart has no box on screen')
-  const tip = page.locator('.chart-tip').filter({ visible: true })
+  const tip = chart.locator('xpath=ancestor::*[contains(@class, "echarts-host")][1]').locator('.chart-tip')
   for (let i = 1; i < 30; i++) {
     await page.mouse.move(box.x + (box.width * i) / 30, box.y + box.height / 2)
-    if ((await tip.count()) > 0) return tip.first()
+    const shown = await tip.filter({ visible: true }).evaluateAll((tips) =>
+      tips.map((t) => ({
+        rows: t.querySelectorAll('.chart-tip-row').length,
+        dots: [...t.querySelectorAll('.chart-tip-dot')].map((d) => ({
+          width: d.getBoundingClientRect().width,
+          color: getComputedStyle(d).backgroundColor,
+        })),
+      })),
+    )
+    if (shown.length) return shown[0]!
   }
   throw new Error('no tooltip showed along the middle of the chart')
 }
 
 /** Each row of a tooltip has a dot that the eye can see: a size and a color. */
-async function expectRowsWithDots(tip: Locator): Promise<void> {
-  const rows = tip.locator('.chart-tip-row')
-  expect(await rows.count()).toBeGreaterThan(0)
-  for (const dot of await tip.locator('.chart-tip-dot').all()) {
-    const look = await dot.evaluate((d) => {
-      const s = getComputedStyle(d)
-      return { width: d.getBoundingClientRect().width, color: s.backgroundColor }
-    })
-    expect(look.width).toBeGreaterThanOrEqual(8)
-    expect(look.color).not.toBe('rgba(0, 0, 0, 0)')
+function expectRowsWithDots(tip: TipLook): void {
+  expect(tip.rows).toBeGreaterThan(0)
+  expect(tip.dots).toHaveLength(tip.rows)
+  for (const dot of tip.dots) {
+    expect(dot.width).toBeGreaterThanOrEqual(8)
+    expect(dot.color).not.toBe('rgba(0, 0, 0, 0)')
   }
-  expect(await tip.locator('.chart-tip-dot').count()).toBe(await rows.count())
 }
 
 /** Moves the pointer off the charts, so the next chart shows its own tooltip. */
