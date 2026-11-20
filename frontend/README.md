@@ -18,7 +18,7 @@ npm run dev        # :5173; proxies /api, /auth, /readyz and /metrics to localho
 
 The frontend server of the image (`server/serve.mjs`) sends `/api`, `/auth` and `/readyz` to the
 backend in the same way, so the app never needs a backend URL. `vite preview` (the built app) has
-the same proxy, without `/metrics`. Only `server/serve.mjs` sends the Content-Security-Policy of a
+the proxy of the dev server, `/metrics` too. Only `server/serve.mjs` sends the Content-Security-Policy of a
 deployed JAVV, so the CI job `frontend-smoke` serves the built app with it (issue 1272).
 
 ## The API contract

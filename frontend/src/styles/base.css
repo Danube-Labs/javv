@@ -572,7 +572,11 @@ html [class*=' p-'] {
 
 /* ---- the tooltip of each chart (charts/chartTooltip.ts, issue 1272). The layout is here, not in
    the nodes, because the policy of the frontend server refuses a style attribute in HTML. The
-   chart option gives the box, the text color and the size. */
+   chart option gives the box, the text color and the size. ECharts writes its own font on the
+   box, so the content sets the UI font again. */
+.chart-tip {
+  font-family: var(--font-ui);
+}
 .chart-tip-head {
   margin-bottom: 4px;
 }
@@ -593,6 +597,7 @@ html [class*=' p-'] {
 }
 .chart-tip-val {
   margin-left: 12px;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }

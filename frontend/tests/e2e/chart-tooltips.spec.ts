@@ -9,11 +9,17 @@ import type { Locator, Page } from '@playwright/test'
 
 import { BASE, expect, login, requirePolicy, test } from './helpers'
 
-/** What a tooltip shows: its rows, and the size and the color of each dot. */
+/** What a tooltip shows: its rows, the name of each row, and the size and the color of each dot. */
 interface TipLook {
   rows: number
+  names: string[]
   dots: { width: number; color: string }[]
+  /** The font of the first name and of the first value. */
+  fonts: { name: string; value: string }
 }
+
+/** The names of the rows of the severity chart: the six canonical severities. */
+const SEVERITY_NAMES = ['critical', 'high', 'medium', 'low', 'negligible', 'unknown']
 
 /** Moves the pointer along the middle of a chart until the tooltip of that chart shows, and reads
  *  it in one step. ECharts puts the tooltip in the root of its chart (`.echarts-host`). The
@@ -28,6 +34,11 @@ async function tooltipOf(page: Page, chart: Locator): Promise<TipLook> {
     const shown = await tip.filter({ visible: true }).evaluateAll((tips) =>
       tips.map((t) => ({
         rows: t.querySelectorAll('.chart-tip-row').length,
+        names: [...t.querySelectorAll('.chart-tip-name')].map((n) => n.textContent ?? ''),
+        fonts: {
+          name: getComputedStyle(t.querySelector('.chart-tip-name') ?? t).fontFamily,
+          value: getComputedStyle(t.querySelector('.chart-tip-val') ?? t).fontFamily,
+        },
         dots: [...t.querySelectorAll('.chart-tip-dot')].map((d) => ({
           width: d.getBoundingClientRect().width,
           color: getComputedStyle(d).backgroundColor,
@@ -39,9 +50,13 @@ async function tooltipOf(page: Page, chart: Locator): Promise<TipLook> {
   throw new Error('no tooltip showed along the middle of the chart')
 }
 
-/** Each row of a tooltip has a dot that the eye can see: a size and a color. */
+/** Each row of a tooltip has a dot that the eye can see: a size and a color. The name is in the
+ *  UI font and the value in the mono font, as each count of the app. ECharts writes its own font
+ *  on the box (issue 1275). */
 function expectRowsWithDots(tip: TipLook): void {
   expect(tip.rows).toBeGreaterThan(0)
+  expect(tip.fonts.name).toContain('Hanken Grotesk')
+  expect(tip.fonts.value).toContain('Spline Sans Mono')
   expect(tip.dots).toHaveLength(tip.rows)
   for (const dot of tip.dots) {
     expect(dot.width).toBeGreaterThanOrEqual(8)
@@ -67,9 +82,18 @@ test('each chart of the Overview shows its tooltip with a dot in each row', asyn
     await expectRowsWithDots(await tooltipOf(page, chart))
   }
 
-  await page.getByRole('button', { name: 'by severity' }).click()
+  // The card shows a note in place of its chart while the severity data loads, or when it has
+  // none. So the step reads the chart in this card only, and each row must be a severity.
+  const trend = page.locator('section.card', {
+    has: page.getByRole('heading', { name: 'Vulnerabilities over time' }),
+  })
+  await trend.getByRole('button', { name: 'by severity' }).click()
+  const severityChart = trend.locator('canvas')
+  await expect(severityChart).toBeVisible({ timeout: 15_000 })
   await away(page)
-  await expectRowsWithDots(await tooltipOf(page, charts.nth(1)))
+  const tip = await tooltipOf(page, severityChart)
+  expectRowsWithDots(tip)
+  for (const name of tip.names) expect(SEVERITY_NAMES).toContain(name)
 })
 
 test('the strip of the Audit log shows its tooltip with a dot', async ({ page }) => {

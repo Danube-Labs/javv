@@ -908,12 +908,12 @@ jobs:
           npm ci
           npx playwright install chromium --with-deps
           npm run build
-          nohup node server/serve.mjs > /tmp/serve.log 2>&1 &
+          nohup node server/serve.mjs > ../development/e2e/logs/serve.log 2>&1 &
           for i in $(seq 1 15); do
             curl -sf http://localhost:4173/ >/dev/null && break || sleep 2
           done
           curl -sfI http://localhost:4173/login | grep -i '^content-security-policy:' \
-            || { cat /tmp/serve.log; exit 1; }
+            || { cat ../development/e2e/logs/serve.log; exit 1; }
 
       - name: Route smoke (walk every screen, core triage loop)
         if: steps.detect.outputs.present == 'true'
@@ -940,7 +940,8 @@ jobs:
         run: tail -100 development/e2e/logs/backend.log
 
       # the record of a failed run (issue 786): the smoke's trace, the e2e suite's traces and the
-      # whole backend log, whose last 100 lines above can miss the moment of the failure
+      # whole backend log. Its last 100 lines above can miss the moment of the failure. The record
+      # also keeps the log of the frontend server (issue 1275)
       - name: Upload the failure record
         if: failure() && steps.detect.outputs.present == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

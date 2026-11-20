@@ -42,16 +42,19 @@ function row(p: TooltipParam, name: string): HTMLElement {
   const dot = el('span', 'chart-tip-dot')
   if (typeof p.color === 'string') dot.style.backgroundColor = p.color
   line.append(dot, el('span', 'chart-tip-name', name), el('span', 'chart-tip-val', valueText(p.value)))
-  if (typeof p.percent === 'number') line.append(el('span', 'chart-tip-share', `${p.percent}%`))
+  if (typeof p.percent === 'number' && Number.isFinite(p.percent)) line.append(el('span', 'chart-tip-share', `${p.percent}%`))
   return line
 }
 
 /** The formatter. An axis tooltip shows the label of its category as a head, then one row for each
- * series. An item tooltip, for example of the donut, is one row with the share of the item. */
-export function tooltipContent(params: TooltipParam | TooltipParam[]): HTMLElement {
+ * series. An item tooltip, for example of the donut, is one row with the share of the item.
+ * With no rows, it returns an empty string: ECharts then shows no box, as it did with its own
+ * tooltip. An empty element gives a dark box with nothing in it. */
+export function tooltipContent(params: TooltipParam | TooltipParam[]): HTMLElement | '' {
   const root = el('div', 'chart-tip')
   if (Array.isArray(params)) {
-    if (params.length) root.append(el('div', 'chart-tip-head', params[0]?.axisValueLabel ?? ''))
+    if (!params.length) return ''
+    root.append(el('div', 'chart-tip-head', params[0]?.axisValueLabel ?? ''))
     for (const p of params) root.append(row(p, p.seriesName ?? ''))
   } else {
     root.append(row(params, params.name ?? ''))

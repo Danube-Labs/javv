@@ -93,14 +93,53 @@ export function policyViolationLine(e: {
   return `${e.violatedDirective} in ${file}:${e.lineNumber}${e.sample ? `: ${e.sample.slice(0, 60)}` : ''}`
 }
 
+/** True when the value of `CI` names a CI run. `false`, `0` and an empty value do not. */
+export function isCi(value: string | undefined): boolean {
+  return value !== undefined && !['', '0', 'false'].includes(value.trim().toLowerCase())
+}
+
 /** Skips a test on a server that sends no policy, for example the dev server or `vite preview`.
  *  In CI it fails the test, because the CI job serves the app with `frontend/server/serve.mjs`
  *  (issue 1272). A check under no policy passes for the wrong reason. */
 export async function requirePolicy(page: Page): Promise<void> {
   const res = await page.request.get(`${BASE}/login`)
   if (res.headers()['content-security-policy']) return
-  if (process.env.CI) throw new Error(`${BASE} sends no Content-Security-Policy header`)
+  if (isCi(process.env.CI)) throw new Error(`${BASE} sends no Content-Security-Policy header`)
   test.skip(true, `${BASE} sends no Content-Security-Policy header`)
+}
+
+/** Collects each violation of the policy on a page, one line for each. Call it before the page
+ *  opens its first address. The fixture `policyViolations` calls it for the page of each test. A
+ *  spec that opens a page in a second browser context calls it for that page. */
+export async function watchPolicy(page: Page): Promise<string[]> {
+  const found: string[] = []
+  await page.exposeFunction(POLICY_HOOK, (e: Parameters<typeof policyViolationLine>[0]) => {
+    const line = policyViolationLine(e)
+    if (!found.includes(line)) found.push(line)
+  })
+  // The page sends the plain fields, and this side makes the line. The policy refuses `eval`
+  // in the page, so the page cannot rebuild a function from its text.
+  await page.addInitScript((hook) => {
+    document.addEventListener('securitypolicyviolation', (e) => {
+      const send = (window as unknown as Record<string, (f: object) => void>)[hook]
+      send?.({
+        violatedDirective: e.violatedDirective,
+        sourceFile: e.sourceFile,
+        lineNumber: e.lineNumber,
+        sample: e.sample,
+      })
+    })
+  }, POLICY_HOOK)
+  return found
+}
+
+/** Waits until the violations that the page already has reach the list of `watchPolicy`. The
+ *  browser sends a violation event as a task of its own, and the event then goes to this process
+ *  in a second step. One more task in the page runs after the event, and its answer comes back
+ *  after the call of the hook. A closed page sends nothing more. */
+export async function settlePolicy(page: Page): Promise<void> {
+  if (page.isClosed()) return
+  await page.evaluate(() => new Promise((done) => setTimeout(done, 0))).catch(() => {})
 }
 
 /** Runs in the page: adds a style with the nonce of the page. The frontend server writes the nonce
@@ -152,25 +191,9 @@ export const test = base.extend<{ codeErrors: string[]; policyViolations: string
   // policy on purpose reads this list and empties it. Each line is in the list one time.
   policyViolations: [
     async ({ page }, use) => {
-      const found: string[] = []
-      await page.exposeFunction(POLICY_HOOK, (e: Parameters<typeof policyViolationLine>[0]) => {
-        const line = policyViolationLine(e)
-        if (!found.includes(line)) found.push(line)
-      })
-      // The page sends the plain fields, and this side makes the line. The policy refuses `eval`
-      // in the page, so the page cannot rebuild a function from its text.
-      await page.addInitScript((hook) => {
-        document.addEventListener('securitypolicyviolation', (e) => {
-          const send = (window as unknown as Record<string, (f: object) => void>)[hook]
-          send?.({
-            violatedDirective: e.violatedDirective,
-            sourceFile: e.sourceFile,
-            lineNumber: e.lineNumber,
-            sample: e.sample,
-          })
-        })
-      }, POLICY_HOOK)
+      const found = await watchPolicy(page)
       await use(found)
+      await settlePolicy(page)
       expect(found, 'the page broke the policy of the frontend server').toEqual([])
     },
     { auto: true },
