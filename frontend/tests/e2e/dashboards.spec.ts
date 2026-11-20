@@ -8,7 +8,7 @@
  */
 import type { Page } from '@playwright/test'
 
-import { addStyle, BASE, expect, login, loginViewer, test } from './helpers'
+import { addStyle, BASE, expect, login, loginViewer, settlePolicy, test, watchPolicy } from './helpers'
 
 async function addPanel(page: Page, id: string, name: string) {
   await page.getByRole('button', { name: 'Add panel', exact: true }).first().click()
@@ -237,14 +237,19 @@ test('a dashboard is made, moved, shared and removed; the viewer cannot change i
     expect(triage.y).toBe(0)
 
     // the viewer sees it, and cannot change it
+    // The fixture of the test watches its own page only, so the page of the viewer gets a watch
+    // of its own (issue 1275).
     const viewerContext = await browser.newContext()
     try {
       const viewer = await viewerContext.newPage()
+      const viewerViolations = await watchPolicy(viewer)
       await loginViewer(viewer)
       await viewer.goto(`${BASE}/dashboards/${id}`)
       await expect(viewer.locator('h1')).toHaveText(name, { timeout: 20_000 })
       await expect(viewer.getByRole('button', { name: 'Edit dashboard' })).toBeDisabled()
       await expect(viewer.locator('#no-edit-note')).toHaveText('Your role cannot change dashboards.')
+      await settlePolicy(viewer)
+      expect(viewerViolations, 'the page of the viewer broke the policy of the frontend server').toEqual([])
     } finally {
       await viewerContext.close()
     }

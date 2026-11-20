@@ -15,6 +15,7 @@ import {
   codeErrorFromConsole,
   codeErrorLine,
   expect,
+  isCi,
   login,
   policyViolationLine,
   requirePolicy,
@@ -106,6 +107,27 @@ test('a policy violation left in place fails the test', async ({ page, policyVio
   await page.goto(`${BASE}/login`)
   await page.evaluate(styleInHtml)
   await expect.poll(() => policyViolations.length, { timeout: 10_000 }).toBe(1)
+})
+
+test('a policy violation in the last moment of a test still fails it', async ({ page }) => {
+  // The page breaks the policy in a timer, after the last step of the test returns. The
+  // fixture must still see the violation before its check. test.fail() turns the case red if the
+  // test passes.
+  test.fail()
+  await requirePolicy(page)
+  await page.goto(`${BASE}/login`)
+  await page.evaluate((html) => {
+    setTimeout(() => {
+      const box = document.createElement('div')
+      box.innerHTML = html
+      document.body.append(box)
+    }, 0)
+  }, '<span style="color: red">refused</span>')
+})
+
+test('requirePolicy reads CI=false, CI=0 and an empty CI as no CI run', () => {
+  expect([undefined, '', '0', 'false', 'FALSE', ' false '].map(isCi)).toEqual([false, false, false, false, false, false])
+  expect(['true', '1', 'yes'].map(isCi)).toEqual([true, true, true])
 })
 
 test('the line of a violation names the directive, the file, the line and the sample', () => {

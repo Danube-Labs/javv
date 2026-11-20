@@ -103,6 +103,11 @@ the policy refuses, and the page stays on screen with a part missing. The policy
 attributes of the old chart tooltips, so a deployed JAVV showed them as bare text. The check works
 only behind `frontend/server/serve.mjs`. `chart-tooltips.spec.ts` and the two policy cases of
 `page-errors.spec.ts` call `requirePolicy`: they skip on a server with no policy, and fail in CI.
+`CI=false` and `CI=0` do not count as CI. Before its check, the fixture makes one round trip into
+the page (`settlePolicy`), so a violation in the last moment of a test still fails it. The fixture
+watches the page of the test only. A spec that opens a page in a second browser context calls
+`watchPolicy` for that page. `dashboards.spec.ts` does so for the viewer. In CI the frontend server
+writes its log to `development/e2e/logs/serve.log`, which the failure record keeps (issue 1275).
 A test that needs a style of its own uses `addStyle` or `addStyleOnEachPage` from `helpers.ts`.
 They give the style the nonce of the page. The policy refuses `page.addStyleTag`.
 
