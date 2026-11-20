@@ -8,6 +8,8 @@ import { dayLabel } from '@/lib/format'
 import { CHART_SEV, CHART_UI, SEVERITIES, type Severity } from '@/styles/tokens'
 import type { TrendPoint } from '@/charts/buildFindingsTrendOption'
 
+import { chartTooltip } from './chartTooltip'
+
 export type SeverityTrendData = Partial<Record<Severity, TrendPoint[]>>
 
 export function buildSeverityTrendOption(data: SeverityTrendData): EChartsOption {
@@ -37,12 +39,7 @@ export function buildSeverityTrendOption(data: SeverityTrendData): EChartsOption
   return {
     grid: { left: 44, right: 16, top: 16, bottom: 26 },
     legend: { show: false },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: CHART_UI.tooltipBg,
-      borderWidth: 0,
-      textStyle: { color: CHART_UI.tooltipFg, fontSize: 11 },
-    },
+    tooltip: chartTooltip('axis'),
     xAxis: {
       type: 'category',
       data: dates,

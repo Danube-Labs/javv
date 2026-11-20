@@ -126,3 +126,5 @@ in passing.
 - `shallowRef` + `markRaw` for ECharts options/instances; **manual** ECharts module imports
   (no full-bundle import).
 - Test the option-builder and the emitted query params as **pure units**, not through the DOM.
+- A chart tooltip is `chartTooltip` (`charts/chartTooltip.ts`): DOM nodes, never an HTML string
+  formatter. The policy of the frontend server refuses a style attribute in HTML (issue 1272).

@@ -6,6 +6,8 @@ import type { EChartsOption } from 'echarts'
 
 import { CHART_PTYPE_RAMP, CHART_UI } from '@/styles/tokens'
 
+import { chartTooltip } from './chartTooltip'
+
 export interface PtypeBucket {
   key: string
   count: number
@@ -14,13 +16,7 @@ export interface PtypeBucket {
 export function buildPtypeDonutOption(buckets: PtypeBucket[]): EChartsOption {
   return {
     legend: { show: false },
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: CHART_UI.tooltipBg,
-      borderWidth: 0,
-      textStyle: { color: CHART_UI.tooltipFg, fontSize: 11 },
-      formatter: '{b}: {c} ({d}%)',
-    },
+    tooltip: chartTooltip('item'),
     series: [
       {
         type: 'pie',

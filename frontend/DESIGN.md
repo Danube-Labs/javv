@@ -449,6 +449,14 @@ fills its row, how its line wraps, and the margin and weight of its empty text. 
 a copy. A click on a bar of a strip calls `useBucketRewind`: the end of that bucket becomes the time
 of the app. `shared-helpers-guard.spec.ts` fails a call of `bucketEndT` outside it.
 
+**One chart tooltip** (issue 1272): each chart builder takes its tooltip from `chartTooltip` in
+`src/charts/chartTooltip.ts`. Its formatter returns DOM nodes, never an HTML string, because the
+policy of the frontend server refuses a style attribute in HTML. The text goes in with
+`textContent`. The `.chart-tip` rules of base.css give the layout: a head with the axis label,
+then a row for each series with a dot, the name and the value in bold. The donut row also has the
+share. Only the color of a dot comes from script. Do not give `position` a named place, because
+ECharts then adds its arrow as HTML. `chart-tooltip.spec.ts` fails a builder that does not use it.
+
 **Two note lines** (issue 1214): `.cap-note` is the small line under a list that stops at a limit,
 for example "Showing the 90 newest of 190 tokens". `.empty-note` is the line of a list with no
 rows. base.css holds their color and the size of `.cap-note`. Each component adds its own margin,

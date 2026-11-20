@@ -569,6 +569,33 @@ html [class*=' p-'] {
 .ingest-lens > .skel-gap {
   margin-bottom: 6px;
 }
+
+/* ---- the tooltip of each chart (charts/chartTooltip.ts, issue 1272). The layout is here, not in
+   the nodes, because the policy of the frontend server refuses a style attribute in HTML. The
+   chart option gives the box, the text color and the size. */
+.chart-tip-head {
+  margin-bottom: 4px;
+}
+.chart-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 22px;
+}
+.chart-tip-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.chart-tip-name {
+  flex: 1;
+}
+.chart-tip-val {
+  margin-left: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 @media (prefers-reduced-motion: reduce) {
   .tbl-hover.tbl-hover tbody tr {
     transition: none;
