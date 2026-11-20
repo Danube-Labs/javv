@@ -8,6 +8,7 @@ import { dayLabel } from '@/lib/format'
 import { CHART_ACCENT, CHART_UI } from '@/styles/tokens'
 
 import type { IngestInterval } from './buildIngestLensOption'
+import { chartTooltip } from './chartTooltip'
 
 export interface ActivityPoint {
   date: string
@@ -26,12 +27,7 @@ export function buildAuditLensOption(
   return {
     grid: { left: 26, right: 8, top: 6, bottom: 18 },
     legend: { show: false },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: CHART_UI.tooltipBg,
-      borderWidth: 0,
-      textStyle: { color: CHART_UI.tooltipFg, fontSize: 11 },
-    },
+    tooltip: chartTooltip('axis'),
     xAxis: {
       type: 'category',
       data: rows.map((p) => label(p.date)),

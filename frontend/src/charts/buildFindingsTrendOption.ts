@@ -8,6 +8,8 @@ import { dayLabel } from '@/lib/format'
 import type { ScannerLens } from '@/lib/scannerLens'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
 
+import { chartTooltip } from './chartTooltip'
+
 export interface TrendPoint {
   date: string
   count: number
@@ -76,12 +78,7 @@ export function buildFindingsTrendOption(data: FindingsTrendData): EChartsOption
   return {
     grid: { left: 44, right: 16, top: 16, bottom: 26 },
     legend: { show: false },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: CHART_UI.tooltipBg,
-      borderWidth: 0,
-      textStyle: { color: CHART_UI.tooltipFg, fontSize: 11 },
-    },
+    tooltip: chartTooltip('axis'),
     xAxis: {
       type: 'category',
       data: dates,

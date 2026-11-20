@@ -5,6 +5,8 @@ import type { BarSeriesOption, EChartsOption } from 'echarts'
 import { dayLabel } from '@/lib/format'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
 
+import { chartTooltip } from './chartTooltip'
+
 export interface ScanPoint {
   date: string
   scans: number
@@ -36,12 +38,7 @@ export function buildScanActivityOption(series: ScanActivityData): EChartsOption
   return {
     grid: { left: 34, right: 12, top: 12, bottom: 24 },
     legend: { show: false },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: CHART_UI.tooltipBg,
-      borderWidth: 0,
-      textStyle: { color: CHART_UI.tooltipFg, fontSize: 11 },
-    },
+    tooltip: chartTooltip('axis'),
     xAxis: {
       type: 'category',
       data: dates,
