@@ -1232,6 +1232,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#0912-a-stricter-check-of-tls-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.9.12: a stricter check of TLS certificates
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#089-a-new-permission-for-the-export-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1669,6 +1680,17 @@
   
     <nav class="md-nav" aria-label="Version notes">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#0912-a-stricter-check-of-tls-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.9.12: a stricter check of TLS certificates
+      </span>
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#089-a-new-permission-for-the-export-files" class="md-nav__link">
@@ -2151,6 +2173,7 @@ already running. But the second run is work for no result.</p>
 <li>The report formats that the backend accepts changed (<code>envelope_versions</code>).</li>
 <li>The scanner images must be published again, or changed together with the release.</li>
 <li>The OpenSearch chart (<code>javv-opensearch</code>) changed. Then do the <code>store</code> upgrade.</li>
+<li>The check of TLS certificates in the backend or in the scanners changed.</li>
 </ul>
 <p>The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.</p>
@@ -2164,6 +2187,12 @@ applied it automatically on the first start.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>0.9.12</td>
+<td>23</td>
+<td>3, 4 and 5</td>
+<td>The note <strong>A stricter check of TLS certificates</strong> below</td>
+</tr>
 <tr>
 <td>0.9.10</td>
 <td>23</td>
@@ -2238,6 +2267,40 @@ chart, but not OpenSearch:</p>
 <li>0.8.7 changed the test pod of the chart (<code>helm test store</code>). The pod can now run in a namespace
   with the <code>restricted</code> level of the pod security standards.</li>
 </ul>
+<h3 id="0912-a-stricter-check-of-tls-certificates">0.9.12: a stricter check of TLS certificates<a class="headerlink" href="#0912-a-stricter-check-of-tls-certificates" title="Permanent link">&para;</a></h3>
+<p>The backend and the scanner images run on Python 3.14. The earlier releases used Python 3.12. Python
+3.14 applies a stricter check to a TLS certificate. Thus a certificate chain that the earlier
+release accepts can fail after the upgrade.</p>
+<p>The stricter check applies in two places:</p>
+<ul>
+<li>The backend applies the check to the certificate of OpenSearch when the URL is <code>https</code> and
+  <code>JAVV_OPENSEARCH_VERIFY_CERTS</code> is <code>true</code>.</li>
+<li>A scanner applies the check to the certificate of the backend when the backend URL of the scanner
+  is <code>https</code>.</li>
+</ul>
+<p>Before you upgrade, use OpenSSL to examine each chain. This command applies the same strict check as
+the backend and the scanners:</p>
+<div class="highlight"><pre><span></span><code>openssl<span class="w"> </span>verify<span class="w"> </span>-x509_strict<span class="w"> </span>-partial_chain<span class="w"> </span>-CAfile<span class="w"> </span>ca.crt<span class="w"> </span>server.crt
+</code></pre></div>
+<ul>
+<li><code>ca.crt</code> is the CA file that JAVV uses. For OpenSearch, it is the file in
+  <code>JAVV_OPENSEARCH_CA_BUNDLE</code>.</li>
+<li><code>server.crt</code> is the certificate of OpenSearch, or the certificate of the backend for the scanners.</li>
+<li>When the command writes <code>server.crt: OK</code>, the chain passes.</li>
+</ul>
+<p>If the command writes <code>CA cert does not include key usage extension</code>, make the CA again with the
+<code>basicConstraints</code> and <code>keyUsage</code> extensions. Then sign the server certificate again with the new
+CA. For example, give <code>openssl req -x509</code> these options: <code>-addext
+"basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign"</code>.</p>
+<p>If a chain fails after the upgrade:</p>
+<ul>
+<li>The backend stops at start. Its error message starts with "OpenSearch unreachable at startup:" and
+  gives the reason of the check.</li>
+<li>A scanner logs <code>scan scope request failed</code> at <code>warning</code>, with the reason in <code>error</code>. Then the
+  scanner skips the cycle.</li>
+</ul>
+<p>To go back, use the images of the earlier release (<a href="#go-back-to-a-previous-release">Go back to a previous
+release</a>). The upgrade does not change the data.</p>
 <h3 id="089-a-new-permission-for-the-export-files">0.8.9: a new permission for the export files<a class="headerlink" href="#089-a-new-permission-for-the-export-files" title="Permanent link">&para;</a></h3>
 <p>A user now needs the permission <code>can_export</code> to download a file of the data:</p>
 <ul>

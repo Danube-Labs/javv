@@ -2615,7 +2615,7 @@ description.</p>
 <tr>
 <td><code>JAVV_OPENSEARCH_CA_BUNDLE</code></td>
 <td>empty: the CAs of the system and of certifi</td>
-<td>The path to a PEM file of CA certificates, for an OpenSearch certificate from a private CA. A path with no readable file stops the start. An empty value means no file.</td>
+<td>The path to a PEM file of CA certificates, for an OpenSearch certificate from a private CA. A path with no readable file stops the start. An empty value means no file. From 0.9.12, the backend applies a strict check to the certificate chain. For example, the CA must have the <code>keyUsage</code> extension. The note for 0.9.12 in <a href="../UPGRADING/#version-notes">Version notes</a> tells how to examine a chain.</td>
 </tr>
 <tr>
 <td><code>JAVV_OPENSEARCH_VERIFY_CERTS</code></td>

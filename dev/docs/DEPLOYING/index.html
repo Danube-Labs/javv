@@ -2761,7 +2761,8 @@ helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>
     <!-- x-release-please-end -->
     If OpenSearch uses its own certificate, also add <code>--set opensearch.caSecret.name=&lt;the Secret with
     its ca.crt&gt;</code>. With cert-manager, this Secret is <code>store-javv-opensearch-tls</code>. The backend then
-    verifies the certificate.</li>
+    verifies the certificate. The CA must have the <code>keyUsage</code> extension. The note for 0.9.12 in
+    <a href="../UPGRADING/#version-notes">Version notes</a> tells how to examine a chain.</li>
 <li><strong>Sign in</strong> through the <code>javv</code> Service on port 8080, as <code>admin</code>, with the bootstrap password.<ul>
 <li>Nothing is in front of the Service. For <code>https</code>, put your own Ingress, gateway or load
   balancer in front of it, and keep the session cookie <code>Secure</code>

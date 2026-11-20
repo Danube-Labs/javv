@@ -1768,6 +1768,8 @@ JAVV.</p>
 <li><strong>Keep each push in the size limits.</strong> The limit is 10 MiB as it arrives (still compressed) and
   60 MiB after decompression, by default. To send a large envelope, compress it and send the
   header <code>Content-Encoding: gzip</code>. The limit is 100,000 findings for each envelope.</li>
+<li><strong>Keep the JSON 64 levels deep or less.</strong> JAVV refuses a body with objects and arrays nested
+  deeper than 64 levels. The reply is <code>400</code>. An envelope needs about 8 levels.</li>
 <li><strong>Compress only the envelopes.</strong> Only <code>POST /api/v1/ingest/scan</code> accepts <code>Content-Encoding: gzip</code>.
   <code>POST /api/v1/inventory-runs</code> gets <code>400</code> for a compressed body.</li>
 <li><strong>Keep the token secret.</strong> Do not write the token in a log or in the envelope.</li>
@@ -2422,7 +2424,7 @@ have. JAVV refuses the envelope with <code>422</code> in these conditions:</p>
 </tr>
 <tr>
 <td><code>400</code></td>
-<td>The body is not valid gzip or not valid JSON.</td>
+<td>The body is not valid gzip, not valid JSON, or deeper than 64 levels.</td>
 <td>No. Correct the body.</td>
 </tr>
 <tr>
