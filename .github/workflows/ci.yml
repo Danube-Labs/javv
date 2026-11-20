@@ -895,17 +895,25 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Build + preview
+      # The production frontend server, not `vite preview`: it sends the Content-Security-Policy of a
+      # deployed JAVV, so the smoke and the e2e suite run under it (issue 1272). `vite preview` sends
+      # no policy, and the chart tooltips that the policy broke passed here.
+      - name: Build + serve
         if: steps.detect.outputs.present == 'true'
         working-directory: frontend
+        env:
+          JAVV_BACKEND_URL: http://localhost:8000
+          JAVV_FRONTEND_PORT: "4173"
         run: |
           npm ci
           npx playwright install chromium --with-deps
           npm run build
-          nohup npm run preview -- --port 4173 > /tmp/preview.log 2>&1 &
+          nohup node server/serve.mjs > /tmp/serve.log 2>&1 &
           for i in $(seq 1 15); do
             curl -sf http://localhost:4173/ >/dev/null && break || sleep 2
           done
+          curl -sfI http://localhost:4173/login | grep -i '^content-security-policy:' \
+            || { cat /tmp/serve.log; exit 1; }
 
       - name: Route smoke (walk every screen, core triage loop)
         if: steps.detect.outputs.present == 'true'
@@ -916,7 +924,7 @@ jobs:
           JAVV_PASS: ci-smoke-rotated-pw
         run: node scripts/ci-smoke.mjs --core-loop
 
-      - name: E2E smoke suite (login, triage round-trip, degraded banner, paging, /inspect loops, beacon)
+      - name: E2E smoke suite (login, triage round-trip, degraded banner, paging, /inspect loops, beacon, chart tooltips)
         if: steps.detect.outputs.present == 'true'
         working-directory: frontend
         env:

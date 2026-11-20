@@ -14,7 +14,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { BASE, DATA_ROW, expect, login, test } from './helpers'
+import { addStyleOnEachPage, BASE, DATA_ROW, expect, login, test } from './helpers'
 
 type Kind = 'text box' | 'dropdown' | 'search box' | 'footer button' | 'close button'
 interface Control {
@@ -193,13 +193,7 @@ async function check(page: Page, place: string, scope: string | null = null): Pr
 
 // The transitions of the kit take 120ms; with them off, a read right after the pointer moves is the end state.
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    addEventListener('DOMContentLoaded', () => {
-      const s = document.createElement('style')
-      s.textContent = '*, *::before, *::after { transition: none !important; }'
-      document.head.append(s)
-    })
-  })
+  await addStyleOnEachPage(page, '*, *::before, *::after { transition: none !important; }')
 })
 
 test('the sign-in boxes wear the kit', async ({ page }) => {

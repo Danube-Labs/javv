@@ -1,7 +1,7 @@
 /**
- * The e2e suite fails a test whose page logs a code error (issue 749, `helpers.ts`). This spec
- * proves the catching: it causes each kind on purpose, checks the fixture saw it, then empties
- * the list so the fixture lets the test pass. It also holds every spec (in this folder, not
+ * The e2e suite fails a test whose page logs a code error (issue 749, `helpers.ts`) or breaks the
+ * policy of the frontend server (issue 1272). This spec proves the catching: it causes each kind
+ * on purpose, checks the fixture saw it, then empties the list so the fixture lets the test pass. It also holds every spec (in this folder, not
  * below it) to the helpers' `test`, since one taken from Playwright directly would skip the
  * check without a word.
  */
@@ -16,6 +16,8 @@ import {
   codeErrorLine,
   expect,
   login,
+  policyViolationLine,
+  requirePolicy,
   test,
 } from './helpers'
 
@@ -77,6 +79,40 @@ test('a code error left in place fails the test', async ({ page, codeErrors }) =
     void Promise.reject(new Error('left in place'))
   })
   await expect.poll(() => codeErrors.length, { timeout: 10_000 }).toBe(2)
+})
+
+/** Puts a style attribute in the page through HTML, as the old chart tooltips did. */
+const styleInHtml = () => {
+  const box = document.createElement('div')
+  box.innerHTML = '<span style="color: red">refused</span>'
+  document.body.append(box)
+}
+
+test('a policy violation is caught', async ({ page, policyViolations }) => {
+  // issue 1272: the policy of the frontend server refused the style attributes of the chart
+  // tooltips, and the tooltips showed bare text with no error
+  await requirePolicy(page)
+  await page.goto(`${BASE}/login`)
+  await page.evaluate(styleInHtml)
+  await expect.poll(() => policyViolations.length, { timeout: 10_000 }).toBe(1)
+  expect(policyViolations[0]).toMatch(/^style-src-attr in /)
+  policyViolations.length = 0 // caused on purpose
+})
+
+test('a policy violation left in place fails the test', async ({ page, policyViolations }) => {
+  // the fixture's own check, after the body. As above, test.fail() is also met if the body fails
+  test.fail()
+  await requirePolicy(page)
+  await page.goto(`${BASE}/login`)
+  await page.evaluate(styleInHtml)
+  await expect.poll(() => policyViolations.length, { timeout: 10_000 }).toBe(1)
+})
+
+test('the line of a violation names the directive, the file, the line and the sample', () => {
+  const event = { violatedDirective: 'style-src-attr', sourceFile: 'http://h/assets/app-1.js', lineNumber: 14, sample: '' }
+  expect(policyViolationLine(event)).toBe('style-src-attr in app-1.js:14')
+  expect(policyViolationLine({ ...event, sample: 'color: red' })).toBe('style-src-attr in app-1.js:14: color: red')
+  expect(policyViolationLine({ ...event, sourceFile: '' })).toBe('style-src-attr in the page:14')
 })
 
 test('only the code-error events count', () => {

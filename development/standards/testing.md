@@ -50,13 +50,15 @@ and the core loop round-trips. Keep it to a handful of fast, deterministic specs
   and the row re-renders (M9b - the core-loop gate).
 - **Server-side-everything holds:** the grid pages/filters via backend queries (assert the network calls; no
   client-side counting).
-Run Playwright against a **built frontend + a seeded backend** (real OpenSearch container). Playwright **MCP**
+Run Playwright against a **built frontend + a seeded backend** (real OpenSearch container). The CI job
+serves the build with `frontend/server/serve.mjs`, which sends the Content-Security-Policy of a deployed
+JAVV. `vite preview` and the dev server send no policy (issue 1272). Playwright **MCP**
 drives the same browser interactively during dev (authoring/debugging these specs) - see
 [`TOOLING-AND-MCP.md`](../../docs/research/TOOLING-AND-MCP.md); the committed specs are what gate CI.
 
 **As built — the spec suite (M9f slice 5, same CI job):** `frontend/playwright.config.ts` +
 `frontend/tests/e2e/*.spec.ts` (`npm run test:e2e`), run right after the route walk against the
-same built FE + seeded backend. Twenty spec files, one worker, zero retries; among them: login
+same built FE + seeded backend. Twenty-one spec files, one worker, zero retries; among them: login
 round-trip incl. the bad-password path (`app.spec.ts`) · the core triage persist-and-revert loop
 (`triage-loop.spec.ts`) · the degraded banner via a `/readyz` route intercept — the mount-time
 health check makes it deterministic, no 30s poll wait (`degraded-banner.spec.ts`) · grid
@@ -70,7 +72,8 @@ Findings loading row must not pass for a data row, and a click whose page is sti
 the list lands must still open it (`slow-cluster-list.spec.ts`, issues 786 and 669) · every text
 box, dropdown, search box and window footer button on each screen and in each window has the kit's
 line, corner, fill and type face, and its fill and line both change under the pointer
-(`kit-consistency.spec.ts`, issue 1055, and `frontend/DESIGN.md` §5). Selectors and login come from
+(`kit-consistency.spec.ts`, issue 1055, and `frontend/DESIGN.md` §5) · each chart tooltip under the
+policy, with a dot in each row (`chart-tooltips.spec.ts`, issue 1272). Selectors and login come from
 `scripts/walk.mjs` (still the one owner).
 
 **Where the suite must pass (issue 1223, D1).** The gate is the built app against the seeded
@@ -93,6 +96,15 @@ assertions pass over them. `page crashed` and `page failed to load` draw the err
 left to the specs. A test that causes a code error on purpose empties its `codeErrors` list.
 `page-errors.spec.ts` proves the catching, and fails naming any spec that takes `test` or `expect`
 from Playwright directly.
+
+**A policy violation fails the test (issue 1272).** The same `test` fails a test whose page breaks
+the Content-Security-Policy of the frontend server. The browser drops the style or the script that
+the policy refuses, and the page stays on screen with a part missing. The policy refused the style
+attributes of the old chart tooltips, so a deployed JAVV showed them as bare text. The check works
+only behind `frontend/server/serve.mjs`. `chart-tooltips.spec.ts` and the two policy cases of
+`page-errors.spec.ts` call `requirePolicy`: they skip on a server with no policy, and fail in CI.
+A test that needs a style of its own uses `addStyle` or `addStyleOnEachPage` from `helpers.ts`.
+They give the style the nonce of the page. The policy refuses `page.addStyleTag`.
 
 **As built (audit F-14/#383, CI job `frontend-smoke`):**
 - **One walk, two consumers.** `frontend/scripts/walk.mjs` owns the route matrix (per-route
