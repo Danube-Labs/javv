@@ -453,8 +453,9 @@ of the app. `shared-helpers-guard.spec.ts` fails a call of `bucketEndT` outside 
 `src/charts/chartTooltip.ts`. Its formatter returns DOM nodes, never an HTML string, because the
 policy of the frontend server refuses a style attribute in HTML. The text goes in with
 `textContent`. The `.chart-tip` rules of base.css give the UI font and the layout: a head with the
-axis label, then a row for each series with a dot, the name and the value in bold. The donut row
-also has the share. ECharts writes its own font on the box, so `.chart-tip` sets `--font-ui` again.
+axis label, then a row for each series with a dot, the name and the value in bold mono. The value
+is a count, so it is in mono as each count of the app (§3, operator D1 on built pictures, issue
+1275). The donut row also has the share. ECharts writes its own font on the box, so `.chart-tip` sets `--font-ui` again.
 Only the color of a dot comes from script. With no rows, the formatter returns an empty string, and
 ECharts shows no box. Do not give `position` a named place, because ECharts then adds its arrow as
 HTML. `chart-tooltip.spec.ts` fails each ECharts `tooltip:` in `src/` that is not `chartTooltip`,

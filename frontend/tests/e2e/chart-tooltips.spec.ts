@@ -14,6 +14,8 @@ interface TipLook {
   rows: number
   names: string[]
   dots: { width: number; color: string }[]
+  /** The font of the first name and of the first value. */
+  fonts: { name: string; value: string }
 }
 
 /** The names of the rows of the severity chart: the six canonical severities. */
@@ -33,6 +35,10 @@ async function tooltipOf(page: Page, chart: Locator): Promise<TipLook> {
       tips.map((t) => ({
         rows: t.querySelectorAll('.chart-tip-row').length,
         names: [...t.querySelectorAll('.chart-tip-name')].map((n) => n.textContent ?? ''),
+        fonts: {
+          name: getComputedStyle(t.querySelector('.chart-tip-name') ?? t).fontFamily,
+          value: getComputedStyle(t.querySelector('.chart-tip-val') ?? t).fontFamily,
+        },
         dots: [...t.querySelectorAll('.chart-tip-dot')].map((d) => ({
           width: d.getBoundingClientRect().width,
           color: getComputedStyle(d).backgroundColor,
@@ -44,9 +50,13 @@ async function tooltipOf(page: Page, chart: Locator): Promise<TipLook> {
   throw new Error('no tooltip showed along the middle of the chart')
 }
 
-/** Each row of a tooltip has a dot that the eye can see: a size and a color. */
+/** Each row of a tooltip has a dot that the eye can see: a size and a color. The name is in the
+ *  UI font and the value in the mono font, as each count of the app. ECharts writes its own font
+ *  on the box (issue 1275). */
 function expectRowsWithDots(tip: TipLook): void {
   expect(tip.rows).toBeGreaterThan(0)
+  expect(tip.fonts.name).toContain('Hanken Grotesk')
+  expect(tip.fonts.value).toContain('Spline Sans Mono')
   expect(tip.dots).toHaveLength(tip.rows)
   for (const dot of tip.dots) {
     expect(dot.width).toBeGreaterThanOrEqual(8)
