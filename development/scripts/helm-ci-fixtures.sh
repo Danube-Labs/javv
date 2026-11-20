@@ -5,8 +5,8 @@
 #   - javv-ci-admin: the admin password Secret (key `password`, from JAVV_CI_OPENSEARCH_PASSWORD);
 #   - javv-ci-backend: javv's password Secret, the user the backend signs in as (issue 729; key
 #     `password`, from JAVV_CI_OPENSEARCH_BACKEND_PASSWORD);
-#   - javv-ci-tls: a throwaway CA and a node certificate for the Service javv-opensearch, made with
-#     openssl (tls.crt, a PKCS#8 tls.key, ca.crt), for ci/existing-secret-values.yaml;
+#   - javv-ci-tls: a throwaway CA and a node certificate for the Service javv-opensearch, made by
+#     make-test-certs.sh (tls.crt, a PKCS#8 tls.key, ca.crt), for ci/existing-secret-values.yaml;
 #   - cert-manager, and a CA Issuer javv-ci-ca, for ci/cert-manager-values.yaml.
 # The keys exist only in the cluster; the files are removed on exit.
 #
@@ -32,18 +32,7 @@ printf '%s' "$JAVV_CI_OPENSEARCH_BACKEND_PASSWORD" | kubectl -n "$ns" create sec
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=javv-ci-ca" \
-  -keyout "$work/ca.key" -out "$work/ca.crt" 2>/dev/null
-# genpkey writes PKCS#8, the only key format OpenSearch reads
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$work/tls.key" 2>/dev/null
-openssl req -new -key "$work/tls.key" -subj "/CN=$service" -out "$work/tls.csr"
-cat > "$work/ext" <<EOF
-subjectAltName=DNS:$service,DNS:$service.$ns,DNS:$service.$ns.svc,DNS:$service.$ns.svc.cluster.local,DNS:$service-headless,DNS:localhost
-extendedKeyUsage=serverAuth,clientAuth
-keyUsage=digitalSignature,keyEncipherment
-EOF
-openssl x509 -req -in "$work/tls.csr" -CA "$work/ca.crt" -CAkey "$work/ca.key" \
-  -CAcreateserial -days 2 -extfile "$work/ext" -out "$work/tls.crt" 2>/dev/null
+"$(dirname "$0")/make-test-certs.sh" "$work" "$service" "$ns"
 kubectl -n "$ns" create secret generic javv-ci-tls --from-file="$work/tls.crt" \
   --from-file="$work/tls.key" --from-file="$work/ca.crt" --dry-run=client -o yaml | kubectl apply -f -
 
