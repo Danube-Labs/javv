@@ -8,7 +8,7 @@
  */
 import type { Page } from '@playwright/test'
 
-import { BASE, expect, login, loginViewer, test } from './helpers'
+import { addStyle, BASE, expect, login, loginViewer, test } from './helpers'
 
 async function addPanel(page: Page, id: string, name: string) {
   await page.getByRole('button', { name: 'Add panel', exact: true }).first().click()
@@ -270,7 +270,7 @@ test('Add panel puts the new panel under the others, and the others keep their p
     await page.goto(`${BASE}/dashboards/${id}?edit=1`)
     // the bug needs content taller than the 7 catalog rows of Findings summary; how tall the real
     // content is depends on the width and the data, so the test makes it tall on any store
-    await page.addStyleTag({ content: '.grid-stack-item[data-panel="findings-summary"] .dash-fit { min-height: 400px }' })
+    await addStyle(page, '.grid-stack-item[data-panel="findings-summary"] .dash-fit { min-height: 400px }')
     await addPanel(page, 'findings-summary', 'Findings summary')
     const summary = page.locator('.grid-stack-item[data-panel="findings-summary"]')
     await expect(page.locator('.grid-stack .skel')).toHaveCount(0, { timeout: 20_000 })

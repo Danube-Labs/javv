@@ -1,8 +1,9 @@
 /**
  * The E2E smoke suite (M9f slice 5, testing.md §4): a handful of fast, deterministic specs
  * against a BUILT frontend + seeded backend — the same environment the route-walk smoke uses
- * (CI job `frontend-smoke` starts backend/seed/preview, then runs both). Locally, point
- * JAVV_BASE at the dev server (defaults to the preview port) and export JAVV_USER/JAVV_PASS.
+ * (CI job `frontend-smoke` starts the backend, the seed and server/serve.mjs, then runs both).
+ * On a dev machine, point JAVV_BASE at the app (the default is port 4173, where CI serves the
+ * build) and export JAVV_USER/JAVV_PASS.
  * One worker, zero retries: the specs share one seeded store and must be deterministic —
  * a retry that hides a flake is worse than a red.
  */

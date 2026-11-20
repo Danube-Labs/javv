@@ -8,6 +8,10 @@
  * assertions pass over them, and the Overview's `reading 'series'` went unseen that way.
  * `page crashed` and `page failed to load` are not on the list: they draw the error page, which a
  * spec sees, and `crash-page.spec.ts` causes them on purpose.
+ *
+ * The same `test` also fails a test whose page breaks the Content-Security-Policy of the frontend
+ * server (issue 1272). The browser then drops a style or a script, and the page stays on screen
+ * with a part missing. This check works only behind `frontend/server/serve.mjs`, as in CI.
  */
 import { expect, test as base, type ConsoleMessage, type Page } from '@playwright/test'
 
@@ -74,7 +78,56 @@ async function consoleCodeError(msg: ConsoleMessage): Promise<string | null> {
   return codeErrorFromConsole(msg.text(), await msg.args()[0]?.jsonValue().catch(() => null))
 }
 
-export const test = base.extend<{ codeErrors: string[] }>({
+/** The name of the function that the page calls for each policy violation. */
+const POLICY_HOOK = '__javvPolicyViolation'
+
+/** One line for a violation of the policy that the frontend server sends: the directive, the
+ *  file and line, and the start of what the browser refused. */
+export function policyViolationLine(e: {
+  violatedDirective: string
+  sourceFile: string
+  lineNumber: number
+  sample: string
+}): string {
+  const file = e.sourceFile.split('/').pop() || 'the page'
+  return `${e.violatedDirective} in ${file}:${e.lineNumber}${e.sample ? `: ${e.sample.slice(0, 60)}` : ''}`
+}
+
+/** Skips a test on a server that sends no policy, for example the dev server or `vite preview`.
+ *  In CI it fails the test, because the CI job serves the app with `frontend/server/serve.mjs`
+ *  (issue 1272). A check under no policy passes for the wrong reason. */
+export async function requirePolicy(page: Page): Promise<void> {
+  const res = await page.request.get(`${BASE}/login`)
+  if (res.headers()['content-security-policy']) return
+  if (process.env.CI) throw new Error(`${BASE} sends no Content-Security-Policy header`)
+  test.skip(true, `${BASE} sends no Content-Security-Policy header`)
+}
+
+/** Runs in the page: adds a style with the nonce of the page. The frontend server writes the nonce
+ *  in `<meta name="csp-nonce">`, and the policy allows a style with it, as it allows the styles of
+ *  the app (issue 1272). A page with no policy has no nonce, and the style needs none. */
+function appendStyleWithNonce(css: string): void {
+  const style = document.createElement('style')
+  const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content')
+  if (nonce) style.nonce = nonce
+  style.textContent = css
+  document.head.append(style)
+}
+
+/** Adds a style for a test to the page that is open. Never `page.addStyleTag`: the policy refuses
+ *  a style with no nonce. */
+export async function addStyle(page: Page, css: string): Promise<void> {
+  await page.evaluate(appendStyleWithNonce, css)
+}
+
+/** Adds a style for a test to each page that the test opens, when its document is ready. */
+export async function addStyleOnEachPage(page: Page, css: string): Promise<void> {
+  await page.addInitScript({
+    content: `addEventListener('DOMContentLoaded', () => (${appendStyleWithNonce.toString()})(${JSON.stringify(css)}))`,
+  })
+}
+
+export const test = base.extend<{ codeErrors: string[]; policyViolations: string[] }>({
   // A test that causes a code error on purpose reads this list and empties it.
   codeErrors: [
     async ({ page }, use) => {
@@ -91,6 +144,34 @@ export const test = base.extend<{ codeErrors: string[] }>({
       await use(found)
       await Promise.all(reading)
       expect(found, 'the page logged a code error').toEqual([])
+    },
+    { auto: true },
+  ],
+  // The browser refuses a style or a script that the policy of the frontend server does not
+  // allow, and the page stays on screen with a part missing (issue 1272). A test that breaks the
+  // policy on purpose reads this list and empties it. Each line is in the list one time.
+  policyViolations: [
+    async ({ page }, use) => {
+      const found: string[] = []
+      await page.exposeFunction(POLICY_HOOK, (e: Parameters<typeof policyViolationLine>[0]) => {
+        const line = policyViolationLine(e)
+        if (!found.includes(line)) found.push(line)
+      })
+      // The page sends the plain fields, and this side makes the line. The policy refuses `eval`
+      // in the page, so the page cannot rebuild a function from its text.
+      await page.addInitScript((hook) => {
+        document.addEventListener('securitypolicyviolation', (e) => {
+          const send = (window as unknown as Record<string, (f: object) => void>)[hook]
+          send?.({
+            violatedDirective: e.violatedDirective,
+            sourceFile: e.sourceFile,
+            lineNumber: e.lineNumber,
+            sample: e.sample,
+          })
+        })
+      }, POLICY_HOOK)
+      await use(found)
+      expect(found, 'the page broke the policy of the frontend server').toEqual([])
     },
     { auto: true },
   ],

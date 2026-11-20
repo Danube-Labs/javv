@@ -29,8 +29,9 @@ export default defineConfig({
     },
   },
   preview: {
-    // the CI route smoke (scripts/ci-smoke.mjs) serves the BUILT app via `vite preview`,
-    // which does not inherit server.proxy — same backend, same ingress-shaped paths
+    // `vite preview` serves the BUILT app on a dev machine. It does not take server.proxy, so it
+    // has its own. It sends no Content-Security-Policy, so CI serves the build with
+    // server/serve.mjs instead (issue 1272)
     proxy: {
       '/api': 'http://localhost:8000',
       '/auth': 'http://localhost:8000',
