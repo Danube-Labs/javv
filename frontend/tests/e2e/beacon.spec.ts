@@ -128,7 +128,8 @@ test('a policy violation lands in the backend log one time for its route', async
   expect(line!.level).toBe('warning')
   expect(line!.client_event).toBe(true)
   expect(line!.username).toBe(USER)
-  expect(line!.fields).toMatchObject({ directive: 'style-src-attr', route })
+  // the violation is in the page itself, so the page names it, not the last part of its address
+  expect(line!.fields).toMatchObject({ directive: 'style-src-attr', source: 'the page', route })
   expect(Object.keys(line!.fields!).sort()).toEqual(['directive', 'line', 'route', 'sample', 'source'])
   policyViolations.length = 0 // caused on purpose
 })
