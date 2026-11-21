@@ -162,8 +162,8 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   - Older items (issue 1246, PR 1259): one page load before sign-in, a typed test fixture with no
     `dueAt` warnings, and why `uv run` builds again under faketime on Ubuntu 26.04.
   - These changes shipped in 0.9.11 (2026-11-19).
-- **The work for 0.9.12** (2026-11-19 to 2026-11-20): fewer vulnerabilities in the JAVV images
-  (issue 1263).
+- **The work for 0.9.12** (2026-11-19 to 2026-11-21): fewer vulnerabilities in the JAVV images
+  (issue 1263), and the Content-Security-Policy of the frontend server (issues 1272 and 1275).
   - A rig runs the old and the new images side by side after each image build (PR 1264).
   - The images leave out the package managers of their bases: pip, npm, npx, corepack and yarn
     (PR 1265).
@@ -171,7 +171,15 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
     (PR 1267), then to `python:3.14-alpine` (PR 1269).
   - The CI test CA passes the strict TLS check of Python 3.13 and later (PR 1268). The scanner
     logs why the scope request failed. Ingest refuses JSON nested deeper than 64 levels (PR 1269).
-  - These changes wait for release 0.9.12.
+  - The chart tooltips are DOM nodes, so the policy of the frontend server keeps their dots (issue
+    1272, PR 1273). The CI job `frontend-smoke` serves the build with `serve.mjs`, and an e2e test
+    fails when its page breaks the policy (PR 1274).
+  - Issue 1275, the follow-ups of issue 1272: a review of PRs 1273 and 1274 and the changes after
+    it, with the value of a tooltip row in the mono font (PR 1276). The browser logs each policy
+    violation as `client.csp violation` (PR 1277). The dev server sends the policy (PR 1278). The
+    frontend server no longer logs a 502 for a browser that left, and a long wait gives
+    `backend slow` (PR 1279).
+  - These changes shipped in 0.9.12 (2026-11-21).
 
 ## 6. Releases
 
@@ -179,6 +187,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.12 | 2026-11-21 | The JAVV images have 88 findings, against 1,517 on 0.9.11: Python 3.14 on Alpine and no package managers (issue 1263). Ingest refuses JSON nested deeper than 64 levels. The chart tooltips show their dots under the policy (issue 1272). The backend log shows the policy violations of the browser, and the frontend server logs `backend slow` in place of false 502 warnings (issue 1275). The database schema stays 23 |
 | 0.9.11 | 2026-11-19 | The text of the app is in strict STE, with one name for each thing (issue 1247). Some labels have new names, for example the MCP level "Write and accept risks". The page loads one time before sign-in (issue 1246). The videos and the README walkthrough show the new text. The database schema stays 23 |
 | 0.9.10 | 2026-11-17 | A finding shows the files where the scanner found it, on the screens and in the CSV and CycloneDX exports (issues 1077, 1199 and 1245). Two dashboard panels (issue 1176). A new layout for the finding page (issue 1205). The app says "vulnerability" (issue 1224). The popovers open from their arrow (issue 1240). Each image upgrades its OS packages (issue 1172). Grype 0.121.3. The store schema is 23, and the backend takes reports of format 5 |
 | 0.9.9 | 2026-11-09 | Pages and jobs to scan a Nomad cluster and a Docker Compose host (issue 1155). The image page has one band of three columns, and Findings has a Digest filter. A saved view asks first, in a window. One close button and plain words on each screen (issues 1140 and 1152). Five new Guide sections that address you (issue 1142). The scanner images use Trivy 0.76.2 |
