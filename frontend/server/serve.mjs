@@ -280,7 +280,13 @@ export function createFrontendServer({
       answer.pipe(res)
     })
 
+    // A browser that leaves before the answer (a page change, a closed tab) stops the backend call
+    // below. Node then fails the call with ECONNRESET. The backend is up and nobody waits for the
+    // 502, so a warning would blame the backend for nothing (issue 1275, item 10).
+    let browserLeft = false
+
     upstream.on('error', (/** @type {NodeJS.ErrnoException} */ error) => {
+      if (browserLeft) return
       if (res.headersSent) {
         res.destroy() // the backend went away mid-answer: cut the stream, don't fake an end
         return
@@ -306,7 +312,9 @@ export function createFrontendServer({
 
     // a browser that leaves mid-request stops the backend call too
     res.on('close', () => {
-      if (!res.writableFinished) upstream.destroy()
+      if (res.writableFinished) return
+      browserLeft = true
+      upstream.destroy()
     })
 
     req.pipe(upstream)

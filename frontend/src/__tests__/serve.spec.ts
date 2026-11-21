@@ -313,6 +313,25 @@ describe('a backend that does not answer', () => {
   })
 })
 
+describe('a browser that leaves before the answer (issue 1275, item 10)', () => {
+  it('stops the backend call and logs no warning, because the backend is up', async () => {
+    const base = await frontend(backendUrl, 0)
+    const leave = new AbortController()
+    setTimeout(() => leave.abort(), 30)
+    await expect(fetch(`${base}/api/v1/slow`, { signal: leave.signal })).rejects.toThrow(/abort/i)
+    // past the 150 ms of the slow answer, so a late line would show here
+    await new Promise((done) => setTimeout(done, 250))
+    expect(seen.map((r) => r.url)).toEqual(['/api/v1/slow'])
+    expect(lines).toEqual([])
+  })
+
+  it('still logs a backend that fails while the browser waits', async () => {
+    const base = await frontend(await deadBackend(), 0, DEAD_CONNECT_MS)
+    expect((await fetch(`${base}/readyz`)).status).toBe(502)
+    expect(lines.map((l) => JSON.parse(l).event)).toEqual(['backend unreachable'])
+  })
+})
+
 /** A socket that never finishes connecting: an address whose pod is gone but still listed. */
 function neverConnects(): net.Socket {
   const socket = new net.Socket()
