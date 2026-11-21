@@ -503,6 +503,19 @@ The browser sends its warnings and errors in batches, and it accepts some loss:
   value cannot cause a 422 for its batch. A cut value ends in `…`. A value of 512 characters or
   fewer arrives with no change.
 
+The browser also logs each violation of the `Content-Security-Policy` of the frontend server as a
+warning. The backend log shows it as `client.csp violation`, with these fields: `directive`,
+`source` (the name of the file, with no address), `line`, `sample` and `route`.
+
+- The browser logs only the first violation of a directive and a file on a route. One fault can
+  break the policy many times, and the other warnings of that route would not fit in the batch.
+- The browser logs no violation from a browser extension: a file or a blocked address that starts
+  with `chrome-extension:`, `moz-extension:`, `safari-extension:` or `safari-web-extension:`.
+- `sample` is empty in Chromium, because the policy does not ask the browser for the start of
+  what it refused (`'report-sample'`).
+- A violation before sign-in reaches no log, because the endpoint needs a session.
+- No setting turns the violation warnings on or off. `VITE_CLIENT_EVENTS` turns all warnings off.
+
 ## OpenSearch settings
 
 These settings belong to OpenSearch.
