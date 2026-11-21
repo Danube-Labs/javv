@@ -52,7 +52,8 @@ and the core loop round-trips. Keep it to a handful of fast, deterministic specs
   client-side counting).
 Run Playwright against a **built frontend + a seeded backend** (real OpenSearch container). The CI job
 serves the build with `frontend/server/serve.mjs`, which sends the Content-Security-Policy of a deployed
-JAVV. `vite preview` and the dev server send no policy (issue 1272). Playwright **MCP**
+JAVV. `vite preview` sends no policy (issue 1272). The dev server sends it, unless
+`VITE_DEVTOOLS=true` turns it off (issue 1275). Playwright **MCP**
 drives the same browser interactively during dev (authoring/debugging these specs) - see
 [`TOOLING-AND-MCP.md`](../../docs/research/TOOLING-AND-MCP.md); the committed specs are what gate CI.
 

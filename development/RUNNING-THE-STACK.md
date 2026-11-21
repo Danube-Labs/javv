@@ -354,6 +354,10 @@ npm install          # first time only
 npm run dev          # http://localhost:5173 — /api + /auth proxied to :8000
 ```
 
+The dev server sends the Content-Security-Policy of the frontend server (issue 1275), so a refused
+style or script shows in the console at once. The Vue devtools are off under it. To use them, run
+`VITE_DEVTOOLS=true npm run dev`, which turns the policy off.
+
 Log in with the bootstrap admin from A4. If the backend was started with the default PIT budget
 (no `JAVV_MAX_CONCURRENT_PITS_PER_PRINCIPAL=50`), rapid navigation will 429 — restart it with the
 export from A2.

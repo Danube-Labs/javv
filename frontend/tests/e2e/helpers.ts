@@ -98,7 +98,8 @@ export function isCi(value: string | undefined): boolean {
   return value !== undefined && !['', '0', 'false'].includes(value.trim().toLowerCase())
 }
 
-/** Skips a test on a server that sends no policy, for example the dev server or `vite preview`.
+/** Skips a test on a server that sends no policy: `vite preview`, or the dev server with
+ *  `VITE_DEVTOOLS=true`.
  *  In CI it fails the test, because the CI job serves the app with `frontend/server/serve.mjs`
  *  (issue 1272). A check under no policy passes for the wrong reason. */
 export async function requirePolicy(page: Page): Promise<void> {
