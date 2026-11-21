@@ -14,6 +14,9 @@
     "module": "preserve",
     "moduleResolution": "bundler",
 
+    // vite.config.ts reads the policy of the frontend server from server/serve.mjs (issue 1275)
+    "allowJs": true,
+
     // Include Node.js types and avoid accidentally including other `@types/*` packages.
     "types": ["node"],
 

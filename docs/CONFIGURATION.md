@@ -471,6 +471,19 @@ The server sends these headers on each reply, so that JAVV needs no proxy to add
 | `JAVV_FRONTEND_PORT` | `8080` | The port that the server listens on in its container. |
 | `JAVV_LOG_LEVEL` | `info` | The log level of the server: `debug`, `info`, `warning` or `error`. An unknown name stops the server at start, as in the backend. |
 
+### Frontend dev server settings
+
+These settings apply only to `npm run dev`, the dev server of Vite. A built web app and the
+frontend image do not read them.
+
+The dev server sends the `Content-Security-Policy` of the frontend server, with a fixed nonce.
+Thus the console shows a style or a script that the policy refuses while you work, as in a
+deployed JAVV.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `VITE_DEVTOOLS` | not set: the Vue devtools are off, and the dev server sends the policy | `true` turns on the Vue devtools and turns off the policy of the dev server. The devtools add a style with no nonce, which the policy refuses. Each other value keeps the default. Restart `npm run dev` to apply a change. |
+
 ### Frontend build settings
 
 These settings apply only when you build the frontend image yourself.
@@ -502,6 +515,23 @@ The browser sends its warnings and errors in batches, and it accepts some loss:
 - The browser cuts each field value to 512 characters, the limit of the endpoint. Thus one long
   value cannot cause a 422 for its batch. A cut value ends in `…`. A value of 512 characters or
   fewer arrives with no change.
+
+The browser also logs each violation of the `Content-Security-Policy` of the frontend server as a
+warning. The backend log shows it as `client.csp violation`, with these fields: `directive`,
+`source`, `line`, `sample` and `route`. `source` is the name of the file, with no address. For a
+violation in the page itself, `source` is `the page`.
+
+- The browser logs only the first violation of a directive and a file on a screen of the app. One
+  fault can break the policy many times, and the other warnings of that screen would not fit in the
+  batch. Two images or two findings are the same screen. `route` gives the address of the first one.
+- The browser logs no violation from a browser extension: a file or a blocked address that starts
+  with the scheme `chrome-extension`, `moz-extension`, `safari-extension` or
+  `safari-web-extension`.
+- `sample` is empty in Chromium, because the policy does not ask the browser for the start of
+  what it refused (`'report-sample'`).
+- A violation before sign-in reaches no log, because the endpoint needs a session.
+- No setting of their own turns the violation warnings on or off. `VITE_CLIENT_EVENTS=false` stops
+  the browser from sending any warning. `VITE_LOG_LEVEL=error` drops each warning in the browser.
 
 ## OpenSearch settings
 
