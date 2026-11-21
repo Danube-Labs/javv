@@ -1,25 +1,21 @@
 # Active context
 
-As of: 2026-11-20
+As of: 2026-11-21
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
 
 ## Where the project is
 
-- The last release is 0.9.11 (2026-11-19): the text of the app in strict STE, and one page load
-  before sign-in.
+- The last release is 0.9.12 (2026-11-21): Python 3.14 on Alpine and 88 findings in the JAVV images,
+  against 1,517 on 0.9.11 (issue 1263). The chart tooltips work under the Content-Security-Policy
+  (issue 1272), and its follow-ups (issue 1275) log the policy violations of the browser, send the
+  policy from the dev server and stop the false 502 warnings of the frontend server.
 - The phase is hardening for 1.0 (issue 555, phase 3).
-- `main` holds the work of issue 1263 for the next release (0.9.12). The backend and the two scanner
-  images run on `python:3.14-alpine` and leave out the package managers of their bases. The four
-  images and both scanners have 88 findings, against 1,517 on 0.9.11 (one scanner database for both,
-  2026-11-20). Python 3.14 checks TLS certificates more strictly, and `docs/UPGRADING.md` has a note
-  for it. Ingest refuses JSON nested deeper than 64 levels.
 
 ## Next
 
-- Release 0.9.12 (PR 1266), on the word of the operator.
-- Then issue 1263 closes after a new scan of the deployment that reported the 1,360 findings.
+- Issue 1263 closes after a new scan of the deployment that reported the 1,360 findings, on 0.9.12.
 
 Apart from these, the operator chooses the next step from the tables below.
 
@@ -63,6 +59,16 @@ Small items that no issue tracks.
 - The push line of `javv_docker_push.py` says "135 findings" for an image that has 67 findings in
   JAVV. The line counts the entries of the scanner report. JAVV keeps one finding for each CVE,
   package and version (after issue 1263).
+- The browser logs the requests that it stops itself, for example at a page change, as `*_failed`
+  warnings, such as `client.scanner_freshness_fetch_failed` with no status. They are noise in the
+  backend log. No change, by the word of the operator (after issue 1275).
+- A walk of the dev store found no tooltip on the strip Handled findings of Contributors, in the
+  range "Last 90 days". On a scratch store the strip shows its tooltip. The cause is not known
+  (after issue 1275).
+- The release run of 0.9.12 failed one time at "Push the charts". `helm push` of `javv-scanner`
+  gave `failed to perform "Tag" on destination: sha256:…: not found`, after `javv` and
+  `javv-opensearch` were in the registry. A re-run of the failed jobs pushed and signed the three
+  charts and published the docs. The cause is not known.
 
 ## Open, in the 1.0.0 milestone
 
