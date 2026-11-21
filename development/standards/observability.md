@@ -42,7 +42,7 @@ and the app **degrades loudly, not blindly** when its datastore is unavailable.
   A browser that leaves before the answer stops the backend call. A quick leave adds no line: it is
   the browser's choice, and nobody waits for the 502 (issue 1275). A leave after a wait longer than
   `JAVV_BACKEND_CONNECT_TIMEOUT` keeps the warning, with `reason: browser left`, because a hung
-  backend writes no line of its own.
+  backend writes no line of its own. A slow answer that is not a fault gives the same line.
 
 ## 2. Health endpoints — `/healthz` vs `/readyz`
 | Endpoint | Means | Depends on OpenSearch? | Used by |
