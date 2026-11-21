@@ -36,6 +36,8 @@ async function pluginNames(plugins: PluginOption[] | undefined): Promise<string[
 
 const SERVE: ConfigEnv = { command: 'serve', mode: 'development' }
 const BUILD: ConfigEnv = { command: 'build', mode: 'production' }
+// what Vite gives the config for `vite preview` (resolveConfig with isPreview)
+const PREVIEW: ConfigEnv = { command: 'serve', mode: 'production', isPreview: true }
 
 describe('the config of the dev server', () => {
   it('sends the policy of the frontend server with the dev nonce', async () => {
@@ -81,6 +83,20 @@ describe('the config of the build', () => {
   })
 })
 
+describe('the config of vite preview', () => {
+  it.each([undefined, 'true'])('has no nonce, no policy and no devtools (VITE_DEVTOOLS=%j)', async (value) => {
+    if (value === undefined) delete process.env.VITE_DEVTOOLS
+    else process.env.VITE_DEVTOOLS = value
+    const config = await configFor(PREVIEW)
+    expect(config.html?.cspNonce).toBeUndefined()
+    expect(config.server?.headers).toBeUndefined()
+    expect(config.preview?.headers).toBeUndefined()
+    const names = await pluginNames(config.plugins)
+    expect(names).not.toContain('javv-csp-nonce-meta')
+    expect(names.filter((n) => n.includes('devtools'))).toEqual([])
+  })
+})
+
 describe('a running dev server', () => {
   it('sends the policy, and the page carries the nonce for PrimeVue and for Vite', async () => {
     delete process.env.VITE_DEVTOOLS
@@ -99,7 +115,8 @@ describe('a running dev server', () => {
       expect(html).toContain(`<meta name="csp-nonce" content="${DEV_NONCE}">`)
       // the tag that the client of Vite reads for the styles that it adds
       expect(html).toContain(`<meta property="csp-nonce" nonce="${DEV_NONCE}">`)
-      // each script of the page carries the nonce, so a new script tag that Vite adds stays covered
+      // `script-src 'self'` needs no nonce. The nonce on each script shows that html.cspNonce
+      // reached the page, as it reaches the styles that Vite adds
       const scripts = html.match(/<script\b[^>]*>/g) ?? []
       expect(scripts.length).toBeGreaterThan(0)
       expect(scripts.filter((tag) => !tag.includes(`nonce="${DEV_NONCE}"`))).toEqual([])
