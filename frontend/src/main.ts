@@ -8,6 +8,7 @@ import PrimeVue from 'primevue/config'
 
 import App from './App.vue'
 import { logger } from './lib/logger'
+import { logPolicyViolations } from './lib/policyViolations'
 import router from './router'
 import { countNavigations } from './system/pendingWork'
 import { errorMessage, errorStack, logUnhandledRejections, pageCrashed } from './system/crash'
@@ -35,6 +36,7 @@ app.config.errorHandler = (err, _instance, info) => {
   })
 }
 logUnhandledRejections(window, () => router.currentRoute.value.path)
+logPolicyViolations(document, () => router.currentRoute.value)
 // a page whose file fails to load (a deploy swapped the files under an open tab, or the network
 // dropped): the navigation is cancelled, so without this the click does nothing
 router.onError((err, to) => {
