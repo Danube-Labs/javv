@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.12](https://github.com/Danube-Labs/javv/compare/v0.9.11...v0.9.12) (2026-11-21)
+
+
+### Features
+
+* the browser logs each violation of the policy as a warning (issue 1275) ([#1277](https://github.com/Danube-Labs/javv/issues/1277)) ([d0369ad](https://github.com/Danube-Labs/javv/commit/d0369ad8124da6c70a0ad5f86aa58cf36edb9f7a))
+* the dev server sends the policy of the frontend server (issue 1275) ([#1278](https://github.com/Danube-Labs/javv/issues/1278)) ([cb95b1e](https://github.com/Danube-Labs/javv/commit/cb95b1e62073a89650c866641fed4e9a41e3c704))
+
+
+### Bug Fixes
+
+* a browser that leaves mid-request is not a backend failure (issue 1275) ([#1279](https://github.com/Danube-Labs/javv/issues/1279)) ([d4febf8](https://github.com/Danube-Labs/javv/commit/d4febf89a80152fc72d97f412bedec230ba8ba35))
+* chart tooltips are dom nodes, so the csp keeps their dots (issue 1272) ([#1273](https://github.com/Danube-Labs/javv/issues/1273)) ([dc2defd](https://github.com/Danube-Labs/javv/commit/dc2defd0ca20ee774637fb97d2951352c14f7e85))
+* review round 1 of the chart tooltips and the e2e policy guard (issue 1275) ([#1276](https://github.com/Danube-Labs/javv/issues/1276)) ([c8c96c9](https://github.com/Danube-Labs/javv/commit/c8c96c93b89592acf711f0be7cfac5413a5c9660))
+* the backend and scanner images run python 3.14 (issue 1263) ([#1269](https://github.com/Danube-Labs/javv/issues/1269)) ([26d5ce6](https://github.com/Danube-Labs/javv/commit/26d5ce64712d2dc11bb543970bd8982a253d7f89))
+* the images leave out the package managers of their base images (issue 1263) ([#1265](https://github.com/Danube-Labs/javv/issues/1265)) ([b3cf8e8](https://github.com/Danube-Labs/javv/commit/b3cf8e8112766568e6d6c62539a5b8c62e52b627))
+* the python images run on python:3.12-alpine (issue 1263) ([#1267](https://github.com/Danube-Labs/javv/issues/1267)) ([9bf1ed9](https://github.com/Danube-Labs/javv/commit/9bf1ed93b3659e48d508d871fc2c64745a772f6b))
+
 ## [0.9.11](https://github.com/Danube-Labs/javv/compare/v0.9.10...v0.9.11) (2026-11-19)
 
 
