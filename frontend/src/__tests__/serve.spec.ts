@@ -332,7 +332,7 @@ describe('a browser that leaves before the answer (issue 1275, item 10)', () => 
     expect(lines).toEqual([])
   })
 
-  it('logs a browser that left after a wait longer than the connect time: the backend can hang', async () => {
+  it('logs backend slow for a browser that left after a wait longer than the connect time', async () => {
     // accepts each request and never answers, as a backend whose event loop is blocked
     const hung = http.createServer(() => {})
     const hungUrl = await listen(hung)
@@ -343,8 +343,31 @@ describe('a browser that leaves before the answer (issue 1275, item 10)', () => 
       await expect(fetch(`${base}/api/v1/x`, { signal: leave.signal })).rejects.toThrow(/abort/i)
       await expect.poll(() => lines.length).toBe(1)
       const line = JSON.parse(lines[0]!)
-      expect(line).toMatchObject({ event: 'backend unreachable', reason: 'browser left', path: '/api/v1/x' })
+      // nobody got a 502, and the backend can be slow, not down
+      expect(line).toMatchObject({ level: 'warning', event: 'backend slow', path: '/api/v1/x', held_back: 0 })
+      expect(line).not.toHaveProperty('status')
       expect(line.duration_ms).toBeGreaterThanOrEqual(100)
+    } finally {
+      hung.closeAllConnections()
+      await new Promise((done) => hung.close(done))
+    }
+  })
+
+  it('keeps a window of its own for backend slow, so a real 502 after it still logs', async () => {
+    const hung = http.createServer(() => {})
+    const hungUrl = await listen(hung)
+    try {
+      const base = await frontend(hungUrl, 60_000, 100)
+      const leave = new AbortController()
+      setTimeout(() => leave.abort(), 250)
+      await expect(fetch(`${base}/api/v1/x`, { signal: leave.signal })).rejects.toThrow(/abort/i)
+      await expect.poll(() => lines.length).toBe(1)
+      // a request that waits, and then the backend drops it: a real 502
+      const waiting = fetch(`${base}/api/v1/y`)
+      await new Promise((done) => setTimeout(done, 50))
+      hung.closeAllConnections()
+      expect((await waiting).status).toBe(502)
+      expect(lines.map((l) => JSON.parse(l).event)).toEqual(['backend slow', 'backend unreachable'])
     } finally {
       hung.closeAllConnections()
       await new Promise((done) => hung.close(done))

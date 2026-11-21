@@ -236,6 +236,9 @@ export function createFrontendServer({
   const agent = backendAgent(transport, idleMs)
   let lastWarning = -Infinity
   let heldBack = 0
+  // `backend slow` has a window of its own, so it never holds back a real 502
+  let lastSlow = -Infinity
+  let slowHeldBack = 0
 
   /**
    * @param {import('node:http').IncomingMessage} req
@@ -284,12 +287,31 @@ export function createFrontendServer({
     // below, and Node then fails the call with ECONNRESET. A quick leave is the browser's own
     // choice: a warning for it would blame the backend for nothing (issue 1275, item 10). A
     // browser that left after it waited longer than a connection may take to open can have left
-    // because the backend hung, so that case keeps its warning. Nothing else would log a hung
-    // backend: the backend writes its line only when a request ends.
+    // because the backend hung or was slow, so that case logs `backend slow`. Nothing else would
+    // log a hung backend: the backend writes its line only when a request ends.
     let browserLeft = false
 
     upstream.on('error', (/** @type {NodeJS.ErrnoException} */ error) => {
-      if (browserLeft && performance.now() - started < connectMs) return
+      if (browserLeft) {
+        const at = performance.now()
+        const waited = at - started
+        if (waited < connectMs) return
+        // nobody gets a 502 here, and the backend can be slow, not down
+        if (at - lastSlow >= warnWindowMs) {
+          log.warning('backend slow', {
+            method: req.method ?? '',
+            path: target.split('?')[0] ?? '',
+            duration_ms: Math.round(waited),
+            request_id: requestId,
+            held_back: slowHeldBack,
+          })
+          lastSlow = at
+          slowHeldBack = 0
+        } else {
+          slowHeldBack += 1
+        }
+        return
+      }
       if (res.headersSent) {
         res.destroy() // the backend went away mid-answer: cut the stream, don't fake an end
         return
@@ -303,11 +325,7 @@ export function createFrontendServer({
           duration_ms: Math.round(now - started),
           request_id: requestId,
           held_back: heldBack,
-          reason: browserLeft
-            ? 'browser left'
-            : error.code === 'CONNECT_TIMEOUT'
-              ? 'connect timeout'
-              : (error.code ?? 'error'),
+          reason: error.code === 'CONNECT_TIMEOUT' ? 'connect timeout' : (error.code ?? 'error'),
         })
         lastWarning = now
         heldBack = 0
