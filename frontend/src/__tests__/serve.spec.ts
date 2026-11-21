@@ -26,6 +26,8 @@ let dist: string
 let backend: http.Server
 let backendUrl: string
 let seen: Seen[] = []
+/** The paths whose answer the backend could not finish because the caller went away. */
+let cutShort: string[] = []
 let lines: string[] = []
 const servers: http.Server[] = []
 
@@ -68,6 +70,9 @@ beforeAll(async () => {
         res.writeHead(200, { 'content-type': 'application/json', server: 'uvicorn', 'x-powered-by': 'x' })
         res.end('{}')
       } else if (req.url === '/api/v1/slow') {
+        res.on('close', () => {
+          if (!res.writableFinished) cutShort.push(req.url ?? '')
+        })
         setTimeout(() => {
           res.writeHead(200, { 'content-type': 'application/json' })
           res.end('{"slow":true}')
@@ -88,6 +93,7 @@ beforeAll(async () => {
 afterEach(async () => {
   await Promise.all(servers.splice(0).map((s) => new Promise((r) => s.close(r))))
   seen = []
+  cutShort = []
   lines = []
 })
 
@@ -314,7 +320,7 @@ describe('a backend that does not answer', () => {
 })
 
 describe('a browser that leaves before the answer (issue 1275, item 10)', () => {
-  it('stops the backend call and logs no warning, because the backend is up', async () => {
+  it('stops the backend call, and a quick leave logs no warning', async () => {
     const base = await frontend(backendUrl, 0)
     const leave = new AbortController()
     setTimeout(() => leave.abort(), 30)
@@ -322,7 +328,27 @@ describe('a browser that leaves before the answer (issue 1275, item 10)', () => 
     // past the 150 ms of the slow answer, so a late line would show here
     await new Promise((done) => setTimeout(done, 250))
     expect(seen.map((r) => r.url)).toEqual(['/api/v1/slow'])
+    expect(cutShort).toEqual(['/api/v1/slow'])
     expect(lines).toEqual([])
+  })
+
+  it('logs a browser that left after a wait longer than the connect time: the backend can hang', async () => {
+    // accepts each request and never answers, as a backend whose event loop is blocked
+    const hung = http.createServer(() => {})
+    const hungUrl = await listen(hung)
+    try {
+      const base = await frontend(hungUrl, 0, 100)
+      const leave = new AbortController()
+      setTimeout(() => leave.abort(), 250)
+      await expect(fetch(`${base}/api/v1/x`, { signal: leave.signal })).rejects.toThrow(/abort/i)
+      await expect.poll(() => lines.length).toBe(1)
+      const line = JSON.parse(lines[0]!)
+      expect(line).toMatchObject({ event: 'backend unreachable', reason: 'browser left', path: '/api/v1/x' })
+      expect(line.duration_ms).toBeGreaterThanOrEqual(100)
+    } finally {
+      hung.closeAllConnections()
+      await new Promise((done) => hung.close(done))
+    }
   })
 
   it('still logs a backend that fails while the browser waits', async () => {

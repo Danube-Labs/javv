@@ -281,12 +281,15 @@ export function createFrontendServer({
     })
 
     // A browser that leaves before the answer (a page change, a closed tab) stops the backend call
-    // below. Node then fails the call with ECONNRESET. The backend is up and nobody waits for the
-    // 502, so a warning would blame the backend for nothing (issue 1275, item 10).
+    // below, and Node then fails the call with ECONNRESET. A quick leave is the browser's own
+    // choice: a warning for it would blame the backend for nothing (issue 1275, item 10). A
+    // browser that left after it waited longer than a connection may take to open can have left
+    // because the backend hung, so that case keeps its warning. Nothing else would log a hung
+    // backend: the backend writes its line only when a request ends.
     let browserLeft = false
 
     upstream.on('error', (/** @type {NodeJS.ErrnoException} */ error) => {
-      if (browserLeft) return
+      if (browserLeft && performance.now() - started < connectMs) return
       if (res.headersSent) {
         res.destroy() // the backend went away mid-answer: cut the stream, don't fake an end
         return
@@ -300,7 +303,11 @@ export function createFrontendServer({
           duration_ms: Math.round(now - started),
           request_id: requestId,
           held_back: heldBack,
-          reason: error.code === 'CONNECT_TIMEOUT' ? 'connect timeout' : (error.code ?? 'error'),
+          reason: browserLeft
+            ? 'browser left'
+            : error.code === 'CONNECT_TIMEOUT'
+              ? 'connect timeout'
+              : (error.code ?? 'error'),
         })
         lastWarning = now
         heldBack = 0

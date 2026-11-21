@@ -39,8 +39,10 @@ and the app **degrades loudly, not blindly** when its datastore is unavailable.
   through `server/log.mjs` only: JSON lines to stdout in the backend's shape and level names,
   threshold from `JAVV_LOG_LEVEL`. Startup and failures only (the backend already logs every
   request); no header, body or query string in a line; its 502 logs once per window with a count.
-  A browser that leaves before the answer stops the backend call and adds no line: the backend is
-  up, and nobody waits for a 502 (issue 1275).
+  A browser that leaves before the answer stops the backend call. A quick leave adds no line: it is
+  the browser's choice, and nobody waits for the 502 (issue 1275). A leave after a wait longer than
+  `JAVV_BACKEND_CONNECT_TIMEOUT` keeps the warning, with `reason: browser left`, because a hung
+  backend writes no line of its own.
 
 ## 2. Health endpoints — `/healthz` vs `/readyz`
 | Endpoint | Means | Depends on OpenSearch? | Used by |
