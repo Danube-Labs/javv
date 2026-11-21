@@ -20,7 +20,8 @@ app.use(createPinia())
 app.use(router)
 countNavigations(router)
 // the frontend server puts a new nonce in each page and its policy (server/serve.mjs); PrimeVue
-// stamps it on the `<style>` elements of its theme. No meta in dev, where no policy applies.
+// stamps it on the `<style>` elements of its theme. The dev server writes a fixed one
+// (vite.config.ts). With VITE_DEVTOOLS=true it sends no policy and no meta.
 const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content') ?? undefined
 app.use(PrimeVue, { theme: themeOptions, csp: { nonce } })
 

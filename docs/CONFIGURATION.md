@@ -471,6 +471,19 @@ The server sends these headers on each reply, so that JAVV needs no proxy to add
 | `JAVV_FRONTEND_PORT` | `8080` | The port that the server listens on in its container. |
 | `JAVV_LOG_LEVEL` | `info` | The log level of the server: `debug`, `info`, `warning` or `error`. An unknown name stops the server at start, as in the backend. |
 
+### Frontend dev server settings
+
+These settings apply only to `npm run dev`, the dev server of Vite. A built web app and the
+frontend image do not read them.
+
+The dev server sends the `Content-Security-Policy` of the frontend server, with a fixed nonce.
+Thus the console shows a style or a script that the policy refuses while you work, as in a
+deployed JAVV.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `VITE_DEVTOOLS` | not set: the Vue devtools are off, and the dev server sends the policy | `true` turns on the Vue devtools and turns off the policy of the dev server. The devtools add a style with no nonce, which the policy refuses. Each other value keeps the default. Restart `npm run dev` to apply a change. |
+
 ### Frontend build settings
 
 These settings apply only when you build the frontend image yourself.
