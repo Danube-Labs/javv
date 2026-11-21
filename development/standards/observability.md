@@ -36,7 +36,7 @@ and the app **degrades loudly, not blindly** when its datastore is unavailable.
   `warn` prod — see `docs/CONFIGURATION.md`, "Frontend build settings"). The never-log list applies unchanged: no tokens,
   no cookie values, no raw response bodies — shapes/sizes/ids.
   A violation of the frontend server's policy logs as `csp violation` at `warn`
-  (`src/lib/policyViolations.ts`, issue 1275): one line for each directive, file and route, none
+  (`src/lib/policyViolations.ts`, issue 1275): one line for each directive, file and screen, none
   for a browser extension, the file name only, so it ships as `client.csp violation`.
 - **Frontend server (issue 452):** the frontend container's Node process (`frontend/server/`) logs
   through `server/log.mjs` only: JSON lines to stdout in the backend's shape and level names,
