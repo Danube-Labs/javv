@@ -1228,6 +1228,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#frontend-dev-server-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend dev server settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#frontend-build-settings" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2220,6 +2231,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Frontend server settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-dev-server-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Frontend dev server settings
       </span>
     </span>
   </a>
@@ -3509,6 +3531,28 @@ set, <code>docker compose up</code> stops with an error that names it.</p>
 <td><code>JAVV_LOG_LEVEL</code></td>
 <td><code>info</code></td>
 <td>The log level of the server: <code>debug</code>, <code>info</code>, <code>warning</code> or <code>error</code>. An unknown name stops the server at start, as in the backend.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frontend-dev-server-settings">Frontend dev server settings<a class="headerlink" href="#frontend-dev-server-settings" title="Permanent link">&para;</a></h3>
+<p>These settings apply only to <code>npm run dev</code>, the dev server of Vite. A built web app and the
+frontend image do not read them.</p>
+<p>The dev server sends the <code>Content-Security-Policy</code> of the frontend server, with a fixed nonce.
+Thus the console shows a style or a script that the policy refuses while you work, as in a
+deployed JAVV.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VITE_DEVTOOLS</code></td>
+<td>not set: the Vue devtools are off, and the dev server sends the policy</td>
+<td><code>true</code> turns on the Vue devtools and turns off the policy of the dev server. The devtools add a style with no nonce, which the policy refuses. Each other value keeps the default. Restart <code>npm run dev</code> to apply a change.</td>
 </tr>
 </tbody>
 </table>
