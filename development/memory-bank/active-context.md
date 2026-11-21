@@ -65,6 +65,10 @@ Small items that no issue tracks.
 - A walk of the dev store found no tooltip on the strip Handled findings of Contributors, in the
   range "Last 90 days". On a scratch store the strip shows its tooltip. The cause is not known
   (after issue 1275).
+- The release run of 0.9.12 failed one time at "Push the charts". `helm push` of `javv-scanner`
+  gave `failed to perform "Tag" on destination: sha256:…: not found`, after `javv` and
+  `javv-opensearch` were in the registry. A re-run of the failed jobs pushed and signed the three
+  charts and published the docs. The cause is not known.
 
 ## Open, in the 1.0.0 milestone
 
