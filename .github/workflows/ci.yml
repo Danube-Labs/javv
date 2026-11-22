@@ -54,7 +54,7 @@ jobs:
       contents: read
       pull-requests: read   # the action lists the PR's commits via the API
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Lint PR commits
@@ -74,7 +74,7 @@ jobs:
       # the checksum of versions.yaml supply_chain.gitleaks's linux_x64 tarball; bump them together
       GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Install gitleaks (checksum-verified)
@@ -92,12 +92,12 @@ jobs:
     name: javv-common (shared lib)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read uv pin from versions.yaml (D42)
         id: uv
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
       - name: Set up uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
@@ -124,7 +124,7 @@ jobs:
     name: Backend static
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Detect backend
         id: detect
@@ -142,7 +142,7 @@ jobs:
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
       - name: Set up uv
         if: steps.detect.outputs.present == 'true'
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
@@ -194,7 +194,7 @@ jobs:
           --health-cmd "curl -sf http://localhost:9200/_cluster/health || exit 1"
           --health-interval 10s --health-timeout 5s --health-retries 20 --health-start-period 40s
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # the tags and origin/main: tests/test_mapping_additive.py and test_api_routes_kept.py
           # compare with the newest release and with the merge base (issue 261)
@@ -216,7 +216,7 @@ jobs:
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
       - name: Set up uv
         if: steps.detect.outputs.present == 'true'
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
@@ -263,7 +263,7 @@ jobs:
           --health-cmd "curl -sf http://localhost:9200/_cluster/health || exit 1"
           --health-interval 10s --health-timeout 5s --health-retries 20 --health-start-period 40s
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # the release builds with this script too, so its tags and labels are checked on every PR
       - name: Build both images
@@ -343,7 +343,7 @@ jobs:
     env:
       OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # the release tags: the last step runs the last release
 
@@ -499,7 +499,7 @@ jobs:
       JAVV_CI_OPENSEARCH_PASSWORD: Ci-only-OpenSearch-725!
       JAVV_CI_OPENSEARCH_BACKEND_PASSWORD: Ci-only-javv-729
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -589,7 +589,7 @@ jobs:
       JAVV_CI_OPENSEARCH_PASSWORD: Ci-only-OpenSearch-725!
       JAVV_CI_OPENSEARCH_BACKEND_PASSWORD: Ci-only-javv-729
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -698,7 +698,7 @@ jobs:
     name: Scanner
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Detect scanner
         id: detect
@@ -716,7 +716,7 @@ jobs:
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
       - name: Set up uv
         if: steps.detect.outputs.present == 'true'
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
@@ -750,7 +750,7 @@ jobs:
     name: Frontend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Detect frontend
         id: detect
@@ -764,7 +764,7 @@ jobs:
 
       - name: Set up Node
         if: steps.detect.outputs.present == 'true'
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '26'
           cache: npm
@@ -791,7 +791,7 @@ jobs:
       # breaks the build here, not at runtime.
       - name: Set up uv (contract gate)
         if: steps.detect.outputs.present == 'true'
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
       - name: Contract gate — schema snapshot matches backend code
         if: steps.detect.outputs.present == 'true'
@@ -830,7 +830,7 @@ jobs:
           --health-cmd "curl -sf http://localhost:9200/_cluster/health || exit 1"
           --health-interval 10s --health-timeout 5s --health-retries 20 --health-start-period 40s
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Detect frontend
         id: detect
@@ -848,7 +848,7 @@ jobs:
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
       - name: Set up uv
         if: steps.detect.outputs.present == 'true'
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
@@ -889,7 +889,7 @@ jobs:
 
       - name: Set up Node
         if: steps.detect.outputs.present == 'true'
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '26'
           cache: npm
@@ -944,7 +944,7 @@ jobs:
       # also keeps the log of the frontend server (issue 1275)
       - name: Upload the failure record
         if: failure() && steps.detect.outputs.present == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-smoke-failure
           path: |
@@ -959,12 +959,12 @@ jobs:
     name: Docs site
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Read uv pin from versions.yaml (D42)
         id: uv
         run: echo "version=$(yq -r '.toolchain.uv' versions.yaml)" >> "$GITHUB_OUTPUT"
       - name: Set up uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: ${{ steps.uv.outputs.version }}
           enable-cache: true
@@ -993,7 +993,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       - name: Audit dependencies (report-only)
         run: development/scripts/dependency-audit.sh >> "$GITHUB_STEP_SUMMARY"
