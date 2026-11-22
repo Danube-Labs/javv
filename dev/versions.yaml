@@ -51,7 +51,7 @@ toolchain:
   pre-commit: "4.7.0"
   # major-only LTS; CI's setup-node repeats it (drift-checked). Majors wait for dashboard approval.
   # renovate: datasource=node-version depName=node
-  node: "22"
+  node: "26"
   # writes each chart's README from its values.yaml; CI fails on a README it would change.
   # development/scripts/helm-docs.sh runs this version (issue 725)
   # renovate: datasource=github-releases depName=norwoodj/helm-docs extractVersion=^v(?<version>.+)$
