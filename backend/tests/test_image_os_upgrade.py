@@ -3,7 +3,8 @@ The base images are pinned by digest, so without the upgrade a security fix wait
 moves the digest and the next build. The upgrade must run before USER: the image user can't.
 
 The final stage also removes the package managers that the base image brings and the app never
-runs (issue 1263): pip in the Python images, and npm, npx, corepack and yarn in the Node image.
+runs (issue 1263): pip in the Python images, and npm and npx in the Node image. The Node 26 base
+has no corepack or yarn (issue 1283).
 Their packages were findings in every scan of JAVV's own images. The removal also needs root, so
 it runs before USER.
 """
@@ -27,10 +28,7 @@ NO_PIP = (
     "RUN rm -rf /usr/local/lib/python3*/site-packages/pip"
     " /usr/local/lib/python3*/site-packages/pip-*.dist-info /usr/local/bin/pip*"
 )
-NO_NPM = (
-    "RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v* /usr/local/bin/npm /usr/local/bin/npx"
-    " /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg"
-)
+NO_NPM = "RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx"
 REMOVALS = {
     "backend/Dockerfile": NO_PIP,
     "frontend/Dockerfile": NO_NPM,

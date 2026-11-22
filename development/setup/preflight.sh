@@ -14,7 +14,7 @@
 set -uo pipefail
 
 OPENSEARCH_URL="${OPENSEARCH_URL:-http://localhost:9200}"
-NODE_MAJOR_MIN=22
+NODE_MAJOR_MIN=26
 
 HARD=0; SOFT=0
 ok()   { printf '  \033[1;32m✓\033[0m %s\n' "$*"; }

@@ -2,7 +2,7 @@
 #
 # setup-dev.sh — install the JAVV development toolchain on Ubuntu 24.04 (x86_64).
 #
-# Installs: build floor, Python (uv + ruff), Node 22 LTS (+ pyright), k8s tooling
+# Installs: build floor, Python (uv + ruff), Node LTS (+ pyright), k8s tooling
 # (kubectl, helm, k3d) and the scanners (trivy, grype). Idempotent: re-run any time;
 # tools already present are skipped. Docker is assumed already installed.
 #
@@ -113,9 +113,12 @@ install_precommit() {
   fi
 }
 
-# --- 3. Node.js 22 LTS (+ npm/npx) and pyright ------------------------------
+# --- 3. Node.js LTS (+ npm/npx) and pyright ---------------------------------
+# A node of another major than versions.yaml is replaced: the gates must run on the CI major
 install_node() {
-  if have node; then skip node "$(node --version)"; return; fi
+  if have node && [ "$(node -p 'process.versions.node.split(".")[0]')" = "$NODE_MAJOR" ]; then
+    skip node "$(node --version)"; return
+  fi
   log "Installing Node.js ${NODE_MAJOR} LTS (NodeSource)"
   # ${SUDO:+...} adds 'sudo -E' only when non-root; as root $SUDO is empty so it's just 'bash -'
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | ${SUDO:+$SUDO -E} bash -
