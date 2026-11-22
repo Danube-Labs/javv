@@ -97,6 +97,16 @@
       "allowedVersions": "<3.15"
     },
     {
+      "description": "Stay on PrimeVue 4, the last MIT major: PrimeVue 5 uses the PrimeUI license, which needs a license key (operator ruling A, issue 597)",
+      "matchPackageNames": ["primevue"],
+      "allowedVersions": "<5"
+    },
+    {
+      "description": "Stay on @primeuix/themes 2, the last MIT major: themes 3 uses the PrimeUI license, as PrimeVue 5 does (operator ruling A, issue 597)",
+      "matchPackageNames": ["@primeuix/themes"],
+      "allowedVersions": "<3"
+    },
+    {
       "description": "The Dockerfiles' python and node bases and the uv image stay pinned by digest; Renovate re-pins one if an edit (check-versions.sh --fix) drops the digest. Dockerfiles only: the pyenv manager reads .python-version with the same datasource, and a digest there would break it",
       "matchManagers": ["dockerfile"],
       "matchDatasources": ["docker"],
