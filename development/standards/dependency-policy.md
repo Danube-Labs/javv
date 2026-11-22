@@ -11,7 +11,7 @@ by the operator on issue 552 (2026-09-27).
 | Scanners (Trivy, Grype) and OpenSearch | `versions.yaml` (D42), drift-checked by `development/scripts/check-versions.sh` into the scanner Dockerfiles, the bake defaults, the dev compose file, the CI service images, and the docs that state the versions (README *Supported versions*, `docs/CONFIGURATION.md`, the verify example in `scanner/README.md`) | Renovate's `versions.yaml` custom manager. Renovate doesn't edit the docs or the bake defaults, so a bump PR fails the Versions drift check until `check-versions.sh --fix` is run on it and pushed. Merging a scanner bump publishes its signed image (`scanner-images.yml`) |
 | Gate toolchain (uv, ruff, pyright, pre-commit, helm-docs) | `versions.yaml` `toolchain:`. `development/scripts/helm-docs.sh` runs the pinned helm-docs image. CI's `setup-uv` and `development/setup/setup-dev.sh` read it directly; ruff and pyright are also pinned in each `pyproject.toml` dev-deps and uv in the tag of the uv image the scanner Dockerfiles copy from (pinned by digest), all drift-checked by `check-versions.sh` | Renovate's `versions.yaml` custom manager; each tool's other pins come in the same PR |
 | Node (major only) | `versions.yaml` `toolchain.node`, repeated in each CI `setup-node` `node-version` (drift-checked by `check-versions.sh`) and as a range in `frontend/package.json` `engines` (not checked) | Renovate, one PR for `versions.yaml` and CI; a major waits for approval on the dashboard |
-| Python (minor) | `.python-version` in `backend/` and `scanner/`, and the `FROM python:` tag in both scanner Dockerfiles, pinned by digest; `requires-python` in each `pyproject.toml` is only the floor. `check-versions.sh` holds the other copies to `backend/.python-version` | Renovate, one PR for the `.python-version` files and the Dockerfile tags (held on 3.12, see Updates); it also refreshes the base-image digest when the image is rebuilt |
+| Python (minor) | `.python-version` in `backend/`, `scanner/` and `libs/javv-common/`. The `FROM python:` tag in the backend Dockerfile and in both scanner Dockerfiles, pinned by digest. `requires-python` in each `pyproject.toml` is only the floor. `check-versions.sh` holds the other copies to `backend/.python-version` | Renovate, in one PR for the `.python-version` files and the Dockerfile tags. A rule in `renovate.json` holds it on 3.14 (see Updates). It also refreshes the base-image digest when the image is rebuilt |
 | OS packages of the images | the base image of each Dockerfile (`python:3.14-alpine`, `node:26-alpine`), pinned by digest | Renovate moves the digest. At each build, the final stage of each image also upgrades its OS packages (`apk upgrade`). Thus a build gets the security fixes released after the digest. `backend/tests/test_image_os_upgrade.py` holds the step. Two builds on different days can have different package versions. The SBOM of each published image records them (issue 1172) |
 | Python libraries (backend, scanner, `libs/javv-common`) | each `pyproject.toml` + `uv.lock` | Renovate (uv) |
 | Frontend packages | `frontend/package.json` + `package-lock.json` | Renovate (npm) |
@@ -35,8 +35,8 @@ by the operator on issue 552 (2026-09-27).
 - **Lockfiles are refreshed weekly** (lock file maintenance, Monday before 4am UTC): one PR that
   moves every transitive dependency in every lockfile to the newest version its ranges allow. That is
   how a transitive fix lands within the 7-day window; the dashboard checkbox runs it early.
-- **Python stays on 3.12** (images, `.python-version`) until a deliberate upgrade;
-  Renovate is held below 3.13.
+- **Python stays on 3.14** (images, `.python-version`) until a deliberate upgrade. A rule in
+  `renovate.json` holds Renovate below 3.15 (issue 1263).
 - **Nothing merges itself.** Every Renovate PR is merged by the operator like any other PR,
   after CI is green. No automerge rule exists and none is added without a new ruling.
 
