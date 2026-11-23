@@ -1,7 +1,9 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import type { EChartsOption } from 'echarts'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { TooltipParam } from '@/charts/chartTooltip'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
 import EChart from '@/components/charts/EChart.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
@@ -94,6 +96,16 @@ describe('FailedIngestsLens (self-contained lens)', () => {
     expect(trendMock.mock.calls[1]![0]).toMatchObject({
       query: { days: 1, interval: 'day', as_of: '2026-09-20T23:59:59.999Z' },
     })
+  })
+
+  it('the hover names what a bar counts: refused scans, not the scans of Scan ingest (issue 1292)', async () => {
+    trendMock.mockResolvedValue(ok({ series: { trivy: pts([0, 3]) } }))
+    const w = mount(FailedIngestsLens, { props, global: { stubs } })
+    await flushPromises()
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const format = (option.tooltip as { formatter: (p: TooltipParam[]) => HTMLElement }).formatter
+    const tip = format([{ axisValueLabel: '21 Sep', seriesName: 'trivy', value: 3 }])
+    expect(tip.querySelector('.chart-tip-head')?.textContent).toBe('21 Sep · refused scans')
   })
 
   it('a range with no refusals is quiet copy, never an empty chart', async () => {

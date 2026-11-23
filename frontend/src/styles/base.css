@@ -569,6 +569,41 @@ html [class*=' p-'] {
 .ingest-lens > .skel-gap {
   margin-bottom: 6px;
 }
+/* Two strips as one band, Scan ingest above the other: one outer frame, split by a gutter of the
+   page color so each strip reads as its own panel (operator ruling 2026-09-27, on built A/B/C
+   specimens; a hairline alone read as one chart). The band carries the frame, and the strips give
+   up theirs. The band does not clip: overflow: hidden cut the top of the hover box of its first
+   strip (issue 1292). So each strip rounds the outer corners of the band itself, inside its 1px
+   line. */
+.lens-stack {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.lens-stack > .ingest-lens {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* a line on each side of the gutter */
+.lens-stack > .ingest-lens:first-child {
+  border-bottom: 1px solid var(--line);
+  border-top-left-radius: calc(var(--r) - 1px);
+  border-top-right-radius: calc(var(--r) - 1px);
+}
+.lens-stack > .ingest-lens:last-child {
+  border-bottom-left-radius: calc(var(--r) - 1px);
+  border-bottom-right-radius: calc(var(--r) - 1px);
+}
+.lens-stack > .ingest-lens + .ingest-lens {
+  border-top: 1px solid var(--line);
+}
 
 /* ---- the tooltip of each chart (charts/chartTooltip.ts, issue 1272). The layout is here, not in
    the nodes, because the policy of the frontend server refuses a style attribute in HTML. The

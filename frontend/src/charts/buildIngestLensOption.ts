@@ -42,8 +42,9 @@ const hourLabel = (iso: string): string =>
 export function buildIngestLensOption(
   series: ScanActivityData,
   interval: IngestInterval = 'day',
+  unit?: string,
 ): EChartsOption {
-  const option = buildScanActivityOption(series)
+  const option = buildScanActivityOption(series, unit)
   if (interval === 'hour') {
     // relabel the axis in hours — the base builder's day labels collapse hourly buckets
     const dates = ingestLensDates(series)

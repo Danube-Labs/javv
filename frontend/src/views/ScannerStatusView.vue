@@ -189,35 +189,7 @@ const laneOptions = computed(() =>
 </template>
 
 <style scoped>
-/* prototype .scan-cards grid; band/head scaffolding lives in base.css */
-/* The two strips as one band: a single outer frame, split by a canvas-coloured gutter so each
-   lens reads as its own panel (operator ruling 2026-09-27, on built A/B/C specimens; a hairline
-   alone read as one chart). The stack carries the frame, the lenses give up theirs — their roots
-   take this scope, so this reaches them. */
-.lens-stack {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-.lens-stack > .ingest-lens {
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-/* Scan ingest above, Failed ingests below: a line on each side of the gutter */
-.lens-stack > .ingest-lens:first-child {
-  border-bottom: 1px solid var(--line);
-}
-.lens-stack > .ingest-lens + .ingest-lens {
-  border-top: 1px solid var(--line);
-}
+/* prototype .scan-cards grid; the band of strips and the head scaffolding are in base.css */
 .scan-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;

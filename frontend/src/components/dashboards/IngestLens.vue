@@ -99,7 +99,7 @@ const latest = computed(
       .sort((a, b) => (a.last_ingest_at! < b.last_ingest_at! ? 1 : -1))[0] ?? null,
 )
 const interval = computed(() => ingestInterval(timeTravel.windowDays, timeTravel.t))
-const option = computed(() => buildIngestLensOption(series.value, interval.value))
+const option = computed(() => buildIngestLensOption(series.value, interval.value, 'scans'))
 // daily bars only mislead when the range is sub-day AND the buckets stayed daily (past T)
 const subDay = computed(() => interval.value === 'day' && isSubDayWindow(timeTravel.windowDays))
 /** Quiet range = the one state worth a visual flag (operator 2026-07-11): the amber wash

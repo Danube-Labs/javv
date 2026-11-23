@@ -190,6 +190,9 @@ const SHARED_RULES = [
   // the chart strips above a table (issue 1197)
   '.ingest-lens', '.il-quiet', '.il-head', '.il-title', '.il-sub', '.il-sub b', '.il-empty',
   '.ingest-lens > .skel-gap',
+  // the band of joined strips, Scan ingest above another strip (issue 1292)
+  '.lens-stack', '.lens-stack > .ingest-lens', '.lens-stack > .ingest-lens:first-child',
+  '.lens-stack > .ingest-lens:last-child', '.lens-stack > .ingest-lens + .ingest-lens',
   // the line under a cut list and the line of an empty list (issue 1214)
   '.cap-note', '.empty-note',
   // the menu panel with the dark head of a window: the popover edge, no border line (issue 1240)
@@ -378,6 +381,32 @@ describe('style rules: one shared card, menu panel and error text', () => {
     expect(sharedRuleCopies('.il-empty { margin: 0; font-weight: 400; }', shared)).toEqual([
       '.il-empty: margin',
       '.il-empty: font-weight',
+    ])
+  })
+
+  it('the band of joined strips does not clip, so a hover box shows whole (issue 1292)', () => {
+    // overflow: hidden on the band cut the top of the hover box of its first strip
+    expect([...(all.get('.lens-stack') ?? [])].filter((p) => p.startsWith('overflow') || p === 'clip-path')).toEqual([])
+    // with no clip, each strip rounds the outer corners of the band itself
+    expect(all.get('.lens-stack > .ingest-lens:first-child')).toEqual(
+      new Set(['border-bottom', 'border-top-left-radius', 'border-top-right-radius']),
+    )
+    expect(all.get('.lens-stack > .ingest-lens:last-child')).toEqual(
+      new Set(['border-bottom-left-radius', 'border-bottom-right-radius']),
+    )
+  })
+
+  it('the check finds a planted copy of the band rules (issue 1292)', () => {
+    // the shape the Scanner status page had before the band moved to base.css
+    const planted = [
+      '.lens-stack { display: flex; gap: 6px; border: 1px solid var(--line); overflow: hidden; }',
+      '.lens-stack > .ingest-lens { border: 0; box-shadow: none; }',
+      '.lens-stack > .ingest-lens + .ingest-lens { border-top: 1px solid var(--line); }',
+    ].join('\n')
+    expect(sharedRuleCopies(planted, shared)).toEqual([
+      '.lens-stack: display', '.lens-stack: gap', '.lens-stack: border',
+      '.lens-stack > .ingest-lens: border', '.lens-stack > .ingest-lens: box-shadow',
+      '.lens-stack > .ingest-lens + .ingest-lens: border-top',
     ])
   })
 
