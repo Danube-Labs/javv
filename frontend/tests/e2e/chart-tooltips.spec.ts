@@ -106,7 +106,7 @@ test('the strip of the Audit log shows its tooltip with a dot', async ({ page })
 test('the hover of a strip in the joined band shows whole, with its unit (issue 1292)', async ({ page }) => {
   // The band of Scanner status clipped its strips (overflow: hidden). The hover box of Scan ingest
   // rises above the top of the band, so the band cut off its head line, the time and the unit.
-  await page.goto(`${BASE}/scanners`)
+  await page.goto(`${BASE}/scanner-status`)
   const band = page.locator('.lens-stack')
   const chart = band.locator('.ingest-lens').first().locator('canvas')
   await expect(chart).toBeVisible({ timeout: 15_000 })
@@ -114,17 +114,21 @@ test('the hover of a strip in the joined band shows whole, with its unit (issue 
   expectRowsWithDots(await tooltipOf(page, chart))
   const tip = chart.locator('xpath=ancestor::*[contains(@class, "echarts-host")][1]').locator('.chart-tip')
   const look = await tip.filter({ visible: true }).first().evaluate((t) => {
-    // the box of ECharts around the content: its top line is the head
-    const box = (t.parentElement ?? t).getBoundingClientRect()
-    const head = t.querySelector('.chart-tip-head')?.getBoundingClientRect() ?? box
-    const hit = document.elementFromPoint(head.left + head.width / 2, head.top + head.height / 2)
-    return {
-      head: t.querySelector('.chart-tip-head')?.textContent ?? '',
-      headShows: hit !== null && (t.parentElement ?? t).contains(hit),
-      boxTop: box.top,
+    // ECharts gives its box `pointer-events: none`, so a hit test passes through it. The check
+    // reads the clip of each ancestor instead: an ancestor that clips its overflow and starts
+    // below the top of the head line cuts that line off.
+    const head = (t.querySelector('.chart-tip-head') ?? t).getBoundingClientRect()
+    const cutBy: string[] = []
+    for (let node = t.parentElement; node && node !== document.body; node = node.parentElement) {
+      const style = getComputedStyle(node)
+      if (style.overflowY === 'visible' && style.overflowX === 'visible') continue
+      const r = node.getBoundingClientRect()
+      if (r.top > head.top || r.bottom < head.bottom || r.left > head.left || r.right < head.right)
+        cutBy.push(`${node.tagName.toLowerCase()}.${[...node.classList].join('.')}`)
     }
+    return { head: t.querySelector('.chart-tip-head')?.textContent ?? '', cutBy }
   })
   expect(look.head).toMatch(/ · scans$/)
-  // the point in the middle of the head line is the hover box, not the band or the page under it
-  expect(look.headShows).toBe(true)
+  // no ancestor of the hover box cuts off its head line
+  expect(look.cutBy).toEqual([])
 })
