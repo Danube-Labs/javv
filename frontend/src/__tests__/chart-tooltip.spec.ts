@@ -9,7 +9,7 @@ import { buildIngestLensOption } from '@/charts/buildIngestLensOption'
 import { buildPtypeDonutOption } from '@/charts/buildPtypeDonutOption'
 import { buildScanActivityOption } from '@/charts/buildScanActivityOption'
 import { buildSeverityTrendOption } from '@/charts/buildSeverityTrendOption'
-import { tooltipContent, type TooltipParam } from '@/charts/chartTooltip'
+import { chartTooltip, tooltipContent, type TooltipParam } from '@/charts/chartTooltip'
 import { CHART_SCANNER, CHART_UI } from '@/styles/tokens'
 
 const axisParams: TooltipParam[] = [
@@ -23,6 +23,9 @@ const tipOf = (params: TooltipParam | TooltipParam[]): HTMLElement => {
   if (root === '') throw new Error('the tooltip is empty')
   return root
 }
+
+/** A formatter as ECharts calls it: the params, an async ticket and a callback. */
+type EChartsFormatter = (p: TooltipParam | TooltipParam[], ticket: string, cb: () => void) => HTMLElement
 
 const texts = (root: HTMLElement, cls: string) =>
   [...root.querySelectorAll(`.${cls}`)].map((el) => el.textContent)
@@ -89,8 +92,34 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
     expect(adjacentHTML).not.toHaveBeenCalled()
   })
 
+  it('a unit goes after the axis label in the head, so the value says what it counts (issue 1292)', () => {
+    expect(texts(tooltipContent(axisParams, 'scans') as HTMLElement, 'chart-tip-head')).toEqual(['1 Nov · scans'])
+    // the rows do not change
+    expect(texts(tooltipContent(axisParams, 'scans') as HTMLElement, 'chart-tip-val')).toEqual(['31,627', '-'])
+  })
+
+  it('with no unit, or an empty one, the head is the axis label only', () => {
+    expect(texts(tooltipContent(axisParams) as HTMLElement, 'chart-tip-head')).toEqual(['1 Nov'])
+    expect(texts(tooltipContent(axisParams, '') as HTMLElement, 'chart-tip-head')).toEqual(['1 Nov'])
+  })
+
+  it('an item tooltip has no head, also with a unit', () => {
+    const root = tooltipContent({ name: 'os', color: '#1f8e84', value: 3, percent: 50 }, 'scans')
+    expect((root as HTMLElement).querySelector('.chart-tip-head')).toBeNull()
+  })
+
+  it('chartTooltip gives its unit to the formatter, and ignores the other arguments of ECharts', () => {
+    // ECharts calls a formatter as (params, asyncTicket, callback), and the ticket of an axis
+    // tooltip is a random number as a string. It must never reach the head as a unit.
+    const call = (unit?: string) =>
+      (chartTooltip('axis', unit).formatter as unknown as EChartsFormatter)(axisParams, '0.4837261', () => {})
+    expect(texts(call('refused scans'), 'chart-tip-head')).toEqual(['1 Nov · refused scans'])
+    expect(texts(call(), 'chart-tip-head')).toEqual(['1 Nov'])
+  })
+
   it('an empty list of rows gives no tooltip, so ECharts shows no empty box', () => {
     expect(tooltipContent([])).toBe('')
+    expect(tooltipContent([], 'scans')).toBe('')
   })
 
   it('a share that is not a finite number is not shown', () => {
@@ -110,19 +139,26 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
 const pts = (n: number) => [{ date: '2026-07-01T00:00:00.000Z', count: n }]
 const scans = { trivy: [{ date: '2026-07-01T00:00:00.000Z', scans: 3 }] }
 
-const builders: [string, EChartsOption, 'axis' | 'item'][] = [
-  ['scan activity', buildScanActivityOption(scans), 'axis'],
-  ['ingest strip', buildIngestLensOption(scans), 'axis'],
-  ['findings trend', buildFindingsTrendOption({ new: { trivy: pts(4) }, resolved: {} }), 'axis'],
-  ['severity trend', buildSeverityTrendOption({ critical: pts(4) }), 'axis'],
-  ['audit strip', buildAuditLensOption(pts(5)), 'axis'],
-  ['package type donut', buildPtypeDonutOption([{ key: 'os', count: 9 }]), 'item'],
+// the head that each builder gives the axis params above; null for an item tooltip, which has none
+const builders: [string, EChartsOption, 'axis' | 'item', string | null][] = [
+  ['scan activity', buildScanActivityOption(scans), 'axis', '1 Nov'],
+  ['scan activity with a unit', buildScanActivityOption(scans, 'scans'), 'axis', '1 Nov · scans'],
+  ['ingest strip', buildIngestLensOption(scans), 'axis', '1 Nov'],
+  ['ingest strip with a unit', buildIngestLensOption(scans, 'hour', 'refused scans'), 'axis', '1 Nov · refused scans'],
+  ['findings trend', buildFindingsTrendOption({ new: { trivy: pts(4) }, resolved: {} }), 'axis', '1 Nov'],
+  ['severity trend', buildSeverityTrendOption({ critical: pts(4) }), 'axis', '1 Nov'],
+  ['audit strip', buildAuditLensOption(pts(5)), 'axis', '1 Nov'],
+  ['package type donut', buildPtypeDonutOption([{ key: 'os', count: 9 }]), 'item', null],
 ]
 
 describe('each chart builder uses the shared tooltip', () => {
-  it.each(builders)('%s', (_name, option, trigger) => {
+  it.each(builders)('%s', (_name, option, trigger, head) => {
     const tooltip = option.tooltip as Record<string, unknown>
-    expect(tooltip.formatter).toBe(tooltipContent)
+    // called as ECharts calls it: params, an async ticket and a callback
+    const format = tooltip.formatter as EChartsFormatter
+    const root = format(trigger === 'axis' ? axisParams : { name: 'os', color: '#1f8e84', value: 1 }, '0.4837261', () => {})
+    expect(root.classList.contains('chart-tip')).toBe(true)
+    expect(root.querySelector('.chart-tip-head')?.textContent ?? null).toBe(head)
     expect(tooltip.trigger).toBe(trigger)
     expect(tooltip.backgroundColor).toBe(CHART_UI.tooltipBg)
     // With a named position on an item tooltip, ECharts adds its arrow as HTML with a style attribute.

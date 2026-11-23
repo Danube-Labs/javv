@@ -448,6 +448,11 @@ rules hold only the values that are equal in all four. A strip adds the rest in 
 fills its row, how its line wraps, and the margin and weight of its empty text. The same test fails
 a copy. A click on a bar of a strip calls `useBucketRewind`: the end of that bucket becomes the time
 of the app. `shared-helpers-guard.spec.ts` fails a call of `bucketEndT` outside it.
+Two strips can join as one band, Scan ingest above the other (`.lens-stack` in base.css, Scanner
+status): one outer frame, and a gutter of the page color between the strips (operator ruling
+2026-09-27). The band does not clip its overflow, because a clip cut off the top line of the hover
+box (issue 1292). So the first and the last strip round the outer corners of the band. The same
+test fails a copy of the band rules, and a clip on the band.
 
 **One chart tooltip** (issue 1272): each chart builder takes its tooltip from `chartTooltip` in
 `src/charts/chartTooltip.ts`. Its formatter returns DOM nodes, never an HTML string, because the
@@ -455,7 +460,9 @@ policy of the frontend server refuses a style attribute in HTML. The text goes i
 `textContent`. The `.chart-tip` rules of base.css give the UI font and the layout: a head with the
 axis label, then a row for each series with a dot, the name and the value in bold mono. The value
 is a count, so it is in mono as each count of the app (§3, operator D1 on built pictures, issue
-1275). The donut row also has the share. ECharts writes its own font on the box, so `.chart-tip` sets `--font-ui` again.
+1275). A builder can give a unit, which the head shows after the axis label, for example
+`14 Nov · images scanned`. Scan ingest says "images scanned" and Failed ingests "refused scans"
+(operator ruling on built pictures, issue 1292). The donut row also has the share. ECharts writes its own font on the box, so `.chart-tip` sets `--font-ui` again.
 Only the color of a dot comes from script. With no rows, the formatter returns an empty string, and
 ECharts shows no box. Do not give `position` a named place, because ECharts then adds its arrow as
 HTML. `chart-tooltip.spec.ts` fails each ECharts `tooltip:` in `src/` that is not `chartTooltip`,

@@ -166,6 +166,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-18 | Slices S1 to S3 of issue 1247 go up as one PR of 146 files. One review page holds every changed string, with the pictures of main and of the change. | 1247 |
 | 2026-11-18 | Slices S4 and S5 of issue 1247 join the same PR. One PR of 204 files holds all of the text pass. The text test then has no exceptions. | 1247 |
 | 2026-11-19 | The camera rule of the videos stays. After a click, the new screen shows at the old zoom for the result hold, and then the camera moves to the next box. A window can be partly out of the view for that time. | 1246 |
+| 2026-11-23 | The hover of a strip names what its values count after the time of the bar. Scan ingest says "images scanned", because "scans" can read as runs of the whole cluster. Failed ingests says "refused scans". | 1292 |
 
 ## AI vulnerability research (alpha)
 

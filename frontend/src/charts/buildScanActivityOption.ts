@@ -15,7 +15,8 @@ export type ScanActivityData = Partial<Record<'trivy' | 'grype', ScanPoint[]>>
 
 const SCANNERS = ['trivy', 'grype'] as const
 
-export function buildScanActivityOption(series: ScanActivityData): EChartsOption {
+/** `unit` names what a bar counts, in the head of the hover (issue 1292). */
+export function buildScanActivityOption(series: ScanActivityData, unit?: string): EChartsOption {
   const dates = (SCANNERS.map((s) => series[s]).find((r) => r?.length) ?? []).map((p) =>
     dayLabel(p.date),
   )
@@ -38,7 +39,7 @@ export function buildScanActivityOption(series: ScanActivityData): EChartsOption
   return {
     grid: { left: 34, right: 12, top: 12, bottom: 24 },
     legend: { show: false },
-    tooltip: chartTooltip('axis'),
+    tooltip: chartTooltip('axis', unit),
     xAxis: {
       type: 'category',
       data: dates,

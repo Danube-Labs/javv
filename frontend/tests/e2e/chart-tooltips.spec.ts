@@ -11,6 +11,8 @@ import { BASE, expect, login, requirePolicy, test } from './helpers'
 
 /** What a tooltip shows: its rows, the name of each row, and the size and the color of each dot. */
 interface TipLook {
+  /** The head line: the axis label, and the unit when the chart gives one. */
+  head: string
   rows: number
   names: string[]
   dots: { width: number; color: string }[]
@@ -33,6 +35,7 @@ async function tooltipOf(page: Page, chart: Locator): Promise<TipLook> {
     await page.mouse.move(box.x + (box.width * i) / 30, box.y + box.height / 2)
     const shown = await tip.filter({ visible: true }).evaluateAll((tips) =>
       tips.map((t) => ({
+        head: t.querySelector('.chart-tip-head')?.textContent ?? '',
         rows: t.querySelectorAll('.chart-tip-row').length,
         names: [...t.querySelectorAll('.chart-tip-name')].map((n) => n.textContent ?? ''),
         fonts: {
@@ -100,5 +103,45 @@ test('the strip of the Audit log shows its tooltip with a dot', async ({ page })
   await page.goto(`${BASE}/audit`)
   const chart = page.locator('canvas').first()
   await expect(chart).toBeVisible({ timeout: 15_000 })
-  await expectRowsWithDots(await tooltipOf(page, chart))
+  const tip = await tooltipOf(page, chart)
+  expectRowsWithDots(tip)
+  // a chart with no unit shows the axis label alone: ECharts calls the formatter with a random
+  // ticket as its second argument, and that ticket once showed after the label (issue 1292)
+  expect(tip.head).toMatch(/\S/)
+  expect(tip.head).not.toContain(' · ')
+})
+
+test('the hover of a strip in the joined band shows whole, with its unit (issue 1292)', async ({ page }) => {
+  // The band of Scanner status clipped its strips (overflow: hidden). The hover box of Scan ingest
+  // rises above the top of the band, so the band cut off its head line, the time and the unit.
+  await page.goto(`${BASE}/scanner-status`)
+  const band = page.locator('.lens-stack')
+  const chart = band.locator('.ingest-lens').first().locator('canvas')
+  await expect(chart).toBeVisible({ timeout: 15_000 })
+  await away(page)
+  expectRowsWithDots(await tooltipOf(page, chart))
+  const tip = chart.locator('xpath=ancestor::*[contains(@class, "echarts-host")][1]').locator('.chart-tip')
+  const look = await tip.filter({ visible: true }).first().evaluate((t) => {
+    // ECharts gives its box `pointer-events: none`, so a hit test passes through it. The check
+    // reads the clip of each ancestor instead (overflow, clip-path or paint containment): such an
+    // ancestor that does not hold the whole head line cuts that line off.
+    const head = (t.querySelector('.chart-tip-head') ?? t).getBoundingClientRect()
+    const cutBy: string[] = []
+    for (let node = t.parentElement; node && node !== document.body; node = node.parentElement) {
+      const style = getComputedStyle(node)
+      const clips =
+        style.overflowY !== 'visible' ||
+        style.overflowX !== 'visible' ||
+        style.clipPath !== 'none' ||
+        /paint|strict|content/.test(style.contain)
+      if (!clips) continue
+      const r = node.getBoundingClientRect()
+      if (r.top > head.top || r.bottom < head.bottom || r.left > head.left || r.right < head.right)
+        cutBy.push(`${node.tagName.toLowerCase()}.${[...node.classList].join('.')}`)
+    }
+    return { head: t.querySelector('.chart-tip-head')?.textContent ?? '', cutBy }
+  })
+  expect(look.head).toMatch(/ · images scanned$/)
+  // no ancestor of the hover box cuts off its head line
+  expect(look.cutBy).toEqual([])
 })

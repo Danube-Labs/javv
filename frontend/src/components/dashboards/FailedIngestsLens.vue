@@ -64,7 +64,7 @@ watch(
 
 const lensSeries = computed(() => failuresAsLensSeries(series.value))
 const refused = computed(() => totalRefused(series.value))
-const option = computed(() => buildIngestLensOption(lensSeries.value, interval.value))
+const option = computed(() => buildIngestLensOption(lensSeries.value, interval.value, 'refused scans'))
 
 const rewindToBucket = useBucketRewind()
 function onPointClick(params: { dataIndex: number }) {

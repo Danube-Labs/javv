@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import type { BarSeriesOption } from 'echarts'
+import type { BarSeriesOption, EChartsOption } from 'echarts'
 
 import { scannerFreshnessApiV1ScannersFreshnessGet, scansTrendApiV1TrendsScansGet } from '@/api/generated'
 import {
@@ -12,6 +12,8 @@ import {
   ingestLensDates,
 } from '@/charts/buildIngestLensOption'
 import type { ScanActivityData } from '@/charts/buildScanActivityOption'
+import type { TooltipParam } from '@/charts/chartTooltip'
+import EChart from '@/components/charts/EChart.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { CHART_SCANNER } from '@/styles/tokens'
@@ -143,6 +145,14 @@ describe('IngestLens head (issue 341: the guide popover, plain copy)', () => {
     useTimeTravelStore().setWindow(7, 'Last 7 days')
     await flushPromises()
     expect(w.find('.il-last').text()).toBe('last scan -')
+  })
+
+  it('the hover names what a bar counts after the time of the bar (issue 1292)', async () => {
+    const w = await mountLens({ trivy: pts([1]) })
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const format = (option.tooltip as { formatter: (p: TooltipParam[]) => HTMLElement }).formatter
+    const tip = format([{ axisValueLabel: '1 Jul', seriesName: 'trivy', value: 1 }])
+    expect(tip.querySelector('.chart-tip-head')?.textContent).toBe('1 Jul · images scanned')
   })
 
   it('a quiet range at now says when the table was last updated, without an em dash', async () => {
