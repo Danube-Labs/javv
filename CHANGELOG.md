@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.13](https://github.com/Danube-Labs/javv/compare/v0.9.12...v0.9.13) (2026-11-23)
+
+
+### Features
+
+* the frontend image, ci and the dev setup run node 26, with vitest 5 (issue 1283) ([#1285](https://github.com/Danube-Labs/javv/issues/1285)) ([08e4a0d](https://github.com/Danube-Labs/javv/commit/08e4a0dcd44aaf76276bc8fe4728b113e82ff83e))
+
 ## [0.9.12](https://github.com/Danube-Labs/javv/compare/v0.9.11...v0.9.12) (2026-11-21)
 
 
