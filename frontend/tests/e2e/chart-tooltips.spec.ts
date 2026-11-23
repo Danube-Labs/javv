@@ -128,7 +128,7 @@ test('the hover of a strip in the joined band shows whole, with its unit (issue 
     }
     return { head: t.querySelector('.chart-tip-head')?.textContent ?? '', cutBy }
   })
-  expect(look.head).toMatch(/ · scans$/)
+  expect(look.head).toMatch(/ · images scanned$/)
   // no ancestor of the hover box cuts off its head line
   expect(look.cutBy).toEqual([])
 })

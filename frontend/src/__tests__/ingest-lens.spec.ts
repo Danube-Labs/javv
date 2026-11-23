@@ -152,7 +152,7 @@ describe('IngestLens head (issue 341: the guide popover, plain copy)', () => {
     const option = w.findComponent(EChart).props('option') as EChartsOption
     const format = (option.tooltip as { formatter: (p: TooltipParam[]) => HTMLElement }).formatter
     const tip = format([{ axisValueLabel: '1 Jul', seriesName: 'trivy', value: 1 }])
-    expect(tip.querySelector('.chart-tip-head')?.textContent).toBe('1 Jul · scans')
+    expect(tip.querySelector('.chart-tip-head')?.textContent).toBe('1 Jul · images scanned')
   })
 
   it('a quiet range at now says when the table was last updated, without an em dash', async () => {
