@@ -65,9 +65,12 @@ export function tooltipContent(params: TooltipParam | TooltipParam[], unit?: str
   return root
 }
 
-/** The tooltip option that each chart builder uses. `unit` goes in the head of an axis tooltip. */
+/** The tooltip option that each chart builder uses. `unit` goes in the head of an axis tooltip.
+ * ECharts calls a formatter as (params, asyncTicket, callback), and the ticket of an axis tooltip
+ * is a random number as a string. So the formatter passes on only the params, never the ticket as
+ * a unit. */
 export function chartTooltip(trigger: 'axis' | 'item', unit?: string): TooltipComponentOption {
-  const formatter = unit ? (p: TooltipParam | TooltipParam[]) => tooltipContent(p, unit) : tooltipContent
+  const formatter = (p: TooltipParam | TooltipParam[]) => tooltipContent(p, unit)
   return {
     trigger,
     backgroundColor: CHART_UI.tooltipBg,

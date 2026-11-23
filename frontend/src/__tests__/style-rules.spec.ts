@@ -385,8 +385,17 @@ describe('style rules: one shared card, menu panel and error text', () => {
   })
 
   it('the band of joined strips does not clip, so a hover box shows whole (issue 1292)', () => {
-    // overflow: hidden on the band cut the top of the hover box of its first strip
-    expect([...(all.get('.lens-stack') ?? [])].filter((p) => p.startsWith('overflow') || p === 'clip-path')).toEqual([])
+    // overflow: hidden on the band cut the top of the hover box of its first strip. A clip in a
+    // component style counts too: the band was a scoped rule of Scanner status before.
+    const clips = (props: Set<string>) =>
+      [...props].filter((p) => p.startsWith('overflow') || p === 'clip-path' || p === 'contain')
+    expect(clips(all.get('.lens-stack') ?? new Set())).toEqual([])
+    const scoped = files.flatMap((rel) =>
+      [...ruleProperties(parseSfc(readFileSync(join(SRC, rel), 'utf8')).descriptor.styles.map((st) => st.content).join('\n'))]
+        .filter(([selector]) => selector.includes('.lens-stack'))
+        .flatMap(([selector, props]) => clips(props).map((p) => `${rel} → ${selector}: ${p}`)),
+    )
+    expect(scoped).toEqual([])
     // with no clip, each strip rounds the outer corners of the band itself
     expect(all.get('.lens-stack > .ingest-lens:first-child')).toEqual(
       new Set(['border-bottom', 'border-top-left-radius', 'border-top-right-radius']),
