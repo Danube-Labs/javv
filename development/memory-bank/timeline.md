@@ -180,6 +180,21 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
     frontend server no longer logs a 502 for a browser that left, and a long wait gives
     `backend slow` (PR 1279).
   - These changes shipped in 0.9.12 (2026-11-21).
+- **The work for 0.9.13** (2026-11-21 to 2026-11-23): Node.js 26 (issue 1283).
+  - The frontend image, CI and the dev setup run Node.js 26, and the frontend tests run on Vitest
+    5 (PR 1285). The workflows use `actions/checkout` 7, `actions/setup-node` 7,
+    `actions/upload-artifact` 7 and `astral-sh/setup-uv` 10 (PR 1287).
+  - Renovate keeps PrimeVue on version 4 and `@primeuix/themes` on version 2, their last versions
+    with the MIT license (issue 597, PR 1284). The dependency policy keeps Python on 3.14 (PR 1288).
+  - These changes shipped in 0.9.13 (2026-11-23).
+- **The work for 0.9.14** (from 2026-11-23): four issues from a 0.9.13 deployment (issues 1291 to
+  1294).
+  - The hover boxes of the chart strips name their unit, and the band of strips does not clip the
+    top line of a hover box (issue 1292, PR 1295).
+  - An image name with a tag and a digest keeps its tag (issue 1294, PR 1297).
+  - The API takes a Tag filter, and a past time gives the image names of that time (issue 1294,
+    PR 1298).
+  - These changes wait for release 0.9.14.
 
 ## 6. Releases
 
@@ -187,6 +202,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.13 | 2026-11-23 | The frontend image, CI and the dev setup run Node.js 26, and the frontend tests run on Vitest 5 (issue 1283). The web app uses Vue 3.5.46. The database schema stays 23 |
 | 0.9.12 | 2026-11-21 | The JAVV images have 88 findings, against 1,517 on 0.9.11: Python 3.14 on Alpine and no package managers (issue 1263). Ingest refuses JSON nested deeper than 64 levels. The chart tooltips show their dots under the policy (issue 1272). The backend log shows the policy violations of the browser, and the frontend server logs `backend slow` in place of false 502 warnings (issue 1275). The database schema stays 23 |
 | 0.9.11 | 2026-11-19 | The text of the app is in strict STE, with one name for each thing (issue 1247). Some labels have new names, for example the MCP level "Write and accept risks". The page loads one time before sign-in (issue 1246). The videos and the README walkthrough show the new text. The database schema stays 23 |
 | 0.9.10 | 2026-11-17 | A finding shows the files where the scanner found it, on the screens and in the CSV and CycloneDX exports (issues 1077, 1199 and 1245). Two dashboard panels (issue 1176). A new layout for the finding page (issue 1205). The app says "vulnerability" (issue 1224). The popovers open from their arrow (issue 1240). Each image upgrades its OS packages (issue 1172). Grype 0.121.3. The store schema is 23, and the backend takes reports of format 5 |
