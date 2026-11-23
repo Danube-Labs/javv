@@ -85,6 +85,9 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-21 | A browser can leave before the answer within `JAVV_BACKEND_CONNECT_TIMEOUT`. The frontend server then logs nothing, because nobody waits for the 502. After a longer wait, it logs the warning `backend slow`, because a hung backend writes no line. That warning has no 502 status and a window of its own. The limit reuses the setting, with no new one. The browser keeps logging the requests that it stops itself as `*_failed` warnings. | 1275 |
 | 2026-11-23 | An image name with a tag and a digest (`app:1.4.2@sha256:…`) is the image `app` with the tag `1.4.2`. A name that is only a digest (`sha256:…`) stays as before: the image `sha256` and the hex as its tag. | 1294 |
 | 2026-11-23 | After that fix, a finding gets the new names only when a scan reports it again. The operator accepted four effects on built pictures. The Image filter on the new name selects every version. Search text with a version finds nothing. The build history of the image page starts at the first scan after the upgrade. The VEX export gives new product ids. No code rewrites saved views. The version note in `docs/UPGRADING.md` tells the operator what to change. | 1294 |
+| 2026-11-23 | At a past time, each finding takes its image name and tag from the scan record of its own last appearance. A gone finding then keeps the name that the live list shows. | 1294 |
+| 2026-11-23 | A dashboard panel that reads findings takes the Tag filter, its exclude side and "No tag", as it takes the other filters of Findings. | 1294 |
+| 2026-11-23 | The past-time names ship with their effects on the screen, accepted on built pictures. At a past time, the Image column shows the names. Search and the Image filter give rows. A background export takes these filters. | 1294 |
 
 ## UI copy and look
 

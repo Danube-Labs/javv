@@ -8,10 +8,10 @@ import type { FilterField } from '@/filters/fields.config'
 
 export const EXPORT_PARAM_KEYS = [
   'severity', 'state', 'scanner', 'assignee', 'kev', 'fixable', 'disagree', 'cve_id',
-  'image_digest', 'image_repo', 'namespace', 'ptype', 'package_name', 'q', 'present',
-  'new_within_days', 'overdue', 'unassigned', 'exclude_severity', 'exclude_state',
+  'image_digest', 'image_repo', 'namespace', 'ptype', 'package_name', 'tag', 'q', 'present',
+  'new_within_days', 'overdue', 'unassigned', 'untagged', 'exclude_severity', 'exclude_state',
   'exclude_scanner', 'exclude_assignee', 'exclude_image_repo', 'exclude_namespace',
-  'exclude_ptype', 'exclude_cve_id', 'exclude_package_name',
+  'exclude_ptype', 'exclude_cve_id', 'exclude_package_name', 'exclude_tag',
 ] as const
 
 const GLOBAL_KEYS = new Set(['cluster_id', 'as_of', 'window_days'])
@@ -41,9 +41,7 @@ export function filterNames(fields: readonly FilterField[], keys: readonly strin
 /** The filters the backend cannot answer at a past time, because the scan history does not
  * record them (`_unrecorded` in backend/src/backend/query/as_of_t.py). `export-params.spec.ts`
  * keeps this list equal to the backend's. */
-export const PAST_TIME_UNRECORDED_KEYS = [
-  'kev', 'disagree', 'image_repo', 'exclude_image_repo', 'q', 'new_within_days',
-] as const
+export const PAST_TIME_UNRECORDED_KEYS = ['kev', 'disagree', 'new_within_days'] as const
 
 /** Assignee with Unassigned: the one pair a Findings query can hold (`FINDINGS_EXCLUSIVE_PAIRS`
  * in filters/fields.config.ts), and the backend refuses it with 422. */
