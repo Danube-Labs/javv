@@ -6,8 +6,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
+import FilterBar from '@/components/filters/FilterBar.vue'
 import FilterPill from '@/components/filters/FilterPill.vue'
 import { FINDINGS_FIELDS, isNegatable, pillNote } from '@/filters/fields.config'
+import { IMAGES_FIELDS } from '@/images/fields.config'
 
 const field = (key: string) => FINDINGS_FIELDS.find((f) => f.key === key)!
 
@@ -46,6 +48,15 @@ describe('FilterPill', () => {
     expect(w.get('.fpill-open').attributes('aria-label')).toBe('Edit the filter image: is shop/app, all tags')
     const plain = mount(FilterPill, { props: { field: image, values: ['shop/app'], mode: 'is' } })
     expect(plain.find('.fpill-note').exists()).toBe(false)
+  })
+
+  it('the filter bar gives the Image pill its note, and takes it away for a Tag', async () => {
+    const bar = (selections: Record<string, string[]>) =>
+      mount(FilterBar, { props: { fields: FINDINGS_FIELDS, selections } })
+    expect(bar({ image: ['shop/app'] }).get('.fpill-note').text()).toBe('· all tags')
+    expect(bar({ image: ['shop/app'], tag: ['1.4.1'] }).find('.fpill-note').exists()).toBe(false)
+    // the Images screen has its own fields, with no note
+    expect(mount(FilterBar, { props: { fields: IMAGES_FIELDS, selections: { repo: ['shop/app'] } } }).find('.fpill-note').exists()).toBe(false)
   })
 
   it('clears from the ✕ and switches the mode from the op words, without opening the field', async () => {

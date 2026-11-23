@@ -43,6 +43,10 @@ export function filterNames(fields: readonly FilterField[], keys: readonly strin
  * keeps this list equal to the backend's. */
 export const PAST_TIME_UNRECORDED_KEYS = ['kev', 'disagree', 'new_within_days'] as const
 
+/** The query holds a filter that a past time refuses: the past-time text names these filters. */
+export const hasUnrecordedFilter = (query: Record<string, unknown>): boolean =>
+  PAST_TIME_UNRECORDED_KEYS.some((key) => query[key] !== undefined)
+
 /** The query keys of a pair that the backend refuses with 422 (`FINDINGS_EXCLUSIVE_PAIRS` in
  * filters/fields.config.ts: Assignee with Unassigned, Tag with No tag), or null. A link can hold
  * one, since the store keeps both until the user picks one of the two. */

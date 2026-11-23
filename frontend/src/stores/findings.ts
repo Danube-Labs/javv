@@ -13,7 +13,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { useCursorPager } from '@/composables/useCursorPager'
-import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
+import { PAST_TIME_SORT_FIELDS, type SortField, type SortOrder } from '@/findings/buildFindingsQuery'
 
 /** The findings-search row shape this bolt renders (subset of the server doc; B-2: only real fields). */
 export interface FindingRow {
@@ -89,7 +89,14 @@ export const useFindingsStore = defineStore('findings', () => {
     order.value = sort.value === field ? (order.value === 'desc' ? 'asc' : 'desc') : 'desc'
     sort.value = field
     pager.reset()
+  }  /** At a past time the history has no EPSS, so an EPSS sort falls back to the first sort. */
+  function keepPastTimeSort() {
+    if (PAST_TIME_SORT_FIELDS.includes(sort.value)) return
+    sort.value = 'severity_rank'
+    order.value = 'desc'
+    pager.reset()
   }
+
   /** Cluster or T switched — the held rows belong to another tenant/world; drop them so the
    * loading state shows instead of readable stale data while the new read is in flight. */
   function clearResults() {
@@ -122,6 +129,7 @@ export const useFindingsStore = defineStore('findings', () => {
     goNext: pager.next,
     goPrev: pager.prev,
     setSort,
+    keepPastTimeSort,
     setSize: pager.setSize,
     /** Filters/sort/size changed or a cursor went stale — back to page 0, stack rebuilt. */
     resetPaging: pager.reset,

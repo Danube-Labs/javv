@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { filterLabel } from '@/about/glossary'
+import { FINDINGS_FIELDS } from '@/filters/fields.config'
+
 import GuideProse from './GuideProse.vue'
+
+const image = filterLabel(FINDINGS_FIELDS, 'image')
+const tag = filterLabel(FINDINGS_FIELDS, 'tag')
+const attribute = filterLabel(FINDINGS_FIELDS, 'attr')
+const noTag = filterLabel(FINDINGS_FIELDS, 'untagged')
 </script>
 
 <template>
@@ -13,9 +21,10 @@ import GuideProse from './GuideProse.vue'
       An image's page lists its build history: every time the digest behind its tag changed, as scanned.
     </p>
     <p>
-      On Findings, the <strong>Image</strong> filter finds all the tags of an image. To see one tag, add
-      the <strong>Tag</strong> filter. To see the images that have no tag, use <strong>No tag</strong> in
-      Attribute. For example, a pod can run an image by its digest only.
+      On Findings, the <span class="ui-name">{{ image }}</span> filter finds all the tags of an image. To
+      see one tag, add the <span class="ui-name">{{ tag }}</span> filter. To see the findings of images that
+      have no tag, use <span class="ui-name">{{ noTag }}</span> in <span class="ui-name">{{ attribute }}</span>.
+      For example, a pod can run an image by its digest only.
     </p>
   </GuideProse>
 </template>

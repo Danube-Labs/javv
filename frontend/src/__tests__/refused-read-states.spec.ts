@@ -614,6 +614,15 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     expect(w.text()).toContain(copy)
   })
 
+  it('a grid sorted by EPSS reads a past time by Severity, so the read is not refused', async () => {
+    useFindingsStore().setSort('epss')
+    useTimeTravelStore().t = PAST
+    search().mockImplementation(async () => findingsPage('CVE-2026-0001', 1, null) as never)
+    await mountRouted(FindingsView as Component, {}, '/')
+    await flushPromises()
+    expect(lastQuery().sort).toBe('severity_rank')
+  })
+
   it('the reason survives leaving Findings and coming back while the next read runs', async () => {
     useTimeTravelStore().t = PAST
     search().mockImplementation(async () => refusedWith(422) as never)

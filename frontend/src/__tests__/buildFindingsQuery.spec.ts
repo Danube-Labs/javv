@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-import { buildFindingsQuery, type GridState } from '@/findings/buildFindingsQuery'
+import { PAST_TIME_SORT_FIELDS, buildFindingsQuery, type GridState } from '@/findings/buildFindingsQuery'
 import { FINDINGS_FIELDS, emptySelections } from '@/filters/fields.config'
 
 const CID = 'fcbcbe84-9da1-41fb-879e-83c3e0f995f0'
@@ -74,5 +77,15 @@ describe('buildFindingsQuery', () => {
     const off = buildFindingsQuery(FINDINGS_FIELDS, sel(), { cluster_id: CID }, { ...GRID, locations: false })
     expect(off).not.toHaveProperty('locations')
     expect(buildFindingsQuery(FINDINGS_FIELDS, sel(), { cluster_id: CID }, GRID)).not.toHaveProperty('locations')
+  })
+})
+
+// the past-time reader sorts only on the fields that the scan history records (issue 1294 review)
+describe('PAST_TIME_SORT_FIELDS', () => {
+  it('equals _SORT_FIELDS of the past-time reader', () => {
+    const source = readFileSync(resolve(process.cwd(), '..', 'backend/src/backend/query/as_of_t.py'), 'utf8')
+    const backend = /^_SORT_FIELDS = \(([^)]*)\)/m.exec(source)![1]!.match(/"([^"]+)"/g)!.map((s) => s.slice(1, -1))
+    expect([...PAST_TIME_SORT_FIELDS].sort()).toEqual(backend.sort())
+    expect(PAST_TIME_SORT_FIELDS).not.toContain('epss')
   })
 })

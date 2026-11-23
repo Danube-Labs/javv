@@ -37,7 +37,7 @@ import StateTag from '@/components/chips/StateTag.vue'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
 import ValueActions from '@/components/filters/ValueActions.vue'
 import RowLink from '@/components/ui/RowLink.vue'
-import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
+import { PAST_TIME_SORT_FIELDS, type SortField, type SortOrder } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS, type FindingsColumnKey } from '@/findings/columns'
 import { pathsOf } from '@/findings/paths'
 import { logger } from '@/lib/logger'
@@ -73,6 +73,8 @@ const props = withDefaults(
     modes?: Modes
     /** where a row leads: its identifier renders as a real link, so the keyboard can open it */
     rowTo?: (row: FindingRow) => RouteLocationRaw
+    /** a past time: the scan history has no EPSS, so its header does not sort (issue 1294) */
+    historical?: boolean
   }>(),
   {
     hidden: () => new Set<string>(),
@@ -170,6 +172,11 @@ const emit = defineEmits<{
   /** a cell's value action (issue 349 §2): filter TO / OUT of this exact value */
   pickValue: [fieldKey: string, value: string, mode: FilterMode]
 }>()
+
+const sortableAt = (key: FindingsColumnKey) => {
+  const field = SORT_FIELD[key]
+  return field !== undefined && (!props.historical || PAST_TIME_SORT_FIELDS.includes(field))
+}
 
 function onSort(e: DataTableSortEvent) {
   if (typeof e.sortField === 'string') emit('sort', e.sortField as SortField)
@@ -301,7 +308,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
         :key="key"
         :column-key="key"
         :field="SORT_FIELD[key]"
-        :sortable="key in SORT_FIELD"
+        :sortable="sortableAt(key)"
         :class="colClass(key)"
       >
         <template #header>

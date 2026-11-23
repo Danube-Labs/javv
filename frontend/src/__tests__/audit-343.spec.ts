@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
-import { refusedPair } from '@/findings/exportParams'
+import { hasUnrecordedFilter, refusedPair } from '@/findings/exportParams'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { clusterFromQuery, foreignQuery, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
 
@@ -52,6 +52,16 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(failureKind(422, true, true)).toBe('bad_filter')
     expect(failureKind(422, true, false)).toBe('past_t') // an unrecorded filter at a past time
     expect(failureKind(501, true, true)).toBe('past_t')
+  })
+
+  // issue 1294 review: the past-time text names KEV, Scanners disagree and New in range, so it
+  // shows only when the refused read holds one of them
+  it('a 422 at a past time with none of those filters gets the refused-filters text', () => {
+    expect(failureKind(422, true, false, false)).toBe('bad_filter')
+    expect(failureKind(422, true, false, true)).toBe('past_t')
+    expect(hasUnrecordedFilter({ cluster_id: 'c', severity: ['high'] })).toBe(false)
+    expect(hasUnrecordedFilter({ cluster_id: 'c', kev: true })).toBe(true)
+    expect(hasUnrecordedFilter({ cluster_id: 'c', new_within_days: 7 })).toBe(true)
   })
 
   it('finds each refused pair in a built query, and only the include side', () => {
