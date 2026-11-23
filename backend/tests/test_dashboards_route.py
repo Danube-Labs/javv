@@ -437,6 +437,30 @@ async def test_the_panels_that_read_findings_counts_keep_their_filters(env) -> N
     assert after["findings-summary"] == filters["findings-summary"]
 
 
+async def test_a_findings_panel_keeps_the_tag_filters(env) -> None:
+    """Issue 1294, Q2 ruled A: a panel takes the filters of /findings (issue 999), so the Tag
+    filter, its exclude side and "No tag" are stored as in a saved view. A pair still fails."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [
+        _panel(filters={"image_repo": "app", "tag": "1.4.2"}),
+        _panel("riskiest-images", w=1, y=1, filters={"exclude_tag": ["1.4.1"]}),
+        _panel("top-cves", x=1, w=1, y=1, filters={"untagged": True}),
+    ]
+    made = await _create(owner, panels=panels)
+    stored = (await owner.get(f"/api/v1/dashboards/{made['dashboard_id']}")).json()["panels"]
+    assert [p["filters"] for p in stored] == [
+        {"image_repo": ["app"], "tag": ["1.4.2"], "present": True},
+        {"exclude_tag": ["1.4.1"], "present": True},
+        {"untagged": True, "present": True},
+    ]
+    r = await owner.post(
+        "/api/v1/dashboards",
+        json={"name": "d", "panels": [_panel(filters={"tag": ["1.4.2"], "untagged": False})]},
+    )
+    assert r.status_code == 422, r.text
+
+
 async def test_vulnerabilities_over_time_keeps_its_scanner(env) -> None:
     """Issue 1176: the Overview trend is a panel with scanner data, so it takes the scanner
     setting of a panel, as a Full or a Half panel."""

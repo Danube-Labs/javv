@@ -165,6 +165,8 @@ _PAIR_VALUE: dict[str, Any] = {
     "cve_id": ["CVE-2021-3711"],
     "package_name": ["openssl"],
     "unassigned": True,
+    "tag": ["1.4.2"],
+    "untagged": True,
 }
 
 
@@ -392,6 +394,7 @@ def test_golden_preset_serialization_is_pinned() -> None:
         ptype=["os"],
         namespace=["team-a"],
         package_name=["zlib"],
+        tag=["1.4.2"],
     )
     assert populated.model_dump() == golden["populated"]
     negated = ViewPreset(
@@ -400,6 +403,7 @@ def test_golden_preset_serialization_is_pinned() -> None:
         exclude_cve_id=["CVE-2021-3711"],
         exclude_package_name=["openssl"],
         state=["open"],
+        untagged=True,
     )
     assert negated.model_dump() == golden["negated"]
 

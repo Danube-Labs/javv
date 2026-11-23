@@ -961,6 +961,22 @@
             ],
             "title": "Exclude State"
           },
+          "exclude_tag": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Tag"
+          },
           "fixable": {
             "anyOf": [
               {
@@ -1153,6 +1169,22 @@
             ],
             "title": "State"
           },
+          "tag": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          },
           "unassigned": {
             "anyOf": [
               {
@@ -1163,6 +1195,17 @@
               }
             ],
             "title": "Unassigned"
+          },
+          "untagged": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Untagged"
           }
         },
         "title": "ExportParams",
@@ -2171,6 +2214,22 @@
             ],
             "title": "Exclude State"
           },
+          "exclude_tag": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Tag"
+          },
           "fixable": {
             "anyOf": [
               {
@@ -2357,6 +2416,22 @@
             ],
             "title": "State"
           },
+          "tag": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          },
           "unassigned": {
             "anyOf": [
               {
@@ -2367,6 +2442,17 @@
               }
             ],
             "title": "Unassigned"
+          },
+          "untagged": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Untagged"
           }
         },
         "title": "ViewPreset",
@@ -5837,6 +5923,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -5911,6 +6018,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -6092,6 +6215,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -6444,6 +6588,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -6518,6 +6683,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -6699,6 +6880,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -7020,6 +7222,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -7094,6 +7317,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -7275,6 +7514,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -7633,6 +7893,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -7707,6 +7988,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -7888,6 +8185,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -8238,6 +8556,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -8312,6 +8651,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -8493,6 +8848,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -8805,6 +9181,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -8879,6 +9276,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -9060,6 +9473,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -9372,6 +9806,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -9446,6 +9901,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -9627,6 +10098,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
@@ -9949,6 +10441,27 @@
           },
           {
             "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -10023,6 +10536,22 @@
                 }
               ],
               "title": "Unassigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "untagged",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Untagged"
             }
           },
           {
@@ -10204,6 +10733,27 @@
                 }
               ],
               "title": "Exclude Package Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exclude_tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exclude Tag"
             }
           },
           {
