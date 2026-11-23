@@ -324,7 +324,7 @@ the API accepts it. A link that holds both filters keeps both, and the grid show
 (see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
 another filter, or the removal of an Assignee value, keeps both.
 
-**Tag with No tag** (issue 1294): the Tag filter is a typed field after Image, with "is" and "is
+**Tag with No tag** (operator ruling 2026-11-23 on built pictures, issue 1294): the Tag filter is a typed field after Image, with "is" and "is
 not". "No tag" in Attribute keeps the findings of images with no tag, for example an image that a
 pod runs by its digest. Findings refuses Tag "is" with No tag, and the rules of Assignee with
 Unassigned apply: the last pick wins, a message names what JAVV cleared ("JAVV cleared the filter
