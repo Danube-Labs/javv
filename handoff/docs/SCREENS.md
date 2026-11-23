@@ -608,8 +608,9 @@ in `findings/exportParams.ts`). The button of the open tab (Download or Schedule
 the dialog says why:
   - Schedule, a filter the schedule cannot carry → "An export in the background cannot use these filters: <filter
     names>. Clear them, or use Run now." (at a past time: "… Clear them.", as Run now is hidden).
-  - Schedule at a past time, a filter the scan history does not record (Search, KEV, Scanners
-    disagree, Image, New in range) → "At a past time, a schedule cannot use these filters:
+  - Schedule at a past time, a filter the scan history does not record (KEV, Scanners disagree,
+    New in range; the history keeps the image names since issue 1294) → "At a past time, a
+    schedule cannot use these filters:
     <filter names>. Clear them."
   - Both tabs, Assignee with Unassigned → "An export cannot use Assignee and Unassigned
     together. Clear one of them."

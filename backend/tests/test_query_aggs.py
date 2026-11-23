@@ -39,7 +39,7 @@ from backend.query.aggs import (
     top_images_rows,
     top_values_rows,
 )
-from backend.query.search import SearchFilters, unassigned_clause
+from backend.query.search import SearchFilters, unassigned_clause, untagged_clause
 from os_env import OS_URL, requires_opensearch
 
 
@@ -437,6 +437,53 @@ def test_with_no_assignee_the_unassigned_count_is_unchanged() -> None:
         "filter": unassigned_clause(),
         "aggs": {"by_scanner": {"terms": {"field": "scanner", "size": 4}}},
     }
+
+
+# --- "No tag" (issue 1294), on the pattern of the Unassigned count -----------------------
+
+_TAG_IS = json.dumps({"terms": {"tag": ["1.4.2"]}})
+
+
+def test_the_untagged_facet_is_a_filter_agg_on_the_shared_clause() -> None:
+    """Count ≡ filtered rows: the facet counts the clause that `untagged=true` filters on."""
+    assert "untagged" in FACET_FIELDS
+    body = build_facets_body(SearchFilters(severity=["high"]), fields=["severity", "untagged"])
+    assert body["aggs"]["untagged"] == {
+        "filter": untagged_clause(),
+        "aggs": {"by_scanner": {"terms": {"field": "scanner", "size": 4}}},
+    }
+
+
+def test_the_untagged_count_leaves_out_tag_is() -> None:
+    """A click on "No tag" clears the Tag "is" values (the pair refuses both), so the count is
+    what the grid shows after the click, as for Unassigned (issue 979)."""
+    f = SearchFilters(tag=["1.4.2"], severity=["high"])
+    body = build_facets_body(f, fields=["severity", "untagged"])
+    untagged = body["aggs"]["untagged"]
+    assert _TAG_IS not in _query_of(untagged)
+    assert json.dumps({"terms": {"severity_canonical": ["high"]}}) in _query_of(untagged)
+    assert "by_scanner" in untagged["aggs"]["values"]["aggs"]
+    assert _TAG_IS in _query_of(body["aggs"]["severity"])
+    assert _TAG_IS not in json.dumps(body["query"])
+
+
+def test_the_untagged_count_keeps_tag_is_not() -> None:
+    f = SearchFilters(exclude_tag=["1.4.2"])
+    body = build_facets_body(f, fields=["severity", "untagged"])
+    assert "values" not in body["aggs"]["untagged"].get("aggs", {})
+    assert _TAG_IS in json.dumps(body["query"])
+
+
+def test_untagged_and_unassigned_counts_free_each_their_own_filter() -> None:
+    f = SearchFilters(tag=["1.4.2"], assignee=["lead"])
+    body = build_facets_body(f, fields=["untagged", "unassigned", "kev"])
+    assert _TAG_IS not in _query_of(body["aggs"]["untagged"])
+    assert _ASSIGNEE_IS in _query_of(body["aggs"]["untagged"])
+    assert _ASSIGNEE_IS not in _query_of(body["aggs"]["unassigned"])
+    assert _TAG_IS in _query_of(body["aggs"]["unassigned"])
+    assert _TAG_IS in _query_of(body["aggs"]["kev"]) and _ASSIGNEE_IS in _query_of(
+        body["aggs"]["kev"]
+    )
 
 
 def test_facet_buckets_unwraps_both_shapes() -> None:

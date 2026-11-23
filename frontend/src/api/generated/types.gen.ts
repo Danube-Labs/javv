@@ -441,6 +441,10 @@ export type ExportParams = {
      */
     exclude_state?: Array<string> | null;
     /**
+     * Exclude Tag
+     */
+    exclude_tag?: Array<string> | null;
+    /**
      * Fixable
      */
     fixable?: boolean | null;
@@ -501,9 +505,17 @@ export type ExportParams = {
      */
     state?: Array<string> | null;
     /**
+     * Tag
+     */
+    tag?: Array<string> | null;
+    /**
      * Unassigned
      */
     unassigned?: boolean | null;
+    /**
+     * Untagged
+     */
+    untagged?: boolean | null;
 };
 
 /**
@@ -979,6 +991,10 @@ export type ViewPreset = {
      */
     exclude_state?: Array<string> | null;
     /**
+     * Exclude Tag
+     */
+    exclude_tag?: Array<string> | null;
+    /**
      * Fixable
      */
     fixable?: boolean | null;
@@ -1035,9 +1051,17 @@ export type ViewPreset = {
      */
     state?: Array<string> | null;
     /**
+     * Tag
+     */
+    tag?: Array<string> | null;
+    /**
      * Unassigned
      */
     unassigned?: boolean | null;
+    /**
+     * Untagged
+     */
+    untagged?: boolean | null;
 };
 
 /**
@@ -2825,6 +2849,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -2844,6 +2872,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -2880,6 +2912,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -2996,6 +3032,10 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3015,6 +3055,10 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3051,6 +3095,10 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -3140,6 +3188,10 @@ export type ExportVexApiV1FindingsExportVexGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3159,6 +3211,10 @@ export type ExportVexApiV1FindingsExportVexGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3195,6 +3251,10 @@ export type ExportVexApiV1FindingsExportVexGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -3298,6 +3358,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3317,6 +3381,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3353,6 +3421,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -3456,6 +3528,10 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3475,6 +3551,10 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3511,6 +3591,10 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -3602,6 +3686,10 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3621,6 +3709,10 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3657,6 +3749,10 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -3748,6 +3844,10 @@ export type TopImagesFindingsApiV1FindingsTopImagesGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3767,6 +3867,10 @@ export type TopImagesFindingsApiV1FindingsTopImagesGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3803,6 +3907,10 @@ export type TopImagesFindingsApiV1FindingsTopImagesGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */
@@ -3898,6 +4006,10 @@ export type TopValuesFindingsApiV1FindingsTopValuesGetData = {
          */
         package_name?: Array<string> | null;
         /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
          * Q
          */
         q?: string | null;
@@ -3917,6 +4029,10 @@ export type TopValuesFindingsApiV1FindingsTopValuesGetData = {
          * Unassigned
          */
         unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
         /**
          * Exclude Severity
          */
@@ -3953,6 +4069,10 @@ export type TopValuesFindingsApiV1FindingsTopValuesGetData = {
          * Exclude Package Name
          */
         exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
         /**
          * As Of
          */

@@ -13,10 +13,12 @@
     "namespace": null,
     "ptype": null,
     "package_name": null,
+    "tag": null,
     "q": null,
     "present": true,
     "new_within_days": null,
     "unassigned": null,
+    "untagged": null,
     "overdue": null,
     "exclude_severity": null,
     "exclude_state": null,
@@ -26,7 +28,8 @@
     "exclude_namespace": null,
     "exclude_ptype": null,
     "exclude_cve_id": null,
-    "exclude_package_name": null
+    "exclude_package_name": null,
+    "exclude_tag": null
   },
   "populated": {
     "severity": [
@@ -53,10 +56,14 @@
     "package_name": [
       "zlib"
     ],
+    "tag": [
+      "1.4.2"
+    ],
     "q": null,
     "present": true,
     "new_within_days": null,
     "unassigned": null,
+    "untagged": null,
     "overdue": null,
     "exclude_severity": null,
     "exclude_state": null,
@@ -66,7 +73,8 @@
     "exclude_namespace": null,
     "exclude_ptype": null,
     "exclude_cve_id": null,
-    "exclude_package_name": null
+    "exclude_package_name": null,
+    "exclude_tag": null
   },
   "negated": {
     "severity": null,
@@ -84,10 +92,12 @@
     "namespace": null,
     "ptype": null,
     "package_name": null,
+    "tag": null,
     "q": null,
     "present": true,
     "new_within_days": null,
     "unassigned": null,
+    "untagged": true,
     "overdue": null,
     "exclude_severity": [
       "low",
@@ -106,6 +116,7 @@
     ],
     "exclude_package_name": [
       "openssl"
-    ]
+    ],
+    "exclude_tag": null
   }
 }

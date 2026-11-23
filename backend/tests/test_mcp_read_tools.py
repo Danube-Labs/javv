@@ -387,6 +387,9 @@ def test_search_findings_names_the_fields_that_a_past_time_does_not_record():
         "first_seen_at": "2026-01-01T00:00:00Z",
         "present": True,
         "resolved_at": "2026-01-02T00:00:00Z",
+        # the names come from the scan record of the run (issue 1294)
+        "image_repo": "app",
+        "tag": "1.0",
     }
     human = {
         "state": "open",

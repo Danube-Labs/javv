@@ -24,8 +24,10 @@ from backend.query.search import (
     decode_cursor,
     encode_cursor,
     has_owner_clause,
+    has_tag_clause,
     run_search,
     unassigned_clause,
+    untagged_clause,
 )
 
 
@@ -415,6 +417,7 @@ def test_exclude_facets_land_as_pure_must_not() -> None:
             exclude_ptype=["deb"],
             exclude_cve_id=["CVE-2021-3711"],
             exclude_package_name=["zlib"],
+            exclude_tag=["1.4.2"],
         ),
         size=10,
     )
@@ -432,6 +435,8 @@ def test_exclude_facets_land_as_pure_must_not() -> None:
         # is exactly the case the no-exists-guard assertion below protects
         ("cve_id", "CVE-2021-3711"),
         ("package_name", "zlib"),
+        # issue 1294: the tag of an image, split from its name at ingest
+        ("tag", "1.4.2"),
     ):
         assert {"terms": {field: [term]}} in mn
     assert not any("exists" in json.dumps(c) for c in mn)
@@ -458,6 +463,8 @@ def test_include_and_exclude_on_one_field_is_rejected() -> None:
         )
     with pytest.raises(ValueError, match="scanner"):
         build_search_body(SearchFilters(scanner="trivy", exclude_scanner="grype"), size=10)
+    with pytest.raises(ValueError, match="tag"):
+        build_search_body(SearchFilters(tag=["1.4.2"], exclude_tag=["1.4.1"]), size=10)
 
 
 def test_package_name_include_is_an_exact_term() -> None:
@@ -535,6 +542,46 @@ def test_unassigned_composes_with_the_other_must_not_writers() -> None:
     assert len(mn) == 3
 
 
+# --- "No tag" (issue 1294): the rows of an image with no tag, on the pattern of unassigned ---
+
+
+def test_untagged_selects_the_rows_with_an_empty_tag_or_no_tag() -> None:
+    """The ingest writes `tag: ""` for a name with no tag (`app`, `app@sha256:…`). A row with
+    no tag field at all reads the same, as a row with no assignee reads as unassigned."""
+    body = build_search_body(SearchFilters(untagged=True), size=10)
+    assert body["query"]["bool"]["must_not"] == [has_tag_clause()]
+    assert has_tag_clause() == {
+        "bool": {
+            "filter": [{"exists": {"field": "tag"}}],
+            "must_not": [{"term": {"tag": ""}}],
+        }
+    }
+    assert untagged_clause() == {"bool": {"must_not": [has_tag_clause()]}}
+
+
+def test_untagged_false_asks_for_a_tag() -> None:
+    body = build_search_body(SearchFilters(untagged=False), size=10)
+    assert has_tag_clause() in body["query"]["bool"]["filter"]
+    assert "must_not" not in body["query"]["bool"]
+
+
+def test_untagged_and_a_tag_are_mutually_exclusive() -> None:
+    with pytest.raises(ValueError, match="untagged"):
+        build_search_body(SearchFilters(tag=["1.4.2"], untagged=True), size=10)
+
+
+def test_exclude_tag_keeps_the_rows_with_no_tag() -> None:
+    """Pure must_not, as every exclude side: "tag is not 1.4.2" keeps the untagged rows."""
+    body = build_search_body(SearchFilters(exclude_tag=["1.4.2"]), size=10)
+    assert body["query"]["bool"]["must_not"] == [{"terms": {"tag": ["1.4.2"]}}]
+
+
+def test_untagged_composes_with_unassigned() -> None:
+    body = build_search_body(SearchFilters(untagged=True, unassigned=True), size=10)
+    mn = body["query"]["bool"]["must_not"]
+    assert has_tag_clause() in mn and has_owner_clause() in mn
+
+
 async def test_run_search_overdue_policy_failure_opens_no_pit(monkeypatch) -> None:
     """A failing sla-policy read on an overdue first page must not leak a PIT: the read runs
     BEFORE create_pit, so the error paths (which only reclaim what the try block sees) never
@@ -565,6 +612,7 @@ _LIST_FIELDS = (
     ("image_repo", "image_repo"),
     ("cve_id", "cve_id"),
     ("package_name", "package_name"),
+    ("tag", "tag"),  # issue 1294
 )
 
 
@@ -607,10 +655,11 @@ _EXCLUDE_FIELDS = [f for f in SearchFilters.__dataclass_fields__ if f.startswith
 
 
 def test_every_exclude_filter_is_a_pair_with_its_include_side() -> None:
-    assert len(_EXCLUDE_FIELDS) == 9
+    assert len(_EXCLUDE_FIELDS) == 10
     assert set(FILTER_PAIRS) == {
         *((f.removeprefix("exclude_"), f) for f in _EXCLUDE_FIELDS),
         ("assignee", "unassigned"),
+        ("tag", "untagged"),
     }
 
 
@@ -632,6 +681,11 @@ def test_a_false_flag_and_an_empty_list_are_set() -> None:
     # real filter (rows that have an owner), so it still conflicts with a named assignee
     assert conflicting_filter_pair({"assignee": ["ana"], "unassigned": False}) is not None
     assert conflicting_filter_pair({"cve_id": [], "exclude_cve_id": ["CVE-1"]}) is not None
+
+
+def test_untagged_false_is_set_and_conflicts_with_a_tag() -> None:
+    # `untagged=false` (rows with a tag) still names a tag rule, so it refuses a tag list too
+    assert conflicting_filter_pair({"tag": ["1.4.2"], "untagged": False}) is not None
 
 
 def test_no_filter_is_no_conflict() -> None:

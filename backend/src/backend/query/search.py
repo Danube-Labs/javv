@@ -45,11 +45,11 @@ FilterValue64 = Annotated[str, StringConstraints(max_length=64)]
 FilterValue128 = Annotated[str, StringConstraints(max_length=128)]
 FilterValue256 = Annotated[str, StringConstraints(max_length=256)]
 FilterValue512 = Annotated[str, StringConstraints(max_length=512)]
-# the six filters that take a list, each with its exclude_ pair
+# the seven filters that take a list, each with its exclude_ pair
 LIST_FILTER_FIELDS = tuple(
     f"{prefix}{name}"
     for prefix in ("", "exclude_")
-    for name in ("assignee", "cve_id", "image_repo", "namespace", "ptype", "package_name")
+    for name in ("assignee", "cve_id", "image_repo", "namespace", "ptype", "package_name", "tag")
 )
 
 
@@ -90,6 +90,9 @@ class SearchFilters:
     # the package a finding sits in (issue 492) — an EXACT keyword term, not the fuzzy reading
     # `q` offers. `ptype` is the package's TYPE and answers a different question.
     package_name: list[str] | None = None
+    # the tag that the ingest split from the image name (issue 1294): `app:1.4.2` is the image
+    # `app` with the tag `1.4.2`, so a filter on the image alone selects every version
+    tag: list[str] | None = None
     q: str | None = None  # contains-search across cve/image/namespace/assignee/package (slice 4)
     present: bool = True  # the "now" grid; tombstones are opt-in
     # "new in range": first_seen_at ≥ the trend window's day-floored start — the SAME bounds
@@ -103,6 +106,9 @@ class SearchFilters:
     # below), so no combination of excludes can ask "nobody owns this". True = the untriaged
     # backlog; False = has an owner.
     unassigned: bool | None = None
+    # "No tag" (issue 1294): an image name with no tag (`app`, `app@sha256:…`), on the pattern
+    # of unassigned. True = no tag; False = has a tag. Not a stand-in for exclude_tag either.
+    untagged: bool | None = None
     # negation (issue 349): each excludable facet mirrors its include twin into `must_not`.
     # A field is include OR exclude, never both (ValueError). Semantics are PURE must_not —
     # a row missing the field survives the exclusion ("is not bob" keeps unassigned rows).
@@ -115,11 +121,13 @@ class SearchFilters:
     exclude_ptype: list[str] | None = None
     exclude_cve_id: list[str] | None = None
     exclude_package_name: list[str] | None = None
+    exclude_tag: list[str] | None = None
 
 
-# the filters that cannot be sent together: a filter with its exclude_ side, and a named owner
-# with "unassigned". The findings route, saved views and export settings refuse them with 422
-# from this one list, so a stored view or a queued export cannot hold what the screen refuses.
+# the filters that cannot be sent together: a filter with its exclude_ side, a named owner
+# with "unassigned", and a named tag with "untagged". The findings route, saved views and
+# export settings refuse them with 422 from this one list, so a stored view or a queued export
+# cannot hold what the screen refuses.
 FILTER_PAIRS: tuple[tuple[str, str], ...] = (
     *(
         (name.removeprefix("exclude_"), name)
@@ -127,6 +135,7 @@ FILTER_PAIRS: tuple[tuple[str, str], ...] = (
         if name.startswith("exclude_")
     ),
     ("assignee", "unassigned"),
+    ("tag", "untagged"),
 )
 
 
@@ -155,6 +164,23 @@ def has_owner_clause() -> dict[str, Any]:
 def unassigned_clause() -> dict[str, Any]:
     """The complement — the untriaged backlog (issue 349 §1)."""
     return {"bool": {"must_not": [has_owner_clause()]}}
+
+
+def has_tag_clause() -> dict[str, Any]:
+    """Rows whose image has a tag. The ingest writes `""` for a name with no tag, and
+    OpenSearch counts an empty string as existing, so `exists` alone would call those rows
+    tagged. Shared with the facet, as has_owner_clause is."""
+    return {
+        "bool": {
+            "filter": [{"exists": {"field": "tag"}}],
+            "must_not": [{"term": {"tag": ""}}],
+        }
+    }
+
+
+def untagged_clause() -> dict[str, Any]:
+    """The complement: the rows of an image with no tag (issue 1294)."""
+    return {"bool": {"must_not": [has_tag_clause()]}}
 
 
 _SLA_SEVERITIES = ("critical", "high", "medium", "low")  # the FR-10 buckets that carry an SLA
@@ -227,6 +253,7 @@ def build_search_body(
         ("namespaces", filters.namespace),  # keyword[]: matches when ANY namespace is listed
         ("ptype", filters.ptype),
         ("package_name", filters.package_name),
+        ("tag", filters.tag),
     ):
         if value:
             fl.append({"terms": {field: value}})
@@ -252,6 +279,7 @@ def build_search_body(
         ("ptype", "ptype", filters.ptype, filters.exclude_ptype),
         ("cve_id", "cve_id", filters.cve_id, filters.exclude_cve_id),
         ("package_name", "package_name", filters.package_name, filters.exclude_package_name),
+        ("tag", "tag", filters.tag, filters.exclude_tag),
     ):
         if exclude:
             if include:
@@ -277,6 +305,13 @@ def build_search_body(
             mn.append(has_owner_clause())
         else:
             fl.append(has_owner_clause())
+    if filters.untagged is not None:
+        if filters.tag:
+            raise ValueError("tag and untagged are mutually exclusive")
+        if filters.untagged:
+            mn.append(has_tag_clause())
+        else:
+            fl.append(has_tag_clause())
     if mn:
         bool_q["must_not"] = mn
     if filters.q is not None:

@@ -49,8 +49,8 @@ READ_TOOLS: tuple[Tool, ...] = (
             "Each finding is one vulnerability in one package version for one scanner: the "
             "scanners stay apart. Pass next_cursor back as cursor for the next page. A first page "
             "starts a new search and closes the cursor of your last search with this tool: read "
-            "all the pages that you need first. as_of reads a past time. With as_of, image_repo, "
-            "tag, app, epss, kev and disagree are null: the history does not record them, and a "
+            "all the pages that you need first. as_of reads a past time. With as_of, app, epss, "
+            "kev and disagree are null: the history does not record them, and a "
             "filter or a sort on them is refused. locations_total is the number of files where "
             "the scanner found the package."
         ),
@@ -73,7 +73,7 @@ READ_TOOLS: tuple[Tool, ...] = (
         name="group_findings",
         description=(
             "The findings of one cluster in groups of one field, with a count for each. "
-            f"by: {', '.join(GROUP_FIELDS)}. With as_of, not image_repo or app. To count by "
+            f"by: {', '.join(GROUP_FIELDS)}. With as_of, not app. To count by "
             "severity, state or scanner, use count_findings."
         ),
         routes={"": findings.group_findings},

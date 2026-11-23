@@ -157,7 +157,7 @@ describe('a schedule at a past time', () => {
 
   it('names each filter the scan history does not record', () => {
     expect(block({ q: 'openssl', kev: true, image_repo: ['nginx'] }, PAST)).toBe(
-      'At a past time, an export in the background cannot use these filters: KEV, Image, Search. Clear them.',
+      'At a past time, an export in the background cannot use these filters: KEV. Clear them.',
     )
     expect(block({ new_within_days: 30, disagree: true }, PAST)).toBe(
       'At a past time, an export in the background cannot use these filters: Scanners disagree, New in range. Clear them.',
@@ -166,6 +166,8 @@ describe('a schedule at a past time', () => {
 
   it('takes the filters the history records, and the same filters now', () => {
     expect(block({ severity: ['high'], package_name: ['openssl'], unassigned: true }, PAST)).toBeNull()
+    // issue 1294: the scan records hold the image names, so the history answers these too
+    expect(block({ q: 'openssl', image_repo: ['nginx'], exclude_image_repo: ['redis'] }, PAST)).toBeNull()
     expect(block({ q: 'openssl', kev: true })).toBeNull()
   })
 

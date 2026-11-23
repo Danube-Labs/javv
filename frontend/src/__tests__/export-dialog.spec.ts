@@ -82,10 +82,11 @@ describe('ExportDialog blocks what the backend refuses', () => {
     expect(button('Download').disabled).toBe(true)
   })
 
-  it('at a past time, Search blocks the schedule', async () => {
+  it('at a past time, Search no longer blocks the schedule', async () => {
+    // issue 1294: the scan records keep the image names, so the history answers Search
     await openWith({ q: ['openssl'] }, {}, true)
-    expect(blockText()).toBe('At a past time, an export in the background cannot use these filters: Search. Clear them.')
-    expect(button('Schedule').disabled).toBe(true)
+    expect(blockText()).toBeUndefined()
+    expect(button('Schedule').disabled).toBe(false)
   })
 })
 

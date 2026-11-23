@@ -26,6 +26,7 @@ from backend.query.search import (
     build_search_body,
     overdue_clause,
     unassigned_clause,
+    untagged_clause,
 )
 
 # bounded-vocabulary fields — capped terms cannot truncate these (NFR-1: keyword/bool only) —
@@ -44,6 +45,7 @@ FACET_FIELDS = (
     "assignee",
     "overdue",  # issue 363: a filter agg over the overdue clause, not a terms agg
     "unassigned",  # issue 349 §1: likewise an expression (absence), not a term
+    "untagged",  # issue 1294: the same shape, over the tag of the image
 )
 _FACET_TERMS_SIZE = 32  # ≥ the largest bounded vocabulary; the top-N cap for the rail dims
 
@@ -86,12 +88,15 @@ def counting_filters(filters: SearchFilters, facet: str) -> SearchFilters:
     """The filters one facet counts under. A list facet leaves out its own field (issue 949).
     The Unassigned count leaves out the Assignee "is" values (issue 979): a click on Unassigned
     clears them (issue 975), so the count is what the click shows. Assignee "is not" stays,
-    because the click keeps it."""
+    because the click keeps it. The "No tag" count leaves out the Tag "is" values by the same
+    rule (issue 1294)."""
     own = OWN_FILTER_FREE_FACETS.get(facet)
     if own is not None and (getattr(filters, own) or getattr(filters, f"exclude_{own}")):
         return without_own_filter(filters, facet)
     if facet == "unassigned" and filters.assignee:
         return replace(filters, assignee=None)
+    if facet == "untagged" and filters.tag:
+        return replace(filters, tag=None)
     return filters
 
 
@@ -161,7 +166,7 @@ def build_facets_body(
             "aggs": dict(_BY_SCANNER),
         }
         for f in chosen
-        if f not in ("overdue", "unassigned")
+        if f not in ("overdue", "unassigned", "untagged")
     }
     if "overdue" in chosen:
         # the rail chip's count (issue 363): overdue is an EXPRESSION over the materialized
@@ -174,6 +179,8 @@ def build_facets_body(
         # the rail flag's count: absence is an expression, so the facet reuses the grid's own
         # clause — count ≡ filtered rows by construction, same contract as overdue
         body["aggs"]["unassigned"] = {"filter": unassigned_clause(), "aggs": dict(_BY_SCANNER)}
+    if "untagged" in chosen:
+        body["aggs"]["untagged"] = {"filter": untagged_clause(), "aggs": dict(_BY_SCANNER)}
     freed = [] if all_filters else [f for f in chosen if counting_filters(filters, f) != filters]
     if not freed:
         return body

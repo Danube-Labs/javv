@@ -123,11 +123,13 @@ def _filters(
     namespace: _Values256 = None,
     ptype: _Values64 = None,
     package_name: _Values512 = None,
+    tag: _Values128 = None,
     q: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
     present: bool = True,
     new_within_days: Annotated[int | None, Query(ge=1, le=365)] = None,
     overdue: bool | None = None,
     unassigned: bool | None = None,
+    untagged: bool | None = None,
     exclude_severity: Annotated[list[str] | None, Query()] = None,
     exclude_state: Annotated[list[str] | None, Query()] = None,
     exclude_scanner: Annotated[str | None, Query(max_length=32)] = None,
@@ -137,6 +139,7 @@ def _filters(
     exclude_ptype: _Values64 = None,
     exclude_cve_id: _Values128 = None,
     exclude_package_name: _Values512 = None,
+    exclude_tag: _Values128 = None,
 ) -> SearchFilters:
     filters = SearchFilters(
         severity=severity,
@@ -152,11 +155,13 @@ def _filters(
         namespace=namespace,
         ptype=ptype,
         package_name=package_name,
+        tag=tag,
         q=q,
         present=present,
         new_within_days=new_within_days,
         overdue=overdue,
         unassigned=unassigned,
+        untagged=untagged,
         exclude_severity=exclude_severity,
         exclude_state=exclude_state,
         exclude_scanner=exclude_scanner,
@@ -166,6 +171,7 @@ def _filters(
         exclude_ptype=exclude_ptype,
         exclude_cve_id=exclude_cve_id,
         exclude_package_name=exclude_package_name,
+        exclude_tag=exclude_tag,
     )
     # a refused pair is a 422 here, so the builder's ValueError (kept as defense for direct
     # constructors like report_drain) never costs a 500

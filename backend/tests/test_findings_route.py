@@ -578,6 +578,8 @@ _PAIR_PARAM = {
     "cve_id": "CVE-2024-1000",
     "package_name": "zlib",
     "unassigned": "true",
+    "tag": "1.4.2",
+    "untagged": "true",
 }
 
 
@@ -788,6 +790,74 @@ async def test_the_unassigned_count_is_the_rows_its_click_shows_against_a_real_i
     kept = await facets(exclude_assignee="bob", severity="critical")
     assert kept["unassigned"] == {"true": await total(unassigned="true", severity="critical")}
     assert kept["severity"] == {"critical": 6}  # 2 lead + 3 none + 1 empty, bob left out
+
+
+async def test_the_tag_filters_against_a_real_index(env) -> None:
+    """Issue 1294. The ingest splits `app:1.4.2` into the image `app` and the tag `1.4.2`, and
+    writes `""` for a name with no tag. Tag is a list filter with an exclude side; "No tag" is
+    the absence of a tag, so a row with no tag field reads as untagged too. The "No tag" count
+    is what its click shows: it leaves out Tag "is", as Unassigned leaves out Assignee "is"."""
+    login, client = env
+    cid = f"c-t1294-{uuid.uuid4().hex[:8]}"
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(2, cve="CVE-2024-0021", image_repo="app", tag="1.4.2", severity="critical"),
+            *_rows(1, cve="CVE-2024-0022", image_repo="app", tag="1.4.1", severity="critical"),
+            *_rows(3, cve="CVE-2024-0023", image_repo="app", tag="", severity="critical"),
+            *_rows(1, cve="CVE-2024-0024", image_repo="tool", severity="critical"),  # no tag field
+            *_rows(4, cve="CVE-2024-0025", image_repo="db", tag="16", severity="low"),
+        ],
+    )
+    http = await login()
+
+    async def cves(**params: Any) -> set[str]:
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, "size": 50, **params})
+        assert r.status_code == 200, r.text
+        return {d["cve_id"] for d in r.json()["data"]}
+
+    async def total(**params: Any) -> int:
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, **params})
+        assert r.status_code == 200, r.text
+        return r.json()["total"]["value"]
+
+    assert await cves(tag="1.4.2") == {"CVE-2024-0021"}
+    assert await cves(tag=["1.4.2", "16"]) == {"CVE-2024-0021", "CVE-2024-0025"}
+    # pure must_not: "is not 1.4.2" keeps the rows with an empty tag and with no tag
+    assert await cves(exclude_tag="1.4.2") == {
+        "CVE-2024-0022",
+        "CVE-2024-0023",
+        "CVE-2024-0024",
+        "CVE-2024-0025",
+    }
+    assert await cves(untagged="true") == {"CVE-2024-0023", "CVE-2024-0024"}
+    assert await cves(untagged="false") == {"CVE-2024-0021", "CVE-2024-0022", "CVE-2024-0025"}
+    # the image filter alone selects every version of the image, and the tag narrows it
+    assert await cves(image_repo="app") == {"CVE-2024-0021", "CVE-2024-0022", "CVE-2024-0023"}
+    assert await cves(image_repo="app", tag="1.4.1") == {"CVE-2024-0022"}
+
+    r = await http.get(
+        "/api/v1/findings/facets",
+        params={"cluster_id": cid, "fields": ["untagged", "severity"], "tag": "1.4.2"},
+    )
+    assert r.status_code == 200, r.text
+    facets = {k: {b["key"]: b["count"] for b in v} for k, v in r.json()["facets"].items()}
+    assert facets["untagged"] == {"true": await total(untagged="true")} == {"true": 4}
+    assert facets["severity"] == {"critical": 2}  # the other facets keep Tag "is"
+
+    refused = (
+        {"tag": [f"t{i}" for i in range(MAX_FILTER_VALUES + 1)]},  # one value too many
+        {"tag": "x" * 129},  # an OCI tag has at most 128 characters
+        {"exclude_tag": "x" * 129},
+        {"tag": "1.4.2", "untagged": "false"},  # set means not None, as for unassigned
+    )
+    for params in refused:
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, **params})
+        assert r.status_code == 422, params
+    assert (
+        await http.get("/api/v1/findings", params={"cluster_id": cid, "tag": "x" * 128})
+    ).is_success
 
 
 async def test_groups_paginate_via_after_key_to_exhaustion(env) -> None:

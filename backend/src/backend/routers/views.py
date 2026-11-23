@@ -81,10 +81,12 @@ class ViewPreset(BaseModel):
     namespace: list[FilterValue256] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     ptype: list[_PtypeValue] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     package_name: list[FilterValue512] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
+    tag: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
     q: str | None = Field(default=None, min_length=2, max_length=128)
     present: bool = True
     new_within_days: int | None = Field(default=None, ge=1, le=365)
     unassigned: bool | None = None
+    untagged: bool | None = None
     overdue: bool | None = None
     exclude_severity: list[str] | None = Field(default=None, max_length=16)
     exclude_state: list[str] | None = Field(default=None, max_length=16)
@@ -103,6 +105,7 @@ class ViewPreset(BaseModel):
     exclude_package_name: list[FilterValue512] | None = Field(
         default=None, max_length=MAX_FILTER_VALUES
     )
+    exclude_tag: list[FilterValue128] | None = Field(default=None, max_length=MAX_FILTER_VALUES)
 
     @field_validator(*LIST_FILTER_FIELDS, mode="before")
     @classmethod

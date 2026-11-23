@@ -61,6 +61,7 @@ _ONE_VALUE = {
     "ptype": ["os"],
     "cve_id": ["CVE-2021-3711"],
     "package_name": ["openssl"],
+    "tag": ["1.4.2"],
 }
 
 
@@ -86,6 +87,23 @@ def test_assignee_and_unassigned_are_refused_together(unassigned: bool) -> None:
     ExportParams(unassigned=unassigned, exclude_assignee=["ana"])  # Findings takes this pair
     with pytest.raises(ValidationError, match="assignee and unassigned are mutually exclusive"):
         ExportParams(assignee=["ana"], unassigned=unassigned)
+
+
+@pytest.mark.parametrize("untagged", [True, False])
+def test_tag_and_untagged_are_refused_together(untagged: bool) -> None:
+    # issue 1294, on the pattern of assignee and unassigned
+    ExportParams(untagged=untagged)
+    ExportParams(untagged=untagged, exclude_tag=["1.4.2"])  # Findings takes this pair
+    with pytest.raises(ValidationError, match="tag and untagged are mutually exclusive"):
+        ExportParams(tag=["1.4.2"], untagged=untagged)
+
+
+def test_a_tag_value_keeps_the_oci_length_cap() -> None:
+    ExportParams(tag=["x" * 128])
+    for name in ("tag", "exclude_tag"):
+        with pytest.raises(ValidationError) as err:
+            ExportParams.model_validate({name: ["x" * 129]})
+        assert err.value.errors()[0]["type"] == "string_too_long"
 
 
 def test_enqueue_rejects_unknown_kind_and_extra_fields() -> None:

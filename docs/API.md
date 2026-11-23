@@ -432,7 +432,7 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/v1/findings` | session | One page of findings, with a cursor ([Read a list page by page](#read-a-list-page-by-page)). `size` is 1 to 500, default 50. `sort` is `severity_rank`, `first_seen_at`, `last_scan_at`, `cvss` or `epss`. The last page closes the search of the cursor. With `keep_open=true`, a page read with a cursor keeps it open after the last page, so you can read an earlier page again. Then close it with `POST /api/v1/cursors/close`. Each row has `locations_total`, the number of files where the scanner found the package. With `locations=true`, each row also has `locations`, the first 64 of these file paths in sorted order. The cursor does not keep `locations`, so send it with each page. A scanner that sends schema 3 or 4 does not report paths, so both fields are `null`. A finding that no scan reported after the upgrade to mapping version 23 has neither field. At a past `as_of`, a row from a scan before that upgrade has `locations_total: null`. With `locations=true`, it also has `locations: null`. |
-| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue` and `unassigned`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The `unassigned` facet counts without the `assignee` values, and it keeps `exclude_assignee`. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. With `all_filters=true`, each facet counts with all filters, also the filter of its own field. A dashboard panel uses this, so that "Namespace is not kube-system" takes `kube-system` out of its list. `contains` is a value search, with 2 to 128 characters. It needs exactly one of `namespaces`, `ptype` and `assignee` in `fields`. It gives the values of that field that contain the text, in any case. It searches all values, not only the 32 largest. The counts use the same filters as the list. It gives at most 32 values, and `more` is `true` when more values contain the text. A `contains` with another field, more than one field or no field gives 422. At a past time, only `ptype` takes `contains`, because the scan history has no `namespaces` or `assignee` facet. |
+| GET | `/api/v1/findings/facets` | session | The count of findings for each value of a field, for each scanner. `fields` is one or more of `severity`, `state`, `scanner`, `fixable`, `kev`, `disagree`, `present`, `ptype`, `namespaces`, `assignee`, `overdue`, `unassigned` and `untagged`. For `namespaces` and `assignee`, it gives the 32 largest values. The `namespaces`, `ptype` and `assignee` facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The `unassigned` facet counts without the `assignee` values, and it keeps `exclude_assignee`. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. The `untagged` facet counts without the `tag` values in the same way, and it keeps `exclude_tag`. All other facets count with all filters. With `all_filters=true`, each facet counts with all filters, also the filter of its own field. A dashboard panel uses this, so that "Namespace is not kube-system" takes `kube-system` out of its list. `contains` is a value search, with 2 to 128 characters. It needs exactly one of `namespaces`, `ptype` and `assignee` in `fields`. It gives the values of that field that contain the text, in any case. It searches all values, not only the 32 largest. The counts use the same filters as the list. It gives at most 32 values, and `more` is `true` when more values contain the text. A `contains` with another field, more than one field or no field gives 422. At a past time, only `ptype` takes `contains`, because the scan history has no `namespaces` or `assignee` facet. |
 | GET | `/api/v1/findings/groups` | session | Findings in groups, page by page with a cursor. `by` is `image_repo`, `image_digest`, `namespaces`, `cve_id`, `assignee`, `app` or `ptype`. |
 | GET | `/api/v1/findings/top-components` | session | The packages with the most findings, and the count of different CVEs for each scanner. A past `as_of` gets 422. |
 | GET | `/api/v1/findings/top-values` | session | The CVEs with the most findings, with the filters of `GET /api/v1/findings`. `by` must be `cve_id`. The dashboard panel Top CVEs uses it. It gives at most 100 rows, from the most findings to the fewest, and the CVE ID decides a tie. Each row has the CVE ID in `value` and the findings in `count`. `count_by_scanner` has the findings of each scanner, and `severity_by_scanner` has the findings of each severity for each scanner. `count` adds the findings of the two scanners. Use `scanner` to rank by one scanner. A past `as_of` gets 422. `JAVV_EXACT_RANKING` sets how OpenSearch ranks the rows, as for `GET /api/v1/findings/top-images`. |
@@ -462,40 +462,47 @@ the same filters:
 | `severity` | `critical`, `high`, `medium`, `low`, `negligible` or `unknown`. The facet uses the same words. A row also shows the word of its scanner in `severity`. |
 | `state` | `open`, `acknowledged`, `not_affected`, `risk_accepted`, `resolved` or `stale` |
 | `scanner`, `image_digest` | The rows with that value |
-| `namespace`, `ptype`, `assignee`, `image_repo`, `cve_id`, `package_name` | The rows with one of the values. Give the parameter one time for each value, for example `namespace=a&namespace=b`. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces. |
+| `namespace`, `ptype`, `assignee`, `image_repo`, `tag`, `cve_id`, `package_name` | The rows with one of the values. Give the parameter one time for each value, for example `namespace=a&namespace=b`. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces. |
 | `kev`, `fixable`, `disagree` | `true` or `false` |
 | `present` | `true` (default): the findings in the last scan. `false`: the findings that are gone. |
 | `new_within_days` | The findings first seen in the last 1 to 365 days |
 | `overdue` | `true` or `false`, from the SLA policy at the time of the request. A change of the policy changes the result at once. |
 | `unassigned` | `true`: the rows with no owner. An empty `assignee` counts as no owner. |
+| `untagged` | `true`: the rows of an image with no tag. An empty `tag` counts as no tag. `false`: the rows of an image with a tag. |
 | `q` | 2 to 128 characters. It finds the rows where `cve_id`, `image_repo`, `namespaces`, `assignee` or `package_name` contains the text, in any case. |
 
+- JAVV splits the name of an image at ingest. `app:1.4.2` is the `image_repo` `app` with the
+  `tag` `1.4.2`, so `image_repo=app` selects each version of the image. A `tag` value has at most
+  128 characters.
 - Each filter except `kev`, `fixable`, `disagree`, `present`, `new_within_days`, `overdue`,
-  `unassigned`, `image_digest` and `q` has an `exclude_` form, for example `exclude_severity`.
+  `unassigned`, `untagged`, `image_digest` and `q` has an `exclude_` form, for example `exclude_severity`.
   An `exclude_` filter leaves out the rows with that value. A row with no value for the field stays.
   Thus `exclude_assignee=bob` keeps the rows with no owner. An `exclude_` filter with more than one
   value leaves out the rows with any of the values.
 - `package_name` is not a facet. `fields=package_name` gets 422.
 - In a saved view (`preset`) and in a report (`params`), the filters that take more than one value
-  (`namespace`, `ptype`, `assignee`, `image_repo`, `cve_id`, `package_name` and their `exclude_`
-  forms) also take one string. JAVV keeps it as a list with that one value.
+  (`namespace`, `ptype`, `assignee`, `image_repo`, `tag`, `cve_id`, `package_name` and their
+  `exclude_` forms) also take one string. JAVV keeps it as a list with that one value.
 - One field takes the filter or its `exclude_` form, not both. `assignee` and `unassigned` also
-  do not go together. Each of these pairs gets 422, also in a saved view and in a report.
+  do not go together, and `tag` and `untagged` do not go together. Each of these pairs gets 422, also in a saved view and in a report.
 
 #### A past time: `as_of`
 
 Each read takes `as_of`. With no value, `now` or a time in the future, the read shows the current
 state. With a time in the past, JAVV builds the state at that time from the history:
 
-- `kev`, `epss`, `disagree`, `image_repo`, `tag` and `app` are not in the history. They are
-  `null` in the rows.
+- `kev`, `epss`, `disagree` and `app` are not in the history. They are `null` in the rows.
+- `image_repo` and `tag` come from the scan record of the last scan that showed the finding. A
+  finding that is gone keeps the name of that scan, as in a read now. A scan before release
+  0.9.14 keeps the name before the split of a tag and a digest (`app:1.4.2@sha256:…` was the
+  image `app:1.4.2` with no tag).
 - The SLA deadline (`overdue` and `due_at`) uses the KEV value that each scan recorded, as a
   read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
   A finding from such a scan gets the deadline of its severity.
-- A filter, sort or group on one of these fields gets 422. `image_repo` and `exclude_image_repo`
-  get 422 too.
+- A filter, sort or group on one of these fields gets 422. `new_within_days` gets 422 too.
 - A facet on one of these fields gives no values.
-- `ptype`, `package_name` and the `exclude_` filters on recorded fields apply as usual.
+- `ptype`, `package_name`, `image_repo`, `tag`, `untagged`, `q` and the `exclude_` filters on
+  recorded fields apply as usual. A group by `image_repo` works.
 - The CSV and VEX exports of findings get 501. A report (`POST /api/v1/reports`) can use a past
   `as_of_t`.
 - The audit log and the failed pushes end their window at that time.
