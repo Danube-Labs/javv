@@ -1823,7 +1823,7 @@ The column <strong>Type</strong> uses JSON types. "or null" means that <code>nul
 <td>required</td>
 <td>string</td>
 <td>512 characters at most</td>
-<td>The name of the image that JAVV shows. Example: <code>python:3.9.16-slim</code>.</td>
+<td>The name of the image that JAVV shows. Example: <code>python:3.9.16-slim</code>. JAVV stores the image and the tag apart. First, JAVV removes <code>@</code> and the text after it. Then the tag is the part after the last <code>:</code>, if that part has no <code>/</code>. So <code>app:1.4.2@sha256:…</code> is the image <code>app</code> with the tag <code>1.4.2</code>. <code>app@sha256:…</code> and <code>registry:5000/app</code> have no tag.</td>
 </tr>
 <tr>
 <td><code>namespaces</code></td>

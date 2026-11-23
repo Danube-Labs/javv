@@ -1232,6 +1232,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#0914-image-names-with-a-tag-and-a-digest" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.9.14: image names with a tag and a digest
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#0912-a-stricter-check-of-tls-certificates" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1680,6 +1691,17 @@
   
     <nav class="md-nav" aria-label="Version notes">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#0914-image-names-with-a-tag-and-a-digest" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.9.14: image names with a tag and a digest
+      </span>
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#0912-a-stricter-check-of-tls-certificates" class="md-nav__link">
@@ -2174,6 +2196,7 @@ already running. But the second run is work for no result.</p>
 <li>The scanner images must be published again, or changed together with the release.</li>
 <li>The OpenSearch chart (<code>javv-opensearch</code>) changed. Then do the <code>store</code> upgrade.</li>
 <li>The check of TLS certificates in the backend or in the scanners changed.</li>
+<li>JAVV stores a value in a new form, so a saved view or a dashboard panel can stop matching it.</li>
 </ul>
 <p>The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.</p>
@@ -2187,6 +2210,12 @@ applied it automatically on the first start.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>0.9.14</td>
+<td>23</td>
+<td>3, 4 and 5</td>
+<td>The note <strong>Image names with a tag and a digest</strong> below</td>
+</tr>
 <tr>
 <td>0.9.12</td>
 <td>23</td>
@@ -2267,6 +2296,42 @@ chart, but not OpenSearch:</p>
 <li>0.8.7 changed the test pod of the chart (<code>helm test store</code>). The pod can now run in a namespace
   with the <code>restricted</code> level of the pod security standards.</li>
 </ul>
+<h3 id="0914-image-names-with-a-tag-and-a-digest">0.9.14: image names with a tag and a digest<a class="headerlink" href="#0914-image-names-with-a-tag-and-a-digest" title="Permanent link">&para;</a></h3>
+<p>An image name can have a tag and a digest, for example
+<code>registry.example.com/app:1.4.2@sha256:…</code>. Before 0.9.14, JAVV stored such a name as the image
+<code>registry.example.com/app:1.4.2</code> with no tag. Thus each version of the image showed as an image of
+its own, and the tag column showed <code>-</code>.</p>
+<p>JAVV gets such a name in these cases:</p>
+<ul>
+<li>A Nomad job gives its image with a tag and a digest, for example when Renovate pins the
+  digest. The Nomad scan script sends the image of the job as written.</li>
+<li>The container runtime gives the image of a pod as a bare <code>sha256:…</code> id. Then the scanner takes
+  the name from the image ID of the pod. EKS can do this.</li>
+<li>The Docker scan script reads the name of a container from its settings when the tag moved to
+  another image after the start. Then the name has a digest if the compose file pins one.</li>
+<li>A script of your own sends such a name in <code>image_ref</code>.</li>
+</ul>
+<p>From the first scan after the upgrade, JAVV stores the image <code>registry.example.com/app</code> and the
+tag <code>1.4.2</code>. A finding gets the new names only when a scan reports it again. These findings keep
+the old names:</p>
+<ul>
+<li>The findings of an image that no longer runs. JAVV shows them as Stale.</li>
+<li>The findings that the next scan of the image does not report.</li>
+</ul>
+<p>The scans from before the upgrade also keep the old names in the history. Thus the timeline of an
+image on the image page starts again at the first scan after the upgrade.</p>
+<p>The new name selects each version of the image. To select one version, use the Digest filter.</p>
+<p>After the first scan of each scanner:</p>
+<ol>
+<li>Open each saved view and each dashboard panel that filters on such an image name.</li>
+<li>Add the new name (<code>registry.example.com/app</code>) to the Image filter. Keep the old name
+   (<code>registry.example.com/app:1.4.2</code>) if the view must show its Stale findings.</li>
+<li>Change search text that names a version, for example <code>app:1.4.2</code>. The search does not find
+   the tag.</li>
+</ol>
+<p>A VEX export names the image of each product by its name. After the first scan, the export gives
+the new name.</p>
+<p>If you go back to an earlier release, its next scan stores the old names again.</p>
 <h3 id="0912-a-stricter-check-of-tls-certificates">0.9.12: a stricter check of TLS certificates<a class="headerlink" href="#0912-a-stricter-check-of-tls-certificates" title="Permanent link">&para;</a></h3>
 <p>The backend and the scanner images run on Python 3.14. The earlier releases used Python 3.12. Python
 3.14 applies a stricter check to a TLS certificate. Thus a certificate chain that the earlier
