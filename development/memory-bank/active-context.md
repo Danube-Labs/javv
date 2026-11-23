@@ -75,6 +75,11 @@ Small items that no issue tracks.
   gave `failed to perform "Tag" on destination: sha256:…: not found`, after `javv` and
   `javv-opensearch` were in the registry. A re-run of the failed jobs pushed and signed the three
   charts and published the docs. The cause is not known.
+- At a past time, the rows take a scan by its scan time (`@timestamp`, the start of the scan
+  cycle), and the Scan ingest strip counts it by the time of the server (`ingested_at`). At a time
+  inside a scan cycle, the strip can show fewer scans than the rows. On the dev store, the gap was
+  22 s at the median and 23 min at most, over 2,608 scan records. No change, by the word of the
+  operator (after issue 1294, comment 7114441137).
 
 ## Open, in the 1.0.0 milestone
 
