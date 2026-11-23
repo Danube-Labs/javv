@@ -34,9 +34,10 @@ def _h(*parts: str) -> str:
 
 
 def _repo_tag(image_ref: str) -> tuple[str, str]:
-    """nginx:1.21.6 → (nginx, 1.21.6); digest-only/untagged refs get tag ''."""
-    if "@" in image_ref:
-        return image_ref.split("@", 1)[0], ""
+    """nginx:1.21.6 → (nginx, 1.21.6); digest-only/untagged refs get tag ''.
+    A digest names no version, so `app:1.4.2@sha256:…` is (app, 1.4.2): the scanner sends that
+    form from `imageID` when `status.image` is a bare id (EKS, issue 1294)."""
+    image_ref = image_ref.split("@", 1)[0]
     if ":" in image_ref:
         repo, tag = image_ref.rsplit(":", 1)
         if "/" not in tag:
