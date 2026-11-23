@@ -88,6 +88,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-23 | At a past time, each finding takes its image name and tag from the scan record of its own last appearance. A gone finding then keeps the name that the live list shows. | 1294 |
 | 2026-11-23 | A dashboard panel that reads findings takes the Tag filter, its exclude side and "No tag", as it takes the other filters of Findings. | 1294 |
 | 2026-11-23 | The past-time names ship with their effects on the screen, accepted on built pictures. At a past time, the Image column shows the names. Search and the Image filter give rows. A background export takes these filters. | 1294 |
+| 2026-11-23 | A background export at a past time writes the image names of that time. The CSV fills `image_repo` and `tag`, and a VEX product names the image (`pkg:oci/app@…`), not `unknown`. Accepted on the real files. | 1294 |
 
 ## UI copy and look
 
