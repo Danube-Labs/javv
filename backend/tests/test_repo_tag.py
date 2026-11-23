@@ -33,6 +33,8 @@ ECR = "123456789012.dkr.ecr.eu-west-1.amazonaws.com/team/app"
         (f"docker.io/library/busybox:1.34@{DIGEST}", ("docker.io/library/busybox", "1.34")),
         # the `imageID` of EKS, which the scanner sends when `status.image` is a bare id
         (f"{ECR}:1.4.2@{DIGEST}", (ECR, "1.4.2")),
+        # a name that is only a digest stays as it was (operator ruling on issue 1294)
+        (DIGEST, ("sha256", DIGEST.removeprefix("sha256:"))),
     ],
 )
 def test_repo_tag(image_ref: str, expected: tuple[str, str]) -> None:
@@ -41,7 +43,9 @@ def test_repo_tag(image_ref: str, expected: tuple[str, str]) -> None:
 
 def test_each_doc_of_a_scan_gets_the_name_and_the_tag() -> None:
     golden = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text())
-    env = IngestEnvelope.model_validate({**golden, "image_ref": f"{ECR}:1.4.2@{DIGEST}"})
+    # an EKS `imageID` names the digest of the scan
+    ref = f"{ECR}:1.4.2@{golden['image_digest']}"
+    env = IngestEnvelope.model_validate({**golden, "image_ref": ref})
     docs = build_docs(env)
     rows = [*docs["findings"], docs["scan_event"], docs["image"]]
     assert {(d["image_repo"], d["tag"]) for d in rows} == {(ECR, "1.4.2")}
