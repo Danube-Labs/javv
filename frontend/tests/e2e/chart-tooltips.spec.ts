@@ -107,6 +107,7 @@ test('the strip of the Audit log shows its tooltip with a dot', async ({ page })
   expectRowsWithDots(tip)
   // a chart with no unit shows the axis label alone: ECharts calls the formatter with a random
   // ticket as its second argument, and that ticket once showed after the label (issue 1292)
+  expect(tip.head).toMatch(/\S/)
   expect(tip.head).not.toContain(' · ')
 })
 

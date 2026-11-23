@@ -387,12 +387,15 @@ describe('style rules: one shared card, menu panel and error text', () => {
   it('the band of joined strips does not clip, so a hover box shows whole (issue 1292)', () => {
     // overflow: hidden on the band cut the top of the hover box of its first strip. A clip in a
     // component style counts too: the band was a scoped rule of Scanner status before.
+    // the property names that can clip: `overflow-wrap` and a `contain` without paint do not, but
+    // the property list holds names only, so `contain` counts whatever its value
     const clips = (props: Set<string>) =>
-      [...props].filter((p) => p.startsWith('overflow') || p === 'clip-path' || p === 'contain')
+      [...props].filter((p) => /^overflow(-[xy])?$/.test(p) || p === 'clip-path' || p === 'contain')
     expect(clips(all.get('.lens-stack') ?? new Set())).toEqual([])
     const scoped = files.flatMap((rel) =>
       [...ruleProperties(parseSfc(readFileSync(join(SRC, rel), 'utf8')).descriptor.styles.map((st) => st.content).join('\n'))]
-        .filter(([selector]) => selector.includes('.lens-stack'))
+        // a rule whose subject is the band, not a strip or a text inside it
+        .filter(([selector]) => selector.endsWith('.lens-stack'))
         .flatMap(([selector, props]) => clips(props).map((p) => `${rel} → ${selector}: ${p}`)),
     )
     expect(scoped).toEqual([])
