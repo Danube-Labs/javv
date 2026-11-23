@@ -3067,7 +3067,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/findings/facets</code></td>
 <td>session</td>
-<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code> and <code>unassigned</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. All other facets count with all filters. With <code>all_filters=true</code>, each facet counts with all filters, also the filter of its own field. A dashboard panel uses this, so that "Namespace is not kube-system" takes <code>kube-system</code> out of its list. <code>contains</code> is a value search, with 2 to 128 characters. It needs exactly one of <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> in <code>fields</code>. It gives the values of that field that contain the text, in any case. It searches all values, not only the 32 largest. The counts use the same filters as the list. It gives at most 32 values, and <code>more</code> is <code>true</code> when more values contain the text. A <code>contains</code> with another field, more than one field or no field gives 422. At a past time, only <code>ptype</code> takes <code>contains</code>, because the scan history has no <code>namespaces</code> or <code>assignee</code> facet.</td>
+<td>The count of findings for each value of a field, for each scanner. <code>fields</code> is one or more of <code>severity</code>, <code>state</code>, <code>scanner</code>, <code>fixable</code>, <code>kev</code>, <code>disagree</code>, <code>present</code>, <code>ptype</code>, <code>namespaces</code>, <code>assignee</code>, <code>overdue</code>, <code>unassigned</code> and <code>untagged</code>. For <code>namespaces</code> and <code>assignee</code>, it gives the 32 largest values. The <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> facets count without the filter of their own field. Thus a value that you pick does not take the other values out of the list. The <code>unassigned</code> facet counts without the <code>assignee</code> values, and it keeps <code>exclude_assignee</code>. On the Findings screen, a click on Unassigned clears those values, so the count is the result of the click. The <code>untagged</code> facet counts without the <code>tag</code> values in the same way, and it keeps <code>exclude_tag</code>. All other facets count with all filters. With <code>all_filters=true</code>, each facet counts with all filters, also the filter of its own field. A dashboard panel uses this, so that "Namespace is not kube-system" takes <code>kube-system</code> out of its list. <code>contains</code> is a value search, with 2 to 128 characters. It needs exactly one of <code>namespaces</code>, <code>ptype</code> and <code>assignee</code> in <code>fields</code>. It gives the values of that field that contain the text, in any case. It searches all values, not only the 32 largest. The counts use the same filters as the list. It gives at most 32 values, and <code>more</code> is <code>true</code> when more values contain the text. A <code>contains</code> with another field, more than one field or no field gives 422. At a past time, only <code>ptype</code> takes <code>contains</code>, because the scan history has no <code>namespaces</code> or <code>assignee</code> facet.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3203,7 +3203,7 @@ the same filters:</p>
 <td>The rows with that value</td>
 </tr>
 <tr>
-<td><code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code></td>
+<td><code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>tag</code>, <code>cve_id</code>, <code>package_name</code></td>
 <td>The rows with one of the values. Give the parameter one time for each value, for example <code>namespace=a&amp;namespace=b</code>. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces.</td>
 </tr>
 <tr>
@@ -3227,37 +3227,47 @@ the same filters:</p>
 <td><code>true</code>: the rows with no owner. An empty <code>assignee</code> counts as no owner.</td>
 </tr>
 <tr>
+<td><code>untagged</code></td>
+<td><code>true</code>: the rows of an image with no tag. An empty <code>tag</code> counts as no tag. <code>false</code>: the rows of an image with a tag.</td>
+</tr>
+<tr>
 <td><code>q</code></td>
 <td>2 to 128 characters. It finds the rows where <code>cve_id</code>, <code>image_repo</code>, <code>namespaces</code>, <code>assignee</code> or <code>package_name</code> contains the text, in any case.</td>
 </tr>
 </tbody>
 </table>
 <ul>
+<li>JAVV splits the name of an image at ingest. <code>app:1.4.2</code> is the <code>image_repo</code> <code>app</code> with the
+  <code>tag</code> <code>1.4.2</code>, so <code>image_repo=app</code> selects each version of the image. A <code>tag</code> value has at most
+  128 characters.</li>
 <li>Each filter except <code>kev</code>, <code>fixable</code>, <code>disagree</code>, <code>present</code>, <code>new_within_days</code>, <code>overdue</code>,
-  <code>unassigned</code>, <code>image_digest</code> and <code>q</code> has an <code>exclude_</code> form, for example <code>exclude_severity</code>.
+  <code>unassigned</code>, <code>untagged</code>, <code>image_digest</code> and <code>q</code> has an <code>exclude_</code> form, for example <code>exclude_severity</code>.
   An <code>exclude_</code> filter leaves out the rows with that value. A row with no value for the field stays.
   Thus <code>exclude_assignee=bob</code> keeps the rows with no owner. An <code>exclude_</code> filter with more than one
   value leaves out the rows with any of the values.</li>
 <li><code>package_name</code> is not a facet. <code>fields=package_name</code> gets 422.</li>
 <li>In a saved view (<code>preset</code>) and in a report (<code>params</code>), the filters that take more than one value
-  (<code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>cve_id</code>, <code>package_name</code> and their <code>exclude_</code>
-  forms) also take one string. JAVV keeps it as a list with that one value.</li>
+  (<code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>tag</code>, <code>cve_id</code>, <code>package_name</code> and their
+  <code>exclude_</code> forms) also take one string. JAVV keeps it as a list with that one value.</li>
 <li>One field takes the filter or its <code>exclude_</code> form, not both. <code>assignee</code> and <code>unassigned</code> also
-  do not go together. Each of these pairs gets 422, also in a saved view and in a report.</li>
+  do not go together, and <code>tag</code> and <code>untagged</code> do not go together. Each of these pairs gets 422, also in a saved view and in a report.</li>
 </ul>
 <h4 id="a-past-time-as_of">A past time: <code>as_of</code><a class="headerlink" href="#a-past-time-as_of" title="Permanent link">&para;</a></h4>
 <p>Each read takes <code>as_of</code>. With no value, <code>now</code> or a time in the future, the read shows the current
 state. With a time in the past, JAVV builds the state at that time from the history:</p>
 <ul>
-<li><code>kev</code>, <code>epss</code>, <code>disagree</code>, <code>image_repo</code>, <code>tag</code> and <code>app</code> are not in the history. They are
-  <code>null</code> in the rows.</li>
+<li><code>kev</code>, <code>epss</code>, <code>disagree</code> and <code>app</code> are not in the history. They are <code>null</code> in the rows.</li>
+<li><code>image_repo</code> and <code>tag</code> come from the scan record of the last scan that showed the finding. A
+  finding that is gone keeps the name of that scan, as in a read now. A scan before release
+  0.9.14 keeps the name before the split of a tag and a digest (<code>app:1.4.2@sha256:…</code> was the
+  image <code>app:1.4.2</code> with no tag).</li>
 <li>The SLA deadline (<code>overdue</code> and <code>due_at</code>) uses the KEV value that each scan recorded, as a
   read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
   A finding from such a scan gets the deadline of its severity.</li>
-<li>A filter, sort or group on one of these fields gets 422. <code>image_repo</code> and <code>exclude_image_repo</code>
-  get 422 too.</li>
+<li>A filter, sort or group on one of these fields gets 422. <code>new_within_days</code> gets 422 too.</li>
 <li>A facet on one of these fields gives no values.</li>
-<li><code>ptype</code>, <code>package_name</code> and the <code>exclude_</code> filters on recorded fields apply as usual.</li>
+<li><code>ptype</code>, <code>package_name</code>, <code>image_repo</code>, <code>tag</code>, <code>untagged</code>, <code>q</code> and the <code>exclude_</code> filters on
+  recorded fields apply as usual. A group by <code>image_repo</code> works.</li>
 <li>The CSV and VEX exports of findings get 501. A report (<code>POST /api/v1/reports</code>) can use a past
   <code>as_of_t</code>.</li>
 <li>The audit log and the failed pushes end their window at that time.</li>
