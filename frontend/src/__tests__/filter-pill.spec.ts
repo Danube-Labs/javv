@@ -52,11 +52,11 @@ describe('FilterPill', () => {
 
   it('the filter bar gives the Image pill its note, and takes it away for a Tag', async () => {
     const bar = (selections: Record<string, string[]>) =>
-      mount(FilterBar, { props: { fields: FINDINGS_FIELDS, selections } })
+      mount(FilterBar, { props: { fields: FINDINGS_FIELDS, selections, facets: {} } })
     expect(bar({ image: ['shop/app'] }).get('.fpill-note').text()).toBe('· all tags')
     expect(bar({ image: ['shop/app'], tag: ['1.4.1'] }).find('.fpill-note').exists()).toBe(false)
     // the Images screen has its own fields, with no note
-    expect(mount(FilterBar, { props: { fields: IMAGES_FIELDS, selections: { repo: ['shop/app'] } } }).find('.fpill-note').exists()).toBe(false)
+    expect(mount(FilterBar, { props: { fields: IMAGES_FIELDS, selections: { repo: ['shop/app'] }, facets: {} } }).find('.fpill-note').exists()).toBe(false)
   })
 
   it('clears from the ✕ and switches the mode from the op words, without opening the field', async () => {
