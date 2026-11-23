@@ -93,11 +93,13 @@ async def test_enqueue_writes_a_pending_doc_and_status_reads_it_back(env) -> Non
         "namespace": None,
         "ptype": None,  # M8d/#241 — mirrors SearchFilters
         "package_name": None,  # issue 492 — the package lens, an exact term
+        "tag": None,  # issue 1294 — the tag split from the image name
         "q": None,  # M9b slice 4 — the contains-search lens
         "present": True,
         "new_within_days": None,  # the new-in-range event lens
         "overdue": None,  # issue 363 — the SLA-breached lens
         "unassigned": None,  # issue 349 §1 — the untriaged-backlog lens
+        "untagged": None,  # issue 1294 — an image name with no tag
         "exclude_severity": None,  # issue 349 — the negation mirror family
         "exclude_state": None,
         "exclude_scanner": None,
@@ -107,6 +109,7 @@ async def test_enqueue_writes_a_pending_doc_and_status_reads_it_back(env) -> Non
         "exclude_ptype": None,
         "exclude_cve_id": None,  # issue 492 — the last two facets to grow an exclude side
         "exclude_package_name": None,
+        "exclude_tag": None,
     }
 
     # the status view returns the public shape, never the params blob or claim internals
