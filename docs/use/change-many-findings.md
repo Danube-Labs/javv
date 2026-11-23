@@ -30,6 +30,7 @@ Bulk triage changes many findings at once. First, filter the findings.
 ## Filters that block bulk triage
 
 Bulk triage follows only the Severity, State, Assignee and Digest filters. Other filters, for
-example the Scanner filter, block it. Thus bulk triage never changes more findings than you see.
+example the Scanner filter, block it. The Image filter, the Tag filter and No tag also block it.
+Thus bulk triage never changes more findings than you see.
 
 Next: [When a scanner stops sending results](when-a-scanner-stops.md).

@@ -205,8 +205,8 @@ const nsLabel = (r: FindingRow): string => {
  * filter that doesn't mean what the cell says.
  *
  * `image` filters on the row's FULL `image_repo` (an exact `term` server-side) even though the
- * cell shortens it for display — and on repo only, since findings carry no tag filter, which
- * the action's label says out loud.
+ * cell shortens it for display — and on repo only, so the pick matches every tag of the image,
+ * which the action's label says out loud. The Tag filter of the filter bar narrows it (issue 1294).
  *
  * `cve` and `package` joined in issue 492, once their params existed — `package` filters
  * `package_name`, which is the package itself and not `ptype` (that is the package's TYPE).

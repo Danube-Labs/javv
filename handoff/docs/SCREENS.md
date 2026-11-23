@@ -297,7 +297,7 @@ Layout preserved: facet rail + toolbar (FilterBar + Save view + ColumnsMenu) + b
 
 **Facet rail** (top→bottom): Severity (critical/high/medium/low/**negligible**/unknown — muted
 treatment for negligible+unknown, never red) · Scanner (trivy/grype) · Attributes (KEV /
-Fix available / Scanners disagree) · State (**6**: open, acknowledged, not_affected,
+Fix available / Scanners disagree / SLA breached / Unassigned / No tag / New in range) · State (**6**: open, acknowledged, not_affected,
 risk_accepted, resolved, stale) · Assignee (incl. Unassigned) · Namespace · **Package type**
 (returns per B-1 ruling — buckets from the M8d `ptype` facet; hidden until M8d lands).
 > **RULED (A-1, 2026-07-07):** `negligible` IS its own muted bucket — Grype emits it; hiding it
@@ -308,7 +308,7 @@ one value. A second pick adds the value, and the filter bar reads "is one of". I
 bar reads "is none of", and the grid leaves out the rows with any of the values. Scanner takes one
 value.
 
-**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, Vulnerability and Package
+**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, Tag, Vulnerability and Package
 also take more than one value. In the filter bar's edit box, Enter adds the typed value to a list
 under the input, and the box stays open for the next value. A click on a value in the list removes
 it. A pick from a table cell adds the value, and the same pick again removes it. A pasted list with
@@ -323,6 +323,15 @@ Assignee. You cannot use Assignee and Unassigned together." Assignee "is not" wi
 the API accepts it. A link that holds both filters keeps both, and the grid shows the 422 text
 (see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
 another filter, or the removal of an Assignee value, keeps both.
+
+**Tag with No tag** (issue 1294): the Tag filter is a typed field after Image, with "is" and "is
+not". "No tag" in Attribute keeps the findings of images with no tag, for example an image that a
+pod runs by its digest. Findings refuses Tag "is" with No tag, and the rules of Assignee with
+Unassigned apply: the last pick wins, a message names what JAVV cleared ("JAVV cleared the filter
+Tag. You cannot use Tag and No tag together."), and a link that holds both shows the 422 text. The
+No tag count leaves out the Tag "is" values, as the Unassigned count does. While the Image filter
+is on and Tag and No tag are off, its pill says "· all tags": the Image filter finds every tag of
+the image. The Tag filter and No tag block bulk triage, as the Image filter does.
 
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in

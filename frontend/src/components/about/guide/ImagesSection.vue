@@ -12,5 +12,10 @@ import GuideProse from './GuideProse.vue'
     <p>
       An image's page lists its build history: every time the digest behind its tag changed, as scanned.
     </p>
+    <p>
+      On Findings, the <strong>Image</strong> filter finds all the tags of an image. To see one tag, add
+      the <strong>Tag</strong> filter. To see the images that have no tag, use <strong>No tag</strong> in
+      Attribute. For example, a pod can run an image by its digest only.
+    </p>
   </GuideProse>
 </template>

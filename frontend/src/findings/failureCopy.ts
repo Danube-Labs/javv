@@ -19,8 +19,10 @@ export function failureKind(
 }
 
 export const FAILURE_COPY: Record<FailureKind, string> = {
+  // the scan history records the search fields, the image and the tag (issue 1294), so the text
+  // names only PAST_TIME_UNRECORDED_KEYS (findings/exportParams.ts)
   past_t:
-    'JAVV cannot apply this filter at a past time. Go back to now, or remove the search and the attribute filters.',
+    'JAVV cannot apply the KEV, Scanners disagree or New in range filter at a past time. Go back to now, or remove these filters.',
   // a 1-character search never gets to the server (the search box stops it), so the text names
   // the causes that do
   bad_filter: 'JAVV refused the filters. Two of the filters cannot go together, or a value is not valid. Check the filters.',

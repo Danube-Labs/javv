@@ -600,6 +600,8 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
   it.each([
     // the route refuses the pair before the past-time reader runs
     ['a link with both, at a past time', PAST, '/?assignee=bob&attr=unassigned', FAILURE_COPY.bad_filter],
+    // issue 1294: the second pair, Tag with No tag
+    ['a link with Tag and No tag, at a past time', PAST, '/?tag=1.4.1&attr=untagged', FAILURE_COPY.bad_filter],
     // KEV is not in the scan history, so this 422 is about the past time
     ['a filter the history does not record, at a past time', PAST, '/?attr=kev', FAILURE_COPY.past_t],
     ['the same filter now', null, '/?attr=kev', FAILURE_COPY.bad_filter],

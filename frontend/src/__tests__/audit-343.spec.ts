@@ -30,6 +30,15 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(FAILURE_COPY.past_t).toMatch(/at a past time/)
   })
 
+  // issue 1294: at a past time the history answers Search, Image and Tag, so the text names only
+  // the filters that still get the 422 (PAST_TIME_UNRECORDED_KEYS)
+  it('the past-time text names KEV, Scanners disagree and New in range, and no search', () => {
+    expect(FAILURE_COPY.past_t).toBe(
+      'JAVV cannot apply the KEV, Scanners disagree or New in range filter at a past time. Go back to now, or remove these filters.',
+    )
+    expect(FAILURE_COPY.past_t).not.toMatch(/search/i)
+  })
+
   // issue 975: a short search never gets to the server, so the 422 text names the causes that do
   it('a 422 names refused filters, never a short search', () => {
     expect(FAILURE_COPY.bad_filter).toBe(
