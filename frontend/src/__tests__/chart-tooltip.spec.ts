@@ -24,6 +24,9 @@ const tipOf = (params: TooltipParam | TooltipParam[]): HTMLElement => {
   return root
 }
 
+/** A formatter as ECharts calls it: the params, an async ticket and a callback. */
+type EChartsFormatter = (p: TooltipParam | TooltipParam[], ticket: string, cb: () => void) => HTMLElement
+
 const texts = (root: HTMLElement, cls: string) =>
   [...root.querySelectorAll(`.${cls}`)].map((el) => el.textContent)
 
@@ -109,11 +112,7 @@ describe('tooltipContent makes the rows of a chart tooltip as DOM nodes', () => 
     // ECharts calls a formatter as (params, asyncTicket, callback), and the ticket of an axis
     // tooltip is a random number as a string. It must never reach the head as a unit.
     const call = (unit?: string) =>
-      (chartTooltip('axis', unit).formatter as (p: TooltipParam[], ticket: string, cb: () => void) => HTMLElement)(
-        axisParams,
-        '0.4837261',
-        () => {},
-      )
+      (chartTooltip('axis', unit).formatter as unknown as EChartsFormatter)(axisParams, '0.4837261', () => {})
     expect(texts(call('refused scans'), 'chart-tip-head')).toEqual(['1 Nov · refused scans'])
     expect(texts(call(), 'chart-tip-head')).toEqual(['1 Nov'])
   })
@@ -156,7 +155,7 @@ describe('each chart builder uses the shared tooltip', () => {
   it.each(builders)('%s', (_name, option, trigger, head) => {
     const tooltip = option.tooltip as Record<string, unknown>
     // called as ECharts calls it: params, an async ticket and a callback
-    const format = tooltip.formatter as (p: TooltipParam | TooltipParam[], ticket: string, cb: () => void) => HTMLElement
+    const format = tooltip.formatter as EChartsFormatter
     const root = format(trigger === 'axis' ? axisParams : { name: 'os', color: '#1f8e84', value: 1 }, '0.4837261', () => {})
     expect(root.classList.contains('chart-tip')).toBe(true)
     expect(root.querySelector('.chart-tip-head')?.textContent ?? null).toBe(head)
