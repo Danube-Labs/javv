@@ -52,6 +52,9 @@ RECONSTRUCTABLE = (
     "last_scan_run_id",
     "last_scan_order",
     "locations_total",  # issue 1077 — the paths themselves come only on request (D5)
+    # issue 1294: from the scan record of the row's own last appearance, as the cache keeps them
+    "image_repo",
+    "tag",
 )
 
 
@@ -309,7 +312,14 @@ def test_a_history_row_before_the_paths_has_null_paths() -> None:
         "scan_run_id": "run-old",
         "scan_order": 1,
     }
-    raw = {"occurrence": occ, "first_seen_at": None, "present": True, "resolved_at": None}
+    raw = {
+        "occurrence": occ,
+        "first_seen_at": None,
+        "present": True,
+        "resolved_at": None,
+        "image_repo": "app",
+        "tag": "1.0",
+    }
     human = {"state": "open", "vex_justification": None, "assignee": None, "notes": None}
     row = _finding_row(raw, human)
     assert row["locations"] is None
@@ -560,7 +570,7 @@ async def test_delegated_inputs_are_revalidated(real_os: tuple[AsyncOpenSearch, 
         await READER.findings_facets(client, **base, filters=SearchFilters(), fields=["nope; DROP"])
     with pytest.raises(ValueError, match="not groupable"):
         await READER.findings_groups(
-            client, **base, filters=SearchFilters(), by="image_repo", size=10, cursor=None
+            client, **base, filters=SearchFilters(), by="app", size=10, cursor=None
         )
     with pytest.raises(ValueError, match="cursor"):
         await READER.findings_page(
@@ -671,16 +681,18 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "disagree": True,
         "cve_id": ["CVE-0000-0000"],
         "image_digest": "sha256:x",
-        "image_repo": ["nginx"],
+        "image_repo": ["memcached"],
         "namespace": ["ns"],
         "ptype": ["os"],
         "package_name": ["zlib"],
-        "q": "krb5",
+        "tag": ["1.4.2"],  # issue 1294 — the image names come from the scan records
+        "q": "krb5",  # issue 1294 — searchable at T now that the names are reconstructed
         "present": False,
         "new_within_days": 30,
         "overdue": True,  # issue 363 — filters the reconstruction's own at-T verdict
         # issue 349 §1 — the row is unowned, so asking for an OWNER must drop it
         "unassigned": False,
+        "untagged": True,  # the row has a tag, so "No tag" drops it
         # issue 349 excludes: each probe MATCHES the row below so a handled exclude drops it
         "exclude_severity": ["high"],
         "exclude_state": ["resolved"],
@@ -693,6 +705,7 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "exclude_ptype": ["os"],  # row has ptype=None — same missing-field carve-out
         "exclude_cve_id": ["CVE-1"],  # issue 492 — matches the row, so it drops
         "exclude_package_name": ["zlib"],  # row has package_name=None — carve-out again
+        "exclude_tag": ["1.4.1"],
     }
     missing = set(probe_values) ^ {f.name for f in dc_fields(SearchFilters)}
     assert not missing, f"probe map drifted from SearchFilters: {missing}"
@@ -707,6 +720,8 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "fixable": False,
         "cve_id": "CVE-1",
         "image_digest": "sha256:y",
+        "image_repo": "nginx",
+        "tag": "1.4.1",
         "ptype": None,
         "package_name": None,
         "namespaces": ["default"],
@@ -744,6 +759,8 @@ def test_several_values_at_past_t_are_membership_not_equality() -> None:
         "fixable": False,
         "cve_id": "CVE-1",
         "image_digest": "sha256:y",
+        "image_repo": "registry.local/app",
+        "tag": "1.4.2",
         "ptype": "deb",
         "package_name": "zlib",
         "namespaces": ["default", "prod"],
@@ -755,6 +772,8 @@ def test_several_values_at_past_t_are_membership_not_equality() -> None:
         "ptype": ["npm", "deb"],
         "package_name": ["openssl", "zlib"],
         "namespace": ["staging", "prod"],  # any overlap with the row's namespaces
+        "image_repo": ["nginx", "registry.local/app"],  # issue 1294
+        "tag": ["1.4.1", "1.4.2"],
     }
     for name, values in hits.items():
         keep = AsOfTQuery._apply_filters([dict(row)], SearchFilters(**{name: values}))
@@ -765,13 +784,68 @@ def test_several_values_at_past_t_are_membership_not_equality() -> None:
             [dict(row)], SearchFilters(**dict[str, Any]({name: ["x", "y"]}))
         )
         assert miss == [], f"{name}=['x', 'y'] must drop a row that holds neither value"
-    # an empty list is no filter, as in the live query; image_repo too, though it is unrecorded
-    for empty in ("namespace", "image_repo", "exclude_image_repo"):
+    # an empty list is no filter, as in the live query
+    for empty in ("namespace", "image_repo", "exclude_image_repo", "tag", "exclude_tag"):
         f = SearchFilters(**dict[str, Any]({empty: []}))
         assert len(AsOfTQuery._apply_filters([dict(row)], f)) == 1, empty
-    # image_repo is not in the scan history: a list is refused like one value always was
-    with pytest.raises(ValueError, match="image_repo"):
-        AsOfTQuery._apply_filters([dict(row)], SearchFilters(image_repo=["a", "b"]))
+
+
+def _q_row(**over: Any) -> dict[str, Any]:
+    return {
+        "present": True,
+        "severity_canonical": "high",
+        "state": "open",
+        "scanner": "trivy",
+        "assignee": None,
+        "fixable": False,
+        "cve_id": "CVE-2024-0001",
+        "image_digest": "sha256:y",
+        "image_repo": "registry.local/team/app",
+        "tag": "1.4.2",
+        "ptype": "deb",
+        "package_name": None,
+        "namespaces": ["default", "Payments"],
+        "overdue": False,
+        **over,
+    }
+
+
+@pytest.mark.parametrize(
+    ("q", "over", "kept"),
+    [
+        ("team/APP", {}, True),  # image_repo, in any case
+        ("2024-00", {}, True),  # cve_id
+        ("payMENTS", {}, True),  # any one of the namespaces
+        ("ana", {"assignee": "Anabel"}, True),
+        ("ssl", {"package_name": "openssl"}, True),
+        ("1.4.2", {}, False),  # the live search does not look in the tag either
+        ("krb5", {}, False),
+        ("a*p", {"image_repo": "a*p"}, True),  # a star is the character, never a pattern
+        ("a*p", {}, False),
+    ],
+)
+def test_past_t_q_matches_the_live_search_rule(q: str, over: dict[str, Any], kept: bool) -> None:
+    """Issue 1294: the live `q` is a contains match, in any case, on cve_id, image_repo,
+    namespaces, assignee and package_name, with `*` and `?` escaped. At a past T the reader
+    holds the names now, so it applies the same rule to the reconstructed rows."""
+    from backend.query.as_of_t import AsOfTQuery
+
+    out = AsOfTQuery._apply_filters([_q_row(**over)], SearchFilters(q=q))
+    assert (len(out) == 1) is kept
+
+
+def test_past_t_untagged_matches_the_live_clause() -> None:
+    """An empty tag and no tag both count as no tag, as `has_tag_clause` reads the store."""
+    from backend.query.as_of_t import AsOfTQuery
+
+    rows = [_q_row(tag="1.4.2"), _q_row(tag=""), _q_row(tag=None)]
+    no_tag = AsOfTQuery._apply_filters([dict(r) for r in rows], SearchFilters(untagged=True))
+    assert [r["tag"] for r in no_tag] == ["", None]
+    tagged = AsOfTQuery._apply_filters([dict(r) for r in rows], SearchFilters(untagged=False))
+    assert [r["tag"] for r in tagged] == ["1.4.2"]
+    # pure must_not: "tag is not 1.4.2" keeps the rows with no tag
+    kept = AsOfTQuery._apply_filters([dict(r) for r in rows], SearchFilters(exclude_tag=["1.4.2"]))
+    assert [r["tag"] for r in kept] == ["", None]
 
 
 async def test_past_t_package_type_facet_leaves_out_its_own_filter(monkeypatch) -> None:
@@ -895,6 +969,61 @@ async def test_past_t_unassigned_count_leaves_out_assignee_is(monkeypatch) -> No
     counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
     assert counts["unassigned"] == {"true": 3, "false": 3}  # None and "" have no owner
     assert counts["severity"] == {"critical": 2}
+
+
+async def test_past_t_untagged_count_leaves_out_tag_is(monkeypatch) -> None:
+    """Issue 1294, the rule of the live facet at a past T: with Tag "is 1.4.2", the "No tag"
+    count is the rows with no tag (what its click shows), and severity counts only 1.4.2."""
+    from backend.query.as_of_t import AsOfTQuery
+
+    rows = [_q_row(tag="1.4.2", severity_canonical="critical") for _ in range(2)]
+    rows += [_q_row(tag="", severity_canonical="low"), _q_row(tag=None, severity_canonical="low")]
+    rows += [_q_row(tag="1.4.1", severity_canonical="low")]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_facets(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(tag=["1.4.2"]),
+        fields=["untagged", "severity"],
+    )
+    counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
+    assert counts["untagged"] == {"true": 2, "false": 3}
+    assert counts["severity"] == {"critical": 2}
+
+
+async def test_past_t_groups_by_image(monkeypatch) -> None:
+    """Issue 1294: the group by image works at a past T, in the composite order of the live
+    groups (key ascending), with each scanner apart."""
+    from backend.query.as_of_t import AsOfTQuery
+
+    rows = [_q_row(image_repo="b/app"), _q_row(image_repo="a/db", scanner="grype")]
+    rows += [_q_row(image_repo="b/app", scanner="grype")]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_groups(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(),
+        by="image_repo",
+        size=10,
+        cursor=None,
+    )
+    assert out == {
+        "data": [
+            {"key": "a/db", "count": 1, "by_scanner": {"grype": 1}},
+            {"key": "b/app", "count": 2, "by_scanner": {"trivy": 1, "grype": 1}},
+        ],
+        "next_cursor": None,
+    }
 
 
 async def test_past_t_facets_filter_again_only_for_a_field_with_its_own_filter(
@@ -1105,3 +1234,102 @@ async def test_past_t_top_images_equal_the_live_read_at_t_just_now(
         )
         assert past["images"] == live, filters
         assert live and live[0]["image_digest"] == DIGEST
+
+
+# --- the image names at a past T (issue 1294) -------------------------------------------------
+
+UNTAGGED_DIGEST = "sha256:" + "b" * 64
+
+
+async def _seed_names(client: AsyncOpenSearch, prefix: str) -> dict[str, datetime]:
+    """The image `app` scanned as `app:1.0`, then as `app:1.1` with 5 findings gone, and a
+    second image `tool` pushed by digest only (no tag). The gone findings keep the names of
+    their last scan in the live cache: a scan refreshes the names only on what it reports."""
+    first = _envelope(29, ORDER, "namesrun0001", datetime.now(UTC).isoformat())
+    await ingest_envelope(
+        client, first.model_copy(update={"image_ref": f"app:1.0@{DIGEST}"}), prefix=prefix
+    )
+    t1 = await _now(client, prefix)
+    second = _envelope(24, ORDER + 1, "namesrun0002", datetime.now(UTC).isoformat())
+    await ingest_envelope(client, second.model_copy(update={"image_ref": "app:1.1"}), prefix=prefix)
+    tool = _envelope(3, ORDER, "namesrun0003", datetime.now(UTC).isoformat())
+    tool = tool.model_copy(
+        update={"image_digest": UNTAGGED_DIGEST, "image_ref": f"tool@{UNTAGGED_DIGEST}"}
+    )
+    await ingest_envelope(client, tool, prefix=prefix)
+    t2 = await _now(client, prefix)
+    return {"t1": t1, "t2": t2}
+
+
+async def _keys_and_names(
+    client: AsyncOpenSearch, prefix: str, filters: SearchFilters, t: datetime | None
+) -> dict[str, tuple[str, str]]:
+    if t is None:
+        page = await run_search(
+            client, cluster_id=CLUSTER, filters=filters, size=500, prefix=prefix
+        )
+    else:
+        page = await READER.findings_page(
+            client,
+            cluster_id=CLUSTER,
+            t=t,
+            filters=filters,
+            sort="severity_rank",
+            order="desc",
+            size=500,
+            cursor=None,
+            prefix=prefix,
+        )
+    return {d["finding_key"]: (d["image_repo"], d["tag"]) for d in page["data"]}
+
+
+@requires_opensearch
+async def test_a_past_read_names_each_row_from_the_scan_of_its_last_appearance(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """Q1 of issue 1294, ruled A. At T=just-now each row, present or gone, has the name that
+    the live cache shows. Before the rescan, every row of the image has the first name."""
+    client, prefix = real_os
+    seeded = await _seed_names(client, prefix)
+    for present in (True, False):
+        f = SearchFilters(present=present)
+        live = await _keys_and_names(client, prefix, f, None)
+        past = await _keys_and_names(client, prefix, f, seeded["t2"])
+        assert past == live and live, present
+    gone = await _keys_and_names(client, prefix, SearchFilters(present=False), seeded["t2"])
+    assert set(gone.values()) == {("app", "1.0")} and len(gone) == 5
+    now = await _keys_and_names(client, prefix, SearchFilters(), seeded["t2"])
+    assert set(now.values()) == {("app", "1.1"), ("tool", "")}
+    before = await _keys_and_names(client, prefix, SearchFilters(), seeded["t1"])
+    assert set(before.values()) == {("app", "1.0")} and len(before) == 29
+
+
+@requires_opensearch
+@pytest.mark.parametrize(
+    "filters",
+    [
+        SearchFilters(tag=["1.1"]),
+        SearchFilters(tag=["1.0"], present=False),
+        SearchFilters(exclude_tag=["1.1"]),
+        SearchFilters(untagged=True),
+        SearchFilters(untagged=False),
+        SearchFilters(image_repo=["app"]),
+        SearchFilters(exclude_image_repo=["app"]),
+        SearchFilters(q="TOOL"),
+        SearchFilters(q="cve-2"),
+        SearchFilters(q="team-b"),
+    ],
+    ids=lambda f: ",".join(
+        f"{k}={v}" for k, v in vars(f).items() if v is not None and (k, v) != ("present", True)
+    ),
+)
+async def test_the_name_filters_at_t_just_now_equal_the_live_read(
+    real_os: tuple[AsyncOpenSearch, str], filters: SearchFilters
+) -> None:
+    """The parity of the live and the past reads for each filter that the names allow at a
+    past T: the same rows, with the same names."""
+    client, prefix = real_os
+    seeded = await _seed_names(client, prefix)
+    live = await _keys_and_names(client, prefix, filters, None)
+    past = await _keys_and_names(client, prefix, filters, seeded["t2"])
+    assert past == live

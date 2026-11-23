@@ -9,11 +9,13 @@ the winning active decision projects.
 
 Return shapes MATCH the current-state responses (FR-23: time-travel changes WHEN, never the
 wire contract). Two deliberate deviations, both spec-rooted:
-- fields the history does not record (`epss`, `disagree`, `image_repo`, `tag`, `app`) come back
-  `null`; a FILTER or SORT or GROUP on them at past T is a 422 (`ValueError` at the seam) —
-  silently mis-filtering would be worse; whitelisted FACETS on them return empty buckets. `kev`
-  is recorded only from mapping v20 on (issue 1000): it decides the SLA deadline, and otherwise
-  is treated like the fields above, because the older history has no value.
+- fields the history does not record (`epss`, `disagree`, `app`) come back `null`; a FILTER or
+  SORT or GROUP on them at past T is a 422 (`ValueError` at the seam) — silently mis-filtering
+  would be worse; whitelisted FACETS on them return empty buckets. `kev` is recorded only from
+  mapping v20 on (issue 1000): it decides the SLA deadline, and otherwise is treated like the
+  fields above, because the older history has no value. `image_repo` and `tag` are not on the
+  occurrence rows, but on the scan record of each run (issue 1294): a row takes them from the
+  run of its own last appearance, which is the name the cache keeps for it.
 - paging is stateless (an opaque `search_after`-style cursor, no PIT): history is immutable, so
   a walk is consistent by construction.
 
@@ -62,10 +64,20 @@ _FACET_FIELDS = (
     "ptype",
     "overdue",  # issue 363: counts the reconstruction's own at-T verdict (rows carry the bool)
     "unassigned",  # issue 349 §1: an expression over the row's assignee, mirrored below
+    "untagged",  # issue 1294: the same shape over the row's tag
 )
 # whitelisted, but no history values → empty buckets (kev: none before mapping v20, issue 1000)
 _EMPTY_FACETS = ("kev", "disagree")
-_GROUP_FIELDS = ("image_digest", "namespaces", "cve_id", "assignee", "ptype")  # no image_repo/app
+_GROUP_FIELDS = (
+    "image_repo",
+    "image_digest",
+    "namespaces",
+    "cve_id",
+    "assignee",
+    "ptype",
+)  # no app
+# the fields of the live `q` (query/search.py): a contains match, in any case
+_Q_FIELDS = ("cve_id", "image_repo", "assignee", "package_name")
 
 
 def _unrecorded(name: str) -> ValueError:
@@ -102,6 +114,7 @@ async def _last_rows_per_key(
     that last appearance IS the digest's latest run; otherwise the row is a tombstone whose
     `resolved_at` is the first committed run after it (the rebuild arm's derivation, §9)."""
     orders = [r["scan_order"] for r in committed]
+    runs = {r["scan_order"]: r for r in committed}
     latest = committed[-1]
     last: dict[str, Any] = {"size": 1, "sort": [{"scan_order": "desc"}]}
     if not locations:  # up to 64 paths for each finding of the cluster: only when a page sends them
@@ -157,12 +170,17 @@ async def _last_rows_per_key(
                 resolved_at = next(
                     r["@timestamp"] for r in committed if r["scan_order"] > src["scan_order"]
                 )
+            # the name of the image as the scan of this appearance recorded it: a scan refreshes
+            # the cached names only on the findings that it reports (issue 1294, Q1 ruled A)
+            run = runs[src["scan_order"]]
             rows.append(
                 {
                     "occurrence": src,
                     "present": present,
                     "resolved_at": resolved_at,
                     "first_seen_at": b["first"].get("value_as_string"),
+                    "image_repo": run.get("image_repo"),
+                    "tag": run.get("tag"),
                 }
             )
         after = agg.get("after_key")
@@ -172,15 +190,16 @@ async def _last_rows_per_key(
 
 def _finding_row(raw: dict[str, Any], human: dict[str, Any]) -> dict[str, Any]:
     """One wire row in the findings-grid vocabulary. Fields the history does not record are
-    explicit nulls; `kev` too, since the history before mapping v20 has none (issue 1000)."""
+    explicit nulls; `kev` too, since the history before mapping v20 has none (issue 1000).
+    The image names come from the scan record (issue 1294)."""
     occ = raw["occurrence"]
     return {
         "finding_key": occ["finding_key"],
         "cluster_id": occ["cluster_id"],
         "scanner": occ["scanner"],
         "image_digest": occ["image_digest"],
-        "image_repo": None,
-        "tag": None,
+        "image_repo": raw["image_repo"],
+        "tag": raw["tag"],
         "namespaces": occ.get("namespaces") or [],
         "app": None,
         "cve_id": occ["vuln_id"],
@@ -316,7 +335,14 @@ class AsOfTQuery:
                     },
                     "sort": [{"scan_order": "asc"}],
                     "size": _PAGE,
-                    "_source": ["scan_run_id", "scan_order", "@timestamp", "commit_key"],
+                    "_source": [
+                        "scan_run_id",
+                        "scan_order",
+                        "@timestamp",
+                        "commit_key",
+                        "image_repo",
+                        "tag",
+                    ],
                 },
             )
         except NotFoundError:
@@ -353,19 +379,13 @@ class AsOfTQuery:
             raise _unrecorded("kev")
         if f.disagree is not None:
             raise _unrecorded("disagree")
-        # an empty list is no filter, as on the live read
-        if f.image_repo:
-            raise _unrecorded("image_repo")
-        if f.exclude_image_repo:
-            raise _unrecorded("exclude_image_repo")
-        if f.q is not None:
-            # contains-search spans image_repo, which occurrences don't record — a partial match
-            # at a past T would silently LIE (rows missing for the wrong reason). Reject loudly.
-            raise _unrecorded("q")
         if f.new_within_days is not None:
             # first_seen_at is the findings-cache D21 group clock — occurrences don't record it
             raise _unrecorded("new_within_days")
         sev = set(f.severity) if f.severity else None
+        # the live `q` is `*text*` with `case_insensitive`, and its `*`/`?` are escaped, so it
+        # is a literal contains match in any case
+        needle = f.q.lower() if f.q is not None else None
         out = []
         for r in rows:
             if r["present"] != f.present:
@@ -379,6 +399,15 @@ class AsOfTQuery:
             # occurrences carry the assignee. Mirrors the live clause — an owner is a NON-EMPTY
             # assignee, so a cleared one ("") counts as unowned here too
             if f.unassigned is not None and bool(r.get("assignee")) == f.unassigned:
+                continue
+            # "No tag" mirrors has_tag_clause: an empty tag and no tag both read as no tag
+            if f.untagged is not None and bool(r.get("tag")) == f.untagged:
+                continue
+            if needle is not None and not any(
+                needle in str(v).lower()
+                for v in (*(r.get(k) for k in _Q_FIELDS), *(r.get("namespaces") or []))
+                if v is not None
+            ):
                 continue
             # D46/#274: compare the CANONICAL bucket, mirroring the live filter's target field
             if sev and r["severity_canonical"] not in sev:
@@ -408,6 +437,9 @@ class AsOfTQuery:
                 (f.ptype, r["ptype"]),
                 # package_name likewise rides the occurrence row (issue 492)
                 (f.package_name, r["package_name"]),
+                # the image names ride the scan record (issue 1294)
+                (f.image_repo, r.get("image_repo")),
+                (f.tag, r.get("tag")),
             )
             if any(want and got not in want for want, got in in_checks):
                 continue
@@ -418,6 +450,8 @@ class AsOfTQuery:
                 (f.exclude_ptype, r["ptype"]),
                 (f.exclude_cve_id, r["cve_id"]),
                 (f.exclude_package_name, r["package_name"]),
+                (f.exclude_image_repo, r.get("image_repo")),
+                (f.exclude_tag, r.get("tag")),
             )
             if f.exclude_scanner is not None and f.exclude_scanner == r["scanner"]:
                 continue
@@ -552,6 +586,8 @@ class AsOfTQuery:
                     # assignee (a cleared one is ""), the same reading as the live filter agg
                     # and this reader's own filter above
                     key: Any = not bool(r.get("assignee"))
+                elif field == "untagged":  # issue 1294: the same reading over the tag
+                    key = not bool(r.get("tag"))
                 else:
                     # D46/#274: the severity facet counts the canonical bucket (mirrors the
                     # live facet's field alias — keys are critical/medium/…, never verbatim)

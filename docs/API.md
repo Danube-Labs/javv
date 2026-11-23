@@ -491,15 +491,18 @@ the same filters:
 Each read takes `as_of`. With no value, `now` or a time in the future, the read shows the current
 state. With a time in the past, JAVV builds the state at that time from the history:
 
-- `kev`, `epss`, `disagree`, `image_repo`, `tag` and `app` are not in the history. They are
-  `null` in the rows.
+- `kev`, `epss`, `disagree` and `app` are not in the history. They are `null` in the rows.
+- `image_repo` and `tag` come from the scan record of the last scan that showed the finding. A
+  finding that is gone keeps the name of that scan, as in a read now. A scan before release
+  0.9.14 keeps the name before the split of a tag and a digest (`app:1.4.2@sha256:…` was the
+  image `app:1.4.2` with no tag).
 - The SLA deadline (`overdue` and `due_at`) uses the KEV value that each scan recorded, as a
   read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
   A finding from such a scan gets the deadline of its severity.
-- A filter, sort or group on one of these fields gets 422. `image_repo` and `exclude_image_repo`
-  get 422 too.
+- A filter, sort or group on one of these fields gets 422. `new_within_days` gets 422 too.
 - A facet on one of these fields gives no values.
-- `ptype`, `package_name` and the `exclude_` filters on recorded fields apply as usual.
+- `ptype`, `package_name`, `image_repo`, `tag`, `untagged`, `q` and the `exclude_` filters on
+  recorded fields apply as usual. A group by `image_repo` works.
 - The CSV and VEX exports of findings get 501. A report (`POST /api/v1/reports`) can use a past
   `as_of_t`.
 - The audit log and the failed pushes end their window at that time.
