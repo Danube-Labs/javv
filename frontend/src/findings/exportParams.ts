@@ -4,7 +4,7 @@
  * export. `export-params.spec.ts` compares this list with `ExportParams` in openapi.json, so
  * a field the backend gains fails that spec until it is added here (issue 962). */
 
-import type { FilterField } from '@/filters/fields.config'
+import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 
 export const EXPORT_PARAM_KEYS = [
   'severity', 'state', 'scanner', 'assignee', 'kev', 'fixable', 'disagree', 'cve_id',
@@ -43,10 +43,18 @@ export function filterNames(fields: readonly FilterField[], keys: readonly strin
  * keeps this list equal to the backend's. */
 export const PAST_TIME_UNRECORDED_KEYS = ['kev', 'disagree', 'new_within_days'] as const
 
-/** Assignee with Unassigned: the one pair a Findings query can hold (`FINDINGS_EXCLUSIVE_PAIRS`
- * in filters/fields.config.ts), and the backend refuses it with 422. */
-export function hasAssigneeWithUnassigned(query: Record<string, unknown>): boolean {
-  return query.assignee !== undefined && query.unassigned !== undefined
+/** The query keys of a pair that the backend refuses with 422 (`FINDINGS_EXCLUSIVE_PAIRS` in
+ * filters/fields.config.ts: Assignee with Unassigned, Tag with No tag), or null. A link can hold
+ * one, since the store keeps both until the user picks one of the two. */
+export function refusedPair(query: Record<string, unknown>): [string, string] | null {
+  for (const pair of FINDINGS_EXCLUSIVE_PAIRS) {
+    const field = FINDINGS_FIELDS.find((f) => f.key === pair.field)
+    const flags = FINDINGS_FIELDS.find((f) => f.key === pair.flagField)
+    const flag = flags?.type === 'flags' ? flags.values.find((v) => v.key === pair.flag) : undefined
+    if (!field || field.type === 'flags' || !flag) continue
+    if (query[field.param] !== undefined && query[flag.param] !== undefined) return [field.param, flag.param]
+  }
+  return null
 }
 
 /** What the user picked in the export dialog. */
@@ -76,8 +84,8 @@ export function exportBlockMessage(
     if (unrecorded.length)
       return `At a past time, an export in the background cannot use these filters: ${filterNames(fields, unrecorded).join(', ')}. Clear them.`
   }
-  if (hasAssigneeWithUnassigned(query))
-    return `An export cannot use ${filterNames(fields, ['assignee', 'unassigned']).join(' and ')} together. Clear one of them.`
+  const pair = refusedPair(query)
+  if (pair) return `An export cannot use ${filterNames(fields, pair).join(' and ')} together. Clear one of them.`
   if (choice.format === 'vex') {
     if (query.exclude_scanner !== undefined)
       return 'A VEX file covers one scanner. Clear the Scanner filter first.'

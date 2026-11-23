@@ -36,6 +36,7 @@ describe('a count of 0 on a fixed list (issue 980)', () => {
       disagree: [],
       overdue: [b('true', 21)],
       unassigned: [b('true', 0)],
+      untagged: [b('true', 6)],
     }
     expect(countsOf(facetItems(ATTR, facets))).toEqual({
       kev: 0,
@@ -43,6 +44,7 @@ describe('a count of 0 on a fixed list (issue 980)', () => {
       disagree: 0,
       overdue: 21,
       unassigned: 0,
+      untagged: 6,
       new: null, // New in range has no facet: the server never counts it
     })
   })
@@ -56,7 +58,7 @@ describe('a count of 0 on a fixed list (issue 980)', () => {
   it('a field missing from the response keeps no count', () => {
     // the first read has not come back, or the screen does not ask for the field
     expect(Object.values(countsOf(facetItems(SEVERITY, {})))).toEqual(Array(6).fill(null))
-    expect(Object.values(countsOf(facetItems(ATTR, {})))).toEqual(Array(6).fill(null))
+    expect(Object.values(countsOf(facetItems(ATTR, {})))).toEqual(Array(7).fill(null))
   })
 
   it(`a fixed list the server stopped at ${FACET_CAP} buckets keeps no count for the rest`, () => {

@@ -33,7 +33,7 @@ import type { FacetsResponse } from '@/filters/facets'
 import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, MAX_FILTER_VALUES } from '@/filters/fields.config'
 import { buildFindingsQuery } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS } from '@/findings/columns'
-import { PAST_TIME_UNRECORDED_KEYS, hasAssigneeWithUnassigned } from '@/findings/exportParams'
+import { PAST_TIME_UNRECORDED_KEYS, refusedPair } from '@/findings/exportParams'
 import { captureLens } from '@/findings/savedViews'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
 import { FAILURE_COPY, failureKind, readFailureCopy, type FailureKind } from '@/findings/failureCopy'
@@ -166,7 +166,7 @@ let rowsSeq = 0
 // cannot change the reason shown for this one. The grid store keeps a refusal across a remount,
 // so the first value comes from what that store and the filters still hold.
 const failedKind = ref<FailureKind>(
-  failureKind(grid.failedStatus, timeTravel.t !== null, hasAssigneeWithUnassigned(rowsQuery.value ?? {})),
+  failureKind(grid.failedStatus, timeTravel.t !== null, refusedPair(rowsQuery.value ?? {}) !== null),
 )
 async function loadRows(q: typeof rowsQuery.value) {
   if (!q) return
@@ -195,7 +195,7 @@ async function loadRows(q: typeof rowsQuery.value) {
   } else {
     // a refused later page stays where it is, so Prev still leads back (issue 833, G1)
     const status = response.response?.status ?? null
-    failedKind.value = failureKind(status, Boolean(q.as_of), hasAssigneeWithUnassigned(q))
+    failedKind.value = failureKind(status, Boolean(q.as_of), refusedPair(q) !== null)
     grid.setFailed(status)
     logger.warn('findings_search_failed', { status: response.response?.status, page: grid.page })
   }

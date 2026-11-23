@@ -361,6 +361,48 @@ describe('a pair the API refuses together', () => {
     expect(messages()).toHaveLength(1)
   })
 
+  // issue 1294: Tag with No tag is the second pair, with the same rules
+  it('a click on No tag clears the Tag values, and a Tag pick turns No tag off', () => {
+    const s = usePaired()
+    s.toggle('tag', '1.4.1')
+    s.toggle('attr', 'untagged')
+    expect(s.selections.tag).toEqual([])
+    expect(s.selections.attr).toEqual(['untagged'])
+    s.pickValue('tag', 'latest', 'is')
+    expect(s.selections.tag).toEqual(['latest'])
+    expect(s.selections.attr).toEqual([])
+    expect(messages()).toEqual([
+      'info: JAVV cleared the filter Tag. You cannot use Tag and No tag together.',
+      'info: JAVV cleared the filter No tag. You cannot use Tag and No tag together.',
+    ])
+  })
+
+  it('Tag is not with No tag stays, since the API takes it', () => {
+    const s = usePaired()
+    s.pickValue('tag', 'latest', 'not')
+    s.toggle('attr', 'untagged')
+    expect(s.selections.tag).toEqual(['latest'])
+    expect(s.selections.attr).toEqual(['untagged'])
+    expect(messages()).toEqual([])
+  })
+
+  it('the URL keeps tag, !tag and untagged after a reload', () => {
+    const s = usePaired()
+    s.toggle('tag', '1.4.1')
+    s.toggle('tag', '1.4.2')
+    expect(s.toQuery().tag).toBe('1.4.1,1.4.2')
+    s.toggleMode('tag')
+    s.toggle('attr', 'untagged')
+    const q = s.toQuery()
+    expect(q).toMatchObject({ tag: '!1.4.1,!1.4.2', attr: 'untagged' })
+    setActivePinia(createPinia())
+    const again = usePaired()
+    again.fromQuery(q)
+    expect(again.selections.tag).toEqual(['1.4.1', '1.4.2'])
+    expect(again.modeOf('tag')).toBe('not')
+    expect(again.selections.attr).toEqual(['untagged'])
+  })
+
   it('a store with no pairs keeps both (every other screen)', () => {
     const s = useStore()
     s.toggle('assignee', 'bob')

@@ -40,6 +40,18 @@ describe('lensToSelector (bulk never widens the lens)', () => {
     }
   })
 
+  // issue 1294: the selector has no tag, so the Tag filter and No tag block, as Image does
+  it('blocks on the Tag filter and on No tag', () => {
+    const tag = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical'], tag: ['1.4.1'] }))
+    expect(tag.selector).toBeNull()
+    expect(tag.blocked).toMatch(/^Remove this filter first: Tag\. /)
+    const excluded = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical'], tag: ['latest'] }), { tag: 'not' })
+    expect(excluded.blocked).toMatch(/^Remove this filter first: Tag \(excluded\)\. /)
+    const untagged = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical'], attr: ['untagged'] }))
+    expect(untagged.selector).toBeNull()
+    expect(untagged.blocked).toMatch(/^Remove this filter first: Attribute\. /)
+  })
+
   it('blocks multi-value severity/state (the selector takes exactly one)', () => {
     const r = lensToSelector(FINDINGS_FIELDS, sel({ severity: ['critical', 'high'] }))
     expect(r.selector).toBeNull()

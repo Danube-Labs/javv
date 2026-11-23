@@ -10,6 +10,7 @@ import {
   PAST_TIME_UNRECORDED_KEYS,
   exportBlockMessage,
   filterNames,
+  refusedPair,
   scheduleParams,
   unrepresentableKeys,
 } from '@/findings/exportParams'
@@ -129,6 +130,21 @@ describe('Assignee with Unassigned, which Findings and the schedule refuse', () 
     const message = 'An export cannot use Assignee and Unassigned together. Clear one of them.'
     expect(block({ assignee: ['bob'], unassigned: true })).toBe(message)
     expect(block({ assignee: ['bob'], unassigned: true }, RUN_NOW)).toBe(message)
+  })
+
+  // issue 1294: Tag with No tag is the second pair that the API refuses
+  it('blocks Tag with No tag, and keeps Tag is not with No tag', () => {
+    const message = 'An export cannot use Tag and No tag together. Clear one of them.'
+    expect(block({ tag: ['1.4.1'], untagged: true })).toBe(message)
+    expect(block({ tag: ['1.4.1'], untagged: true }, RUN_NOW)).toBe(message)
+    expect(block({ exclude_tag: ['latest'], untagged: true })).toBeNull()
+  })
+
+  it('refusedPair names the query keys of each pair, or null', () => {
+    expect(refusedPair({ assignee: ['bob'], unassigned: true })).toEqual(['assignee', 'unassigned'])
+    expect(refusedPair({ tag: ['1.4.1'], untagged: true })).toEqual(['tag', 'untagged'])
+    expect(refusedPair({ tag: ['1.4.1'], unassigned: true })).toBeNull()
+    expect(refusedPair({ exclude_assignee: ['bob'], unassigned: true })).toBeNull()
   })
 })
 

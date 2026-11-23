@@ -3,8 +3,9 @@
 
 export type FailureKind = 'past_t' | 'bad_filter' | 'busy' | 'expired' | 'backend'
 
-/** `refusedPair`: the refused query held Assignee with Unassigned. The route refuses that pair
- * before the past-time reader runs, so its 422 is never about the past time (issue 975). */
+/** `refusedPair`: the refused query held a pair the route refuses, Assignee with Unassigned or
+ * Tag with No tag. The route refuses it before the past-time reader runs, so its 422 is never
+ * about the past time (issues 975 and 1294). */
 export function failureKind(
   status: number | null,
   rewound: boolean,

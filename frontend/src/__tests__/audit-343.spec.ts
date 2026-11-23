@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
-import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
+import { refusedPair } from '@/findings/exportParams'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { clusterFromQuery, foreignQuery, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
 
@@ -45,18 +45,23 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(failureKind(501, true, true)).toBe('past_t')
   })
 
-  it('finds Assignee with Unassigned in a built query, and only the include side', () => {
+  it('finds each refused pair in a built query, and only the include side', () => {
     const globals = { cluster_id: 'c-1' }
     const both = buildFilterQuery(FINDINGS_FIELDS, { assignee: ['bob'], attr: ['unassigned'] }, globals)
-    expect(hasAssigneeWithUnassigned(both)).toBe(true)
+    expect(refusedPair(both)).toEqual(['assignee', 'unassigned'])
     const notSide = buildFilterQuery(
       FINDINGS_FIELDS,
       { assignee: ['bob'], attr: ['unassigned'] },
       globals,
       { assignee: 'not' },
     )
-    expect(hasAssigneeWithUnassigned(notSide)).toBe(false)
-    expect(hasAssigneeWithUnassigned(buildFilterQuery(FINDINGS_FIELDS, { attr: ['unassigned'] }, globals))).toBe(false)
+    expect(refusedPair(notSide)).toBeNull()
+    expect(refusedPair(buildFilterQuery(FINDINGS_FIELDS, { attr: ['unassigned'] }, globals))).toBeNull()
+    // issue 1294: Tag with No tag, the second pair
+    const tags = buildFilterQuery(FINDINGS_FIELDS, { tag: ['1.4.1'], attr: ['untagged'] }, globals)
+    expect(refusedPair(tags)).toEqual(['tag', 'untagged'])
+    const tagNot = buildFilterQuery(FINDINGS_FIELDS, { tag: ['1.4.1'], attr: ['untagged'] }, globals, { tag: 'not' })
+    expect(refusedPair(tagNot)).toBeNull()
   })
 })
 
