@@ -29,6 +29,7 @@ the MVP read path; measure before optimizing (#134 bench).
 
 import base64
 import json
+import string
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -78,6 +79,9 @@ _GROUP_FIELDS = (
 )  # no app
 # the fields of the live `q` (query/search.py): a contains match, in any case
 _Q_FIELDS = ("cve_id", "image_repo", "assignee", "package_name")
+# the live `case_insensitive` wildcard folds ASCII letters only (measured on OpenSearch: "ärger"
+# does not find "Ärger"), so the reader folds the same letters and no others
+_ASCII_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
 
 
 def _unrecorded(name: str) -> ValueError:
@@ -384,8 +388,8 @@ class AsOfTQuery:
             raise _unrecorded("new_within_days")
         sev = set(f.severity) if f.severity else None
         # the live `q` is `*text*` with `case_insensitive`, and its `*`/`?` are escaped, so it
-        # is a literal contains match in any case
-        needle = f.q.lower() if f.q is not None else None
+        # is a literal contains match, in any case of the ASCII letters
+        needle = f.q.translate(_ASCII_LOWER) if f.q is not None else None
         out = []
         for r in rows:
             if r["present"] != f.present:
@@ -404,7 +408,7 @@ class AsOfTQuery:
             if f.untagged is not None and bool(r.get("tag")) == f.untagged:
                 continue
             if needle is not None and not any(
-                needle in str(v).lower()
+                needle in str(v).translate(_ASCII_LOWER)
                 for v in (*(r.get(k) for k in _Q_FIELDS), *(r.get("namespaces") or []))
                 if v is not None
             ):

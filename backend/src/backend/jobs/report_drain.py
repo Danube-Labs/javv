@@ -13,7 +13,8 @@ Failures finalize `failed` with the reason — over the byte ceiling, an unknown
 filter history cannot answer. An `as_of_t` export is UNPARKED (M8b slice 4, #34): the drain
 reconstructs the rows at T through the AsOfTReader (paged, throttled like any export) and
 serializes them through the same CSV/VEX pipeline — results labelled as-scanned by construction
-(occurrence-era fields; `kev`/`epss`/`image_repo` are null at a past T).
+(occurrence-era fields; `kev` and `epss` are null at a past T, and the image names come from the
+scan records, issue 1294).
 """
 
 import asyncio

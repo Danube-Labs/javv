@@ -822,6 +822,10 @@ def _q_row(**over: Any) -> dict[str, Any]:
         ("krb5", {}, False),
         ("a*p", {"image_repo": "a*p"}, True),  # a star is the character, never a pattern
         ("a*p", {}, False),
+        # the live wildcard folds ASCII letters only: other letters must match in their own case
+        ("Jürgen", {"assignee": "Jürgen"}, True),
+        ("jÜrgen", {"assignee": "Jürgen"}, False),
+        ("RÉSUMÉ", {"package_name": "Résumé"}, False),
     ],
 )
 def test_past_t_q_matches_the_live_search_rule(q: str, over: dict[str, Any], kept: bool) -> None:
