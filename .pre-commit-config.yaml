@@ -9,7 +9,7 @@ exclude: '^\.claude/skills/ste80-humanizer/'
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.5            # = versions.yaml toolchain.ruff (check-versions.sh)
+    rev: v0.17.6            # = versions.yaml toolchain.ruff (check-versions.sh)
     hooks:
       - id: ruff             # lint (with --fix)
         args: [--fix]
