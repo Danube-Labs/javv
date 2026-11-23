@@ -349,12 +349,14 @@ A release gets an entry here when it needs something from you. These are the con
 - The scanner images must be published again, or changed together with the release.
 - The OpenSearch chart (`javv-opensearch`) changed. Then do the `store` upgrade.
 - The check of TLS certificates in the backend or in the scanners changed.
+- JAVV stores a value in a new form, so a saved view or a dashboard panel can stop matching it.
 
 The entries start with 0.6. Before 0.6, each schema change only added fields, and the backend
 applied it automatically on the first start.
 
 | Release | Database schema | Report formats accepted | What to do |
 |---|---|---|---|
+| 0.9.14 | 23 | 3, 4 and 5 | The note **Image names with a tag and a digest** below |
 | 0.9.12 | 23 | 3, 4 and 5 | The note **A stricter check of TLS certificates** below |
 | 0.9.10 | 23 | 3, 4 and 5 | Nothing. The backend adds two fields to the store on the first start: the files of a finding. Upgrade the backend before the scanner images, because a backend of an earlier release refuses the reports of format 5. |
 | 0.9.6 | 22 | 3 and 4 | Nothing. The backend makes the new index `system-mcp-tokens` on the first start. The `javv` role of an OpenSearch of your own already has access to it, because its name starts with `system-`. |
@@ -379,6 +381,48 @@ chart, but not OpenSearch:
 - 0.9.2 changed the links to the repository in `Chart.yaml`.
 - 0.8.7 changed the test pod of the chart (`helm test store`). The pod can now run in a namespace
   with the `restricted` level of the pod security standards.
+
+### 0.9.14: image names with a tag and a digest
+
+An image name can have a tag and a digest, for example
+`registry.example.com/app:1.4.2@sha256:…`. Before 0.9.14, JAVV stored such a name as the image
+`registry.example.com/app:1.4.2` with no tag. Thus each version of the image showed as an image of
+its own, and the tag column showed `-`.
+
+JAVV gets such a name in these cases:
+
+- A Nomad job gives its image with a tag and a digest, for example when Renovate pins the
+  digest. The Nomad scan script sends the image of the job as written.
+- The container runtime gives the image of a pod as a bare `sha256:…` id. Then the scanner takes
+  the name from the image ID of the pod. EKS can do this.
+- The Docker scan script reads the name of a container from its settings when the tag moved to
+  another image after the start. Then the name has a digest if the compose file pins one.
+- A script of your own sends such a name in `image_ref`.
+
+From the first scan after the upgrade, JAVV stores the image `registry.example.com/app` and the
+tag `1.4.2`. A finding gets the new names only when a scan reports it again. These findings keep
+the old names:
+
+- The findings of an image that no longer runs. JAVV shows them as Stale.
+- The findings that the next scan of the image does not report.
+
+The scans from before the upgrade also keep the old names in the history. Thus the timeline of an
+image on the image page starts again at the first scan after the upgrade.
+
+The new name selects each version of the image. To select one version, use the Digest filter.
+
+After the first scan of each scanner:
+
+1. Open each saved view and each dashboard panel that filters on such an image name.
+2. Add the new name (`registry.example.com/app`) to the Image filter. Keep the old name
+   (`registry.example.com/app:1.4.2`) if the view must show its Stale findings.
+3. Change search text that names a version, for example `app:1.4.2`. The search does not find
+   the tag.
+
+A VEX export names the image of each product by its name. After the first scan, the export gives
+the new name.
+
+If you go back to an earlier release, its next scan stores the old names again.
 
 ### 0.9.12: a stricter check of TLS certificates
 
