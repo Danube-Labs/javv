@@ -333,6 +333,12 @@ No tag count leaves out the Tag "is" values, as the Unassigned count does. While
 is on and Tag and No tag are off, its pill says "· all tags": the Image filter finds every tag of
 the image. The Tag filter and No tag block bulk triage, as the Image filter does.
 
+**EPSS at a past time** (operator ruling 2026-11-23 on built pictures, issue 1294): the scan
+history has no EPSS, so at a past time the EPSS header does not sort. A grid sorted by EPSS sorts by
+Severity there, and stays on Severity back at now. The past-time text ("JAVV cannot apply the KEV,
+Scanners disagree or New in range filter at a past time…") shows only when one of those filters is
+on. Any other refused read at a past time shows the text of refused filters.
+
 **Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
 without the filter of their own field. After you pick a namespace, the other namespaces stay in
 the list with their counts. An excluded value also stays in the list, with a line through it and
