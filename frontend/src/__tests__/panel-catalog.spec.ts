@@ -1088,6 +1088,21 @@ describe('a panel with filters (issue 999)', () => {
     expect(w.text()).not.toContain('Only the namespace')
   })
 
+  it('scan-ingest sends the scanner of the panel, and no scanner for all scanners (Q1 A)', async () => {
+    fn('scansTrendApiV1TrendsScansGet').mockResolvedValue(ok({ series: {} }))
+    fn('scannerFreshnessApiV1ScannersFreshnessGet').mockResolvedValue(ok({ scanners: [] }))
+    mountPanel(panelById('scan-ingest')!, ctx({ scanner: 'trivy', filters: null }))
+    mountPanel(panelById('scan-ingest')!, ctx({ scanner: 'all', filters: null }))
+    await flushPromises()
+    const [trivy, all] = fn('scansTrendApiV1TrendsScansGet').mock.calls.map(
+      (call) => (call[0] as { query: Record<string, unknown> }).query,
+    )
+    expect(trivy).toMatchObject({ scanner: 'trivy' })
+    expect(all).not.toHaveProperty('scanner')
+    // a scanner is a scan filter: the last scan of the whole cluster does not show (Q2 B of PR 2a)
+    expect(fn('scannerFreshnessApiV1ScannersFreshnessGet')).toHaveBeenCalledTimes(1)
+  })
+
   it('scan-ingest with no filters reads the whole cluster and the last scan, as before', async () => {
     fn('scansTrendApiV1TrendsScansGet').mockResolvedValue(ok({ series: {} }))
     fn('scannerFreshnessApiV1ScannersFreshnessGet').mockResolvedValue(ok({ scanners: [] }))

@@ -230,13 +230,18 @@ export const PANELS: readonly CatalogPanel[] = [
     component: IngestLens,
     defaultWidth: 2,
     heights: { short: 4 },
-    usesScanner: false,
+    usesScanner: true,
     framed: false,
     takesFilters: true,
     // `/trends/scans` takes only the filters that a scan record holds (issue 1293)
     refusedFilters: SCAN_REFUSED_FILTERS,
     counts: 'scans',
-    props: (ctx) => ({ clusterId: ctx.clusterId, subject: 'this dashboard', filters: ctx.filters ?? {} }),
+    props: (ctx) => ({
+      clusterId: ctx.clusterId,
+      subject: 'this dashboard',
+      // "All scanners" shows the two scanners side by side, as on Findings (issue 1293, Q1 A)
+      filters: { ...ctx.filters, ...(ctx.scanner === 'all' ? {} : { scanner: ctx.scanner }) },
+    }),
   },
   {
     id: 'failed-ingests',

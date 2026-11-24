@@ -41,7 +41,7 @@ PANELS: dict[str, CatalogPanel] = {
     "top-components": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "top-cves": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "new-findings": CatalogPanel({"short": 4}, uses_scanner=True),
-    "scan-ingest": CatalogPanel({"short": 4}, uses_scanner=False),
+    "scan-ingest": CatalogPanel({"short": 4}, uses_scanner=True),
     "failed-ingests": CatalogPanel({"short": 4}, uses_scanner=False),
     "triage-activity": CatalogPanel({"short": 5}, uses_scanner=False),
     "handled-findings": CatalogPanel({"short": 5}, uses_scanner=False),
@@ -81,6 +81,10 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
     ),
     "triage-progress": ("state",),
 }
+
+# the panels that count scans: a scan record has no `present` field, so they refuse
+# `present: false` (issue 1293, Q2 A)
+SCAN_PANELS: frozenset[str] = frozenset({"scan-ingest"})
 
 # the panels that count audit-log rows take the Action and User filters of the Audit log
 # (issue 1063, decision D2 A); Entity is the panel's own query, so no panel takes it

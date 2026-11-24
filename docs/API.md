@@ -734,6 +734,7 @@ The backend refuses with 422:
   the time range.
 - a filter in the `filters` of `scan-ingest` that a scan record does not hold. This panel counts
   scans, so it takes only the filters of `GET /api/v1/trends/scans`.
+- `present: false` in the `filters` of `scan-ingest`. A scan record has no `present` field.
 - `audit_filters` on a panel other than `triage-activity`, or `entity_type` in `audit_filters`
 - a field and its `exclude_` form in `audit_filters`, as the Audit log refuses them
 - an action in `audit_filters` that is not a triage action. The panel counts only the triage rows.
