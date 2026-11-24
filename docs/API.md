@@ -511,13 +511,14 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 #### Trends
 
 - `/trends/scans`: the committed scans. `interval` is `day` (default) or `hour`. `hour` is
-  possible only for 31 days or less, else 422. At a past `as_of`, the intervals are days. It
-  takes the filters of `GET /api/v1/findings` that a scan record holds: `namespace`,
-  `image_repo` and `tag` with their `exclude_` sides, `untagged`, `image_digest`, `scanner` and
-  `exclude_scanner`. `scanner` and `exclude_scanner` are `trivy` or `grype`. A namespace filter
-  selects a scan when the image runs in one of the namespaces. The caps and the pairs that
-  `/findings` refuses get 422 here too. At a past `as_of`, the filters select the scans of that
-  time.
+  possible only for 31 days or less, else 422. At a past `as_of`, the intervals are days.
+    - It takes the filters of `GET /api/v1/findings` that a scan record holds:
+        - `namespace`, `image_repo` and `tag`, and the `exclude_` filter of each
+        - `untagged` and `image_digest`
+        - `scanner` and `exclude_scanner`, each `trivy` or `grype`
+    - A namespace filter selects a scan when the image runs in one of the namespaces.
+    - The route refuses with 422 each value and each pair of filters that `/findings` refuses.
+    - At a past `as_of`, the filters select the scans of that time.
 - `/trends/findings`: the new findings and the resolved findings. `resolved` counts only the
   findings that a scan no longer showed (`resolved_semantics: "scan_resolved"`). A triage to
   `resolved` does not count. `split` is `scanner` (default) or `severity`. `split=severity` gets
