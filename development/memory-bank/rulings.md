@@ -89,6 +89,10 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-23 | A dashboard panel that reads findings takes the Tag filter, its exclude side and "No tag", as it takes the other filters of Findings. | 1294 |
 | 2026-11-23 | The past-time names ship with their effects on the screen, accepted on built pictures. At a past time, the Image column shows the names. Search and the Image filter give rows. A background export takes these filters. | 1294 |
 | 2026-11-23 | A background export at a past time writes the image names of that time. The CSV fills `image_repo` and `tag`, and a VEX product names the image (`pkg:oci/app@…`), not `unknown`. Accepted on the real files. | 1294 |
+| 2026-11-23 | Findings has a Tag filter after Image, with "is not", and "No tag" in Attribute. The store keeps Tag "is" and No tag apart, as Assignee and Unassigned. An export blocks a link that holds both, and the grid shows the text of refused filters, also at a past time. Accepted on built pictures. | 1294 |
+| 2026-11-23 | The Image pill ends with "· all tags" while Tag and No tag are off, because the Image filter finds every tag of the image. Accepted on built pictures. | 1294 |
+| 2026-11-23 | At a past time, a refused filter gives "JAVV cannot apply the KEV, Scanners disagree or New in range filter at a past time. Go back to now, or remove these filters." Accepted on built pictures. | 1294 |
+| 2026-11-23 | At a past time, Findings does not sort by EPSS, because the scan history has no EPSS. A grid sorted by EPSS sorts by Severity there, and the EPSS header does not sort. The past-time text shows only when the refused read holds KEV, Scanners disagree or New in range. Accepted on built pictures (review round 1 of PR 3). | 1294 |
 
 ## UI copy and look
 

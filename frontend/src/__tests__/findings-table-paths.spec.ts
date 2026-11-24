@@ -180,3 +180,16 @@ describe('FindingsTable, the Paths column (issue 1077)', () => {
     w.unmount()
   })
 })
+
+// the scan history has no EPSS, so at a past time its header does not sort (issue 1294 review)
+describe('FindingsTable, the EPSS sort at a past time', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  const epssHead = (w: ReturnType<typeof mountTable>) => w.findAll('thead th').find((th) => th.text().startsWith('EPSS'))!
+
+  it('sorts at now, and not at a past time', () => {
+    expect(epssHead(mountTable([])).classes()).toContain('p-datatable-sortable-column')
+    expect(epssHead(mountTable([], true, { historical: true })).classes()).not.toContain('p-datatable-sortable-column')
+    const first = mountTable([], true, { historical: true }).findAll('thead th').find((th) => th.text().startsWith('First seen'))!
+    expect(first.classes()).toContain('p-datatable-sortable-column')
+  })
+})

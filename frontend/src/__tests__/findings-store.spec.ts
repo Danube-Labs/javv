@@ -123,3 +123,19 @@ describe('findings store (cursor-stack paging)', () => {
     expect([s.rows.length, s.total, s.totalKnown]).toEqual([0, 0, false])
   })
 })
+
+// the scan history has no EPSS, so a past time cannot sort by it (issue 1294 review)
+describe('findings store, the sort at a past time', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('an EPSS sort falls back to Severity, and other sorts stay', () => {
+    const s = useFindingsStore()
+    s.setSort('epss')
+    s.keepPastTimeSort()
+    expect([s.sort, s.order]).toEqual(['severity_rank', 'desc'])
+    s.setSort('first_seen_at')
+    s.setSort('first_seen_at')
+    s.keepPastTimeSort()
+    expect([s.sort, s.order]).toEqual(['first_seen_at', 'asc'])
+  })
+})

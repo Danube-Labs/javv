@@ -14,7 +14,13 @@ import { isNegatable, valueLabel, type FilterField } from '@/filters/fields.conf
 import { inText } from '@/filters/typedValues'
 import type { FilterMode } from '@/stores/filters'
 
-const props = defineProps<{ field: FilterField; values: readonly string[]; mode: FilterMode }>()
+const props = defineProps<{
+  field: FilterField
+  values: readonly string[]
+  mode: FilterMode
+  /** A short note after the values, for example "all tags" (`pillNote`). */
+  note?: string | null
+}>()
 const emit = defineEmits<{ open: []; toggleMode: []; clear: [] }>()
 
 const labels = computed(() => props.values.map((v) => valueLabel(props.field, v)))
@@ -34,7 +40,7 @@ const shown = computed(() =>
     <button
       type="button"
       class="fpill-open fpill-field"
-      :aria-label="`Edit the filter ${inText(field.label)}: ${opText} ${labels.join(', ')}`"
+      :aria-label="`Edit the filter ${inText(field.label)}: ${opText} ${labels.join(', ')}${note ? `, ${note}` : ''}`"
       @click="emit('open')"
     >
       {{ field.label }}
@@ -54,6 +60,7 @@ const shown = computed(() =>
     <span v-else class="fpill-op">{{ opText }}</span>
     <!-- a long image repo hides the "+N"; the title holds every value -->
     <span class="fpill-vals" :title="labels.join(', ')">{{ shown }}</span>
+    <span v-if="note" class="fpill-note">· {{ note }}</span>
     <UiCloseButton class="fpill-x" small :label="`Clear ${inText(field.label)}`" @click="emit('clear')" />
   </div>
 </template>
@@ -121,6 +128,12 @@ const shown = computed(() =>
   max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* a note on what the values match, for example "all tags" (issue 1294): quiet, as the op words */
+.fpill-note {
+  color: var(--soft);
+  font-size: var(--text-sm);
   white-space: nowrap;
 }
 /* the NOT-pill (issue 349, ruled 2026-07-17 on built specimens): the include pill is FILLED

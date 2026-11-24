@@ -16,6 +16,9 @@ import type { Modes } from '@/stores/filters'
 
 export const SORT_FIELDS = ['severity_rank', 'first_seen_at', 'last_scan_at', 'cvss', 'epss'] as const
 export type SortField = (typeof SORT_FIELDS)[number]
+/** The sorts of the past-time reader (`_SORT_FIELDS` in backend/src/backend/query/as_of_t.py,
+ * held equal by buildFindingsQuery.spec.ts): the scan history does not record EPSS. */
+export const PAST_TIME_SORT_FIELDS: readonly SortField[] = ['severity_rank', 'first_seen_at', 'last_scan_at', 'cvss']
 export type SortOrder = 'asc' | 'desc'
 
 export interface GridState {

@@ -316,6 +316,8 @@ describe('the words of a result', () => {
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0, 'audit_filters'], msg: 'Value error, actor and exclude_actor are mutually exclusive', type: 'value_error' }] }, 'Not correct: one field with both is and is not (panel 1, audit_filters)'],
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0, 'filters'], msg: 'Value error, severity and exclude_severity are mutually exclusive', type: 'value_error' }] }, 'Not correct: one field with both is and is not (panel 1, filters)'],
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0, 'filters'], msg: 'Value error, assignee and unassigned are mutually exclusive', type: 'value_error' }] }, 'Not correct: an assignee and Unassigned together (panel 1, filters)'],
+    // issue 1294: the second pair of two fields
+    [{ line: 1, status: 422, errors: [{ loc: ['panels', 0, 'filters'], msg: 'Value error, tag and untagged are mutually exclusive', type: 'value_error' }] }, 'Not correct: a tag and No tag together (panel 1, filters)'],
     [{ line: 1, status: 422, errors: [{ loc: ['panels', 0, 'audit_filters'], msg: 'Value error, an audit action filter takes only the triage actions', type: 'value_error' }] }, 'Not correct: an Audit log action that is not a triage action (panel 1, audit_filters)'],
     [{ line: 1, status: 422, errors: [{ loc: [], msg: 'Value error, a check that is new', type: 'value_error' }] }, 'Not correct: a value that JAVV cannot use'],
   ] as const)('%o', (result, words) => {

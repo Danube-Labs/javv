@@ -61,6 +61,13 @@ describe('ExportDialog blocks what the backend refuses', () => {
     expect(button('Schedule').disabled).toBe(true)
   })
 
+  // issue 1294: a link can hold the second pair too, Tag with No tag
+  it('Tag with No tag: the window says why and turns Download off', async () => {
+    await openWith({ tag: ['1.4.1'], attr: ['untagged'] })
+    expect(blockText()).toBe('An export cannot use Tag and No tag together. Clear one of them.')
+    expect(button('Download').disabled).toBe(true)
+  })
+
   it('Scanner is not trivy: CSV can download, VEX is blocked', async () => {
     await openWith({ scanner: ['trivy'] }, { scanner: 'not' })
     expect(blockText()).toBeUndefined()

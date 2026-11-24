@@ -159,6 +159,20 @@ describe('buildFilterQuery', () => {
     expect(exc).not.toHaveProperty('package_name')
   })
 
+  // issue 1294: the tag of an image, a typed list with an exclude side, and a flag for no tag
+  it('tag, exclude_tag and untagged go out as the API takes them', () => {
+    const inc = buildFilterQuery(FINDINGS_FIELDS, sel({ image: ['shop/app'], tag: ['1.4.1', '1.4.2'] }), {
+      cluster_id: CID,
+    })
+    expect(inc.image_repo).toEqual(['shop/app'])
+    expect(inc.tag).toEqual(['1.4.1', '1.4.2'])
+    const exc = buildFilterQuery(FINDINGS_FIELDS, sel({ tag: ['latest'] }), { cluster_id: CID }, { tag: 'not' })
+    expect(exc.exclude_tag).toEqual(['latest'])
+    expect(exc).not.toHaveProperty('tag')
+    const flag = buildFilterQuery(FINDINGS_FIELDS, sel({ attr: ['untagged'] }), { cluster_id: CID })
+    expect(flag).toEqual({ cluster_id: CID, untagged: true })
+  })
+
   // issue 949 PR C: Image, CVE and Package take several typed values
   it('typed values go out as one list, trimmed, blanks dropped, in both modes', () => {
     const inc = buildFilterQuery(FINDINGS_FIELDS, sel({ image: [' api ', '   ', 'web'] }), { cluster_id: CID })

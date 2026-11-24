@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
-import { hasAssigneeWithUnassigned } from '@/findings/exportParams'
+import { hasUnrecordedFilter, refusedPair } from '@/findings/exportParams'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
 import { clusterFromQuery, foreignQuery, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
 
@@ -30,6 +30,15 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(FAILURE_COPY.past_t).toMatch(/at a past time/)
   })
 
+  // issue 1294: at a past time the history answers Search, Image and Tag, so the text names only
+  // the filters that still get the 422 (PAST_TIME_UNRECORDED_KEYS)
+  it('the past-time text names KEV, Scanners disagree and New in range, and no search', () => {
+    expect(FAILURE_COPY.past_t).toBe(
+      'JAVV cannot apply the KEV, Scanners disagree or New in range filter at a past time. Go back to now, or remove these filters.',
+    )
+    expect(FAILURE_COPY.past_t).not.toMatch(/search/i)
+  })
+
   // issue 975: a short search never gets to the server, so the 422 text names the causes that do
   it('a 422 names refused filters, never a short search', () => {
     expect(FAILURE_COPY.bad_filter).toBe(
@@ -45,18 +54,33 @@ describe('accurate-error mapping (audit 343 rule 1)', () => {
     expect(failureKind(501, true, true)).toBe('past_t')
   })
 
-  it('finds Assignee with Unassigned in a built query, and only the include side', () => {
+  // issue 1294 review: the past-time text names KEV, Scanners disagree and New in range, so it
+  // shows only when the refused read holds one of them
+  it('a 422 at a past time with none of those filters gets the refused-filters text', () => {
+    expect(failureKind(422, true, false, false)).toBe('bad_filter')
+    expect(failureKind(422, true, false, true)).toBe('past_t')
+    expect(hasUnrecordedFilter({ cluster_id: 'c', severity: ['high'] })).toBe(false)
+    expect(hasUnrecordedFilter({ cluster_id: 'c', kev: true })).toBe(true)
+    expect(hasUnrecordedFilter({ cluster_id: 'c', new_within_days: 7 })).toBe(true)
+  })
+
+  it('finds each refused pair in a built query, and only the include side', () => {
     const globals = { cluster_id: 'c-1' }
     const both = buildFilterQuery(FINDINGS_FIELDS, { assignee: ['bob'], attr: ['unassigned'] }, globals)
-    expect(hasAssigneeWithUnassigned(both)).toBe(true)
+    expect(refusedPair(both)).toEqual(['assignee', 'unassigned'])
     const notSide = buildFilterQuery(
       FINDINGS_FIELDS,
       { assignee: ['bob'], attr: ['unassigned'] },
       globals,
       { assignee: 'not' },
     )
-    expect(hasAssigneeWithUnassigned(notSide)).toBe(false)
-    expect(hasAssigneeWithUnassigned(buildFilterQuery(FINDINGS_FIELDS, { attr: ['unassigned'] }, globals))).toBe(false)
+    expect(refusedPair(notSide)).toBeNull()
+    expect(refusedPair(buildFilterQuery(FINDINGS_FIELDS, { attr: ['unassigned'] }, globals))).toBeNull()
+    // issue 1294: Tag with No tag, the second pair
+    const tags = buildFilterQuery(FINDINGS_FIELDS, { tag: ['1.4.1'], attr: ['untagged'] }, globals)
+    expect(refusedPair(tags)).toEqual(['tag', 'untagged'])
+    const tagNot = buildFilterQuery(FINDINGS_FIELDS, { tag: ['1.4.1'], attr: ['untagged'] }, globals, { tag: 'not' })
+    expect(refusedPair(tagNot)).toBeNull()
   })
 })
 

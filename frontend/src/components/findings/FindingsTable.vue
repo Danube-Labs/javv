@@ -37,7 +37,7 @@ import StateTag from '@/components/chips/StateTag.vue'
 import ScannerTag from '@/components/chips/ScannerTag.vue'
 import ValueActions from '@/components/filters/ValueActions.vue'
 import RowLink from '@/components/ui/RowLink.vue'
-import type { SortField, SortOrder } from '@/findings/buildFindingsQuery'
+import { PAST_TIME_SORT_FIELDS, type SortField, type SortOrder } from '@/findings/buildFindingsQuery'
 import { FINDINGS_COLUMNS, type FindingsColumnKey } from '@/findings/columns'
 import { pathsOf } from '@/findings/paths'
 import { logger } from '@/lib/logger'
@@ -73,6 +73,8 @@ const props = withDefaults(
     modes?: Modes
     /** where a row leads: its identifier renders as a real link, so the keyboard can open it */
     rowTo?: (row: FindingRow) => RouteLocationRaw
+    /** a past time: the scan history has no EPSS, so its header does not sort (issue 1294) */
+    historical?: boolean
   }>(),
   {
     hidden: () => new Set<string>(),
@@ -171,6 +173,11 @@ const emit = defineEmits<{
   pickValue: [fieldKey: string, value: string, mode: FilterMode]
 }>()
 
+const sortableAt = (key: FindingsColumnKey) => {
+  const field = SORT_FIELD[key]
+  return field !== undefined && (!props.historical || PAST_TIME_SORT_FIELDS.includes(field))
+}
+
 function onSort(e: DataTableSortEvent) {
   if (typeof e.sortField === 'string') emit('sort', e.sortField as SortField)
 }
@@ -205,8 +212,8 @@ const nsLabel = (r: FindingRow): string => {
  * filter that doesn't mean what the cell says.
  *
  * `image` filters on the row's FULL `image_repo` (an exact `term` server-side) even though the
- * cell shortens it for display — and on repo only, since findings carry no tag filter, which
- * the action's label says out loud.
+ * cell shortens it for display — and on repo only, so the pick matches every tag of the image,
+ * which the action's label says out loud. The Tag filter of the filter bar narrows it (issue 1294).
  *
  * `cve` and `package` joined in issue 492, once their params existed — `package` filters
  * `package_name`, which is the package itself and not `ptype` (that is the package's TYPE).
@@ -301,7 +308,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
         :key="key"
         :column-key="key"
         :field="SORT_FIELD[key]"
-        :sortable="key in SORT_FIELD"
+        :sortable="sortableAt(key)"
         :class="colClass(key)"
       >
         <template #header>

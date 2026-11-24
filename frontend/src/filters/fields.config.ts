@@ -2,7 +2,7 @@
  * The one `fields` config that drives BOTH FacetRail and FilterBar (PLAN gate: adding a field
  * here surfaces it in both with no component edits). Shape mirrors the backend contract, not
  * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values,
- * and so do the text fields `image`, `cve` and `package` (issue 949); `scanner` and the other text
+ * and so do the text fields `image`, `tag`, `cve` and `package` (issues 949 and 1294); `scanner` and the other text
  * fields send one; KEV / fix-available / disagree are boolean flags (grouped as one "Attribute"
  * facet, as in the prototype).
  */
@@ -67,6 +67,10 @@ export interface TextField extends BaseField {
   /** The param takes several values (issue 949): each Enter in the filter bar adds one, and a
    * second pick from a table cell adds rather than replaces. Off by default. */
   multi?: boolean
+  /** A short note on the pill while none of `offWith` is on (issue 1294): the Image filter
+   * matches every tag of the image until a Tag filter or No tag narrows it. An entry is a field
+   * key, or `field:value` for one value of a field (a flag). */
+  note?: { text: string; offWith: readonly string[] }
 }
 
 export type FilterField = TermsField | FlagsField | TextField
@@ -84,6 +88,17 @@ export function valueLabel(field: FilterField, value: string): string {
 
 export const isNegatable = (field: FilterField): boolean =>
   field.type !== 'flags' && field.negatable === true
+
+/** The note of a field's pill, or null: see `TextField.note`. */
+export function pillNote(field: FilterField, selections: Selections): string | null {
+  if (field.type !== 'text' || !field.note || (selections[field.key] ?? []).length === 0) return null
+  const on = (entry: string) => {
+    const [key, value] = entry.split(':')
+    const picked = selections[key!] ?? []
+    return value === undefined ? picked.length > 0 : picked.includes(value)
+  }
+  return field.note.offWith.some(on) ? null : field.note.text
+}
 
 /**
  * Which mode a value is currently filtered under, or `null` when it is not selected at all —
@@ -150,6 +165,15 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
           'This filter keeps the findings that have no assignee yet. The filter "Assignee is not ' +
           '<name>" also keeps these findings. To see only these findings, use this filter.',
       },
+      // issue 1294: the API refuses it with Tag "is", as Unassigned with Assignee
+      {
+        key: 'untagged',
+        param: 'untagged',
+        label: 'No tag',
+        hint:
+          'This filter keeps the findings of images that have no tag. For example, a pod can run an image by its ' +
+          'digest only.',
+      },
       // first_seen_at within the global range — the event view of the state table
       {
         key: 'new',
@@ -169,7 +193,18 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', multi: true, facetKey: 'namespaces', negatable: true },
   // `image_repo` is an exact `term` server-side, so the grid's image cell can filter on the
   // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2)
-  { key: 'image', label: 'Image', type: 'text', param: 'image_repo', multi: true, negatable: true },
+  {
+    key: 'image',
+    label: 'Image',
+    type: 'text',
+    param: 'image_repo',
+    multi: true,
+    negatable: true,
+    note: { text: 'all tags', offWith: ['tag', 'attr:untagged'] },
+  },
+  // issue 1294: an exact `term` on the tag of the image, with `exclude_tag`. The API has no tag
+  // facet, so it is a typed field, as Image is
+  { key: 'tag', label: 'Tag', type: 'text', param: 'tag', multi: true, negatable: true },
   // one exact image (issue 1140): the image page opens Findings on its digest. The API takes one
   // `image_digest` and has no exclude side, so the field is single and not negatable
   { key: 'digest', label: 'Digest', type: 'text', param: 'image_digest', multi: false },
@@ -181,8 +216,9 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
 ]
 
-/** The one pair the Findings filters can send: the store keeps one mode per field, so a field
+/** The pairs the Findings filters can send: the store keeps one mode per field, so a field
  * never goes out with its own `exclude_` side. */
 export const FINDINGS_EXCLUSIVE_PAIRS: readonly ExclusivePair[] = [
   { flagField: 'attr', flag: 'unassigned', field: 'assignee' },
+  { flagField: 'attr', flag: 'untagged', field: 'tag' },
 ]

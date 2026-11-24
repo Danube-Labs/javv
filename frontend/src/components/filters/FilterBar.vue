@@ -23,7 +23,7 @@ import {
   type FacetsResponse,
   type ValueSearchFn,
 } from '@/filters/facets'
-import { isNegatable, type FilterField, type Selections } from '@/filters/fields.config'
+import { isNegatable, pillNote, type FilterField, type Selections } from '@/filters/fields.config'
 import { inText, typedValuesToAdd } from '@/filters/typedValues'
 import type { FilterMode, Modes } from '@/stores/filters'
 
@@ -177,6 +177,7 @@ function onKeydown(e: KeyboardEvent) {
       :field="f"
       :values="selections[f.key] ?? []"
       :mode="modeOf(f.key)"
+      :note="pillNote(f, selections)"
       @open="openField(f.key)"
       @toggle-mode="emit('toggleMode', f.key)"
       @clear="emit('clearField', f.key)"

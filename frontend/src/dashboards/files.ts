@@ -94,6 +94,7 @@ export const VALUE_ERROR_WORDS: readonly (readonly [RegExp, string])[] = [
   [/takes only the triage actions/, 'an Audit log action that is not a triage action'],
   // two fields, so the words of the last pattern would be wrong for it
   [/assignee and unassigned are mutually exclusive/, 'an assignee and Unassigned together'],
+  [/tag and untagged are mutually exclusive/, 'a tag and No tag together'],
   [/are mutually exclusive/, 'one field with both is and is not'],
 ]
 const VALUE_ERROR_ELSE = 'a value that JAVV cannot use'
