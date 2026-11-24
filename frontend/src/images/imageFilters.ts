@@ -195,6 +195,12 @@ export function stripFilters(clusterId: string, sel: Selections, modes: Modes = 
   return buildFilterQuery(STRIP_FIELDS, sel, { cluster_id: clusterId }, modes)
 }
 
+/** All the filters of this screen as a query, for the Scan ingest strip (issue 1293). It applies
+ * Scanner, Namespace, Image and Tag, and says so when another filter of Images is on. */
+export function screenFilters(clusterId: string, sel: Selections, modes: Modes = {}): FilterQuery {
+  return buildFilterQuery(IMAGES_FIELDS, sel, { cluster_id: clusterId }, modes)
+}
+
 export function stripFiltersNote(): string {
   const labels = STRIP_FIELDS.map((f) => f.label)
   return `Only the ${labels.slice(0, -1).join(', ')} and ${labels.at(-1)} filters apply.`

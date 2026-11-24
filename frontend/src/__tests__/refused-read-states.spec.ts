@@ -34,9 +34,11 @@ import {
   listDecisionsApiV1DecisionsGet,
   readAuditLogApiV1AuditGet as readActivity,
   readAuditLogApiV1AuditGet,
+  scansTrendApiV1TrendsScansGet,
   searchFindingsApiV1FindingsGet,
 } from '@/api/generated'
 import AuditTable from '@/components/audit/AuditTable.vue'
+import IngestLens from '@/components/dashboards/IngestLens.vue'
 import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
@@ -635,6 +637,53 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     const strip = w.findComponent(NewFindingsStrip)
     expect(strip.props('filters')).toEqual({ cluster_id: CLUSTER, tag: ['1.4.1'], scanner: 'grype' })
     expect(strip.props('note')).toBe('Only the Scanner, Namespace, Image and Tag filters apply.')
+  })
+
+  // issue 1293: Scan ingest applies the filters of the table that a scan record holds
+  const scansQuery = () =>
+    (vi.mocked(scansTrendApiV1TrendsScansGet).mock.calls.at(-1)![0] as { query: Record<string, unknown> }).query
+
+  it('on Findings, Scan ingest reads the scans under the scan filters of the table, and names the others', async () => {
+    search().mockImplementation(async () => findingsPage('CVE-2026-0001', 1, null) as never)
+    const w = await mountRouted(
+      FindingsView as Component,
+      {},
+      '/?namespace=javv&image=nginx&tag=1.4.1&digest=sha256:abc&scanner=grype&severity=critical',
+    )
+    await flushPromises()
+    expect(scansQuery()).toMatchObject({
+      cluster_id: CLUSTER,
+      namespace: ['javv'],
+      image_repo: ['nginx'],
+      tag: ['1.4.1'],
+      image_digest: 'sha256:abc',
+      scanner: 'grype',
+    })
+    expect(scansQuery()).not.toHaveProperty('severity')
+    expect(w.findComponent(IngestLens).text()).toContain('Only the namespace, image, tag, digest and scanner filters apply.')
+  })
+
+  it('on Images, Scan ingest reads the scans under Scanner, Namespace, Image and Tag', async () => {
+    const w = await mountRouted(ImagesView as Component, {}, '/?tag=1.4.1&severity=critical&scanner=grype')
+    await flushPromises()
+    expect(scansQuery()).toMatchObject({ cluster_id: CLUSTER, tag: ['1.4.1'], scanner: 'grype' })
+    expect(scansQuery()).not.toHaveProperty('severity')
+    expect(w.findComponent(IngestLens).text()).toContain('Only the namespace, image, tag, digest and scanner filters apply.')
+  })
+
+  it('a link with Tag and No tag: Scan ingest says the filters are refused, not the connection', async () => {
+    search().mockImplementation(async () => refusedWith(422) as never)
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockImplementation(async () => refusedWith(422) as never)
+    const w = await mountRouted(FindingsView as Component, {}, '/?tag=1.4.1&attr=untagged')
+    await flushPromises()
+    expect(scansQuery()).toMatchObject({ tag: ['1.4.1'], untagged: true })
+    expect(w.findComponent(IngestLens).find('.il-empty').text()).toBe('JAVV cannot count the scans with these filters.')
+  })
+
+  it('Scanner status has no table filters: Scan ingest reads the scans of the whole cluster', async () => {
+    await mountRouted(ScannerStatusView as Component, {}, '/?namespace=javv')
+    await flushPromises()
+    expect(Object.keys(scansQuery()).sort()).toEqual(['cluster_id', 'days', 'interval'])
   })
 
   it('a grid sorted by EPSS reads a past time by Severity, so the read is not refused', async () => {

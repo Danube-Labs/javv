@@ -14,7 +14,8 @@ import GuideProse from './GuideProse.vue'
       </li>
       <li>
         <strong>Charts show what happened inside the range,</strong> for example the Scan ingest strip
-        above the tables. It counts the scans when they arrived. The New findings strip under it counts
+        above the tables. It counts the scans when they arrived. It applies the filters of the table that a
+        scan holds, for example the namespace and the image. The New findings strip under it counts
         the findings that JAVV first saw in each day or hour. On Findings it follows the filters of the table.
       </li>
       <li>

@@ -229,3 +229,129 @@ describe('IngestLens read', () => {
     expect(w.find('.il-empty').text()).toBe('JAVV cannot show the scans. Check the backend connection.')
   })
 })
+
+describe('IngestLens filters (issue 1293): the filters a scan record holds', () => {
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })
+  const ok = <T,>(data: T) => ({ data, response: { ok: true, status: 200 } })
+  const series = { trivy: pts([2, 3]) }
+
+  function mountLens(filters?: Record<string, unknown>) {
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue(ok({ scanners: [] }) as never)
+    return mount(IngestLens, {
+      props: { clusterId: 'c-1', ...(filters ? { filters } : {}) },
+      global: { plugins: [router], stubs: { EChart: true } },
+    })
+  }
+  const sent = () => vi.mocked(scansTrendApiV1TrendsScansGet).mock.calls.map((c) => (c[0] as { query: Record<string, unknown> }).query)
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockReset()
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue(ok({ series }) as never)
+  })
+
+  it('sends the scan filters of the screen with its own range, and never the other filters', async () => {
+    const w = mountLens({ cluster_id: 'c-1', window_days: 7, namespace: ['javv'], exclude_tag: ['dev'], severity: ['high'] })
+    await flushPromises()
+    expect(sent()).toEqual([{ cluster_id: 'c-1', days: 30, interval: 'day', namespace: ['javv'], exclude_tag: ['dev'] }])
+    w.unmount()
+  })
+
+  it('with no filters it sends what it sent before', async () => {
+    mountLens()
+    await flushPromises()
+    expect(sent()).toEqual([{ cluster_id: 'c-1', days: 30, interval: 'day' }])
+  })
+
+  it('says that the other filters do not apply, only while one is on', async () => {
+    const w = mountLens({ cluster_id: 'c-1', namespace: ['javv'] })
+    await flushPromises()
+    expect(w.find('.il-sub').text()).not.toContain('filters apply')
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['javv'], state: ['open'] } })
+    await flushPromises()
+    expect(w.find('.il-sub').text()).toContain('Only the namespace, image, tag, digest and scanner filters apply.')
+  })
+
+  it('while a scan filter applies, it shows no last scan: that time is the time of the whole cluster', async () => {
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue(ok({ series: {} }) as never)
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue(
+      ok({ scanners: [{ scanner: 'trivy', last_ingest_at: '2026-10-01T08:30:00Z', silent_for_seconds: 600 }] }) as never,
+    )
+    const mountWith = (filters: Record<string, unknown>) =>
+      mount(IngestLens, { props: { clusterId: 'c-1', filters }, global: { plugins: [router], stubs: { EChart: true } } })
+    const filtered = mountWith({ cluster_id: 'c-1', namespace: ['shop'] })
+    await flushPromises()
+    expect(filtered.find('.il-last').exists()).toBe(false)
+    expect(filtered.find('.il-empty').text()).toBe('No scans in this range.')
+    // another filter alone changes no scan, so the time of the cluster is still true
+    const other = mountWith({ cluster_id: 'c-1', severity: ['high'] })
+    await flushPromises()
+    expect(other.find('.il-last').text()).toContain('last scan trivy')
+    expect(other.find('.il-empty').text()).toMatch(/^No scans in this range\. The table shows the state of the last scan/)
+  })
+
+  it('a 422 on the filters says so, and blames no connection (a value past the cap, or Tag with No tag)', async () => {
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue({ error: {}, response: { ok: false, status: 422 } } as never)
+    const w = mountLens({ cluster_id: 'c-1', tag: ['1.4'], untagged: true })
+    await flushPromises()
+    expect(w.find('.il-empty').text()).toBe('JAVV cannot count the scans with these filters.')
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue({ error: {}, response: { ok: false, status: 500 } } as never)
+    await w.setProps({ filters: { cluster_id: 'c-1', tag: ['1.5'] } })
+    await flushPromises()
+    expect(w.find('.il-empty').text()).toBe('JAVV cannot show the scans. Check the backend connection.')
+  })
+
+  it('reads the last scan only while no scan filter applies: under one it is not shown', async () => {
+    const fresh = vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet)
+    const w = mountLens({ cluster_id: 'c-1', severity: ['high'] })
+    await flushPromises()
+    expect(fresh).toHaveBeenCalledTimes(1)
+    fresh.mockClear()
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['shop'] } })
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['data'] } })
+    await flushPromises()
+    expect(fresh).not.toHaveBeenCalled()
+  })
+
+  it('a refused last-scan read shows "-" until a scan filter applies, then no line at once', async () => {
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue({ error: {}, response: { ok: false, status: 503 } } as never)
+    const w = mount(IngestLens, {
+      props: { clusterId: 'c-1', filters: {} },
+      global: { plugins: [router], stubs: { EChart: true } },
+    })
+    await flushPromises()
+    expect(w.find('.il-last').text()).toBe('last scan -')
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockImplementation(() => new Promise(() => {}) as never)
+    await w.setProps({ filters: { namespace: ['shop'] } })
+    // the reply has not landed: the line goes with the filter, not with the next read
+    expect(w.find('.il-last').exists()).toBe(false)
+  })
+
+  it('reads again when a scan filter changes, and not for an equal object or another filter', async () => {
+    const w = mountLens({ cluster_id: 'c-1', namespace: ['javv'] })
+    await flushPromises()
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['javv'] } })
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['javv'], severity: ['low'] } })
+    await flushPromises()
+    expect(sent()).toHaveLength(1)
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['shop'] } })
+    await flushPromises()
+    expect(sent().map((q) => q.namespace)).toEqual([['javv'], ['shop']])
+  })
+
+  it('an older reply that lands after a newer one does not take the strip', async () => {
+    let first!: (v: unknown) => void
+    vi.mocked(scansTrendApiV1TrendsScansGet)
+      .mockImplementationOnce(() => new Promise((r) => (first = r)) as never)
+      .mockResolvedValueOnce(ok({ series: { grype: pts([5]) } }) as never)
+    const w = mountLens({ namespace: ['javv'] })
+    await flushPromises()
+    await w.setProps({ filters: { namespace: ['shop'] } })
+    await flushPromises()
+    first(ok({ series: { trivy: pts([9, 9]) } }))
+    await flushPromises()
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const names = (option.series as BarSeriesOption[]).map((s) => s.name)
+    expect(names).toEqual(['grype'])
+  })
+})

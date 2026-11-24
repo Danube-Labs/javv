@@ -111,6 +111,25 @@ describe('ImageDetailView (M9c slice 3)', () => {
     expect(w.find('.lens-stack').findAll('.ingest-lens')).toHaveLength(2)
   })
 
+  it('Scan ingest reads the scans of this digest only, for both scanners (issue 1293)', async () => {
+    facetsMock.mockResolvedValue(ok({ facets: {} }) as never)
+    searchMock.mockResolvedValue(ok({ data: [], total: { value: 0 }, next_cursor: null }) as never)
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockClear()
+    await router.push('/images/sha256:abc?repo=docker.io/library/nginx&tag=1.21.6')
+    const w = mount(ImageDetailView, { global: { plugins: [router] } })
+    await flushPromises()
+    const scans = vi.mocked(scansTrendApiV1TrendsScansGet)
+    const q = () => (scans.mock.calls.at(-1)![0] as { query: Record<string, unknown> }).query
+    expect(q()).toMatchObject({ cluster_id: 'c-1', image_digest: 'sha256:abc' })
+    expect(q()).not.toHaveProperty('scanner')
+    const reads = scans.mock.calls.length
+    await w.findAll('button').find((b) => b.text() === 'grype')!.trigger('click')
+    await flushPromises()
+    // the scanner switch picks the findings, and Scan ingest keeps both scanners
+    expect(scans.mock.calls.length).toBe(reads)
+    expect(w.find('.lens-stack .il-sub').text()).not.toContain('filters apply')
+  })
+
   it('scanner lens SWAPS the per-scanner reads — rows replaced, never merged', async () => {
     facetsMock.mockResolvedValue(
       ok({ facets: { severity: [{ key: 'critical', count: 3 }], present: [{ key: 'true', count: 10 }] } }) as never,

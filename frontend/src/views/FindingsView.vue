@@ -349,9 +349,10 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         </p>
         <p class="head-note">JAVV counts the findings of Trivy and Grype apart. When the two scanners report a vulnerability, it counts once for each scanner.</p>
       </div>
-      <!-- Scan ingest and New findings, one band: the new strip takes the filters of the table -->
+      <!-- Scan ingest and New findings, one band: both take the filters of the table, and Scan
+           ingest applies those that a scan record holds -->
       <div v-if="clusterStore.selectedId" class="lens-stack">
-        <IngestLens :cluster-id="clusterStore.selectedId" />
+        <IngestLens :cluster-id="clusterStore.selectedId" :filters="facetsQuery ?? {}" />
         <NewFindingsStrip
           :cluster-id="clusterStore.selectedId"
           :t="timeTravel.t"

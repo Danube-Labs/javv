@@ -11,6 +11,9 @@
  * Every number is a server aggregation: `GET /trends/scans` (cardinality-deduped committed
  * runs) + `GET /scanners/freshness`. The freshness line is NOW-truth, so it hides at a
  * past T — there the range copy alone carries the message.
+ *
+ * `filters` is the filter query of the screen (issue 1293). The strip sends the filters that a
+ * scan record holds (`scanFilters`) and says so when the screen has another filter on.
  */
 import { computed, ref, watch } from 'vue'
 
@@ -33,6 +36,7 @@ import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
 import { useStripNow } from '@/composables/useStripNow'
+import { scanFilters } from '@/dashboards/scanFilters'
 import { logger } from '@/lib/logger'
 import { lastDataAt, silentFor, type FreshnessRow } from '@/system/freshness'
 import { useTimeTravelStore } from '@/stores/timeTravel'
@@ -42,8 +46,10 @@ const props = withDefaults(
     clusterId: string
     /** What the D28 clause points at — "the table" on grid screens, "this screen" on overview. */
     subject?: string
+    /** the filter query of the screen; none on a screen without table filters */
+    filters?: Record<string, unknown>
   }>(),
-  { subject: 'the table' },
+  { subject: 'the table', filters: () => ({}) },
 )
 const timeTravel = useTimeTravelStore()
 /** the subject starts a sentence in the strip text */
@@ -53,12 +59,25 @@ const series = ref<ScanActivityData>({})
 const freshness = ref<FreshnessRow[]>([])
 const freshnessFailed = ref(false)
 const failed = ref(false)
+/** the route refused the filters of the screen (422): a value past its cap, or a pair that it
+ * refuses, as Tag with No tag. Not a connection fault. */
+const refused = ref(false)
 // no claim before evidence: quiet/failed/chart render only once a response has LANDED —
 // the pre-data default used to satisfy `quiet` and flash the amber panel on every load
 const settled = ref(false)
 
+const split = computed(() => scanFilters(props.filters))
+/** the screen has a filter on that a scan record does not hold */
+const otherFilters = computed(() => split.value.ignored.length > 0)
+/** a scan filter applies: the last scan of `/scanners/freshness` is the last scan of the whole
+ * cluster, so the strip does not read or show it (operator decision Q2 B, issue 1293) */
+const scanFiltered = computed(() => Object.keys(split.value.applied).length > 0)
+
+let seq = 0
+// one source for each value, and the filters as text: a host that passes an equal new object on
+// each render does not read again (a getter of one array is compared as a whole, by identity)
 watch(
-  () => [props.clusterId, timeTravel.t, timeTravel.windowDays] as const,
+  [() => props.clusterId, () => timeTravel.t, () => timeTravel.windowDays, () => JSON.stringify(split.value.applied)],
   async ([id, t, days], old) => {
     if (!id) return
     // a cluster switch invalidates what's on screen (another tenant's chart would be a lie);
@@ -68,22 +87,25 @@ watch(
       series.value = {}
       freshness.value = []
     }
+    const mine = ++seq
+    const withFreshness = !scanFiltered.value
     const [scans, fresh] = await Promise.all([
       scansTrendApiV1TrendsScansGet({
         client,
-        query: { ...buildTrendQuery(id, days, t), interval: ingestInterval(days, t) } as never,
+        query: { ...split.value.applied, ...buildTrendQuery(id, days, t), interval: ingestInterval(days, t) } as never,
       }),
-      scannerFreshnessApiV1ScannersFreshnessGet({ client, query: { cluster_id: id } }),
+      withFreshness ? scannerFreshnessApiV1ScannersFreshnessGet({ client, query: { cluster_id: id } }) : null,
     ])
+    if (mine !== seq) return // a newer read owns the strip now
     failed.value = !scans.response?.ok || !scans.data
+    refused.value = failed.value && scans.response?.status === 422
     if (failed.value) logger.warn('ingest_lens_failed', { status: scans.response?.status })
     series.value = failed.value ? {} : ((scans.data as { series: ScanActivityData }).series ?? {})
     // a refused freshness read drops the old time: it belonged to an earlier read (issue 833, F5)
-    freshnessFailed.value = !fresh.response?.ok || !fresh.data
-    freshness.value = freshnessFailed.value
-      ? []
-      : ((fresh.data as { scanners: FreshnessRow[] }).scanners ?? [])
-    if (freshnessFailed.value) logger.warn('ingest_lens_freshness_failed', { status: fresh.response?.status })
+    freshnessFailed.value = fresh !== null && (!fresh.response?.ok || !fresh.data)
+    freshness.value =
+      fresh === null || freshnessFailed.value ? [] : ((fresh.data as { scanners: FreshnessRow[] }).scanners ?? [])
+    if (freshnessFailed.value) logger.warn('ingest_lens_freshness_failed', { status: fresh?.response?.status })
     settled.value = true
   },
   { immediate: true },
@@ -128,22 +150,24 @@ function onPointClick(params: { dataIndex: number }) {
       <span class="il-sub"
         >Scans for each {{ interval }} · {{ timeTravel.windowLabel.toLowerCase()
         }}<template v-if="subDay">. The chart has one bar for each day. It shows all of the last day</template>.
-        {{ subjectCap }} shows the state at the <b>end</b> of this range.</span
+        {{ subjectCap }} shows the state at the <b>end</b> of this range.<template v-if="otherFilters">
+          Only the namespace, image, tag, digest and scanner filters apply.</template></span
       >
       <GuideLink class="il-help" section="time-range" variant="popover" />
-      <span v-if="timeTravel.isNow && latest" class="il-last mono-cell">
+      <span v-if="timeTravel.isNow && !scanFiltered && latest" class="il-last mono-cell">
         last scan {{ latest.scanner }} · {{ lastDataAt(latest.last_ingest_at) }} ({{
           silentFor(latest.silent_for_seconds)
         }} ago)
       </span>
-      <span v-else-if="timeTravel.isNow && freshnessFailed" class="il-last mono-cell">last scan -</span>
+      <span v-else-if="timeTravel.isNow && !scanFiltered && freshnessFailed" class="il-last mono-cell">last scan -</span>
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (a quiet range is an
          ANSWER; before the response lands there is none) -->
     <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading the scans" class="skel-gap" />
+    <p v-else-if="refused" class="il-empty">JAVV cannot count the scans with these filters.</p>
     <p v-else-if="failed" class="il-empty">JAVV cannot show the scans. Check the backend connection.</p>
     <p v-else-if="totalRuns === 0" class="il-empty">
-      No scans in this range. <template v-if="timeTravel.isNow && latest"
+      No scans in this range. <template v-if="timeTravel.isNow && !scanFiltered && latest"
         >{{ subjectCap }} shows the state of the last scan, {{ lastDataAt(latest.last_ingest_at) }},
         {{ silentFor(latest.silent_for_seconds) }} ago.</template
       >

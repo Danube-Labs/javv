@@ -93,6 +93,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-23 | The Image pill ends with "· all tags" while Tag and No tag are off, because the Image filter finds every tag of the image. Accepted on built pictures. | 1294 |
 | 2026-11-23 | At a past time, a refused filter gives "JAVV cannot apply the KEV, Scanners disagree or New in range filter at a past time. Go back to now, or remove these filters." Accepted on built pictures. | 1294 |
 | 2026-11-23 | At a past time, Findings does not sort by EPSS, because the scan history has no EPSS. A grid sorted by EPSS sorts by Severity there, and the EPSS header does not sort. The past-time text shows only when the refused read holds KEV, Scanners disagree or New in range. Accepted on built pictures (review round 1 of PR 3). | 1294 |
+| 2026-11-23 | The Scan ingest strip follows the scan filters of its screen. These are the filters that a scan record holds: Namespace, Image, Tag, No tag, Digest and Scanner. `GET /trends/scans` takes these filters, now and at a past time. | 1293 |
+| 2026-11-24 | The MCP tool `trends`, kind `scans`, takes the same filters as its route (Q1 A of PR 1). | 1293 |
 
 ## UI copy and look
 
@@ -182,6 +184,10 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-24 | The strips of a band share one axis: each bucket of the range up to now, with each count at its date (D4 B, on built pictures). Scan ingest and Failed ingests changed with it. | 1292 |
 | 2026-11-24 | When a past time refuses a filter, the New findings strip says "JAVV cannot count the new findings with these filters at a past time." (D5). | 1292 |
 | 2026-11-24 | The New findings strip is a dashboard panel in the Findings group, with panel filters and the scanner switch, as Top vulnerabilities (D3 B). It refuses "New in range", because the strip counts the findings first seen in its range already (Q1 B, on built pictures). A new panel takes both columns, as Scan ingest (Q2 A). | 1292 |
+| 2026-11-23 | On Image detail, Scan ingest shows only the scans of that image, for the two scanners. | 1293 |
+| 2026-11-23 | The Scan ingest panel of a dashboard takes panel filters, as the strip above a table. | 1293 |
+| 2026-11-24 | When the screen has a filter that a scan record does not hold, Scan ingest says so (Q1 A, on built pictures). Its line ends with "Only the namespace, image, tag, digest and scanner filters apply". | 1293 |
+| 2026-11-24 | While a scan filter applies, Scan ingest does not show the last scan, and its empty text has no time. That time is the time of the whole cluster (Q2 B, on built pictures). | 1293 |
 | 2026-11-24 | The "New in range" filter stops at the time of the request, as the New findings strip does. This goes in PR 1 of issue 1291. | 1291 |
 
 ## AI vulnerability research (alpha)

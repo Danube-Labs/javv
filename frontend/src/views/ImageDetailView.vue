@@ -61,6 +61,8 @@ const title = computed(() =>
 const scanner = ref<'trivy' | 'grype'>('trivy')
 // the New findings strip counts this digest, for the scanner of the switch (issue 1292)
 const stripQuery = computed(() => ({ image_digest: digest.value, scanner: scanner.value }))
+// Scan ingest shows the scans of this image, for both scanners side by side (issue 1293)
+const scanQuery = computed(() => ({ image_digest: digest.value }))
 
 /* ---- severity cards: the lens scanner's facet buckets, image-scoped ---- */
 const facets = ref<Record<string, { key: string; count: number }[]>>({})
@@ -290,9 +292,9 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
     </div>
 
     <template v-else>
-      <!-- the New findings strip of this digest, for the scanner of the switch -->
+      <!-- the scans of this digest, and the New findings strip of it for the scanner of the switch -->
       <div v-if="clusterStore.selectedId" class="lens-stack detail-lens">
-        <IngestLens :cluster-id="clusterStore.selectedId" />
+        <IngestLens :cluster-id="clusterStore.selectedId" :filters="scanQuery" />
         <NewFindingsStrip
           :cluster-id="clusterStore.selectedId"
           :t="timeTravel.t"

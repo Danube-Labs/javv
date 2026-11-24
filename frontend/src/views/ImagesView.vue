@@ -36,6 +36,7 @@ import {
   imagesCsv,
   imagesFacets,
   searchImageValues,
+  screenFilters,
   stripFilters,
   stripFiltersNote,
 } from '@/images/imageFilters'
@@ -61,6 +62,10 @@ const { withGlobals } = useApi()
 // the four filters of this screen that the New findings strip takes (issue 1292)
 const stripQuery = computed(() =>
   stripFilters(clusterStore.selectedId ?? '', filters.selections, filters.modes),
+)
+// all the filters of this screen: Scan ingest applies its own and names the others (issue 1293)
+const screenQuery = computed(() =>
+  screenFilters(clusterStore.selectedId ?? '', filters.selections, filters.modes),
 )
 
 filters.fromQuery(route.query)
@@ -193,9 +198,10 @@ const inventoryAt = computed(() =>
         </template>
         <p v-else class="head-note">The latest inventory. The table shows one row for each image digest.</p>
       </div>
-      <!-- the New findings strip takes the four filters that mean the same on the findings -->
+      <!-- the New findings strip takes the four filters that mean the same on the findings, and
+           Scan ingest the same four from all the filters of the screen -->
       <div v-if="clusterStore.selectedId" class="lens-stack">
-        <IngestLens :cluster-id="clusterStore.selectedId" />
+        <IngestLens :cluster-id="clusterStore.selectedId" :filters="screenQuery" />
         <NewFindingsStrip
           :cluster-id="clusterStore.selectedId"
           :t="timeTravel.t"
