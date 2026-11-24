@@ -231,6 +231,10 @@ async def test_scans_trend_follows_the_scan_filters(env) -> None:
     )
     await ingest_envelope(client, _scan(cid, "r3", "trivy", "ops/tool", "3", ["ops"]))  # no tag
     await ingest_envelope(client, _scan(cid, "r4", "grype", "shop/app:1.4.2", "1", ["shop"]))
+    # a cluster whose id starts with this one: the index pattern of `cid` matches its indices
+    # too, so only the forced cluster_id term keeps its scan out of the counts below
+    neighbour = f"{cid}-x"
+    await ingest_envelope(client, _scan(neighbour, "rx", "trivy", "shop/app:1.4.2", "1", ["shop"]))
     await client.indices.refresh(index=f"javv-scan-events-{cid}-*")
     http = await login()
 
@@ -252,7 +256,12 @@ async def test_scans_trend_follows_the_scan_filters(env) -> None:
     assert await scans(scanner="grype") == {"grype": 1}
     assert await scans(exclude_scanner="grype") == {"trivy": 3}
 
-    # tenant isolation: another cluster never counts, with or without filters
+    # tenant isolation: the neighbour counts its own scan only, and a cluster with no scans none
+    r = await http.get(
+        "/api/v1/trends/scans",
+        params={"cluster_id": neighbour, "days": 7, "namespace": "shop"},
+    )
+    assert _today(r.json()["series"]) == {"trivy": 1}
     other = f"c-trend-{uuid.uuid4().hex[:8]}"
     r = await http.get(
         "/api/v1/trends/scans", params={"cluster_id": other, "days": 7, "namespace": "shop"}

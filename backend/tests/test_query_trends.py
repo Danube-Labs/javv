@@ -9,6 +9,7 @@ axis is the SERVER-stamped `ingested_at` (client `@timestamp` is display-only an
 `size:0` — counts come from aggregations only.
 """
 
+from dataclasses import fields
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -92,13 +93,20 @@ def test_scans_trend_exclude_sides_and_no_tag() -> None:
 
 
 def test_scans_trend_with_no_filter_keeps_its_body_and_refuses_a_pair() -> None:
-    assert build_scans_trend_body(days=30, filters=ScanFilters()) == build_scans_trend_body(days=30)
+    q = build_scans_trend_body(days=30, filters=ScanFilters())["query"]["bool"]
+    assert q == {"filter": [{"range": {"ingested_at": {"gte": _gte(30)}}}]}  # no must_not
     with pytest.raises(ValueError, match="tag and untagged"):
         build_scans_trend_body(days=30, filters=ScanFilters(tag=["1"], untagged=True))
     with pytest.raises(ValueError, match="namespace and exclude_namespace"):
         build_scans_trend_body(
             days=30, filters=ScanFilters(namespace=["a"], exclude_namespace=["b"])
         )
+
+
+def test_scan_filters_have_the_names_of_the_findings_filters() -> None:
+    """The pair check (`conflicting_filter_pair`) reads the names of SearchFilters: a field of
+    ScanFilters with another name would skip it, and a refused pair would filter instead."""
+    assert {f.name for f in fields(ScanFilters)} <= set(SearchFilters.__dataclass_fields__)
 
 
 def test_scans_trend_days_is_bounded() -> None:

@@ -516,8 +516,11 @@ state. With a time in the past, JAVV builds the state at that time from the hist
         - `namespace`, `image_repo` and `tag`, and the `exclude_` filter of each
         - `untagged` and `image_digest`
         - `scanner` and `exclude_scanner`, each `trivy` or `grype`
-    - A namespace filter selects a scan when the image runs in one of the namespaces.
+    - A namespace filter selects a scan when the image ran in one of the namespaces at the time
+      of that scan.
     - The route refuses with 422 each value and each pair of filters that `/findings` refuses.
+      It also refuses a `scanner` other than `trivy` or `grype`.
+    - The route ignores the other filters of `/findings`.
     - At a past `as_of`, the filters select the scans of that time.
 - `/trends/findings`: the new findings and the resolved findings. `resolved` counts only the
   findings that a scan no longer showed (`resolved_semantics: "scan_resolved"`). A triage to
