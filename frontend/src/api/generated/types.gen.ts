@@ -5302,6 +5302,46 @@ export type ScansTrendApiV1TrendsScansGetData = {
          * As Of
          */
         as_of?: string | null;
+        /**
+         * Namespace
+         */
+        namespace?: Array<string> | null;
+        /**
+         * Exclude Namespace
+         */
+        exclude_namespace?: Array<string> | null;
+        /**
+         * Image Repo
+         */
+        image_repo?: Array<string> | null;
+        /**
+         * Exclude Image Repo
+         */
+        exclude_image_repo?: Array<string> | null;
+        /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
+        /**
+         * Image Digest
+         */
+        image_digest?: string | null;
+        /**
+         * Scanner
+         */
+        scanner?: 'trivy' | 'grype' | null;
+        /**
+         * Exclude Scanner
+         */
+        exclude_scanner?: 'trivy' | 'grype' | null;
     };
     url: '/api/v1/trends/scans';
 };

@@ -196,6 +196,93 @@ async def test_findings_trend_reports_new_vs_resolved_per_scanner(env) -> None:
     assert r.status_code == 501  # the uniform D28 seam
 
 
+# issue 1293: the Scan ingest strip follows the filters of the table that a scan record holds.
+def _scan(
+    cid: str, run: str, scanner: str, image_ref: str, digest: str, ns: list[str]
+) -> IngestEnvelope:
+    doc = {
+        **GOLDEN,
+        "cluster_id": cid,
+        "scanner": scanner,
+        "scan_run_id": run,
+        "image_ref": image_ref,
+        "image_digest": "sha256:" + digest * 64,
+        "namespaces": ns,
+        "last_seen_at": datetime.now(UTC).isoformat(),
+    }
+    if scanner == "grype":
+        doc["effective_config"] = {**GOLDEN["effective_config"], "tuning": GRYPE_TUNING}
+    return IngestEnvelope.model_validate(doc)
+
+
+def _today(series: dict[str, list[dict[str, Any]]]) -> dict[str, int]:
+    """The scans of today for each scanner; a scanner with no scan in the range has no series."""
+    return {scanner: _today_bucket(points, "scans") for scanner, points in series.items()}
+
+
+async def test_scans_trend_follows_the_scan_filters(env) -> None:
+    """Issue 1293: the namespace, image, tag, digest and scanner filters of /findings select the
+    scans, on the fields of the scan record. A filter on any namespace of a record matches it."""
+    login, client = env
+    cid = f"c-trend-{uuid.uuid4().hex[:8]}"
+    await ingest_envelope(client, _scan(cid, "r1", "trivy", "shop/app:1.4.2", "1", ["shop"]))
+    await ingest_envelope(
+        client, _scan(cid, "r2", "trivy", "shop/app:1.4.1", "2", ["shop", "team-b"])
+    )
+    await ingest_envelope(client, _scan(cid, "r3", "trivy", "ops/tool", "3", ["ops"]))  # no tag
+    await ingest_envelope(client, _scan(cid, "r4", "grype", "shop/app:1.4.2", "1", ["shop"]))
+    await client.indices.refresh(index=f"javv-scan-events-{cid}-*")
+    http = await login()
+
+    async def scans(**filters: Any) -> dict[str, int]:
+        r = await http.get("/api/v1/trends/scans", params={"cluster_id": cid, "days": 7, **filters})
+        assert r.status_code == 200, r.text
+        return _today(r.json()["series"])
+
+    assert await scans() == {"trivy": 3, "grype": 1}
+    assert await scans(namespace="team-b") == {"trivy": 1}
+    assert await scans(namespace=["shop", "ops"]) == {"trivy": 3, "grype": 1}
+    assert await scans(exclude_namespace="shop") == {"trivy": 1}
+    assert await scans(image_repo="shop/app", tag="1.4.2") == {"trivy": 1, "grype": 1}
+    assert await scans(exclude_image_repo="shop/app") == {"trivy": 1}
+    assert await scans(exclude_tag="1.4.2") == {"trivy": 2}
+    assert await scans(untagged="true") == {"trivy": 1}
+    assert await scans(untagged="false") == {"trivy": 2, "grype": 1}
+    assert await scans(image_digest="sha256:" + "1" * 64) == {"trivy": 1, "grype": 1}
+    assert await scans(scanner="grype") == {"grype": 1}
+    assert await scans(exclude_scanner="grype") == {"trivy": 3}
+
+    # tenant isolation: another cluster never counts, with or without filters
+    other = f"c-trend-{uuid.uuid4().hex[:8]}"
+    r = await http.get(
+        "/api/v1/trends/scans", params={"cluster_id": other, "days": 7, "namespace": "shop"}
+    )
+    assert r.status_code == 200 and r.json()["series"] == {}
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param({"tag": "1.4.2", "untagged": "true"}, id="tag with untagged"),
+        pytest.param({"namespace": "a", "exclude_namespace": "b"}, id="a filter and its exclude"),
+        pytest.param({"scanner": "trivy", "exclude_scanner": "grype"}, id="scanner both sides"),
+        pytest.param({"scanner": "clair"}, id="a scanner JAVV does not run"),
+        pytest.param({"namespace": [f"n{i}" for i in range(33)]}, id="33 namespaces"),
+        pytest.param({"namespace": "n" * 257}, id="a namespace of 257 characters"),
+        pytest.param({"image_digest": "d" * 129}, id="a digest of 129 characters"),
+    ],
+)
+async def test_scans_trend_refuses_what_findings_refuses(env, params: dict[str, Any]) -> None:
+    """The caps and the pairs of /findings, so the strip cannot send what the table refuses."""
+    login, _client = env
+    http = await login()
+    r = await http.get(
+        "/api/v1/trends/scans",
+        params={"cluster_id": f"c-trend-{uuid.uuid4().hex[:8]}", "days": 7, **params},
+    )
+    assert r.status_code == 422, r.text
+
+
 # issue 1292: the New findings strip. The findings first seen in each bucket, by severity, under
 # the filters of the table.
 def _raw_words(cid: str, scanner: str, run: str) -> IngestEnvelope:

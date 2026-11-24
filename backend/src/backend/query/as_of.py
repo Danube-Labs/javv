@@ -20,6 +20,7 @@ from typing import Any, Protocol
 from opensearchpy import AsyncOpenSearch
 
 from backend.query.search import SearchFilters
+from backend.query.trends import ScanFilters
 
 
 class AsOfTUnavailable(LookupError):
@@ -86,7 +87,13 @@ class AsOfTReader(Protocol):
     ) -> dict[str, Any]: ...
 
     async def trends_scans(
-        self, client: AsyncOpenSearch, *, cluster_id: str, t: datetime, days: int
+        self,
+        client: AsyncOpenSearch,
+        *,
+        cluster_id: str,
+        t: datetime,
+        days: int,
+        filters: ScanFilters | None = None,
     ) -> dict[str, Any]: ...
 
     async def trends_findings(

@@ -3,7 +3,8 @@
 - **Scans** (`javv-scan-events-<cluster_id>-*`): committed scans per day per scanner. THE
   dedup rule (task B, #139): a retry straddling a rollover leaves byte-identical sibling docs
   (same `commit_key`) in two backing indices — accepted in storage, deduped at read via
-  `cardinality(commit_key)`. NEVER raw doc counts or sums over scan-event docs.
+  `cardinality(commit_key)`. NEVER raw doc counts or sums over scan-event docs. It takes the
+  filters of the grid that a scan record also holds (`ScanFilters`, issue 1293).
 - **Findings** (`findings`): the FR-5 "new in Nd" series plus its burn-down twin — new
   (`first_seen_at`) vs resolved (`resolved_at`) per day per scanner. No `present` filter: a
   finding that appeared and was tombstoned inside the window still counts as new that day.
@@ -26,6 +27,7 @@ The tenant filter is forced by the tenant read path at execution; scan-events ro
 pins the per-cluster index pattern.
 """
 
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -63,8 +65,60 @@ def _timeline(date_field: str, gte: str, upper: str, interval: str = "day") -> d
     }
 
 
+@dataclass(frozen=True)
+class ScanFilters:
+    """The filters of the findings grid that a scan record also holds (issue 1293): the
+    namespaces, the image, its tag and digest, and the scanner, with the names of `/findings`. A
+    scan record holds no severity, state or other field of a finding, so the route takes no
+    such filter. `scanner` is one value, as on `/findings`."""
+
+    namespace: list[str] | None = None
+    exclude_namespace: list[str] | None = None
+    image_repo: list[str] | None = None
+    exclude_image_repo: list[str] | None = None
+    tag: list[str] | None = None
+    exclude_tag: list[str] | None = None
+    untagged: bool | None = None
+    image_digest: str | None = None
+    scanner: str | None = None
+    exclude_scanner: str | None = None
+
+
+def _scan_filter_clauses(filters: ScanFilters) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """(filter, must_not) on the fields of a scan record, which have the names of the fields of
+    a finding: a namespace filter matches a record when ANY of its namespaces is listed."""
+    # local: search imports this module for window_bounds
+    from backend.query.search import conflicting_filter_pair, has_tag_clause
+
+    if (message := conflicting_filter_pair(vars(filters))) is not None:
+        raise ValueError(message)
+    fl: list[dict[str, Any]] = []
+    mn: list[dict[str, Any]] = []
+    for field, include, exclude in (
+        ("namespaces", filters.namespace, filters.exclude_namespace),
+        ("image_repo", filters.image_repo, filters.exclude_image_repo),
+        ("tag", filters.tag, filters.exclude_tag),
+    ):
+        if include:
+            fl.append({"terms": {field: include}})
+        if exclude:
+            mn.append({"terms": {field: exclude}})
+    for field, value in (("image_digest", filters.image_digest), ("scanner", filters.scanner)):
+        if value is not None:
+            fl.append({"term": {field: value}})
+    if filters.exclude_scanner is not None:
+        mn.append({"term": {"scanner": filters.exclude_scanner}})
+    if filters.untagged is not None:  # "no tag" is a missing tag or "", as for the findings
+        (mn if filters.untagged else fl).append(has_tag_clause())
+    return fl, mn
+
+
 def build_scans_trend_body(
-    *, days: int, anchor: datetime | None = None, interval: str = "day"
+    *,
+    days: int,
+    anchor: datetime | None = None,
+    interval: str = "day",
+    filters: ScanFilters | None = None,
 ) -> dict[str, Any]:
     # hourly buckets answer "does the scanner run every N hours?" on short ranges — daily
     # bars over a 1-day window collapse any cadence into one bar (operator, audit 343)
@@ -75,9 +129,13 @@ def build_scans_trend_body(
     window: dict[str, Any] = {"gte": gte}
     if anchor is not None:  # the ≤ T cut — an anchored window must not see later appends
         window["lte"] = anchor.isoformat()
+    fl, mn = _scan_filter_clauses(filters or ScanFilters())
+    query: dict[str, Any] = {"filter": [{"range": {"ingested_at": window}}, *fl]}
+    if mn:
+        query["must_not"] = mn
     return {
         "size": 0,
-        "query": {"bool": {"filter": [{"range": {"ingested_at": window}}]}},
+        "query": {"bool": query},
         "aggs": {"by_scanner": {"terms": dict(_BY_SCANNER_TERMS), "aggs": {"timeline": timeline}}},
     }
 
