@@ -20,6 +20,8 @@ vi.mock('@/api/generated', async (importOriginal) =>
     // the ingest lens (audit 343) mounts inside the view and calls these two
     scansTrendApiV1TrendsScansGet: vi.fn<() => Promise<unknown>>(),
     scannerFreshnessApiV1ScannersFreshnessGet: vi.fn<() => Promise<unknown>>(),
+    // the New findings strip under it (issue 1292)
+    newFindingsTrendApiV1TrendsNewFindingsGet: vi.fn<() => Promise<unknown>>(),
     listClustersApiV1ClustersGet: vi.fn<() => Promise<unknown>>(),
   }),
 )
@@ -29,6 +31,7 @@ import {
   facetFindingsApiV1FindingsFacetsGet,
   imageTimelineApiV1ImagesTimelineGet,
   listRunningImagesApiV1ImagesGet,
+  newFindingsTrendApiV1TrendsNewFindingsGet,
   scannerFreshnessApiV1ScannersFreshnessGet,
   scansTrendApiV1TrendsScansGet,
   searchFindingsApiV1FindingsGet,
@@ -87,6 +90,25 @@ describe('ImageDetailView (M9c slice 3)', () => {
     vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue(
       ok({ scanners: [] }) as never,
     )
+    vi.mocked(newFindingsTrendApiV1TrendsNewFindingsGet).mockResolvedValue(
+      ok({ series: {}, days: 30, interval: 'day' }) as never,
+    )
+  })
+
+  // issue 1292: the strip counts the new findings of this digest, for the scanner of the switch
+  it('the New findings strip reads this digest and follows the scanner switch', async () => {
+    facetsMock.mockResolvedValue(ok({ facets: {} }) as never)
+    searchMock.mockResolvedValue(ok({ data: [], total: { value: 0 }, next_cursor: null }) as never)
+    await router.push('/images/sha256:abc?repo=docker.io/library/nginx&tag=1.21.6')
+    const w = mount(ImageDetailView, { global: { plugins: [router] } })
+    await flushPromises()
+    const strip = vi.mocked(newFindingsTrendApiV1TrendsNewFindingsGet)
+    const q = (i: number) => (strip.mock.calls.at(i)![0] as { query: Record<string, unknown> }).query
+    expect(q(-1)).toMatchObject({ cluster_id: 'c-1', image_digest: 'sha256:abc', scanner: 'trivy' })
+    await w.findAll('button').find((b) => b.text() === 'grype')!.trigger('click')
+    await flushPromises()
+    expect(q(-1)).toMatchObject({ image_digest: 'sha256:abc', scanner: 'grype' })
+    expect(w.find('.lens-stack').findAll('.ingest-lens')).toHaveLength(2)
   })
 
   it('scanner lens SWAPS the per-scanner reads — rows replaced, never merged', async () => {

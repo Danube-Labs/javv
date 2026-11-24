@@ -17,6 +17,7 @@ import FacetRail from '@/components/filters/FacetRail.vue'
 import FilterBar from '@/components/filters/FilterBar.vue'
 import SevChip from '@/components/chips/SevChip.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
+import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
 import ColumnsMenu from '@/components/findings/ColumnsMenu.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import ImagesTable, { type ImagesSortField } from '@/components/images/ImagesTable.vue'
@@ -30,7 +31,14 @@ import type { ValueSearchFn } from '@/filters/facets'
 import { IMAGES_COLUMNS, IMAGES_FIELDS } from '@/images/fields.config'
 import { fmt } from '@/lib/format'
 import { reorderFromDrag, restoreHidden, restoreOrder } from '@/system/columnOrder'
-import { filterImages, imagesCsv, imagesFacets, searchImageValues } from '@/images/imageFilters'
+import {
+  filterImages,
+  imagesCsv,
+  imagesFacets,
+  searchImageValues,
+  stripFilters,
+  stripFiltersNote,
+} from '@/images/imageFilters'
 import { logger } from '@/lib/logger'
 import { NO_EXPORT_NOTE, useAuthStore } from '@/stores/auth'
 import { makeFiltersStore } from '@/stores/filters'
@@ -181,7 +189,17 @@ const inventoryAt = computed(() =>
         </template>
         <p v-else class="head-note">The latest inventory. The table shows one row for each image digest.</p>
       </div>
-      <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
+      <!-- the New findings strip takes the four filters that mean the same on the findings -->
+      <div v-if="clusterStore.selectedId" class="lens-stack">
+        <IngestLens :cluster-id="clusterStore.selectedId" />
+        <NewFindingsStrip
+          :cluster-id="clusterStore.selectedId"
+          :t="timeTravel.t"
+          :window-days="timeTravel.windowDays"
+          :filters="stripFilters(clusterStore.selectedId, filters.selections, filters.modes)"
+          :note="stripFiltersNote()"
+        />
+      </div>
     </div>
 
     <div v-if="images.loading || !images.settled" aria-busy="true" aria-label="Loading images">

@@ -37,6 +37,7 @@ import {
   searchFindingsApiV1FindingsGet,
 } from '@/api/generated'
 import AuditTable from '@/components/audit/AuditTable.vue'
+import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { FAILURE_COPY } from '@/findings/failureCopy'
@@ -612,6 +613,28 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     await flushPromises()
     expect(lastQuery().as_of).toBe(t ?? undefined)
     expect(w.text()).toContain(copy)
+  })
+
+  // issue 1292: the New findings strip under Scan ingest counts under the filters of the table
+  it('the New findings strip gets the filter query of the table, with the time and the range', async () => {
+    useTimeTravelStore().t = PAST
+    search().mockImplementation(async () => findingsPage('CVE-2026-0001', 1, null) as never)
+    const w = await mountRouted(FindingsView as Component, {}, '/?severity=critical&scanner=grype&tag=1.4.1')
+    await flushPromises()
+    const strip = w.findComponent(NewFindingsStrip)
+    expect(strip.exists()).toBe(true)
+    expect(strip.props('t')).toBe(PAST)
+    expect(strip.props('windowDays')).toBe(useTimeTravelStore().windowDays)
+    expect(strip.props('filters')).toMatchObject({ severity: ['critical'], scanner: 'grype', tag: ['1.4.1'] })
+    expect(w.find('.lens-stack').findAll('.ingest-lens')).toHaveLength(2) // one band, two strips
+  })
+
+  it('on Images, the strip takes only the Scanner, Namespace, Image and Tag filters', async () => {
+    const w = await mountRouted(ImagesView as Component, {}, '/?tag=1.4.1&severity=critical&scanner=grype')
+    await flushPromises()
+    const strip = w.findComponent(NewFindingsStrip)
+    expect(strip.props('filters')).toEqual({ cluster_id: CLUSTER, tag: ['1.4.1'], scanner: 'grype' })
+    expect(strip.props('note')).toBe('Only the Scanner, Namespace, Image and Tag filters apply.')
   })
 
   it('a grid sorted by EPSS reads a past time by Severity, so the read is not refused', async () => {

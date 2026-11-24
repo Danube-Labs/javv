@@ -21,6 +21,7 @@ import {
   listRunningImagesApiV1ImagesGet,
 } from '@/api/generated'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
+import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
 import DigestSubTimeline from '@/components/images/DigestSubTimeline.vue'
 import ImageFindingsPanel from '@/components/images/ImageFindingsPanel.vue'
 import { buildImageAtTQuery } from '@/images/buildImageAtTQuery'
@@ -287,11 +288,16 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
     </div>
 
     <template v-else>
-      <IngestLens
-        v-if="clusterStore.selectedId"
-        class="detail-lens"
-        :cluster-id="clusterStore.selectedId"
-      />
+      <!-- the New findings strip of this digest, for the scanner of the switch -->
+      <div v-if="clusterStore.selectedId" class="lens-stack detail-lens">
+        <IngestLens :cluster-id="clusterStore.selectedId" />
+        <NewFindingsStrip
+          :cluster-id="clusterStore.selectedId"
+          :t="timeTravel.t"
+          :window-days="timeTravel.windowDays"
+          :filters="{ image_digest: digest, scanner }"
+        />
+      </div>
       <!-- per-scanner severity cards: one scanner's buckets only — the lens swaps, never merges -->
       <div class="stat-band sev-band">
         <div v-for="s in CARD_SEVERITIES" :key="s" class="stat-cell">

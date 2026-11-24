@@ -23,6 +23,7 @@ import ExportDialog from '@/components/findings/ExportDialog.vue'
 import SaveViewDialog from '@/components/findings/SaveViewDialog.vue'
 import BulkTriageBar from '@/components/triage/BulkTriageBar.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
+import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
 import FindingsTable from '@/components/findings/FindingsTable.vue'
 import GridPager from '@/components/findings/GridPager.vue'
 import UiSearchBox from '@/components/ui/UiSearchBox.vue'
@@ -348,7 +349,16 @@ function onHeaderReorder(dragIndex: number, dropIndex: number) {
         </p>
         <p class="head-note">JAVV counts the findings of Trivy and Grype apart. When the two scanners report a vulnerability, it counts once for each scanner.</p>
       </div>
-      <IngestLens v-if="clusterStore.selectedId" :cluster-id="clusterStore.selectedId" />
+      <!-- Scan ingest and New findings, one band: the new strip takes the filters of the table -->
+      <div v-if="clusterStore.selectedId" class="lens-stack">
+        <IngestLens :cluster-id="clusterStore.selectedId" />
+        <NewFindingsStrip
+          :cluster-id="clusterStore.selectedId"
+          :t="timeTravel.t"
+          :window-days="timeTravel.windowDays"
+          :filters="facetsQuery ?? {}"
+        />
+      </div>
     </div>
 
     <div class="findings-layout">
