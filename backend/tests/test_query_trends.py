@@ -35,7 +35,12 @@ def _gte(days: int) -> str:
 
 # a fixed end for a window of 30 whole days: the day floor 30 days back, up to the end itself
 END = datetime(2026, 11, 20, 11, 30, tzinfo=UTC)
-DAYS_30 = {"gte": "2026-10-21", "lte": END.isoformat()}
+DAYS_30 = {"gte": "2026-10-21", "lte": "2026-11-20T11:30:00.000+00:00"}
+
+
+def _ms(t: datetime) -> str:
+    """A bound as the builders write it: always with milliseconds (see trends._ms)."""
+    return t.isoformat(timespec="milliseconds")
 
 
 def _assert_now(lte: str) -> None:
@@ -223,7 +228,10 @@ def test_ingest_failures_trend_anchored_window_ends_at_t() -> None:
     t = datetime(2026, 9, 20, 15, 30, tzinfo=UTC)
     body = build_ingest_failures_trend_body(days=7, anchor=t)
     window = body["query"]["bool"]["filter"][0]["range"]["@timestamp"]
-    assert window == {"gte": "2026-09-13", "lte": t.isoformat()}  # later refusals stay out
+    assert window == {
+        "gte": "2026-09-13",
+        "lte": t.isoformat(timespec="milliseconds"),
+    }  # later refusals stay out
     with pytest.raises(ValueError):
         build_ingest_failures_trend_body(days=0)
     with pytest.raises(ValueError):
@@ -248,7 +256,7 @@ def test_new_findings_trend_counts_first_seen_by_canonical_severity() -> None:
     assert "aggs" not in by_severity["aggs"]["timeline"]  # a doc count: each scanner's row counts
     # the window starts on the day floor and stops at now: a scanner clock ahead of the server
     # gives a first_seen_at after now, and that finding is not new yet
-    window = {"range": {"first_seen_at": {"gte": "2026-09-13", "lte": NOW.isoformat()}}}
+    window = {"range": {"first_seen_at": {"gte": "2026-09-13", "lte": _ms(NOW)}}}
     assert window in body["query"]["bool"]["filter"]
 
 
@@ -307,23 +315,28 @@ def test_new_findings_trend_bounds() -> None:
 @pytest.mark.parametrize(
     ("end", "seconds", "gte"),
     [
-        (END, 3600, "2026-11-20T10:30:00+00:00"),  # "Last 1 hour"
-        (datetime(2026, 11, 20, 11, 1, tzinfo=UTC), 3600, "2026-11-20T10:01:00+00:00"),
-        (datetime(2026, 12, 1, 0, 30, tzinfo=UTC), 3600, "2026-11-30T23:30:00+00:00"),
-        (END, EXACT_MAX_SECONDS, "2026-11-18T11:30:00+00:00"),  # exactly 2 days
-        (END, EXACT_MIN_SECONDS, "2026-11-20T11:29:00+00:00"),
+        (END, 3600, "2026-11-20T10:30:00.000+00:00"),  # "Last 1 hour"
+        (datetime(2026, 11, 20, 11, 1, tzinfo=UTC), 3600, "2026-11-20T10:01:00.000+00:00"),
+        (datetime(2026, 12, 1, 0, 30, tzinfo=UTC), 3600, "2026-11-30T23:30:00.000+00:00"),
+        (END, EXACT_MAX_SECONDS, "2026-11-18T11:30:00.000+00:00"),  # exactly 2 days
+        (END, EXACT_MIN_SECONDS, "2026-11-20T11:29:00.000+00:00"),
     ],
 )
 def test_range_bounds_is_the_end_minus_the_length(end: datetime, seconds: int, gte: str) -> None:
     """Across midnight and the end of a month too: no day floor."""
-    assert range_bounds(seconds, end) == (gte, end.isoformat())
+    assert range_bounds(seconds, end) == (gte, _ms(end))
 
 
 def test_range_bounds_cuts_to_the_millisecond_and_never_starts_after_its_end() -> None:
     end = datetime(2026, 11, 20, 10, 59, 59, 999_999, tzinfo=UTC)
     gte, lte = range_bounds(3600, end)
-    assert lte == "2026-11-20T10:59:59.999000+00:00"  # a date field holds milliseconds
-    assert gte == "2026-11-20T09:59:59.999000+00:00"
+    assert lte == "2026-11-20T10:59:59.999+00:00"  # a date field holds milliseconds
+    assert gte == "2026-11-20T09:59:59.999+00:00"
+    # an lte with no milliseconds would count up to .999 of its second: always write them
+    assert range_bounds(3600, END) == (
+        "2026-11-20T10:30:00.000+00:00",
+        "2026-11-20T11:30:00.000+00:00",
+    )
     live_gte, live_lte = range_bounds(EXACT_MIN_SECONDS)  # unanchored: the server's clock
     assert datetime.fromisoformat(live_gte) < datetime.fromisoformat(live_lte)
     _assert_now(live_lte)
@@ -339,7 +352,7 @@ def test_scans_trend_with_an_exact_window_filters_and_draws_that_window() -> Non
     """The first bar starts on the hour, before the start: the filter makes it partial."""
     body = build_scans_trend_body(window_seconds=3600, anchor=END, interval="hour")
     [window] = body["query"]["bool"]["filter"]
-    exact = {"gte": "2026-11-20T10:30:00+00:00", "lte": END.isoformat()}
+    exact = {"gte": "2026-11-20T10:30:00.000+00:00", "lte": _ms(END)}
     assert window == {"range": {"ingested_at": exact}}
     dh = body["aggs"]["by_scanner"]["aggs"]["timeline"]["date_histogram"]
     assert dh["calendar_interval"] == "hour"  # the bars stay on the UTC hour (ruling 4)
@@ -370,7 +383,7 @@ def test_the_three_strips_share_an_exact_axis(interval: str) -> None:
         new["aggs"]["by_severity"]["aggs"]["timeline"]["date_histogram"],
     ]
     assert len({repr({k: v for k, v in a.items() if k != "field"}) for a in axes}) == 1
-    window = {"gte": "2026-11-20T09:30:00+00:00", "lte": END.isoformat()}
+    window = {"gte": "2026-11-20T09:30:00.000+00:00", "lte": _ms(END)}
     assert {"range": {"first_seen_at": window}} in new["query"]["bool"]["filter"]
     assert fails["query"]["bool"]["filter"] == [{"range": {"@timestamp": window}}]
 

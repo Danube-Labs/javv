@@ -29,8 +29,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from backend.auth.principal import Principal, get_current_principal
 from backend.core.identifiers import ClusterId
 from backend.query.ingest_failures import build_ingest_failures_body, decode_cursor, page_of
+from backend.query.trends import pick_window
 from backend.routers.findings import AsOf
-from backend.routers.trends import Days
+from backend.routers.trends import Days, WindowSeconds
 from backend.tenancy.read_path import tenant_search
 
 router = APIRouter(prefix="/api/v1/scanners", tags=["scanners"])
@@ -242,19 +243,27 @@ async def scanner_ingest_failures(
     cluster_id: ClusterId,
     scanner: Literal["trivy", "grype"],
     as_of_t: AsOf,
-    days: Days = 30,
+    days: Days = None,
+    window_seconds: WindowSeconds = None,
     size: Annotated[int, Query(ge=1, le=100)] = 25,
     cursor: Annotated[str | None, Query(max_length=1024)] = None,
 ) -> dict[str, Any]:
     """An append-only log read directly at any T (the window just ends there), so a past
-    `as_of` needs no reconstruction and never 501s."""
+    `as_of` needs no reconstruction and never 501s. `window_seconds` gives the exact range of
+    the strip above the table (issue 1291)."""
     try:
         after = None if cursor is None else decode_cursor(cursor)
+        days, window_seconds = pick_window(days, window_seconds, past=as_of_t is not None)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     client = cast(Any, request.app.state.opensearch)
     body = build_ingest_failures_body(
-        scanner=scanner, days=days, size=size, anchor=as_of_t, search_after=after
+        scanner=scanner,
+        days=days,
+        window_seconds=window_seconds,
+        size=size,
+        anchor=as_of_t,
+        search_after=after,
     )
     resp = await tenant_search(
         client, index=f"javv-ingest-failures-{cluster_id}-*", cluster_id=cluster_id, body=body

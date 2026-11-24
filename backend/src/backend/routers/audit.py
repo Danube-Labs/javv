@@ -43,6 +43,8 @@ from backend.query.search import (
     FilterValue128,
     cursor_pit_id,
 )
+from backend.query.trends import pick_window
+from backend.routers.trends import Days, WindowSeconds
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 log = structlog.get_logger()
@@ -159,7 +161,8 @@ async def audit_facets(
     params: AuditFilterParams,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
     interval: Annotated[str | None, Query(max_length=8)] = None,
-    window_days: Annotated[int, Query(ge=1, le=365)] = 30,
+    window_days: Days = None,
+    window_seconds: WindowSeconds = None,
     # the limits of the findings value search: a search starts at 2 letters
     contains: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
 ) -> dict[str, Any]:
@@ -175,10 +178,18 @@ async def audit_facets(
         filters = replace(params, until=parse_as_of(as_of))
         if contains is not None and interval is not None:
             raise ValueError("contains takes no interval")
+        window_days, window_seconds = pick_window(
+            window_days, window_seconds, past=filters.until is not None, days_name="window_days"
+        )
         body = (
             build_actor_search_body(filters, contains)
             if contains is not None
-            else build_audit_facets_body(filters, interval=interval, window_days=window_days)
+            else build_audit_facets_body(
+                filters,
+                interval=interval,
+                window_days=window_days,
+                window_seconds=window_seconds,
+            )
         )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc

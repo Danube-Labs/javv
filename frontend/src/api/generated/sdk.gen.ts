@@ -641,7 +641,8 @@ export const scannerFreshnessApiV1ScannersFreshnessGet = <ThrowOnError extends b
  * Scanner Ingest Failures
  *
  * An append-only log read directly at any T (the window just ends there), so a past
- * `as_of` needs no reconstruction and never 501s.
+ * `as_of` needs no reconstruction and never 501s. `window_seconds` gives the exact range of
+ * the strip above the table (issue 1291).
  */
 export const scannerIngestFailuresApiV1ScannersIngestFailuresGet = <ThrowOnError extends boolean = false>(options: Options<ScannerIngestFailuresApiV1ScannersIngestFailuresGetData, ThrowOnError>): RequestResult<ScannerIngestFailuresApiV1ScannersIngestFailuresGetResponses, ScannerIngestFailuresApiV1ScannersIngestFailuresGetErrors, ThrowOnError> => (options.client ?? client).get<ScannerIngestFailuresApiV1ScannersIngestFailuresGetResponses, ScannerIngestFailuresApiV1ScannersIngestFailuresGetErrors, ThrowOnError>({ url: '/api/v1/scanners/ingest-failures', ...options });
 

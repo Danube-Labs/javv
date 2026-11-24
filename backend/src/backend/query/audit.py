@@ -21,6 +21,7 @@ from opensearchpy.exceptions import NotFoundError, RequestError
 from backend.core.settings import get_settings
 from backend.query.aggs import _FACET_TERMS_SIZE, contains_pattern
 from backend.query.search import CursorExpired, decode_cursor, encode_cursor
+from backend.query.trends import range_bounds
 from backend.tenancy.read_path import tenant_query
 
 log = structlog.get_logger()
@@ -320,7 +321,8 @@ def build_audit_facets_body(
     filters: AuditFilters,
     *,
     interval: str | None = None,
-    window_days: int = 30,
+    window_days: int | None = 30,
+    window_seconds: int | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Terms counts for the rail dims (entity_type/action/actor) under the SAME filters as the
@@ -346,8 +348,17 @@ def build_audit_facets_body(
         if interval not in ("day", "hour"):
             raise ValueError("interval must be day or hour")
         end = filters.until or now or datetime.now(UTC)
-        start = end - timedelta(days=window_days)
-        window = {"range": {_SORT_KEY: {"gte": start.isoformat(), "lte": end.isoformat()}}}
+        # the window of the picker: whole days back from T, or the exact length of a range of 2
+        # days or less (issue 1291, Q2 A), as the strips of the other screens
+        if window_seconds is not None:
+            if window_days is not None:
+                raise ValueError("window_days and window_seconds are mutually exclusive")
+            gte, lte = range_bounds(window_seconds, end)
+        elif window_days is not None:
+            gte, lte = (end - timedelta(days=window_days)).isoformat(), end.isoformat()
+        else:
+            raise ValueError("give window_days or window_seconds")
+        window = {"range": {_SORT_KEY: {"gte": gte, "lte": lte}}}
         body["aggs"]["activity"] = {
             "filter": window,
             "aggs": {
@@ -356,10 +367,7 @@ def build_audit_facets_body(
                         "field": _SORT_KEY,
                         "calendar_interval": interval,
                         "min_doc_count": 0,
-                        "extended_bounds": {
-                            "min": start.isoformat(),
-                            "max": end.isoformat(),
-                        },
+                        "extended_bounds": {"min": gte, "max": lte},
                     }
                 }
             },

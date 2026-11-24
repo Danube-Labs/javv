@@ -232,6 +232,32 @@ async def test_trends_scans_takes_the_scan_filters_of_its_route(mcp_on):
     assert result["isError"] and "this kind does not take tag" in result["content"][0]["text"]
 
 
+async def test_an_exact_window_reaches_the_tools_and_days_with_it_is_refused(mcp_on):
+    """Issue 1291: the tools take the parameters of their routes, `window_seconds` too. A route
+    takes `days` with no default, so a call that names both gets the 422 of the route, also
+    through a tool. The kind `findings` stays daily and does not take it."""
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+        _, raw = await _token(client)
+        tools = await _tools(http, raw)
+        for name in ("trends", "scanner_ingest_failures", "count_audit_log"):
+            assert "window_seconds" in tools[name]["inputSchema"]["properties"], name
+        hour = {"kind": "scans", "cluster_id": cluster, "window_seconds": 3600}
+        ok = json.loads(_text(await http.post(PATH, **_call("trends", hour, raw))))
+        both = await http.post(PATH, **_call("trends", hour | {"days": 7}, raw))
+        daily = await http.post(
+            PATH,
+            **_call(
+                "trends", {"kind": "findings", "cluster_id": cluster, "window_seconds": 60}, raw
+            ),
+        )
+    assert (ok["days"], ok["window_seconds"]) == (None, 3600)
+    result = both.json()["result"]
+    assert result["isError"] and "mutually exclusive" in result["content"][0]["text"]
+    result = daily.json()["result"]
+    assert result["isError"] and "does not take window_seconds" in result["content"][0]["text"]
+
+
 async def test_the_findings_page_is_25_at_most_and_the_ui_switch_is_not_offered(mcp_on):
     """Q5 of the step 0 report: a client refused one answer of 92,789 characters. The route
     takes pages of 500; the tool takes 25 at most. `keep_open` is for the screen's Prev button."""

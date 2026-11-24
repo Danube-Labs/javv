@@ -443,11 +443,11 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | GET | `/api/v1/contributors` | session | The triage work of each user over `days` (1 to 365, default 30): actions, time to fix and SLA results. `totals` gives the same values for the team. |
 | GET | `/api/v1/contributors/export.csv` | `can_export` | The data of `/contributors` as CSV. It has one `action_<name>` column for each triage action. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
 | GET | `/api/v1/scanners/freshness` | session | For each scanner of the cluster: `last_ingest_at` and `silent_for_seconds`. With no push yet, both are `null`. |
-| GET | `/api/v1/scanners/ingest-failures` | session | The pushes that the ingest refused after the token check, newest first. `scanner` is necessary. `days` is 1 to 365 (default 30), and `size` is 1 to 100 (default 25). [Failed pushes](#failed-pushes) gives the fields. |
+| GET | `/api/v1/scanners/ingest-failures` | session | The pushes that the ingest refused after the token check, newest first. `scanner` is necessary. The range is `days` (1 to 365, default 30) or `window_seconds`, as in [Trends](#trends). `size` is 1 to 100 (default 25). [Failed pushes](#failed-pushes) gives the fields. |
 | GET | `/api/v1/scanners/provenance` | session | For each scanner: the versions and `effective_config` of the last committed run, and the last `runs` runs (1 to 50, default 10). `findings_total` of a run counts findings. A run that JAVV stored before release 0.9.5 counts the entries of the scanner reports. |
 | GET | `/api/v1/audit` | session | The audit log, page by page with a cursor. Filters: `entity_type`, `action`, `actor` and `finding_key`, each with an `exclude_` form except `finding_key`. `entity_type`, `action` and `actor` take several values, for example `actor=a&actor=b`, at most 32 for each filter. A row matches when it has one of the values. An `exclude_` filter with several values leaves out the rows with any of them. `finding_key` also returns each bulk change that included the finding (`action` `bulk_triage`). Such a row lists the changed findings in `target_ids`. `order` is `desc` (default) or `asc`. `keep_open` is as in `/findings`. Each row also shows the CVE, image and scanner of the finding or decision that it changed. |
 | POST | `/api/v1/cursors/close` | session | Closes a cursor of `/findings` or `/audit` before its last page. Body: `{cursor}`. It closes the search of the cursor and frees your slot ([Exports and reports](#exports-and-reports)), and answers 204. A cursor of a different user, of a list that ended, or that expired also gets 204, and nothing changes. A cursor that is not valid gets 422. |
-| GET | `/api/v1/audit/facets` | session | The counts of `entity_type`, `action` and `actor`, with the same filters. The `actor` counts leave out the `actor` and `exclude_actor` filters, so the other users keep their counts. With `interval` (`day` or `hour`) and `window_days`, it also gives `activity`: the events in each interval. `contains` is a value search on the `actor` values, with 2 to 128 characters. It gives the users that contain the text, in any case, from all users and not only the 32 with the most events. The counts use the same filters as the `actor` counts. It gives at most 32 values, and `more` is `true` when more users contain the text. It gives no `entity_type`, `action` or `activity`. `contains` with `interval` gives 422. |
+| GET | `/api/v1/audit/facets` | session | The counts of `entity_type`, `action` and `actor`, with the same filters. The `actor` counts leave out the `actor` and `exclude_actor` filters, so the other users keep their counts. With `interval` (`day` or `hour`), it also gives `activity`: the events in each interval. The range is `window_days` (1 to 365, default 30) back from the time of the request or from `as_of`, or `window_seconds`, as in [Trends](#trends). `contains` is a value search on the `actor` values, with 2 to 128 characters. It gives the users that contain the text, in any case, from all users and not only the 32 with the most events. The counts use the same filters as the `actor` counts. It gives at most 32 values, and `more` is `true` when more users contain the text. It gives no `entity_type`, `action` or `activity`. `contains` with `interval` gives 422. |
 | GET | `/api/v1/audit/export.csv` | `can_export` | The audit log as CSV, with the same filters. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
 | GET | `/api/v1/images` | session | The running images: the images of the last committed inventory. It also shows images with no findings. If JAVV has no committed inventory, `inventory` is `null`. The severity counts of an image count findings, as the counts of a scan in `/images/timeline` do. An image that JAVV scanned before release 0.9.5 counts the entries of the scanner report until its next scan. |
 | GET | `/api/v1/images/timeline` | session | The scan history of one image tag. `image_repo` and `tag` are necessary. `total` of a scan counts findings. A scan that JAVV stored before release 0.9.5 counts the entries of the scanner report. |
@@ -510,6 +510,17 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 
 #### Trends
 
+- The range of a trend is `days` or `window_seconds`. A read takes one of the two:
+    - `days` (1 to 365, default 30): whole UTC days, from 00:00 UTC `days` days before today.
+    - `window_seconds` (60 to 172,800): the exact range of 2 days or less. It starts at the time
+      of the request less `window_seconds`. `/trends/scans`, `/trends/ingest-failures` and
+      `/trends/new-findings` take it.
+    - `window_seconds` with `days`, or with a past `as_of`, gets 422. A range at a past time is in days.
+    - Each range ends at the time of the request, or at a past `as_of`. A record with a later time
+      does not count, also when the clock of a scanner runs ahead.
+    - The response gives `days` and `window_seconds`. The one that the read did not use is `null`.
+    - The intervals stay on the UTC day or hour. With `window_seconds`, the first interval counts
+      only from the start of the range.
 - `/trends/scans`: the committed scans. `interval` is `day` (default) or `hour`. `hour` is
   possible only for 31 days or less, else 422. At a past `as_of`, the intervals are days.
     - It takes the filters of `GET /api/v1/findings` that a scan record holds:
@@ -526,17 +537,18 @@ state. With a time in the past, JAVV builds the state at that time from the hist
   findings that a scan no longer showed (`resolved_semantics: "scan_resolved"`). A triage to
   `resolved` does not count. `split` is `scanner` (default) or `severity`. `split=severity` gets
   422 at a past `as_of`. `scanner` (`trivy` or `grype`) limits the series to one scanner.
-- `/trends/ingest-failures`: the same `days` and `interval` as `/trends/scans`, so the two series
-  align. It gives `{series: {<scanner>: [{date, count}]}, days, interval}`. With no refused push,
+- `/trends/ingest-failures`: the same range and `interval` as `/trends/scans`, so the two series
+  align. It gives `{series: {<scanner>: [{date, count}]}, days, window_seconds, interval}`. With no refused push,
   `series` is `{}`.
 - `/trends/new-findings`: the findings first seen in each interval, for each severity. It takes
-  the same `days` and `interval` as `/trends/scans`, and the daily series have the same days. An
-  hourly series ends at 00:00 UTC of the current day, or at the hour of its last finding if that
-  is later. Thus align hourly series by `date`, not by position. It also takes the filters of `GET /api/v1/findings`. `present` is a filter there, so
+  the same range and `interval` as `/trends/scans`, and the daily series have the same days. With
+  `days`, an hourly series ends at 00:00 UTC of the current day, or at the hour of its last finding
+  if that is later. With `window_seconds`, it ends at the hour of the request. Thus align hourly
+  series by `date`, not by position. It also takes the filters of `GET /api/v1/findings`. `present` is a filter there, so
   by default the series counts only the findings that are present now. Each scanner has its own
   findings, and the series counts the findings of each scanner. The range ends at the time of the
   request: a finding with a `first_seen_at` after that time does not count. It gives
-  `{series: {<severity>: [{date, count}]}, days, interval}`. A severity with no new finding in
+  `{series: {<severity>: [{date, count}]}, days, window_seconds, interval}`. A severity with no new finding in
   the range is not in `series`.
   At a past `as_of`, JAVV builds the findings at that time from the history and applies the
   filters to them, as on `/findings`. The intervals are days, and `interval` is `day`. The filters
@@ -548,7 +560,8 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 `GET /api/v1/scanners/ingest-failures` gives `{data, total, next_cursor}`. Each row has
 `@timestamp`, `failure_id`, `scanner`, `stage`, `reason`, `status`, `error` and `image_ref`. The
 `ingest rejected` log line has the same `failure_id`. The read uses no point in time. Thus a push
-that fails during your read can show on a later page.
+that fails during your read can show on a later page. Each page also takes its range at its own
+request. With `window_seconds`, a push that leaves the range during your read is not on a later page.
 
 #### The clusters list
 

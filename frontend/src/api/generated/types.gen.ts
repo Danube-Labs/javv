@@ -1892,7 +1892,11 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
         /**
          * Window Days
          */
-        window_days?: number;
+        window_days?: number | null;
+        /**
+         * Window Seconds
+         */
+        window_seconds?: number | null;
         /**
          * Contains
          */
@@ -4584,7 +4588,11 @@ export type ScannerIngestFailuresApiV1ScannersIngestFailuresGetData = {
         /**
          * Days
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         */
+        window_seconds?: number | null;
         /**
          * Size
          */
@@ -5031,7 +5039,7 @@ export type FindingsTrendApiV1TrendsFindingsGetData = {
         /**
          * Days
          */
-        days?: number;
+        days?: number | null;
         /**
          * Split
          */
@@ -5081,7 +5089,11 @@ export type IngestFailuresTrendApiV1TrendsIngestFailuresGetData = {
         /**
          * Days
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         */
+        window_seconds?: number | null;
         /**
          * Interval
          */
@@ -5127,7 +5139,11 @@ export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
         /**
          * Days
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         */
+        window_seconds?: number | null;
         /**
          * Interval
          */
@@ -5293,7 +5309,11 @@ export type ScansTrendApiV1TrendsScansGetData = {
         /**
          * Days
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         */
+        window_seconds?: number | null;
         /**
          * Interval
          */
