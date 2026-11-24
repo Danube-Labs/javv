@@ -48,6 +48,7 @@ from backend.query.aggs import (
 from backend.query.human_at import decisions_active_at, finding_states_at
 from backend.query.pit import latest_committed_runs
 from backend.query.search import SearchFilters
+from backend.query.trends import ScanFilters
 from backend.sla.overdue import compute_overdue
 from backend.sla.policy import read_sla_policy
 
@@ -732,13 +733,16 @@ class AsOfTQuery:
         cluster_id: str,
         t: datetime,
         days: int,
+        filters: ScanFilters | None = None,
         prefix: str = "",
     ) -> dict[str, Any]:
         from backend.query.trends import build_scans_trend_body
         from backend.routers.trends import _series
         from backend.tenancy.read_path import tenant_search
 
-        body = build_scans_trend_body(days=days, anchor=t)  # ValueError on bad days → 422
+        # the scan records are an append-only log: each holds the namespaces, image and tag of
+        # its own time, so the filters of now apply at T as they are (issue 1293)
+        body = build_scans_trend_body(days=days, anchor=t, filters=filters)  # ValueError → 422
         resp = await tenant_search(
             client,
             index=f"{prefix}javv-scan-events-{cluster_id}-*",

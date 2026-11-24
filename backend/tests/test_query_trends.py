@@ -9,12 +9,14 @@ axis is the SERVER-stamped `ingested_at` (client `@timestamp` is display-only an
 `size:0` — counts come from aggregations only.
 """
 
+from dataclasses import fields
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from backend.query.search import SearchFilters, build_search_body
+from backend.query.search import SearchFilters, build_search_body, has_tag_clause
 from backend.query.trends import (
+    ScanFilters,
     build_findings_trend_body,
     build_ingest_failures_trend_body,
     build_new_findings_trend_body,
@@ -42,6 +44,69 @@ def test_scans_trend_counts_committed_scans_by_cardinality_never_docs() -> None:
     assert timeline["aggs"]["scans"] == {"cardinality": {"field": "commit_key"}}
     # the window is a query filter, not a client-side trim
     assert body["query"]["bool"]["filter"] == [{"range": {"ingested_at": {"gte": _gte(30)}}}]
+
+
+def test_scans_trend_puts_each_filter_on_the_field_of_the_scan_record() -> None:
+    """Issue 1293: the filters of /findings that a scan record holds, on its fields. The names
+    of the fields are those of a finding: `namespace` reads the array `namespaces`."""
+    body = build_scans_trend_body(
+        days=30,
+        filters=ScanFilters(
+            namespace=["shop"],
+            exclude_image_repo=["ops/tool"],
+            tag=["1.4.2"],
+            image_digest="sha256:d1",
+            scanner="grype",
+        ),
+    )
+    q = body["query"]["bool"]
+    assert q["filter"] == [
+        {"range": {"ingested_at": {"gte": _gte(30)}}},
+        {"terms": {"namespaces": ["shop"]}},
+        {"terms": {"tag": ["1.4.2"]}},
+        {"term": {"image_digest": "sha256:d1"}},
+        {"term": {"scanner": "grype"}},
+    ]
+    assert q["must_not"] == [{"terms": {"image_repo": ["ops/tool"]}}]
+
+
+def test_scans_trend_exclude_sides_and_no_tag() -> None:
+    q = build_scans_trend_body(
+        days=7,
+        filters=ScanFilters(
+            exclude_namespace=["kube-system"],
+            image_repo=["shop/app"],
+            exclude_tag=["latest"],
+            exclude_scanner="trivy",
+            untagged=True,
+        ),
+    )["query"]["bool"]
+    assert q["filter"][1:] == [{"terms": {"image_repo": ["shop/app"]}}]
+    assert q["must_not"] == [
+        {"terms": {"namespaces": ["kube-system"]}},
+        {"terms": {"tag": ["latest"]}},
+        {"term": {"scanner": "trivy"}},
+        has_tag_clause(),  # "no tag" is a missing tag or "", as for the findings
+    ]
+    has_tag = build_scans_trend_body(days=7, filters=ScanFilters(untagged=False))["query"]["bool"]
+    assert has_tag["filter"][1:] == [has_tag_clause()] and "must_not" not in has_tag
+
+
+def test_scans_trend_with_no_filter_keeps_its_body_and_refuses_a_pair() -> None:
+    q = build_scans_trend_body(days=30, filters=ScanFilters())["query"]["bool"]
+    assert q == {"filter": [{"range": {"ingested_at": {"gte": _gte(30)}}}]}  # no must_not
+    with pytest.raises(ValueError, match="tag and untagged"):
+        build_scans_trend_body(days=30, filters=ScanFilters(tag=["1"], untagged=True))
+    with pytest.raises(ValueError, match="namespace and exclude_namespace"):
+        build_scans_trend_body(
+            days=30, filters=ScanFilters(namespace=["a"], exclude_namespace=["b"])
+        )
+
+
+def test_scan_filters_have_the_names_of_the_findings_filters() -> None:
+    """The pair check (`conflicting_filter_pair`) reads the names of SearchFilters: a field of
+    ScanFilters with another name would skip it, and a refused pair would filter instead."""
+    assert {f.name for f in fields(ScanFilters)} <= set(SearchFilters.__dataclass_fields__)
 
 
 def test_scans_trend_days_is_bounded() -> None:

@@ -15,6 +15,7 @@ from opensearchpy import AsyncOpenSearch
 from backend.models.envelope import IngestEnvelope, canonical_severity
 from backend.query.as_of_t import AsOfTQuery
 from backend.query.search import SearchFilters
+from backend.query.trends import ScanFilters
 from backend.services.ingest import build_docs, ingest_envelope
 from os_env import requires_opensearch
 
@@ -79,6 +80,45 @@ async def test_scans_trend_window_anchors_at_t(real_os: tuple[AsyncOpenSearch, s
     assert sum(p["scans"] for p in at1["series"]["trivy"]) == 1  # cardinality(commit_key)
     with pytest.raises(ValueError, match="days"):
         await READER.trends_scans(client, cluster_id=CLUSTER, t=t1, days=0, prefix=prefix)
+
+
+@requires_opensearch
+async def test_scans_trend_at_t_follows_the_scan_filters(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """Issue 1293: at a past T, the filters select the scan records of that time. Each record
+    holds the namespaces of its own scan, so a later scan of the namespace counts only later."""
+    client, prefix = real_os
+
+    def scan(run: str, digest: str, ns: list[str]) -> IngestEnvelope:
+        return IngestEnvelope.model_validate(
+            GOLDEN
+            | {
+                "scan_run_id": run,
+                "image_digest": "sha256:" + digest * 64,
+                "namespaces": ns,
+                "last_seen_at": datetime.now(UTC).isoformat(),
+            }
+        )
+
+    await ingest_envelope(client, scan("ns-run-1", "a", ["shop"]), prefix=prefix)
+    await ingest_envelope(client, scan("ns-run-2", "b", ["ops"]), prefix=prefix)
+    t1 = await _now(client, prefix)
+    await ingest_envelope(client, scan("ns-run-3", "c", ["shop"]), prefix=prefix)
+    t2 = await _now(client, prefix)
+
+    async def scans(t: datetime, filters: ScanFilters) -> int:
+        at = await READER.trends_scans(
+            client, cluster_id=CLUSTER, t=t, days=30, filters=filters, prefix=prefix
+        )
+        return sum(p["scans"] for pts in at["series"].values() for p in pts)
+
+    assert await scans(t1, ScanFilters(namespace=["shop"])) == 1
+    assert await scans(t2, ScanFilters(namespace=["shop"])) == 2
+    assert await scans(t2, ScanFilters(exclude_namespace=["shop"])) == 1
+    assert await scans(t2, ScanFilters(image_digest="sha256:" + "c" * 64)) == 1
+    with pytest.raises(ValueError, match="namespace and exclude_namespace"):
+        await scans(t2, ScanFilters(namespace=["a"], exclude_namespace=["b"]))
 
 
 @requires_opensearch

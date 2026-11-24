@@ -122,7 +122,7 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
         ("/api/v1/findings", {}, "findings_page"),
         ("/api/v1/findings/facets", {"fields": "ptype", "contains": "de"}, "findings_facets"),
         ("/api/v1/findings/groups", {"by": "image_repo"}, "findings_groups"),
-        ("/api/v1/trends/scans", {}, "trends_scans"),
+        ("/api/v1/trends/scans", {"namespace": "shop", "untagged": "true"}, "trends_scans"),
         ("/api/v1/trends/findings", {}, "trends_findings"),
         ("/api/v1/contributors", {}, "contributors"),
         (
@@ -144,6 +144,9 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
     assert reader.calls[1][1]["contains"] == "de"  # a value search reads the history too
     assert reader.calls[2][1]["by"] == "image_repo"
     assert reader.calls[5][1]["days"] == 30
+    # the scan filters ride to the reader too (issue 1293)
+    assert reader.calls[3][1]["filters"].namespace == ["shop"]
+    assert reader.calls[3][1]["filters"].untagged is True
     # the filters of the table ride to the reader; the reader rebuilds daily buckets only
     assert reader.calls[6][1]["filters"].scanner == "grype"
     assert "interval" not in reader.calls[6][1]

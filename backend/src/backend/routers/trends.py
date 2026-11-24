@@ -27,10 +27,12 @@ Tenancy: scan-events routing pins the per-cluster index pattern AND the tenant r
 
 from typing import Annotated, Any, Literal, cast
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from backend.core.identifiers import ClusterId
+from backend.query.search import conflicting_filter_pair
 from backend.query.trends import (
+    ScanFilters,
     build_findings_trend_body,
     build_ingest_failures_trend_body,
     build_new_findings_trend_body,
@@ -43,6 +45,9 @@ from backend.routers.findings import (
     _reader_or_501,
     _reconstructed,
     _sla_cutoffs,
+    _Values128,
+    _Values256,
+    _Values512,
 )
 from backend.tenancy.read_path import tenant_search
 
@@ -50,6 +55,43 @@ router = APIRouter(prefix="/api/v1/trends", tags=["trends"])
 
 Days = Annotated[int, Query(ge=1, le=365)]
 Interval = Literal["day", "hour"]
+# the type of `scanner` on /trends/findings: the MCP tool `trends` takes the parameters of both
+# routes under one name, and refuses to start when their types differ
+Scanner = Literal["trivy", "grype"] | None
+
+
+def _scan_filters(
+    namespace: _Values256 = None,
+    exclude_namespace: _Values256 = None,
+    image_repo: _Values512 = None,
+    exclude_image_repo: _Values512 = None,
+    tag: _Values128 = None,
+    exclude_tag: _Values128 = None,
+    untagged: bool | None = None,
+    image_digest: Annotated[str | None, Query(max_length=128)] = None,
+    scanner: Scanner = None,
+    exclude_scanner: Scanner = None,
+) -> ScanFilters:
+    """The filters of /findings that a scan record holds (issue 1293), with the same names and
+    caps. The route declares only these, so it never takes a filter that it does not apply."""
+    filters = ScanFilters(
+        namespace=namespace,
+        exclude_namespace=exclude_namespace,
+        image_repo=image_repo,
+        exclude_image_repo=exclude_image_repo,
+        tag=tag,
+        exclude_tag=exclude_tag,
+        untagged=untagged,
+        image_digest=image_digest,
+        scanner=scanner,
+        exclude_scanner=exclude_scanner,
+    )
+    if (message := conflicting_filter_pair(vars(filters))) is not None:
+        raise HTTPException(422, message)
+    return filters
+
+
+ScanFiltersDep = Annotated[ScanFilters, Depends(_scan_filters)]
 
 
 def _guard_hourly(interval: str, days: int) -> None:
@@ -77,6 +119,7 @@ async def scans_trend(
     principal: Authenticated,
     cluster_id: ClusterId,
     as_of_t: AsOf,
+    filters: ScanFiltersDep,
     days: Days = 30,
     interval: Interval = "day",
 ) -> dict[str, Any]:
@@ -86,14 +129,16 @@ async def scans_trend(
         # the reader reconstructs DAILY only (MVP) — `interval` is a live-path setting; the
         # reader's payload rides verbatim (the dispatch pin)
         return await _reconstructed(
-            _reader_or_501().trends_scans(client, cluster_id=cluster_id, t=as_of_t, days=days)
+            _reader_or_501().trends_scans(
+                client, cluster_id=cluster_id, t=as_of_t, days=days, filters=filters
+            )
         )
     index = f"javv-scan-events-{cluster_id}-*"
     resp = await tenant_search(
         client,
         index=index,
         cluster_id=cluster_id,
-        body=build_scans_trend_body(days=days, interval=interval),
+        body=build_scans_trend_body(days=days, interval=interval, filters=filters),
     )
     # a cluster with no scan-events yet matches zero indices — no aggregations at all
     aggs = resp.get("aggregations")
