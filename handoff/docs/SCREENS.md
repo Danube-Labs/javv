@@ -305,6 +305,17 @@ right. A click on a bar rewinds the app, as on Scan ingest. A range with none sa
 findings in this range." At a past time, a filter that the history does not record (KEV, Scanners
 disagree) gets "JAVV cannot count the new findings with these filters at a past time."
 
+**Scan ingest under the filters of the table (issue 1293, operator rulings 2026-11-23 and 2026-11-24 on built pictures):**
+
+- Scan ingest reads `GET /api/v1/trends/scans` with the filters of the table that a scan record
+  holds. These filters are Namespace, Image, Tag and Scanner, each with its "is not" side, No tag
+  and Digest.
+- The other filters select findings, so the strip does not apply them. When one of them is on, the
+  line of the strip ends with "Only the namespace, image, tag, digest and scanner filters apply".
+- While a scan filter applies, the strip does not show the last scan. With no scans in the range,
+  its empty text then has no time. The last scan comes from `GET /api/v1/scanners/freshness`,
+  which reads the whole cluster.
+
 **Facet rail** (top→bottom): Severity (critical/high/medium/low/**negligible**/unknown — muted
 treatment for negligible+unknown, never red) · Scanner (trivy/grype) · Attributes (KEV /
 Fix available / Scanners disagree / SLA breached / Unassigned / No tag / New in range) · State (**6**: open, acknowledged, not_affected,
@@ -721,6 +732,11 @@ copy of the view. Before, the "×" of the card deleted the view at the first cli
 Scanner, Namespace, Image and Tag filters of this screen only, because they mean the same on the
 findings. Its line ends with "Only the Scanner, Namespace, Image and Tag filters apply."
 
+**Scan ingest (issue 1293):** it applies the Scanner, Namespace, Image and Tag filters of this
+screen, as on Findings. When another filter of Images is on, its line ends with "Only the
+namespace, image, tag, digest and scanner filters apply". While one of the four filters applies,
+the strip does not show the last scan.
+
 **Columns:** Image (`image_repo` + registry mono) · Tag · Namespace · Replicas (M8c inventory
 read) · per-scanner finding counts (`T n / G n / Δ` — never a merged total) · Severity mix
 (labeled MixBar, per scanner) · Scanners · Last seen.
@@ -763,6 +779,9 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
   findings work today.
 - New findings strip (issue 1292): under Scan ingest in one band. It counts the new findings of
   this digest, for the scanner of the switch.
+- Scan ingest (issue 1293): it shows the scans of this digest, for the two scanners side by side.
+  The switch does not change it. The strip does not show the last scan, because that time is the
+  time of the whole cluster.
 - Build history (`GET /api/v1/images/timeline`): the count of a scan counts findings, as the
   Findings table does (issue 1076). A scan stored before release 0.9.5 keeps the count of the
   report entries.
