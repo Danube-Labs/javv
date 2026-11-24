@@ -313,6 +313,10 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             id="New in range on New findings, which counts the new findings itself",
         ),
         pytest.param(
+            {"panels": [_panel("new-findings", filters={"new_within_seconds": 3600})]},
+            id="the exact New in range on New findings (issue 1291)",
+        ),
+        pytest.param(
             {"panels": [_panel(filters={"severity": ["High"]})]},
             id="a filter value a saved view refuses",
         ),
@@ -542,6 +546,7 @@ _NOT_SCAN_FILTERS: dict[str, Any] = {
     "overdue": True,
     "unassigned": True,
     "new_within_days": 30,
+    "new_within_seconds": 3600,
     "ptype": ["os"],
     "cve_id": ["CVE-2024-0001"],
     "package_name": ["openssl"],

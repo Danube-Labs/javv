@@ -67,10 +67,10 @@ def range_bounds(window_seconds: int, end: datetime | None = None) -> tuple[str,
     if not EXACT_MIN_SECONDS <= window_seconds <= EXACT_MAX_SECONDS:
         raise ValueError(f"window_seconds must be {EXACT_MIN_SECONDS}..{EXACT_MAX_SECONDS}")
     end = end or datetime.now(UTC)
-    return _ms(end - timedelta(seconds=window_seconds)), _ms(end)
+    return iso_ms(end - timedelta(seconds=window_seconds)), iso_ms(end)
 
 
-def _ms(t: datetime) -> str:
+def iso_ms(t: datetime) -> str:
     """An exact bound, always with its milliseconds, the precision of a `date` field. OpenSearch
     fills the fields that an `lte` date leaves out with their highest value: `lte 11:30:00`
     counts a document at 11:30:00.999 (a probe on the store, issue 1291)."""
@@ -118,7 +118,7 @@ def trend_window(days: int | None, window_seconds: int | None, end: datetime) ->
     if days is None:
         raise ValueError("give days or window_seconds")
     gte, upper = window_bounds(days, end)
-    return TrendWindow(gte=gte, upper=upper, lte=_ms(end))
+    return TrendWindow(gte=gte, upper=upper, lte=iso_ms(end))
 
 
 def _timeline(date_field: str, gte: str, upper: str, interval: str = "day") -> dict[str, Any]:
@@ -281,8 +281,9 @@ def build_new_findings_trend_body(
     # search.py imports window_bounds from here: a top-level import of aggs would be a cycle
     from backend.query.aggs import _base
 
-    w = trend_window(days, window_seconds, now or datetime.now(UTC))
-    body = _base(filters, sla_cutoffs)
+    end = now or datetime.now(UTC)
+    w = trend_window(days, window_seconds, end)
+    body = _base(filters, sla_cutoffs, now=end)  # "new in range" ends where the strip ends
     body["query"]["bool"]["filter"].append(
         {"range": {"first_seen_at": {"gte": w.gte, "lte": w.lte}}}
     )

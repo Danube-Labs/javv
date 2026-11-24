@@ -1067,6 +1067,19 @@
             ],
             "title": "New Within Days"
           },
+          "new_within_seconds": {
+            "anyOf": [
+              {
+                "maximum": 172800.0,
+                "minimum": 60.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Within Seconds"
+          },
           "overdue": {
             "anyOf": [
               {
@@ -2309,6 +2322,19 @@
               }
             ],
             "title": "New Within Days"
+          },
+          "new_within_seconds": {
+            "anyOf": [
+              {
+                "maximum": 172800.0,
+                "minimum": 60.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Within Seconds"
           },
           "overdue": {
             "anyOf": [
@@ -6015,6 +6041,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -6680,6 +6724,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -7310,6 +7372,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {
@@ -7985,6 +8065,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -8648,6 +8746,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -9273,6 +9389,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -9894,6 +10028,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {
@@ -10529,6 +10681,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {
@@ -12783,6 +12953,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {

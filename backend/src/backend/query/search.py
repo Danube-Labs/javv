@@ -27,7 +27,7 @@ from opensearchpy.exceptions import NotFoundError, RequestError
 from pydantic import StringConstraints
 
 from backend.core.settings import get_settings
-from backend.query.trends import window_bounds
+from backend.query.trends import iso_ms, range_bounds, window_bounds
 from backend.sla.overdue import HANDLED_STATES, overdue_cutoffs
 from backend.sla.policy import read_sla_policy
 from backend.tenancy.read_path import tenant_query
@@ -95,9 +95,11 @@ class SearchFilters:
     tag: list[str] | None = None
     q: str | None = None  # contains-search across cve/image/namespace/assignee/package (slice 4)
     present: bool = True  # the "now" grid; tombstones are opt-in
-    # "new in range": first_seen_at ≥ the trend window's day-floored start — the SAME bounds
-    # the trend charts use, so the lens bars and the filtered rows always agree
+    # "new in range": first_seen_at from the start of the trend window to the time of the
+    # request — the SAME bounds the trend charts use, so the lens bars and the filtered rows
+    # always agree. Whole UTC days, or the exact range of 2 days or less in seconds (issue 1291).
     new_within_days: int | None = None
+    new_within_seconds: int | None = None
     # SLA breached (issue 363): ranges on the materialized D21 group clock `sla_clock_at`
     # against LIVE-policy cutoffs — the body needs `sla_cutoffs` (see overdue_cutoffs)
     overdue: bool | None = None
@@ -136,6 +138,7 @@ FILTER_PAIRS: tuple[tuple[str, str], ...] = (
     ),
     ("assignee", "unassigned"),
     ("tag", "untagged"),
+    ("new_within_days", "new_within_seconds"),
 )
 
 
@@ -223,6 +226,21 @@ def overdue_clause(cutoffs: dict[str, str]) -> dict[str, Any]:
     }
 
 
+def _new_in_range(filters: SearchFilters, end: datetime) -> dict[str, str]:
+    """The range of "new in range". It stops at the time of the request, as the New findings
+    strip does (issue 1291, ruling of 2026-11-24): `first_seen_at` is the scanner's clock, and
+    a clock that runs ahead gives a time after now, which is not new yet."""
+    if filters.new_within_seconds is not None:
+        if filters.new_within_days is not None:
+            raise ValueError("new_within_days and new_within_seconds are mutually exclusive")
+        gte, lte = range_bounds(filters.new_within_seconds, end)
+        return {"gte": gte, "lte": lte}
+    if filters.new_within_days is None:
+        raise ValueError("new in range needs new_within_days or new_within_seconds")
+    gte, _upper = window_bounds(filters.new_within_days, end)
+    return {"gte": gte, "lte": iso_ms(end)}
+
+
 def build_search_body(
     filters: SearchFilters,
     *,
@@ -231,11 +249,13 @@ def build_search_body(
     order: str = "desc",
     search_after: list[Any] | None = None,
     sla_cutoffs: dict[str, str] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     """Pure — the unit-tested contract. Does NOT include the tenant filter (tenant_query
     forces that in) or the PIT (the executor owns its lifecycle). An `overdue` filter REQUIRES
     `sla_cutoffs` (derive via `overdue_cutoffs` from the live policy) — raising instead of
-    silently dropping the facet is what keeps every consumer's results correct."""
+    silently dropping the facet is what keeps every consumer's results correct. `now` is the
+    end of "new in range": a walk of pages passes the time of its first page."""
     if sort not in _SORT_FIELDS:
         raise ValueError(f"sort must be one of {_SORT_FIELDS}")
     if order not in ("asc", "desc"):
@@ -266,9 +286,8 @@ def build_search_body(
     ):
         if term is not None:
             fl.append({"term": {field: term}})
-    if filters.new_within_days is not None:
-        gte, _upper = window_bounds(filters.new_within_days)
-        fl.append({"range": {"first_seen_at": {"gte": gte}}})
+    if filters.new_within_days is not None or filters.new_within_seconds is not None:
+        fl.append({"range": {"first_seen_at": _new_in_range(filters, now or datetime.now(UTC))}})
     mn: list[dict[str, Any]] = []
     for name, field, include, exclude in (
         ("severity", "severity_canonical", filters.severity, filters.exclude_severity),
@@ -352,6 +371,7 @@ def encode_cursor(
     sort: str,
     order: str,
     sla_cutoffs: dict[str, str] | None = None,
+    now: datetime | None = None,
 ) -> str:
     payload: dict[str, Any] = {"p": pit_id, "a": search_after, "s": sort, "o": order}
     if sla_cutoffs is not None:
@@ -359,17 +379,26 @@ def encode_cursor(
         # query must freeze too — a wall-clock cutoff drifting between pages could flip a row's
         # match mid-walk and skip/duplicate it across a page boundary
         payload["sc"] = sla_cutoffs
+    if now is not None:
+        # the same for the bounds of "new in range" (issue 1291): its start and end move with
+        # the clock, so the walk keeps the time of its first page
+        payload["n"] = now.isoformat()
     raw = json.dumps(payload)
     return base64.urlsafe_b64encode(raw.encode()).decode()
 
 
-def decode_cursor(cursor: str) -> tuple[str, list[Any], str, str, dict[str, str] | None]:
+def decode_cursor(
+    cursor: str,
+) -> tuple[str, list[Any], str, str, dict[str, str] | None, datetime | None]:
     try:
         c = json.loads(base64.urlsafe_b64decode(cursor.encode()))
         pit_id, search_after, sort, order = c["p"], c["a"], c["s"], c["o"]
         sla_cutoffs = c.get("sc")
+        now = None if c.get("n") is None else datetime.fromisoformat(c["n"])
     except (binascii.Error, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         raise ValueError("invalid cursor") from exc
+    if now is not None and now.tzinfo is None:
+        raise ValueError("invalid cursor")
     # a base64/JSON-valid cursor can still carry tampered fields that would sail past decode and
     # blow up inside client.search (500) — type-check them here so a bad shape is a 422 (A-m1).
     # sort/order are re-validated by build_search_body against their whitelists (also → 422).
@@ -385,7 +414,7 @@ def decode_cursor(cursor: str) -> tuple[str, list[Any], str, str, dict[str, str]
         and all(isinstance(v, str) for v in sla_cutoffs.values())
     ):
         raise ValueError("invalid cursor")
-    return pit_id, search_after, sort, order, sla_cutoffs
+    return pit_id, search_after, sort, order, sla_cutoffs, now
 
 
 def cursor_pit_id(cursor: str) -> str:
@@ -414,8 +443,9 @@ async def run_search(
     keep_alive = get_settings().search_pit_keep_alive
     search_after: list[Any] | None = None
     sla_cutoffs: dict[str, str] | None = None
+    now: datetime | None = None
     if cursor is not None:
-        pit_id, search_after, sort, order, sla_cutoffs = decode_cursor(cursor)
+        pit_id, search_after, sort, order, sla_cutoffs, now = decode_cursor(cursor)
         if filters.overdue is not None and sla_cutoffs is None:
             # a cursor minted by a non-overdue walk carries no frozen cutoffs — resolve live
             policy = await read_sla_policy(client, prefix=prefix)
@@ -432,6 +462,9 @@ async def run_search(
         )["pit_id"]
 
     opened_here = cursor is None  # this call created the PIT (vs. a client-owned cursor PIT)
+    new_in_range = filters.new_within_days is not None or filters.new_within_seconds is not None
+    if new_in_range and now is None:  # a first page, or a cursor minted with no frozen time
+        now = datetime.now(UTC)
     body = build_search_body(
         filters,
         size=size,
@@ -439,6 +472,7 @@ async def run_search(
         order=order,
         search_after=search_after,
         sla_cutoffs=sla_cutoffs,
+        now=now,
     )
     body = tenant_query(cluster_id, body)  # SEC-4 — the only guard on the index-less PIT path
     body["pit"] = {"id": pit_id, "keep_alive": keep_alive}
@@ -478,6 +512,7 @@ async def run_search(
             sort=sort,
             order=order,
             sla_cutoffs=sla_cutoffs if filters.overdue is not None else None,
+            now=now if new_in_range else None,
         )
     return {
         "data": [h["_source"] for h in hits],

@@ -63,7 +63,7 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "riskiest-images": (),
     "top-components": (),
     "top-cves": (),
-    "new-findings": ("new_within_days",),
+    "new-findings": ("new_within_days", "new_within_seconds"),
     "scan-ingest": (
         "q",
         "severity",
@@ -75,6 +75,7 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
         "overdue",
         "unassigned",
         "new_within_days",
+        "new_within_seconds",
         "ptype",
         "cve_id",
         "package_name",

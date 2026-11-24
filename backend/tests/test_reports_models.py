@@ -129,3 +129,13 @@ def test_public_report_hides_internals() -> None:
     assert pub["report_id"] == "r1" and pub["status"] == "running"
     for hidden in ("params", "attempt_id", "lease_expires_at", "heartbeat_at"):
         assert hidden not in pub  # the status view never leaks the lens or the claim internals
+
+
+def test_the_two_ranges_of_new_in_range_are_refused_together() -> None:
+    """Issue 1291: whole days or the exact range of 2 days or less, never both, as /findings."""
+    with pytest.raises(ValidationError, match="new_within_days and new_within_seconds"):
+        ExportParams.model_validate({"new_within_days": 1, "new_within_seconds": 3600})
+    assert ExportParams.model_validate({"new_within_seconds": 3600}).new_within_seconds == 3600
+    for bad in (59, 172_801):
+        with pytest.raises(ValidationError):
+            ExportParams.model_validate({"new_within_seconds": bad})

@@ -473,6 +473,10 @@ export type ExportParams = {
      */
     new_within_days?: number | null;
     /**
+     * New Within Seconds
+     */
+    new_within_seconds?: number | null;
+    /**
      * Overdue
      */
     overdue?: boolean | null;
@@ -1018,6 +1022,10 @@ export type ViewPreset = {
      * New Within Days
      */
     new_within_days?: number | null;
+    /**
+     * New Within Seconds
+     */
+    new_within_seconds?: number | null;
     /**
      * Overdue
      */
@@ -2869,6 +2877,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3052,6 +3064,10 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3207,6 +3223,10 @@ export type ExportVexApiV1FindingsExportVexGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -3378,6 +3398,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3548,6 +3572,10 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3706,6 +3734,10 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3863,6 +3895,10 @@ export type TopImagesFindingsApiV1FindingsTopImagesGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -4025,6 +4061,10 @@ export type TopValuesFindingsApiV1FindingsTopValuesGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -5216,6 +5256,10 @@ export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */

@@ -466,7 +466,8 @@ the same filters:
 | `namespace`, `ptype`, `assignee`, `image_repo`, `tag`, `cve_id`, `package_name` | The rows with one of the values. Give the parameter one time for each value, for example `namespace=a&namespace=b`. Each filter takes at most 32 values. A row in more than one namespace matches each of its namespaces. |
 | `kev`, `fixable`, `disagree` | `true` or `false` |
 | `present` | `true` (default): the findings in the last scan. `false`: the findings that are gone. |
-| `new_within_days` | The findings first seen in the last 1 to 365 days |
+| `new_within_days` | The findings first seen in the last 1 to 365 days. The range starts at 00:00 UTC, that number of days before today. |
+| `new_within_seconds` | The findings first seen in an exact range of 60 to 172,800 seconds (2 days) that ends at the time of the request |
 | `overdue` | `true` or `false`, from the SLA policy at the time of the request. A change of the policy changes the result at once. |
 | `unassigned` | `true`: the rows with no owner. An empty `assignee` counts as no owner. |
 | `untagged` | `true`: the rows of an image with no tag. An empty `tag` counts as no tag. `false`: the rows of an image with a tag. |
@@ -475,7 +476,7 @@ the same filters:
 - JAVV splits the name of an image at ingest. `app:1.4.2` is the `image_repo` `app` with the
   `tag` `1.4.2`, so `image_repo=app` selects each version of the image. A `tag` value has at most
   128 characters.
-- Each filter except `kev`, `fixable`, `disagree`, `present`, `new_within_days`, `overdue`,
+- Each filter except `kev`, `fixable`, `disagree`, `present`, `new_within_days`, `new_within_seconds`, `overdue`,
   `unassigned`, `untagged`, `image_digest` and `q` has an `exclude_` form, for example `exclude_severity`.
   An `exclude_` filter leaves out the rows with that value. A row with no value for the field stays.
   Thus `exclude_assignee=bob` keeps the rows with no owner. An `exclude_` filter with more than one
@@ -485,7 +486,10 @@ the same filters:
   (`namespace`, `ptype`, `assignee`, `image_repo`, `tag`, `cve_id`, `package_name` and their
   `exclude_` forms) also take one string. JAVV keeps it as a list with that one value.
 - One field takes the filter or its `exclude_` form, not both. `assignee` and `unassigned` also
-  do not go together, and `tag` and `untagged` do not go together. Each of these pairs gets 422, also in a saved view and in a report.
+  do not go together, and `tag` and `untagged` do not go together. `new_within_days` and `new_within_seconds` do not go together. Each of these pairs gets 422, also in a saved view and in a report.
+- `new_within_days` and `new_within_seconds` end at the time of the request. A finding with a later
+  `first_seen_at` does not count, also when the clock of a scanner runs ahead. A walk with `cursor`
+  keeps the time of its first page, and an export keeps the time of its start.
 
 #### A past time: `as_of`
 
@@ -500,7 +504,7 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 - The SLA deadline (`overdue` and `due_at`) uses the KEV value that each scan recorded, as a
   read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
   A finding from such a scan gets the deadline of its severity.
-- A filter, sort or group on one of these fields gets 422. `new_within_days` gets 422 too.
+- A filter, sort or group on one of these fields gets 422. `new_within_days` and `new_within_seconds` get 422 too.
 - A facet on one of these fields gives no values.
 - `ptype`, `package_name`, `image_repo`, `tag`, `untagged`, `q` and the `exclude_` filters on
   recorded fields apply as usual. A group by `image_repo` works.
@@ -743,7 +747,7 @@ The backend refuses with 422:
 - `filters` on a panel that does not read findings counts or scans
 - `scanner` or `exclude_scanner` in `filters`. The `scanner` field of the panel does this.
 - `state` or `exclude_state` in the `filters` of `triage-progress`. This panel shows each state.
-- `new_within_days` in the `filters` of `new-findings`. This panel counts only the findings first seen in
+- `new_within_days` or `new_within_seconds` in the `filters` of `new-findings`. This panel counts only the findings first seen in
   the time range.
 - a filter in the `filters` of `scan-ingest` that a scan record does not hold. This panel counts
   scans, so it takes only the filters of `GET /api/v1/trends/scans`.

@@ -185,7 +185,7 @@ async def run_audit_search(
     keep_alive = get_settings().search_pit_keep_alive
     search_after: list[Any] | None = None
     if cursor is not None:
-        pit_id, search_after, sort, order, _ = decode_cursor(cursor)
+        pit_id, search_after, sort, order, _, _ = decode_cursor(cursor)
         if sort != _SORT_KEY:  # a findings-grid (or hand-rolled) cursor is not an audit cursor
             raise ValueError("invalid cursor")
     else:

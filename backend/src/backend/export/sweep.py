@@ -52,6 +52,7 @@ async def count_lens(
         sort="first_seen_at",
         order="asc",
         sla_cutoffs=await _cutoffs(client, filters, prefix),
+        now=datetime.now(UTC),
     )
     del body["track_total_hits"]  # count has its own total; drop the search-only setting
     body = tenant_query(cluster_id, body)  # SEC-4 — the cluster filter is forced in
@@ -69,6 +70,7 @@ async def sweep_findings(
     """Yield every finding doc matching the lens, one page at a time."""
     keep_alive = get_settings().search_pit_keep_alive
     sla_cutoffs = await _cutoffs(client, filters, prefix)  # frozen for the whole walk
+    now = datetime.now(UTC)  # and the end of "new in range" too (issue 1291)
     pit_id = (
         await client.create_pit(index=f"{prefix}findings", params={"keep_alive": keep_alive})
     )["pit_id"]
@@ -82,6 +84,7 @@ async def sweep_findings(
                 order="asc",
                 search_after=search_after,
                 sla_cutoffs=sla_cutoffs,
+                now=now,
             )
             body = tenant_query(cluster_id, body)  # SEC-4 — the only guard on the PIT path
             body["pit"] = {"id": pit_id, "keep_alive": keep_alive}

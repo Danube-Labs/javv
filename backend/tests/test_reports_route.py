@@ -97,6 +97,7 @@ async def test_enqueue_writes_a_pending_doc_and_status_reads_it_back(env) -> Non
         "q": None,  # M9b slice 4 — the contains-search lens
         "present": True,
         "new_within_days": None,  # the new-in-range event lens
+        "new_within_seconds": None,  # issue 1291 — the exact range of 2 days or less
         "overdue": None,  # issue 363 — the SLA-breached lens
         "unassigned": None,  # issue 349 §1 — the untriaged-backlog lens
         "untagged": None,  # issue 1294 — an image name with no tag
