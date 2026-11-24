@@ -44,11 +44,16 @@ test.describe('at 1366, the common laptop width', () => {
 
   test('Findings: the ingest strip subtitle shows its whole sentence', async ({ page }) => {
     await page.goto(`${BASE}/findings`)
-    const sub = page.locator('.ingest-lens .il-sub')
+    // the band holds two strips since issue 1292: Scan ingest, then New findings
+    const sub = page.getByRole('region', { name: 'Scan ingest activity' }).locator('.il-sub')
     await expect(sub).toBeVisible({ timeout: 20_000 })
     await expect(sub).toContainText('of this range')
     const { needs, has } = await sub.evaluate((el) => ({ needs: el.scrollWidth, has: el.clientWidth }))
     expect(needs).toBeLessThanOrEqual(has)
+    const fresh = page.getByRole('region', { name: 'New findings' }).locator('.il-sub')
+    await expect(fresh).toContainText('by severity.')
+    const line = await fresh.evaluate((el) => ({ needs: el.scrollWidth, has: el.clientWidth }))
+    expect(line.needs).toBeLessThanOrEqual(line.has)
   })
 
   test('Top bar: the search hint shows its whole text', async ({ page }) => {
