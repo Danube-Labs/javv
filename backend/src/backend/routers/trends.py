@@ -14,6 +14,11 @@
 - `/trends/ingest-failures` — pushes the ingest route refused after the token check, per bucket per
   scanner (issue 575), on `/trends/scans`'s exact axis so the two strips line up. An append-only
   log, so a past `as_of` just ends the window at T — no reconstruction, never a 501.
+- `/trends/new-findings` — the findings first seen in each bucket, by severity, under the filters
+  of `GET /findings` (issue 1292), with the bounds and bucket size of `/trends/scans`. `present`
+  comes from the
+  filters (the default counts the findings present now), and the window ends at now. A past
+  `as_of` goes to the reader, which rebuilds the rows at T and counts daily buckets.
 
 Tenancy: scan-events routing pins the per-cluster index pattern AND the tenant read path forces the
 `cluster_id` body filter; findings reads carry it through the tenant read path alone. Same uniform
@@ -28,9 +33,17 @@ from backend.core.identifiers import ClusterId
 from backend.query.trends import (
     build_findings_trend_body,
     build_ingest_failures_trend_body,
+    build_new_findings_trend_body,
     build_scans_trend_body,
 )
-from backend.routers.findings import AsOf, Authenticated, _reader_or_501, _reconstructed
+from backend.routers.findings import (
+    AsOf,
+    Authenticated,
+    Filters,
+    _reader_or_501,
+    _reconstructed,
+    _sla_cutoffs,
+)
 from backend.tenancy.read_path import tenant_search
 
 router = APIRouter(prefix="/api/v1/trends", tags=["trends"])
@@ -142,4 +155,30 @@ async def ingest_failures_trend(
     # a cluster that never had a push refused matches zero indices — no aggregations at all
     aggs = resp.get("aggregations")
     series = _series(aggs["by_scanner"]) if aggs else {}
+    return {"series": series, "days": days, "interval": interval}
+
+
+@router.get("/new-findings")
+async def new_findings_trend(
+    request: Request,
+    principal: Authenticated,
+    cluster_id: ClusterId,
+    filters: Filters,
+    as_of_t: AsOf,
+    days: Days = 30,
+    interval: Interval = "day",
+) -> dict[str, Any]:
+    _guard_hourly(interval, days)
+    client = cast(Any, request.app.state.opensearch)
+    if as_of_t is not None:  # past T → the reader rebuilds the rows at T, daily only (D28)
+        return await _reconstructed(
+            _reader_or_501().trends_new_findings(
+                client, cluster_id=cluster_id, t=as_of_t, days=days, filters=filters
+            )
+        )
+    body = build_new_findings_trend_body(
+        filters, days=days, interval=interval, sla_cutoffs=await _sla_cutoffs(client, filters)
+    )
+    resp = await tenant_search(client, index="findings", cluster_id=cluster_id, body=body)
+    series = _series(resp["aggregations"]["by_severity"])
     return {"series": series, "days": days, "interval": interval}

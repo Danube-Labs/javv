@@ -194,3 +194,129 @@ async def test_findings_trend_reports_new_vs_resolved_per_scanner(env) -> None:
         params={"cluster_id": cid, "days": 30, "as_of": "2026-01-01T00:00:00Z"},
     )
     assert r.status_code == 501  # the uniform D28 seam
+
+
+# issue 1292: the New findings strip. The findings first seen in each bucket, by severity, under
+# the filters of the table.
+def _raw_words(cid: str, scanner: str, run: str) -> IngestEnvelope:
+    """The golden scan with mixed-case severity words, as scanners send them."""
+    doc = {
+        **GOLDEN,
+        "cluster_id": cid,
+        "scanner": scanner,
+        "scan_run_id": run,
+        "last_seen_at": datetime.now(UTC).isoformat(),
+        "findings": [dict(f) for f in GOLDEN["findings"]],
+    }
+    if scanner == "grype":
+        doc["effective_config"] = {**GOLDEN["effective_config"], "tuning": GRYPE_TUNING}
+    doc["findings"][4]["severity"] = "Critical"  # was CRITICAL
+    doc["findings"][8]["severity"] = "High"  # was HIGH
+    return IngestEnvelope.model_validate(doc)
+
+
+def _totals(series: dict[str, list[dict[str, Any]]]) -> dict[str, int]:
+    return {sev: sum(p["count"] for p in points) for sev, points in series.items()}
+
+
+GRYPE_TUNING = {"only_fixed": False, "scope": None, "scan_timeout": 300}
+GOLDEN_COUNTS = {"critical": 4, "high": 8, "medium": 8, "low": 5, "unknown": 4}
+
+
+async def _seed_row(client: AsyncOpenSearch, cid: str, **row: Any) -> None:
+    fk = f"fk-{uuid.uuid4().hex[:10]}"
+    await client.index(
+        index="findings",
+        id=fk,
+        body={
+            "finding_key": fk,
+            "cluster_id": cid,
+            "scanner": "trivy",
+            "cve_id": "CVE-2024-5000",
+            "image_digest": "sha256:newfindings01",
+            "namespaces": ["default"],
+            "state": "open",
+            "present": True,
+            "severity": "critical",
+            "severity_canonical": "critical",
+            "severity_rank": 5,
+            **row,
+        },
+    )
+
+
+async def test_new_findings_trend_counts_raw_scanner_words_in_canonical_buckets(env) -> None:
+    login, client = env
+    cid = f"c-newf-{uuid.uuid4().hex[:8]}"
+    other = f"c-newf-{uuid.uuid4().hex[:8]}"
+    await ingest_envelope(client, _raw_words(other, "trivy", "run-o"))  # never counts for cid
+    await ingest_envelope(client, _raw_words(cid, "trivy", "run-t"))
+    await ingest_envelope(client, _raw_words(cid, "grype", "run-g"))
+    await client.indices.refresh(index="findings")
+
+    http = await login()
+    params: dict[str, Any] = {"cluster_id": cid, "days": 7}
+    r = await http.get("/api/v1/trends/new-findings", params=params)
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["days"] == 7
+    assert out["interval"] == "day"
+    # each scanner's row counts: the two scans give twice the golden counts, never merged
+    assert _totals(out["series"]) == {k: 2 * v for k, v in GOLDEN_COUNTS.items()}
+    assert _today_bucket(out["series"]["critical"], "count") == 8
+    assert len(out["series"]["critical"]) == 8  # a continuous axis: 7 days back to today
+
+    r = await http.get("/api/v1/trends/new-findings", params={**params, "scanner": "trivy"})
+    assert _totals(r.json()["series"]) == GOLDEN_COUNTS  # the Scanner filter of the table
+    r = await http.get(
+        "/api/v1/trends/new-findings", params={**params, "severity": ["critical", "high"]}
+    )
+    assert _totals(r.json()["series"]) == {"critical": 8, "high": 16}
+
+    r = await http.get("/api/v1/trends/new-findings", params={"cluster_id": other, "days": 7})
+    assert _totals(r.json()["series"]) == GOLDEN_COUNTS  # one scan only: cid never leaks in
+
+    r = await http.get("/api/v1/trends/new-findings", params={**params, "interval": "hour"})
+    assert r.status_code == 200
+    assert r.json()["interval"] == "hour"
+    assert _totals(r.json()["series"]) == {k: 2 * v for k, v in GOLDEN_COUNTS.items()}
+
+
+async def test_new_findings_trend_follows_presence_overdue_and_the_window(env) -> None:
+    login, client = env
+    cid = f"c-newf-{uuid.uuid4().hex[:8]}"
+    now = datetime.now(UTC)
+    await _seed_row(client, cid, first_seen_at=now.isoformat())  # new, present
+    await _seed_row(client, cid, first_seen_at=now.isoformat(), present=False)  # gone again
+    # a scanner clock ahead of the server: first seen after now, not new yet
+    await _seed_row(client, cid, first_seen_at=(now + timedelta(hours=3)).isoformat())
+    await _seed_row(client, cid, first_seen_at=(now - timedelta(days=40)).isoformat())  # too old
+    # a sibling clock from long ago: past the critical SLA of the default policy
+    await _seed_row(
+        client,
+        cid,
+        first_seen_at=(now - timedelta(days=1)).isoformat(),
+        sla_clock_at=(now - timedelta(days=400)).isoformat(),
+        severity_canonical="high",
+    )
+    await client.indices.refresh(index="findings")
+
+    http = await login()
+    params: dict[str, Any] = {"cluster_id": cid, "days": 30}
+    r = await http.get("/api/v1/trends/new-findings", params=params)
+    assert _totals(r.json()["series"]) == {"critical": 1, "high": 1}  # D2 A: present now
+    r = await http.get("/api/v1/trends/new-findings", params={**params, "present": "false"})
+    assert _totals(r.json()["series"]) == {"critical": 1}
+    # the overdue filter reads the cutoffs of the live policy, as the grid does (never a 500)
+    r = await http.get("/api/v1/trends/new-findings", params={**params, "overdue": "true"})
+    assert r.status_code == 200, r.text
+    assert _totals(r.json()["series"]) == {"high": 1}
+
+    r = await http.get(
+        "/api/v1/trends/new-findings", params={**params, "days": 32, "interval": "hour"}
+    )
+    assert r.status_code == 422  # the hourly cap of /trends/scans
+    r = await http.get(
+        "/api/v1/trends/new-findings", params={**params, "tag": "1.4.1", "untagged": "true"}
+    )
+    assert r.status_code == 422  # the pair that the table refuses

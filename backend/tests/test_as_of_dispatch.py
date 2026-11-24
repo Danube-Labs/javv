@@ -63,6 +63,9 @@ class _StubReader:
     async def trends_findings(self, client: Any, **kw: Any) -> dict[str, Any]:
         return await self._record("trends_findings", kw)
 
+    async def trends_new_findings(self, client: Any, **kw: Any) -> dict[str, Any]:
+        return await self._record("trends_new_findings", kw)
+
     async def contributors(self, client: Any, **kw: Any) -> dict[str, Any]:
         return await self._record("contributors", kw)
 
@@ -122,6 +125,11 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
         ("/api/v1/trends/scans", {}, "trends_scans"),
         ("/api/v1/trends/findings", {}, "trends_findings"),
         ("/api/v1/contributors", {}, "contributors"),
+        (
+            "/api/v1/trends/new-findings",
+            {"scanner": "grype", "interval": "hour"},
+            "trends_new_findings",
+        ),
     ]
     for path, extra, surface in surfaces:
         r = await http.get(path, params={"cluster_id": cid, "as_of": PAST_T, **extra})
@@ -136,6 +144,9 @@ async def test_a_past_t_delegates_each_surface_with_the_parsed_instant(http) -> 
     assert reader.calls[1][1]["contains"] == "de"  # a value search reads the history too
     assert reader.calls[2][1]["by"] == "image_repo"
     assert reader.calls[5][1]["days"] == 30
+    # the filters of the table ride to the reader; the reader rebuilds daily buckets only
+    assert reader.calls[6][1]["filters"].scanner == "grype"
+    assert "interval" not in reader.calls[6][1]
 
 
 async def test_top_images_at_a_past_t_asks_the_reader_with_no_inventory_too(http) -> None:

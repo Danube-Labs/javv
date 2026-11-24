@@ -13,9 +13,11 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from backend.query.search import SearchFilters, build_search_body
 from backend.query.trends import (
     build_findings_trend_body,
     build_ingest_failures_trend_body,
+    build_new_findings_trend_body,
     build_scans_trend_body,
 )
 
@@ -143,3 +145,73 @@ def test_ingest_failures_trend_anchored_window_ends_at_t() -> None:
         build_ingest_failures_trend_body(days=0)
     with pytest.raises(ValueError):
         build_ingest_failures_trend_body(days=1, interval="minute")
+
+
+# issue 1292: the New findings strip under Scan ingest. It counts the findings first seen in each
+# bucket, by severity, under the filters of the table.
+NOW = datetime(2026, 9, 20, 15, 30, tzinfo=UTC)
+
+
+def test_new_findings_trend_counts_first_seen_by_canonical_severity() -> None:
+    body = build_new_findings_trend_body(SearchFilters(), days=7, now=NOW)
+    assert body["size"] == 0
+    by_severity = body["aggs"]["by_severity"]
+    # the server-derived canonical key (D46), never the verbatim scanner word; six buckets
+    assert by_severity["terms"] == {"field": "severity_canonical", "size": 6}
+    dh = by_severity["aggs"]["timeline"]["date_histogram"]
+    assert dh["field"] == "first_seen_at"
+    assert dh["calendar_interval"] == "day"
+    assert dh["min_doc_count"] == 0
+    assert "aggs" not in by_severity["aggs"]["timeline"]  # a doc count: each scanner's row counts
+    # the window starts on the day floor and stops at now: a scanner clock ahead of the server
+    # gives a first_seen_at after now, and that finding is not new yet
+    window = {"range": {"first_seen_at": {"gte": "2026-09-13", "lte": NOW.isoformat()}}}
+    assert window in body["query"]["bool"]["filter"]
+
+
+@pytest.mark.parametrize("interval", ["day", "hour"])
+def test_new_findings_trend_shares_the_scan_ingest_axis(interval: str) -> None:
+    """The strip sits under Scan ingest: the same bounds and bucket size for the same window."""
+    new = build_new_findings_trend_body(SearchFilters(), days=2, interval=interval, now=NOW)
+    scans = build_scans_trend_body(days=2, anchor=NOW, interval=interval)
+    n_dh = new["aggs"]["by_severity"]["aggs"]["timeline"]["date_histogram"]
+    s_dh = scans["aggs"]["by_scanner"]["aggs"]["timeline"]["date_histogram"]
+    assert {k: v for k, v in n_dh.items() if k != "field"} == {
+        k: v for k, v in s_dh.items() if k != "field"
+    }
+
+
+def test_new_findings_trend_takes_the_filter_context_of_the_grid() -> None:
+    filters = SearchFilters(
+        scanner="grype", severity=["critical"], namespace=["shop"], tag=["1.4.1"], q="ssl"
+    )
+    body = build_new_findings_trend_body(filters, days=7, now=NOW)
+    grid = build_search_body(filters, size=0)["query"]["bool"]
+    query = body["query"]["bool"]
+    assert query["filter"][: len(grid["filter"])] == grid["filter"]  # the grid filters, in order
+    assert query["must"] == grid["must"]  # the search
+    assert {"term": {"present": True}} in query["filter"]  # D2 A: present from the filters
+    gone = build_new_findings_trend_body(SearchFilters(present=False), days=7, now=NOW)
+    assert {"term": {"present": False}} in gone["query"]["bool"]["filter"]
+    excluded = build_new_findings_trend_body(SearchFilters(exclude_tag=["latest"]), days=7, now=NOW)
+    assert excluded["query"]["bool"]["must_not"] == [{"terms": {"tag": ["latest"]}}]
+
+
+def test_new_findings_trend_overdue_needs_the_sla_cutoffs() -> None:
+    with pytest.raises(ValueError, match="sla_cutoffs"):
+        build_new_findings_trend_body(SearchFilters(overdue=True), days=7, now=NOW)
+    cutoffs: dict[str, str] = {
+        k: "2026-09-01T00:00:00+00:00" for k in ("kev", "critical", "high", "medium", "low")
+    }
+    body = build_new_findings_trend_body(
+        SearchFilters(overdue=True), days=7, now=NOW, sla_cutoffs=cutoffs
+    )
+    grid = build_search_body(SearchFilters(overdue=True), size=0, sla_cutoffs=cutoffs)
+    assert grid["query"]["bool"]["filter"][-1] in body["query"]["bool"]["filter"]
+
+
+def test_new_findings_trend_bounds() -> None:
+    with pytest.raises(ValueError):
+        build_new_findings_trend_body(SearchFilters(), days=0, now=NOW)
+    with pytest.raises(ValueError):
+        build_new_findings_trend_body(SearchFilters(), days=1, interval="minute", now=NOW)

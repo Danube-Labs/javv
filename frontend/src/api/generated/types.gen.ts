@@ -5116,6 +5116,172 @@ export type IngestFailuresTrendApiV1TrendsIngestFailuresGetResponses = {
 
 export type IngestFailuresTrendApiV1TrendsIngestFailuresGetResponse = IngestFailuresTrendApiV1TrendsIngestFailuresGetResponses[keyof IngestFailuresTrendApiV1TrendsIngestFailuresGetResponses];
 
+export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Cluster Id
+         */
+        cluster_id: string;
+        /**
+         * Days
+         */
+        days?: number;
+        /**
+         * Interval
+         */
+        interval?: 'day' | 'hour';
+        /**
+         * Severity
+         */
+        severity?: Array<string> | null;
+        /**
+         * State
+         */
+        state?: Array<string> | null;
+        /**
+         * Scanner
+         */
+        scanner?: string | null;
+        /**
+         * Assignee
+         */
+        assignee?: Array<string> | null;
+        /**
+         * Kev
+         */
+        kev?: boolean | null;
+        /**
+         * Fixable
+         */
+        fixable?: boolean | null;
+        /**
+         * Disagree
+         */
+        disagree?: boolean | null;
+        /**
+         * Cve Id
+         */
+        cve_id?: Array<string> | null;
+        /**
+         * Image Digest
+         */
+        image_digest?: string | null;
+        /**
+         * Image Repo
+         */
+        image_repo?: Array<string> | null;
+        /**
+         * Namespace
+         */
+        namespace?: Array<string> | null;
+        /**
+         * Ptype
+         */
+        ptype?: Array<string> | null;
+        /**
+         * Package Name
+         */
+        package_name?: Array<string> | null;
+        /**
+         * Tag
+         */
+        tag?: Array<string> | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Present
+         */
+        present?: boolean;
+        /**
+         * New Within Days
+         */
+        new_within_days?: number | null;
+        /**
+         * Overdue
+         */
+        overdue?: boolean | null;
+        /**
+         * Unassigned
+         */
+        unassigned?: boolean | null;
+        /**
+         * Untagged
+         */
+        untagged?: boolean | null;
+        /**
+         * Exclude Severity
+         */
+        exclude_severity?: Array<string> | null;
+        /**
+         * Exclude State
+         */
+        exclude_state?: Array<string> | null;
+        /**
+         * Exclude Scanner
+         */
+        exclude_scanner?: string | null;
+        /**
+         * Exclude Assignee
+         */
+        exclude_assignee?: Array<string> | null;
+        /**
+         * Exclude Image Repo
+         */
+        exclude_image_repo?: Array<string> | null;
+        /**
+         * Exclude Namespace
+         */
+        exclude_namespace?: Array<string> | null;
+        /**
+         * Exclude Ptype
+         */
+        exclude_ptype?: Array<string> | null;
+        /**
+         * Exclude Cve Id
+         */
+        exclude_cve_id?: Array<string> | null;
+        /**
+         * Exclude Package Name
+         */
+        exclude_package_name?: Array<string> | null;
+        /**
+         * Exclude Tag
+         */
+        exclude_tag?: Array<string> | null;
+        /**
+         * As Of
+         */
+        as_of?: string | null;
+    };
+    url: '/api/v1/trends/new-findings';
+};
+
+export type NewFindingsTrendApiV1TrendsNewFindingsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NewFindingsTrendApiV1TrendsNewFindingsGetError = NewFindingsTrendApiV1TrendsNewFindingsGetErrors[keyof NewFindingsTrendApiV1TrendsNewFindingsGetErrors];
+
+export type NewFindingsTrendApiV1TrendsNewFindingsGetResponses = {
+    /**
+     * Response New Findings Trend Api V1 Trends New Findings Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type NewFindingsTrendApiV1TrendsNewFindingsGetResponse = NewFindingsTrendApiV1TrendsNewFindingsGetResponses[keyof NewFindingsTrendApiV1TrendsNewFindingsGetResponses];
+
 export type ScansTrendApiV1TrendsScansGetData = {
     body?: never;
     path?: never;

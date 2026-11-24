@@ -263,6 +263,7 @@ EXEMPT_GET_ROUTES: dict[str, str] = {
     "/api/v1/trends/scans": "series keyed by scanner, not a list envelope",
     "/api/v1/trends/findings": "series keyed by scanner, not a list envelope",
     "/api/v1/trends/ingest-failures": "series keyed by scanner, not a list envelope",
+    "/api/v1/trends/new-findings": "series keyed by severity, not a list envelope",
     "/api/v1/findings/facets": "aggregation buckets, own shape",
     "/api/v1/audit/facets": "aggregation buckets, own shape",
     "/api/v1/findings/export.csv": "CSV stream",

@@ -237,4 +237,5 @@ NO_TOOL: dict[str, str] = {
     "/api/v1/contributors/export.csv": "an export file: contributors reads the same rows",
     "/api/v1/decisions/approvals/export.csv": "an export file: list_approvals reads the same rows",
     "/api/v1/dashboards/export.ndjson": "an export file: list_dashboards reads the same rows",
+    "/api/v1/trends/new-findings": "the New findings strip; search_findings reads the same rows",
 }
