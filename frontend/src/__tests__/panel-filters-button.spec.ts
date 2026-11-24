@@ -147,7 +147,7 @@ describe('the filters text of Scan ingest, which counts scans (issue 1293)', () 
 
   it('says scans in the help of the Filters field of its settings, and findings on the other panels', () => {
     setActivePinia(createPinia())
-    const help = (panel: string) => {
+    const help = (panel: 'scan-ingest' | 'findings-summary') => {
       const anchor = document.createElement('div')
       document.body.appendChild(anchor)
       const w = mount(PanelSettings, {
