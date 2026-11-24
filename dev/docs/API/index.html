@@ -3762,7 +3762,7 @@ permissions of the user who opens the dashboard.</p>
 </tr>
 <tr>
 <td><code>filters</code></td>
-<td>The filters of <code>GET /api/v1/findings</code>, with the fields and checks of the <code>preset</code> of a saved view. Only on the panels that read findings counts: <code>findings-summary</code>, <code>package-type</code>, <code>findings-by-namespace</code>, <code>riskiest-images</code>, <code>top-components</code>, <code>top-cves</code>, <code>new-findings</code> and <code>triage-progress</code>.</td>
+<td>The filters of <code>GET /api/v1/findings</code>, with the fields and checks of the <code>preset</code> of a saved view. Only on the panels that read findings counts: <code>findings-summary</code>, <code>package-type</code>, <code>findings-by-namespace</code>, <code>riskiest-images</code>, <code>top-components</code>, <code>top-cves</code>, <code>new-findings</code> and <code>triage-progress</code>. Also on <code>scan-ingest</code>, with only the filters that <code>GET /api/v1/trends/scans</code> takes: <code>namespace</code>, <code>image_repo</code>, <code>tag</code> and their <code>exclude_</code> forms, <code>untagged</code> and <code>image_digest</code>.</td>
 </tr>
 <tr>
 <td><code>audit_filters</code></td>
@@ -3774,11 +3774,14 @@ permissions of the user who opens the dashboard.</p>
 <ul>
 <li>a field that is not in these lists, or a panel ID that it does not know</li>
 <li>a height that the panel does not have, or a <code>scanner</code> on a panel with no scanner data</li>
-<li><code>filters</code> on a panel that does not read findings counts</li>
+<li><code>filters</code> on a panel that does not read findings counts or scans</li>
 <li><code>scanner</code> or <code>exclude_scanner</code> in <code>filters</code>. The <code>scanner</code> field of the panel does this.</li>
 <li><code>state</code> or <code>exclude_state</code> in the <code>filters</code> of <code>triage-progress</code>. This panel shows each state.</li>
 <li><code>new_within_days</code> in the <code>filters</code> of <code>new-findings</code>. This panel counts only the findings first seen in
   the time range.</li>
+<li>a filter in the <code>filters</code> of <code>scan-ingest</code> that a scan record does not hold. This panel counts
+  scans, so it takes only the filters of <code>GET /api/v1/trends/scans</code>.</li>
+<li><code>present: false</code> in the <code>filters</code> of <code>scan-ingest</code>. A scan record has no <code>present</code> field.</li>
 <li><code>audit_filters</code> on a panel other than <code>triage-activity</code>, or <code>entity_type</code> in <code>audit_filters</code></li>
 <li>a field and its <code>exclude_</code> form in <code>audit_filters</code>, as the Audit log refuses them</li>
 <li>an action in <code>audit_filters</code> that is not a triage action. The panel counts only the triage rows.</li>
