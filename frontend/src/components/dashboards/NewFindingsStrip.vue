@@ -89,11 +89,7 @@ function onPointClick(params: { dataIndex: number }) {
   <section class="ingest-lens" aria-label="New findings">
     <div class="il-head">
       <h2 class="il-title">New findings</h2>
-      <span class="il-sub"
-        >The findings first seen in each {{ interval }}, by severity.<template v-if="note">
-          {{ note }}</template
-        ></span
-      >
+      <span class="il-sub">The findings first seen in each {{ interval }}, by severity.{{ note ? ` ${note}` : '' }}</span>
       <span v-if="settled && !failed && total > 0" class="nf-total mono-cell">{{ total }} in this range</span>
     </div>
     <UiSkeleton v-if="!settled" :height="56" radius="sm" label="Loading the new findings" class="skel-gap" />

@@ -61,7 +61,8 @@ export function buildNewFindingsStripOption(
     yAxis: {
       type: 'value',
       minInterval: 1,
-      splitNumber: 2,
+      // two labels at most in 56 px: with two splits, 0 to 30 gave four labels that touched
+      splitNumber: 1,
       splitLine: { lineStyle: { color: CHART_UI.splitLine } },
       axisLabel: { color: CHART_UI.label, fontSize: 10 },
     },

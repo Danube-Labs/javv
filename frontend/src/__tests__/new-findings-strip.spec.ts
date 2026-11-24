@@ -205,7 +205,7 @@ describe('NewFindingsStrip (self-contained)', () => {
     trendMock.mockResolvedValue(ok({ series: {} }))
     const w = mount(NewFindingsStrip, { props: { ...props, note: 'Only these filters apply.' }, global: { stubs } })
     await flushPromises()
-    expect(w.find('.il-sub').text()).toContain('Only these filters apply.')
+    expect(w.find('.il-sub').text()).toBe('The findings first seen in each day, by severity. Only these filters apply.')
   })
 
   it('a click on a bar rewinds the app to the end of that bucket', async () => {
