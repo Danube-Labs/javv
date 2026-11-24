@@ -9,11 +9,16 @@
   finding that appeared and was tombstoned inside the window still counts as new that day.
 - **Ingest failures** (`javv-ingest-failures-<cluster_id>-*`, issue 575): pushes refused after
   the token check, per bucket per scanner, on the scans series' exact axis.
+- **New findings** (`findings`, issue 1292): the findings first seen in each bucket, by severity,
+  under the filters of the grid, on the scans series' exact axis.
 
-All are `size:0` (server-side everything), split `by_scanner` (per-scanner is sacred), and
-bucket on SERVER-stamped times (`ingested_at`/`first_seen_at`/`resolved_at`, and a failure
-record's `@timestamp`, which the server writes — no scanner payload reaches it). A scan event's
-`@timestamp` is the client's: display-only and gameable (D40: never an ordering key). True
+All are `size:0` (server-side everything). The scans, findings and failures series split
+`by_scanner` (per-scanner is sacred); the new-findings series splits by severity and counts the
+row of each scanner. `ingested_at`, `resolved_at` and a failure record's `@timestamp` are
+stamped by the server. `first_seen_at` is not: the ingest copies it from the scan's
+`last_seen_at` (`services/ingest.py`), the scanner's clock, so a live window that must not see
+the future ends at now. A scan event's `@timestamp` is the client's too: display-only and
+gameable (D40: never an ordering key). True
 historical severity totals (state at T) are NOT derivable from these logs at read cost — that's
 the v1.1 `javv-metrics` rollup; these series are the MVP trend surface.
 
@@ -22,7 +27,10 @@ pins the per-cluster index pattern.
 """
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from backend.query.search import SearchFilters
 
 _MAX_DAYS = 365
 _BY_SCANNER_TERMS = {"field": "scanner", "size": 4}
@@ -127,4 +135,33 @@ def build_findings_trend_body(
     }
     if scanner is not None:  # scope the split to one scanner AT THE QUERY — never client math
         body["query"] = {"bool": {"filter": [{"term": {"scanner": scanner}}]}}
+    return body
+
+
+def build_new_findings_trend_body(
+    filters: "SearchFilters",
+    *,
+    days: int,
+    interval: str = "day",
+    sla_cutoffs: dict[str, str] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """The findings first seen in each bucket, by canonical severity, under the filter context
+    of the grid (issue 1292). `present` comes from the filters, so the default counts the
+    findings present now. An `overdue` filter needs `sla_cutoffs`, as on the grid."""
+    # search.py imports window_bounds from here: a top-level import of aggs would be a cycle
+    from backend.query.aggs import _base
+
+    end = now or datetime.now(UTC)
+    gte, upper = window_bounds(days, end)
+    body = _base(filters, sla_cutoffs)
+    body["query"]["bool"]["filter"].append(
+        {"range": {"first_seen_at": {"gte": gte, "lte": end.isoformat()}}}
+    )
+    body["aggs"] = {
+        "by_severity": {
+            "terms": dict(_SPLIT_TERMS["severity"]),
+            "aggs": {"timeline": _timeline("first_seen_at", gte, upper, interval)},
+        }
+    }
     return body

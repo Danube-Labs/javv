@@ -439,6 +439,7 @@ These endpoints need a session only. Each one needs `cluster_id`, except
 | GET | `/api/v1/findings/top-images` | session | The running images with the most critical findings, then high, medium and low findings, with the filters of `GET /api/v1/findings`. A dashboard panel of Riskiest images with filters uses it. It gives at most 100 images. An image with none of these four severities is not in the list. Each row has `image_digest`, `image_repo`, `tag` and `namespaces`, as on `GET /api/v1/images`, and the count of each severity for each scanner in `severity_by_scanner`. The rank adds the counts of the scanners. Use `scanner` to rank by one scanner. `inventory` is `null` when JAVV has no committed inventory. A past `as_of` reads the scan history, and the filters that the history does not keep get 422. The images go in one `terms` query, so the read works for at most 65,536 running images (`index.max_terms_count`). OpenSearch reads each shard in one pass, so the 100 images are the 100 with the highest rank. `JAVV_EXACT_RANKING` sets this. |
 | GET | `/api/v1/trends/scans` · `/api/v1/trends/findings` | session | Counts for each day over `days` (1 to 365, default 30), for each scanner. [Trends](#trends) gives the details. |
 | GET | `/api/v1/trends/ingest-failures` | session | The pushes that the ingest refused after the token check, for each time interval and scanner ([Trends](#trends)) |
+| GET | `/api/v1/trends/new-findings` | session | The findings first seen in each time interval, for each severity, under the filters of `/findings` ([Trends](#trends)) |
 | GET | `/api/v1/contributors` | session | The triage work of each user over `days` (1 to 365, default 30): actions, time to fix and SLA results. `totals` gives the same values for the team. |
 | GET | `/api/v1/contributors/export.csv` | `can_export` | The data of `/contributors` as CSV. It has one `action_<name>` column for each triage action. A file larger than `JAVV_EXPORT_MAX_ROWS` rows gets 413. |
 | GET | `/api/v1/scanners/freshness` | session | For each scanner of the cluster: `last_ingest_at` and `silent_for_seconds`. With no push yet, both are `null`. |
@@ -518,6 +519,14 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 - `/trends/ingest-failures`: the same `days` and `interval` as `/trends/scans`, so the two series
   align. It gives `{series: {<scanner>: [{date, count}]}, days, interval}`. With no refused push,
   `series` is `{}`.
+- `/trends/new-findings`: the findings first seen in each interval, for each severity. It takes
+  the same `days` and `interval` as `/trends/scans`, so the two series align. It also takes the
+  filters of `GET /api/v1/findings`. `present` is a filter there, so by default the series counts
+  only the findings that are present now. Each scanner has its own findings, and the series counts
+  the findings of each scanner. The interval ends at the time of the request: a finding with a
+  `first_seen_at` after that time does not count. It gives
+  `{series: {<severity>: [{date, count}]}, days, interval}`. A severity with no new finding in
+  the range is not in `series`.
 
 #### Failed pushes
 
