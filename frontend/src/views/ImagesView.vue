@@ -58,6 +58,10 @@ const images = useImagesStore()
 const canExport = computed(() => useAuthStore().hasCapability('can_export'))
 const filters = makeFiltersStore('imageFilters', IMAGES_FIELDS)()
 const { withGlobals } = useApi()
+// the four filters of this screen that the New findings strip takes (issue 1292)
+const stripQuery = computed(() =>
+  stripFilters(clusterStore.selectedId ?? '', filters.selections, filters.modes),
+)
 
 filters.fromQuery(route.query)
 const OWN_KEYS = IMAGES_FIELDS.map((f) => f.key)
@@ -196,7 +200,7 @@ const inventoryAt = computed(() =>
           :cluster-id="clusterStore.selectedId"
           :t="timeTravel.t"
           :window-days="timeTravel.windowDays"
-          :filters="stripFilters(clusterStore.selectedId, filters.selections, filters.modes)"
+          :filters="stripQuery"
           :note="stripFiltersNote()"
         />
       </div>

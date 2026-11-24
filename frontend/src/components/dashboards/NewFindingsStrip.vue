@@ -25,6 +25,7 @@ import { buildTrendQuery } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
+import { useStripNow } from '@/composables/useStripNow'
 import { logger } from '@/lib/logger'
 
 const props = defineProps<{
@@ -52,36 +53,45 @@ const filterParams = computed(() =>
   Object.fromEntries(Object.entries(props.filters).filter(([key]) => !OWN_KEYS.has(key))),
 )
 
+/** the range of the answer on screen: while a new read runs, its bars stay on their own axis */
+const drawn = ref({ windowDays: props.windowDays, t: props.t, interval: interval.value })
+
 let seq = 0
+// one source for each value: a host that passes an equal new object on each render does not
+// read again (a getter of one array is compared as a whole, by identity)
 watch(
-  () => [props.clusterId, props.t, props.windowDays, JSON.stringify(filterParams.value)] as const,
+  [() => props.clusterId, () => props.t, () => props.windowDays, () => JSON.stringify(filterParams.value)],
   async ([id, t, days], old) => {
     if (old && old[0] !== id) {
       settled.value = false // another tenant's bars would be a lie
       series.value = {}
     }
     const mine = ++seq
+    const asked = { windowDays: days, t, interval: interval.value }
     const { data, response } = await newFindingsTrendApiV1TrendsNewFindingsGet({
       client,
-      query: { ...filterParams.value, ...buildTrendQuery(id, days, t), interval: interval.value } as never,
+      query: { ...filterParams.value, ...buildTrendQuery(id, days, t), interval: asked.interval } as never,
     })
     if (mine !== seq) return // a newer read owns the strip now
     failed.value = !response?.ok || !data
     refused.value = failed.value && response?.status === 422 && t !== null
     if (failed.value) logger.warn('new_findings_strip_failed', { status: response?.status })
     series.value = failed.value ? {} : ((data as { series: NewFindingsSeries }).series ?? {})
+    drawn.value = asked
     settled.value = true
   },
   { immediate: true },
 )
 
-const axis = computed(() => stripAxis(props.windowDays, props.t, interval.value))
+// the band's clock: Scan ingest above ends its axis at the same hour
+const now = useStripNow()
+const axis = computed(() => stripAxis(drawn.value.windowDays, drawn.value.t, drawn.value.interval, now.value))
 const total = computed(() => totalNew(series.value))
-const option = computed(() => buildNewFindingsStripOption(series.value, axis.value, interval.value))
+const option = computed(() => buildNewFindingsStripOption(series.value, axis.value, drawn.value.interval))
 
 const rewindToBucket = useBucketRewind()
 function onPointClick(params: { dataIndex: number }) {
-  rewindToBucket(axis.value[params.dataIndex], interval.value)
+  rewindToBucket(axis.value[params.dataIndex], drawn.value.interval)
 }
 </script>
 
@@ -104,6 +114,10 @@ function onPointClick(params: { dataIndex: number }) {
 
 <style scoped>
 /* the shared strip rules are in base.css (issue 1197) */
+.il-title {
+  flex: none;
+  white-space: nowrap;
+}
 .il-sub {
   flex: 1 1 0;
   min-width: 12ch;

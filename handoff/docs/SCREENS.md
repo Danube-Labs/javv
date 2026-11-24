@@ -977,9 +977,10 @@ day/hour rule) so a day lines up across both. Its own scale: runs peak in the hu
 a handful. Click a day to rewind, like Scan ingest; a range with none reads "No refused pushes in
 this range", never an empty chart.
 **One axis for the strips of a band (issue 1292, D4 B, operator ruling 2026-11-24 on built
-pictures):** the backend ends an hourly series at its last document, so two strips could put the
-same hour at a different place. Scan ingest, Failed ingests and New findings show each bucket of
-the range up to now (`stripAxis`), and put each count at its date (`onAxis`).
+pictures):** the backend ends an hourly series at 00:00 UTC of the current day, or at the hour of
+its last document if that is later. So two strips could put the same hour at a different place. Scan ingest, Failed ingests and New findings show each bucket of
+the range up to now (`stripAxis`), and put each count at its date (`onAxis`). "Now" is one clock
+for the band (`useStripNow`), so the axes move together.
 
 **Failed ingests — reinstated by ruling (issue 357, option 2, 2026-07-30):** the pushes JAVV itself
 refused after the token check are recorded (`javv-ingest-failures-*`) and read per scanner by

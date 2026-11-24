@@ -61,7 +61,8 @@ export function buildNewFindingsStripOption(
     yAxis: {
       type: 'value',
       minInterval: 1,
-      // two labels at most in 56 px: with two splits, 0 to 30 gave four labels that touched
+      // fewer labels in 56 px: with two splits, 0 to 30 gave four labels that touched. ECharts
+      // rounds the step, so some maxima still get three labels (0, 20, 40), which do not touch
       splitNumber: 1,
       splitLine: { lineStyle: { color: CHART_UI.splitLine } },
       axisLabel: { color: CHART_UI.label, fontSize: 10 },

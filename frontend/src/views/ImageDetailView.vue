@@ -59,6 +59,8 @@ const title = computed(() =>
 )
 
 const scanner = ref<'trivy' | 'grype'>('trivy')
+// the New findings strip counts this digest, for the scanner of the switch (issue 1292)
+const stripQuery = computed(() => ({ image_digest: digest.value, scanner: scanner.value }))
 
 /* ---- severity cards: the lens scanner's facet buckets, image-scoped ---- */
 const facets = ref<Record<string, { key: string; count: number }[]>>({})
@@ -295,7 +297,7 @@ const plural = (n: number, one: string) => `${fmt(n)} ${one}${n === 1 ? '' : 's'
           :cluster-id="clusterStore.selectedId"
           :t="timeTravel.t"
           :window-days="timeTravel.windowDays"
-          :filters="{ image_digest: digest, scanner }"
+          :filters="stripQuery"
         />
       </div>
       <!-- per-scanner severity cards: one scanner's buckets only — the lens swaps, never merges -->

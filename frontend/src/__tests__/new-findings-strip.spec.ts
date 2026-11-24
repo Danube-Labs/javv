@@ -3,16 +3,18 @@
  * the filters of the screen. It sits under Scan ingest in one band, with the same range and the
  * same day or hour rule, and reads `GET /trends/new-findings` itself (DESIGN.md section 10).
  */
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import type { BarSeriesOption, EChartsOption } from 'echarts'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { effectScope } from 'vue'
 
 import { stripAxis } from '@/charts/buildIngestLensOption'
 import { buildNewFindingsStripOption, totalNew } from '@/charts/buildNewFindingsStripOption'
 import type { TooltipParam } from '@/charts/chartTooltip'
 import EChart from '@/components/charts/EChart.vue'
 import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
+import { useStripNow } from '@/composables/useStripNow'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { CHART_SEV } from '@/styles/tokens'
 
@@ -28,6 +30,9 @@ import { newFindingsTrendApiV1TrendsNewFindingsGet } from '@/api/generated'
 import { okWithoutBody } from './helpers/okWithoutBody'
 
 const trendMock = vi.mocked(newFindingsTrendApiV1TrendsNewFindingsGet)
+// each test unmounts its strips, so the shared band clock stops and the next test starts it
+// with its own timers
+enableAutoUnmount(afterEach)
 const ok = (data: unknown) => ({ data, response: { ok: true, status: 200 } }) as never
 const NOW = new Date('2026-09-22T10:30:00Z').getTime()
 const day = (d: number) => `2026-09-${String(d).padStart(2, '0')}T00:00:00.000Z`
@@ -104,6 +109,7 @@ describe('NewFindingsStrip (self-contained)', () => {
   afterEach(() => vi.useRealTimers())
 
   it('asks for the Scan ingest window with the filters of the screen, and draws the bars', async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ['Date'] }) // 21 Sep is in the range of 30 days
     trendMock.mockResolvedValue(ok({ series: { high: [{ date: day(21), count: 2 }] } }))
     const w = mount(NewFindingsStrip, {
       props: { ...props, filters: { scanner: 'trivy', severity: ['high'], tag: ['1.4.1'] } },
@@ -120,8 +126,59 @@ describe('NewFindingsStrip (self-contained)', () => {
         tag: ['1.4.1'],
       },
     })
-    expect(w.findComponent(EChart).exists()).toBe(true)
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const data = (option.series as BarSeriesOption[])[0]!.data as number[]
+    expect(data.reduce((a, b) => a + b, 0)).toBe(2) // the bar is on the axis, not only in the total
     expect(w.text()).toContain('2 in this range')
+  })
+
+  it('a host that passes an equal new filter object on each render does not read again', async () => {
+    trendMock.mockResolvedValue(ok({ series: {} }))
+    const w = mount(NewFindingsStrip, { props: { ...props, filters: { scanner: 'trivy' } }, global: { stubs } })
+    await flushPromises()
+    for (let i = 0; i < 5; i++) await w.setProps({ filters: { scanner: 'trivy' } })
+    await flushPromises()
+    expect(trendMock).toHaveBeenCalledTimes(1)
+    await w.setProps({ filters: { scanner: 'grype' } })
+    await flushPromises()
+    expect(trendMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('a live read sends no as_of, also when the screen query holds one', async () => {
+    trendMock.mockResolvedValue(ok({ series: {} }))
+    mount(NewFindingsStrip, { props: { ...props, filters: { as_of: '2026-01-01T00:00:00Z' } }, global: { stubs } })
+    await flushPromises()
+    expect((trendMock.mock.calls[0]![0] as { query: Record<string, unknown> }).query).not.toHaveProperty('as_of')
+  })
+
+  it('the axis runs to the hour of the band clock, also with no new read, and a later read lands on it', async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ['Date', 'setInterval', 'clearInterval'] }) // 10:30
+    trendMock.mockResolvedValue(ok({ series: { low: [{ date: '2026-09-22T05:00:00.000Z', count: 1 }] } }))
+    const w = mount(NewFindingsStrip, { props: { ...props, windowDays: 1 }, global: { stubs } })
+    await flushPromises()
+    const labels = () => ((w.findComponent(EChart).props('option') as EChartsOption).xAxis as { data: string[] }).data
+    expect(labels()).toHaveLength(24 + 11) // 21 Sep 00:00 to 22 Sep 10:00
+    vi.advanceTimersByTime(165 * 60_000) // 13:15: the band clock moves each minute
+    await flushPromises()
+    expect(labels()).toHaveLength(24 + 14) // to 13:00 with no new read, as Scan ingest above
+    trendMock.mockResolvedValue(ok({ series: { high: [{ date: '2026-09-22T12:00:00.000Z', count: 5 }] } }))
+    await w.setProps({ filters: { scanner: 'grype' } })
+    await flushPromises()
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const data = (option.series as BarSeriesOption[])[0]!.data as number[]
+    expect(data.at(-2)).toBe(5) // the 12:00 bar, drawn where the total counts it
+  })
+
+  it('while a new range loads, the old bars stay on the axis of their own range', async () => {
+    vi.useFakeTimers({ now: NOW, toFake: ['Date'] })
+    trendMock.mockResolvedValueOnce(ok({ series: { high: [{ date: day(21), count: 2 }] } }))
+    const w = mount(NewFindingsStrip, { props, global: { stubs } })
+    await flushPromises()
+    trendMock.mockReturnValueOnce(new Promise(() => {}) as never) // the 24-hour read never lands
+    await w.setProps({ windowDays: 1 })
+    await flushPromises()
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    expect((option.series as BarSeriesOption[])[0]!.data).toHaveLength(31) // still the 30 days
   })
 
   it('leaves out the globals and New in range of the screen query: the strip has its own', async () => {
@@ -219,5 +276,21 @@ describe('NewFindingsStrip (self-contained)', () => {
     const timeTravel = useTimeTravelStore()
     w.findComponent(EChart).vm.$emit('point-click', { dataIndex: 1 })
     expect(timeTravel.t).toBe('2026-09-25T23:59:59.999Z')
+  })
+})
+
+describe('useStripNow: one clock for the strips of a band', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('gives the floor of the hour, the same to each strip, and moves with the clock', () => {
+    vi.useFakeTimers({ now: NOW, toFake: ['Date', 'setInterval', 'clearInterval'] })
+    const scope = effectScope()
+    const [a, b] = scope.run(() => [useStripNow(), useStripNow()])!
+    expect(a.value).toBe(new Date('2026-09-22T10:00:00Z').getTime())
+    expect(b.value).toBe(a.value)
+    vi.advanceTimersByTime(45 * 60_000) // 11:15
+    expect(a.value).toBe(new Date('2026-09-22T11:00:00Z').getTime())
+    expect(b.value).toBe(a.value)
+    scope.stop()
   })
 })
