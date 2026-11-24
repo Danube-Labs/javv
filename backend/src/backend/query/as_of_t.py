@@ -266,10 +266,15 @@ class AsOfTQuery:
         *,
         prefix: str = "",
         locations: bool = False,
+        image_digest: str | None = None,
     ) -> list[dict[str, Any]]:
         """The cluster's raw scanner facts at T (occurrence + presence + first/resolved clocks)
-        — shared by the findings reconstruction and the findings-trend derivation."""
-        runs = await latest_committed_runs(client, cluster_id, t, prefix=prefix)
+        — shared by the findings reconstruction and the findings-trend derivation. An
+        `image_digest` reads that image only: the SLA group clock is per (cve, digest), so the
+        overdue verdict of its rows does not change."""
+        runs = await latest_committed_runs(
+            client, cluster_id, t, image_digest=image_digest, prefix=prefix
+        )
         by_digest: dict[tuple[str, str], list[dict[str, Any]]] = {}
         for r in runs:
             by_digest.setdefault((r["scanner"], r["image_digest"]), []).append(r)
@@ -297,10 +302,13 @@ class AsOfTQuery:
         *,
         prefix: str = "",
         locations: bool = False,
+        image_digest: str | None = None,
     ) -> list[dict[str, Any]]:
         """Every finding row of the cluster as it stood at T (present AND tombstones) —
         filters/facets/groups are applied over this one reconstruction."""
-        raws = await self._raws(client, cluster_id, t, prefix=prefix, locations=locations)
+        raws = await self._raws(
+            client, cluster_id, t, prefix=prefix, locations=locations, image_digest=image_digest
+        )
         keys = [r["occurrence"]["finding_key"] for r in raws]
         humans = await finding_states_at(client, cluster_id, t, finding_keys=keys, prefix=prefix)
         decisions = await decisions_active_at(client, cluster_id, t, prefix=prefix)
@@ -642,8 +650,12 @@ class AsOfTQuery:
     ) -> dict[str, Any]:
         if by not in _GROUP_FIELDS:
             raise ValueError(f"not groupable at a past as_of (whitelist {_GROUP_FIELDS}): {by!r}")
+        # one image (Image detail) rebuilds that image only, not the whole cluster
         rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
+            await self._reconstruct(
+                client, cluster_id, t, prefix=prefix, image_digest=filters.image_digest
+            ),
+            filters,
         )
         buckets: dict[str, dict[str, Any]] = {}
         for r in rows:
@@ -679,8 +691,12 @@ class AsOfTQuery:
         self._apply_filters([], filters)  # an unrecorded filter is a 422 before any work
         if not digests:
             return {"images": []}
+        # one image (Image detail) rebuilds that image only, not the whole cluster
         rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
+            await self._reconstruct(
+                client, cluster_id, t, prefix=prefix, image_digest=filters.image_digest
+            ),
+            filters,
         )
         running = set(digests)
         counts: dict[str, dict[str, dict[str, int]]] = {}
@@ -789,8 +805,12 @@ class AsOfTQuery:
         if not 1 <= days <= 365:
             raise ValueError("days must be 1..365")
         self._apply_filters([], filters)  # filter re-validation, before any work
+        # one image (Image detail) rebuilds that image only, not the whole cluster
         rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
+            await self._reconstruct(
+                client, cluster_id, t, prefix=prefix, image_digest=filters.image_digest
+            ),
+            filters,
         )
         start = t.date() - timedelta(days=days)
         end = t.date()

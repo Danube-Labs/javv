@@ -15,7 +15,8 @@
   scanner (issue 575), on `/trends/scans`'s exact axis so the two strips line up. An append-only
   log, so a past `as_of` just ends the window at T — no reconstruction, never a 501.
 - `/trends/new-findings` — the findings first seen in each bucket, by severity, under the filters
-  of `GET /findings` (issue 1292), on `/trends/scans`'s exact axis. `present` comes from the
+  of `GET /findings` (issue 1292), with the bounds and bucket size of `/trends/scans`. `present`
+  comes from the
   filters (the default counts the findings present now), and the window ends at now. A past
   `as_of` goes to the reader, which rebuilds the rows at T and counts daily buckets.
 

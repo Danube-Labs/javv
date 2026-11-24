@@ -10,15 +10,15 @@
 - **Ingest failures** (`javv-ingest-failures-<cluster_id>-*`, issue 575): pushes refused after
   the token check, per bucket per scanner, on the scans series' exact axis.
 - **New findings** (`findings`, issue 1292): the findings first seen in each bucket, by severity,
-  under the filters of the grid, on the scans series' exact axis.
+  under the filters of the grid, with the bounds and bucket size of the scans series.
 
 All are `size:0` (server-side everything). The scans, findings and failures series split
 `by_scanner` (per-scanner is sacred); the new-findings series splits by severity and counts the
-row of each scanner. `ingested_at`, `resolved_at` and a failure record's `@timestamp` are
-stamped by the server. `first_seen_at` is not: the ingest copies it from the scan's
-`last_seen_at` (`services/ingest.py`), the scanner's clock, so a live window that must not see
-the future ends at now. A scan event's `@timestamp` is the client's too: display-only and
-gameable (D40: never an ordering key). True
+row of each scanner. `ingested_at` and a failure record's `@timestamp` are stamped by the
+server. `first_seen_at` and `resolved_at` are not: the ingest and the reconcile copy the scan's
+`last_seen_at` (`services/ingest.py`, `services/reconcile.py`), the scanner's clock, so a live
+window that must not see the future ends at now. A scan event's `@timestamp` is the client's
+too: display-only and gameable (D40: never an ordering key). True
 historical severity totals (state at T) are NOT derivable from these logs at read cost — that's
 the v1.1 `javv-metrics` rollup; these series are the MVP trend surface.
 
