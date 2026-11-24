@@ -64,6 +64,8 @@ export interface CatalogPanel {
   takesFilters: boolean
   /** the filters it refuses, by API name: Triage progress splits by state itself */
   refusedFilters?: readonly string[]
+  /** what its numbers count, for the text of its filters: findings when not set */
+  counts?: 'scans'
   /** the panel counts audit-log rows and takes the Action and User filters of the Audit log
    * (issue 1063, decision D2 A) */
   takesAuditFilters?: boolean
@@ -233,6 +235,7 @@ export const PANELS: readonly CatalogPanel[] = [
     takesFilters: true,
     // `/trends/scans` takes only the filters that a scan record holds (issue 1293)
     refusedFilters: SCAN_REFUSED_FILTERS,
+    counts: 'scans',
     props: (ctx) => ({ clusterId: ctx.clusterId, subject: 'this dashboard', filters: ctx.filters ?? {} }),
   },
   {

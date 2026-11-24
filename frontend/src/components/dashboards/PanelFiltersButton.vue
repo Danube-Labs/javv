@@ -27,6 +27,8 @@ const props = defineProps<{
   pinned?: 'trivy' | 'grype' | null
   /** the Audit log filters of a panel that counts audit-log rows (issue 1063) */
   auditFilters?: PanelAuditFilters | null
+  /** what the numbers of the panel count, when not findings: Scan ingest counts scans */
+  counts?: 'scans'
 }>()
 
 const router = useRouter()
@@ -77,7 +79,7 @@ function openAuditLog() {
       :width="320"
       @close="open = null"
     >
-      <p class="pf-intro">The numbers of this panel count only these {{ auditParts.length ? 'changes' : 'findings' }}.</p>
+      <p class="pf-intro">The numbers of this panel count only these {{ auditParts.length ? 'changes' : (counts ?? 'findings') }}.</p>
       <ul class="pf-list">
         <li v-for="part in parts" :key="part" class="pf-item">{{ part }}</li>
       </ul>
