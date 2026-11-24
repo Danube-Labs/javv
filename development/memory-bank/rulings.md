@@ -177,6 +177,11 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-18 | Slices S4 and S5 of issue 1247 join the same PR. One PR of 204 files holds all of the text pass. The text test then has no exceptions. | 1247 |
 | 2026-11-19 | The camera rule of the videos stays. After a click, the new screen shows at the old zoom for the result hold, and then the camera moves to the next box. A window can be partly out of the view for that time. | 1246 |
 | 2026-11-23 | The hover of a strip names what its values count after the time of the bar. Scan ingest says "images scanned", because "scans" can read as runs of the whole cluster. Failed ingests says "refused scans". | 1292 |
+| 2026-11-23 | A New findings strip sits under Scan ingest in one band on Findings, Images and Image detail, not on Overview or Scanner status. It shows the findings first seen in each bucket, as stacked bars by severity, from a route of its own (D1 A). It counts the findings that the `present` filter of the table selects (D2 A). | 1292 |
+| 2026-11-23 | The New findings strip follows the scanner selection of its page and the filters of its table, now and at a past time. On Images it takes only the Scanner, Namespace, Image and Tag filters, and its text says so. The route has no MCP tool. | 1292 |
+| 2026-11-24 | The strips of a band share one axis: each bucket of the range up to now, with each count at its date (D4 B, on built pictures). Scan ingest and Failed ingests changed with it. | 1292 |
+| 2026-11-24 | When a past time refuses a filter, the New findings strip says "JAVV cannot count the new findings with these filters at a past time." (D5). | 1292 |
+| 2026-11-24 | The "New in range" filter stops at the time of the request, as the New findings strip does. This goes in PR 1 of issue 1291. | 1291 |
 
 ## AI vulnerability research (alpha)
 

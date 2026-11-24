@@ -111,6 +111,18 @@ test('the strip of the Audit log shows its tooltip with a dot', async ({ page })
   expect(tip.head).not.toContain(' · ')
 })
 
+test('the New findings strip on Findings shows its hover with the unit and a dot in each row (issue 1292)', async ({ page }) => {
+  await page.goto(`${BASE}/findings`)
+  const strip = page.locator('.lens-stack .ingest-lens').nth(1)
+  await expect(strip.locator('.il-title')).toHaveText('New findings', { timeout: 15_000 })
+  const chart = strip.locator('canvas')
+  await expect(chart).toBeVisible({ timeout: 15_000 })
+  await away(page)
+  const tip = await tooltipOf(page, chart)
+  expectRowsWithDots(tip)
+  expect(tip.head).toMatch(/ · new findings$/)
+})
+
 test('the hover of a strip in the joined band shows whole, with its unit (issue 1292)', async ({ page }) => {
   // The band of Scanner status clipped its strips (overflow: hidden). The hover box of Scan ingest
   // rises above the top of the band, so the band cut off its head line, the time and the unit.
