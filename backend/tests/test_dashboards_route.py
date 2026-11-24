@@ -9,6 +9,7 @@ the panel model refuses an unknown field or panel, a height the catalog does not
 setting on a panel without scanner data, a place outside the two columns, two panels on one cell,
 and more than 24 panels (Q2, Q5 to Q7)."""
 
+import dataclasses
 import uuid
 from typing import Any
 
@@ -18,9 +19,11 @@ from opensearchpy import AsyncOpenSearch
 
 from backend.auth.passwords import hash_password
 from backend.core.bootstrap import bootstrap
-from backend.dashboards.catalog import PANELS, CatalogPanel
+from backend.dashboards.catalog import FILTER_PANELS, PANELS, CatalogPanel
 from backend.main import create_app
 from backend.query.contributors import TRIAGE_ACTIONS
+from backend.query.trends import ScanFilters
+from backend.routers.views import ViewPreset
 from os_env import OS_URL, requires_opensearch
 
 PASSWORD = "dashboards-route-password"
@@ -262,7 +265,7 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
         pytest.param({"panels": [_panel(h="tall")]}, id="a height the catalog does not give"),
         pytest.param({"panels": [_panel(h="medium")]}, id="an unknown height"),
         pytest.param(
-            {"panels": [_panel("scan-ingest", scanner="trivy")]},
+            {"panels": [_panel("failed-ingests", w=1, scanner="trivy")]},
             id="a scanner setting on a panel without scanner data",
         ),
         pytest.param({"panels": [_panel(x=1, w=2)]}, id="outside the two columns"),
@@ -286,7 +289,7 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             id="25 panels",
         ),
         pytest.param(
-            {"panels": [_panel("scan-ingest", filters={"kev": True})]},
+            {"panels": [_panel("failed-ingests", w=1, filters={"kev": True})]},
             id="filters on a panel that reads no findings counts",
         ),
         pytest.param(
@@ -527,6 +530,112 @@ async def test_new_findings_keeps_its_filters_and_scanner(env) -> None:
     assert "takes no new_within_days filter" in r.text
 
 
+# the filters of /findings that a scan record does not hold, each with one value it takes
+_NOT_SCAN_FILTERS: dict[str, Any] = {
+    "q": "openssl",
+    "severity": ["critical"],
+    "state": ["open"],
+    "assignee": ["lead"],
+    "kev": True,
+    "fixable": True,
+    "disagree": True,
+    "overdue": True,
+    "unassigned": True,
+    "new_within_days": 30,
+    "ptype": ["os"],
+    "cve_id": ["CVE-2024-0001"],
+    "package_name": ["openssl"],
+}
+
+
+async def test_scan_ingest_keeps_the_scan_filters(env) -> None:
+    """Issue 1293: the Scan ingest panel takes the filters that a scan record holds, with their
+    exclude sides, as the strip above a table does."""
+    user, _ = env
+    owner = await user(EDIT)
+    scan = {
+        "namespace": ["shop"],
+        "exclude_image_repo": ["docker.io/library/busybox"],
+        "tag": ["1.2"],
+        "image_digest": "sha256:" + "a" * 64,
+    }
+    panels = [
+        _panel("scan-ingest", filters=scan),
+        _panel(
+            "scan-ingest", y=1, filters={"untagged": True, "exclude_namespace": ["kube-system"]}
+        ),
+        _panel("scan-ingest", y=2, filters={"exclude_tag": ["latest"], "image_repo": ["shop/api"]}),
+    ]
+    panels[1]["scanner"] = "trivy"
+    made = await _create(owner, panels=panels)
+    stored = (await owner.get(f"/api/v1/dashboards/{made['dashboard_id']}")).json()["panels"]
+    # Q1 A: the panel has the scanner setting of the other panels, `dashboard` by default
+    assert [p["scanner"] for p in stored] == ["dashboard", "trivy", "dashboard"]
+    assert [p["filters"] for p in stored] == [
+        {**scan, "present": True},
+        {"untagged": True, "exclude_namespace": ["kube-system"], "present": True},
+        {"exclude_tag": ["latest"], "image_repo": ["shop/api"], "present": True},
+    ]
+
+
+def test_scan_ingest_refuses_each_filter_that_trends_scans_does_not_take() -> None:
+    """A new filter of /findings, or a new exclude side, must be a scan filter or a refused one on
+    Scan ingest, so the panel never stores a filter that its read drops. `present` is not a
+    filter of the strip: the panel refuses `present: false` on its own."""
+    scan = {f.name for f in dataclasses.fields(ScanFilters)}
+    refused = set(FILTER_PANELS["scan-ingest"])
+    for name in ViewPreset.model_fields:
+        base = name.removeprefix("exclude_")
+        assert name in scan or name == "present" or base in refused, name
+    other = {
+        name
+        for name in ViewPreset.model_fields
+        if name not in scan and name != "present" and not name.startswith("exclude_")
+    }
+    assert refused == other
+    assert set(_NOT_SCAN_FILTERS) == other
+
+
+async def test_scan_ingest_refuses_present_false(env) -> None:
+    """Issue 1293, Q2 A: a scan record has no `present` field, so the panel cannot apply
+    `present: false`. The other panels take it, and Scan ingest takes the default."""
+    user, _ = env
+    owner = await user(EDIT)
+    r = await owner.post(
+        "/api/v1/dashboards",
+        json={"name": "d", "panels": [_panel("scan-ingest", filters={"present": False})]},
+    )
+    assert r.status_code == 422, r.text
+    assert "the panel scan-ingest takes no present filter" in r.text
+    made = await _create(
+        owner,
+        panels=[
+            _panel("scan-ingest", filters={"present": True, "namespace": ["shop"]}),
+            _panel("findings-summary", y=1, filters={"present": False}),
+        ],
+    )
+    assert len(made["panels"]) == 2
+
+
+@pytest.mark.parametrize("field", sorted(_NOT_SCAN_FILTERS))
+async def test_scan_ingest_refuses_a_filter_a_scan_record_does_not_hold(env, field: str) -> None:
+    """Issue 1293: /trends/scans takes none of these, so the panel stores none of them, also not
+    as an exclude."""
+    user, _ = env
+    owner = await user(EDIT)
+    sides = [field] + ([f"exclude_{field}"] if isinstance(_NOT_SCAN_FILTERS[field], list) else [])
+    for name in sides:
+        r = await owner.post(
+            "/api/v1/dashboards",
+            json={
+                "name": "d",
+                "panels": [_panel("scan-ingest", filters={name: _NOT_SCAN_FILTERS[field]})],
+            },
+        )
+        assert r.status_code == 422, (name, r.text)
+        assert f"the panel scan-ingest takes no {field} filter" in r.text, (name, r.text)
+
+
 async def test_triage_activity_keeps_its_audit_filters(env) -> None:
     """Issue 1063, decision D2 A: Triage activity stores the Action and User filters of the
     Audit log in `audit_filters`, apart from the findings filters. A change replaces them, and
@@ -615,14 +724,14 @@ async def test_the_model_takes_panels_side_by_side_and_one_under_another(env) ->
             _panel(),  # rows 0 to 6, both columns
             _panel("package-type", x=0, y=7, w=1),  # rows 7 to 18, the left column
             _panel("findings-by-namespace", x=1, y=7, w=1, h="tall", scanner="grype"),
-            _panel("scan-ingest", x=0, y=31, w=2),  # under the tall panel (7 + 24 rows)
+            _panel("failed-ingests", x=0, y=31, w=2),  # under the tall panel (7 + 24 rows)
         ],
     )
     assert [p["panel"] for p in made["panels"]] == [
         "findings-summary",
         "package-type",
         "findings-by-namespace",
-        "scan-ingest",
+        "failed-ingests",
     ]
     assert made["panels"][2]["scanner"] == "grype" and "scanner" not in made["panels"][3]
 

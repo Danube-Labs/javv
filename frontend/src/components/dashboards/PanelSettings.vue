@@ -158,7 +158,7 @@ const useSettingsAuditFilters = makeFiltersStore('panel-settings-audit-filters',
           @clear-field="filters.clearField"
           @clear-all="filters.clearAll"
         />
-        <p class="ps-help">The panel counts only the findings that match these filters.</p>
+        <p class="ps-help">The panel counts only the {{ entry?.counts ?? 'findings' }} that match these filters.</p>
       </UiField>
       <UiField v-if="auditFields.length" label="Filters">
         <FilterBar

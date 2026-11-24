@@ -3,10 +3,12 @@
  * with the filters in words, its link to Findings, and its close by Escape and by a click outside.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import PanelFiltersButton from '@/components/dashboards/PanelFiltersButton.vue'
+import PanelSettings from '@/components/dashboards/PanelSettings.vue'
 
 const TWO = { present: true, exclude_namespace: ['kube-system'], kev: true }
 
@@ -132,5 +134,31 @@ describe('the filters button of Triage activity (issue 1063)', () => {
       expect(w.find('button').exists()).toBe(false)
       w.unmount()
     }
+  })
+})
+
+describe('the filters text of Scan ingest, which counts scans (issue 1293)', () => {
+  it('says that the numbers count only these scans', async () => {
+    const { w } = mountButton({ panelName: 'Scan ingest', filters: { present: true, namespace: ['shop'] }, counts: 'scans' })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    expect(popover()!.querySelector('.pf-intro')?.textContent).toBe('The numbers of this panel count only these scans.')
+  })
+
+  it('says scans in the help of the Filters field of its settings, and findings on the other panels', () => {
+    setActivePinia(createPinia())
+    const help = (panel: 'scan-ingest' | 'findings-summary') => {
+      const anchor = document.createElement('div')
+      document.body.appendChild(anchor)
+      const w = mount(PanelSettings, {
+        props: { panel: { key: 'k', panel, x: 0, y: 0, w: 2, h: 'short' }, dashboardScanner: 'all', anchor, clusterId: null, t: null, windowDays: 30 },
+        attachTo: document.body,
+      })
+      const text = [...document.body.querySelectorAll('.ps-help')].map((p) => p.textContent).at(-1)
+      w.unmount()
+      return text
+    }
+    expect(help('scan-ingest')).toBe('The panel counts only the scans that match these filters.')
+    expect(help('findings-summary')).toBe('The panel counts only the findings that match these filters.')
   })
 })

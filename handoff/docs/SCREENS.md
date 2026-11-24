@@ -1491,6 +1491,16 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   now for the bucket still in progress. **Open in Findings** of this panel carries its filters only,
   so Findings shows all the findings under them, not only the new ones. A new New findings panel
   takes both columns, as Scan ingest (Q2 A).
+  Scan ingest (issue 1293) keeps the filters that a scan record holds: Namespace, Image, Tag, No
+  tag and Digest. The operator ruled this on 2026-11-23 and 2026-11-24, on built pictures. Its
+  settings offer only these, and the backend refuses the others and `present: false`. The strip
+  reads `GET /api/v1/trends/scans` with them (`scanFilters`).
+
+  The Scan ingest panel has the Scanner setting of the other panels, and it follows the switch
+  (Q1 A). One scanner is a scan filter, so the panel then does not show the last scan of the
+  cluster (Q2 B of PR 2a). The help of its Filters field and its filters popover say "scans",
+  not "findings" (`counts` in the catalog).
+
   `components/dashboards/PanelFiltersButton.vue` shows "1 filter" or "N filters" over the top
   right corner of the panel, next to the pinned scanner tag. The tag and the button are one
   row with the height of a `mini` button (24 px). The row is 3 px under the panel above and 4 px

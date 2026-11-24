@@ -64,6 +64,8 @@ export interface CatalogPanel {
   takesFilters: boolean
   /** the filters it refuses, by API name: Triage progress splits by state itself */
   refusedFilters?: readonly string[]
+  /** what its numbers count, for the text of its filters: findings when not set */
+  counts?: 'scans'
   /** the panel counts audit-log rows and takes the Action and User filters of the Audit log
    * (issue 1063, decision D2 A) */
   takesAuditFilters?: boolean
@@ -77,6 +79,24 @@ export const TABLE_ROWS: Record<PanelHeight, number> = { short: 10, tall: 25 }
 export function globalQuery(ctx: PanelContext): { cluster_id: string; as_of?: string } {
   return { cluster_id: ctx.clusterId, ...(ctx.t ? { as_of: ctx.t } : {}) }
 }
+
+/** The filters of /findings that a scan record does not hold. `catalog.py` refuses the same on
+ * Scan ingest, and a spec holds the two lists equal. */
+const SCAN_REFUSED_FILTERS = [
+  'q',
+  'severity',
+  'state',
+  'assignee',
+  'kev',
+  'fixable',
+  'disagree',
+  'overdue',
+  'unassigned',
+  'new_within_days',
+  'ptype',
+  'cve_id',
+  'package_name',
+] as const
 
 export const PANELS: readonly CatalogPanel[] = [
   {
@@ -210,10 +230,18 @@ export const PANELS: readonly CatalogPanel[] = [
     component: IngestLens,
     defaultWidth: 2,
     heights: { short: 4 },
-    usesScanner: false,
+    usesScanner: true,
     framed: false,
-    takesFilters: false,
-    props: (ctx) => ({ clusterId: ctx.clusterId, subject: 'this dashboard' }),
+    takesFilters: true,
+    // `/trends/scans` takes only the filters that a scan record holds (issue 1293)
+    refusedFilters: SCAN_REFUSED_FILTERS,
+    counts: 'scans',
+    props: (ctx) => ({
+      clusterId: ctx.clusterId,
+      subject: 'this dashboard',
+      // "All scanners" shows the two scanners side by side, as on Findings (issue 1293, Q1 A)
+      filters: { ...ctx.filters, ...(ctx.scanner === 'all' ? {} : { scanner: ctx.scanner }) },
+    }),
   },
   {
     id: 'failed-ingests',

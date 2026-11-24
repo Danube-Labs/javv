@@ -163,6 +163,7 @@ watch(
             :filters="p.stored.filters"
             :audit-filters="p.stored.audit_filters"
             :panel-name="p.panel.name"
+            :counts="p.panel.counts"
             :pinned="p.panel.usesScanner && isPinned(p.stored) ? (p.stored.scanner as 'trivy' | 'grype') : null"
           />
           <UiButton variant="mini" :aria-label="`Settings of ${p.panel.name}`" @click="emit('settings', p.stored.key, $event.currentTarget as HTMLElement)">

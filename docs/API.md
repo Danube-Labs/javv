@@ -720,18 +720,21 @@ Each panel:
 | `w` | The width: 1 (one column) or 2 (both columns). `x + w` is at most 2. |
 | `h` | The height: `short` or `tall`. Each panel has the heights that its catalog entry gives. |
 | `scanner` | `dashboard` (default), `trivy` or `grype`, only on a panel with scanner data. `dashboard` follows the scanner switch of the dashboard. |
-| `filters` | The filters of `GET /api/v1/findings`, with the fields and checks of the `preset` of a saved view. Only on the panels that read findings counts: `findings-summary`, `package-type`, `findings-by-namespace`, `riskiest-images`, `top-components`, `top-cves`, `new-findings` and `triage-progress`. |
+| `filters` | The filters of `GET /api/v1/findings`, with the fields and checks of the `preset` of a saved view. Only on the panels that read findings counts: `findings-summary`, `package-type`, `findings-by-namespace`, `riskiest-images`, `top-components`, `top-cves`, `new-findings` and `triage-progress`. Also on `scan-ingest`, with only the filters that `GET /api/v1/trends/scans` takes: `namespace`, `image_repo`, `tag` and their `exclude_` forms, `untagged` and `image_digest`. |
 | `audit_filters` | The Action and User filters of `GET /api/v1/audit`: `action`, `actor`, `exclude_action` and `exclude_actor`, each a list of at most 32 values. An action is one of the ten triage actions, in lower case: `acknowledge`, `not_affected`, `risk_accept`, `resolve`, `reopen`, `assign`, `note`, `bulk_triage`, `decision_create` and `decision_revoke`. A user has at most 128 characters. Only on `triage-activity`. The panel sets the Entity filter itself. |
 
 The backend refuses with 422:
 
 - a field that is not in these lists, or a panel ID that it does not know
 - a height that the panel does not have, or a `scanner` on a panel with no scanner data
-- `filters` on a panel that does not read findings counts
+- `filters` on a panel that does not read findings counts or scans
 - `scanner` or `exclude_scanner` in `filters`. The `scanner` field of the panel does this.
 - `state` or `exclude_state` in the `filters` of `triage-progress`. This panel shows each state.
 - `new_within_days` in the `filters` of `new-findings`. This panel counts only the findings first seen in
   the time range.
+- a filter in the `filters` of `scan-ingest` that a scan record does not hold. This panel counts
+  scans, so it takes only the filters of `GET /api/v1/trends/scans`.
+- `present: false` in the `filters` of `scan-ingest`. A scan record has no `present` field.
 - `audit_filters` on a panel other than `triage-activity`, or `entity_type` in `audit_filters`
 - a field and its `exclude_` form in `audit_filters`, as the Audit log refuses them
 - an action in `audit_filters` that is not a triage action. The panel counts only the triage rows.

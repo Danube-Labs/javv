@@ -41,7 +41,7 @@ PANELS: dict[str, CatalogPanel] = {
     "top-components": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "top-cves": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "new-findings": CatalogPanel({"short": 4}, uses_scanner=True),
-    "scan-ingest": CatalogPanel({"short": 4}, uses_scanner=False),
+    "scan-ingest": CatalogPanel({"short": 4}, uses_scanner=True),
     "failed-ingests": CatalogPanel({"short": 4}, uses_scanner=False),
     "triage-activity": CatalogPanel({"short": 5}, uses_scanner=False),
     "handled-findings": CatalogPanel({"short": 5}, uses_scanner=False),
@@ -54,7 +54,8 @@ PANELS: dict[str, CatalogPanel] = {
 # images ranks under its filters through /findings/top-images (issue 1063), and Top CVEs
 # through /findings/top-values (issue 1176). New findings counts under its filters through
 # /trends/new-findings, which counts the findings first seen in the range already, so it refuses
-# "New in range" (issue 1292).
+# "New in range" (issue 1292). Scan ingest reads /trends/scans, which takes only the filters that
+# a scan record holds, so it refuses every other field (issue 1293).
 FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "findings-summary": (),
     "package-type": (),
@@ -63,8 +64,27 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "top-components": (),
     "top-cves": (),
     "new-findings": ("new_within_days",),
+    "scan-ingest": (
+        "q",
+        "severity",
+        "state",
+        "assignee",
+        "kev",
+        "fixable",
+        "disagree",
+        "overdue",
+        "unassigned",
+        "new_within_days",
+        "ptype",
+        "cve_id",
+        "package_name",
+    ),
     "triage-progress": ("state",),
 }
+
+# the panels that count scans: a scan record has no `present` field, so they refuse
+# `present: false` (issue 1293, Q2 A)
+SCAN_PANELS: frozenset[str] = frozenset({"scan-ingest"})
 
 # the panels that count audit-log rows take the Action and User filters of the Audit log
 # (issue 1063, decision D2 A); Entity is the panel's own query, so no panel takes it

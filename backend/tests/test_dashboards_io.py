@@ -398,7 +398,7 @@ async def test_an_export_keeps_the_panel_filters_and_imports_them_again(env) -> 
         {"sharing": "roles"},
         {"panels": [_panel(h="tall")]},
         {"panels": [_panel(filters={"scanner": "trivy"})]},
-        {"panels": [_panel("scan-ingest", filters={"kev": True})]},
+        {"panels": [_panel("failed-ingests", filters={"kev": True})]},
         {"panels": [_panel("triage-activity", audit_filters={"entity_type": ["user"]})]},
         {"panels": [_panel("triage-activity", audit_filters={"action": ["login"]})]},
     ],

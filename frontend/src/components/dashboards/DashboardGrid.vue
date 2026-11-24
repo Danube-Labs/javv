@@ -45,6 +45,7 @@ const pinnedOf = (p: PlacedPanel) => (p.panel.usesScanner && isPinned(p.stored) 
               :filters="p.stored.filters"
               :audit-filters="p.stored.audit_filters"
               :panel-name="p.panel.name"
+              :counts="p.panel.counts"
               :pinned="pinnedOf(p)"
             />
           </span>

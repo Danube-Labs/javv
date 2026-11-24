@@ -53,6 +53,15 @@ New findings shows the findings first seen in each day or hour of the time range
 past time, it shows the days of the range that ends at that time. Select a bar to see the app as
 it was at the end of that day or hour.
 
+Scan ingest can count only some scans. Its Filters list has Namespace, Image, Tag, No tag and
+Digest, because a scan record holds only these. Open in Findings on this panel opens Findings
+with its filters. The Scan ingest strip of Findings shows the same scans when the panel shows all
+scanners or a pinned scanner.
+
+Scan ingest follows the scanner switch of the dashboard, or the scanner of its Scanner setting.
+The panel shows the time of the last scan of the whole cluster. It shows this time only for the
+time now, with all scanners and with no filters.
+
 1. Open the dashboard, then select Edit dashboard.
 2. On the panel, select Settings.
 3. In Filters, select Add filter. Select a field, then select or type one value or more. To leave
@@ -60,7 +69,9 @@ it was at the end of that day or hour.
 4. Select Apply, then select Save changes.
 
 A panel with filters shows 1 filter or a number of filters over its top right corner. Select it to
-see the filters. Open in Findings shows the same findings on the Findings page.
+see the filters. Open in Findings opens the Findings page with the filters of the panel. A panel
+with a pinned scanner opens Findings on that scanner. A panel that follows the dashboard switch
+opens Findings on all scanners.
 
 - The list has no Scanner filter. Use the Scanner setting of the panel.
 - Triage progress shows each state, so its list has no State filter.

@@ -36,6 +36,7 @@ from backend.dashboards.catalog import (
     AUDIT_FILTER_PANELS,
     FILTER_PANELS,
     PANELS,
+    SCAN_PANELS,
     PanelHeight,
     PanelId,
 )
@@ -125,6 +126,8 @@ class DashboardPanel(BaseModel):
         for field in refused:
             if given & {field, f"exclude_{field}"}:
                 raise ValueError(f"the panel {self.panel} takes no {field} filter")
+        if self.panel in SCAN_PANELS and not filters.present:
+            raise ValueError(f"the panel {self.panel} takes no present filter: it counts scans")
 
     def start_cells(self) -> set[tuple[int, int]]:
         # only the first row: in edit mode a panel is as tall as its content, so the catalog rows

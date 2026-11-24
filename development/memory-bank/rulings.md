@@ -95,6 +95,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-23 | At a past time, Findings does not sort by EPSS, because the scan history has no EPSS. A grid sorted by EPSS sorts by Severity there, and the EPSS header does not sort. The past-time text shows only when the refused read holds KEV, Scanners disagree or New in range. Accepted on built pictures (review round 1 of PR 3). | 1294 |
 | 2026-11-23 | The Scan ingest strip follows the scan filters of its screen. These are the filters that a scan record holds: Namespace, Image, Tag, No tag, Digest and Scanner. `GET /trends/scans` takes these filters, now and at a past time. | 1293 |
 | 2026-11-24 | The MCP tool `trends`, kind `scans`, takes the same filters as its route (Q1 A of PR 1). | 1293 |
+| 2026-11-24 | The backend refuses `present: false` in the filters of the Scan ingest panel. A scan record has no `present` field (Q2 A of PR 2b). | 1293 |
 
 ## UI copy and look
 
@@ -188,6 +189,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-23 | The Scan ingest panel of a dashboard takes panel filters, as the strip above a table. | 1293 |
 | 2026-11-24 | When the screen has a filter that a scan record does not hold, Scan ingest says so (Q1 A, on built pictures). Its line ends with "Only the namespace, image, tag, digest and scanner filters apply". | 1293 |
 | 2026-11-24 | While a scan filter applies, Scan ingest does not show the last scan, and its empty text has no time. That time is the time of the whole cluster (Q2 B, on built pictures). | 1293 |
+| 2026-11-24 | The Scan ingest panel of a dashboard has the Scanner setting of the other panels, and it follows the scanner switch. With one scanner, it does not show the last scan (Q1 A of PR 2b, on built pictures). | 1293 |
+| 2026-11-24 | The filters text of the Scan ingest panel says "scans", not "findings" (PR 2b, on built pictures). | 1293 |
 | 2026-11-24 | The "New in range" filter stops at the time of the request, as the New findings strip does. This goes in PR 1 of issue 1291. | 1291 |
 
 ## AI vulnerability research (alpha)
