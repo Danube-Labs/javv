@@ -1465,7 +1465,10 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   refuses "New in range" (Q1 B, operator 2026-11-24 on built pictures): the strip counts the
   findings first seen in its range already, so the filter would change nothing. Its reads take no
   `all_filters`, and a click on a bar rewinds the time, as on the screens: Findings has no filter
-  for "first seen on this day". A new New findings panel takes both columns, as Scan ingest (Q2 A).
+  for "first seen on this day". The click goes to the end of the day or hour of the bar, or back to
+  now for the bucket still in progress. **Open in Findings** of this panel carries its filters only,
+  so Findings shows all the findings under them, not only the new ones. A new New findings panel
+  takes both columns, as Scan ingest (Q2 A).
   `components/dashboards/PanelFiltersButton.vue` shows "1 filter" or "N filters" over the top
   right corner of the panel, next to the pinned scanner tag. The tag and the button are one
   row with the height of a `mini` button (24 px). The row is 3 px under the panel above and 4 px

@@ -199,10 +199,7 @@ export const PANELS: readonly CatalogPanel[] = [
       t: ctx.t,
       windowDays: ctx.windowDays,
       // "All scanners" counts the two scanners together, as on Findings (issue 1292)
-      filters: {
-        ...Object.fromEntries(Object.entries(ctx.filters ?? {}).filter(([, v]) => v !== null && v !== undefined)),
-        ...(ctx.scanner === 'all' ? {} : { scanner: ctx.scanner }),
-      },
+      filters: { ...ctx.filters, ...(ctx.scanner === 'all' ? {} : { scanner: ctx.scanner }) },
     }),
   },
   {

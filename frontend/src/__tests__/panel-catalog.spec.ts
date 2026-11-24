@@ -1052,10 +1052,13 @@ describe('a panel with filters (issue 999)', () => {
     await flushPromises()
     const chart = w.findComponent({ name: 'EChart' })
     expect(chart.exists()).toBe(true)
-    // the bar of two days ago: its end is a past time, so the app rewinds to it
+    // 30 days give 31 daily bars, today last: bar 27 is the day of three days ago. The app
+    // rewinds to the last millisecond of that UTC day.
     chart.vm.$emit('point-click', { dataIndex: 27 })
     await flushPromises()
-    expect(useTimeTravelStore().t).not.toBeNull()
+    const today = new Date()
+    const endOfThatDay = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 2) - 1
+    expect(useTimeTravelStore().t).toBe(new Date(endOfThatDay).toISOString())
   })
 
   it('new-findings sends the scanner of the panel, and no scanner for all scanners', async () => {

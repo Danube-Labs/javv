@@ -518,6 +518,13 @@ async def test_new_findings_keeps_its_filters_and_scanner(env) -> None:
         "/api/v1/dashboards", json={"name": "d", "panels": [_panel("new-findings", h="tall")]}
     )
     assert r.status_code == 422, r.text
+    # the panel takes filters, and refuses only "New in range": the strip counts new findings
+    r = await owner.post(
+        "/api/v1/dashboards",
+        json={"name": "d", "panels": [_panel("new-findings", filters={"new_within_days": 30})]},
+    )
+    assert r.status_code == 422, r.text
+    assert "takes no new_within_days filter" in r.text
 
 
 async def test_triage_activity_keeps_its_audit_filters(env) -> None:
