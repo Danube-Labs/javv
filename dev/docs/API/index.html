@@ -3107,6 +3107,12 @@ cron expressions.</p>
 </tr>
 <tr>
 <td>GET</td>
+<td><code>/api/v1/trends/new-findings</code></td>
+<td>session</td>
+<td>The findings first seen in each time interval, for each severity, under the filters of <code>GET /api/v1/findings</code> (<a href="#trends">Trends</a>)</td>
+</tr>
+<tr>
+<td>GET</td>
 <td><code>/api/v1/contributors</code></td>
 <td>session</td>
 <td>The triage work of each user over <code>days</code> (1 to 365, default 30): actions, time to fix and SLA results. <code>totals</code> gives the same values for the team.</td>
@@ -3283,6 +3289,19 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 <li><code>/trends/ingest-failures</code>: the same <code>days</code> and <code>interval</code> as <code>/trends/scans</code>, so the two series
   align. It gives <code>{series: {&lt;scanner&gt;: [{date, count}]}, days, interval}</code>. With no refused push,
   <code>series</code> is <code>{}</code>.</li>
+<li><code>/trends/new-findings</code>: the findings first seen in each interval, for each severity. It takes
+  the same <code>days</code> and <code>interval</code> as <code>/trends/scans</code>, and the daily series have the same days. An
+  hourly series ends at 00:00 UTC of the current day, or at the hour of its last finding if that
+  is later. Thus align hourly series by <code>date</code>, not by position. It also takes the filters of <code>GET /api/v1/findings</code>. <code>present</code> is a filter there, so
+  by default the series counts only the findings that are present now. Each scanner has its own
+  findings, and the series counts the findings of each scanner. The range ends at the time of the
+  request: a finding with a <code>first_seen_at</code> after that time does not count. It gives
+  <code>{series: {&lt;severity&gt;: [{date, count}]}, days, interval}</code>. A severity with no new finding in
+  the range is not in <code>series</code>.
+  At a past <code>as_of</code>, JAVV builds the findings at that time from the history and applies the
+  filters to them, as on <code>/findings</code>. The intervals are days, and <code>interval</code> is <code>day</code>. The filters
+  that get 422 on <code>/findings</code> at a past time get 422 here too. <code>first_seen_at</code> is then the first
+  scan in the history that showed the finding.</li>
 </ul>
 <h4 id="failed-pushes">Failed pushes<a class="headerlink" href="#failed-pushes" title="Permanent link">&para;</a></h4>
 <p><code>GET /api/v1/scanners/ingest-failures</code> gives <code>{data, total, next_cursor}</code>. Each row has
