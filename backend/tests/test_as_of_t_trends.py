@@ -7,12 +7,14 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 from opensearchpy import AsyncOpenSearch
 
 from backend.models.envelope import IngestEnvelope, canonical_severity
 from backend.query.as_of_t import AsOfTQuery
+from backend.query.search import SearchFilters
 from backend.services.ingest import build_docs, ingest_envelope
 from os_env import requires_opensearch
 
@@ -141,3 +143,61 @@ async def test_contributors_board_anchors_at_t(real_os: tuple[AsyncOpenSearch, s
     assert at1["totals"]["handled"] == 1 and at1["totals"]["by_action"] == {"acknowledge": 1}
     with pytest.raises(ValueError, match="days"):
         await READER.contributors(client, cluster_id=CLUSTER, t=t1, days=999, prefix=prefix)
+
+
+def _totals(out: dict[str, Any]) -> dict[str, int]:
+    return {sev: sum(p["count"] for p in points) for sev, points in out["series"].items()}
+
+
+@requires_opensearch
+async def test_new_findings_trend_at_t_follows_the_filters_and_presence(
+    real_os: tuple[AsyncOpenSearch, str],
+) -> None:
+    """Issue 1292: the New findings strip at a past time. The rows as they stood at T, under the
+    filters of the table, counted by first appearance and canonical severity."""
+    client, prefix = real_os
+    t0 = await _now(client, prefix)
+    # the scanner sends its own words (CRITICAL, HIGH, ...): the buckets are the canonical ones
+    seen = datetime.now(UTC).isoformat()
+    run1 = _envelope(len(GOLDEN["findings"]), ORDER, GOLDEN["scan_run_id"], seen)
+    await ingest_envelope(client, run1, prefix=prefix)
+    t1 = await _now(client, prefix)
+    run2 = _envelope(24, ORDER + 1, "goldenrun0002", datetime.now(UTC).isoformat())
+    await ingest_envelope(client, run2, prefix=prefix)
+    t2 = await _now(client, prefix)
+
+    async def at(t: datetime, **filters: Any) -> dict[str, Any]:
+        return await READER.trends_new_findings(
+            client,
+            cluster_id=CLUSTER,
+            t=t,
+            days=30,
+            filters=SearchFilters(**filters),
+            prefix=prefix,
+        )
+
+    assert (await at(t0))["series"] == {}  # nothing scanned yet
+    at1 = await at(t1)
+    assert _totals(at1) == {"critical": 4, "high": 8, "medium": 8, "low": 5, "unknown": 4}
+    assert at1["days"] == 30
+    assert at1["interval"] == "day"  # daily buckets at a past time (ruling 5 of issue 1291)
+    assert len(at1["series"]["critical"]) == 31  # continuous and zero-filled
+    # run 2 dropped the last five findings: at T2 they are gone, and present=false shows them
+    assert _totals(await at(t2)) == {"critical": 4, "high": 8, "medium": 4, "low": 4, "unknown": 4}
+    assert _totals(await at(t2, present=False)) == {"medium": 4, "low": 1}
+    assert _totals(await at(t2, severity=["critical"])) == {"critical": 4}
+    assert _totals(await at(t2, scanner="grype")) == {}
+    assert _totals(await at(t2, exclude_severity=["unknown", "high"])) == {
+        "critical": 4,
+        "medium": 4,
+        "low": 4,
+    }
+
+    # the filters the history does not record refuse before any work, as on Findings
+    for unrecorded in ({"kev": True}, {"disagree": True}, {"new_within_days": 7}):
+        with pytest.raises(ValueError, match="not recorded"):
+            await at(t2, **unrecorded)
+    with pytest.raises(ValueError, match="days"):
+        await READER.trends_new_findings(
+            client, cluster_id=CLUSTER, t=t2, days=0, filters=SearchFilters(), prefix=prefix
+        )

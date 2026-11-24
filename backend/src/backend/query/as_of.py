@@ -93,6 +93,16 @@ class AsOfTReader(Protocol):
         self, client: AsyncOpenSearch, *, cluster_id: str, t: datetime, days: int
     ) -> dict[str, Any]: ...
 
+    async def trends_new_findings(
+        self,
+        client: AsyncOpenSearch,
+        *,
+        cluster_id: str,
+        t: datetime,
+        days: int,
+        filters: SearchFilters,
+    ) -> dict[str, Any]: ...
+
     async def contributors(
         self, client: AsyncOpenSearch, *, cluster_id: str, t: datetime, days: int
     ) -> dict[str, Any]: ...

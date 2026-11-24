@@ -16,7 +16,8 @@
   log, so a past `as_of` just ends the window at T — no reconstruction, never a 501.
 - `/trends/new-findings` — the findings first seen in each bucket, by severity, under the filters
   of `GET /findings` (issue 1292), on `/trends/scans`'s exact axis. `present` comes from the
-  filters (the default counts the findings present now), and the window ends at now.
+  filters (the default counts the findings present now), and the window ends at now. A past
+  `as_of` goes to the reader, which rebuilds the rows at T and counts daily buckets.
 
 Tenancy: scan-events routing pins the per-cluster index pattern AND the tenant read path forces the
 `cluster_id` body filter; findings reads carry it through the tenant read path alone. Same uniform
@@ -168,8 +169,12 @@ async def new_findings_trend(
 ) -> dict[str, Any]:
     _guard_hourly(interval, days)
     client = cast(Any, request.app.state.opensearch)
-    if as_of_t is not None:
-        raise HTTPException(501, "new-findings at a past as_of is not available yet")
+    if as_of_t is not None:  # past T → the reader rebuilds the rows at T, daily only (D28)
+        return await _reconstructed(
+            _reader_or_501().trends_new_findings(
+                client, cluster_id=cluster_id, t=as_of_t, days=days, filters=filters
+            )
+        )
     body = build_new_findings_trend_body(
         filters, days=days, interval=interval, sla_cutoffs=await _sla_cutoffs(client, filters)
     )

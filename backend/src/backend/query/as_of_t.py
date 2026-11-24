@@ -84,6 +84,20 @@ _Q_FIELDS = ("cve_id", "image_repo", "assignee", "package_name")
 _ASCII_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
 
 
+def _day_axis(
+    per_key: dict[str, dict[date, int]], start: date, end: date
+) -> dict[str, list[dict[str, Any]]]:
+    """The continuous zero-filled day axis, matching the date_histogram wire format."""
+    days_axis = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+    return {
+        key: [
+            {"date": f"{d.isoformat()}T00:00:00.000Z", "count": buckets.get(d, 0)}
+            for d in days_axis
+        ]
+        for key, buckets in sorted(per_key.items())
+    }
+
+
 def _unrecorded(name: str) -> ValueError:
     return ValueError(
         f"{name} is not recorded in per-scan history — not available for a past as_of"
@@ -752,23 +766,43 @@ class AsOfTQuery:
                 bucket = resolved.setdefault(scanner, {})
                 bucket[gone] = bucket.get(gone, 0) + 1
 
-        def _axis(per_scanner: dict[str, dict[date, int]]) -> dict[str, list[dict[str, Any]]]:
-            # the continuous zero-filled day axis, matching the date_histogram wire format
-            days_axis = [start + timedelta(days=i) for i in range((end - start).days + 1)]
-            return {
-                scanner: [
-                    {"date": f"{d.isoformat()}T00:00:00.000Z", "count": buckets.get(d, 0)}
-                    for d in days_axis
-                ]
-                for scanner, buckets in sorted(per_scanner.items())
-            }
-
         return {
-            "new": _axis(new),
-            "resolved": _axis(resolved),
+            "new": _day_axis(new, start, end),
+            "resolved": _day_axis(resolved, start, end),
             "resolved_semantics": "scan_resolved",  # same A-m9 label as current-state
             "days": days,
         }
+
+    async def trends_new_findings(
+        self,
+        client: AsyncOpenSearch,
+        *,
+        cluster_id: str,
+        t: datetime,
+        days: int,
+        filters: SearchFilters,
+        prefix: str = "",
+    ) -> dict[str, Any]:
+        """The New findings strip at T (issue 1292): the rows as they stood at T, under the
+        filters of the grid, counted by first appearance and canonical severity. Days only:
+        the reconstruction has no hourly buckets (ruling 5 of issue 1291)."""
+        if not 1 <= days <= 365:
+            raise ValueError("days must be 1..365")
+        self._apply_filters([], filters)  # filter re-validation, before any work
+        rows = self._apply_filters(
+            await self._reconstruct(client, cluster_id, t, prefix=prefix), filters
+        )
+        start = t.date() - timedelta(days=days)
+        end = t.date()
+        per_severity: dict[str, dict[date, int]] = {}
+        for row in rows:
+            if row["first_seen_at"] is None:
+                continue
+            first = datetime.fromisoformat(row["first_seen_at"]).date()
+            if start <= first <= end:
+                bucket = per_severity.setdefault(row["severity_canonical"], {})
+                bucket[first] = bucket.get(first, 0) + 1
+        return {"series": _day_axis(per_severity, start, end), "days": days, "interval": "day"}
 
     async def contributors(
         self,

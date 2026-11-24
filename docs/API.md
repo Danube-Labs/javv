@@ -527,6 +527,10 @@ state. With a time in the past, JAVV builds the state at that time from the hist
   `first_seen_at` after that time does not count. It gives
   `{series: {<severity>: [{date, count}]}, days, interval}`. A severity with no new finding in
   the range is not in `series`.
+  At a past `as_of`, JAVV builds the findings at that time from the history and applies the
+  filters to them, as on `/findings`. The intervals are days, and `interval` is `day`. The filters
+  that get 422 on `/findings` at a past time get 422 here too. `first_seen_at` is then the first
+  scan in the history that showed the finding.
 
 #### Failed pushes
 
