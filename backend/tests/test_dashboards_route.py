@@ -306,6 +306,10 @@ async def test_a_change_cannot_name_another_owner(env) -> None:
             id="a state exclude on Triage progress",
         ),
         pytest.param(
+            {"panels": [_panel("new-findings", filters={"new_within_days": 30})]},
+            id="New in range on New findings, which counts the new findings itself",
+        ),
+        pytest.param(
             {"panels": [_panel(filters={"severity": ["High"]})]},
             id="a filter value a saved view refuses",
         ),
@@ -493,6 +497,27 @@ async def test_top_cves_keeps_its_filters_scanner_and_height(env) -> None:
         ("tall", "trivy", {"fixable": True, "present": True}),
         ("short", "dashboard", None),
     ]
+
+
+async def test_new_findings_keeps_its_filters_and_scanner(env) -> None:
+    """Issue 1292, D3 B: the New findings strip is a panel. It takes the filters of /findings and
+    the scanner setting of a panel, as Top CVEs does, and only the short height."""
+    user, _ = env
+    owner = await user(EDIT)
+    panels = [
+        _panel("new-findings", scanner="grype", filters={"exclude_namespace": "kube-system"}),
+        _panel("new-findings", y=1),
+    ]
+    made = await _create(owner, panels=panels)
+    stored = (await owner.get(f"/api/v1/dashboards/{made['dashboard_id']}")).json()["panels"]
+    assert [(p["w"], p["h"], p.get("scanner"), p.get("filters")) for p in stored] == [
+        (2, "short", "grype", {"exclude_namespace": ["kube-system"], "present": True}),
+        (2, "short", "dashboard", None),
+    ]
+    r = await owner.post(
+        "/api/v1/dashboards", json={"name": "d", "panels": [_panel("new-findings", h="tall")]}
+    )
+    assert r.status_code == 422, r.text
 
 
 async def test_triage_activity_keeps_its_audit_filters(env) -> None:

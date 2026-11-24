@@ -15,6 +15,7 @@ PanelId = Literal[
     "riskiest-images",
     "top-components",
     "top-cves",
+    "new-findings",
     "scan-ingest",
     "failed-ingests",
     "triage-activity",
@@ -39,6 +40,7 @@ PANELS: dict[str, CatalogPanel] = {
     "riskiest-images": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "top-components": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
     "top-cves": CatalogPanel({"short": 13, "tall": 26}, uses_scanner=True),
+    "new-findings": CatalogPanel({"short": 4}, uses_scanner=True),
     "scan-ingest": CatalogPanel({"short": 4}, uses_scanner=False),
     "failed-ingests": CatalogPanel({"short": 4}, uses_scanner=False),
     "triage-activity": CatalogPanel({"short": 5}, uses_scanner=False),
@@ -50,7 +52,9 @@ PANELS: dict[str, CatalogPanel] = {
 # each with the fields it refuses: Triage progress splits by state itself. The scanner is the
 # panel's own setting, so no panel takes a scanner filter (see DashboardPanel). Riskiest
 # images ranks under its filters through /findings/top-images (issue 1063), and Top CVEs
-# through /findings/top-values (issue 1176).
+# through /findings/top-values (issue 1176). New findings counts under its filters through
+# /trends/new-findings, which counts the findings first seen in the range already, so it refuses
+# "New in range" (issue 1292).
 FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "findings-summary": (),
     "package-type": (),
@@ -58,6 +62,7 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "riskiest-images": (),
     "top-components": (),
     "top-cves": (),
+    "new-findings": ("new_within_days",),
     "triage-progress": ("state",),
 }
 

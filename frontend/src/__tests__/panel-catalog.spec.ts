@@ -24,6 +24,7 @@ vi.mock('@/api/generated', async (importOriginal) =>
     contributorsApiV1ContributorsGet: vi.fn<() => Promise<unknown>>(),
     findingsTrendApiV1TrendsFindingsGet: vi.fn<() => Promise<unknown>>(),
     topValuesFindingsApiV1FindingsTopValuesGet: vi.fn<() => Promise<unknown>>(),
+    newFindingsTrendApiV1TrendsNewFindingsGet: vi.fn<() => Promise<unknown>>(),
   }),
 )
 vi.mock('@/api/client', () => ({ client: {} }))
@@ -45,6 +46,7 @@ import {
 } from '@/dashboards/catalog'
 import { panelPropsCache, placePanels } from '@/dashboards/layout'
 import { useClusterStore } from '@/stores/cluster'
+import { useTimeTravelStore } from '@/stores/timeTravel'
 import OverviewView from '@/views/OverviewView.vue'
 
 const CLUSTER = 'c-k3d-0001'
@@ -127,6 +129,13 @@ const READS: Record<
     loading: 'Loading top vulnerabilities',
     emptyCopy: 'No vulnerabilities yet.',
     errorCopy: 'JAVV cannot show the top vulnerabilities. Check the backend connection.',
+  },
+  'new-findings': {
+    calls: ['newFindingsTrendApiV1TrendsNewFindingsGet'],
+    empty: [{ series: {}, days: 30, interval: 'day' }],
+    loading: 'Loading the new findings',
+    emptyCopy: 'No new findings in this range.',
+    errorCopy: 'JAVV cannot show the new findings. Check the backend connection.',
   },
   'scan-ingest': {
     calls: ['scansTrendApiV1TrendsScansGet', 'scannerFreshnessApiV1ScannersFreshnessGet'],
@@ -927,6 +936,9 @@ describe('a panel with filters (issue 999)', () => {
       row: Record<string, string>
       calls?: SdkName[]
       opens?: { path: string; query: Record<string, string> }
+      /** the read takes no `all_filters`, and a click rewinds the time: no Findings link can
+       * show the findings first seen in one bucket */
+      rewinds?: true
     }
   > = {
     'findings-summary': { answers: [{ facets: FACETS }], click: '.stat-cell', row: { severity: 'critical' } },
@@ -953,6 +965,13 @@ describe('a panel with filters (issue 999)', () => {
       ],
       click: 'tbody tr',
       row: { cve: 'CVE-2024-0003' },
+    },
+    // issue 1292: the strip counts the new findings under the filters; a bar rewinds the time
+    'new-findings': {
+      answers: [{ series: { critical: [{ date: `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`, count: 2 }] } }],
+      click: '',
+      row: {},
+      rewinds: true,
     },
     // issue 1063: with filters the store ranks the images; a row opens its image, as with none
     'riskiest-images': {
@@ -997,7 +1016,8 @@ describe('a panel with filters (issue 999)', () => {
     const sent = calls.flatMap((name) => fn(name).mock.calls.map((call) => (call[0] as { query: object }).query))
     expect(sent.length).toBeGreaterThan(0)
     for (const q of sent) {
-      expect(q).toMatchObject({ cluster_id: CLUSTER, exclude_namespace: ['kube-system'], kev: true, all_filters: true })
+      expect(q).toMatchObject({ cluster_id: CLUSTER, exclude_namespace: ['kube-system'], kev: true })
+      expect((q as { all_filters?: boolean }).all_filters).toBe(c.rewinds ? undefined : true)
     }
   })
 
@@ -1013,7 +1033,7 @@ describe('a panel with filters (issue 999)', () => {
     return router.currentRoute.value
   }
 
-  it.each(Object.keys(CASES).filter((id) => !CASES[id]!.opens))(
+  it.each(Object.keys(CASES).filter((id) => !CASES[id]!.opens && !CASES[id]!.rewinds))(
     '%s opens Findings with its filters and the value of the row',
     async (id) => {
       const route = await clickRow(id)
@@ -1024,6 +1044,31 @@ describe('a panel with filters (issue 999)', () => {
   it.each(Object.keys(CASES).filter((id) => CASES[id]!.opens))('%s opens the page of its row', async (id) => {
     const route = await clickRow(id)
     expect({ path: route.path, query: route.query }).toEqual(CASES[id]!.opens)
+  })
+
+  it('new-findings rewinds the time to the end of the clicked day, as on the screens', async () => {
+    fn('newFindingsTrendApiV1TrendsNewFindingsGet').mockResolvedValueOnce(ok(CASES['new-findings']!.answers[0]))
+    const { w } = mountFiltered('new-findings')
+    await flushPromises()
+    const chart = w.findComponent({ name: 'EChart' })
+    expect(chart.exists()).toBe(true)
+    // the bar of two days ago: its end is a past time, so the app rewinds to it
+    chart.vm.$emit('point-click', { dataIndex: 27 })
+    await flushPromises()
+    expect(useTimeTravelStore().t).not.toBeNull()
+  })
+
+  it('new-findings sends the scanner of the panel, and no scanner for all scanners', async () => {
+    fn('newFindingsTrendApiV1TrendsNewFindingsGet').mockResolvedValue(ok({ series: {} }))
+    mountPanel(panelById('new-findings')!, ctx({ scanner: 'grype', filters: FILTERS as never }))
+    mountPanel(panelById('new-findings')!, ctx({ scanner: 'all' }))
+    await flushPromises()
+    const [grype, all] = fn('newFindingsTrendApiV1TrendsNewFindingsGet').mock.calls.map(
+      (call) => (call[0] as { query: Record<string, unknown> }).query,
+    )
+    expect(grype).toMatchObject({ scanner: 'grype', exclude_namespace: ['kube-system'], present: true })
+    expect(all).not.toHaveProperty('scanner')
+    expect(all).not.toHaveProperty('kev')
   })
 
   it('a panel with no filters reads and links as before', async () => {

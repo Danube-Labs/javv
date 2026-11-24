@@ -21,10 +21,16 @@ export function panelFiltersAt(filters: Filters, windowDays: number): ViewPreset
 }
 
 /** The fields a panel's settings can filter on: the Findings fields less Scanner, which the
- * dashboard switch and the panel's own setting pick, and less the filters the panel refuses. */
+ * dashboard switch and the panel's own setting pick, and less the filters the panel refuses. A
+ * refused flag leaves its group, and the other flags of the group stay. */
 export function panelFilterFields(panel: Pick<CatalogPanel, 'refusedFilters'>): readonly FilterField[] {
   const refused = panel.refusedFilters ?? []
-  return FINDINGS_FIELDS.filter((f) => f.key !== 'scanner' && !(f.type !== 'flags' && refused.includes(f.param)))
+  return FINDINGS_FIELDS.filter((f) => f.key !== 'scanner' && !(f.type !== 'flags' && refused.includes(f.param))).map(
+    (f) =>
+      f.type === 'flags' && f.values.some((v) => refused.includes(v.param))
+        ? { ...f, values: f.values.filter((v) => !refused.includes(v.param)) }
+        : f,
+  )
 }
 
 /** The filters of a panel in words, one text for each. */
