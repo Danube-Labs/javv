@@ -181,6 +181,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-23 | The New findings strip follows the scanner selection of its page and the filters of its table, now and at a past time. On Images it takes only the Scanner, Namespace, Image and Tag filters, and its text says so. The route has no MCP tool. | 1292 |
 | 2026-11-24 | The strips of a band share one axis: each bucket of the range up to now, with each count at its date (D4 B, on built pictures). Scan ingest and Failed ingests changed with it. | 1292 |
 | 2026-11-24 | When a past time refuses a filter, the New findings strip says "JAVV cannot count the new findings with these filters at a past time." (D5). | 1292 |
+| 2026-11-24 | The New findings strip is a dashboard panel in the Findings group, with panel filters and the scanner switch, as Top vulnerabilities (D3 B). It refuses "New in range", because the strip counts the findings first seen in its range already (Q1 B, on built pictures). A new panel takes both columns, as Scan ingest (Q2 A). | 1292 |
 | 2026-11-24 | The "New in range" filter stops at the time of the request, as the New findings strip does. This goes in PR 1 of issue 1291. | 1291 |
 
 ## AI vulnerability research (alpha)

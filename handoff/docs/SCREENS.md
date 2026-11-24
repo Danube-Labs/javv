@@ -1443,9 +1443,9 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   renders again only the panels that follow it, so the other panels do not read their data again.
 - **Data:** each panel reads its own data at the selected cluster, T and window (D8,
   DESIGN.md §10).
-- **Panel filters (issue 999, decision 2 C):** seven panels can keep findings filters: Findings
+- **Panel filters (issue 999, decision 2 C):** eight panels can keep findings filters: Findings
   summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components,
-  Top vulnerabilities (issue 1176) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
+  Top vulnerabilities (issue 1176), New findings (issue 1292) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
   store ranks the running images under the filters, for the scanner of the panel, and the panel
   pages through at most 100 of them. With no filter it reads `GET /api/v1/images` as before. A
   row still opens the image page, which does not take the filters. Top vulnerabilities reads
@@ -1459,6 +1459,13 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens
   Findings with the filters of the panel and the value of the row. The value of the row replaces
   the filter of the panel on the same field, and the flags of both stay.
+  New findings (issue 1292, D3 B) is the strip of the Findings band
+  (`components/dashboards/NewFindingsStrip.vue`): it reads `GET /api/v1/trends/new-findings` under the
+  filters, for the scanner of the panel, and "All scanners" counts the two scanners together. It
+  refuses "New in range" (Q1 B, operator 2026-11-24 on built pictures): the strip counts the
+  findings first seen in its range already, so the filter would change nothing. Its reads take no
+  `all_filters`, and a click on a bar rewinds the time, as on the screens: Findings has no filter
+  for "first seen on this day". A new New findings panel takes both columns, as Scan ingest (Q2 A).
   `components/dashboards/PanelFiltersButton.vue` shows "1 filter" or "N filters" over the top
   right corner of the panel, next to the pinned scanner tag. The tag and the button are one
   row with the height of a `mini` button (24 px). The row is 3 px under the panel above and 4 px
@@ -1470,7 +1477,8 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
 - **Filters field (issue 999, decision 3 B):** in edit mode, the panel settings of such a panel
   have a Filters field: the Findings `FilterBar` with `menu-up`, so its Add filter menu opens
   above the bar. The fields are the Findings fields less Scanner, and less the filters the panel
-  refuses (State on Triage progress, `refusedFilters`). The menu counts at the dashboard cluster
+  refuses (State on Triage progress, New in range on New findings, `refusedFilters`). A refused
+  flag leaves the Attribute group, and the other flags stay. The menu counts at the dashboard cluster
   and T, where a field does not count under its own filter, as on Findings. It counts the scanner
   that the panel counts (`countedScanner`): the scanner of the settings or the dashboard switch.
   A panel without scanner data counts all scanners. An Escape in the menu
