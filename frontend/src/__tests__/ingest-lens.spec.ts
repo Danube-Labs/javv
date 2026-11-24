@@ -290,6 +290,43 @@ describe('IngestLens filters (issue 1293): the filters a scan record holds', () 
     expect(other.find('.il-empty').text()).toMatch(/^No scans in this range\. The table shows the state of the last scan/)
   })
 
+  it('a 422 on the filters says so, and blames no connection (a value past the cap, or Tag with No tag)', async () => {
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue({ error: {}, response: { ok: false, status: 422 } } as never)
+    const w = mountLens({ cluster_id: 'c-1', tag: ['1.4'], untagged: true })
+    await flushPromises()
+    expect(w.find('.il-empty').text()).toBe('JAVV cannot count the scans with these filters.')
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue({ error: {}, response: { ok: false, status: 500 } } as never)
+    await w.setProps({ filters: { cluster_id: 'c-1', tag: ['1.5'] } })
+    await flushPromises()
+    expect(w.find('.il-empty').text()).toBe('JAVV cannot show the scans. Check the backend connection.')
+  })
+
+  it('reads the last scan only while no scan filter applies: under one it is not shown', async () => {
+    const fresh = vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet)
+    const w = mountLens({ cluster_id: 'c-1', severity: ['high'] })
+    await flushPromises()
+    expect(fresh).toHaveBeenCalledTimes(1)
+    fresh.mockClear()
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['shop'] } })
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['data'] } })
+    await flushPromises()
+    expect(fresh).not.toHaveBeenCalled()
+  })
+
+  it('a refused last-scan read shows "-" until a scan filter applies, then no line at once', async () => {
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue({ error: {}, response: { ok: false, status: 503 } } as never)
+    const w = mount(IngestLens, {
+      props: { clusterId: 'c-1', filters: {} },
+      global: { plugins: [router], stubs: { EChart: true } },
+    })
+    await flushPromises()
+    expect(w.find('.il-last').text()).toBe('last scan -')
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockImplementation(() => new Promise(() => {}) as never)
+    await w.setProps({ filters: { namespace: ['shop'] } })
+    // the reply has not landed: the line goes with the filter, not with the next read
+    expect(w.find('.il-last').exists()).toBe(false)
+  })
+
   it('reads again when a scan filter changes, and not for an equal object or another filter', async () => {
     const w = mountLens({ cluster_id: 'c-1', namespace: ['javv'] })
     await flushPromises()

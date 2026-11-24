@@ -308,13 +308,15 @@ disagree) gets "JAVV cannot count the new findings with these filters at a past 
 **Scan ingest under the filters of the table (issue 1293, operator rulings 2026-11-23 and 2026-11-24 on built pictures):**
 
 - Scan ingest reads `GET /api/v1/trends/scans` with the filters of the table that a scan record
-  holds. These filters are Namespace, Image, Tag and Scanner, each with its "is not" side, No tag
-  and Digest.
+  holds. These filters are Namespace, Image, Tag, Scanner, No tag and Digest. The first four also
+  have an "is not" side.
 - The other filters select findings, so the strip does not apply them. When one of them is on, the
   line of the strip ends with "Only the namespace, image, tag, digest and scanner filters apply".
-- While a scan filter applies, the strip does not show the last scan. With no scans in the range,
-  its empty text then has no time. The last scan comes from `GET /api/v1/scanners/freshness`,
-  which reads the whole cluster.
+- While a scan filter applies, the strip does not read or show the last scan. With no scans in
+  the range, its empty text then has no time. The last scan comes from
+  `GET /api/v1/scanners/freshness`, which reads the whole cluster.
+- When the route refuses the filters (422), the strip says "JAVV cannot count the scans with these
+  filters". For example, a filter has more than 32 values, or Tag and No tag are on together.
 
 **Facet rail** (top→bottom): Severity (critical/high/medium/low/**negligible**/unknown — muted
 treatment for negligible+unknown, never red) · Scanner (trivy/grype) · Attributes (KEV /
@@ -1027,7 +1029,8 @@ warm canvas) and one-at-a-time on wide screens (loses the side-by-side compariso
 head count shows "-" until both reads answer, and after a refused one, never "0 scanners" (issue
 833 F5); the alert follows the G2 rule (§3). The ingest strip on this and the other data screens
 shows "last scan -" when its freshness read is refused, never the previous read's time
-(operator ruling 2026-10-12).
+(operator ruling 2026-10-12). While a scan filter applies, the strip does not read the last scan and
+shows no last-scan line (issue 1293).
 
 **Changed vs SCREENS.md:** C-3 (whole-screen redesign), A-7/D-4 (retry/dead-letter feed cut), issue 357 (JAVV-side refusals reinstated), D41
 (version/DB lines are provenance display only), C-1 (historical limitation).

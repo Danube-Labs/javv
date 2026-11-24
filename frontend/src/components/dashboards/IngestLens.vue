@@ -59,6 +59,9 @@ const series = ref<ScanActivityData>({})
 const freshness = ref<FreshnessRow[]>([])
 const freshnessFailed = ref(false)
 const failed = ref(false)
+/** the route refused the filters of the screen (422): a value past its cap, or a pair that it
+ * refuses, as Tag with No tag. Not a connection fault. */
+const refused = ref(false)
 // no claim before evidence: quiet/failed/chart render only once a response has LANDED —
 // the pre-data default used to satisfy `quiet` and flash the amber panel on every load
 const settled = ref(false)
@@ -67,7 +70,7 @@ const split = computed(() => scanFilters(props.filters))
 /** the screen has a filter on that a scan record does not hold */
 const otherFilters = computed(() => split.value.ignored.length > 0)
 /** a scan filter applies: the last scan of `/scanners/freshness` is the last scan of the whole
- * cluster, so the strip does not show it (operator ruling 2026-11-24, issue 1293, Q2 B) */
+ * cluster, so the strip does not read or show it (operator decision Q2 B, issue 1293) */
 const scanFiltered = computed(() => Object.keys(split.value.applied).length > 0)
 
 let seq = 0
@@ -85,23 +88,24 @@ watch(
       freshness.value = []
     }
     const mine = ++seq
+    const withFreshness = !scanFiltered.value
     const [scans, fresh] = await Promise.all([
       scansTrendApiV1TrendsScansGet({
         client,
         query: { ...split.value.applied, ...buildTrendQuery(id, days, t), interval: ingestInterval(days, t) } as never,
       }),
-      scannerFreshnessApiV1ScannersFreshnessGet({ client, query: { cluster_id: id } }),
+      withFreshness ? scannerFreshnessApiV1ScannersFreshnessGet({ client, query: { cluster_id: id } }) : null,
     ])
     if (mine !== seq) return // a newer read owns the strip now
     failed.value = !scans.response?.ok || !scans.data
+    refused.value = failed.value && scans.response?.status === 422
     if (failed.value) logger.warn('ingest_lens_failed', { status: scans.response?.status })
     series.value = failed.value ? {} : ((scans.data as { series: ScanActivityData }).series ?? {})
     // a refused freshness read drops the old time: it belonged to an earlier read (issue 833, F5)
-    freshnessFailed.value = !fresh.response?.ok || !fresh.data
-    freshness.value = freshnessFailed.value
-      ? []
-      : ((fresh.data as { scanners: FreshnessRow[] }).scanners ?? [])
-    if (freshnessFailed.value) logger.warn('ingest_lens_freshness_failed', { status: fresh.response?.status })
+    freshnessFailed.value = fresh !== null && (!fresh.response?.ok || !fresh.data)
+    freshness.value =
+      fresh === null || freshnessFailed.value ? [] : ((fresh.data as { scanners: FreshnessRow[] }).scanners ?? [])
+    if (freshnessFailed.value) logger.warn('ingest_lens_freshness_failed', { status: fresh?.response?.status })
     settled.value = true
   },
   { immediate: true },
@@ -160,6 +164,7 @@ function onPointClick(params: { dataIndex: number }) {
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (a quiet range is an
          ANSWER; before the response lands there is none) -->
     <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading the scans" class="skel-gap" />
+    <p v-else-if="refused" class="il-empty">JAVV cannot count the scans with these filters.</p>
     <p v-else-if="failed" class="il-empty">JAVV cannot show the scans. Check the backend connection.</p>
     <p v-else-if="totalRuns === 0" class="il-empty">
       No scans in this range. <template v-if="timeTravel.isNow && !scanFiltered && latest"

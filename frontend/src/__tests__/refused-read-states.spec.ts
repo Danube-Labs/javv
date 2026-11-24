@@ -671,6 +671,15 @@ describe('Findings: Assignee with Unassigned on the screen (issue 975)', () => {
     expect(w.findComponent(IngestLens).text()).toContain('Only the namespace, image, tag, digest and scanner filters apply.')
   })
 
+  it('a link with Tag and No tag: Scan ingest says the filters are refused, not the connection', async () => {
+    search().mockImplementation(async () => refusedWith(422) as never)
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockImplementation(async () => refusedWith(422) as never)
+    const w = await mountRouted(FindingsView as Component, {}, '/?tag=1.4.1&attr=untagged')
+    await flushPromises()
+    expect(scansQuery()).toMatchObject({ tag: ['1.4.1'], untagged: true })
+    expect(w.findComponent(IngestLens).find('.il-empty').text()).toBe('JAVV cannot count the scans with these filters.')
+  })
+
   it('Scanner status has no table filters: Scan ingest reads the scans of the whole cluster', async () => {
     await mountRouted(ScannerStatusView as Component, {}, '/?namespace=javv')
     await flushPromises()
