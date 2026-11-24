@@ -3281,7 +3281,21 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 <h4 id="trends">Trends<a class="headerlink" href="#trends" title="Permanent link">&para;</a></h4>
 <ul>
 <li><code>/trends/scans</code>: the committed scans. <code>interval</code> is <code>day</code> (default) or <code>hour</code>. <code>hour</code> is
-  possible only for 31 days or less, else 422. At a past <code>as_of</code>, the intervals are days.</li>
+  possible only for 31 days or less, else 422. At a past <code>as_of</code>, the intervals are days.<ul>
+<li>It takes the filters of <code>GET /api/v1/findings</code> that a scan record holds:<ul>
+<li><code>namespace</code>, <code>image_repo</code> and <code>tag</code>, and the <code>exclude_</code> filter of each</li>
+<li><code>untagged</code> and <code>image_digest</code></li>
+<li><code>scanner</code> and <code>exclude_scanner</code>, each <code>trivy</code> or <code>grype</code></li>
+</ul>
+</li>
+<li>A namespace filter selects a scan when the image ran in one of the namespaces at the time
+  of that scan.</li>
+<li>The route refuses with 422 each value and each pair of filters that <code>/findings</code> refuses.
+  It also refuses a <code>scanner</code> other than <code>trivy</code> or <code>grype</code>.</li>
+<li>The route ignores the other filters of <code>/findings</code>.</li>
+<li>At a past <code>as_of</code>, the filters select the scans of that time.</li>
+</ul>
+</li>
 <li><code>/trends/findings</code>: the new findings and the resolved findings. <code>resolved</code> counts only the
   findings that a scan no longer showed (<code>resolved_semantics: "scan_resolved"</code>). A triage to
   <code>resolved</code> does not count. <code>split</code> is <code>scanner</code> (default) or <code>severity</code>. <code>split=severity</code> gets
