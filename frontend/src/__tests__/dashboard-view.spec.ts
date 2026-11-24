@@ -66,6 +66,19 @@ vi.mock('@/dashboards/catalog', () => ({
         framed: true,
         props: (ctx: { clusterId: string }) => ({ query: { cluster_id: ctx.clusterId } }),
       },
+      // the panel that counts scans, not findings (issue 1293)
+      'scan-ingest': {
+        id: 'scan-ingest',
+        name: 'Scan ingest',
+        line: 'one line',
+        component: Probe,
+        heights: { short: 4 },
+        usesScanner: true,
+        framed: false,
+        takesFilters: true,
+        counts: 'scans',
+        props: () => ({}),
+      },
       // the panel with audit filters (issue 1063)
       'triage-activity': {
         id: 'triage-activity',
@@ -116,7 +129,7 @@ const DOC = {
 const answer = (status: number, data?: unknown) =>
   ({ data, request: {}, response: { ok: status < 300, status } }) as never
 
-async function mountView(query = '', id = ID) {
+async function mountView(query = '', id = ID, attach = false) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -125,7 +138,11 @@ async function mountView(query = '', id = ID) {
     ],
   })
   await router.push(`/dashboards/${id}${query}`)
-  const w = mount(DashboardView, { global: { plugins: [router, [PrimeVue, { unstyled: true }]] } })
+  // a popover finds its panel in the document, so a test that opens one attaches the page
+  const w = mount(DashboardView, {
+    global: { plugins: [router, [PrimeVue, { unstyled: true }]] },
+    ...(attach ? { attachTo: document.body } : {}),
+  })
   await flushPromises()
   return { w, router }
 }
@@ -274,6 +291,17 @@ describe('the read page', () => {
     expect(cells[0]!.find('.dash-corner button').text()).toBe('1 filter')
     expect(cells[0]!.find('.dash-corner button').attributes('aria-label')).toBe('1 filter on Triage activity')
     expect(cells[1]!.find('.dash-corner button').exists()).toBe(false)
+  })
+
+  it('says that the filters of Scan ingest count scans (issue 1293)', async () => {
+    vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
+      answer(200, { ...DOC, panels: [{ panel: 'scan-ingest', x: 0, y: 0, w: 2, h: 'short', filters: { present: true, namespace: ['shop'] } }] }),
+    )
+    const { w } = await mountView('', ID, true)
+    await w.find('.dash-corner button').trigger('click')
+    await flushPromises()
+    expect(document.body.querySelector('.pf-intro')?.textContent).toBe('The numbers of this panel count only these scans.')
+    w.unmount()
   })
 
   it('draws each panel with the cluster and the scanner the owner saved', async () => {

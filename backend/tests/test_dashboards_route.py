@@ -579,15 +579,20 @@ async def test_scan_ingest_keeps_the_scan_filters(env) -> None:
 
 
 def test_scan_ingest_refuses_each_filter_that_trends_scans_does_not_take() -> None:
-    """A new filter of /findings must be a scan filter or a refused one on Scan ingest, so the
-    panel never stores a filter that its read drops. `present` is not a filter of the strip."""
+    """A new filter of /findings, or a new exclude side, must be a scan filter or a refused one on
+    Scan ingest, so the panel never stores a filter that its read drops. `present` is not a
+    filter of the strip: the panel refuses `present: false` on its own."""
     scan = {f.name for f in dataclasses.fields(ScanFilters)}
+    refused = set(FILTER_PANELS["scan-ingest"])
+    for name in ViewPreset.model_fields:
+        base = name.removeprefix("exclude_")
+        assert name in scan or name == "present" or base in refused, name
     other = {
         name
         for name in ViewPreset.model_fields
         if name not in scan and name != "present" and not name.startswith("exclude_")
     }
-    assert set(FILTER_PANELS["scan-ingest"]) == other
+    assert refused == other
     assert set(_NOT_SCAN_FILTERS) == other
 
 
