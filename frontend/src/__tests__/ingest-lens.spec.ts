@@ -272,6 +272,24 @@ describe('IngestLens filters (issue 1293): the filters a scan record holds', () 
     expect(w.find('.il-sub').text()).toContain('Only the namespace, image, tag, digest and scanner filters apply.')
   })
 
+  it('while a scan filter applies, it shows no last scan: that time is the time of the whole cluster', async () => {
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue(ok({ series: {} }) as never)
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue(
+      ok({ scanners: [{ scanner: 'trivy', last_ingest_at: '2026-10-01T08:30:00Z', silent_for_seconds: 600 }] }) as never,
+    )
+    const mountWith = (filters: Record<string, unknown>) =>
+      mount(IngestLens, { props: { clusterId: 'c-1', filters }, global: { plugins: [router], stubs: { EChart: true } } })
+    const filtered = mountWith({ cluster_id: 'c-1', namespace: ['shop'] })
+    await flushPromises()
+    expect(filtered.find('.il-last').exists()).toBe(false)
+    expect(filtered.find('.il-empty').text()).toBe('No scans in this range.')
+    // another filter alone changes no scan, so the time of the cluster is still true
+    const other = mountWith({ cluster_id: 'c-1', severity: ['high'] })
+    await flushPromises()
+    expect(other.find('.il-last').text()).toContain('last scan trivy')
+    expect(other.find('.il-empty').text()).toMatch(/^No scans in this range\. The table shows the state of the last scan/)
+  })
+
   it('reads again when a scan filter changes, and not for an equal object or another filter', async () => {
     const w = mountLens({ cluster_id: 'c-1', namespace: ['javv'] })
     await flushPromises()

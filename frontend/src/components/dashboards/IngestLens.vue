@@ -66,6 +66,9 @@ const settled = ref(false)
 const split = computed(() => scanFilters(props.filters))
 /** the screen has a filter on that a scan record does not hold */
 const otherFilters = computed(() => split.value.ignored.length > 0)
+/** a scan filter applies: the last scan of `/scanners/freshness` is the last scan of the whole
+ * cluster, so the strip does not show it (operator ruling 2026-11-24, issue 1293, Q2 B) */
+const scanFiltered = computed(() => Object.keys(split.value.applied).length > 0)
 
 let seq = 0
 // one source for each value, and the filters as text: a host that passes an equal new object on
@@ -147,19 +150,19 @@ function onPointClick(params: { dataIndex: number }) {
           Only the namespace, image, tag, digest and scanner filters apply.</template></span
       >
       <GuideLink class="il-help" section="time-range" variant="popover" />
-      <span v-if="timeTravel.isNow && latest" class="il-last mono-cell">
+      <span v-if="timeTravel.isNow && !scanFiltered && latest" class="il-last mono-cell">
         last scan {{ latest.scanner }} · {{ lastDataAt(latest.last_ingest_at) }} ({{
           silentFor(latest.silent_for_seconds)
         }} ago)
       </span>
-      <span v-else-if="timeTravel.isNow && freshnessFailed" class="il-last mono-cell">last scan -</span>
+      <span v-else-if="timeTravel.isNow && !scanFiltered && freshnessFailed" class="il-last mono-cell">last scan -</span>
     </div>
     <!-- pre-data: a shimmer where the chart will be — never the amber claim (a quiet range is an
          ANSWER; before the response lands there is none) -->
     <UiSkeleton v-if="!settled" :height="84" radius="sm" label="Loading the scans" class="skel-gap" />
     <p v-else-if="failed" class="il-empty">JAVV cannot show the scans. Check the backend connection.</p>
     <p v-else-if="totalRuns === 0" class="il-empty">
-      No scans in this range. <template v-if="timeTravel.isNow && latest"
+      No scans in this range. <template v-if="timeTravel.isNow && !scanFiltered && latest"
         >{{ subjectCap }} shows the state of the last scan, {{ lastDataAt(latest.last_ingest_at) }},
         {{ silentFor(latest.silent_for_seconds) }} ago.</template
       >
