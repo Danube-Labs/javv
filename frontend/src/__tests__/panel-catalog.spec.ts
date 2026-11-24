@@ -1002,7 +1002,8 @@ describe('a panel with filters (issue 999)', () => {
   }
 
   it('covers every panel that takes filters', () => {
-    expect(Object.keys(CASES).sort()).toEqual(PANELS.filter((p) => p.takesFilters).map((p) => p.id).sort())
+    // Scan ingest counts scans, not findings: its own tests are below
+    expect([...Object.keys(CASES), 'scan-ingest'].sort()).toEqual(PANELS.filter((p) => p.takesFilters).map((p) => p.id).sort())
   })
 
   it.each(Object.keys(CASES))('%s sends its filters, with all_filters, in each read', async (id) => {
@@ -1072,6 +1073,29 @@ describe('a panel with filters (issue 999)', () => {
     expect(grype).toMatchObject({ scanner: 'grype', exclude_namespace: ['kube-system'], present: true })
     expect(all).not.toHaveProperty('scanner')
     expect(all).not.toHaveProperty('kev')
+  })
+
+  it('scan-ingest sends the scan filters of the panel, and no last-scan read (issue 1293)', async () => {
+    fn('scansTrendApiV1TrendsScansGet').mockResolvedValue(ok({ series: {} }))
+    fn('scannerFreshnessApiV1ScannersFreshnessGet').mockResolvedValue(ok({ scanners: [] }))
+    const scan = { present: true, exclude_namespace: ['kube-system'], tag: ['1.2'], untagged: null }
+    const w = mountPanel(panelById('scan-ingest')!, ctx({ filters: scan as never }))
+    await flushPromises()
+    const [q] = fn('scansTrendApiV1TrendsScansGet').mock.calls.map((call) => (call[0] as { query: object }).query)
+    expect(q).toEqual({ cluster_id: CLUSTER, days: 30, interval: 'day', exclude_namespace: ['kube-system'], tag: ['1.2'] })
+    expect(fn('scannerFreshnessApiV1ScannersFreshnessGet')).not.toHaveBeenCalled()
+    // the settings offer only the scan filters, so the line about the other filters never shows
+    expect(w.text()).not.toContain('Only the namespace')
+  })
+
+  it('scan-ingest with no filters reads the whole cluster and the last scan, as before', async () => {
+    fn('scansTrendApiV1TrendsScansGet').mockResolvedValue(ok({ series: {} }))
+    fn('scannerFreshnessApiV1ScannersFreshnessGet').mockResolvedValue(ok({ scanners: [] }))
+    mountPanel(panelById('scan-ingest')!, ctx({ filters: null }))
+    await flushPromises()
+    const [q] = fn('scansTrendApiV1TrendsScansGet').mock.calls.map((call) => (call[0] as { query: object }).query)
+    expect(q).toEqual({ cluster_id: CLUSTER, days: 30, interval: 'day' })
+    expect(fn('scannerFreshnessApiV1ScannersFreshnessGet')).toHaveBeenCalledTimes(1)
   })
 
   it('a panel with no filters reads and links as before', async () => {

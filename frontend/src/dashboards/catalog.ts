@@ -78,6 +78,24 @@ export function globalQuery(ctx: PanelContext): { cluster_id: string; as_of?: st
   return { cluster_id: ctx.clusterId, ...(ctx.t ? { as_of: ctx.t } : {}) }
 }
 
+/** The filters of /findings that a scan record does not hold. `catalog.py` refuses the same on
+ * Scan ingest, and a spec holds the two lists equal. */
+const SCAN_REFUSED_FILTERS = [
+  'q',
+  'severity',
+  'state',
+  'assignee',
+  'kev',
+  'fixable',
+  'disagree',
+  'overdue',
+  'unassigned',
+  'new_within_days',
+  'ptype',
+  'cve_id',
+  'package_name',
+] as const
+
 export const PANELS: readonly CatalogPanel[] = [
   {
     id: 'findings-summary',
@@ -212,8 +230,10 @@ export const PANELS: readonly CatalogPanel[] = [
     heights: { short: 4 },
     usesScanner: false,
     framed: false,
-    takesFilters: false,
-    props: (ctx) => ({ clusterId: ctx.clusterId, subject: 'this dashboard' }),
+    takesFilters: true,
+    // `/trends/scans` takes only the filters that a scan record holds (issue 1293)
+    refusedFilters: SCAN_REFUSED_FILTERS,
+    props: (ctx) => ({ clusterId: ctx.clusterId, subject: 'this dashboard', filters: ctx.filters ?? {} }),
   },
   {
     id: 'failed-ingests',

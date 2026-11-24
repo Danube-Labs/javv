@@ -132,6 +132,12 @@ describe('the fields of the Filters field in the panel settings', () => {
     expect(flags('new-findings')).toEqual(all.filter((p) => p !== 'new_within_days'))
     expect(keys('new-findings')).toEqual(keys('findings-summary'))
   })
+
+  it('are the filters that a scan record holds on Scan ingest, with No tag as its one flag (issue 1293)', () => {
+    expect(keys('scan-ingest')).toEqual(['attr', 'namespace', 'image', 'tag', 'digest'])
+    const attr = panelFilterFields(panelById('scan-ingest')!).find((f) => f.key === 'attr')
+    expect(attr?.type === 'flags' ? attr.values.map((v) => v.param) : []).toEqual(['untagged'])
+  })
 })
 
 describe('the audit filters of Triage activity (issue 1063)', () => {
