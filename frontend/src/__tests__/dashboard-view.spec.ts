@@ -129,7 +129,7 @@ const DOC = {
 const answer = (status: number, data?: unknown) =>
   ({ data, request: {}, response: { ok: status < 300, status } }) as never
 
-async function mountView(query = '', id = ID, attach = false) {
+async function mountView(query = '', id = ID) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -138,11 +138,7 @@ async function mountView(query = '', id = ID, attach = false) {
     ],
   })
   await router.push(`/dashboards/${id}${query}`)
-  // a popover finds its panel in the document, so a test that opens one attaches the page
-  const w = mount(DashboardView, {
-    global: { plugins: [router, [PrimeVue, { unstyled: true }]] },
-    ...(attach ? { attachTo: document.body } : {}),
-  })
+  const w = mount(DashboardView, { global: { plugins: [router, [PrimeVue, { unstyled: true }]] } })
   await flushPromises()
   return { w, router }
 }
@@ -297,11 +293,10 @@ describe('the read page', () => {
     vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(
       answer(200, { ...DOC, panels: [{ panel: 'scan-ingest', x: 0, y: 0, w: 2, h: 'short', filters: { present: true, namespace: ['shop'] } }] }),
     )
-    const { w } = await mountView('', ID, true)
+    const { w } = await mountView()
     await w.find('.dash-corner button').trigger('click')
     await flushPromises()
-    expect(document.body.querySelector('.pf-intro')?.textContent).toBe('The numbers of this panel count only these scans.')
-    w.unmount()
+    expect(w.find('.pf-intro').text()).toBe('The numbers of this panel count only these scans.')
   })
 
   it('draws each panel with the cluster and the scanner the owner saved', async () => {

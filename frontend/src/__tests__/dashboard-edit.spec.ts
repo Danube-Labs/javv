@@ -160,7 +160,7 @@ async function settle() {
   await flushPromises()
 }
 
-async function mountView(query = '', attach = false) {
+async function mountView(query = '') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -169,11 +169,7 @@ async function mountView(query = '', attach = false) {
     ],
   })
   await router.push(`/dashboards/${ID}${query}`)
-  // a popover finds its panel in the document, so a test that opens one attaches the page
-  const w = mount(DashboardView, {
-    global: { plugins: [router, [PrimeVue, { unstyled: true }]] },
-    ...(attach ? { attachTo: document.body } : {}),
-  })
+  const w = mount(DashboardView, { global: { plugins: [router, [PrimeVue, { unstyled: true }]] } })
   await settle()
   return { w, router }
 }
@@ -732,11 +728,10 @@ describe('edit mode', () => {
       it('the filters button of Scan ingest says scans in edit mode (issue 1293)', async () => {
         const scan = { panel: 'scan-ingest', x: 0, y: 20, w: 2, h: 'short', filters: { present: true, namespace: ['shop'] } }
         vi.mocked(getDashboardApiV1DashboardsDashboardIdGet).mockResolvedValue(answer(200, doc({ panels: [...PANELS, scan] })))
-        const { w } = await mountView('?edit=1', true)
+        const { w } = await mountView('?edit=1')
         await w.find('[aria-label="1 filter on Scan ingest"]').trigger('click')
         await flushPromises()
-        expect(document.body.querySelector('.pf-intro')?.textContent).toBe('The numbers of this panel count only these scans.')
-        w.unmount()
+        expect(w.find('.pf-intro').text()).toBe('The numbers of this panel count only these scans.')
       })
 
       it('shows the filters button of the panel in edit mode', async () => {
