@@ -9,6 +9,8 @@ and the dashboard list shows every dashboard. No answer holds a hash. Real OpenS
 import json
 import uuid
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated, Any
 
 import httpx
@@ -19,11 +21,13 @@ from backend.jobs.staleness import StalenessTimers
 from backend.main import create_app
 from backend.mcp.read_tools import READ_TOOLS
 from backend.mcp.tools import Tool, _plan, build
+from backend.models.envelope import IngestEnvelope
 from backend.query import as_of_t
 from backend.query.aggs import FACET_FIELDS, GROUP_FIELDS
 from backend.query.as_of import register_as_of_t
 from backend.query.as_of_t import AsOfTQuery
 from backend.query.search import cursor_pit_id
+from backend.services.ingest import ingest_envelope
 from os_env import requires_opensearch
 from test_findings_route import _rows as _findings
 from test_findings_route import _seed
@@ -191,6 +195,41 @@ async def _tools(http: httpx.AsyncClient, raw: str) -> dict[str, dict[str, Any]]
     r = await http.post(PATH, **_modern("tools/list", authorization=f"Bearer {raw}"))
     assert r.status_code == 200, r.text
     return {t["name"]: t for t in r.json()["result"]["tools"]}
+
+
+async def test_trends_scans_takes_the_scan_filters_of_its_route(mcp_on):
+    """Issue 1293, Q1 A: the kind `scans` takes the filters of /trends/scans, as each tool takes
+    the parameters of its route. The kind `findings` does not take them."""
+    golden = json.loads((Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text())
+    async with _endpoint() as (http, client):
+        cluster = f"c-mcp-{uuid.uuid4().hex[:8]}"
+        for run, digest, namespaces in (("r1", "1", ["shop"]), ("r2", "2", ["ops"])):
+            envelope = golden | {
+                "cluster_id": cluster,
+                "scan_run_id": run,
+                "image_digest": "sha256:" + digest * 64,
+                "namespaces": namespaces,
+                "last_seen_at": datetime.now(UTC).isoformat(),
+            }
+            await ingest_envelope(client, IngestEnvelope.model_validate(envelope))
+        await client.indices.refresh(index=f"javv-scan-events-{cluster}-*")
+        _, raw = await _token(client)
+        schema = (await _tools(http, raw))["trends"]["inputSchema"]["properties"]
+        for name in ("namespace", "image_repo", "tag", "untagged", "image_digest", "exclude_tag"):
+            assert name in schema
+        args = {"kind": "scans", "cluster_id": cluster, "days": 7}
+        everything = json.loads(_text(await http.post(PATH, **_call("trends", args, raw))))
+        shop = json.loads(
+            _text(await http.post(PATH, **_call("trends", args | {"namespace": ["shop"]}, raw)))
+        )
+        refused = await http.post(
+            PATH,
+            **_call("trends", {"kind": "findings", "cluster_id": cluster, "tag": ["1"]}, raw),
+        )
+    assert sum(p["scans"] for p in everything["series"]["trivy"]) == 2
+    assert sum(p["scans"] for p in shop["series"]["trivy"]) == 1
+    result = refused.json()["result"]
+    assert result["isError"] and "this kind does not take tag" in result["content"][0]["text"]
 
 
 async def test_the_findings_page_is_25_at_most_and_the_ui_switch_is_not_offered(mcp_on):
