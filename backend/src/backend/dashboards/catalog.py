@@ -54,7 +54,8 @@ PANELS: dict[str, CatalogPanel] = {
 # images ranks under its filters through /findings/top-images (issue 1063), and Top CVEs
 # through /findings/top-values (issue 1176). New findings counts under its filters through
 # /trends/new-findings, which counts the findings first seen in the range already, so it refuses
-# "New in range" (issue 1292).
+# "New in range" (issue 1292). Scan ingest reads /trends/scans, which takes only the filters that
+# a scan record holds, so it refuses every other field (issue 1293).
 FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "findings-summary": (),
     "package-type": (),
@@ -63,6 +64,21 @@ FILTER_PANELS: dict[str, tuple[str, ...]] = {
     "top-components": (),
     "top-cves": (),
     "new-findings": ("new_within_days",),
+    "scan-ingest": (
+        "q",
+        "severity",
+        "state",
+        "assignee",
+        "kev",
+        "fixable",
+        "disagree",
+        "overdue",
+        "unassigned",
+        "new_within_days",
+        "ptype",
+        "cve_id",
+        "package_name",
+    ),
     "triage-progress": ("state",),
 }
 
