@@ -39,8 +39,8 @@ A dashboard has at most 24 panels.
 
 ## Filter a panel
 
-Seven panels can count only some findings: Findings summary, Package type, Findings by namespace,
-Riskiest images, Top components, Top vulnerabilities and Triage progress.
+Eight panels can count only some findings: Findings summary, Package type, Findings by namespace,
+Riskiest images, Top components, Top vulnerabilities, New findings and Triage progress.
 
 Riskiest images with filters shows at most 100 images. A row opens the page of the image. That
 page does not use the filters of the panel.
@@ -48,6 +48,10 @@ page does not use the filters of the panel.
 Top vulnerabilities shows at most 100 vulnerabilities, with the most findings first. A row opens
 Findings with the vulnerability and the filters of the panel. Top vulnerabilities shows only the
 time now, as Top components does.
+
+New findings shows the findings first seen in each day or hour of the time range, by severity. At a
+past time, it shows the days of the range that ends at that time. Select a bar to see the app as
+it was at the end of that day or hour.
 
 1. Open the dashboard, then select Edit dashboard.
 2. On the panel, select Settings.
@@ -60,6 +64,9 @@ see the filters. Open in Findings shows the same findings on the Findings page.
 
 - The list has no Scanner filter. Use the Scanner setting of the panel.
 - Triage progress shows each state, so its list has no State filter.
+- New findings counts only the findings first seen in the time range, so its list has no New in
+  range. Open in Findings on this panel shows all the findings that match the filters of the
+  panel, not only the new findings. To see only the new findings, add New in range on Findings.
 - New in range counts the findings first seen in the time range at the top of the page.
 
 To clear the filters of a panel, select Clear all in Filters. Then select Apply and Save changes.

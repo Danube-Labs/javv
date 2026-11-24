@@ -427,6 +427,7 @@
               "riskiest-images",
               "top-components",
               "top-cves",
+              "new-findings",
               "scan-ingest",
               "failed-ingests",
               "triage-activity",

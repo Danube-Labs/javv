@@ -121,6 +121,17 @@ describe('the fields of the Filters field in the panel settings', () => {
     expect(keys('triage-progress')).not.toContain('scanner')
     expect(keys('findings-summary')).toContain('state')
   })
+
+  it('leave out a refused flag and keep the other flags: New findings counts the new findings itself', () => {
+    const flags = (id: string) => {
+      const f = panelFilterFields(panelById(id)!).find((x) => x.key === 'attr')
+      return f?.type === 'flags' ? f.values.map((v) => v.param) : []
+    }
+    const all = flags('findings-summary')
+    expect(all).toContain('new_within_days')
+    expect(flags('new-findings')).toEqual(all.filter((p) => p !== 'new_within_days'))
+    expect(keys('new-findings')).toEqual(keys('findings-summary'))
+  })
 })
 
 describe('the audit filters of Triage activity (issue 1063)', () => {

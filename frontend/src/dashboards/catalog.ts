@@ -14,6 +14,7 @@ import AuditLens from '@/components/dashboards/AuditLens.vue'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
 import FindingsTrendPanel from '@/components/dashboards/FindingsTrendPanel.vue'
 import IngestLens from '@/components/dashboards/IngestLens.vue'
+import NewFindingsStrip from '@/components/dashboards/NewFindingsStrip.vue'
 import TopCvesPanel from '@/components/dashboards/TopCvesPanel.vue'
 import OverviewNamespacesCard from '@/components/overview/OverviewNamespacesCard.vue'
 import OverviewStatBands from '@/components/overview/OverviewStatBands.vue'
@@ -178,6 +179,27 @@ export const PANELS: readonly CatalogPanel[] = [
       scanner: ctx.scanner,
       pageSize: TABLE_ROWS[ctx.height],
       filters: ctx.filters,
+    }),
+  },
+  {
+    id: 'new-findings',
+    name: 'New findings',
+    group: 'Findings',
+    line: 'The findings first seen in each day or hour of the time range, by severity.',
+    component: NewFindingsStrip,
+    defaultWidth: 2,
+    heights: { short: 4 },
+    usesScanner: true,
+    framed: false,
+    takesFilters: true,
+    // the strip counts the findings first seen in its range already (issue 1292)
+    refusedFilters: ['new_within_days'],
+    props: (ctx) => ({
+      clusterId: ctx.clusterId,
+      t: ctx.t,
+      windowDays: ctx.windowDays,
+      // "All scanners" counts the two scanners together, as on Findings (issue 1292)
+      filters: { ...ctx.filters, ...(ctx.scanner === 'all' ? {} : { scanner: ctx.scanner }) },
     }),
   },
   {
