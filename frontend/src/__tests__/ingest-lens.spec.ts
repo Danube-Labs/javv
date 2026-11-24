@@ -229,3 +229,74 @@ describe('IngestLens read', () => {
     expect(w.find('.il-empty').text()).toBe('JAVV cannot show the scans. Check the backend connection.')
   })
 })
+
+describe('IngestLens filters (issue 1293): the filters a scan record holds', () => {
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:any(.*)*', component: { template: '<div />' } }] })
+  const ok = <T,>(data: T) => ({ data, response: { ok: true, status: 200 } })
+  const series = { trivy: pts([2, 3]) }
+
+  function mountLens(filters?: Record<string, unknown>) {
+    vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue(ok({ scanners: [] }) as never)
+    return mount(IngestLens, {
+      props: { clusterId: 'c-1', ...(filters ? { filters } : {}) },
+      global: { plugins: [router], stubs: { EChart: true } },
+    })
+  }
+  const sent = () => vi.mocked(scansTrendApiV1TrendsScansGet).mock.calls.map((c) => (c[0] as { query: Record<string, unknown> }).query)
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockReset()
+    vi.mocked(scansTrendApiV1TrendsScansGet).mockResolvedValue(ok({ series }) as never)
+  })
+
+  it('sends the scan filters of the screen with its own range, and never the other filters', async () => {
+    const w = mountLens({ cluster_id: 'c-1', window_days: 7, namespace: ['javv'], exclude_tag: ['dev'], severity: ['high'] })
+    await flushPromises()
+    expect(sent()).toEqual([{ cluster_id: 'c-1', days: 30, interval: 'day', namespace: ['javv'], exclude_tag: ['dev'] }])
+    w.unmount()
+  })
+
+  it('with no filters it sends what it sent before', async () => {
+    mountLens()
+    await flushPromises()
+    expect(sent()).toEqual([{ cluster_id: 'c-1', days: 30, interval: 'day' }])
+  })
+
+  it('says that the other filters do not apply, only while one is on', async () => {
+    const w = mountLens({ cluster_id: 'c-1', namespace: ['javv'] })
+    await flushPromises()
+    expect(w.find('.il-sub').text()).not.toContain('filters apply')
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['javv'], state: ['open'] } })
+    await flushPromises()
+    expect(w.find('.il-sub').text()).toContain('Only the namespace, image, tag, digest and scanner filters apply.')
+  })
+
+  it('reads again when a scan filter changes, and not for an equal object or another filter', async () => {
+    const w = mountLens({ cluster_id: 'c-1', namespace: ['javv'] })
+    await flushPromises()
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['javv'] } })
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['javv'], severity: ['low'] } })
+    await flushPromises()
+    expect(sent()).toHaveLength(1)
+    await w.setProps({ filters: { cluster_id: 'c-1', namespace: ['shop'] } })
+    await flushPromises()
+    expect(sent().map((q) => q.namespace)).toEqual([['javv'], ['shop']])
+  })
+
+  it('an older reply that lands after a newer one does not take the strip', async () => {
+    let first!: (v: unknown) => void
+    vi.mocked(scansTrendApiV1TrendsScansGet)
+      .mockImplementationOnce(() => new Promise((r) => (first = r)) as never)
+      .mockResolvedValueOnce(ok({ series: { grype: pts([5]) } }) as never)
+    const w = mountLens({ namespace: ['javv'] })
+    await flushPromises()
+    await w.setProps({ filters: { namespace: ['shop'] } })
+    await flushPromises()
+    first(ok({ series: { trivy: pts([9, 9]) } }))
+    await flushPromises()
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const names = (option.series as BarSeriesOption[]).map((s) => s.name)
+    expect(names).toEqual(['grype'])
+  })
+})
