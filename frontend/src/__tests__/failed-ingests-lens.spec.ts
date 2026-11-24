@@ -3,6 +3,7 @@ import type { EChartsOption } from 'echarts'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { stripAxis } from '@/charts/buildIngestLensOption'
 import type { TooltipParam } from '@/charts/chartTooltip'
 import FailedIngestsLens from '@/components/dashboards/FailedIngestsLens.vue'
 import EChart from '@/components/charts/EChart.vue'
@@ -108,6 +109,16 @@ describe('FailedIngestsLens (self-contained lens)', () => {
     expect(tip.querySelector('.chart-tip-head')?.textContent).toBe('21 Sep · refused scans')
   })
 
+  it('puts each refusal at its date of the range axis, up to now (issue 1292, D4 B)', async () => {
+    vi.useFakeTimers({ now: new Date('2026-09-22T12:00:00Z'), toFake: ['Date'] })
+    trendMock.mockResolvedValue(ok({ series: { trivy: pts([0, 3]) } })) // 20 and 21 Sep
+    const w = mount(FailedIngestsLens, { props: { ...props, windowDays: 3 }, global: { stubs } })
+    await flushPromises()
+    const option = w.findComponent(EChart).props('option') as { series: { data: number[] }[] }
+    expect(option.series[0]!.data).toEqual([0, 0, 3, 0]) // 19 to 22 Sep, 22 Sep has none
+    vi.useRealTimers()
+  })
+
   it('a range with no refusals is quiet copy, never an empty chart', async () => {
     trendMock.mockResolvedValue(ok({ series: { trivy: pts([0, 0]) } }))
     const w = mount(FailedIngestsLens, { props, global: { stubs } })
@@ -144,7 +155,11 @@ describe('FailedIngestsLens (self-contained lens)', () => {
     trendMock.mockResolvedValue(ok({ series: { trivy: pts([0, 3]) } }))
     const w = mount(FailedIngestsLens, { props, global: { stubs } })
     await flushPromises()
-    w.findComponent(EChart).vm.$emit('point-click', { dataIndex: 1 })
+    // the bars sit on the axis of the whole range (issue 1292, D4 B): 21 Sep is its own bucket
+    const at21 = stripAxis(30, null, 'day').indexOf('2026-09-21T00:00:00.000Z')
+    const option = w.findComponent(EChart).props('option') as { series: { data: number[] }[] }
+    expect(option.series[0]!.data[at21]).toBe(3)
+    w.findComponent(EChart).vm.$emit('point-click', { dataIndex: at21 })
     expect(useTimeTravelStore().t).toBe('2026-09-21T23:59:59.999Z')
     vi.useRealTimers()
   })

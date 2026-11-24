@@ -23,6 +23,8 @@ import {
   buildIngestLensOption,
   ingestInterval,
   ingestLensDates,
+  onAxis,
+  stripAxis,
 } from '@/charts/buildIngestLensOption'
 import type { ScanActivityData } from '@/charts/buildScanActivityOption'
 import { buildTrendQuery, isSubDayWindow } from '@/charts/buildTrendQuery'
@@ -99,7 +101,11 @@ const latest = computed(
       .sort((a, b) => (a.last_ingest_at! < b.last_ingest_at! ? 1 : -1))[0] ?? null,
 )
 const interval = computed(() => ingestInterval(timeTravel.windowDays, timeTravel.t))
-const option = computed(() => buildIngestLensOption(series.value, interval.value, 'images scanned'))
+// each count at its date of the range's axis: the strips of a band line up (issue 1292)
+const shown = computed(() =>
+  onAxis(series.value, stripAxis(timeTravel.windowDays, timeTravel.t, interval.value)),
+)
+const option = computed(() => buildIngestLensOption(shown.value, interval.value, 'images scanned'))
 // daily bars only mislead when the range is sub-day AND the buckets stayed daily (past T)
 const subDay = computed(() => interval.value === 'day' && isSubDayWindow(timeTravel.windowDays))
 /** Quiet range = the one state worth a visual flag (operator 2026-07-11): the amber wash
@@ -108,7 +114,7 @@ const quiet = computed(() => settled.value && !failed.value && totalRuns.value =
 
 const rewindToBucket = useBucketRewind()
 function onPointClick(params: { dataIndex: number }) {
-  rewindToBucket(ingestLensDates(series.value)[params.dataIndex], interval.value)
+  rewindToBucket(ingestLensDates(shown.value)[params.dataIndex], interval.value)
 }
 </script>
 

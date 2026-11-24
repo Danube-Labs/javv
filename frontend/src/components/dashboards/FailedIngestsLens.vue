@@ -17,6 +17,8 @@ import {
   buildIngestLensOption,
   ingestInterval,
   ingestLensDates,
+  onAxis,
+  stripAxis,
 } from '@/charts/buildIngestLensOption'
 import { buildTrendQuery } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
@@ -62,7 +64,10 @@ watch(
   { immediate: true },
 )
 
-const lensSeries = computed(() => failuresAsLensSeries(series.value))
+// each count at its date of the range's axis: the strips of a band line up (issue 1292)
+const lensSeries = computed(() =>
+  onAxis(failuresAsLensSeries(series.value), stripAxis(props.windowDays, props.t, interval.value)),
+)
 const refused = computed(() => totalRefused(series.value))
 const option = computed(() => buildIngestLensOption(lensSeries.value, interval.value, 'refused scans'))
 

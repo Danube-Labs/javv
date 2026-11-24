@@ -36,6 +36,19 @@ export function bucketEndT(
   return end >= nowMs ? null : new Date(end).toISOString()
 }
 
+/** Each scanner's points at their dates of `axis`, zero where a bucket has none, so the bars of
+ * Scan ingest and Failed ingests line up with the other strips of the band (issue 1292). */
+export function onAxis(series: ScanActivityData, axis: readonly string[]): ScanActivityData {
+  const out: ScanActivityData = {}
+  for (const scanner of ['trivy', 'grype'] as const) {
+    const rows = series[scanner]
+    if (!rows?.length) continue
+    const byTime = new Map(rows.map((p) => [Date.parse(p.date), p.scans]))
+    out[scanner] = axis.map((date) => ({ date, scans: byTime.get(Date.parse(date)) ?? 0 }))
+  }
+  return out
+}
+
 export const hourLabel = (iso: string): string =>
   new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
 
