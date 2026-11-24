@@ -1,10 +1,12 @@
 /** Pure filter layer for the Running-images screen (unit-tested): the committed inventory is
  * one run's rows, fully served — matching + bucket counts derive from those rows (IMAGE
  * counts). Severity buckets use the canonical vocabulary mapped from the doc's short keys. */
+import { buildFilterQuery, type FilterQuery } from '@/filters/buildFilterQuery'
 import { FACET_CAP, type ValueSearch } from '@/filters/facets'
 import type { Selections } from '@/filters/fields.config'
 import { SCANNER_ORDER } from '@/findings/detailViewModel'
 import type { FilterMode, Modes } from '@/stores/filters'
+import { IMAGES_FIELDS } from '@/images/fields.config'
 import type { ImageRow } from '@/stores/images'
 import type { Severity } from '@/styles/tokens'
 
@@ -183,3 +185,17 @@ const CSV_COUNTS: readonly [string, keyof ScannerCounts][] = [
   ['total', 'total'],
   ['fixable', 'fixable'],
 ]
+
+/** The filters of this screen that the New findings strip takes (issue 1292): Scanner, Namespace,
+ * Image and Tag mean the same on the findings. The other filters of Images select images of the
+ * inventory, so the strip leaves them out and says so (`stripFiltersNote`). */
+const STRIP_FIELDS = IMAGES_FIELDS.filter((f) => ['scanner', 'namespace', 'repo', 'tag'].includes(f.key))
+
+export function stripFilters(clusterId: string, sel: Selections, modes: Modes = {}): FilterQuery {
+  return buildFilterQuery(STRIP_FIELDS, sel, { cluster_id: clusterId }, modes)
+}
+
+export function stripFiltersNote(): string {
+  const labels = STRIP_FIELDS.map((f) => f.label)
+  return `Only the ${labels.slice(0, -1).join(', ')} and ${labels.at(-1)} filters apply.`
+}

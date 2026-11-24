@@ -439,12 +439,12 @@ Data inspector. `.first-run` is the text of a screen that has no data yet, with 
 test fails a copy of these rules, with one ruled exception (operator, 2026-11-15): the first-run
 text of the image page sits in a card and keeps 16px from its sides.
 
-**One chart strip** (issue 1197): the four strips above a table (Scan ingest, Failed ingests, Audit
-activity, Handled findings) wear the same rules in base.css. `.ingest-lens` is the frame of a strip,
+**One chart strip** (issue 1197): the five strips above a table (Scan ingest, Failed ingests, New
+findings, Audit activity, Handled findings) wear the same rules in base.css. `.ingest-lens` is the frame of a strip,
 `.il-quiet` its amber state when the range holds nothing, `.il-head` the row of its title,
 `.il-title` the title, `.il-sub` the line next to it with `.il-sub b`, and `.il-empty` the text of an
 empty or failed strip. `.ingest-lens > .skel-gap` is the space under its loading shimmer. These
-rules hold only the values that are equal in all four. A strip adds the rest in its own rule: how it
+rules hold only the values that are equal in all five. A strip adds the rest in its own rule: how it
 fills its row, how its line wraps, and the margin and weight of its empty text. The same test fails
 a copy. A click on a bar of a strip calls `useBucketRewind`: the end of that bucket becomes the time
 of the app. `shared-helpers-guard.spec.ts` fails a call of `bucketEndT` outside it.
@@ -453,6 +453,14 @@ status): one outer frame, and a gutter of the page color between the strips (ope
 2026-09-27). The band does not clip its overflow, because a clip cut off the top line of the hover
 box (issue 1292). So the first and the last strip round the outer corners of the band. The same
 test fails a copy of the band rules, and a clip on the band.
+The strips of a band share one axis (issue 1292, D4 B, operator ruling on built pictures): each
+shows each bucket of the range up to now (`stripAxis`) and puts each count at its date (`onAxis`).
+The backend ends an hourly series at 00:00 UTC of the current day, or at the hour of its last
+document if that is later. "Now" is one clock for all strips (`composables/useStripNow.ts`): the
+floor of the hour, read each minute, so the axes of a band move together and a later read lands
+on its axis. Findings, Images and Image detail
+put New findings under Scan ingest; it counts the findings first seen in each bucket, by severity,
+under the filters of the screen.
 
 **One chart tooltip** (issue 1272): each chart builder takes its tooltip from `chartTooltip` in
 `src/charts/chartTooltip.ts`. Its formatter returns DOM nodes, never an HTML string, because the

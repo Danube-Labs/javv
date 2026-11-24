@@ -10,6 +10,7 @@ import {
   buildIngestLensOption,
   ingestInterval,
   ingestLensDates,
+  onAxis,
 } from '@/charts/buildIngestLensOption'
 import type { ScanActivityData } from '@/charts/buildScanActivityOption'
 import type { TooltipParam } from '@/charts/chartTooltip'
@@ -73,6 +74,32 @@ describe('click-to-rewind mapping (D28: a day bucket → the whole-app T)', () =
     const nowMs = Date.parse('2026-07-10T12:30:00Z')
     expect(bucketEndT('2026-07-10T08:00:00.000Z', nowMs, 'hour')).toBe('2026-07-10T08:59:59.999Z')
     expect(bucketEndT('2026-07-10T12:00:00.000Z', nowMs, 'hour')).toBeNull()
+  })
+})
+
+// issue 1292, D4 B: the strips of a band put each count at its date of one axis, up to now
+describe('onAxis (pure): each count at its date of the range axis', () => {
+  const axis = ['2026-09-20T00:00:00.000Z', '2026-09-20T01:00:00.000Z', '2026-09-20T02:00:00.000Z']
+  it('fills the hours after the last scan with zeros, and keeps one series per scanner', () => {
+    const series: ScanActivityData = {
+      trivy: [{ date: '2026-09-20T00:00:00.000Z', scans: 3 }],
+      grype: [{ date: '2026-09-20T01:00:00.000Z', scans: 2 }],
+    }
+    expect(onAxis(series, axis)).toEqual({
+      trivy: [
+        { date: axis[0], scans: 3 },
+        { date: axis[1], scans: 0 },
+        { date: axis[2], scans: 0 },
+      ],
+      grype: [
+        { date: axis[0], scans: 0 },
+        { date: axis[1], scans: 2 },
+        { date: axis[2], scans: 0 },
+      ],
+    })
+  })
+  it('a scanner with no points stays out, so the strip still shows its empty text', () => {
+    expect(onAxis({ trivy: [] }, axis)).toEqual({})
   })
 })
 
@@ -145,6 +172,24 @@ describe('IngestLens head (issue 341: the guide popover, plain copy)', () => {
     useTimeTravelStore().setWindow(7, 'Last 7 days')
     await flushPromises()
     expect(w.find('.il-last').text()).toBe('last scan -')
+  })
+
+  it('the bars run to the hour of now, as the New findings strip under them (issue 1292, D4 B)', async () => {
+    vi.useFakeTimers({ now: new Date('2026-09-21T03:30:00Z'), toFake: ['Date'] })
+    useTimeTravelStore().setWindow(1, 'Last 24 hours')
+    // the backend ends its hourly series at the last scan, here 01:00
+    const w = await mountLens({
+      trivy: [
+        { date: '2026-09-20T00:00:00.000Z', scans: 1 },
+        { date: '2026-09-21T01:00:00.000Z', scans: 2 },
+      ],
+    })
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    const data = (option.series as BarSeriesOption[])[0]!.data as number[]
+    expect(data).toHaveLength(24 + 4) // 20 Sep 00:00 to 21 Sep 03:00
+    expect(data[25]).toBe(2)
+    expect(data.slice(26)).toEqual([0, 0])
+    vi.useRealTimers()
   })
 
   it('the hover names what a bar counts after the time of the bar (issue 1292)', async () => {

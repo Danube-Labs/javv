@@ -295,6 +295,16 @@ Layout preserved: facet rail + toolbar (FilterBar + Save view + ColumnsMenu) + b
   `413` past `JAVV_BULK_INLINE_LIMIT`/`JAVV_BULK_MAX_TARGETS` → "narrow the selection" copy;
   `422` empty selector).
 
+**New findings strip (issue 1292, operator rulings 2026-11-23 and 2026-11-24 on built pictures):**
+the head band holds Scan ingest and, under it, New findings, as one band (`.lens-stack`). The
+strip reads `GET /api/v1/trends/new-findings` with the filters of the table, and shows the findings
+first seen in each bucket as stacked bars by severity, critical at the bottom. "New in range" is
+left out, because the strip counts the findings first seen in its range already. The hover has
+the head "24 Nov · new findings" and a row for each severity. The total of the range is at the
+right. A click on a bar rewinds the app, as on Scan ingest. A range with none says "No new
+findings in this range." At a past time, a filter that the history does not record (KEV, Scanners
+disagree) gets "JAVV cannot count the new findings with these filters at a past time."
+
 **Facet rail** (top→bottom): Severity (critical/high/medium/low/**negligible**/unknown — muted
 treatment for negligible+unknown, never red) · Scanner (trivy/grype) · Attributes (KEV /
 Fix available / Scanners disagree / SLA breached / Unassigned / No tag / New in range) · State (**6**: open, acknowledged, not_affected,
@@ -707,6 +717,10 @@ copy of the view. Before, the "×" of the card deleted the view at the first cli
 - Image naming: compose from `image_repo` + `tag` (no `image_ref` field exists — M9c update,
   #156-3).
 
+**New findings strip (issue 1292):** under Scan ingest in one band, as on Findings. It takes the
+Scanner, Namespace, Image and Tag filters of this screen only, because they mean the same on the
+findings. Its line ends with "Only the Scanner, Namespace, Image and Tag filters apply."
+
 **Columns:** Image (`image_repo` + registry mono) · Tag · Namespace · Replicas (M8c inventory
 read) · per-scanner finding counts (`T n / G n / Δ` — never a merged total) · Severity mix
 (labeled MixBar, per scanner) · Scanners · Last seen.
@@ -747,6 +761,8 @@ Identity is the **content digest** (`image_digest`). Layout preserved: header �
   `vulns_as_scanned_at_T`, kept as two distinct facts): **M8b point-in-time API — not shipped**;
   until M8b these render the C-1 "history available after M8b" state. `T=now` per-scanner
   findings work today.
+- New findings strip (issue 1292): under Scan ingest in one band. It counts the new findings of
+  this digest, for the scanner of the switch.
 - Build history (`GET /api/v1/images/timeline`): the count of a scan counts findings, as the
   Findings table does (issue 1076). A scan stored before release 0.9.5 keeps the count of the
   report entries.
@@ -960,6 +976,11 @@ pushes refused per bucket, one bar series per scanner, on Scan ingest's axis (sa
 day/hour rule) so a day lines up across both. Its own scale: runs peak in the hundreds, refusals are
 a handful. Click a day to rewind, like Scan ingest; a range with none reads "No refused pushes in
 this range", never an empty chart.
+**One axis for the strips of a band (issue 1292, D4 B, operator ruling 2026-11-24 on built
+pictures):** the backend ends an hourly series at 00:00 UTC of the current day, or at the hour of
+its last document if that is later. So two strips could put the same hour at a different place. Scan ingest, Failed ingests and New findings show each bucket of
+the range up to now (`stripAxis`), and put each count at its date (`onAxis`). "Now" is one clock
+for the band (`useStripNow`), so the axes move together.
 
 **Failed ingests — reinstated by ruling (issue 357, option 2, 2026-07-30):** the pushes JAVV itself
 refused after the token check are recorded (`javv-ingest-failures-*`) and read per scanner by

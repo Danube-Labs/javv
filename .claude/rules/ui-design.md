@@ -82,7 +82,7 @@ column** `.stack`, its **scope line** `.scope-src`, the **row buttons** `.row-ac
 **filter row** `.facet-row` (check box, selected state, hover), the **card title band**
 `.panel-band` and the **first-run text** `.first-run` are base.css rules too (issue 1190). So is a
 **chart strip** above a table: `.ingest-lens` with `.il-quiet`, `.il-head`, `.il-title`, `.il-sub`
-and `.il-empty`, holding only what all four strips share; a click on its bar calls
+and `.il-empty`, holding only what all five strips share; a click on its bar calls
 `useBucketRewind`, never its own `bucketEndT` (issue 1197). The **note lines** `.cap-note` (under
 a list cut at a limit) and `.empty-note` (a list with no rows) hold their color, and the size of
 `.cap-note`, in base.css. A component adds only its margin (issue 1214). A **window footer** is a `ghost` Cancel,

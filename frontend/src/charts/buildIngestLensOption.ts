@@ -36,8 +36,42 @@ export function bucketEndT(
   return end >= nowMs ? null : new Date(end).toISOString()
 }
 
-const hourLabel = (iso: string): string =>
+/** Each scanner's points at their dates of `axis`, zero where a bucket has none, so the bars of
+ * Scan ingest and Failed ingests line up with the other strips of the band (issue 1292). */
+export function onAxis(series: ScanActivityData, axis: readonly string[]): ScanActivityData {
+  const out: ScanActivityData = {}
+  for (const scanner of ['trivy', 'grype'] as const) {
+    const rows = series[scanner]
+    if (!rows?.length) continue
+    const byTime = new Map(rows.map((p) => [Date.parse(p.date), p.scans]))
+    out[scanner] = axis.map((date) => ({ date, scans: byTime.get(Date.parse(date)) ?? 0 }))
+  }
+  return out
+}
+
+export const hourLabel = (iso: string): string =>
   new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+/** The buckets of a strip's range, as the backend counts them (`window_bounds`): from the UTC day
+ * floor of the start to the day of the end, or to the hour of now for hourly buckets. A strip
+ * that puts each count at its date of this axis lines up with the other strips of its band, also
+ * when its last count is in another hour (issue 1292). */
+export function stripAxis(
+  windowDays: number,
+  t: string | null,
+  interval: IngestInterval,
+  nowMs: number = Date.now(),
+): string[] {
+  const days = Math.min(365, Math.max(1, Math.ceil(windowDays))) // the days of buildTrendQuery
+  const endMs = t === null ? nowMs : Date.parse(t)
+  const endDay = Math.floor(endMs / INTERVAL_MS.day) * INTERVAL_MS.day
+  const last = interval === 'day' ? endDay : Math.floor(endMs / INTERVAL_MS.hour) * INTERVAL_MS.hour
+  const out: string[] = []
+  for (let ms = endDay - days * INTERVAL_MS.day; ms <= last; ms += INTERVAL_MS[interval]) {
+    out.push(new Date(ms).toISOString())
+  }
+  return out
+}
 
 export function buildIngestLensOption(
   series: ScanActivityData,

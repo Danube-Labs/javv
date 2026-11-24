@@ -17,11 +17,14 @@ import {
   buildIngestLensOption,
   ingestInterval,
   ingestLensDates,
+  onAxis,
+  stripAxis,
 } from '@/charts/buildIngestLensOption'
 import { buildTrendQuery } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
+import { useStripNow } from '@/composables/useStripNow'
 import { logger } from '@/lib/logger'
 import {
   failuresAsLensSeries,
@@ -62,7 +65,12 @@ watch(
   { immediate: true },
 )
 
-const lensSeries = computed(() => failuresAsLensSeries(series.value))
+// the band's clock, shared with the other strips (issue 1292)
+const stripNow = useStripNow()
+// each count at its date of the range's axis: the strips of a band line up (issue 1292)
+const lensSeries = computed(() =>
+  onAxis(failuresAsLensSeries(series.value), stripAxis(props.windowDays, props.t, interval.value, stripNow.value)),
+)
 const refused = computed(() => totalRefused(series.value))
 const option = computed(() => buildIngestLensOption(lensSeries.value, interval.value, 'refused scans'))
 

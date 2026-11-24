@@ -517,7 +517,7 @@ html [class*=' p-'] {
 }
 
 /* ---- a chart strip above a table: Scan ingest, Failed ingests, Audit activity, Handled findings
-   (issue 1197). These rules hold the values that are equal in all four strips. A strip adds the
+   (issue 1197). These rules hold the values that are equal in all five strips. A strip adds the
    rest in its own rule: how it fills its row, and how its line under the title wraps. */
 .ingest-lens {
   min-width: 0;
