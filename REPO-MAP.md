@@ -15,8 +15,9 @@ composable dashboards (#440), marked as the minor release 0.9.0. The bolts are f
 issue per feature. The 0.9 releases added the MCP server for AI agents (0.9.6, #1096), the scans of a
 Nomad cluster and a Docker Compose host (0.9.9, #1155), the files where a scanner found a finding
 (0.9.10, #1077), the app text in strict STE (0.9.11, #1247), Python 3.14 images with 88 findings
-(0.9.12, #1263) and Node.js 26 in the frontend image (0.9.13, #1283). The newest release is
-**0.9.13** (2026-11-23), and `development/memory-bank/timeline.md` has each release. **Now:** the 1.0.0 hardening
+(0.9.12, #1263), Node.js 26 in the frontend image (0.9.13, #1283), and the Tag filter, the New
+findings strip and exact short ranges (0.9.14, #1291 to #1294 and #1313). The newest release is
+**0.9.14** (2026-11-25), and `development/memory-bank/timeline.md` has each release. **Now:** the 1.0.0 hardening
 milestone. #555 has the roadmap and its burn order, and the open work is in
 `development/memory-bank/active-context.md`.
 

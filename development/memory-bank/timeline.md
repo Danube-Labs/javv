@@ -187,14 +187,22 @@ On 2026-10-10 each open issue went into the 1.0.0 milestone (issue 555, phase 3)
   - Renovate keeps PrimeVue on version 4 and `@primeuix/themes` on version 2, their last versions
     with the MIT license (issue 597, PR 1284). The dependency policy keeps Python on 3.14 (PR 1288).
   - These changes shipped in 0.9.13 (2026-11-23).
-- **The work for 0.9.14** (from 2026-11-23): four issues from a 0.9.13 deployment (issues 1291 to
-  1294).
+- **The work for 0.9.14** (2026-11-23 to 2026-11-25): five issues from a 0.9.13 deployment
+  (issues 1291 to 1294, and issue 1313).
   - The hover boxes of the chart strips name their unit, and the band of strips does not clip the
     top line of a hover box (issue 1292, PR 1295).
   - An image name with a tag and a digest keeps its tag (issue 1294, PR 1297).
   - The API takes a Tag filter, and a past time gives the image names of that time (issue 1294,
-    PR 1298).
-  - These changes wait for release 0.9.14.
+    PR 1298). Findings takes the Tag filter and a No tag flag (PR 1300).
+  - A New findings strip under Scan ingest counts the findings first seen in each day or hour, by
+    severity (issue 1292, PRs 1303 and 1304). A dashboard can show it as a panel (PR 1305).
+  - The Scan ingest strip and its dashboard panel take the filters that a scan record holds
+    (issue 1293, PRs 1306, 1307 and 1308).
+  - A range of 2 days or less that ends now starts at its exact time, on the clock of the backend
+    (issue 1291, PRs 1311 and 1312). An Exact range of the time picker that ends now starts at its
+    From time (issue 1313, PR 1314).
+  - The audited lines of PRs 1297 to 1305 are in strict STE (PR 1315).
+  - These changes shipped in 0.9.14 (2026-11-25).
 
 ## 6. Releases
 
@@ -202,6 +210,7 @@ Each release in `CHANGELOG.md`, with what it brought. `CHANGELOG.md` has the ful
 
 | Release | Date | What it brought |
 |---|---|---|
+| 0.9.14 | 2026-11-25 | Findings takes a Tag filter and a No tag flag, and an image name with a tag and a digest keeps its tag (issue 1294). A New findings strip sits under Scan ingest (issue 1292). Scan ingest follows the scan filters of its screen (issue 1293). A range of 2 days or less that ends now starts at its exact time (issues 1291 and 1313). The database schema stays 23 |
 | 0.9.13 | 2026-11-23 | The frontend image, CI and the dev setup run Node.js 26, and the frontend tests run on Vitest 5 (issue 1283). The web app uses Vue 3.5.46. The database schema stays 23 |
 | 0.9.12 | 2026-11-21 | The JAVV images have 88 findings, against 1,517 on 0.9.11: Python 3.14 on Alpine and no package managers (issue 1263). Ingest refuses JSON nested deeper than 64 levels. The chart tooltips show their dots under the policy (issue 1272). The backend log shows the policy violations of the browser, and the frontend server logs `backend slow` in place of false 502 warnings (issue 1275). The database schema stays 23 |
 | 0.9.11 | 2026-11-19 | The text of the app is in strict STE, with one name for each thing (issue 1247). Some labels have new names, for example the MCP level "Write and accept risks". The page loads one time before sign-in (issue 1246). The videos and the README walkthrough show the new text. The database schema stays 23 |

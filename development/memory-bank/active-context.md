@@ -7,24 +7,20 @@ issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR u
 
 ## Where the project is
 
-- The last release is 0.9.13 (2026-11-23). The frontend image, CI and the dev setup run Node.js
-  26, and the frontend tests run on Vitest 5 (issue 1283).
-- The phase is hardening for 1.0 (issue 555, phase 3).
-- `main` holds the fixes for five issues from a 0.9.13 deployment, for the next release (0.9.14).
-  The operator closed the five issues:
+- The last release is 0.9.14 (2026-11-25). It holds the fixes for five issues from a 0.9.13
+  deployment. The operator closed the five issues:
   - Issue 1294: an image name keeps its tag, and Findings takes a Tag filter and a No tag flag.
   - Issue 1292: the New findings strip under Scan ingest, and as a dashboard panel.
   - Issue 1293: the Scan ingest strip follows the scan filters of its screen.
   - Issue 1291: a range of 2 days or less starts at the exact time, on the clock of the backend.
   - Issue 1313: an Exact range of the time picker that ends now starts at its From time.
+- The phase is phase 3 of issue 555, which makes JAVV ready for 1.0.
 
 ## Next
 
-- Release 0.9.14, on the word of the operator. The release PR is PR 1296. Its What's new section
-  comes after the last merge before the release.
 - Issue 1263 closes after a new scan of the deployment that reported the 1,360 findings, on 0.9.12.
 
-Apart from these, the operator chooses the next step from the tables below.
+Apart from this, the operator chooses the next step from the tables below.
 
 Each step starts on the word of the operator.
 
