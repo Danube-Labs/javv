@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.9.14](https://github.com/Danube-Labs/javv/compare/v0.9.13...v0.9.14) (2026-11-25)
+
+
+### Features
+
+* a new findings strip under scan ingest on findings, images and image detail ([#1304](https://github.com/Danube-Labs/javv/issues/1304)) ([b84c2c2](https://github.com/Danube-Labs/javv/commit/b84c2c24eab004b08b789ed86ffee613c7ee2194))
+* a read of the new findings by severity, now and at a past time ([#1303](https://github.com/Danube-Labs/javv/issues/1303)) ([2fde347](https://github.com/Danube-Labs/javv/commit/2fde34735fe6ce028f88003d091edac60829fddc))
+* findings take a tag filter and a no tag flag ([#1300](https://github.com/Danube-Labs/javv/issues/1300)) ([5e34f7b](https://github.com/Danube-Labs/javv/commit/5e34f7b8d9658f882c2972a3a4e978559a4267f8))
+* findings take a tag filter, and a past time names each image ([#1298](https://github.com/Danube-Labs/javv/issues/1298)) ([3f547c3](https://github.com/Danube-Labs/javv/commit/3f547c37951f56c6e34952684f5548893a25df4e))
+* the new findings strip as a dashboard panel, with panel filters and the scanner switch ([#1305](https://github.com/Danube-Labs/javv/issues/1305)) ([56d0ec6](https://github.com/Danube-Labs/javv/commit/56d0ec6d16162147502b265936da3602226e0d52)), closes [#1292](https://github.com/Danube-Labs/javv/issues/1292)
+* the scan ingest panel of a dashboard takes the scan filters and the scanner setting ([#1308](https://github.com/Danube-Labs/javv/issues/1308)) ([94afa55](https://github.com/Danube-Labs/javv/commit/94afa555dd9e662c22ef34216947a07cd11cbaab)), closes [#1293](https://github.com/Danube-Labs/javv/issues/1293)
+* the scan ingest strip follows the scan filters of its screen ([#1307](https://github.com/Danube-Labs/javv/issues/1307)) ([1c3ce35](https://github.com/Danube-Labs/javv/commit/1c3ce35f7e6f2a09abf445dabb2a7f2cbc340cab))
+* the scans trend takes the filters of a scan record, now and at a past time ([#1306](https://github.com/Danube-Labs/javv/issues/1306)) ([cb99752](https://github.com/Danube-Labs/javv/commit/cb99752fd994d201a0f22a10fa6b3d8e11970906)), closes [#1293](https://github.com/Danube-Labs/javv/issues/1293)
+
+
+### Bug Fixes
+
+* an exact range that ends now starts at its from time ([#1314](https://github.com/Danube-Labs/javv/issues/1314)) ([4dd446c](https://github.com/Danube-Labs/javv/commit/4dd446cca686c5e0106d64ad4f1240b552dec751))
+* an image name with a tag and a digest keeps its tag ([#1297](https://github.com/Danube-Labs/javv/issues/1297)) ([377ba19](https://github.com/Danube-Labs/javv/commit/377ba199aab76511b7f6cc942874c24641fa1f84))
+* exact ranges of 2 days or less on the trend reads, and new in range stops at now ([#1311](https://github.com/Danube-Labs/javv/issues/1311)) ([9949439](https://github.com/Danube-Labs/javv/commit/99494393ac82faa8f513fca43840b5be591e229d))
+* the frontend sends the exact range of 2 days or less, on the clock of the backend ([#1312](https://github.com/Danube-Labs/javv/issues/1312)) ([cc16a40](https://github.com/Danube-Labs/javv/commit/cc16a400996a63e63f92b4d95fd032d114cbde21))
+* the strip hovers name their unit, and the band of strips no longer clips ([#1295](https://github.com/Danube-Labs/javv/issues/1295)) ([85d1a5c](https://github.com/Danube-Labs/javv/commit/85d1a5cab76bbf4299b06fa550db53472d29656d))
+
 ## [0.9.13](https://github.com/Danube-Labs/javv/compare/v0.9.12...v0.9.13) (2026-11-23)
 
 
