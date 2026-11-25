@@ -66,7 +66,9 @@ Days = Annotated[
     Query(
         ge=1,
         le=365,
-        description="The range in whole UTC days. With no range in the request, it is 30 days.",
+        description=(
+            "The range is in whole UTC days. With no range in the request, the range is 30 days."
+        ),
     ),
 ]
 # the exact length of a range of 2 days or less, at now only (issue 1291)
@@ -75,7 +77,7 @@ WindowSeconds = Annotated[
     Query(
         ge=EXACT_MIN_SECONDS,
         le=EXACT_MAX_SECONDS,
-        description="The exact range in seconds. It ends at the time of the request.",
+        description="The exact range is in seconds. It ends at the time of the request.",
     ),
 ]
 Interval = Literal["day", "hour"]

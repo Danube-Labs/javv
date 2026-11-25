@@ -135,6 +135,34 @@ def test_cursor_freezes_the_end_of_new_in_range() -> None:
     )
     *_, now = decode_cursor(cur)
     assert now == NOW_1291
+    shifted = base64.urlsafe_b64encode(
+        json.dumps(
+            {
+                "p": "p",
+                "a": [1],
+                "s": "severity_rank",
+                "o": "desc",
+                "n": "2026-11-20T06:30:00-05:00",
+            }
+        ).encode()
+    ).decode()
+    *_, now = decode_cursor(shifted)  # an offset is read as its time in UTC, the day of the range
+    assert now is not None and now.utcoffset() == timedelta(0) and now.hour == 11
+    # read in its own offset, the day of this time is 0001-12-31 and 365 days back overflow (a
+    # 500); read in UTC, the day is 0002-01-01 and the range builds
+    edge = base64.urlsafe_b64encode(
+        json.dumps(
+            {
+                "p": "p",
+                "a": [1],
+                "s": "severity_rank",
+                "o": "desc",
+                "n": "0001-12-31T23:00:00-05:00",
+            }
+        ).encode()
+    ).decode()
+    *_, now = decode_cursor(edge)
+    build_search_body(SearchFilters(new_within_days=365), size=1, now=now)
     for bad in (
         "not a time",
         "2026-11-20T11:30:00",  # a naive time is not a time of the server

@@ -525,8 +525,8 @@ state. With a time in the past, JAVV builds the state at that time from the hist
     - `/trends/ingest-failures` gives `days` and `window_seconds`. `/trends/scans` and
       `/trends/new-findings` give the two at the time of the request. The one that the read did
       not use is `null`.
-    - `/trends/findings` gives `days` and no `window_seconds`. So do `/trends/scans` and
-      `/trends/new-findings` at a past `as_of`.
+    - `/trends/findings` gives `days` and no `window_seconds`. At a past `as_of`, `/trends/scans`
+      and `/trends/new-findings` also give `days` and no `window_seconds`.
     - The intervals stay on the UTC day or hour. With `window_seconds`, the first interval counts
       only from the start of the range.
 - `/trends/scans`: the committed scans. `interval` is `day` (default) or `hour`. `hour` is

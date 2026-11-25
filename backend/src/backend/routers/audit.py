@@ -44,7 +44,7 @@ from backend.query.search import (
     cursor_pit_id,
 )
 from backend.query.trends import pick_window
-from backend.routers.trends import Days, WindowSeconds
+from backend.routers.trends import WindowSeconds
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 log = structlog.get_logger()
@@ -86,6 +86,18 @@ def _audit_filters(
 
 
 AuditFilterParams = Annotated[AuditFilters, Depends(_audit_filters)]
+# the activity window is N x 24 h back from the exact end, not whole UTC days as on the trends
+_WindowDays = Annotated[
+    int | None,
+    Query(
+        ge=1,
+        le=365,
+        description=(
+            "The range of the activity histogram is in days, back from the time of the request"
+            " or from as_of. With interval and no range in the request, the range is 30 days."
+        ),
+    ),
+]
 
 
 @router.get("")
@@ -161,7 +173,7 @@ async def audit_facets(
     params: AuditFilterParams,
     as_of: Annotated[str | None, Query(max_length=64)] = None,
     interval: Annotated[str | None, Query(max_length=8)] = None,
-    window_days: Days = None,
+    window_days: _WindowDays = None,
     window_seconds: WindowSeconds = None,
     # the limits of the findings value search: a search starts at 2 letters
     contains: Annotated[str | None, Query(min_length=2, max_length=128)] = None,

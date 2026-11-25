@@ -397,10 +397,12 @@ def decode_cursor(
     if now is not None and now.tzinfo is None:
         raise ValueError("invalid cursor")
     if now is not None:
-        # a tampered time near the ends of the calendar overflows the range of "new in range"
-        # (OverflowError, a 500): the widest range is 365 days back from the day of `now`
+        # the server writes UTC; a tampered offset would shift the day of the range. A tampered time
+        # near the start of the calendar overflows the range of "new in range" (OverflowError, a
+        # 500): the widest range is 365 days back from the UTC day of `now`
         try:
-            trend_window(365, None, now.astimezone(UTC))
+            now = now.astimezone(UTC)
+            trend_window(365, None, now)
         except OverflowError as exc:
             raise ValueError("invalid cursor") from exc
     # a base64/JSON-valid cursor can still carry tampered fields that would sail past decode and

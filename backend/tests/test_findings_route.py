@@ -221,7 +221,7 @@ async def test_tampered_but_decodable_cursor_is_422_not_500(env) -> None:
     r = await http.get("/api/v1/findings", params={"cluster_id": cid, "cursor": bad})
     assert r.status_code == 422
 
-    # a time of the walk at the end of the calendar overflows the range of "new in range"
+    # a time of the walk at the start of the calendar overflows the range of "new in range"
     far = {"p": "x", "a": [1], "s": "severity_rank", "o": "desc", "n": "0001-01-01T00:00:00+00:00"}
     bad_now = base64.urlsafe_b64encode(json.dumps(far).encode()).decode()
     for params in ({"new_within_days": "30"}, {"new_within_seconds": "3600"}):

@@ -3984,7 +3984,7 @@
             }
           },
           {
-            "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+            "description": "The range of the activity histogram is in days, back from the time of the request or from as_of. With interval and no range in the request, the range is 30 days.",
             "in": "query",
             "name": "window_days",
             "required": false,
@@ -3999,12 +3999,12 @@
                   "type": "null"
                 }
               ],
-              "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+              "description": "The range of the activity histogram is in days, back from the time of the request or from as_of. With interval and no range in the request, the range is 30 days.",
               "title": "Window Days"
             }
           },
           {
-            "description": "The exact range in seconds. It ends at the time of the request.",
+            "description": "The exact range is in seconds. It ends at the time of the request.",
             "in": "query",
             "name": "window_seconds",
             "required": false,
@@ -4019,7 +4019,7 @@
                   "type": "null"
                 }
               ],
-              "description": "The exact range in seconds. It ends at the time of the request.",
+              "description": "The exact range is in seconds. It ends at the time of the request.",
               "title": "Window Seconds"
             }
           },
@@ -11672,7 +11672,7 @@
             }
           },
           {
-            "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
@@ -11687,12 +11687,12 @@
                   "type": "null"
                 }
               ],
-              "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
               "title": "Days"
             }
           },
           {
-            "description": "The exact range in seconds. It ends at the time of the request.",
+            "description": "The exact range is in seconds. It ends at the time of the request.",
             "in": "query",
             "name": "window_seconds",
             "required": false,
@@ -11707,7 +11707,7 @@
                   "type": "null"
                 }
               ],
-              "description": "The exact range in seconds. It ends at the time of the request.",
+              "description": "The exact range is in seconds. It ends at the time of the request.",
               "title": "Window Seconds"
             }
           },
@@ -12377,7 +12377,7 @@
             }
           },
           {
-            "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
@@ -12392,7 +12392,7 @@
                   "type": "null"
                 }
               ],
-              "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
               "title": "Days"
             }
           },
@@ -12492,7 +12492,7 @@
             }
           },
           {
-            "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
@@ -12507,12 +12507,12 @@
                   "type": "null"
                 }
               ],
-              "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
               "title": "Days"
             }
           },
           {
-            "description": "The exact range in seconds. It ends at the time of the request.",
+            "description": "The exact range is in seconds. It ends at the time of the request.",
             "in": "query",
             "name": "window_seconds",
             "required": false,
@@ -12527,7 +12527,7 @@
                   "type": "null"
                 }
               ],
-              "description": "The exact range in seconds. It ends at the time of the request.",
+              "description": "The exact range is in seconds. It ends at the time of the request.",
               "title": "Window Seconds"
             }
           },
@@ -12607,7 +12607,7 @@
             }
           },
           {
-            "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
@@ -12622,12 +12622,12 @@
                   "type": "null"
                 }
               ],
-              "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
               "title": "Days"
             }
           },
           {
-            "description": "The exact range in seconds. It ends at the time of the request.",
+            "description": "The exact range is in seconds. It ends at the time of the request.",
             "in": "query",
             "name": "window_seconds",
             "required": false,
@@ -12642,7 +12642,7 @@
                   "type": "null"
                 }
               ],
-              "description": "The exact range in seconds. It ends at the time of the request.",
+              "description": "The exact range is in seconds. It ends at the time of the request.",
               "title": "Window Seconds"
             }
           },
@@ -13303,7 +13303,7 @@
             }
           },
           {
-            "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
@@ -13318,12 +13318,12 @@
                   "type": "null"
                 }
               ],
-              "description": "The range in whole UTC days. With no range in the request, it is 30 days.",
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
               "title": "Days"
             }
           },
           {
-            "description": "The exact range in seconds. It ends at the time of the request.",
+            "description": "The exact range is in seconds. It ends at the time of the request.",
             "in": "query",
             "name": "window_seconds",
             "required": false,
@@ -13338,7 +13338,7 @@
                   "type": "null"
                 }
               ],
-              "description": "The exact range in seconds. It ends at the time of the request.",
+              "description": "The exact range is in seconds. It ends at the time of the request.",
               "title": "Window Seconds"
             }
           },

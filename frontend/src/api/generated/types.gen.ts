@@ -1900,13 +1900,13 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
         /**
          * Window Days
          *
-         * The range in whole UTC days. With no range in the request, it is 30 days.
+         * The range of the activity histogram is in days, back from the time of the request or from as_of. With interval and no range in the request, the range is 30 days.
          */
         window_days?: number | null;
         /**
          * Window Seconds
          *
-         * The exact range in seconds. It ends at the time of the request.
+         * The exact range is in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -4632,13 +4632,13 @@ export type ScannerIngestFailuresApiV1ScannersIngestFailuresGetData = {
         /**
          * Days
          *
-         * The range in whole UTC days. With no range in the request, it is 30 days.
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
          *
-         * The exact range in seconds. It ends at the time of the request.
+         * The exact range is in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -5087,7 +5087,7 @@ export type FindingsTrendApiV1TrendsFindingsGetData = {
         /**
          * Days
          *
-         * The range in whole UTC days. With no range in the request, it is 30 days.
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
         days?: number | null;
         /**
@@ -5139,13 +5139,13 @@ export type IngestFailuresTrendApiV1TrendsIngestFailuresGetData = {
         /**
          * Days
          *
-         * The range in whole UTC days. With no range in the request, it is 30 days.
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
          *
-         * The exact range in seconds. It ends at the time of the request.
+         * The exact range is in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -5193,13 +5193,13 @@ export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
         /**
          * Days
          *
-         * The range in whole UTC days. With no range in the request, it is 30 days.
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
          *
-         * The exact range in seconds. It ends at the time of the request.
+         * The exact range is in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -5371,13 +5371,13 @@ export type ScansTrendApiV1TrendsScansGetData = {
         /**
          * Days
          *
-         * The range in whole UTC days. With no range in the request, it is 30 days.
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
          *
-         * The exact range in seconds. It ends at the time of the request.
+         * The exact range is in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
