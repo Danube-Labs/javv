@@ -876,3 +876,9 @@ async def test_facets_activity_with_window_seconds_reads_that_range(env) -> None
     ):
         r = await http.get("/api/v1/audit/facets", params={**params, **bad})
         assert r.status_code == 422, bad
+    # with no interval there is no histogram, so the call reads no range and refuses none
+    rail = {"cluster_id": cid, "actor": actor, "window_seconds": 3600}
+    for extra in ({"window_days": 1}, {"as_of": "2026-11-01T00:00:00+00:00"}):
+        r = await http.get("/api/v1/audit/facets", params={**rail, **extra})
+        assert r.status_code == 200, (extra, r.text)
+        assert "activity" not in r.json()

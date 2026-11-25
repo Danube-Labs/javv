@@ -178,9 +178,10 @@ async def audit_facets(
         filters = replace(params, until=parse_as_of(as_of))
         if contains is not None and interval is not None:
             raise ValueError("contains takes no interval")
-        window_days, window_seconds = pick_window(
-            window_days, window_seconds, past=filters.until is not None, days_name="window_days"
-        )
+        if interval is not None:  # the range is of the activity histogram only
+            window_days, window_seconds = pick_window(
+                window_days, window_seconds, past=filters.until is not None, days_name="window_days"
+            )
         body = (
             build_actor_search_body(filters, contains)
             if contains is not None
