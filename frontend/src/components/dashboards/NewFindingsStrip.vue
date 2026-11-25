@@ -15,7 +15,7 @@ import { computed, ref, watch } from 'vue'
 
 import { client } from '@/api/client'
 import { newFindingsTrendApiV1TrendsNewFindingsGet } from '@/api/generated'
-import { ingestInterval, stripAxis } from '@/charts/buildIngestLensOption'
+import { ingestInterval } from '@/charts/buildIngestLensOption'
 import {
   buildNewFindingsStripOption,
   totalNew,
@@ -25,7 +25,7 @@ import { buildTrendQuery } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
-import { useStripNow } from '@/composables/useStripNow'
+import { useStripAxis } from '@/composables/useStripNow'
 import { logger } from '@/lib/logger'
 
 const props = defineProps<{
@@ -48,7 +48,7 @@ const settled = ref(false)
 
 const interval = computed(() => ingestInterval(props.windowDays, props.t))
 // the globals of the screen query and "New in range" are the strip's own range
-const OWN_KEYS = new Set(['cluster_id', 'as_of', 'new_within_days'])
+const OWN_KEYS = new Set(['cluster_id', 'as_of', 'new_within_days', 'new_within_seconds'])
 const filterParams = computed(() =>
   Object.fromEntries(Object.entries(props.filters).filter(([key]) => !OWN_KEYS.has(key))),
 )
@@ -84,8 +84,7 @@ watch(
 )
 
 // the band's clock: Scan ingest above ends its axis at the same hour
-const now = useStripNow()
-const axis = computed(() => stripAxis(drawn.value.windowDays, drawn.value.t, drawn.value.interval, now.value))
+const axis = useStripAxis(() => [drawn.value.windowDays, drawn.value.t, drawn.value.interval])
 const total = computed(() => totalNew(series.value))
 const option = computed(() => buildNewFindingsStripOption(series.value, axis.value, drawn.value.interval))
 

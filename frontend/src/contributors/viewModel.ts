@@ -2,6 +2,7 @@
  * the `/contributors` wire (leaderboard rows + the team `totals` block), unit-tested. Every
  * NUMBER is the server's; these helpers only order, label, and format. */
 
+import { trendDays } from '@/charts/buildTrendQuery'
 import { CHART_PTYPE_RAMP } from '@/styles/tokens'
 
 export interface BoardRow {
@@ -74,7 +75,7 @@ export function slaTier(pct: number | null): 'good' | 'ok' | 'low' | null {
 
 /** The trend window → the endpoint's `days` (int, 1..365): Last 24h → 1. */
 export function daysFromWindow(windowDays: number): number {
-  return Math.min(365, Math.max(1, Math.ceil(windowDays)))
+  return trendDays(windowDays)
 }
 
 /* ---- triage progress (facets-fed, state-at-T — NOT window-scoped like the board) ---- */

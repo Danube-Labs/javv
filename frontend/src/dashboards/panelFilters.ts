@@ -4,7 +4,7 @@
  */
 import type { PanelAuditFilters, ViewPreset } from '@/api/generated'
 import { AUDIT_FIELDS, TRIAGE_ACTIONS, TRIAGE_ENTITY_TYPES } from '@/audit/fields.config'
-import { daysFromWindow } from '@/contributors/viewModel'
+import { newInRange } from '@/charts/buildTrendQuery'
 import type { CatalogPanel } from '@/dashboards/catalog'
 import { FINDINGS_FIELDS, type FilterField } from '@/filters/fields.config'
 import { presetParts, presetToRouteQuery } from '@/findings/savedViews'
@@ -13,11 +13,14 @@ type Filters = ViewPreset | null | undefined
 type AuditFilters = PanelAuditFilters | null | undefined
 
 /** The filters a panel reads with. "New in range" counts in the range of the dashboard, as on
- * Findings, and not in the days stored when the filter was applied (operator, 2026-10-31). */
-export function panelFiltersAt(filters: Filters, windowDays: number): ViewPreset | null {
+ * Findings, and not in the days stored when the filter was applied (operator, 2026-10-31). The
+ * stored key only says that the filter is on; the range is exact for 2 days or less at now, as
+ * on Findings (issue 1291). */
+export function panelFiltersAt(filters: Filters, windowDays: number, t: string | null): ViewPreset | null {
   if (!filters) return null
-  if (filters.new_within_days === null || filters.new_within_days === undefined) return filters
-  return { ...filters, new_within_days: daysFromWindow(windowDays) }
+  const { new_within_days: days, new_within_seconds: seconds, ...rest } = filters
+  if ((days === null || days === undefined) && (seconds === null || seconds === undefined)) return filters
+  return { ...rest, ...newInRange(windowDays, t) }
 }
 
 /** The fields a panel's settings can filter on: the Findings fields less Scanner, which the

@@ -180,15 +180,32 @@ describe('IngestLens head (issue 341: the guide popover, plain copy)', () => {
     // the backend ends its hourly series at the last scan, here 01:00
     const w = await mountLens({
       trivy: [
-        { date: '2026-09-20T00:00:00.000Z', scans: 1 },
+        { date: '2026-09-20T03:00:00.000Z', scans: 1 },
         { date: '2026-09-21T01:00:00.000Z', scans: 2 },
       ],
     })
     const option = w.findComponent(EChart).props('option') as EChartsOption
     const data = (option.series as BarSeriesOption[])[0]!.data as number[]
-    expect(data).toHaveLength(24 + 4) // 20 Sep 00:00 to 21 Sep 03:00
-    expect(data[25]).toBe(2)
-    expect(data.slice(26)).toEqual([0, 0])
+    // the exact range (issue 1291): 20 Sep 03:30 to 21 Sep 03:30, in the hours 03:00 to 03:00
+    expect(data).toHaveLength(25)
+    expect(data[0]).toBe(1)
+    expect(data[22]).toBe(2)
+    expect(data.slice(23)).toEqual([0, 0])
+    vi.useRealTimers()
+  })
+
+  it('Last 1 hour sends its length, and the axis has the hours of that hour only (issue 1291)', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-20T10:31:00Z'), toFake: ['Date'] })
+    useTimeTravelStore().setWindow(0.0417, 'Last 1 hour')
+    const w = await mountLens({ trivy: [{ date: '2026-11-20T10:00:00.000Z', scans: 3 }] })
+    expect(vi.mocked(scansTrendApiV1TrendsScansGet).mock.calls.at(-1)?.[0].query).toEqual({
+      cluster_id: 'c-1',
+      window_seconds: 3600,
+      interval: 'hour',
+    })
+    const option = w.findComponent(EChart).props('option') as EChartsOption
+    expect((option.series as BarSeriesOption[])[0]!.data).toEqual([0, 3]) // 09:00 and 10:00
+    expect(w.find('.il-sub').text()).not.toContain('one bar for each day')
     vi.useRealTimers()
   })
 

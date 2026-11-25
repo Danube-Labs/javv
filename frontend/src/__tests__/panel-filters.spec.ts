@@ -94,18 +94,34 @@ describe('the Findings link of a click in a filtered panel', () => {
 })
 
 describe('"New in range" in a panel follows the dashboard range (operator, 2026-10-31)', () => {
+  const PAST = '2026-09-20T12:00:00Z'
+
   it('reads with the days of the dashboard range, not the stored days', () => {
-    expect(panelFiltersAt(stored({ new_within_days: 7, kev: true }), 30)).toEqual(stored({ new_within_days: 30, kev: true }))
-    // Last 24h is one day; a range is at most 365 days, as on Findings
-    expect(panelFiltersAt(stored({ new_within_days: 7 }), 0.5)?.new_within_days).toBe(1)
-    expect(panelFiltersAt(stored({ new_within_days: 7 }), 400)?.new_within_days).toBe(365)
+    expect(panelFiltersAt(stored({ new_within_days: 7, kev: true }), 30, null)).toEqual({
+      ...stored({ kev: true }),
+      new_within_days: 30,
+    })
+    // a sub-day range at a past T is one day; a range is at most 365 days, as on Findings
+    expect(panelFiltersAt(stored({ new_within_days: 7 }), 0.5, PAST)?.new_within_days).toBe(1)
+    expect(panelFiltersAt(stored({ new_within_days: 7 }), 400, null)?.new_within_days).toBe(365)
+  })
+
+  it('a range of 2 days or less at now reads with its exact length, as on Findings (issue 1291)', () => {
+    const f = panelFiltersAt(stored({ new_within_days: 7, kev: true }), 0.0417, null)
+    expect(f?.new_within_seconds).toBe(3600)
+    expect(f).not.toHaveProperty('new_within_days')
+    expect(f?.kev).toBe(true)
+    // a filter stored with seconds reads with the range of the dashboard too
+    const back = panelFiltersAt(stored({ new_within_seconds: 3600 }), 7, null)
+    expect(back?.new_within_days).toBe(7)
+    expect(back).not.toHaveProperty('new_within_seconds')
   })
 
   it('leaves the other filters as they are, and gives null for no filters', () => {
     const f = stored({ exclude_namespace: ['kube-system'] })
-    expect(panelFiltersAt(f, 30)).toEqual(f)
-    expect(panelFiltersAt(null, 30)).toBeNull()
-    expect(panelFiltersAt(undefined, 30)).toBeNull()
+    expect(panelFiltersAt(f, 30, null)).toEqual(f)
+    expect(panelFiltersAt(null, 30, null)).toBeNull()
+    expect(panelFiltersAt(undefined, 30, null)).toBeNull()
   })
 })
 

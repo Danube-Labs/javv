@@ -1136,4 +1136,21 @@ describe('a panel with filters (issue 999)', () => {
     await flushPromises()
     expect((facetsMock().mock.calls[0]![0] as { query: object }).query).toMatchObject({ new_within_days: 30, all_filters: true })
   })
+
+  it.each([
+    ['at now, the exact range', null, { new_within_seconds: 3600 }],
+    ['at a past time, whole days', '2026-10-01T00:00:00Z', { new_within_days: 1 }],
+  ])('"New in range" of a short range reads %s', (_name, t, range) => {
+    const [placed] = placePanels([
+      { panel: 'findings-by-namespace', x: 0, y: 0, w: 1, h: 'short', filters: { new_within_days: 7 } },
+    ])
+    const seen = vi.fn<(ctx: PanelContext) => Record<string, unknown>>(() => ({}))
+    panelPropsCache()('0-0', { ...placed!, panel: { ...placed!.panel, props: seen } }, {
+      clusterId: CLUSTER,
+      t,
+      windowDays: 0.0417,
+      scanner: 'all',
+    })
+    expect(seen.mock.calls[0]![0].filters).toEqual(range)
+  })
 })

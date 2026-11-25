@@ -59,7 +59,7 @@ drives the same browser interactively during dev (authoring/debugging these spec
 
 **As built — the spec suite (M9f slice 5, same CI job):** `frontend/playwright.config.ts` +
 `frontend/tests/e2e/*.spec.ts` (`npm run test:e2e`), run right after the route walk against the
-same built FE + seeded backend. Twenty-one spec files, one worker, zero retries; among them: login
+same built FE + seeded backend. Twenty-two spec files, one worker, zero retries; among them: login
 round-trip incl. the bad-password path (`app.spec.ts`) · the core triage persist-and-revert loop
 (`triage-loop.spec.ts`) · the degraded banner via a `/readyz` route intercept — the mount-time
 health check makes it deterministic, no 30s poll wait (`degraded-banner.spec.ts`) · grid
@@ -74,7 +74,9 @@ the list lands must still open it (`slow-cluster-list.spec.ts`, issues 786 and 6
 box, dropdown, search box and window footer button on each screen and in each window has the kit's
 line, corner, fill and type face, and its fill and line both change under the pointer
 (`kit-consistency.spec.ts`, issue 1055, and `frontend/DESIGN.md` §5) · each chart tooltip under the
-policy, with a dot in each row (`chart-tooltips.spec.ts`, issue 1272). Selectors and login come from
+policy, with a dot in each row (`chart-tooltips.spec.ts`, issue 1272) · a browser clock 40 minutes
+ahead or behind draws the same hours on a strip for "Last 1 hour" (`time-range.spec.ts`, issue
+1291). Selectors and login come from
 `scripts/walk.mjs` (still the one owner).
 
 **Where the suite must pass (issue 1223, D1).** The gate is the built app against the seeded

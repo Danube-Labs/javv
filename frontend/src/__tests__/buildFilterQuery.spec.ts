@@ -96,12 +96,22 @@ describe('buildFilterQuery', () => {
       window_days: 30,
     })
     expect(q.new_within_days).toBe(30)
-    // sub-day windows round up to the day-grained 1..365 contract, like the trend charts
-    const day = buildFilterQuery(FINDINGS_FIELDS, sel({ attr: ['new'] }), {
+    expect(q).not.toHaveProperty('new_within_seconds')
+    // a range of 2 days or less at now is exact, as the strips (issue 1291): its length, no days
+    const hour = buildFilterQuery(FINDINGS_FIELDS, sel({ attr: ['new'] }), {
       cluster_id: CID,
+      window_days: 0.0417,
+    })
+    expect(hour.new_within_seconds).toBe(3600)
+    expect(hour).not.toHaveProperty('new_within_days')
+    // at a past T a sub-day window rounds up to the day-grained 1..365 contract, like the trends
+    const past = buildFilterQuery(FINDINGS_FIELDS, sel({ attr: ['new'] }), {
+      cluster_id: CID,
+      as_of: '2026-09-20T12:00:00Z',
       window_days: 0.0625,
     })
-    expect(day.new_within_days).toBe(1)
+    expect(past.new_within_days).toBe(1)
+    expect(past).not.toHaveProperty('new_within_seconds')
     // and it refuses to guess a window
     expect(() =>
       buildFilterQuery(FINDINGS_FIELDS, sel({ attr: ['new'] }), { cluster_id: CID }),

@@ -1001,7 +1001,15 @@ this range", never an empty chart.
 pictures):** the backend ends an hourly series at 00:00 UTC of the current day, or at the hour of
 its last document if that is later. So two strips could put the same hour at a different place. Scan ingest, Failed ingests and New findings show each bucket of
 the range up to now (`stripAxis`), and put each count at its date (`onAxis`). "Now" is one clock
-for the band (`useStripNow`), so the axes move together.
+for the band (`useStripNow`), and each strip builds its axis on it (`useStripAxis`). So the axes move together.
+**The exact range (issue 1291, operator rulings 2026-11-23, 2026-11-24 and 2026-11-25):** a range
+of 2 days or less at now starts at now less its length, and its bars stay on the UTC hour. With
+"Last 1 hour" at 10:31, the strips show the bars of 09:00 and 10:00, and the 09:00 bar counts from
+09:31. Scan ingest, Failed ingests, New findings, the table of refused scans and Audit activity send
+the length (`window_seconds`). "New in range" sends it too (`new_within_seconds`), so the table and
+the New findings strip count the same findings. A longer range, a past end and the Findings trend
+stay in whole UTC days. The axis takes the clock of the backend from the `Date` header of the API
+responses (Q1 B). So a browser clock that is wrong draws the same hours.
 
 **Failed ingests — reinstated by ruling (issue 357, option 2, 2026-07-30):** the pushes JAVV itself
 refused after the token check are recorded (`javv-ingest-failures-*`) and read per scanner by

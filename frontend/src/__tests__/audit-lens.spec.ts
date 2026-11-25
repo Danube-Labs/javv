@@ -3,11 +3,24 @@
  * `revision`, never arrival order) and the audit screen's emitted query params (the shared
  * builder over AUDIT_FIELDS — cluster_id always on, single-value terms, as_of pass-through).
  */
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { causalOrder } from '@/audit/causalOrder'
 import { AUDIT_FIELDS } from '@/audit/fields.config'
+import AuditLens from '@/components/dashboards/AuditLens.vue'
 import { buildFilterQuery } from '@/filters/buildFilterQuery'
+import { useTimeTravelStore } from '@/stores/timeTravel'
+
+vi.mock('@/api/generated', async (importOriginal) =>
+  (await import('./helpers/mockSdk')).mockSdk(importOriginal, {
+    auditFacetsApiV1AuditFacetsGet: vi.fn<() => Promise<unknown>>(),
+  }),
+)
+vi.mock('@/api/client', () => ({ client: {} }))
+
+import { auditFacetsApiV1AuditFacetsGet } from '@/api/generated'
 
 const ev = (over: Record<string, unknown>) => ({
   '@timestamp': '2026-07-11T10:00:00.000000+00:00',
@@ -66,5 +79,39 @@ describe('audit query params', () => {
     expect(
       buildFilterQuery(AUDIT_FIELDS, sel(), { cluster_id: 'c-1', as_of: '2026-07-10T00:00:00+00:00' }),
     ).toEqual({ cluster_id: 'c-1', as_of: '2026-07-10T00:00:00+00:00' })
+  })
+})
+
+describe('AuditLens range (issue 1291, Q2 A)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockReset()
+    vi.mocked(auditFacetsApiV1AuditFacetsGet).mockResolvedValue({ data: { activity: [] }, response: { ok: true, status: 200 } } as never)
+  })
+  const sent = () => (vi.mocked(auditFacetsApiV1AuditFacetsGet).mock.calls.at(-1)![0] as { query: object }).query
+  const mountLens = async () => {
+    mount(AuditLens, { props: { query: { cluster_id: 'c-1' } }, global: { stubs: { EChart: true } } })
+    await flushPromises()
+  }
+
+  it('Last 1 hour at now sends its length, as the other strips', async () => {
+    useTimeTravelStore().setWindow(0.0417, 'Last 1 hour')
+    await mountLens()
+    expect(sent()).toEqual({ cluster_id: 'c-1', interval: 'hour', window_seconds: 3600 })
+  })
+
+  it('a longer range sends whole days', async () => {
+    useTimeTravelStore().setWindow(7, 'Last 7 days')
+    await mountLens()
+    expect(sent()).toEqual({ cluster_id: 'c-1', interval: 'day', window_days: 7 })
+  })
+
+  it('a short range at a past T sends whole days, which the route takes there', async () => {
+    const tt = useTimeTravelStore()
+    tt.setWindow(0.0417, 'Last 1 hour')
+    tt.rewindTo('2026-09-20T12:00:00.000Z')
+    await mountLens()
+    expect(sent()).toMatchObject({ interval: 'day', window_days: 1 })
+    expect(sent()).not.toHaveProperty('window_seconds')
   })
 })

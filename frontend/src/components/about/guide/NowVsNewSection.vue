@@ -19,7 +19,8 @@ const newInRange = filterLabel(FINDINGS_FIELDS, 'new')
         <strong>What arrived in this range?</strong> The Scan ingest and New findings strips, and the
         <span class="ui-name">{{ newInRange }}</span> filter. The New findings strip shows the findings
         that JAVV first saw in each day or hour, by severity. The filter keeps only the findings that
-        JAVV first saw in the range. A quiet range shows 0.
+        JAVV first saw in the range. It uses the range of the strips, so the two count the same findings.
+        A quiet range shows 0.
       </li>
     </ul>
   </GuideProse>

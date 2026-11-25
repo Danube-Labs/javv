@@ -18,7 +18,7 @@ import {
   trendForScanner,
   type FindingsTrendData,
 } from '@/charts/buildFindingsTrendOption'
-import { buildTrendQuery, isSubDayWindow } from '@/charts/buildTrendQuery'
+import { buildDailyTrendQuery, isSubDayWindow } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { logger } from '@/lib/logger'
@@ -55,7 +55,7 @@ watch(
     }
     const { data, response } = await findingsTrendApiV1TrendsFindingsGet({
       client,
-      query: buildTrendQuery(id, days, t) as never,
+      query: buildDailyTrendQuery(id, days, t) as never,
     })
     if (mine !== seq) return // a newer read owns the panel now
     failed.value = !response?.ok || !data

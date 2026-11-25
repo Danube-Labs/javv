@@ -48,9 +48,10 @@ describe('stripAxis (pure): the buckets of the range, as the backend counts them
 
   it('an hourly range runs to the hour of now, so two strips of the band have one axis', () => {
     const axis = stripAxis(1, null, 'hour', NOW)
-    expect(axis[0]).toBe(day(21))
+    // the exact range (issue 1291): from the hour of now less 24 hours
+    expect(axis[0]).toBe('2026-09-21T10:00:00.000Z')
     expect(axis.at(-1)).toBe('2026-09-22T10:00:00.000Z')
-    expect(axis).toHaveLength(24 + 11)
+    expect(axis).toHaveLength(25)
   })
 })
 
@@ -157,10 +158,13 @@ describe('NewFindingsStrip (self-contained)', () => {
     const w = mount(NewFindingsStrip, { props: { ...props, windowDays: 1 }, global: { stubs } })
     await flushPromises()
     const labels = () => ((w.findComponent(EChart).props('option') as EChartsOption).xAxis as { data: string[] }).data
-    expect(labels()).toHaveLength(24 + 11) // 21 Sep 00:00 to 22 Sep 10:00
+    expect(labels()).toHaveLength(25) // 21 Sep 10:00 to 22 Sep 10:00
+    const first = labels()[0]
     vi.advanceTimersByTime(165 * 60_000) // 13:15: the band clock moves each minute
     await flushPromises()
-    expect(labels()).toHaveLength(24 + 14) // to 13:00 with no new read, as Scan ingest above
+    // to 13:00 with no new read, as Scan ingest above: the exact range moves with its end
+    expect(labels()).toHaveLength(25)
+    expect(labels()[0]).not.toBe(first)
     trendMock.mockResolvedValue(ok({ series: { high: [{ date: '2026-09-22T12:00:00.000Z', count: 5 }] } }))
     await w.setProps({ filters: { scanner: 'grype' } })
     await flushPromises()
@@ -197,11 +201,24 @@ describe('NewFindingsStrip (self-contained)', () => {
     expect(query).not.toHaveProperty('new_within_days')
   })
 
+  it('leaves out the exact New in range too (issue 1291)', async () => {
+    trendMock.mockResolvedValue(ok({ series: {} }))
+    mount(NewFindingsStrip, {
+      props: { ...props, windowDays: 0.0417, filters: { cluster_id: 'c-k3d-0001', new_within_seconds: 3600, kev: true } },
+      global: { stubs },
+    })
+    await flushPromises()
+    const query = (trendMock.mock.calls[0]![0] as { query: Record<string, unknown> }).query
+    expect(query).toEqual({ cluster_id: 'c-k3d-0001', kev: true, window_seconds: 3600, interval: 'hour' })
+  })
+
   it('a short live range buckets hourly; a rewound one is daily, as Scan ingest', async () => {
     trendMock.mockResolvedValue(ok({ series: {} }))
     const w = mount(NewFindingsStrip, { props: { ...props, windowDays: 1 }, global: { stubs } })
     await flushPromises()
-    expect(trendMock.mock.calls[0]![0]).toMatchObject({ query: { days: 1, interval: 'hour' } })
+    // the exact range of issue 1291: the length of the range, and no days
+    expect(trendMock.mock.calls[0]![0].query).toMatchObject({ window_seconds: 86_400, interval: 'hour' })
+    expect(trendMock.mock.calls[0]![0].query).not.toHaveProperty('days')
     expect(w.text()).toContain('each hour')
     await w.setProps({ t: '2026-09-20T23:59:59.999Z' })
     await flushPromises()
@@ -282,14 +299,14 @@ describe('NewFindingsStrip (self-contained)', () => {
 describe('useStripNow: one clock for the strips of a band', () => {
   afterEach(() => vi.useRealTimers())
 
-  it('gives the floor of the hour, the same to each strip, and moves with the clock', () => {
+  it('gives the same time to each strip, and moves with the clock each minute', () => {
     vi.useFakeTimers({ now: NOW, toFake: ['Date', 'setInterval', 'clearInterval'] })
     const scope = effectScope()
     const [a, b] = scope.run(() => [useStripNow(), useStripNow()])!
-    expect(a.value).toBe(new Date('2026-09-22T10:00:00Z').getTime())
+    expect(a.value).toBe(NOW)
     expect(b.value).toBe(a.value)
-    vi.advanceTimersByTime(45 * 60_000) // 11:15
-    expect(a.value).toBe(new Date('2026-09-22T11:00:00Z').getTime())
+    vi.advanceTimersByTime(45 * 60_000)
+    expect(a.value).toBe(NOW + 45 * 60_000)
     expect(b.value).toBe(a.value)
     scope.stop()
   })
