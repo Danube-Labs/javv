@@ -344,7 +344,7 @@ past time. An Image value shows the full name of the image, for example
 `docker.io/library/wordpress`. Add filter and the panel settings of a dashboard show the two
 fields as lists of values with counts, as Namespace, not as typed boxes. A pasted list with
 commas does not add values to these two fields. A saved view and the filters text of a panel name
-their values with no quotes, as Namespace.
+their values with no quotes, as Namespace (D2, on built pictures).
 > **RULED (A-1, 2026-07-07):** `negligible` IS its own muted bucket — Grype emits it; hiding it
 > breaks "counts sum". Display muted grey, never red.
 
@@ -435,8 +435,8 @@ the sibling-scanner row, A-3) · Images (group agg, B-4) · SLA (server-computed
 B-5, **never client math**; field names verified at M9b kickoff) · State (6-state pill) ·
 Assignee.
 
-**Tag** (issue 1317, operator rulings 2026-11-25 on built pictures: Q3 yes, Q5 accepted): the
-column comes after Image and shows the tag of the row, or `-` for an image with no tag. Its cell
+**Tag** (issue 1317, operator rulings 2026-11-25 on built pictures: Q3 yes, Q5 accepted, Q6
+shown at first): the column comes after Image, shows by default, and shows the tag of the row, or `-` for an image with no tag. Its cell
 has the +/- of a table cell, which picks the Tag filter. While the Tag column shows, the Image
 cell shows the image name with no tag, for example `postgres`. When the Tag column is hidden, the
 Image cell shows `postgres:13.4` again. A user who moved columns before gets Tag after Image. The

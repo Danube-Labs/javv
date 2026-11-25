@@ -209,6 +209,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-25 | Add filter and the panel settings show Image and Tag as lists of values with counts. They have no typed box, so a pasted list with commas stops for them (D1 accepted, on built pictures). | 1317 |
 | 2026-11-25 | In the filter list and in Add filter, an Image value shows the full name, for example `docker.io/library/wordpress` (Q4 B, on built pictures). | 1317 |
 | 2026-11-25 | Tag has a column of its own after Image, with the +/- of a table cell (Q3 yes, on built pictures). While the Tag column shows, the Image cell shows the image name with no tag. When the column is hidden, the cell shows the tag again (Q5 accepted). | 1317 |
+| 2026-11-25 | The Image and Tag values have no quotes on a saved-view card and in the filters text of a panel. The other lists have none either. A typed value keeps its quotes (D2, on built pictures). | 1317 |
+| 2026-11-25 | The Tag column shows at first. A user who stored hidden columns before also gets it, after Image (Q6, on built pictures). | 1317 |
 | 2026-11-25 | Issue 1317 adds no other filter and no Digest column. First seen, Last scan, EPSS, Current, Paths and Affected images stay with no filter (Q2, as recommended). | 1317 |
 
 ## AI vulnerability research (alpha)
