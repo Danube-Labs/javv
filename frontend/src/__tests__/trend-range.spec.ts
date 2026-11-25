@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { hourLabel, stripAxis } from '@/charts/buildIngestLensOption'
-import { buildDailyTrendQuery, buildTrendQuery, exactWindowSeconds } from '@/charts/buildTrendQuery'
+import { buildDailyTrendQuery, buildTrendQuery, exactWindowSeconds, newInRange } from '@/charts/buildTrendQuery'
 
 const HOUR = 1 / 24
 const NOW = Date.parse('2026-11-20T10:31:00Z')
@@ -44,6 +44,14 @@ describe('buildTrendQuery', () => {
 
   it('/trends/findings is daily only: a short range sends 1 day', () => {
     expect(buildDailyTrendQuery('c-1', HOUR, null)).toEqual({ cluster_id: 'c-1', days: 1 })
+  })
+})
+
+describe('newInRange', () => {
+  it('"New in range" takes the range of the strips, so the table and the strip count the same rows', () => {
+    expect(newInRange(0.0417, null)).toEqual({ new_within_seconds: 3600 })
+    expect(newInRange(7, null)).toEqual({ new_within_days: 7 })
+    expect(newInRange(0.0417, PAST)).toEqual({ new_within_days: 1 })
   })
 })
 

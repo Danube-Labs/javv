@@ -48,7 +48,7 @@ const settled = ref(false)
 
 const interval = computed(() => ingestInterval(props.windowDays, props.t))
 // the globals of the screen query and "New in range" are the strip's own range
-const OWN_KEYS = new Set(['cluster_id', 'as_of', 'new_within_days'])
+const OWN_KEYS = new Set(['cluster_id', 'as_of', 'new_within_days', 'new_within_seconds'])
 const filterParams = computed(() =>
   Object.fromEntries(Object.entries(props.filters).filter(([key]) => !OWN_KEYS.has(key))),
 )

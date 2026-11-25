@@ -9,6 +9,7 @@
  *     upstream and throws here rather than silently mangling the query.
  */
 import { isNegatable, type FilterField, type Selections, type TermsField } from './fields.config'
+import { newInRange } from '@/charts/buildTrendQuery'
 import type { Modes } from '@/stores/filters'
 
 /** The values of a terms field as the API gets them. A fixed list is lower case, so a typed or
@@ -64,8 +65,8 @@ export function buildFilterQuery(
         if (flag.window) {
           if (globals.window_days === undefined)
             throw new Error(`buildFilterQuery: '${flag.key}' needs window_days in globals`)
-          // the API's day-grained 1..365 contract, same rounding as the trend charts
-          query[flag.param] = Math.min(365, Math.max(1, Math.ceil(globals.window_days)))
+          // the range of the strips: exact for 2 days or less at now, else whole days (issue 1291)
+          Object.assign(query, newInRange(globals.window_days, globals.as_of ?? null))
         } else {
           query[flag.param] = true
         }

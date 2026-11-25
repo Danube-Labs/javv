@@ -201,6 +201,17 @@ describe('NewFindingsStrip (self-contained)', () => {
     expect(query).not.toHaveProperty('new_within_days')
   })
 
+  it('leaves out the exact New in range too (issue 1291)', async () => {
+    trendMock.mockResolvedValue(ok({ series: {} }))
+    mount(NewFindingsStrip, {
+      props: { ...props, windowDays: 0.0417, filters: { cluster_id: 'c-k3d-0001', new_within_seconds: 3600, kev: true } },
+      global: { stubs },
+    })
+    await flushPromises()
+    const query = (trendMock.mock.calls[0]![0] as { query: Record<string, unknown> }).query
+    expect(query).toEqual({ cluster_id: 'c-k3d-0001', kev: true, window_seconds: 3600, interval: 'hour' })
+  })
+
   it('a short live range buckets hourly; a rewound one is daily, as Scan ingest', async () => {
     trendMock.mockResolvedValue(ok({ series: {} }))
     const w = mount(NewFindingsStrip, { props: { ...props, windowDays: 1 }, global: { stubs } })

@@ -95,7 +95,7 @@ export function panelPropsCache() {
       windowDays: dash.windowDays,
       scanner: countedScanner(p.panel, p.stored, dash.scanner),
       height: p.stored.h,
-      filters: p.panel.takesFilters ? panelFiltersAt(p.stored.filters, dash.windowDays) : null,
+      filters: p.panel.takesFilters ? panelFiltersAt(p.stored.filters, dash.windowDays, dash.t) : null,
       auditFilters: p.panel.takesAuditFilters ? (p.stored.audit_filters ?? null) : null,
     }
     const key = `${p.panel.id}|${JSON.stringify(ctx)}`

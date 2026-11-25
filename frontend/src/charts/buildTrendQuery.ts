@@ -43,6 +43,16 @@ export function buildDailyTrendQuery(clusterId: string, windowDays: number, t: s
   return { cluster_id: clusterId, days: trendDays(windowDays), ...(t === null ? {} : { as_of: t }) }
 }
 
+/** The parameter of "New in range" for a range: the same range as the strips, so the table and
+ * the New findings strip count the same rows (issue 1291). */
+export function newInRange(
+  windowDays: number,
+  t: string | null,
+): { new_within_days: number } | { new_within_seconds: number } {
+  const seconds = exactWindowSeconds(windowDays, t)
+  return seconds === null ? { new_within_days: trendDays(windowDays) } : { new_within_seconds: seconds }
+}
+
 /** True when the picker's chosen span is finer than the chart's 1-day floor. */
 export function isSubDayWindow(windowDays: number): boolean {
   return windowDays > 0 && windowDays < 1
