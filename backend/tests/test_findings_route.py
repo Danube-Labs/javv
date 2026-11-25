@@ -728,7 +728,7 @@ async def test_list_facets_leave_out_their_own_filter_against_a_real_index(env) 
 async def test_the_image_and_tag_lists_against_a_real_index(env) -> None:
     """Issue 1317. The Image and Tag lists count without their own filter (issue 949), and the
     value search (issue 1064) finds a tag in any case. A finding with no tag gives no Tag
-    bucket: the No tag flag counts it."""
+    bucket: the ingest writes its tag as "", and the No tag flag counts it."""
     login, client = env
     cid = f"c-f1317-{uuid.uuid4().hex[:8]}"
     await _seed(
@@ -737,7 +737,7 @@ async def test_the_image_and_tag_lists_against_a_real_index(env) -> None:
         [
             *_rows(2, image_repo="docker.io/library/nginx", tag="1.27-alpine", severity="high"),
             *_rows(3, image_repo="docker.io/library/redis", tag="7.4", severity="low"),
-            *_rows(1, image_repo="docker.io/library/redis", severity="low"),
+            *_rows(1, image_repo="docker.io/library/redis", tag="", severity="low"),
         ],
     )
     http = await login()
@@ -757,7 +757,11 @@ async def test_the_image_and_tag_lists_against_a_real_index(env) -> None:
 
     every = counts(await facets())  # no `fields`: the default read counts the two lists too
     assert every["image_repo"] == {"docker.io/library/redis": 4, "docker.io/library/nginx": 2}
-    assert every["tag"] == {"7.4": 3, "1.27-alpine": 2}
+    assert every["tag"] == {"7.4": 3, "1.27-alpine": 2}  # no "" bucket
+    assert every["untagged"] == {"true": 1}
+
+    # under No tag, the Tag list has no row to pick: a blank one would clear No tag
+    assert counts(await facets(fields=["tag"], untagged="true"))["tag"] == {}
 
     found = await facets(fields=["tag"], contains="ALP")
     assert counts(found) == {"tag": {"1.27-alpine": 2}} and found["more"] is False
@@ -840,6 +844,13 @@ async def test_the_unassigned_count_is_the_rows_its_click_shows_against_a_real_i
     kept = await facets(exclude_assignee="bob", severity="critical")
     assert kept["unassigned"] == {"true": await total(unassigned="true", severity="critical")}
     assert kept["severity"] == {"critical": 6}  # 2 lead + 3 none + 1 empty, bob left out
+
+    # issue 1317: the cleared assignee ("") is no row of the Assignee list, as Unassigned has it
+    r = await http.get(
+        "/api/v1/findings/facets", params={"cluster_id": cid, "fields": ["assignee"]}
+    )
+    assert r.status_code == 200, r.text
+    assert {b["key"]: b["count"] for b in r.json()["facets"]["assignee"]} == {"lead": 2, "bob": 1}
 
 
 async def test_the_tag_filters_against_a_real_index(env) -> None:
