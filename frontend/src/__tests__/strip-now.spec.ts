@@ -7,7 +7,7 @@ import { effectScope } from 'vue'
 import { client } from '@/api/client'
 import { stripAxis } from '@/charts/buildIngestLensOption'
 import { useBucketRewind } from '@/composables/useBucketRewind'
-import { useStripNow } from '@/composables/useStripNow'
+import { useStripAxis, useStripNow } from '@/composables/useStripNow'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { noteServerDate, serverNow } from '@/system/serverClock'
 
@@ -67,6 +67,38 @@ describe('the clock of the strips', () => {
     useBucketRewind()('2026-11-20T09:00:00.000Z', 'hour')
     // on the backend it is 10:31, so the 09:00 hour is over: its end is the new T
     expect(tt.t).toBe('2026-11-20T09:59:59.999Z')
+  })
+})
+
+describe('the axis of a strip with an exact range', () => {
+  const at = (hhmm: string) => Date.parse(`2026-11-20T${hhmm}:00Z`)
+  const hours = (...hh: string[]) => hh.map((h) => `2026-11-20T${h}:00:00.000Z`)
+
+  it.each([
+    // the backend counts from now less the range, and its first bucket is the hour of that start
+    ['Last 30 minutes at 10:45 starts at 10:15', 0.0208, '10:45', hours('10')],
+    ['Last 30 minutes at 10:10 starts at 09:40', 0.0208, '10:10', hours('09', '10')],
+    ['Last 90 minutes at 10:45 starts at 09:15', 0.0625, '10:45', hours('09', '10')],
+    ['Last 1 minute at 10:45 starts at 10:44', 1 / 1440, '10:45', hours('10')],
+  ])('%s', (_name, windowDays, hhmm, axis) => {
+    vi.useFakeTimers({ now: at(hhmm), toFake: ['Date', 'setInterval', 'clearInterval'] })
+    const scope = effectScope()
+    const shown = scope.run(() => useStripAxis(() => [windowDays, null, 'hour']))!
+    expect(shown.value).toEqual(axis)
+    scope.stop()
+  })
+
+  it('drops the first hour when the start passes it, and keeps its array between', () => {
+    vi.useFakeTimers({ now: at('10:28'), toFake: ['Date', 'setInterval', 'clearInterval'] })
+    const scope = effectScope()
+    const shown = scope.run(() => useStripAxis(() => [0.0208, null, 'hour']))!
+    const first = shown.value
+    expect(first).toEqual(hours('09', '10'))
+    vi.advanceTimersByTime(60_000) // 10:29: the same buckets
+    expect(shown.value).toBe(first)
+    vi.advanceTimersByTime(60_000) // 10:30: the range starts at 10:00
+    expect(shown.value).toEqual(hours('10'))
+    scope.stop()
   })
 })
 

@@ -27,7 +27,6 @@ import {
   ingestInterval,
   ingestLensDates,
   onAxis,
-  stripAxis,
 } from '@/charts/buildIngestLensOption'
 import type { ScanActivityData } from '@/charts/buildScanActivityOption'
 import { buildTrendQuery, isSubDayWindow } from '@/charts/buildTrendQuery'
@@ -35,7 +34,7 @@ import GuideLink from '@/components/about/GuideLink.vue'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
-import { useStripNow } from '@/composables/useStripNow'
+import { useStripAxis } from '@/composables/useStripNow'
 import { scanFilters } from '@/dashboards/scanFilters'
 import { logger } from '@/lib/logger'
 import { lastDataAt, silentFor, type FreshnessRow } from '@/system/freshness'
@@ -125,10 +124,10 @@ const latest = computed(
 )
 const interval = computed(() => ingestInterval(timeTravel.windowDays, timeTravel.t))
 // the band's clock, shared with the other strips (issue 1292)
-const stripNow = useStripNow()
+const axis = useStripAxis(() => [timeTravel.windowDays, timeTravel.t, interval.value])
 // each count at its date of the range's axis: the strips of a band line up (issue 1292)
 const shown = computed(() =>
-  onAxis(series.value, stripAxis(timeTravel.windowDays, timeTravel.t, interval.value, stripNow.value)),
+  onAxis(series.value, axis.value),
 )
 const option = computed(() => buildIngestLensOption(shown.value, interval.value, 'images scanned'))
 // daily bars only mislead when the range is sub-day AND the buckets stayed daily (past T)

@@ -458,8 +458,8 @@ shows each bucket of the range up to now (`stripAxis`) and puts each count at it
 A range of 2 days or less at now is exact (issue 1291). The strips send its length
 (`window_seconds`), and the backend counts from now less that length. The axis starts at the hour
 of that start. A longer range, or a past end, is in whole UTC days. "Now" is one clock for all
-strips (`composables/useStripNow.ts`): the floor of the hour, read each minute, so the axes of a
-band move together and a later read lands on its axis. It is the clock of the backend, from the
+strips (`composables/useStripNow.ts`). It reads the time each minute, so the axes of a band move
+together. A strip draws again only when its axis gets or loses a bucket. It is the clock of the backend, from the
 `Date` header of each API response (`system/serverClock.ts`), so a wrong browser clock draws the
 same hours. Findings, Images and Image detail
 put New findings under Scan ingest; it counts the findings first seen in each bucket, by severity,

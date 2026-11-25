@@ -299,14 +299,14 @@ describe('NewFindingsStrip (self-contained)', () => {
 describe('useStripNow: one clock for the strips of a band', () => {
   afterEach(() => vi.useRealTimers())
 
-  it('gives the floor of the hour, the same to each strip, and moves with the clock', () => {
+  it('gives the same time to each strip, and moves with the clock each minute', () => {
     vi.useFakeTimers({ now: NOW, toFake: ['Date', 'setInterval', 'clearInterval'] })
     const scope = effectScope()
     const [a, b] = scope.run(() => [useStripNow(), useStripNow()])!
-    expect(a.value).toBe(new Date('2026-09-22T10:00:00Z').getTime())
+    expect(a.value).toBe(NOW)
     expect(b.value).toBe(a.value)
-    vi.advanceTimersByTime(45 * 60_000) // 11:15
-    expect(a.value).toBe(new Date('2026-09-22T11:00:00Z').getTime())
+    vi.advanceTimersByTime(45 * 60_000)
+    expect(a.value).toBe(NOW + 45 * 60_000)
     expect(b.value).toBe(a.value)
     scope.stop()
   })
