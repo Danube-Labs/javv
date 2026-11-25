@@ -9,7 +9,8 @@ import { FINDINGS_EXCLUSIVE_PAIRS, FINDINGS_FIELDS, type FilterField } from '@/f
 export const EXPORT_PARAM_KEYS = [
   'severity', 'state', 'scanner', 'assignee', 'kev', 'fixable', 'disagree', 'cve_id',
   'image_digest', 'image_repo', 'namespace', 'ptype', 'package_name', 'tag', 'q', 'present',
-  'new_within_days', 'overdue', 'unassigned', 'untagged', 'exclude_severity', 'exclude_state',
+  'new_within_days', 'new_within_seconds', 'overdue', 'unassigned', 'untagged', 'exclude_severity',
+  'exclude_state',
   'exclude_scanner', 'exclude_assignee', 'exclude_image_repo', 'exclude_namespace',
   'exclude_ptype', 'exclude_cve_id', 'exclude_package_name', 'exclude_tag',
 ] as const
@@ -41,7 +42,12 @@ export function filterNames(fields: readonly FilterField[], keys: readonly strin
 /** The filters the backend cannot answer at a past time, because the scan history does not
  * record them (`_unrecorded` in backend/src/backend/query/as_of_t.py). `export-params.spec.ts`
  * keeps this list equal to the backend's. */
-export const PAST_TIME_UNRECORDED_KEYS = ['kev', 'disagree', 'new_within_days'] as const
+export const PAST_TIME_UNRECORDED_KEYS = [
+  'kev',
+  'disagree',
+  'new_within_days',
+  'new_within_seconds',
+] as const
 
 /** The query holds a filter that a past time refuses: the past-time text names these filters. */
 export const hasUnrecordedFilter = (query: Record<string, unknown>): boolean =>

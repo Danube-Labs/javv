@@ -7,17 +7,19 @@ spending the per-principal PIT budget on a panel that sits on a screen next to o
 thing that can move under a walk is retention dropping an old index, which only ends it early.
 
 The window is the shared trend vocabulary (`days` + optional `as_of`, day-floored like every
-trend), filtered on the server stamp. Per-scanner is sacred: `scanner` is required, so every page
-and every total belongs to exactly one scanner.
+trend, or an exact `window_seconds` at now, issue 1291), filtered on the server stamp. Each page
+takes its window at its own request, as it takes the rows: an exact start moves with the clock,
+and a row that left the range is not on a later page. Per-scanner is sacred: `scanner` is
+required, so every page and every total belongs to exactly one scanner.
 """
 
 import base64
 import binascii
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-from backend.query.trends import window_bounds
+from backend.query.trends import trend_window
 
 SORT: list[dict[str, str]] = [{"@timestamp": "desc"}, {"failure_id": "desc"}]
 ROW_FIELDS = [
@@ -57,17 +59,17 @@ def decode_cursor(cursor: str) -> list[Any]:
 def build_ingest_failures_body(
     *,
     scanner: str,
-    days: int,
     size: int,
+    days: int | None = None,
+    window_seconds: int | None = None,
     anchor: datetime | None = None,
     search_after: list[Any] | None = None,
 ) -> dict[str, Any]:
     """Pure builder. Asks for `size + 1` rows: the extra one only says whether a next page
-    exists, so the last page never costs an empty round-trip."""
-    gte, _ = window_bounds(days, anchor)
-    window: dict[str, Any] = {"gte": gte}
-    if anchor is not None:  # the ≤ T cut: a rewound read must not see later rejections
-        window["lte"] = anchor.isoformat()
+    exists, so the last page never costs an empty round-trip. The window ends at T or now, the
+    end of the strip above the table."""
+    w = trend_window(days, window_seconds, anchor or datetime.now(UTC))
+    window: dict[str, Any] = {"gte": w.gte, "lte": w.lte}
     body: dict[str, Any] = {
         "size": size + 1,
         "track_total_hits": True,

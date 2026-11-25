@@ -61,6 +61,7 @@ from backend.query.search import (
     cursor_pit_id,
     run_search,
 )
+from backend.query.trends import EXACT_MAX_SECONDS, EXACT_MIN_SECONDS
 from backend.sla.overdue import compute_overdue, overdue_cutoffs
 from backend.sla.policy import read_sla_policy
 from backend.tenancy.read_path import tenant_search
@@ -127,6 +128,9 @@ def _filters(
     q: Annotated[str | None, Query(min_length=2, max_length=128)] = None,
     present: bool = True,
     new_within_days: Annotated[int | None, Query(ge=1, le=365)] = None,
+    new_within_seconds: Annotated[
+        int | None, Query(ge=EXACT_MIN_SECONDS, le=EXACT_MAX_SECONDS)
+    ] = None,
     overdue: bool | None = None,
     unassigned: bool | None = None,
     untagged: bool | None = None,
@@ -159,6 +163,7 @@ def _filters(
         q=q,
         present=present,
         new_within_days=new_within_days,
+        new_within_seconds=new_within_seconds,
         overdue=overdue,
         unassigned=unassigned,
         untagged=untagged,

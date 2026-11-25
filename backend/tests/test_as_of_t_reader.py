@@ -689,6 +689,7 @@ def test_every_search_filter_is_handled_or_rejected_at_past_t() -> None:
         "q": "krb5",  # issue 1294 — searchable at T now that the names are reconstructed
         "present": False,
         "new_within_days": 30,
+        "new_within_seconds": 3600,
         "overdue": True,  # issue 363 — filters the reconstruction's own at-T verdict
         # issue 349 §1 — the row is unowned, so asking for an OWNER must drop it
         "unassigned": False,
@@ -1337,3 +1338,15 @@ async def test_the_name_filters_at_t_just_now_equal_the_live_read(
     live = await _keys_and_names(client, prefix, filters, None)
     past = await _keys_and_names(client, prefix, filters, seeded["t2"])
     assert past == live
+
+
+def test_new_in_range_is_refused_at_past_t() -> None:
+    """`first_seen_at` is the clock of the findings cache: the scan history does not record it,
+    so "new in range" at a past time is a 422, the exact range of issue 1291 too."""
+    from backend.query.as_of_t import AsOfTQuery
+    from backend.query.search import SearchFilters
+
+    with pytest.raises(ValueError, match="new_within_days"):
+        AsOfTQuery._apply_filters([], SearchFilters(new_within_days=7))
+    with pytest.raises(ValueError, match="new_within_seconds"):
+        AsOfTQuery._apply_filters([], SearchFilters(new_within_seconds=3600))

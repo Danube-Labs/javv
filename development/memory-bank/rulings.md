@@ -191,7 +191,14 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-24 | While a scan filter applies, Scan ingest does not show the last scan, and its empty text has no time. That time is the time of the whole cluster (Q2 B, on built pictures). | 1293 |
 | 2026-11-24 | The Scan ingest panel of a dashboard has the Scanner setting of the other panels, and it follows the scanner switch. With one scanner, it does not show the last scan (Q1 A of PR 2b, on built pictures). | 1293 |
 | 2026-11-24 | The filters text of the Scan ingest panel says "scans", not "findings" (PR 2b, on built pictures). | 1293 |
+| 2026-11-23 | A range of 2 days or less starts at its exact time: the end less the length. The bars stay on the UTC hour, and the first bar counts only from the start. A longer range keeps whole UTC days. | 1291 |
+| 2026-11-23 | The backend takes the start and the end of a range from its own clock and the length that the browser sends. The browser sends no time. | 1291 |
+| 2026-11-23 | Each live trend read stops at the time of the request. A scanner clock that runs ahead draws no bar after that time. | 1291 |
+| 2026-11-23 | The bars of the strips stay in UTC. Bars in the time zone of the user are out of scope. A range that ends at a past time stays daily. | 1291 |
+| 2026-11-23 | `days` and `new_within_days` stay in the API, because saved views, exports and dashboard panels store `new_within_days`. | 1291 |
 | 2026-11-24 | The "New in range" filter stops at the time of the request, as the New findings strip does. This goes in PR 1 of issue 1291. | 1291 |
+| 2026-11-24 | The table of refused scans on Scanner status takes the exact range of the strip above it (Q1 A of PR 1). | 1291 |
+| 2026-11-24 | The Audit activity strip takes the exact range of 2 days or less, as the other strips (Q2 A of PR 1). | 1291 |
 
 ## AI vulnerability research (alpha)
 

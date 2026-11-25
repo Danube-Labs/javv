@@ -76,7 +76,7 @@ describe('scanFilters (pure): the filters a scan record holds (issue 1293)', () 
       paths: Record<string, { get: { parameters: { name: string }[] } }>
     }
     const names = spec.paths['/api/v1/trends/scans']!.get.parameters.map((p) => p.name)
-    const own = ['cluster_id', 'as_of', 'days', 'interval']
+    const own = ['cluster_id', 'as_of', 'days', 'window_seconds', 'interval']
     expect([...SCAN_FILTER_PARAMS].sort()).toEqual(names.filter((n) => !own.includes(n)).sort())
   })
 })

@@ -93,6 +93,7 @@ const SCAN_REFUSED_FILTERS = [
   'overdue',
   'unassigned',
   'new_within_days',
+  'new_within_seconds',
   'ptype',
   'cve_id',
   'package_name',
@@ -213,7 +214,7 @@ export const PANELS: readonly CatalogPanel[] = [
     framed: false,
     takesFilters: true,
     // the strip counts the findings first seen in its range already (issue 1292)
-    refusedFilters: ['new_within_days'],
+    refusedFilters: ['new_within_days', 'new_within_seconds'],
     props: (ctx) => ({
       clusterId: ctx.clusterId,
       t: ctx.t,

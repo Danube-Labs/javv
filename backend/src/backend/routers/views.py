@@ -47,6 +47,7 @@ from backend.query.search import (
     conflicting_filter_pair,
     one_value_as_list,
 )
+from backend.query.trends import EXACT_MAX_SECONDS, EXACT_MIN_SECONDS
 from backend.triage.state_machine import STATES
 
 router = APIRouter(prefix="/api/v1/views", tags=["views"])
@@ -85,6 +86,7 @@ class ViewPreset(BaseModel):
     q: str | None = Field(default=None, min_length=2, max_length=128)
     present: bool = True
     new_within_days: int | None = Field(default=None, ge=1, le=365)
+    new_within_seconds: int | None = Field(default=None, ge=EXACT_MIN_SECONDS, le=EXACT_MAX_SECONDS)
     unassigned: bool | None = None
     untagged: bool | None = None
     overdue: bool | None = None

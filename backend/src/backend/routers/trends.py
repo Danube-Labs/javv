@@ -20,6 +20,9 @@
   filters (the default counts the findings present now), and the window ends at now. A past
   `as_of` goes to the reader, which rebuilds the rows at T and counts daily buckets.
 
+A range is `days` (whole UTC days) or `window_seconds` (the exact range of 2 days or less, at now
+only, issue 1291). Each live read stops at the time of the request.
+
 Tenancy: scan-events routing pins the per-cluster index pattern AND the tenant read path forces the
 `cluster_id` body filter; findings reads carry it through the tenant read path alone. Same uniform
 `as_of` seam as every read (D28: past T is 501 until the slice-7 dispatcher wires M8b).
@@ -32,11 +35,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from backend.core.identifiers import ClusterId
 from backend.query.search import conflicting_filter_pair
 from backend.query.trends import (
+    EXACT_MAX_SECONDS,
+    EXACT_MIN_SECONDS,
     ScanFilters,
     build_findings_trend_body,
     build_ingest_failures_trend_body,
     build_new_findings_trend_body,
     build_scans_trend_body,
+    pick_window,
 )
 from backend.routers.findings import (
     AsOf,
@@ -53,7 +59,27 @@ from backend.tenancy.read_path import tenant_search
 
 router = APIRouter(prefix="/api/v1/trends", tags=["trends"])
 
-Days = Annotated[int, Query(ge=1, le=365)]
+# no default in the signature: 30 when the request names neither `days` nor `window_seconds`
+# (pick_window), so a route can refuse a request that names both, also from an MCP tool
+Days = Annotated[
+    int | None,
+    Query(
+        ge=1,
+        le=365,
+        description=(
+            "The range is in whole UTC days. With no range in the request, the range is 30 days."
+        ),
+    ),
+]
+# the exact length of a range of 2 days or less, at now only (issue 1291)
+WindowSeconds = Annotated[
+    int | None,
+    Query(
+        ge=EXACT_MIN_SECONDS,
+        le=EXACT_MAX_SECONDS,
+        description="The exact range is in seconds. It ends at the time of the request.",
+    ),
+]
 Interval = Literal["day", "hour"]
 # the type of `scanner` on /trends/findings: the MCP tool `trends` takes the parameters of both
 # routes under one name, and refuses to start when their types differ
@@ -94,11 +120,20 @@ def _scan_filters(
 ScanFiltersDep = Annotated[ScanFilters, Depends(_scan_filters)]
 
 
-def _guard_hourly(interval: str, days: int) -> None:
+def _guard_hourly(interval: str, days: int | None) -> None:
     # contract guard (audit 343): hourly × long spans is a cost setting no UI uses — 365d hourly
     # is ~8.8k materialized buckets per scanner per request. 31d hourly (744) stays cheap.
-    if interval == "hour" and days > 31:
+    if interval == "hour" and days is not None and days > 31:
         raise HTTPException(422, "interval=hour is limited to days<=31 — use daily buckets")
+
+
+def _pick(
+    days: int | None, window_seconds: int | None, as_of_t: Any
+) -> tuple[int | None, int | None]:
+    try:
+        return pick_window(days, window_seconds, past=as_of_t is not None)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 def _series(
@@ -120,9 +155,11 @@ async def scans_trend(
     cluster_id: ClusterId,
     as_of_t: AsOf,
     filters: ScanFiltersDep,
-    days: Days = 30,
+    days: Days = None,
+    window_seconds: WindowSeconds = None,
     interval: Interval = "day",
 ) -> dict[str, Any]:
+    days, window_seconds = _pick(days, window_seconds, as_of_t)
     _guard_hourly(interval, days)
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:  # past T → M8b's reconstruction, never this route's query (D28)
@@ -130,7 +167,7 @@ async def scans_trend(
         # reader's payload rides verbatim (the dispatch pin)
         return await _reconstructed(
             _reader_or_501().trends_scans(
-                client, cluster_id=cluster_id, t=as_of_t, days=days, filters=filters
+                client, cluster_id=cluster_id, t=as_of_t, days=cast(int, days), filters=filters
             )
         )
     index = f"javv-scan-events-{cluster_id}-*"
@@ -138,12 +175,14 @@ async def scans_trend(
         client,
         index=index,
         cluster_id=cluster_id,
-        body=build_scans_trend_body(days=days, interval=interval, filters=filters),
+        body=build_scans_trend_body(
+            days=days, window_seconds=window_seconds, interval=interval, filters=filters
+        ),
     )
     # a cluster with no scan-events yet matches zero indices — no aggregations at all
     aggs = resp.get("aggregations")
     series = _series(aggs["by_scanner"], metric="scans") if aggs else {}
-    return {"series": series, "days": days, "interval": interval}
+    return {"series": series, "days": days, "window_seconds": window_seconds, "interval": interval}
 
 
 @router.get("/findings")
@@ -152,10 +191,11 @@ async def findings_trend(
     principal: Authenticated,
     cluster_id: ClusterId,
     as_of_t: AsOf,
-    days: Days = 30,
+    days: Days = None,
     split: Literal["scanner", "severity"] = "scanner",
     scanner: Literal["trivy", "grype"] | None = None,
 ) -> dict[str, Any]:
+    days = cast(int, _pick(days, None, as_of_t)[0])  # daily only: no exact window here
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:
         if split != "scanner":  # the M8b reader reconstructs per-scanner only (MVP; like the
@@ -186,21 +226,25 @@ async def ingest_failures_trend(
     principal: Authenticated,
     cluster_id: ClusterId,
     as_of_t: AsOf,
-    days: Days = 30,
+    days: Days = None,
+    window_seconds: WindowSeconds = None,
     interval: Interval = "day",
 ) -> dict[str, Any]:
+    days, window_seconds = _pick(days, window_seconds, as_of_t)
     _guard_hourly(interval, days)
     client = cast(Any, request.app.state.opensearch)
     resp = await tenant_search(
         client,
         index=f"javv-ingest-failures-{cluster_id}-*",
         cluster_id=cluster_id,
-        body=build_ingest_failures_trend_body(days=days, anchor=as_of_t, interval=interval),
+        body=build_ingest_failures_trend_body(
+            days=days, window_seconds=window_seconds, anchor=as_of_t, interval=interval
+        ),
     )
     # a cluster that never had a push refused matches zero indices — no aggregations at all
     aggs = resp.get("aggregations")
     series = _series(aggs["by_scanner"]) if aggs else {}
-    return {"series": series, "days": days, "interval": interval}
+    return {"series": series, "days": days, "window_seconds": window_seconds, "interval": interval}
 
 
 @router.get("/new-findings")
@@ -210,20 +254,26 @@ async def new_findings_trend(
     cluster_id: ClusterId,
     filters: Filters,
     as_of_t: AsOf,
-    days: Days = 30,
+    days: Days = None,
+    window_seconds: WindowSeconds = None,
     interval: Interval = "day",
 ) -> dict[str, Any]:
+    days, window_seconds = _pick(days, window_seconds, as_of_t)
     _guard_hourly(interval, days)
     client = cast(Any, request.app.state.opensearch)
     if as_of_t is not None:  # past T → the reader rebuilds the rows at T, daily only (D28)
         return await _reconstructed(
             _reader_or_501().trends_new_findings(
-                client, cluster_id=cluster_id, t=as_of_t, days=days, filters=filters
+                client, cluster_id=cluster_id, t=as_of_t, days=cast(int, days), filters=filters
             )
         )
     body = build_new_findings_trend_body(
-        filters, days=days, interval=interval, sla_cutoffs=await _sla_cutoffs(client, filters)
+        filters,
+        days=days,
+        window_seconds=window_seconds,
+        interval=interval,
+        sla_cutoffs=await _sla_cutoffs(client, filters),
     )
     resp = await tenant_search(client, index="findings", cluster_id=cluster_id, body=body)
     series = _series(resp["aggregations"]["by_severity"])
-    return {"series": series, "days": days, "interval": interval}
+    return {"series": series, "days": days, "window_seconds": window_seconds, "interval": interval}

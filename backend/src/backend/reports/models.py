@@ -23,6 +23,7 @@ from backend.query.search import (
     conflicting_filter_pair,
     one_value_as_list,
 )
+from backend.query.trends import EXACT_MAX_SECONDS, EXACT_MIN_SECONDS
 
 REPORTS_INDEX = "system-reports"
 REPORT_CHUNKS_INDEX = "system-report-chunks"
@@ -61,6 +62,7 @@ class ExportParams(BaseModel):
     q: str | None = Field(default=None, min_length=2, max_length=128)
     present: bool = True
     new_within_days: int | None = Field(default=None, ge=1, le=365)
+    new_within_seconds: int | None = Field(default=None, ge=EXACT_MIN_SECONDS, le=EXACT_MAX_SECONDS)
     overdue: bool | None = None
     unassigned: bool | None = None
     untagged: bool | None = None

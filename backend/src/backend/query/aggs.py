@@ -19,6 +19,7 @@ import base64
 import binascii
 import json
 from dataclasses import replace
+from datetime import datetime
 from typing import Any
 
 from backend.query.search import (
@@ -63,9 +64,13 @@ GROUP_FIELDS = ("image_repo", "image_digest", "namespaces", "cve_id", "assignee"
 _BY_SCANNER = {"by_scanner": {"terms": {"field": "scanner", "size": 4}}}
 
 
-def _base(filters: SearchFilters, sla_cutoffs: dict[str, str] | None = None) -> dict[str, Any]:
+def _base(
+    filters: SearchFilters,
+    sla_cutoffs: dict[str, str] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
     """The filter context, agg-shaped: same facets as the grid, no hits, no sort."""
-    body = build_search_body(filters, size=0, sla_cutoffs=sla_cutoffs)
+    body = build_search_body(filters, size=0, sla_cutoffs=sla_cutoffs, now=now)
     del body["sort"], body["track_total_hits"]
     return body
 

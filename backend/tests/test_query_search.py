@@ -9,6 +9,7 @@ last-page short-circuit) — D38.
 
 import base64
 import json
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -74,15 +75,107 @@ def test_every_facet_filter_is_a_filter_clause_never_scoring() -> None:
     assert "must" not in body["query"]["bool"]  # facets never score
 
 
-def test_new_within_days_is_a_range_filter_on_the_trend_window_start() -> None:
-    from backend.query.trends import window_bounds
+NOW_1291 = datetime(2026, 11, 20, 11, 30, tzinfo=UTC)
 
-    body = build_search_body(SearchFilters(new_within_days=30), size=1)
-    gte, _upper = window_bounds(30)
-    assert {"range": {"first_seen_at": {"gte": gte}}} in body["query"]["bool"]["filter"]
+
+def _first_seen(body: dict[str, Any]) -> list[dict[str, Any]]:
+    return [c for c in body["query"]["bool"]["filter"] if "first_seen_at" in c.get("range", {})]
+
+
+def test_new_within_days_starts_on_the_trend_window_and_stops_at_now() -> None:
+    """The start of the trend window, and the time of the request (issue 1291, ruling of
+    2026-11-24): a scanner clock that runs ahead gives a first_seen_at after now, which the New
+    findings strip does not count, so the table does not either."""
+    body = build_search_body(SearchFilters(new_within_days=30), size=1, now=NOW_1291)
+    window = {"gte": "2026-10-21", "lte": "2026-11-20T11:30:00.000+00:00"}
+    assert _first_seen(body) == [{"range": {"first_seen_at": window}}]
+    [live] = _first_seen(build_search_body(SearchFilters(new_within_days=30), size=1))
+    lte = datetime.fromisoformat(live["range"]["first_seen_at"]["lte"])
+    assert abs(lte - datetime.now(UTC)) < timedelta(seconds=30)  # the server's clock
     # absent by default — the flag is opt-in, never an implicit recency cut
     default = build_search_body(SearchFilters(), size=1)
     assert not [c for c in default["query"]["bool"]["filter"] if "range" in c]
+
+
+def test_new_within_seconds_is_the_exact_range_of_the_strip() -> None:
+    """Issue 1291: "Last 1 hour" with "New in range" lists the findings first seen in that
+    hour, with the bounds of the strip (`range_bounds`)."""
+    from backend.query.trends import build_new_findings_trend_body
+
+    body = build_search_body(SearchFilters(new_within_seconds=3600), size=1, now=NOW_1291)
+    window = {"gte": "2026-11-20T10:30:00.000+00:00", "lte": "2026-11-20T11:30:00.000+00:00"}
+    assert _first_seen(body) == [{"range": {"first_seen_at": window}}]
+    strip = build_new_findings_trend_body(SearchFilters(), window_seconds=3600, now=NOW_1291)
+    assert {"range": {"first_seen_at": window}} in strip["query"]["bool"]["filter"]
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        build_search_body(SearchFilters(new_within_days=1, new_within_seconds=60), size=1)
+    with pytest.raises(ValueError, match="window_seconds"):
+        build_search_body(SearchFilters(new_within_seconds=59), size=1)
+    assert conflicting_filter_pair({"new_within_days": 1, "new_within_seconds": 60}) == (
+        "new_within_days and new_within_seconds are mutually exclusive"
+    )
+
+
+def test_the_strip_and_the_table_filter_share_one_end() -> None:
+    """With "New in range" on, the strip passes its end to the filter of the table, so the two
+    ranges cannot be a few microseconds apart."""
+    from backend.query.trends import build_new_findings_trend_body
+
+    filters = SearchFilters(new_within_seconds=3600)
+    strip = build_new_findings_trend_body(filters, window_seconds=3600, now=NOW_1291)
+    ranges = _first_seen(strip)
+    assert len(ranges) == 2 and ranges[0] == ranges[1]
+
+
+def test_cursor_freezes_the_end_of_new_in_range() -> None:
+    """The PIT freezes the docs, and the cursor freezes the time of the first page: the bounds
+    of "new in range" move with the clock, so a row could change its match between pages."""
+    cur = encode_cursor(
+        pit_id="p", search_after=[1], sort="severity_rank", order="desc", now=NOW_1291
+    )
+    *_, now = decode_cursor(cur)
+    assert now == NOW_1291
+    shifted = base64.urlsafe_b64encode(
+        json.dumps(
+            {
+                "p": "p",
+                "a": [1],
+                "s": "severity_rank",
+                "o": "desc",
+                "n": "2026-11-20T06:30:00-05:00",
+            }
+        ).encode()
+    ).decode()
+    *_, now = decode_cursor(shifted)  # an offset is read as its time in UTC, the day of the range
+    assert now is not None and now.utcoffset() == timedelta(0) and now.hour == 11
+    # read in its own offset, the day of this time is 0001-12-31 and 365 days back overflow (a
+    # 500); read in UTC, the day is 0002-01-01 and the range builds
+    edge = base64.urlsafe_b64encode(
+        json.dumps(
+            {
+                "p": "p",
+                "a": [1],
+                "s": "severity_rank",
+                "o": "desc",
+                "n": "0001-12-31T23:00:00-05:00",
+            }
+        ).encode()
+    ).decode()
+    *_, now = decode_cursor(edge)
+    build_search_body(SearchFilters(new_within_days=365), size=1, now=now)
+    for bad in (
+        "not a time",
+        "2026-11-20T11:30:00",  # a naive time is not a time of the server
+        5,
+        "0001-01-01T00:00:00+00:00",  # the range of "new in range" overflows: a 422, not a 500
+        "0001-01-01T00:30:00+00:00",
+        "0001-01-01T00:00:00+05:00",
+    ):
+        tampered = base64.urlsafe_b64encode(
+            json.dumps({"p": "p", "a": [1], "s": "severity_rank", "o": "desc", "n": bad}).encode()
+        ).decode()
+        with pytest.raises(ValueError):
+            decode_cursor(tampered)
 
 
 def test_present_false_is_expressible_for_the_tombstone_view() -> None:
@@ -107,9 +200,10 @@ def test_cursor_round_trips_and_rejects_garbage() -> None:
     cur = encode_cursor(
         pit_id="pit-abc", search_after=[5, "fk-1"], sort="severity_rank", order="desc"
     )
-    pit_id, search_after, sort, order, sla_cutoffs = decode_cursor(cur)
+    pit_id, search_after, sort, order, sla_cutoffs, now = decode_cursor(cur)
     assert (pit_id, search_after, sort, order) == ("pit-abc", [5, "fk-1"], "severity_rank", "desc")
     assert sla_cutoffs is None  # absent unless the walk carries an overdue lens
+    assert now is None  # absent unless the walk carries "new in range"
     with pytest.raises(ValueError):
         decode_cursor("not-base64-json!!")
 
@@ -130,7 +224,7 @@ def test_cursor_freezes_overdue_cutoffs_for_the_whole_walk() -> None:
     cur = encode_cursor(
         pit_id="p", search_after=[1], sort="severity_rank", order="desc", sla_cutoffs=_CUTOFFS
     )
-    *_, sla_cutoffs = decode_cursor(cur)
+    *_, sla_cutoffs, _now = decode_cursor(cur)
     assert sla_cutoffs == _CUTOFFS
     for bad in (
         {"kev": "x"},  # missing severity keys
@@ -660,6 +754,7 @@ def test_every_exclude_filter_is_a_pair_with_its_include_side() -> None:
         *((f.removeprefix("exclude_"), f) for f in _EXCLUDE_FIELDS),
         ("assignee", "unassigned"),
         ("tag", "untagged"),
+        ("new_within_days", "new_within_seconds"),  # one range of "new in range" (issue 1291)
     }
 
 

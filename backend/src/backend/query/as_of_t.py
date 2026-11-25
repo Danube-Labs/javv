@@ -409,6 +409,8 @@ class AsOfTQuery:
         if f.new_within_days is not None:
             # first_seen_at is the findings-cache D21 group clock — occurrences don't record it
             raise _unrecorded("new_within_days")
+        if f.new_within_seconds is not None:
+            raise _unrecorded("new_within_seconds")
         sev = set(f.severity) if f.severity else None
         # the live `q` is `*text*` with `case_insensitive`, and its `*`/`?` are escaped, so it
         # is a literal contains match, in any case of the ASCII letters

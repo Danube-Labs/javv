@@ -473,6 +473,10 @@ export type ExportParams = {
      */
     new_within_days?: number | null;
     /**
+     * New Within Seconds
+     */
+    new_within_seconds?: number | null;
+    /**
      * Overdue
      */
     overdue?: boolean | null;
@@ -1018,6 +1022,10 @@ export type ViewPreset = {
      * New Within Days
      */
     new_within_days?: number | null;
+    /**
+     * New Within Seconds
+     */
+    new_within_seconds?: number | null;
     /**
      * Overdue
      */
@@ -1891,8 +1899,16 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
         interval?: string | null;
         /**
          * Window Days
+         *
+         * The range of the activity histogram is in days, back from the time of the request or from as_of. With interval and no range in the request, the range is 30 days.
          */
-        window_days?: number;
+        window_days?: number | null;
+        /**
+         * Window Seconds
+         *
+         * The exact range is in seconds. It ends at the time of the request.
+         */
+        window_seconds?: number | null;
         /**
          * Contains
          */
@@ -2865,6 +2881,10 @@ export type SearchFindingsApiV1FindingsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3048,6 +3068,10 @@ export type ExportCsvApiV1FindingsExportCsvGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3203,6 +3227,10 @@ export type ExportVexApiV1FindingsExportVexGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -3374,6 +3402,10 @@ export type FacetFindingsApiV1FindingsFacetsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3544,6 +3576,10 @@ export type GroupFindingsApiV1FindingsGroupsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3702,6 +3738,10 @@ export type TopComponentsFindingsApiV1FindingsTopComponentsGetData = {
          */
         new_within_days?: number | null;
         /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
+        /**
          * Overdue
          */
         overdue?: boolean | null;
@@ -3859,6 +3899,10 @@ export type TopImagesFindingsApiV1FindingsTopImagesGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -4021,6 +4065,10 @@ export type TopValuesFindingsApiV1FindingsTopValuesGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -4583,8 +4631,16 @@ export type ScannerIngestFailuresApiV1ScannersIngestFailuresGetData = {
         scanner: 'trivy' | 'grype';
         /**
          * Days
+         *
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         *
+         * The exact range is in seconds. It ends at the time of the request.
+         */
+        window_seconds?: number | null;
         /**
          * Size
          */
@@ -5030,8 +5086,10 @@ export type FindingsTrendApiV1TrendsFindingsGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
-        days?: number;
+        days?: number | null;
         /**
          * Split
          */
@@ -5080,8 +5138,16 @@ export type IngestFailuresTrendApiV1TrendsIngestFailuresGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         *
+         * The exact range is in seconds. It ends at the time of the request.
+         */
+        window_seconds?: number | null;
         /**
          * Interval
          */
@@ -5126,8 +5192,16 @@ export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         *
+         * The exact range is in seconds. It ends at the time of the request.
+         */
+        window_seconds?: number | null;
         /**
          * Interval
          */
@@ -5200,6 +5274,10 @@ export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
          * New Within Days
          */
         new_within_days?: number | null;
+        /**
+         * New Within Seconds
+         */
+        new_within_seconds?: number | null;
         /**
          * Overdue
          */
@@ -5292,8 +5370,16 @@ export type ScansTrendApiV1TrendsScansGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range is in whole UTC days. With no range in the request, the range is 30 days.
          */
-        days?: number;
+        days?: number | null;
+        /**
+         * Window Seconds
+         *
+         * The exact range is in seconds. It ends at the time of the request.
+         */
+        window_seconds?: number | null;
         /**
          * Interval
          */

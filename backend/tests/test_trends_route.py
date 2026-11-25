@@ -416,3 +416,102 @@ async def test_new_findings_trend_follows_presence_overdue_and_the_window(env) -
         "/api/v1/trends/new-findings", params={**params, "tag": "1.4.1", "untagged": "true"}
     )
     assert r.status_code == 422  # the pair that the table refuses
+
+
+# issue 1291: a range of 2 days or less starts at its exact time. The browser sends only the
+# length (`window_seconds`), and the backend takes the end from its own clock (ruling 2).
+EXACT_ROUTES = (
+    "/api/v1/trends/scans",
+    "/api/v1/trends/ingest-failures",
+    "/api/v1/trends/new-findings",
+)
+PAST = "2026-11-01T00:00:00+00:00"
+
+
+@pytest.mark.parametrize("route", EXACT_ROUTES)
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"window_seconds": 0},
+        {"window_seconds": -60},
+        {"window_seconds": 59},
+        {"window_seconds": 172_801},  # over 2 days: a longer range is whole days
+        {"window_seconds": 3600, "days": 1},
+        {"window_seconds": 3600, "as_of": PAST},  # a past range stays daily (ruling 5)
+    ],
+)
+async def test_window_seconds_is_bounded_and_takes_no_days_and_no_past(
+    env, route: str, extra: dict[str, Any]
+) -> None:
+    login, _client = env
+    http = await login()
+    r = await http.get(route, params={"cluster_id": f"c-exact-{uuid.uuid4().hex[:8]}", **extra})
+    assert r.status_code == 422, r.text
+
+
+async def test_an_exact_window_counts_its_two_edges_on_hourly_bars(env) -> None:
+    """Against OpenSearch: `gte` and `lte` both count, a millisecond outside does not, and the
+    bars stay on the UTC hour with a partial first bar (cases 2 to 4 of the research)."""
+    from backend.query.search import SearchFilters
+    from backend.query.trends import build_new_findings_trend_body
+    from backend.tenancy.read_path import tenant_search
+
+    _login, client = env
+    cid = f"c-exact-{uuid.uuid4().hex[:8]}"
+    end = datetime(2026, 11, 20, 11, 30, tzinfo=UTC)
+    ms = timedelta(milliseconds=1)
+    for at in (
+        end - timedelta(hours=1) - ms,  # before the start: out
+        end - timedelta(hours=1),  # exactly the start: in the 10:00 bar
+        datetime(2026, 11, 20, 10, 59, 59, 999_000, tzinfo=UTC),  # the 10:00 bar
+        end,  # exactly the end: in the 11:00 bar
+        end + ms,  # after the end: out
+    ):
+        await _seed_row(client, cid, first_seen_at=at.isoformat())
+    await client.indices.refresh(index="findings")
+    body = build_new_findings_trend_body(
+        SearchFilters(), window_seconds=3600, interval="hour", now=end
+    )
+    resp = await tenant_search(client, index="findings", cluster_id=cid, body=body)
+    [critical] = resp["aggregations"]["by_severity"]["buckets"]
+    bars = {b["key_as_string"]: b["doc_count"] for b in critical["timeline"]["buckets"]}
+    assert bars == {"2026-11-20T10:00:00.000Z": 2, "2026-11-20T11:00:00.000Z": 1}
+
+
+async def test_window_seconds_reads_only_that_range_on_each_strip(env) -> None:
+    """ "Last 1 hour" counts the hour, not the time since 00:00 UTC of the day before. A scanner
+    clock ahead of the server gives a `first_seen_at` after now, which no read counts."""
+    login, client = env
+    cid = f"c-exact-{uuid.uuid4().hex[:8]}"
+    now = datetime.now(UTC)
+    await _seed_row(client, cid, first_seen_at=(now - timedelta(minutes=30)).isoformat())
+    await _seed_row(client, cid, first_seen_at=(now - timedelta(minutes=90)).isoformat())
+    await _seed_row(client, cid, first_seen_at=(now + timedelta(hours=1)).isoformat())
+    await ingest_envelope(client, _envelope(cid, "run-1", 1))  # ingested_at is now
+    await client.indices.refresh(index="findings")
+    await client.indices.refresh(index=f"javv-scan-events-{cid}-*")
+
+    http = await login()
+    exact = {"cluster_id": cid, "window_seconds": 3600, "interval": "hour"}
+    r = await http.get("/api/v1/trends/new-findings", params=exact)
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert (out["days"], out["window_seconds"], out["interval"]) == (None, 3600, "hour")
+    # the golden scan adds its own findings, first seen now; the seeded row 30 min ago is one more
+    golden = sum(GOLDEN_COUNTS.values())
+    assert sum(_totals(out["series"]).values()) == golden + 1
+    two_hours = await http.get(
+        "/api/v1/trends/new-findings", params={**exact, "window_seconds": 7200}
+    )
+    assert sum(_totals(two_hours.json()["series"]).values()) == golden + 2  # never the +1 h row
+    assert len(out["series"]["critical"]) <= 2  # the buckets of one hour, not of 32 hours
+
+    r = await http.get("/api/v1/trends/scans", params=exact)
+    assert r.status_code == 200, r.text
+    assert r.json()["window_seconds"] == 3600
+    assert sum(p["scans"] for p in r.json()["series"]["trivy"]) == 1
+    r = await http.get("/api/v1/trends/ingest-failures", params=exact)
+    assert r.status_code == 200 and r.json()["window_seconds"] == 3600
+
+    r = await http.get("/api/v1/trends/scans", params={"cluster_id": cid})
+    assert (r.json()["days"], r.json()["window_seconds"]) == (30, None)  # the default window

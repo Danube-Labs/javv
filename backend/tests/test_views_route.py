@@ -167,6 +167,8 @@ _PAIR_VALUE: dict[str, Any] = {
     "unassigned": True,
     "tag": ["1.4.2"],
     "untagged": True,
+    "new_within_days": 7,
+    "new_within_seconds": 3600,
 }
 
 

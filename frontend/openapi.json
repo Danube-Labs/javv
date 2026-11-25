@@ -1067,6 +1067,19 @@
             ],
             "title": "New Within Days"
           },
+          "new_within_seconds": {
+            "anyOf": [
+              {
+                "maximum": 172800.0,
+                "minimum": 60.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Within Seconds"
+          },
           "overdue": {
             "anyOf": [
               {
@@ -2309,6 +2322,19 @@
               }
             ],
             "title": "New Within Days"
+          },
+          "new_within_seconds": {
+            "anyOf": [
+              {
+                "maximum": 172800.0,
+                "minimum": 60.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Within Seconds"
           },
           "overdue": {
             "anyOf": [
@@ -3958,15 +3984,43 @@
             }
           },
           {
+            "description": "The range of the activity histogram is in days, back from the time of the request or from as_of. With interval and no range in the request, the range is 30 days.",
             "in": "query",
             "name": "window_days",
             "required": false,
             "schema": {
-              "default": 30,
-              "maximum": 365,
-              "minimum": 1,
-              "title": "Window Days",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The range of the activity histogram is in days, back from the time of the request or from as_of. With interval and no range in the request, the range is 30 days.",
+              "title": "Window Days"
+            }
+          },
+          {
+            "description": "The exact range is in seconds. It ends at the time of the request.",
+            "in": "query",
+            "name": "window_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The exact range is in seconds. It ends at the time of the request.",
+              "title": "Window Seconds"
             }
           },
           {
@@ -5991,6 +6045,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -6656,6 +6728,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -7286,6 +7376,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {
@@ -7961,6 +8069,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -8624,6 +8750,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -9249,6 +9393,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -9870,6 +10032,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {
@@ -10505,6 +10685,24 @@
                 }
               ],
               "title": "New Within Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
             }
           },
           {
@@ -11448,7 +11646,7 @@
     },
     "/api/v1/scanners/ingest-failures": {
       "get": {
-        "description": "An append-only log read directly at any T (the window just ends there), so a past\n`as_of` needs no reconstruction and never 501s.",
+        "description": "An append-only log read directly at any T (the window just ends there), so a past\n`as_of` needs no reconstruction and never 501s. `window_seconds` gives the exact range of\nthe strip above the table (issue 1291).",
         "operationId": "scanner_ingest_failures_api_v1_scanners_ingest_failures_get",
         "parameters": [
           {
@@ -11474,15 +11672,43 @@
             }
           },
           {
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
             "schema": {
-              "default": 30,
-              "maximum": 365,
-              "minimum": 1,
-              "title": "Days",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
+              "title": "Days"
+            }
+          },
+          {
+            "description": "The exact range is in seconds. It ends at the time of the request.",
+            "in": "query",
+            "name": "window_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The exact range is in seconds. It ends at the time of the request.",
+              "title": "Window Seconds"
             }
           },
           {
@@ -12151,15 +12377,23 @@
             }
           },
           {
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
             "schema": {
-              "default": 30,
-              "maximum": 365,
-              "minimum": 1,
-              "title": "Days",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
+              "title": "Days"
             }
           },
           {
@@ -12258,15 +12492,43 @@
             }
           },
           {
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
             "schema": {
-              "default": 30,
-              "maximum": 365,
-              "minimum": 1,
-              "title": "Days",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
+              "title": "Days"
+            }
+          },
+          {
+            "description": "The exact range is in seconds. It ends at the time of the request.",
+            "in": "query",
+            "name": "window_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The exact range is in seconds. It ends at the time of the request.",
+              "title": "Window Seconds"
             }
           },
           {
@@ -12345,15 +12607,43 @@
             }
           },
           {
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
             "schema": {
-              "default": 30,
-              "maximum": 365,
-              "minimum": 1,
-              "title": "Days",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
+              "title": "Days"
+            }
+          },
+          {
+            "description": "The exact range is in seconds. It ends at the time of the request.",
+            "in": "query",
+            "name": "window_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The exact range is in seconds. It ends at the time of the request.",
+              "title": "Window Seconds"
             }
           },
           {
@@ -12685,6 +12975,24 @@
           },
           {
             "in": "query",
+            "name": "new_within_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "New Within Seconds"
+            }
+          },
+          {
+            "in": "query",
             "name": "overdue",
             "required": false,
             "schema": {
@@ -12995,15 +13303,43 @@
             }
           },
           {
+            "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
             "in": "query",
             "name": "days",
             "required": false,
             "schema": {
-              "default": 30,
-              "maximum": 365,
-              "minimum": 1,
-              "title": "Days",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The range is in whole UTC days. With no range in the request, the range is 30 days.",
+              "title": "Days"
+            }
+          },
+          {
+            "description": "The exact range is in seconds. It ends at the time of the request.",
+            "in": "query",
+            "name": "window_seconds",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 172800,
+                  "minimum": 60,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The exact range is in seconds. It ends at the time of the request.",
+              "title": "Window Seconds"
             }
           },
           {

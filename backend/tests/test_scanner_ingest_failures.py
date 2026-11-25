@@ -35,11 +35,13 @@ ROUTE = "/api/v1/scanners/ingest-failures"
 
 
 def test_the_body_is_one_scanner_newest_first_on_a_total_order() -> None:
-    body = build_ingest_failures_body(scanner="grype", days=7, size=25)
-    gte, _ = window_bounds(7)
+    now = datetime(2026, 11, 20, 11, 30, tzinfo=UTC)
+    body = build_ingest_failures_body(scanner="grype", days=7, size=25, anchor=now)
+    gte, _ = window_bounds(7, now)
     assert body["query"]["bool"]["filter"] == [
         {"term": {"scanner": "grype"}},
-        {"range": {"@timestamp": {"gte": gte}}},
+        # the window ends at now, the end of the strip above the table (issue 1291)
+        {"range": {"@timestamp": {"gte": gte, "lte": "2026-11-20T11:30:00.000+00:00"}}},
     ]
     assert body["sort"] == [{"@timestamp": "desc"}, {"failure_id": "desc"}]
     assert body["size"] == 26  # one extra row says whether a next page exists
@@ -53,7 +55,7 @@ def test_an_anchored_window_ends_at_t() -> None:
         scanner="trivy", days=30, size=10, anchor=t, search_after=[1, "f"]
     )
     window = body["query"]["bool"]["filter"][1]["range"]["@timestamp"]
-    assert window == {"gte": window_bounds(30, t)[0], "lte": t.isoformat()}
+    assert window == {"gte": window_bounds(30, t)[0], "lte": t.isoformat(timespec="milliseconds")}
     assert body["search_after"] == [1, "f"]
 
 
@@ -354,7 +356,7 @@ async def test_a_cluster_with_no_failures_is_an_empty_series(env) -> None:
     http, _ = env
     r = await http.get(TREND, params={"cluster_id": _cluster()})
     assert r.status_code == 200
-    assert r.json() == {"series": {}, "days": 30, "interval": "day"}
+    assert r.json() == {"series": {}, "days": 30, "window_seconds": None, "interval": "day"}
 
 
 @requires_opensearch
@@ -378,3 +380,33 @@ async def test_the_trend_needs_a_session(env) -> None:
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://t") as c:
         r = await c.get(TREND, params={"cluster_id": _cluster()})
     assert r.status_code == 401
+
+
+@requires_opensearch
+async def test_window_seconds_lists_the_refused_scans_of_the_strip_range(env) -> None:
+    """Issue 1291, Q1 A: with "Last 1 hour", the table lists the refused scans of that hour, as
+    the strip above it counts them, not the refused scans since 00:00 UTC of the day before."""
+    http, client = env
+    cluster = _cluster()
+    now = datetime.now(UTC)
+    inside = await _record_at(client, cluster, "trivy", now - timedelta(minutes=30))
+    await _record_at(client, cluster, "trivy", now - timedelta(minutes=90))
+    await _refresh(client, cluster)
+
+    hour = {"cluster_id": cluster, "scanner": "trivy", "window_seconds": 3600}
+    r = await http.get(ROUTE, params=hour)
+    assert r.status_code == 200, r.text
+    assert [row["failure_id"] for row in r.json()["data"]] == [inside]
+    r = await http.get(TREND, params={"cluster_id": cluster, "window_seconds": 3600})
+    assert sum(p["count"] for p in r.json()["series"]["trivy"]) == 1  # the strip agrees
+    r = await http.get(ROUTE, params={**hour, "window_seconds": 7200})
+    assert r.json()["total"]["value"] == 2
+
+    for bad in (
+        {"window_seconds": 59},
+        {"window_seconds": 172_801},
+        {"window_seconds": 3600, "days": 1},
+        {"window_seconds": 3600, "as_of": "2026-11-01T00:00:00+00:00"},
+    ):
+        r = await http.get(ROUTE, params={"cluster_id": cluster, "scanner": "trivy", **bad})
+        assert r.status_code == 422, bad

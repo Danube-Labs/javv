@@ -838,3 +838,47 @@ async def test_the_user_search_takes_2_to_128_characters_and_no_interval(env) ->
         assert r.status_code == 422, params
     r = await http.get("/api/v1/audit/facets", params={"cluster_id": cid, "contains": "a" * 128})
     assert r.status_code == 200
+
+
+def test_the_activity_window_takes_an_exact_length() -> None:
+    """Issue 1291, Q2 A: "Last 1 hour" draws the bars of that hour, not of 24 hours. The window
+    is the end minus the length, with milliseconds, as the strips of the other screens."""
+    from backend.query.audit import build_audit_facets_body
+
+    now = datetime(2026, 11, 20, 11, 30, tzinfo=UTC)
+    body = build_audit_facets_body(
+        AuditFilters(), interval="hour", window_days=None, window_seconds=3600, now=now
+    )
+    window = {"gte": "2026-11-20T10:30:00.000+00:00", "lte": "2026-11-20T11:30:00.000+00:00"}
+    assert body["aggs"]["activity"]["filter"] == {"range": {"@timestamp": window}}
+    histogram = body["aggs"]["activity"]["aggs"]["buckets"]["date_histogram"]
+    assert histogram["extended_bounds"] == {"min": window["gte"], "max": window["lte"]}
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        build_audit_facets_body(AuditFilters(), interval="hour", window_days=1, window_seconds=60)
+
+
+async def test_facets_activity_with_window_seconds_reads_that_range(env) -> None:
+    http, client = env
+    cid = f"c-audit-{uuid.uuid4().hex[:8]}"
+    actor = f"u-hist-{uuid.uuid4().hex[:8]}"
+    await _journal(client, cid, n=2, actor=actor)
+    params = {"cluster_id": cid, "interval": "hour", "window_seconds": 3600, "actor": actor}
+    r = await http.get("/api/v1/audit/facets", params=params)
+    assert r.status_code == 200, r.text
+    activity = r.json()["activity"]
+    assert sum(b["count"] for b in activity) == 2
+    assert len(activity) <= 2  # the buckets of one hour, not the 25 of window_days=1
+    for bad in (
+        {"window_seconds": 59},
+        {"window_seconds": 172_801},
+        {"window_seconds": 3600, "window_days": 1},
+        {"window_seconds": 3600, "as_of": "2026-11-01T00:00:00+00:00"},
+    ):
+        r = await http.get("/api/v1/audit/facets", params={**params, **bad})
+        assert r.status_code == 422, bad
+    # with no interval there is no histogram, so the call reads no range and refuses none
+    rail = {"cluster_id": cid, "actor": actor, "window_seconds": 3600}
+    for extra in ({"window_days": 1}, {"as_of": "2026-11-01T00:00:00+00:00"}):
+        r = await http.get("/api/v1/audit/facets", params={**rail, **extra})
+        assert r.status_code == 200, (extra, r.text)
+        assert "activity" not in r.json()

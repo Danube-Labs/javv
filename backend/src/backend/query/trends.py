@@ -13,6 +13,9 @@
 - **New findings** (`findings`, issue 1292): the findings first seen in each bucket, by severity,
   under the filters of the grid, with the bounds and bucket size of the scans series.
 
+A window is whole UTC days (`days`), or exact for a range of 2 days or less (`window_seconds`,
+issue 1291): the end minus the length. Each read stops at its end, now or T.
+
 All are `size:0` (server-side everything). The scans, findings and failures series split
 `by_scanner` (per-scanner is sacred); the new-findings series splits by severity and counts the
 row of each scanner. `ingested_at` and a failure record's `@timestamp` are stamped by the
@@ -36,6 +39,11 @@ if TYPE_CHECKING:
 
 _MAX_DAYS = 365
 _BY_SCANNER_TERMS = {"field": "scanner", "size": 4}
+# the exact range of issue 1291 (ruling 1): a range of 2 days or less starts at the end minus its
+# length; a longer one keeps whole UTC days. Both limits are the API contract (`window_seconds`,
+# `new_within_seconds`), not a setting.
+EXACT_MIN_SECONDS = 60
+EXACT_MAX_SECONDS = 2 * 86_400
 
 
 def window_bounds(days: int, anchor: datetime | None = None) -> tuple[str, str]:
@@ -50,6 +58,67 @@ def window_bounds(days: int, anchor: datetime | None = None) -> tuple[str, str]:
         raise ValueError(f"days must be 1..{_MAX_DAYS}")
     day = (anchor or datetime.now(UTC)).date()
     return (day - timedelta(days=days)).isoformat(), day.isoformat()
+
+
+def range_bounds(window_seconds: int, end: datetime | None = None) -> tuple[str, str]:
+    """(gte, lte) for a range of 2 days or less (issue 1291, ruling 1): the end minus the length,
+    and the end. The backend takes the end from its own clock (ruling 2), so the start never
+    comes after it."""
+    if not EXACT_MIN_SECONDS <= window_seconds <= EXACT_MAX_SECONDS:
+        raise ValueError(f"window_seconds must be {EXACT_MIN_SECONDS}..{EXACT_MAX_SECONDS}")
+    end = end or datetime.now(UTC)
+    return iso_ms(end - timedelta(seconds=window_seconds)), iso_ms(end)
+
+
+def iso_ms(t: datetime) -> str:
+    """An exact bound, always with its milliseconds, the precision of a `date` field. OpenSearch
+    fills the fields that an `lte` date leaves out with their highest value: `lte 11:30:00`
+    counts a document at 11:30:00.999 (a probe on the store, issue 1291)."""
+    return t.isoformat(timespec="milliseconds")
+
+
+DEFAULT_DAYS = 30  # the default window of a trend read, in docs/API.md
+
+
+def pick_window(
+    days: int | None, window_seconds: int | None, *, past: bool, days_name: str = "days"
+) -> tuple[int | None, int | None]:
+    """(days, window_seconds) of a read, exactly one of them set; `ValueError` for a request
+    that names both, or an exact window at a past time, which stays daily (issue 1291, ruling
+    5). A route takes `days` with no default, so it can see that a caller named both: the MCP
+    tools call the route function, and a default would hide what the caller sent."""
+    if window_seconds is None:
+        return (DEFAULT_DAYS if days is None else days), None
+    if days is not None:
+        raise ValueError(f"{days_name} and window_seconds are mutually exclusive")
+    if past:
+        raise ValueError("window_seconds is not available at a past as_of: a past range is daily")
+    return None, window_seconds
+
+
+@dataclass(frozen=True)
+class TrendWindow:
+    """The bounds of one trend read: `gte` and `lte` filter the documents, and `gte` to `upper`
+    is the axis of the histogram."""
+
+    gte: str
+    upper: str
+    lte: str
+
+
+def trend_window(days: int | None, window_seconds: int | None, end: datetime) -> TrendWindow:
+    """A whole-day window (`days`) or an exact one (`window_seconds`), never both. Each read stops
+    at its end, now or T (issue 1291, ruling 3): a scanner clock that runs ahead stamps times
+    after now, and the read must not count them or draw a bar for them."""
+    if window_seconds is not None:
+        if days is not None:
+            raise ValueError("days and window_seconds are mutually exclusive")
+        gte, lte = range_bounds(window_seconds, end)
+        return TrendWindow(gte=gte, upper=lte, lte=lte)
+    if days is None:
+        raise ValueError("give days or window_seconds")
+    gte, upper = window_bounds(days, end)
+    return TrendWindow(gte=gte, upper=upper, lte=iso_ms(end))
 
 
 def _timeline(date_field: str, gte: str, upper: str, interval: str = "day") -> dict[str, Any]:
@@ -115,20 +184,20 @@ def _scan_filter_clauses(filters: ScanFilters) -> tuple[list[dict[str, Any]], li
 
 def build_scans_trend_body(
     *,
-    days: int,
+    days: int | None = None,
+    window_seconds: int | None = None,
     anchor: datetime | None = None,
     interval: str = "day",
     filters: ScanFilters | None = None,
 ) -> dict[str, Any]:
     # hourly buckets answer "does the scanner run every N hours?" on short ranges — daily
     # bars over a 1-day window collapse any cadence into one bar (operator, audit 343)
-    gte, upper = window_bounds(days, anchor)
-    timeline = _timeline("ingested_at", gte, upper, interval)
+    w = trend_window(days, window_seconds, anchor or datetime.now(UTC))
+    timeline = _timeline("ingested_at", w.gte, w.upper, interval)
     # THE dedup rule (task B, #139): committed scans = cardinality(commit_key), never doc counts
     timeline["aggs"] = {"scans": {"cardinality": {"field": "commit_key"}}}
-    window: dict[str, Any] = {"gte": gte}
-    if anchor is not None:  # the ≤ T cut — an anchored window must not see later appends
-        window["lte"] = anchor.isoformat()
+    # the ≤ T cut: an anchored window must not see later appends
+    window: dict[str, Any] = {"gte": w.gte, "lte": w.lte}
     fl, mn = _scan_filter_clauses(filters or ScanFilters())
     query: dict[str, Any] = {"filter": [{"range": {"ingested_at": window}}, *fl]}
     if mn:
@@ -141,22 +210,23 @@ def build_scans_trend_body(
 
 
 def build_ingest_failures_trend_body(
-    *, days: int, anchor: datetime | None = None, interval: str = "day"
+    *,
+    days: int | None = None,
+    window_seconds: int | None = None,
+    anchor: datetime | None = None,
+    interval: str = "day",
 ) -> dict[str, Any]:
     """Refused pushes per bucket per scanner (issue 575), on the scans trend's exact axis so the
     two strips line up. A plain doc count: each refusal is written once under its own id, never
     retried, so no sibling duplicates exist for a cardinality to fold."""
-    gte, upper = window_bounds(days, anchor)
-    window: dict[str, Any] = {"gte": gte}
-    if anchor is not None:
-        window["lte"] = anchor.isoformat()
+    w = trend_window(days, window_seconds, anchor or datetime.now(UTC))
     return {
         "size": 0,
-        "query": {"bool": {"filter": [{"range": {"@timestamp": window}}]}},
+        "query": {"bool": {"filter": [{"range": {"@timestamp": {"gte": w.gte, "lte": w.lte}}}]}},
         "aggs": {
             "by_scanner": {
                 "terms": dict(_BY_SCANNER_TERMS),
-                "aggs": {"timeline": _timeline("@timestamp", gte, upper, interval)},
+                "aggs": {"timeline": _timeline("@timestamp", w.gte, w.upper, interval)},
             }
         },
     }
@@ -171,18 +241,18 @@ _SPLIT_TERMS: dict[str, dict[str, Any]] = {
 
 
 def build_findings_trend_body(
-    *, days: int, split: str = "scanner", scanner: str | None = None
+    *, days: int, split: str = "scanner", scanner: str | None = None, now: datetime | None = None
 ) -> dict[str, Any]:
-    gte, upper = window_bounds(days)
+    w = trend_window(days, None, now or datetime.now(UTC))
     terms = _SPLIT_TERMS[split]
 
     def series(date_field: str) -> dict[str, Any]:
         return {
-            "filter": {"range": {date_field: {"gte": gte}}},
+            "filter": {"range": {date_field: {"gte": w.gte, "lte": w.lte}}},
             "aggs": {
                 "by_key": {
                     "terms": dict(terms),
-                    "aggs": {"timeline": _timeline(date_field, gte, upper)},
+                    "aggs": {"timeline": _timeline(date_field, w.gte, w.upper)},
                 }
             },
         }
@@ -199,7 +269,8 @@ def build_findings_trend_body(
 def build_new_findings_trend_body(
     filters: "SearchFilters",
     *,
-    days: int,
+    days: int | None = None,
+    window_seconds: int | None = None,
     interval: str = "day",
     sla_cutoffs: dict[str, str] | None = None,
     now: datetime | None = None,
@@ -211,15 +282,15 @@ def build_new_findings_trend_body(
     from backend.query.aggs import _base
 
     end = now or datetime.now(UTC)
-    gte, upper = window_bounds(days, end)
-    body = _base(filters, sla_cutoffs)
+    w = trend_window(days, window_seconds, end)
+    body = _base(filters, sla_cutoffs, now=end)  # "new in range" ends where the strip ends
     body["query"]["bool"]["filter"].append(
-        {"range": {"first_seen_at": {"gte": gte, "lte": end.isoformat()}}}
+        {"range": {"first_seen_at": {"gte": w.gte, "lte": w.lte}}}
     )
     body["aggs"] = {
         "by_severity": {
             "terms": dict(_SPLIT_TERMS["severity"]),
-            "aggs": {"timeline": _timeline("first_seen_at", gte, upper, interval)},
+            "aggs": {"timeline": _timeline("first_seen_at", w.gte, w.upper, interval)},
         }
     }
     return body

@@ -7,6 +7,7 @@ M5d group clock (D21 — the group's EARLIEST first_seen_at drives every sibling
 page filter hides the earliest row); `as_of` in the past is 501 until M8b's seam lands.
 """
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -219,6 +220,15 @@ async def test_tampered_but_decodable_cursor_is_422_not_500(env) -> None:
     ).decode()
     r = await http.get("/api/v1/findings", params={"cluster_id": cid, "cursor": bad})
     assert r.status_code == 422
+
+    # a time of the walk at the start of the calendar overflows the range of "new in range"
+    far = {"p": "x", "a": [1], "s": "severity_rank", "o": "desc", "n": "0001-01-01T00:00:00+00:00"}
+    bad_now = base64.urlsafe_b64encode(json.dumps(far).encode()).decode()
+    for params in ({"new_within_days": "30"}, {"new_within_seconds": "3600"}):
+        r = await http.get(
+            "/api/v1/findings", params={"cluster_id": cid, "cursor": bad_now, **params}
+        )
+        assert r.status_code == 422
 
     bad_after = base64.urlsafe_b64encode(json.dumps({"key": {"nested": 1}}).encode()).decode()
     r = await http.get(
@@ -580,6 +590,8 @@ _PAIR_PARAM = {
     "unassigned": "true",
     "tag": "1.4.2",
     "untagged": "true",
+    "new_within_days": "1",
+    "new_within_seconds": "3600",
 }
 
 
@@ -1362,3 +1374,91 @@ async def test_the_grid_read_sends_the_count_of_paths_and_the_paths_only_on_requ
     )
     assert last.status_code == 200
     assert last.json()["data"][0]["locations"] == paths
+
+
+# issue 1291: "New in range" stops at the time of the request, and a range of 2 days or less
+# is exact (new_within_seconds)
+
+
+async def test_new_in_range_stops_at_now_and_the_strip_counts_the_same_rows(env) -> None:
+    """A scanner clock ahead of the server gives a first_seen_at after now: the table with "New
+    in range" and the New findings strip leave it out alike (ruling of 2026-11-24)."""
+    login, client = env
+    http = await login()
+    cid = f"c-new-{uuid.uuid4().hex[:8]}"
+    now = datetime.now(UTC)
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(2, first_seen_at=(now - timedelta(minutes=30)).isoformat()),
+            *_rows(1, first_seen_at=(now - timedelta(minutes=90)).isoformat()),
+            *_rows(1, first_seen_at=(now + timedelta(hours=1)).isoformat()),  # the clock ahead
+        ],
+    )
+    for table, strip in (
+        ({"new_within_seconds": 3600}, {"window_seconds": 3600, "interval": "hour"}),
+        ({"new_within_seconds": 7200}, {"window_seconds": 7200, "interval": "hour"}),
+        ({"new_within_days": 1}, {"days": 1, "interval": "hour"}),
+    ):
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, **table})
+        assert r.status_code == 200, r.text
+        rows = r.json()["total"]["value"]
+        s = await http.get("/api/v1/trends/new-findings", params={"cluster_id": cid, **strip})
+        counted = sum(p["count"] for series in s.json()["series"].values() for p in series)
+        assert rows == counted, (table, rows, counted)
+        expected = {3600: 2, 7200: 3}.get(table.get("new_within_seconds", 0), 3)
+        assert rows == expected, table  # never the row of the clock ahead
+    for bad in ({"new_within_seconds": 59}, {"new_within_seconds": 172_801}):
+        r = await http.get("/api/v1/findings", params={"cluster_id": cid, **bad})
+        assert r.status_code == 422, bad
+
+
+async def test_a_walk_keeps_the_end_of_new_in_range_of_its_first_page(env) -> None:
+    """The PIT freezes the rows, and the cursor freezes the time of the first page. Without it,
+    a row first seen 2 s after the first page joins a later page, and the walk gives more rows
+    than the total of its first page said."""
+    login, client = env
+    http = await login()
+    cid = f"c-walk-{uuid.uuid4().hex[:8]}"
+    now = datetime.now(UTC)
+    early = (now - timedelta(minutes=10)).isoformat()
+    await _seed(
+        client,
+        cid,
+        [
+            {
+                "finding_key": f"fk-a-{cid}",
+                "cve_id": "CVE-2024-1",
+                "image_digest": "sha256:w1",
+                "first_seen_at": early,
+            },
+            {
+                "finding_key": f"fk-b-{cid}",
+                "cve_id": "CVE-2024-2",
+                "image_digest": "sha256:w2",
+                "first_seen_at": early,
+            },
+            # the last in the sort order, first seen 2 s after the first page
+            {
+                "finding_key": f"fk-z-{cid}",
+                "cve_id": "CVE-2024-3",
+                "image_digest": "sha256:w3",
+                "first_seen_at": (now + timedelta(seconds=2)).isoformat(),
+            },
+        ],
+    )
+    params = {"cluster_id": cid, "new_within_seconds": 3600, "size": 1}
+    r = await http.get("/api/v1/findings", params=params)
+    assert r.status_code == 200, r.text
+    first = r.json()
+    assert first["total"]["value"] == 2
+    seen = [row["finding_key"] for row in first["data"]]
+    await asyncio.sleep(3)  # the third row is now first seen before now
+    cursor = first["next_cursor"]
+    while cursor is not None:
+        r = await http.get("/api/v1/findings", params={**params, "cursor": cursor})
+        assert r.status_code == 200, r.text
+        seen += [row["finding_key"] for row in r.json()["data"]]
+        cursor = r.json()["next_cursor"]
+    assert sorted(seen) == [f"fk-a-{cid}", f"fk-b-{cid}"]
