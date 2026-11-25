@@ -9,7 +9,7 @@ import {
 import { buildSeverityTrendOption } from '@/charts/buildSeverityTrendOption'
 import { buildPtypeDonutOption } from '@/charts/buildPtypeDonutOption'
 import { buildScanActivityOption } from '@/charts/buildScanActivityOption'
-import { buildTrendQuery, isSubDayWindow } from '@/charts/buildTrendQuery'
+import { buildDailyTrendQuery, buildTrendQuery, isSubDayWindow } from '@/charts/buildTrendQuery'
 import { CHART_PTYPE_RAMP, CHART_SCANNER } from '@/styles/tokens'
 
 const pts = (counts: number[]) =>
@@ -25,15 +25,19 @@ describe('buildTrendQuery (pure params contract)', () => {
     })
   })
 
-  it('sub-day spans round UP to 1 day (day-grained API, operator ruling)', () => {
-    expect(buildTrendQuery('c-1', 0.0625, null).days).toBe(1) // "last 90 minutes"
+  it('sub-day spans of the daily Findings trend round UP to 1 day (day-grained API, operator ruling)', () => {
+    expect(buildDailyTrendQuery('c-1', 0.0625, null).days).toBe(1) // "last 90 minutes"
     expect(isSubDayWindow(0.0625)).toBe(true)
     expect(isSubDayWindow(30)).toBe(false)
   })
 
+  it('a sub-day span at now is exact for the strips (issue 1291)', () => {
+    expect(buildTrendQuery('c-1', 0.0625, null)).toEqual({ cluster_id: 'c-1', window_seconds: 5400 })
+  })
+
   it('clamps to the API bounds 1–365', () => {
     expect(buildTrendQuery('c-1', 900, null).days).toBe(365)
-    expect(buildTrendQuery('c-1', 0, null).days).toBe(1)
+    expect(buildDailyTrendQuery('c-1', 0, null).days).toBe(1)
   })
 })
 
