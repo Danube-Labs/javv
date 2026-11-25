@@ -10,7 +10,7 @@ import {
   findingsTrendApiV1TrendsFindingsGet,
 } from '@/api/generated'
 import type { FindingsTrendData } from '@/charts/buildFindingsTrendOption'
-import { buildTrendQuery } from '@/charts/buildTrendQuery'
+import { buildDailyTrendQuery } from '@/charts/buildTrendQuery'
 import { logger } from '@/lib/logger'
 
 export interface FacetBucket {
@@ -40,7 +40,7 @@ export const useOverviewStore = defineStore('overview', {
     async load(params: { cluster_id: string; as_of?: string }, windowDays: number) {
       this.loading = true
       this.failed = false
-      const trendQ = buildTrendQuery(params.cluster_id, windowDays, params.as_of ?? null)
+      const trendQ = buildDailyTrendQuery(params.cluster_id, windowDays, params.as_of ?? null)
       const [facets, trend, fresh] = await Promise.all([
         facetFindingsApiV1FindingsFacetsGet({ client, query: params as never }),
         findingsTrendApiV1TrendsFindingsGet({ client, query: trendQ as never }),
@@ -76,7 +76,7 @@ export const useOverviewStore = defineStore('overview', {
      * as a QUERY filter. Only callable at T=now (the route 422s otherwise — the view gates). */
     async loadSeverityTrend(clusterId: string, windowDays: number, scanner: 'trivy' | 'grype' | null) {
       const q = {
-        ...buildTrendQuery(clusterId, windowDays, null),
+        ...buildDailyTrendQuery(clusterId, windowDays, null),
         split: 'severity',
         ...(scanner ? { scanner } : {}),
       }

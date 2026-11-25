@@ -4,6 +4,7 @@
 import type { EChartsOption } from 'echarts'
 
 import { buildScanActivityOption, type ScanActivityData } from './buildScanActivityOption'
+import { exactWindowSeconds, trendDays } from './buildTrendQuery'
 
 export type IngestInterval = 'day' | 'hour'
 
@@ -52,22 +53,27 @@ export function onAxis(series: ScanActivityData, axis: readonly string[]): ScanA
 export const hourLabel = (iso: string): string =>
   new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
 
-/** The buckets of a strip's range, as the backend counts them (`window_bounds`): from the UTC day
- * floor of the start to the day of the end, or to the hour of now for hourly buckets. A strip
- * that puts each count at its date of this axis lines up with the other strips of its band, also
- * when its last count is in another hour (issue 1292). */
+/** The buckets of a strip's range, as the backend counts them. A range in whole days
+ * (`window_bounds`) runs from the UTC day floor of its start to the day of the end, or to the hour
+ * of now for hourly buckets. An exact range (`window_seconds`, issue 1291) runs from the hour of
+ * now less its length. A strip that puts each count at its date of this axis lines up with the
+ * other strips of its band, also when its last count is in another hour (issue 1292). */
 export function stripAxis(
   windowDays: number,
   t: string | null,
   interval: IngestInterval,
   nowMs: number = Date.now(),
 ): string[] {
-  const days = Math.min(365, Math.max(1, Math.ceil(windowDays))) // the days of buildTrendQuery
   const endMs = t === null ? nowMs : Date.parse(t)
   const endDay = Math.floor(endMs / INTERVAL_MS.day) * INTERVAL_MS.day
   const last = interval === 'day' ? endDay : Math.floor(endMs / INTERVAL_MS.hour) * INTERVAL_MS.hour
+  const seconds = interval === 'hour' ? exactWindowSeconds(windowDays, t) : null
+  const first =
+    seconds === null
+      ? endDay - trendDays(windowDays) * INTERVAL_MS.day
+      : Math.floor((endMs - seconds * 1000) / INTERVAL_MS.hour) * INTERVAL_MS.hour
   const out: string[] = []
-  for (let ms = endDay - days * INTERVAL_MS.day; ms <= last; ms += INTERVAL_MS[interval]) {
+  for (let ms = first; ms <= last; ms += INTERVAL_MS[interval]) {
     out.push(new Date(ms).toISOString())
   }
   return out

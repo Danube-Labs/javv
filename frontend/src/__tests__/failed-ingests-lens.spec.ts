@@ -87,11 +87,12 @@ describe('FailedIngestsLens (self-contained lens)', () => {
     expect(option.series.map((s) => s.name)).toEqual(['trivy', 'grype'])
   })
 
-  it('a short live range buckets hourly and a rewound one rides as_of, like Scan ingest', async () => {
+  it('a short live range sends its length and buckets hourly; a rewound one rides as_of, like Scan ingest', async () => {
     trendMock.mockResolvedValue(ok({ series: {} }))
     const w = mount(FailedIngestsLens, { props: { ...props, windowDays: 1 }, global: { stubs } })
     await flushPromises()
-    expect(trendMock.mock.calls[0]![0]).toMatchObject({ query: { days: 1, interval: 'hour' } })
+    // the exact range of issue 1291: the length of the range, and no days
+    expect(trendMock.mock.calls[0]![0].query).toEqual({ cluster_id: props.clusterId, window_seconds: 86_400, interval: 'hour' })
     await w.setProps({ t: '2026-09-20T23:59:59.999Z' })
     await flushPromises()
     expect(trendMock.mock.calls[1]![0]).toMatchObject({

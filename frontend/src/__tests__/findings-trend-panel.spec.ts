@@ -134,7 +134,8 @@ describe('FindingsTrendPanel (self-contained panel)', () => {
     trendMock.mockResolvedValue(ok(BOTH))
     const w = mount(FindingsTrendPanel, { props: { ...props, windowDays: 0.25 }, global: { stubs } })
     await flushPromises()
-    expect(trendMock.mock.calls[0]![0]).toMatchObject({ query: { days: 1 } })
+    // /trends/findings is daily only: no exact range here (issue 1291)
+    expect(trendMock.mock.calls[0]![0].query).toEqual({ cluster_id: 'c-k3d-0001', days: 1 })
     expect(w.text()).toContain('The chart has one bar for each day. It shows all of the last day.')
   })
 

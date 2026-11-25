@@ -37,6 +37,17 @@ describe('useOverviewStore().load', () => {
     vi.mocked(scannerFreshnessApiV1ScannersFreshnessGet).mockResolvedValue(ok(FRESH))
   })
 
+  it('the trend of findings reads whole days, also for a short range (issue 1291)', async () => {
+    const store = useOverviewStore()
+    await store.load({ cluster_id: 'c-1' }, 1 / 24)
+    await store.loadSeverityTrend('c-1', 1 / 24, null)
+    const queries = vi.mocked(findingsTrendApiV1TrendsFindingsGet).mock.calls.map((c) => (c[0] as { query: object }).query)
+    expect(queries).toEqual([
+      { cluster_id: 'c-1', days: 1 },
+      { cluster_id: 'c-1', days: 1, split: 'severity' },
+    ])
+  })
+
   it('keeps what the server returned', async () => {
     const store = useOverviewStore()
     await store.load({ cluster_id: 'c-1' }, 30)

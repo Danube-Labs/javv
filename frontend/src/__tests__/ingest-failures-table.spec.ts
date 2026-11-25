@@ -57,8 +57,17 @@ describe('buildIngestFailuresQuery (pure: the params the panel emits)', () => {
     expect(q).toMatchObject({ as_of: '2026-09-20T00:00:00Z', cursor: 'c1', size: 25 })
   })
 
-  it('rounds a sub-day range up to the 1-day floor, like every trend', () => {
-    expect(buildIngestFailuresQuery({ ...props, windowDays: 0.25, size: 10, cursor: null }).days).toBe(1)
+  it('a range of 2 days or less at now sends its length, as the strip above it (issue 1291, Q1 A)', () => {
+    const q = buildIngestFailuresQuery({ ...props, windowDays: 0.25, size: 10, cursor: null })
+    expect(q.window_seconds).toBe(21_600)
+    expect(q.days).toBeUndefined()
+  })
+
+  it('a longer range, or a past T, sends whole days, like every trend', () => {
+    expect(buildIngestFailuresQuery({ ...props, windowDays: 2.5, size: 10, cursor: null }).days).toBe(3)
+    const past = buildIngestFailuresQuery({ ...props, windowDays: 0.25, t: '2026-09-20T12:00:00Z', size: 10, cursor: null })
+    expect(past.days).toBe(1)
+    expect(past.window_seconds).toBeUndefined()
   })
 })
 
