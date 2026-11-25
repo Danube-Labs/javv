@@ -181,3 +181,29 @@ async def test_export_requires_auth_and_as_of_past_is_501(env) -> None:
         params={"cluster_id": cid, "as_of": "2026-01-01T00:00:00+00:00"},
     )
     assert r.status_code == 501  # export-at-T lands with M8b (D28)
+
+
+async def test_an_export_walk_keeps_the_end_of_new_in_range_of_its_start(env, monkeypatch) -> None:
+    """Issue 1291: the export walk takes the time once, before its first page, as it takes the
+    SLA cutoffs. Each page then has the same bounds of "new in range", so a row cannot change its
+    match between two pages."""
+    login, client = env
+    monkeypatch.setattr(sweep_mod, "_PAGE_SIZE", 1)  # one row on each page: a walk of 3 pages
+    ends: list[Any] = []
+    build = sweep_mod.build_search_body
+
+    def recorded(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        ends.append(kwargs.get("now"))
+        return build(*args, **kwargs)
+
+    monkeypatch.setattr(sweep_mod, "build_search_body", recorded)
+    cid = f"c-exp-{uuid.uuid4().hex[:8]}"
+    await _seed(client, cid, _rows(3))
+    http = await login()
+    r = await http.get(
+        "/api/v1/findings/export.csv", params={"cluster_id": cid, "new_within_seconds": 3600}
+    )
+    assert r.status_code == 200, r.text
+    assert len(r.text.splitlines()) == 1 + 3
+    walk = ends[1:]  # the first build is the count before the walk, with its own time
+    assert len(walk) >= 3 and None not in walk and len(set(walk)) == 1
