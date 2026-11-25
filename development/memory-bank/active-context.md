@@ -1,26 +1,27 @@
 # Active context
 
-As of: 2026-11-23
+As of: 2026-11-25
 
 This file shows the open, held and next work on the date above. The live status is on GitHub:
 issue 555 (the roadmap) and the 1.0.0 milestone. After each release, a docs PR updates this file.
 
 ## Where the project is
 
-- The last release is 0.9.13 (2026-11-23): the frontend image, CI and the dev setup run Node.js 26,
-  and the frontend tests run on Vitest 5 (issue 1283).
+- The last release is 0.9.13 (2026-11-23). The frontend image, CI and the dev setup run Node.js
+  26, and the frontend tests run on Vitest 5 (issue 1283).
 - The phase is hardening for 1.0 (issue 555, phase 3).
-- `main` holds the first fixes for four issues from a 0.9.13 deployment, for the next release
-  (0.9.14): issues 1291, 1292, 1293 and 1294. Each issue has its plan, with a spec file for each
-  slice, in a comment.
+- `main` holds the fixes for five issues from a 0.9.13 deployment, for the next release (0.9.14).
+  The operator closed the five issues:
+  - Issue 1294: an image name keeps its tag, and Findings takes a Tag filter and a No tag flag.
+  - Issue 1292: the New findings strip under Scan ingest, and as a dashboard panel.
+  - Issue 1293: the Scan ingest strip follows the scan filters of its screen.
+  - Issue 1291: a range of 2 days or less starts at the exact time, on the clock of the backend.
+  - Issue 1313: an Exact range of the time picker that ends now starts at its From time.
 
 ## Next
 
-- The PRs of issues 1291 to 1294, in this order, each on the word of the operator:
-  - Issue 1294 PR 3: the Tag filter on the screens. `main` has PRs 1297 and 1298.
-  - Issue 1292 PRs 2 and 3: the New findings strip. `main` has PR 1295.
-  - Issue 1293 PRs 1 and 2: the Scan ingest strip follows the filters of the table.
-  - Issue 1291 PRs 1 and 2: a range of less than one day starts at its real start.
+- Release 0.9.14, on the word of the operator. The release PR is PR 1296. Its What's new section
+  comes after the last merge before the release.
 - Issue 1263 closes after a new scan of the deployment that reported the 1,360 findings, on 0.9.12.
 
 Apart from these, the operator chooses the next step from the tables below.
@@ -52,9 +53,9 @@ Small items that no issue tracks.
 - Two library warnings stop a run of the suite with `-W error::DeprecationWarning`: the unset
   `asyncio_default_fixture_loop_scope` of pytest-asyncio, and `enable_cleanup_closed`, which
   opensearch-py passes to aiohttp (after issue 1263).
-- In the A/B rig of issue 1263, the peak memory of the backend on Python 3.14 was 238 MiB, against
-  216 MiB on 3.12, in one run. A second run gave 240 MiB, against 225 MiB on 0.9.11. The cause is
-  not known.
+- In one run of the A/B rig of issue 1263, the peak memory of the backend on Python 3.14 was
+  238 MiB. On 3.12 it was 216 MiB. A second run gave 240 MiB, against 225 MiB on 0.9.11. The cause
+  is not known.
 - The OpenSearch of the `javv-opensearch` chart logs 14 warnings of its security plugin at start.
   The folders `config` and `config/certs` have "insecure file permissions (should be 0700)". The
   files of `opensearch-security/` get the same warning with 0600. The deploy test of 2026-11-20
@@ -76,10 +77,22 @@ Small items that no issue tracks.
   `javv-opensearch` were in the registry. A re-run of the failed jobs pushed and signed the three
   charts and published the docs. The cause is not known.
 - At a past time, the rows take a scan by its scan time (`@timestamp`, the start of the scan
-  cycle), and the Scan ingest strip counts it by the time of the server (`ingested_at`). At a time
+  cycle). The Scan ingest strip counts it by the time of the server (`ingested_at`). At a time
   inside a scan cycle, the strip can show fewer scans than the rows. On the dev store, the gap was
   22 s at the median and 23 min at most, over 2,608 scan records. No change, by the word of the
   operator (after issue 1294, comment 7114441137).
+- A strip reads its counts when the range changes. When the start of a short range passes an hour,
+  the first bar leaves the axis. The count in the head of the strip keeps that bar until the next
+  read. No change, by the word of the operator (after issue 1291).
+- A scheduled export with "New in range" on and a range of 2 days or less counts the range when the
+  export runs. That can be some minutes after the user schedules it (after issue 1291).
+- The strips take the clock of the backend from the `Date` header. An ingress or the frontend
+  server can set that header with its own clock (after issue 1291).
+- The Audit activity strip has no guard against a slow read that lands after a newer one. This gap
+  is older than issue 1291.
+- An Exact range counts its To time as now only when it is at most 60 seconds before now. The To
+  field has minutes only. So a To of the current minute that a user applies in the next minute goes
+  to a past time. No change, by the word of the operator (after issue 1313).
 
 ## Open, in the 1.0.0 milestone
 
