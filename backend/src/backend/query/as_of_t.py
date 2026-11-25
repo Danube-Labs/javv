@@ -64,10 +64,16 @@ _FACET_FIELDS = (
     "disagree",
     "present",
     "ptype",
+    # issue 1317: each row holds the image name and tag of its own last appearance (issue 1294)
+    "image_repo",
+    "tag",
     "overdue",  # issue 363: counts the reconstruction's own at-T verdict (rows carry the bool)
     "unassigned",  # issue 349 §1: an expression over the row's assignee, mirrored below
     "untagged",  # issue 1294: the same shape over the row's tag
 )
+# the lists with no fixed size stop at the cap of the live terms agg, so the filter list shows
+# the same top 32 at a past time as now (issue 1317)
+_CAPPED_FACETS = ("image_repo", "tag")
 # whitelisted, but no history values → empty buckets (kev: none before mapping v20, issue 1000)
 _EMPTY_FACETS = ("kev", "disagree")
 _GROUP_FIELDS = (
@@ -593,7 +599,7 @@ class AsOfTQuery:
         if bad:
             raise ValueError(f"not facetable (whitelist {_FACET_FIELDS}): {bad}")
         # the live rule (issue 1064). The history has no namespaces or assignee facet, so of the
-        # searchable lists only the package type gets here.
+        # searchable lists only the package type, the image and the tag get here.
         if contains is not None and (len(chosen) != 1 or chosen[0] not in SEARCHABLE_FACETS):
             raise ValueError(f"contains needs exactly one field of {SEARCHABLE_FACETS}")
         reconstructed = await self._reconstruct(client, cluster_id, t, prefix=prefix)
@@ -630,6 +636,8 @@ class AsOfTQuery:
                 b["count"] += 1
                 b["by_scanner"][r["scanner"]] = b["by_scanner"].get(r["scanner"], 0) + 1
             facets[field] = sorted(counts.values(), key=lambda b: (-b["count"], str(b["key"])))
+            if field in _CAPPED_FACETS and contains is None:
+                facets[field] = cap_value_search(facets[field])[0]
         if contains is not None:
             # the live include pattern matches each letter in either case: lower() reads the same
             needle = contains.lower()

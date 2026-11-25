@@ -44,6 +44,9 @@ FACET_FIELDS = (
     "ptype",
     "namespaces",
     "assignee",
+    # issue 1317: the Image and Tag lists of the Findings filter list, top 32 like namespaces
+    "image_repo",
+    "tag",
     "overdue",  # issue 363: a filter agg over the overdue clause, not a terms agg
     "unassigned",  # issue 349 §1: likewise an expression (absence), not a term
     "untagged",  # issue 1294: the same shape, over the tag of the image
@@ -77,9 +80,15 @@ def _base(
 
 # facet name -> the SearchFilters field whose filter that facet leaves out (issue 949, ruling
 # 2). These facets list the values a user picks several of, so a pick must not hide the other
-# values. Only these three: the saved-view card count sums the severity facet under the view's
+# values. Only these lists: the saved-view card count sums the severity facet under the view's
 # own filters, so severity, state and scanner keep the full filter context.
-OWN_FILTER_FREE_FACETS = {"namespaces": "namespace", "ptype": "ptype", "assignee": "assignee"}
+OWN_FILTER_FREE_FACETS = {
+    "namespaces": "namespace",
+    "ptype": "ptype",
+    "assignee": "assignee",
+    "image_repo": "image_repo",
+    "tag": "tag",
+}
 
 
 def without_own_filter(filters: SearchFilters, facet: str) -> SearchFilters:
@@ -107,7 +116,7 @@ def counting_filters(filters: SearchFilters, facet: str) -> SearchFilters:
 
 # the facets a value search works on (issue 1064): the lists with no fixed values, where the
 # top 32 can leave out the value a user wants
-SEARCHABLE_FACETS = ("namespaces", "ptype", "assignee")
+SEARCHABLE_FACETS = ("namespaces", "ptype", "assignee", "image_repo", "tag")
 
 
 def contains_pattern(text: str) -> str:

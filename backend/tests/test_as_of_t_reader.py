@@ -1350,3 +1350,58 @@ def test_new_in_range_is_refused_at_past_t() -> None:
         AsOfTQuery._apply_filters([], SearchFilters(new_within_days=7))
     with pytest.raises(ValueError, match="new_within_seconds"):
         AsOfTQuery._apply_filters([], SearchFilters(new_within_seconds=3600))
+
+
+# --- the Image and Tag lists at a past T (issue 1317) ------------------------------------
+
+
+async def _past_facets(monkeypatch, rows: list[dict[str, Any]], **kw: Any) -> dict[str, Any]:
+    from backend.query.as_of_t import AsOfTQuery
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    return await AsOfTQuery().findings_facets(
+        cast(Any, None), cluster_id="c", t=datetime(2026, 1, 1, tzinfo=UTC), **kw
+    )
+
+
+async def test_past_t_image_and_tag_lists_leave_out_their_own_filter(monkeypatch) -> None:
+    """The rule of the live lists (issue 949) at a past T: after a pick of tag 1.4.2, the Tag
+    list still counts 1.4.1, the Image list counts only the picked tag, and a row with no tag
+    gives no Tag bucket (No tag counts it)."""
+    rows = [_q_row(image_repo="r/app", tag="1.4.2") for _ in range(2)]
+    rows += [_q_row(image_repo="r/db", tag="1.4.1", scanner="grype"), _q_row(tag=None)]
+    out = await _past_facets(
+        monkeypatch, rows, filters=SearchFilters(tag=["1.4.2"]), fields=["image_repo", "tag"]
+    )
+    counts = {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
+    assert counts["tag"] == {"1.4.2": 2, "1.4.1": 1}
+    assert counts["image_repo"] == {"r/app": 2}
+    by_tag = {b["key"]: b["by_scanner"] for b in out["facets"]["tag"]}
+    assert by_tag["1.4.1"] == {"grype": 1}
+
+
+async def test_past_t_image_and_tag_lists_stop_at_the_live_cap(monkeypatch) -> None:
+    """The live terms count gives the top 32; the past-time lists give the same top 32, by count
+    first. The Package type list keeps every value, as before."""
+    rows = [_q_row(tag=f"t{i:02d}", ptype=f"p{i:02d}") for i in range(40)]
+    rows += [_q_row(tag="t39", ptype="p39") for _ in range(3)]
+    out = await _past_facets(
+        monkeypatch, rows, filters=SearchFilters(), fields=["tag", "image_repo", "ptype"]
+    )
+    tags = [b["key"] for b in out["facets"]["tag"]]
+    assert len(tags) == 32 and tags[0] == "t39" and tags[1:] == [f"t{i:02d}" for i in range(31)]
+    assert len(out["facets"]["image_repo"]) == 1
+    assert len(out["facets"]["ptype"]) == 40
+
+
+async def test_past_t_value_search_reaches_a_tag_past_the_cap(monkeypatch) -> None:
+    """Issue 1064 at a past T: the Tag search finds a value that the top 32 leave out."""
+    rows = [_q_row(tag=f"t{i:02d}") for i in range(40)] + [_q_row(tag="t05")]
+    out = await _past_facets(
+        monkeypatch, rows, filters=SearchFilters(), fields=["tag"], contains="T3"
+    )
+    assert [b["key"] for b in out["facets"]["tag"]] == [f"t3{i}" for i in range(10)]
+    assert out["more"] is False

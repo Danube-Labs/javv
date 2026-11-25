@@ -725,6 +725,44 @@ async def test_list_facets_leave_out_their_own_filter_against_a_real_index(env) 
     assert sum(two["severity"].values()) == grid.json()["total"]["value"] == 2
 
 
+async def test_the_image_and_tag_lists_against_a_real_index(env) -> None:
+    """Issue 1317. The Image and Tag lists count without their own filter (issue 949), and the
+    value search (issue 1064) finds a tag in any case. A finding with no tag gives no Tag
+    bucket: the No tag flag counts it."""
+    login, client = env
+    cid = f"c-f1317-{uuid.uuid4().hex[:8]}"
+    await _seed(
+        client,
+        cid,
+        [
+            *_rows(2, image_repo="docker.io/library/nginx", tag="1.27-alpine", severity="high"),
+            *_rows(3, image_repo="docker.io/library/redis", tag="7.4", severity="low"),
+            *_rows(1, image_repo="docker.io/library/redis", severity="low"),
+        ],
+    )
+    http = await login()
+
+    async def facets(**params: Any) -> dict[str, Any]:
+        r = await http.get("/api/v1/findings/facets", params={"cluster_id": cid, **params})
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    def counts(out: dict[str, Any]) -> dict[str, dict[str, int]]:
+        return {k: {b["key"]: b["count"] for b in v} for k, v in out["facets"].items()}
+
+    picked = counts(await facets(fields=["image_repo", "tag", "severity"], tag="7.4"))
+    assert picked["tag"] == {"7.4": 3, "1.27-alpine": 2}  # the other tag stays listed
+    assert picked["image_repo"] == {"docker.io/library/redis": 3}
+    assert picked["severity"] == {"low": 3}
+
+    every = counts(await facets())  # no `fields`: the default read counts the two lists too
+    assert every["image_repo"] == {"docker.io/library/redis": 4, "docker.io/library/nginx": 2}
+    assert every["tag"] == {"7.4": 3, "1.27-alpine": 2}
+
+    found = await facets(fields=["tag"], contains="ALP")
+    assert counts(found) == {"tag": {"1.27-alpine": 2}} and found["more"] is False
+
+
 async def test_all_filters_counts_the_list_facets_under_their_own_filter_against_a_real_index(
     env,
 ) -> None:
