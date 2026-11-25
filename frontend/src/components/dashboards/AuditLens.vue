@@ -11,6 +11,7 @@ import { computed, ref, watch } from 'vue'
 import { auditFacetsApiV1AuditFacetsGet } from '@/api/generated'
 import { buildAuditLensOption, type ActivityPoint } from '@/charts/buildAuditLensOption'
 import { ingestInterval } from '@/charts/buildIngestLensOption'
+import { exactWindowSeconds, trendDays } from '@/charts/buildTrendQuery'
 import EChart from '@/components/charts/EChart.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import { useBucketRewind } from '@/composables/useBucketRewind'
@@ -55,12 +56,11 @@ watch(
       settled.value = false
       rows.value = []
     }
+    // the range of the other strips (issue 1291, Q2 A): exact for 2 days or less at now
+    const seconds = exactWindowSeconds(days, timeTravel.t)
+    const range = seconds === null ? { window_days: trendDays(days) } : { window_seconds: seconds }
     const response = await auditFacetsApiV1AuditFacetsGet({
-      query: {
-        ...q,
-        interval: interval.value,
-        window_days: Math.min(365, Math.max(1, Math.ceil(days))),
-      } as never,
+      query: { ...q, interval: interval.value, ...range } as never,
     })
     failed.value = !response.response?.ok || !response.data
     if (failed.value) {
