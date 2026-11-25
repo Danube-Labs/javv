@@ -308,12 +308,13 @@ Layout preserved: facet rail + toolbar (FilterBar + Save view + ColumnsMenu) + b
   `422` empty selector).
 
 **New findings strip (issue 1292, operator rulings 2026-11-23 and 2026-11-24 on built pictures):**
-the head band holds Scan ingest and, under it, New findings, as one band (`.lens-stack`). The
-strip reads `GET /api/v1/trends/new-findings` with the filters of the table, and shows the findings
-first seen in each bucket as stacked bars by severity, critical at the bottom. "New in range" is
-left out, because the strip counts the findings first seen in its range already. The hover has
-the head "24 Nov · new findings" and a row for each severity. The total of the range is at the
-right. A click on a bar rewinds the app, as on Scan ingest. A range with none says "No new
+the head band holds Scan ingest and New findings under it, as one band (`.lens-stack`). The strip
+reads `GET /api/v1/trends/new-findings` with the filters of the table. It shows the findings first
+seen in each bucket as stacked bars by severity, with critical at the bottom. The strip leaves out
+"New in range", because it counts the findings first seen in its range already.
+
+The hover has the head "24 Nov · new findings" and a row for each severity. The total of the range
+is at the right. A click on a bar rewinds the app, as on Scan ingest. A range with none says "No new
 findings in this range." At a past time, a filter that the history does not record (KEV, Scanners
 disagree) gets "JAVV cannot count the new findings with these filters at a past time."
 
@@ -343,10 +344,12 @@ one value. A second pick adds the value, and the filter bar reads "is one of". I
 bar reads "is none of", and the grid leaves out the rows with any of the values. Scanner takes one
 value.
 
-**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen): Image, Tag, Vulnerability and Package
-also take more than one value. In the filter bar's edit box, Enter adds the typed value to a list
-under the input, and the box stays open for the next value. A click on a value in the list removes
-it. A pick from a table cell adds the value, and the same pick again removes it. A pasted list with
+**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen). Four filters also take
+more than one value. They are Image, Tag, Vulnerability and Package. In the edit box of the filter
+bar, Enter adds the typed value to a list under the input. The box stays open for the next value. A
+click on a value in the list removes it.
+
+A pick from a table cell adds the value, and the same pick again removes it. A pasted list with
 commas adds each value. A filter takes at most 32 values (the API limit), and the edit box says so
 when the list is full.
 
@@ -359,14 +362,18 @@ the API accepts it. A link that holds both filters keeps both, and the grid show
 (see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
 another filter, or the removal of an Assignee value, keeps both.
 
-**Tag with No tag** (operator ruling 2026-11-23 on built pictures, issue 1294): the Tag filter is a typed field after Image, with "is" and "is
-not". "No tag" in Attribute keeps the findings of images with no tag, for example an image that a
-pod runs by its digest. Findings refuses Tag "is" with No tag, and the rules of Assignee with
-Unassigned apply: the last pick wins, a message names what JAVV cleared ("JAVV cleared the filter
-Tag. You cannot use Tag and No tag together."), and a link that holds both shows the 422 text. The
-No tag count leaves out the Tag "is" values, as the Unassigned count does. While the Image filter
-is on and Tag and No tag are off, its pill says "· all tags": the Image filter finds every tag of
-the image. The Tag filter and No tag block bulk triage, as the Image filter does.
+**Tag with No tag** (operator ruling 2026-11-23 on built pictures, issue 1294): the Tag filter is a
+typed field after Image, with "is" and "is not". "No tag" in Attribute keeps the findings of images
+with no tag. An example is an image that a pod runs by its digest. Findings refuses Tag "is" with No
+tag, and the rules of Assignee with Unassigned apply:
+- The last pick wins.
+- A message names what JAVV cleared: "JAVV cleared the filter Tag. You cannot use Tag and No tag
+  together."
+- A link that holds the two filters shows the 422 text.
+
+The No tag count leaves out the Tag "is" values, as the Unassigned count does. While the Image
+filter is on and Tag and No tag are off, its pill says "· all tags". The Image filter finds every
+tag of the image. The Tag filter and No tag block bulk triage, as the Image filter does.
 
 **EPSS at a past time** (operator ruling 2026-11-23 on built pictures, issue 1294): the scan
 history has no EPSS, so at a past time the EPSS header does not sort. A grid sorted by EPSS sorts by
@@ -659,7 +666,7 @@ the dialog says why:
   - Schedule, a filter the schedule cannot carry → "An export in the background cannot use these filters: <filter
     names>. Clear them, or use Run now." (at a past time: "… Clear them.", as Run now is hidden).
   - Schedule at a past time, a filter the scan history does not record (KEV, Scanners disagree,
-    New in range; the history keeps the image names since issue 1294) → "At a past time, a
+    New in range. The history keeps the image names since issue 1294.) → "At a past time, a
     schedule cannot use these filters:
     <filter names>. Clear them."
   - Both tabs, Assignee with Unassigned → "An export cannot use Assignee and Unassigned
@@ -1011,8 +1018,9 @@ a handful. Click a day to rewind, like Scan ingest; a range with none reads "No 
 this range", never an empty chart.
 **One axis for the strips of a band (issue 1292, D4 B, operator ruling 2026-11-24 on built
 pictures):** the backend ends an hourly series at 00:00 UTC of the current day, or at the hour of
-its last document if that is later. So two strips could put the same hour at a different place. Scan ingest, Failed ingests and New findings show each bucket of
-the range up to now (`stripAxis`), and put each count at its date (`onAxis`). "Now" is one clock
+its last document if that is later. So two strips can put the same hour at a different place.
+Scan ingest, Failed ingests and New findings show each bucket of the range up to now
+(`stripAxis`), and put each count at its date (`onAxis`). "Now" is one clock
 for the band (`useStripNow`), and each strip builds its axis on it (`useStripAxis`). So the axes move together.
 **The exact range (issue 1291, operator rulings 2026-11-23, 2026-11-24 and 2026-11-25):** a range
 of 2 days or less at now starts at now less its length, and its bars stay on the UTC hour. With
@@ -1485,32 +1493,42 @@ loads, the head card shows `Dashboard` and no actions. It stretches when the nam
   renders again only the panels that follow it, so the other panels do not read their data again.
 - **Data:** each panel reads its own data at the selected cluster, T and window (D8,
   DESIGN.md §10).
-- **Panel filters (issue 999, decision 2 C):** eight panels can keep findings filters: Findings
-  summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top components,
-  Top vulnerabilities (issue 1176), New findings (issue 1292) and Triage progress. Riskiest images with filters reads `GET /api/v1/findings/top-images`: the
-  store ranks the running images under the filters, for the scanner of the panel, and the panel
-  pages through at most 100 of them. With no filter it reads `GET /api/v1/images` as before. A
-  row still opens the image page, which does not take the filters. Top vulnerabilities reads
-  `GET /api/v1/findings/top-values?by=cve_id` (`components/dashboards/TopCvesPanel.vue`): the store
-  ranks the vulnerabilities by findings under the filters, for one scanner when the panel shows one, and the
-  panel pages through at most 100 of them. Its severity tag is the highest severity of the
-  findings in the count. A row opens Findings on the vulnerability. At a past time it reads nothing and says "This panel
-  shows only the time now, not the past time that you selected. To see the vulnerabilities, select Back to
-  now." (operator, 2026-11-09: the words of Top components do not tell a new reader enough). Such a panel
-  sends its filters with each read, and its counts read with `all_filters`, so "Namespace is not
-  kube-system" removes that row from Findings by namespace. A click on a row, band or bar opens
-  Findings with the filters of the panel and the value of the row. The value of the row replaces
-  the filter of the panel on the same field, and the flags of both stay.
+- **Panel filters (issue 999, decision 2 C):** eight panels can keep findings filters. They are
+  Findings summary, Package type, Findings by namespace, Riskiest images (issue 1063), Top
+  components, Top vulnerabilities (issue 1176), New findings (issue 1292) and Triage progress.
+
+  Riskiest images with filters reads `GET /api/v1/findings/top-images`. The store ranks the
+  running images under the filters, for the scanner of the panel. The panel pages through at most
+  100 of them. With no filter it reads `GET /api/v1/images` as before. A row still opens the image
+  page, which does not take the filters.
+
+  Top vulnerabilities reads `GET /api/v1/findings/top-values?by=cve_id`
+  (`components/dashboards/TopCvesPanel.vue`). The store ranks the vulnerabilities by findings under
+  the filters, for one scanner when the panel shows one. The panel pages through at most 100 of
+  them. Its severity tag is the highest severity of the findings in the count. A row opens Findings
+  on the vulnerability.
+
+  At a past time, the panel reads nothing. It then says "This panel shows only
+  the time now, not the past time that you selected. To see the vulnerabilities, select Back to
+  now." (operator, 2026-11-09: the words of Top components do not tell a new reader enough).
+
+  Such a panel sends its filters with each read, and its counts read with `all_filters`, so
+  "Namespace is not kube-system" removes that row from Findings by namespace. A click on a row, band
+  or bar opens Findings with the filters of the panel and the value of the row. The value of the row
+  replaces the filter of the panel on the same field, and the flags of the two stay.
+
   New findings (issue 1292, D3 B) is the strip of the Findings band
-  (`components/dashboards/NewFindingsStrip.vue`): it reads `GET /api/v1/trends/new-findings` under the
-  filters, for the scanner of the panel, and "All scanners" counts the two scanners together. It
-  refuses "New in range" (Q1 B, operator 2026-11-24 on built pictures): the strip counts the
-  findings first seen in its range already, so the filter would change nothing. Its reads take no
-  `all_filters`, and a click on a bar rewinds the time, as on the screens: Findings has no filter
-  for "first seen on this day". The click goes to the end of the day or hour of the bar, or back to
-  now for the bucket still in progress. **Open in Findings** of this panel carries its filters only,
-  so Findings shows all the findings under them, not only the new ones. A new New findings panel
-  takes both columns, as Scan ingest (Q2 A).
+  (`components/dashboards/NewFindingsStrip.vue`). It reads `GET /api/v1/trends/new-findings` under
+  the filters, for the scanner of the panel. "All scanners" counts the two scanners together. It
+  refuses "New in range" (Q1 B, operator 2026-11-24 on built pictures). The strip counts the
+  findings first seen in its range already, so the filter changes nothing.
+
+  Its reads take no `all_filters`, and a click on a bar rewinds the time, as on the screens.
+  Findings has no filter for "first seen on this day". The click goes to the end of the day or hour
+  of the bar, or back to now for the bucket still in progress. The link **Open in Findings** of this
+  panel carries its filters only. So Findings shows all the findings under them, not only the new ones.
+  A new New findings panel takes the two columns, as Scan ingest (Q2 A).
+
   Scan ingest (issue 1293) keeps the filters that a scan record holds: Namespace, Image, Tag, No
   tag and Digest. The operator ruled this on 2026-11-23 and 2026-11-24, on built pictures. Its
   settings offer only these, and the backend refuses the others and `present: false`. The strip
