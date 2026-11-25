@@ -146,7 +146,7 @@ describe('buildFilterQuery', () => {
   })
 
   // issue 1317: Image and Tag are lists now, and they keep the params of the typed fields
-  it('the Image and Tag lists send image_repo and tag as picked, in both modes', () => {
+  it('the Image and Tag lists send image_repo and tag as picked, in each mode', () => {
     const inc = buildFilterQuery(
       FINDINGS_FIELDS,
       sel({ image: ['docker.io/library/postgres'], tag: ['13.4', 'ALP'] }),
