@@ -61,9 +61,23 @@ router = APIRouter(prefix="/api/v1/trends", tags=["trends"])
 
 # no default in the signature: 30 when the request names neither `days` nor `window_seconds`
 # (pick_window), so a route can refuse a request that names both, also from an MCP tool
-Days = Annotated[int | None, Query(ge=1, le=365)]
+Days = Annotated[
+    int | None,
+    Query(
+        ge=1,
+        le=365,
+        description="The range in whole UTC days. With no range in the request, it is 30 days.",
+    ),
+]
 # the exact length of a range of 2 days or less, at now only (issue 1291)
-WindowSeconds = Annotated[int | None, Query(ge=EXACT_MIN_SECONDS, le=EXACT_MAX_SECONDS)]
+WindowSeconds = Annotated[
+    int | None,
+    Query(
+        ge=EXACT_MIN_SECONDS,
+        le=EXACT_MAX_SECONDS,
+        description="The exact range in seconds. It ends at the time of the request.",
+    ),
+]
 Interval = Literal["day", "hour"]
 # the type of `scanner` on /trends/findings: the MCP tool `trends` takes the parameters of both
 # routes under one name, and refuses to start when their types differ

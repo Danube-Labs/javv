@@ -1899,10 +1899,14 @@ export type AuditFacetsApiV1AuditFacetsGetData = {
         interval?: string | null;
         /**
          * Window Days
+         *
+         * The range in whole UTC days. With no range in the request, it is 30 days.
          */
         window_days?: number | null;
         /**
          * Window Seconds
+         *
+         * The exact range in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -4627,10 +4631,14 @@ export type ScannerIngestFailuresApiV1ScannersIngestFailuresGetData = {
         scanner: 'trivy' | 'grype';
         /**
          * Days
+         *
+         * The range in whole UTC days. With no range in the request, it is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
+         *
+         * The exact range in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -5078,6 +5086,8 @@ export type FindingsTrendApiV1TrendsFindingsGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range in whole UTC days. With no range in the request, it is 30 days.
          */
         days?: number | null;
         /**
@@ -5128,10 +5138,14 @@ export type IngestFailuresTrendApiV1TrendsIngestFailuresGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range in whole UTC days. With no range in the request, it is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
+         *
+         * The exact range in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -5178,10 +5192,14 @@ export type NewFindingsTrendApiV1TrendsNewFindingsGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range in whole UTC days. With no range in the request, it is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
+         *
+         * The exact range in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
@@ -5352,10 +5370,14 @@ export type ScansTrendApiV1TrendsScansGetData = {
         cluster_id: string;
         /**
          * Days
+         *
+         * The range in whole UTC days. With no range in the request, it is 30 days.
          */
         days?: number | null;
         /**
          * Window Seconds
+         *
+         * The exact range in seconds. It ends at the time of the request.
          */
         window_seconds?: number | null;
         /**
