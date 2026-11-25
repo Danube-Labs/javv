@@ -76,7 +76,7 @@ opens Findings on all scanners.
 - The list has no Scanner filter. Use the Scanner setting of the panel.
 - Triage progress shows each state, so its list has no State filter.
 - New findings counts only the findings first seen in the time range, so its list has no New in
-  range. Open in Findings on this panel shows all the findings that match the filters of the
+  range. On this panel, Open in Findings shows all the findings that match the filters of the
   panel, not only the new findings. To see only the new findings, add New in range on Findings.
 - New in range counts the findings first seen in the time range at the top of the page.
 

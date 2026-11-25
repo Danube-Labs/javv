@@ -498,9 +498,9 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 
 - `kev`, `epss`, `disagree` and `app` are not in the history. They are `null` in the rows.
 - `image_repo` and `tag` come from the scan record of the last scan that showed the finding. A
-  finding that is gone keeps the name of that scan, as in a read now. A scan before release
-  0.9.14 keeps the name before the split of a tag and a digest (`app:1.4.2@sha256:…` was the
-  image `app:1.4.2` with no tag).
+  finding that no scan shows any more keeps the name of that scan, as in a read now. A scan before
+  release 0.9.14 keeps the name before the split of a tag and a digest (`app:1.4.2@sha256:…` was
+  the image `app:1.4.2` with no tag).
 - The SLA deadline (`overdue` and `due_at`) uses the KEV value that each scan recorded, as a
   read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
   A finding from such a scan gets the deadline of its severity.
@@ -548,20 +548,23 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 - `/trends/ingest-failures`: the same range and `interval` as `/trends/scans`, so the two series
   align. It gives `{series: {<scanner>: [{date, count}]}, days, window_seconds, interval}`. With no refused push,
   `series` is `{}`.
-- `/trends/new-findings`: the findings first seen in each interval, for each severity. It takes
-  the same range and `interval` as `/trends/scans`, and the daily series have the same days. With
-  `days`, an hourly series ends at 00:00 UTC of the current day, or at the hour of its last finding
-  if that is later. With `window_seconds`, it ends at the hour of the request. Thus align hourly
-  series by `date`, not by position. It also takes the filters of `GET /api/v1/findings`. `present` is a filter there, so
-  by default the series counts only the findings that are present now. Each scanner has its own
-  findings, and the series counts the findings of each scanner. The range ends at the time of the
-  request: a finding with a `first_seen_at` after that time does not count. It gives
-  `{series: {<severity>: [{date, count}]}, days, window_seconds, interval}`. A severity with no new finding in
-  the range is not in `series`.
-  At a past `as_of`, JAVV builds the findings at that time from the history and applies the
-  filters to them, as on `/findings`. The intervals are days, and `interval` is `day`. The filters
-  that get 422 on `/findings` at a past time get 422 here too. `first_seen_at` is then the first
-  scan in the history that showed the finding.
+- `/trends/new-findings`: the findings first seen in each interval, for each severity.
+    - It takes the same range and `interval` as `/trends/scans`, and the daily series have the same
+      days.
+    - With `days`, an hourly series ends at 00:00 UTC of the current day, or at the hour of its last
+      finding if that is later. With `window_seconds`, it ends at the hour of the request. Thus
+      align hourly series by `date`, not by position.
+    - It also takes the filters of `GET /api/v1/findings`. `present` is a filter there, so by
+      default the series counts only the findings that are present now.
+    - Each scanner has its own findings, and the series counts the findings of each scanner.
+    - The range ends at the time of the request: a finding with a `first_seen_at` after that time
+      does not count.
+    - It gives `{series: {<severity>: [{date, count}]}, days, window_seconds, interval}`. A severity
+      with no new finding in the range is not in `series`.
+    - At a past `as_of`, JAVV builds the findings at that time from the history and applies the
+      filters to them, as on `/findings`. The intervals are days, and `interval` is `day`. The
+      filters that get 422 on `/findings` at a past time get 422 here too. `first_seen_at` is then
+      the first scan in the history that showed the finding.
 
 #### Failed pushes
 
