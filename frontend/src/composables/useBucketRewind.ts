@@ -6,12 +6,14 @@
 import { bucketEndT, type IngestInterval } from '@/charts/buildIngestLensOption'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 import { lastDataAt } from '@/system/freshness'
+import { serverNow } from '@/system/serverClock'
 
 export function useBucketRewind() {
   const timeTravel = useTimeTravelStore()
   return function rewindToBucket(bucketIso: string | undefined, interval: IngestInterval) {
     if (!bucketIso) return
-    const t = bucketEndT(bucketIso, Date.now(), interval)
+    // the bucket in progress on the clock of the backend, as the axis (issue 1291)
+    const t = bucketEndT(bucketIso, serverNow(), interval)
     if (t === null) {
       timeTravel.backToNow()
       return

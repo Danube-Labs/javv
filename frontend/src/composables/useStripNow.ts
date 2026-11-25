@@ -4,9 +4,12 @@
  * could then answer with buckets past the end of its axis, and two strips that drew on either
  * side of an hour put that hour at two places. This clock is the floor of the current hour, read
  * each minute and shared by every strip, so all axes move at the same moment. The value changes
- * only when the hour changes, so a strip draws again only then.
+ * only when the hour changes, so a strip draws again only then. The time is the time of the
+ * backend (`system/serverClock.ts`, issue 1291): the backend counts the range from its own clock.
  */
 import { computed, onScopeDispose, ref, type ComputedRef } from 'vue'
+
+import { serverNow } from '@/system/serverClock'
 
 const HOUR_MS = 3_600_000
 const nowMs = ref(Date.now())
@@ -24,5 +27,6 @@ export function useStripNow(): ComputedRef<number> {
       timer = null
     }
   })
-  return computed(() => Math.floor(nowMs.value / HOUR_MS) * HOUR_MS)
+  // the clock of the backend, which takes the start of the range (issue 1291, Q1 B)
+  return computed(() => Math.floor(serverNow(nowMs.value) / HOUR_MS) * HOUR_MS)
 }

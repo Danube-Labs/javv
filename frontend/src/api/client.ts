@@ -6,11 +6,13 @@
  * the backend for anything else, such as a proxy's 503 page or a gateway's JSON. A 503 whose problem
  * type says the store's disk is full marks the store read-only instead (issue 832). The health
  * store's /readyz poll clears it. Each request counts as pending work for the loading bar, except
- * the background polls below (issue 902).
+ * the background polls below (issue 902). The `Date` header of each response sets the clock of
+ * the backend (`system/serverClock.ts`).
  */
 import { client } from './generated/client.gen'
 import { downReason, isBackendProblem, isReadOnlyRefusal, useHealthStore } from '@/stores/health'
 import { countedFetch } from '@/system/pendingWork'
+import { noteServerDate } from '@/system/serverClock'
 
 /** Requests the app sends by itself on a timer: no user waits for them. */
 const BACKGROUND_POLLS = new Set(['/api/v1/notifications'])
@@ -26,6 +28,8 @@ client.setConfig({
 const isAuthRoute = (url: string) => new URL(url, window.location.origin).pathname.startsWith('/auth/')
 
 client.interceptors.response.use(async (response, request) => {
+  // the strips draw their axis on the clock of the backend (issue 1291)
+  noteServerDate(response.headers.get('date'))
   if (await isReadOnlyRefusal(response)) {
     useHealthStore().markDegraded('read-only', 'api')
   } else if (response.status === 503 || response.status === 502 || response.status === 504) {
