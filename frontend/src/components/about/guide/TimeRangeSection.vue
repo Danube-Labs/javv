@@ -19,6 +19,12 @@ import GuideProse from './GuideProse.vue'
         the findings that JAVV first saw in each day or hour. On Findings it follows the filters of the table.
       </li>
       <li>
+        <strong>A range of 2 days or less starts at the exact time.</strong> At 10:31,
+        <span class="ui-name">Last 1 hour</span> starts at 09:31 and the strips show the bars of 09:00 and
+        10:00. The first bar counts only from 09:31. A longer range starts at 00:00 UTC of its first day.
+        When the end of the range is in the past, each bar is one day.
+      </li>
+      <li>
         <strong>Move the end into the past to see history.</strong> The screens then show JAVV as the
         scans saw it at that time, with the triage of that time. A click on a day of the Scan ingest strip
         does the same for the end of that day. A banner tells you that you see history.

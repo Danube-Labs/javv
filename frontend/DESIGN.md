@@ -455,10 +455,13 @@ box (issue 1292). So the first and the last strip round the outer corners of the
 test fails a copy of the band rules, and a clip on the band.
 The strips of a band share one axis (issue 1292, D4 B, operator ruling on built pictures): each
 shows each bucket of the range up to now (`stripAxis`) and puts each count at its date (`onAxis`).
-The backend ends an hourly series at 00:00 UTC of the current day, or at the hour of its last
-document if that is later. "Now" is one clock for all strips (`composables/useStripNow.ts`): the
-floor of the hour, read each minute, so the axes of a band move together and a later read lands
-on its axis. Findings, Images and Image detail
+A range of 2 days or less at now is exact (issue 1291). The strips send its length
+(`window_seconds`), and the backend counts from now less that length. The axis starts at the hour
+of that start. A longer range, or a past end, is in whole UTC days. "Now" is one clock for all
+strips (`composables/useStripNow.ts`): the floor of the hour, read each minute, so the axes of a
+band move together and a later read lands on its axis. It is the clock of the backend, from the
+`Date` header of each API response (`system/serverClock.ts`), so a wrong browser clock draws the
+same hours. Findings, Images and Image detail
 put New findings under Scan ingest; it counts the findings first seen in each bucket, by severity,
 under the filters of the screen.
 
