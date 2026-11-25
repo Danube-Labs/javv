@@ -1370,9 +1370,13 @@ async def _past_facets(monkeypatch, rows: list[dict[str, Any]], **kw: Any) -> di
 async def test_past_t_image_and_tag_lists_leave_out_their_own_filter(monkeypatch) -> None:
     """The rule of the live lists (issue 949) at a past T: after a pick of tag 1.4.2, the Tag
     list still counts 1.4.1, the Image list counts only the picked tag, and a row with no tag
-    gives no Tag bucket (No tag counts it)."""
+    gives no Tag bucket (No tag counts it). The ingest writes no tag as "", as the live list."""
     rows = [_q_row(image_repo="r/app", tag="1.4.2") for _ in range(2)]
-    rows += [_q_row(image_repo="r/db", tag="1.4.1", scanner="grype"), _q_row(tag=None)]
+    rows += [
+        _q_row(image_repo="r/db", tag="1.4.1", scanner="grype"),
+        _q_row(tag=""),
+        _q_row(tag=None),
+    ]
     out = await _past_facets(
         monkeypatch, rows, filters=SearchFilters(tag=["1.4.2"]), fields=["image_repo", "tag"]
     )
@@ -1381,6 +1385,10 @@ async def test_past_t_image_and_tag_lists_leave_out_their_own_filter(monkeypatch
     assert counts["image_repo"] == {"r/app": 2}
     by_tag = {b["key"]: b["by_scanner"] for b in out["facets"]["tag"]}
     assert by_tag["1.4.1"] == {"grype": 1}
+    untagged = await _past_facets(
+        monkeypatch, rows, filters=SearchFilters(untagged=True), fields=["tag"]
+    )
+    assert untagged["facets"]["tag"] == []  # a blank row would clear No tag on a click
 
 
 async def test_past_t_image_and_tag_lists_stop_at_the_live_cap(monkeypatch) -> None:

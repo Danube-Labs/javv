@@ -114,6 +114,12 @@ def counting_filters(filters: SearchFilters, facet: str) -> SearchFilters:
     return filters
 
 
+# the lists whose empty value is no value: the ingest writes `""` for an image with no tag, and
+# triage writes `""` for a cleared assignee. The No tag and Unassigned flags count those rows, so
+# a blank row in the Tag or Assignee list would repeat the flag, and a click on it adds no filter
+# (issue 1317)
+EMPTY_IS_NO_VALUE_FACETS = ("tag", "assignee")
+
 # the facets a value search works on (issue 1064): the lists with no fixed values, where the
 # top 32 can leave out the value a user wants
 SEARCHABLE_FACETS = ("namespaces", "ptype", "assignee", "image_repo", "tag")
@@ -175,6 +181,7 @@ def build_facets_body(
                 "field": _FACET_FIELD_ALIAS.get(f, f),
                 "size": _FACET_TERMS_SIZE + (1 if search else 0),
                 **({"missing": _FACET_MISSING[f]} if f in _FACET_MISSING else {}),
+                **({"exclude": [""]} if f in EMPTY_IS_NO_VALUE_FACETS and not search else {}),
                 **search,
             },
             "aggs": dict(_BY_SCANNER),

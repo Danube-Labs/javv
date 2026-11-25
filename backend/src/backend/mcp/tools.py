@@ -194,9 +194,10 @@ async def _call(
 
 def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
     """The answer as compact JSON of at most `limit` characters: the longest top-level list loses
-    rows from its end until it fits, and `cut` says how many it kept. A page with a next page is
-    refused instead, because its cursor goes on after the last row of the full page, so the rows
-    cut here would never be seen.
+    rows from its end until it fits, and `cut` says how many it kept. With no top-level list, the
+    lists of its largest object each keep their first rows (_cut_each_list). A page with a next
+    page is refused instead, because its cursor goes on after the last row of the full page, so
+    the rows cut here would never be seen.
 
     One row always goes out, also over the cap, as Kafka returns a first batch larger than
     `fetch.max.bytes`: else no smaller page exists, and the agent can never read that row (issue
@@ -212,7 +213,12 @@ def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
             f"the page has {len(text)} characters, over the cap of {limit}: ask for a smaller size"
         )
     if not lists:
-        raise ToolError(f"the answer has {len(text)} characters, over the cap of {limit}")
+        nested = [k for k, v in answer.items() if isinstance(v, dict) and _has_list(v)]
+        if not nested:
+            raise ToolError(f"the answer has {len(text)} characters, over the cap of {limit}")
+        return _cut_each_list(
+            answer, max(nested, key=lambda k: len(json.dumps(answer[k], default=str))), limit
+        )
     key = max(lists, key=lambda k: len(json.dumps(answer[k], default=str)))
     rows: list[Any] = answer[key]
 
@@ -233,6 +239,34 @@ def cut_to_fit(answer: dict[str, Any], limit: int) -> str:
         else:
             high = mid - 1
     return trimmed(max(low, 1))
+
+
+def _has_list(value: dict[str, Any]) -> bool:
+    return any(isinstance(v, list) and v for v in value.values())
+
+
+def _cut_each_list(answer: dict[str, Any], key: str, limit: int) -> str:
+    """An answer whose rows are lists inside one object (the `facets` of count_findings, issue
+    1317): each list keeps its first values, the same number for each, the most that fit. The
+    lists come in count order, so each keeps its largest values."""
+    lists: dict[str, Any] = answer[key]
+    had = max(len(v) for v in lists.values() if isinstance(v, list))
+
+    def trimmed(keep: int) -> str:
+        cut = {"field": key, "kept": keep, "had": had, "reason": f"over {limit} characters"}
+        inner = {k: v[:keep] if isinstance(v, list) else v for k, v in lists.items()}
+        return json.dumps({**answer, key: inner, "cut": cut}, separators=(",", ":"), default=str)
+
+    low, high = 1, had
+    if len(trimmed(low)) > limit:
+        raise ToolError(f"the answer is over the cap of {limit} characters: ask for fewer fields")
+    while low < high:
+        mid = (low + high + 1) // 2
+        if len(trimmed(mid)) <= limit:
+            low = mid
+        else:
+            high = mid - 1
+    return trimmed(low)
 
 
 # Q4: for each (token, tool), the open search of its last first page

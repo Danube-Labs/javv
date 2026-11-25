@@ -135,9 +135,17 @@ def test_the_image_and_tag_lists_are_top_n_facets() -> None:
     assert {"image_repo", "tag"} <= set(FACET_FIELDS)
     assert {"image_repo", "tag"} <= set(SEARCHABLE_FACETS)
     body = build_facets_body(SearchFilters(), fields=["image_repo", "tag"])
+    assert body["aggs"]["image_repo"]["terms"] == {"field": "image_repo", "size": 32}
+    # the ingest writes "" for an image with no tag: No tag counts it, the Tag list does not
+    assert body["aggs"]["tag"]["terms"] == {"field": "tag", "size": 32, "exclude": [""]}
     for name in ("image_repo", "tag"):
-        assert body["aggs"][name]["terms"] == {"field": name, "size": 32}
         assert body["aggs"][name]["aggs"]["by_scanner"]["terms"]["field"] == "scanner"
+    # a cleared assignee is "" too: Unassigned counts it, the Assignee list does not
+    assignee = build_facets_body(SearchFilters(), fields=["assignee"])["aggs"]["assignee"]["terms"]
+    assert assignee["exclude"] == [""]
+    # a value search needs 2 letters, so its pattern never matches "" and takes no exclude
+    search = build_facets_body(SearchFilters(), fields=["tag"], contains="1.4")
+    assert "exclude" not in search["aggs"]["tag"]["terms"]
 
 
 def test_top_components_body_is_per_scanner_cardinality_only() -> None:

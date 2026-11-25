@@ -15,7 +15,8 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.
       `cursor`. A new search with the same tool closes the cursor of your last search. Read all
       the pages that you need before you start the next search.
     - An answer with a `cut` field does not have all the rows. Ask for fewer rows. When a tool
-      error tells you to ask for a smaller size, send a smaller `size`.
+      error tells you to ask for a smaller size, send a smaller `size`. For `count_findings`, ask
+      for fewer `fields`.
     - Each write tool has the hint `destructiveHint`. Ask the user before each write.
     - When a tool error has the words "the tool made the change", do not call the tool again.
     - A tool error with `403` tells you that the level of the token does not allow the tool. Tell
@@ -200,7 +201,7 @@ change the state of a finding with an accepted risk.
 | 429 | The token sent more requests in one minute than `JAVV_MCP_RATE_LIMIT_PER_MINUTE` allows (60 by default). Each connection of the client also uses requests: Claude Code sends 5 when it connects. The `detail` of the answer tells the wait. | Wait one minute. Keep `JAVV_MCP_RATE_LIMIT_PER_MINUTE` at 30 or more. |
 | A tool error: the level of this token does not allow this tool | The tool needs a higher level. | Make a token with a higher level. |
 | A tool error: `extra_forbidden` | The agent sent an argument that the tool does not take, for example a filter with a typo. The tool did not run. | Tell the agent to use the arguments of the input schema of the tool. |
-| An answer with a `cut` field | The answer was longer than `JAVV_MCP_MAX_ANSWER_CHARS` (50,000 characters by default). JAVV kept the first rows, and `cut` gives the number. | Ask for fewer rows. |
+| An answer with a `cut` field | The answer was longer than `JAVV_MCP_MAX_ANSWER_CHARS` (50,000 characters by default). JAVV kept the first rows, and `cut` gives the number. | Ask for fewer rows. For `count_findings`, ask for fewer `fields`. |
 | A tool error: 410 `cursor closed` | The agent started a new search with the same tool, and that search closed the cursor of the last search. | Tell the agent to read all the pages that it needs before it starts a new search. |
 | A tool error: ask for a smaller size | A page of rows with a next page was longer than `JAVV_MCP_MAX_ANSWER_CHARS`. | Ask for a smaller page. A page of one row always goes out. |
 

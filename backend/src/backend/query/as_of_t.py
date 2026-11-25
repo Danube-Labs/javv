@@ -38,6 +38,7 @@ from opensearchpy import AsyncOpenSearch, NotFoundError
 from backend.decisions.projection import project
 from backend.models.envelope import SEVERITY_RANK, canonical_severity
 from backend.query.aggs import (
+    EMPTY_IS_NO_VALUE_FACETS,
     SEARCHABLE_FACETS,
     TOP_IMAGES_SIZE,
     cap_value_search,
@@ -631,6 +632,8 @@ class AsOfTQuery:
                     if field != "ptype":
                         continue
                     key = "unknown"  # mirrors the live facet's missing-bucket (the B-1 caveat)
+                if key == "" and field in EMPTY_IS_NO_VALUE_FACETS:
+                    continue  # mirrors the live facet's `exclude` (issue 1317)
                 key = str(key).lower() if isinstance(key, bool) else key
                 b = counts.setdefault(key, {"key": key, "count": 0, "by_scanner": {}})
                 b["count"] += 1

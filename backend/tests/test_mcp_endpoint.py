@@ -455,6 +455,26 @@ def test_a_long_answer_loses_rows_from_the_end_of_its_longest_list_and_says_so()
     assert cut["tags"] == ["a"] and cut["total"] == 40
 
 
+def test_a_long_count_keeps_the_first_values_of_each_list_and_says_so():
+    """Issue 1317: a count_findings answer has its lists inside `facets`, five of them of up to
+    32 values. Each list keeps its first values, the largest counts, the same number for each."""
+    facets = {
+        f: [{"key": f"{f}-{i}-" + "x" * 40, "count": 40 - i} for i in range(32)]
+        for f in ("namespaces", "image_repo", "tag")
+    }
+    answer = {"facets": {**facets, "severity": [{"key": "high", "count": 9}]}}
+    text = cut_to_fit(answer, 3000)
+    assert len(text) <= 3000
+    out = json.loads(text)
+    kept = out["cut"]["kept"]
+    assert 1 < kept < 32 and out["cut"] == {**out["cut"], "field": "facets", "had": 32}
+    for f in facets:
+        assert [b["count"] for b in out["facets"][f]] == [40 - i for i in range(kept)]
+    assert out["facets"]["severity"] == [{"key": "high", "count": 9}]
+    with pytest.raises(ToolError, match="ask for fewer fields"):
+        cut_to_fit(answer, 200)
+
+
 def test_a_page_with_a_next_page_is_refused_and_not_cut():
     """The cursor goes on after the last row of the full page: rows cut here would never show."""
     answer = {"data": [{"pad": "x" * 50} for _ in range(40)], "next_cursor": "after-row-39"}
