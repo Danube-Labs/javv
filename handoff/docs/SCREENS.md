@@ -40,6 +40,13 @@ Apply stays disabled for an end date after today, as it does for a start after t
 later today reads as now. A later day put dates on the button and the captions that the charts
 did not show.
 
+**Time range, an Exact range that ends now (issue 1313, operator rulings 2026-11-25):** the range
+starts at its From time. Its length is now less From, on the clock of the backend
+(`components/time-travel/customRange.ts`). A To time at most a minute before now, or later, ends
+the range now. The query builders then treat the length as for Quick select. A length of 2 days or
+less is exact, and a longer one rounds up to whole days. A range that ends in the past keeps whole
+days, rounded to the nearest day, and JAVV goes to its To time.
+
 **Data**
 - `GET /auth/me` — `username`, `role`, `capabilities`, `must_change`. All gating flows from
   `capabilities` (A-4). Nav items whose screen is capability-gated (Approvals, admin Settings

@@ -201,6 +201,9 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-24 | The Audit activity strip takes the exact range of 2 days or less, as the other strips (Q2 A of PR 1). | 1291 |
 | 2026-11-25 | The axis of the strips takes the clock of the backend, from the `Date` header of each API response. A wrong browser clock then draws the same hours (Q1 B of PR 2). This applies item 2 of 2026-11-23. | 1291 |
 | 2026-11-25 | PR 2 of issue 1291 is one PR of 36 files, 33 of them in the frontend, with a rule exception (Q2 B). | 1291 |
+| 2026-11-25 | A range from Exact range of the time picker that ends now starts at its From time. Its length is now less From, on the clock of the backend. A length of 2 days or less is exact, as for Quick select (Q1 A). | 1313 |
+| 2026-11-25 | A range from Exact range that ends in the past does not change. JAVV goes to the To time and counts whole days, rounded to the nearest day (Q2 A). | 1313 |
+| 2026-11-25 | A range from Exact range of more than 2 days that ends now rounds up to whole days, as Quick select does (Q3 A). | 1313 |
 
 ## AI vulnerability research (alpha)
 
