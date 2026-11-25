@@ -4092,6 +4092,11 @@ workload?</p>
 <td><code>query/aggs._FACET_TERMS_SIZE</code> (32): at least each fixed Findings list, and the top values of a list with no fixed values. The Audit log User list and the Approvals Approver list use it too. A value search (<code>contains</code>) sends the same number of values. <code>query/audit._AUDIT_LIST_TERMS_SIZE</code> (64): more than the Audit log Action list, which has 46 values. <code>query/contributors._BOARD_SIZE</code> (100): the people on the leaderboard. <code>query/aggs.TOP_IMAGES_SIZE</code> (100): the images of a Riskiest images panel with filters, which the panel shows page by page. A cluster can have more images. The panel shows only the first 100, as Top components shows only 100 packages. The rank is on critical findings, then high, medium and low findings. <code>query/aggs.TOP_COMPONENTS_SIZE</code> (100): the packages of a Top components card or panel, and the CVEs of a Top CVEs panel. The panel shows them page by page. A cluster can have more packages or CVEs.</td>
 <td>The data model and the product set these limits, not the workload. A larger value would ask for buckets that cannot exist.</td>
 </tr>
+<tr>
+<td><strong>Exact range of a read:</strong> the shortest and the longest range in seconds</td>
+<td><code>query/trends.EXACT_MIN_SECONDS</code> (60), <code>EXACT_MAX_SECONDS</code> (172,800, which is 2 days)</td>
+<td>These values are the contract of the API (<code>window_seconds</code> and <code>new_within_seconds</code>). They are in the OpenAPI schema and in the generated client. The operator ruled the 2 days: a longer range starts at 00:00 UTC, as before.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="ci-gate-values">CI gate values<a class="headerlink" href="#ci-gate-values" title="Permanent link">&para;</a></h2>

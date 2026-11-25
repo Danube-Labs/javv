@@ -3133,7 +3133,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/scanners/ingest-failures</code></td>
 <td>session</td>
-<td>The pushes that the ingest refused after the token check, newest first. <code>scanner</code> is necessary. <code>days</code> is 1 to 365 (default 30), and <code>size</code> is 1 to 100 (default 25). <a href="#failed-pushes">Failed pushes</a> gives the fields.</td>
+<td>The pushes that the ingest refused after the token check, newest first. <code>scanner</code> is necessary. The range is <code>days</code> (1 to 365, default 30) or <code>window_seconds</code>, as in <a href="#trends">Trends</a>. <code>size</code> is 1 to 100 (default 25). <a href="#failed-pushes">Failed pushes</a> gives the fields.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3157,7 +3157,7 @@ cron expressions.</p>
 <td>GET</td>
 <td><code>/api/v1/audit/facets</code></td>
 <td>session</td>
-<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. The <code>actor</code> counts leave out the <code>actor</code> and <code>exclude_actor</code> filters, so the other users keep their counts. With <code>interval</code> (<code>day</code> or <code>hour</code>) and <code>window_days</code>, it also gives <code>activity</code>: the events in each interval. <code>contains</code> is a value search on the <code>actor</code> values, with 2 to 128 characters. It gives the users that contain the text, in any case, from all users and not only the 32 with the most events. The counts use the same filters as the <code>actor</code> counts. It gives at most 32 values, and <code>more</code> is <code>true</code> when more users contain the text. It gives no <code>entity_type</code>, <code>action</code> or <code>activity</code>. <code>contains</code> with <code>interval</code> gives 422.</td>
+<td>The counts of <code>entity_type</code>, <code>action</code> and <code>actor</code>, with the same filters. The <code>actor</code> counts leave out the <code>actor</code> and <code>exclude_actor</code> filters, so the other users keep their counts. With <code>interval</code> (<code>day</code> or <code>hour</code>), it also gives <code>activity</code>: the events in each interval. The range is <code>window_days</code> (1 to 365, default 30) back from the time of the request or from <code>as_of</code>, or <code>window_seconds</code>, as in <a href="#trends">Trends</a>. <code>contains</code> is a value search on the <code>actor</code> values, with 2 to 128 characters. It gives the users that contain the text, in any case, from all users and not only the 32 with the most events. The counts use the same filters as the <code>actor</code> counts. It gives at most 32 values, and <code>more</code> is <code>true</code> when more users contain the text. It gives no <code>entity_type</code>, <code>action</code> or <code>activity</code>. <code>contains</code> with <code>interval</code> gives 422.</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -3222,7 +3222,11 @@ the same filters:</p>
 </tr>
 <tr>
 <td><code>new_within_days</code></td>
-<td>The findings first seen in the last 1 to 365 days</td>
+<td>The findings first seen in the last 1 to 365 days. The range starts at 00:00 UTC, that number of days before today.</td>
+</tr>
+<tr>
+<td><code>new_within_seconds</code></td>
+<td>The findings first seen in an exact range of 60 to 172,800 seconds (2 days) that ends at the time of the request</td>
 </tr>
 <tr>
 <td><code>overdue</code></td>
@@ -3246,7 +3250,7 @@ the same filters:</p>
 <li>JAVV splits the name of an image at ingest. <code>app:1.4.2</code> is the <code>image_repo</code> <code>app</code> with the
   <code>tag</code> <code>1.4.2</code>, so <code>image_repo=app</code> selects each version of the image. A <code>tag</code> value has at most
   128 characters.</li>
-<li>Each filter except <code>kev</code>, <code>fixable</code>, <code>disagree</code>, <code>present</code>, <code>new_within_days</code>, <code>overdue</code>,
+<li>Each filter except <code>kev</code>, <code>fixable</code>, <code>disagree</code>, <code>present</code>, <code>new_within_days</code>, <code>new_within_seconds</code>, <code>overdue</code>,
   <code>unassigned</code>, <code>untagged</code>, <code>image_digest</code> and <code>q</code> has an <code>exclude_</code> form, for example <code>exclude_severity</code>.
   An <code>exclude_</code> filter leaves out the rows with that value. A row with no value for the field stays.
   Thus <code>exclude_assignee=bob</code> keeps the rows with no owner. An <code>exclude_</code> filter with more than one
@@ -3256,7 +3260,10 @@ the same filters:</p>
   (<code>namespace</code>, <code>ptype</code>, <code>assignee</code>, <code>image_repo</code>, <code>tag</code>, <code>cve_id</code>, <code>package_name</code> and their
   <code>exclude_</code> forms) also take one string. JAVV keeps it as a list with that one value.</li>
 <li>One field takes the filter or its <code>exclude_</code> form, not both. <code>assignee</code> and <code>unassigned</code> also
-  do not go together, and <code>tag</code> and <code>untagged</code> do not go together. Each of these pairs gets 422, also in a saved view and in a report.</li>
+  do not go together, and <code>tag</code> and <code>untagged</code> do not go together. <code>new_within_days</code> and <code>new_within_seconds</code> do not go together. Each of these pairs gets 422, also in a saved view and in a report.</li>
+<li><code>new_within_days</code> and <code>new_within_seconds</code> end at the time of the request. A finding with a later
+  <code>first_seen_at</code> does not count, also when the clock of a scanner runs ahead. A walk with <code>cursor</code>
+  keeps the time of its first page, and an export keeps the time of its start.</li>
 </ul>
 <h4 id="a-past-time-as_of">A past time: <code>as_of</code><a class="headerlink" href="#a-past-time-as_of" title="Permanent link">&para;</a></h4>
 <p>Each read takes <code>as_of</code>. With no value, <code>now</code> or a time in the future, the read shows the current
@@ -3270,7 +3277,7 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 <li>The SLA deadline (<code>overdue</code> and <code>due_at</code>) uses the KEV value that each scan recorded, as a
   read now does. A scan that JAVV received before release 0.9.1 has no KEV value in the history.
   A finding from such a scan gets the deadline of its severity.</li>
-<li>A filter, sort or group on one of these fields gets 422. <code>new_within_days</code> gets 422 too.</li>
+<li>A filter, sort or group on one of these fields gets 422. <code>new_within_days</code> and <code>new_within_seconds</code> get 422 too.</li>
 <li>A facet on one of these fields gives no values.</li>
 <li><code>ptype</code>, <code>package_name</code>, <code>image_repo</code>, <code>tag</code>, <code>untagged</code>, <code>q</code> and the <code>exclude_</code> filters on
   recorded fields apply as usual. A group by <code>image_repo</code> works.</li>
@@ -3280,6 +3287,23 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 </ul>
 <h4 id="trends">Trends<a class="headerlink" href="#trends" title="Permanent link">&para;</a></h4>
 <ul>
+<li>The range of a trend is <code>days</code> or <code>window_seconds</code>. A read takes one of the two:<ul>
+<li><code>days</code> (1 to 365, default 30): whole UTC days, from 00:00 UTC <code>days</code> days before today.</li>
+<li><code>window_seconds</code> (60 to 172,800): the exact range of 2 days or less. It starts at the time
+  of the request less <code>window_seconds</code>. <code>/trends/scans</code>, <code>/trends/ingest-failures</code> and
+  <code>/trends/new-findings</code> take it.</li>
+<li><code>window_seconds</code> with <code>days</code>, or with a past <code>as_of</code>, gets 422. A range at a past time is in days.</li>
+<li>Each range ends at the time of the request, or at a past <code>as_of</code>. A record with a later time
+  does not count, also when the clock of a scanner runs ahead.</li>
+<li><code>/trends/ingest-failures</code> gives <code>days</code> and <code>window_seconds</code>. <code>/trends/scans</code> and
+  <code>/trends/new-findings</code> give the two at the time of the request. The one that the read did
+  not use is <code>null</code>.</li>
+<li><code>/trends/findings</code> gives <code>days</code> and no <code>window_seconds</code>. At a past <code>as_of</code>, <code>/trends/scans</code>
+  and <code>/trends/new-findings</code> also give <code>days</code> and no <code>window_seconds</code>.</li>
+<li>The intervals stay on the UTC day or hour. With <code>window_seconds</code>, the first interval counts
+  only from the start of the range.</li>
+</ul>
+</li>
 <li><code>/trends/scans</code>: the committed scans. <code>interval</code> is <code>day</code> (default) or <code>hour</code>. <code>hour</code> is
   possible only for 31 days or less, else 422. At a past <code>as_of</code>, the intervals are days.<ul>
 <li>It takes the filters of <code>GET /api/v1/findings</code> that a scan record holds:<ul>
@@ -3300,17 +3324,18 @@ state. With a time in the past, JAVV builds the state at that time from the hist
   findings that a scan no longer showed (<code>resolved_semantics: "scan_resolved"</code>). A triage to
   <code>resolved</code> does not count. <code>split</code> is <code>scanner</code> (default) or <code>severity</code>. <code>split=severity</code> gets
   422 at a past <code>as_of</code>. <code>scanner</code> (<code>trivy</code> or <code>grype</code>) limits the series to one scanner.</li>
-<li><code>/trends/ingest-failures</code>: the same <code>days</code> and <code>interval</code> as <code>/trends/scans</code>, so the two series
-  align. It gives <code>{series: {&lt;scanner&gt;: [{date, count}]}, days, interval}</code>. With no refused push,
+<li><code>/trends/ingest-failures</code>: the same range and <code>interval</code> as <code>/trends/scans</code>, so the two series
+  align. It gives <code>{series: {&lt;scanner&gt;: [{date, count}]}, days, window_seconds, interval}</code>. With no refused push,
   <code>series</code> is <code>{}</code>.</li>
 <li><code>/trends/new-findings</code>: the findings first seen in each interval, for each severity. It takes
-  the same <code>days</code> and <code>interval</code> as <code>/trends/scans</code>, and the daily series have the same days. An
-  hourly series ends at 00:00 UTC of the current day, or at the hour of its last finding if that
-  is later. Thus align hourly series by <code>date</code>, not by position. It also takes the filters of <code>GET /api/v1/findings</code>. <code>present</code> is a filter there, so
+  the same range and <code>interval</code> as <code>/trends/scans</code>, and the daily series have the same days. With
+  <code>days</code>, an hourly series ends at 00:00 UTC of the current day, or at the hour of its last finding
+  if that is later. With <code>window_seconds</code>, it ends at the hour of the request. Thus align hourly
+  series by <code>date</code>, not by position. It also takes the filters of <code>GET /api/v1/findings</code>. <code>present</code> is a filter there, so
   by default the series counts only the findings that are present now. Each scanner has its own
   findings, and the series counts the findings of each scanner. The range ends at the time of the
   request: a finding with a <code>first_seen_at</code> after that time does not count. It gives
-  <code>{series: {&lt;severity&gt;: [{date, count}]}, days, interval}</code>. A severity with no new finding in
+  <code>{series: {&lt;severity&gt;: [{date, count}]}, days, window_seconds, interval}</code>. A severity with no new finding in
   the range is not in <code>series</code>.
   At a past <code>as_of</code>, JAVV builds the findings at that time from the history and applies the
   filters to them, as on <code>/findings</code>. The intervals are days, and <code>interval</code> is <code>day</code>. The filters
@@ -3321,7 +3346,8 @@ state. With a time in the past, JAVV builds the state at that time from the hist
 <p><code>GET /api/v1/scanners/ingest-failures</code> gives <code>{data, total, next_cursor}</code>. Each row has
 <code>@timestamp</code>, <code>failure_id</code>, <code>scanner</code>, <code>stage</code>, <code>reason</code>, <code>status</code>, <code>error</code> and <code>image_ref</code>. The
 <code>ingest rejected</code> log line has the same <code>failure_id</code>. The read uses no point in time. Thus a push
-that fails during your read can show on a later page.</p>
+that fails during your read can show on a later page. Each page also takes its range at its own
+request. With <code>window_seconds</code>, a push that leaves the range during your read is not on a later page.</p>
 <h4 id="the-clusters-list">The clusters list<a class="headerlink" href="#the-clusters-list" title="Permanent link">&para;</a></h4>
 <p><code>GET /api/v1/clusters</code> gives each cluster that has a token, a name or a retirement record.
 <code>cluster_name</code> is a name to show. JAVV never uses it in a query. Without a name, it is the
@@ -3777,7 +3803,7 @@ permissions of the user who opens the dashboard.</p>
 <li><code>filters</code> on a panel that does not read findings counts or scans</li>
 <li><code>scanner</code> or <code>exclude_scanner</code> in <code>filters</code>. The <code>scanner</code> field of the panel does this.</li>
 <li><code>state</code> or <code>exclude_state</code> in the <code>filters</code> of <code>triage-progress</code>. This panel shows each state.</li>
-<li><code>new_within_days</code> in the <code>filters</code> of <code>new-findings</code>. This panel counts only the findings first seen in
+<li><code>new_within_days</code> or <code>new_within_seconds</code> in the <code>filters</code> of <code>new-findings</code>. This panel counts only the findings first seen in
   the time range.</li>
 <li>a filter in the <code>filters</code> of <code>scan-ingest</code> that a scan record does not hold. This panel counts
   scans, so it takes only the filters of <code>GET /api/v1/trends/scans</code>.</li>
