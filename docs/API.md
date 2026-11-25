@@ -522,7 +522,11 @@ state. With a time in the past, JAVV builds the state at that time from the hist
     - `window_seconds` with `days`, or with a past `as_of`, gets 422. A range at a past time is in days.
     - Each range ends at the time of the request, or at a past `as_of`. A record with a later time
       does not count, also when the clock of a scanner runs ahead.
-    - The response gives `days` and `window_seconds`. The one that the read did not use is `null`.
+    - `/trends/ingest-failures` gives `days` and `window_seconds`. `/trends/scans` and
+      `/trends/new-findings` give the two at the time of the request. The one that the read did
+      not use is `null`.
+    - `/trends/findings` gives `days` and no `window_seconds`. So do `/trends/scans` and
+      `/trends/new-findings` at a past `as_of`.
     - The intervals stay on the UTC day or hour. With `window_seconds`, the first interval counts
       only from the start of the range.
 - `/trends/scans`: the committed scans. `interval` is `day` (default) or `hour`. `hour` is

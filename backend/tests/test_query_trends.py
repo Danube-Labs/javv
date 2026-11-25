@@ -39,7 +39,7 @@ DAYS_30 = {"gte": "2026-10-21", "lte": "2026-11-20T11:30:00.000+00:00"}
 
 
 def _ms(t: datetime) -> str:
-    """A bound as the builders write it: always with milliseconds (see trends._ms)."""
+    """A bound as the builders write it: always with milliseconds (see trends.iso_ms)."""
     return t.isoformat(timespec="milliseconds")
 
 

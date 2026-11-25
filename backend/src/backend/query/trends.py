@@ -40,8 +40,8 @@ if TYPE_CHECKING:
 _MAX_DAYS = 365
 _BY_SCANNER_TERMS = {"field": "scanner", "size": 4}
 # the exact range of issue 1291 (ruling 1): a range of 2 days or less starts at the end minus its
-# length; a longer one keeps whole UTC days. The minute floor matches the minute rounding of the
-# browser. Both are the API contract (`window_seconds`, `new_within_seconds`), not a setting.
+# length; a longer one keeps whole UTC days. Both limits are the API contract (`window_seconds`,
+# `new_within_seconds`), not a setting.
 EXACT_MIN_SECONDS = 60
 EXACT_MAX_SECONDS = 2 * 86_400
 
