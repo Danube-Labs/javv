@@ -1,8 +1,9 @@
 /**
  * Pins the range-control semantics (#300/#301): range END → global as_of (minute-precise,
- * null when ending now), range SPAN → whole-day windowDays (sub-day quick-selects round UP),
- * strict 24h HH:mm validation, 24-hour labels — never AM/PM. A range ends today at the latest:
- * a later day labelled dates that the charts did not show (issue 984).
+ * null when ending now), range SPAN → windowDays (the query builders round it), strict 24h HH:mm
+ * validation, 24-hour labels — never AM/PM. A range ends today at the latest: a later day labelled
+ * dates that the charts did not show (issue 984). An Exact range that ends now starts at its From
+ * time, on the clock of the backend (issue 1313).
  */
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -10,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import GlobalTimePicker from '@/components/time-travel/GlobalTimePicker.vue'
 import { useTimeTravelStore } from '@/stores/timeTravel'
+import { noteServerDate } from '@/system/serverClock'
 
 async function open(w: ReturnType<typeof mount>) {
   await w.find('.time-range').trigger('click')
@@ -180,5 +182,39 @@ describe('a range that ends after today (issue 984)', () => {
     const w = mount(GlobalTimePicker)
     await pick(w, '2026-10-16', '2026-10-23')
     expect((apply(w).element as HTMLButtonElement).disabled).toBe(false)
+  })
+})
+
+describe('an Exact range that ends now (issue 1313)', () => {
+  const BACKEND = new Date(2026, 10, 25, 11, 36) // local time
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
+
+  beforeEach(() => setActivePinia(createPinia()))
+  afterEach(() => {
+    noteServerDate(new Date(0).toUTCString(), 0) // back to the clock of the browser
+    vi.useRealTimers()
+  })
+
+  it.each([
+    ['right', 0],
+    ['40 minutes ahead', 40],
+  ])('with a browser clock %s, 2 hours to the time of the backend stay 2 hours at now', async (_name, minutes) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(BACKEND.getTime() + minutes * 60_000)
+    noteServerDate(BACKEND.toUTCString())
+    const w = mount(GlobalTimePicker)
+    const store = useTimeTravelStore()
+    const from = new Date(BACKEND.getTime() - 2 * 3_600_000)
+    await open(w)
+    await w.find('input[aria-label="Range start date"]').setValue(day(from))
+    await w.find('input[aria-label="Range start time (24-hour clock)"]').setValue(hm(from))
+    await w.find('input[aria-label="Range end date"]').setValue(day(BACKEND))
+    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue(hm(BACKEND))
+    await w.find('.time-abs .time-apply').trigger('click')
+    expect(store.t).toBeNull() // the range ends now on the clock of the backend
+    expect(store.windowDays).toBeCloseTo(2 / 24, 6) // the length from From, not 1 whole day
+    expect(store.windowLabel).toContain('→')
   })
 })

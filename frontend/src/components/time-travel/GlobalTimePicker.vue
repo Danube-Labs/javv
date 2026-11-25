@@ -15,6 +15,9 @@ import UiDropdown from '@/components/ui/UiDropdown.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiTextBox from '@/components/ui/UiTextBox.vue'
 import { useTimeTravelStore } from '@/stores/timeTravel'
+import { serverNow } from '@/system/serverClock'
+
+import { customRange } from './customRange'
 
 const timeTravel = useTimeTravelStore()
 const open = ref(false)
@@ -106,15 +109,14 @@ function applyCustom() {
   const from = parseSide(fromDate.value, fromTime.value)
   const to = parseSide(toDate.value, toTime.value)
   if (!from || !to || !customValid.value) return
-  // charts take whole days (trends contract int 1..365); the END is minute-precise as_of
-  const span = Math.min(365, Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS) || 1))
+  const range = customRange(from.getTime(), to.getTime(), serverNow())
   const label = `${fmtD(from)} → ${fmtD(to)}`
-  if (to.getTime() >= Date.now() - 60_000) {
+  if (range.endsNow) {
     timeTravel.backToNow() // range ends now-ish: tables show current state
   } else {
     timeTravel.rewindTo(to.toISOString()) // past end: tables show as-scanned at that minute
   }
-  timeTravel.setWindow(span, label)
+  timeTravel.setWindow(range.days, label)
   open.value = false
 }
 
