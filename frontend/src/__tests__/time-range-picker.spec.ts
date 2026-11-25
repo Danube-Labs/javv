@@ -186,7 +186,7 @@ describe('a range that ends after today (issue 984)', () => {
 })
 
 describe('an Exact range that ends now (issue 1313)', () => {
-  const BACKEND = new Date(2026, 10, 25, 11, 36) // local time
+  const BACKEND = new Date(2026, 10, 25, 11, 36, 41) // local time, with seconds as a real clock
   const pad = (n: number) => String(n).padStart(2, '0')
   const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -197,24 +197,39 @@ describe('an Exact range that ends now (issue 1313)', () => {
     vi.useRealTimers()
   })
 
-  it.each([
-    ['right', 0],
-    ['40 minutes ahead', 40],
-  ])('with a browser clock %s, 2 hours to the time of the backend stay 2 hours at now', async (_name, minutes) => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(BACKEND.getTime() + minutes * 60_000)
-    noteServerDate(BACKEND.toUTCString())
-    const w = mount(GlobalTimePicker)
-    const store = useTimeTravelStore()
-    const from = new Date(BACKEND.getTime() - 2 * 3_600_000)
+  async function typeRange(w: ReturnType<typeof mount>, from: Date, to: Date) {
     await open(w)
     await w.find('input[aria-label="Range start date"]').setValue(day(from))
     await w.find('input[aria-label="Range start time (24-hour clock)"]').setValue(hm(from))
-    await w.find('input[aria-label="Range end date"]').setValue(day(BACKEND))
-    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue(hm(BACKEND))
+    await w.find('input[aria-label="Range end date"]').setValue(day(to))
+    await w.find('input[aria-label="Range end time (24-hour clock)"]').setValue(hm(to))
+  }
+
+  it.each([
+    ['right, typed on it', 0, 'browser'],
+    ['40 minutes ahead, typed on the backend', 40, 'backend'],
+    ['40 minutes ahead, typed on the browser', 40, 'browser'],
+    ['2 minutes behind, typed on the browser', -2, 'browser'],
+  ])('a browser clock %s: 2 hours to now stay 2 hours at now', async (_name, minutes, typedOn) => {
+    const browser = new Date(BACKEND.getTime() + minutes * 60_000)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(browser)
+    noteServerDate(BACKEND.toUTCString())
+    const w = mount(GlobalTimePicker)
+    const store = useTimeTravelStore()
+    const to = typedOn === 'browser' ? browser : BACKEND
+    await typeRange(w, new Date(to.getTime() - 2 * 3_600_000), to)
     await w.find('.time-abs .time-apply').trigger('click')
-    expect(store.t).toBeNull() // the range ends now on the clock of the backend
-    expect(store.windowDays).toBeCloseTo(2 / 24, 6) // the length from From, not 1 whole day
+    expect(store.t).toBeNull() // the range ends now
+    expect(store.windowDays).toBeCloseTo(2 / 24, 9) // the typed length, not 1 whole day
     expect(store.windowLabel).toContain('→')
+  })
+
+  it('a From time later than now keeps Apply disabled', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(BACKEND)
+    const w = mount(GlobalTimePicker)
+    await typeRange(w, new Date(BACKEND.getTime() + 3_600_000), new Date(BACKEND.getTime() + 2 * 3_600_000))
+    expect((w.find('.time-abs .time-apply').element as HTMLButtonElement).disabled).toBe(true)
   })
 })

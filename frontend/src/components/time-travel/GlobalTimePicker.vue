@@ -3,7 +3,8 @@
  * POC (operator option D, 2026-07-09): ONE time-RANGE control replacing the
  * two-section time-travel/trend-window menu. A range maps exactly onto the shipped backend:
  * the END of the range is the whole-app `as_of` T (D28 — `null` when the range ends now), the
- * SPAN is `days` for the M9c trend charts (int 1–365). One mental model, accurate copy:
+ * SPAN is the trend window in days, which the query builders round (`charts/buildTrendQuery.ts`).
+ * One mental model, accurate copy:
  * tables show state at the END of the range; charts aggregate the whole span.
  * The button goes amber (`--hist-*`) whenever the range ends in the past.
  */
@@ -31,7 +32,7 @@ const toTime = ref('')
 const UNIT_MS = { minutes: 60_000, hours: 3_600_000, days: 86_400_000, weeks: 604_800_000 } as const
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/ // strict 24h HH:mm — no AM/PM anywhere
 
-/* quick ranges, all ending now — the trends contract is whole days 1..365 */
+/* quick ranges, all ending now */
 const PRESETS: readonly [string, number][] = [
   ['Last 24 hours', 1],
   ['Last 7 days', 7],
@@ -99,17 +100,23 @@ const today = () => {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
+/* a From time later than now has no range to count (issue 1313): the later of the two clocks
+ * decides, so a wrong clock never refuses a From time that is now on the other one */
 const customValid = computed(() => {
   const from = parseSide(fromDate.value, fromTime.value)
   const to = parseSide(toDate.value, toTime.value)
-  return from !== null && to !== null && from.getTime() < to.getTime() && toDate.value <= today()
+  if (from === null || to === null) return false
+  const browserMs = Date.now()
+  const notLater = from.getTime() <= Math.max(browserMs, serverNow(browserMs))
+  return notLater && from.getTime() < to.getTime() && toDate.value <= today()
 })
 
 function applyCustom() {
   const from = parseSide(fromDate.value, fromTime.value)
   const to = parseSide(toDate.value, toTime.value)
   if (!from || !to || !customValid.value) return
-  const range = customRange(from.getTime(), to.getTime(), serverNow())
+  const browserMs = Date.now()
+  const range = customRange(from.getTime(), to.getTime(), serverNow(browserMs), browserMs)
   const label = `${fmtD(from)} → ${fmtD(to)}`
   if (range.endsNow) {
     timeTravel.backToNow() // range ends now-ish: tables show current state
