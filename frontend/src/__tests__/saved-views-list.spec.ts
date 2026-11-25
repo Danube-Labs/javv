@@ -141,14 +141,16 @@ describe('a saved view and the Paths column (issue 1205)', () => {
   it('a view that shows Paths keeps it where the view put it', async () => {
     const { hidden, order } = await applyView(['package', 'paths', 'state'])
     expect(hidden).not.toContain('paths')
-    expect(order.slice(0, 3)).toEqual(['package', 'paths', 'state'])
+    expect(order.filter((k) => !hidden.includes(k))).toEqual(['package', 'paths', 'state'])
   })
 
-  it('the stored order lists the columns of the view first, then the hidden ones in the default order', async () => {
-    // so the Columns menu leads with the view's columns, and a column shown again comes after them
-    const { order } = await applyView(['state', 'package', 'image'])
-    const rest = FINDINGS_COLUMNS.map(([k]) => k).filter((k) => !['state', 'package', 'image'].includes(k))
-    expect(order).toEqual(['state', 'package', 'image', ...rest])
+  it('the stored order keeps the order of the view, and each hidden column after its default neighbour', async () => {
+    // issue 1317: Tag, shown again after the apply of a view saved before it, comes after Image
+    const { order, hidden } = await applyView(['state', 'package', 'image'])
+    expect(order.filter((k) => !hidden.includes(k))).toEqual(['state', 'package', 'image'])
+    expect(order[order.indexOf('image') + 1]).toBe('tag')
+    expect(order[order.indexOf('package') + 1]).toBe('paths')
+    expect([...order].sort()).toEqual(FINDINGS_COLUMNS.map(([k]) => k).sort())
   })
 
   it('a view saved before the Paths column shows the columns it saved: Paths is hidden', async () => {

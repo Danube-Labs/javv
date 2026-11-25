@@ -409,6 +409,42 @@ describe('FilterBar Image and Tag lists', () => {
     expect(bar.findAll('.filter-menu .facet-row').map((r) => r.text())).toEqual([expect.stringContaining('1.3')])
   })
 
+  it('when the facets read failed and the list is empty, the field takes typed values', async () => {
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: emptySelections(FINDINGS_FIELDS),
+        facets: {},
+        countsUnknown: true,
+        maxValues: 32,
+      },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.find('span').text() === 'Tag')?.trigger('click')
+    const input = bar.find('.filter-vsearch input')
+    expect(input.attributes('placeholder')).toBe('Add tag…')
+    await input.setValue('13.4, latest')
+    await input.trigger('keydown.enter')
+    expect(bar.emitted('toggle')).toEqual([
+      ['tag', '13.4'],
+      ['tag', 'latest'],
+    ])
+  })
+
+  it('a list with values, or a read that did not fail, keeps the list and no typed box', async () => {
+    for (const props of [
+      { facets: FACETS, countsUnknown: true },
+      { facets: {}, countsUnknown: false },
+    ]) {
+      const bar = mount(FilterBar, {
+        props: { fields: FINDINGS_FIELDS, selections: emptySelections(FINDINGS_FIELDS), maxValues: 32, ...props },
+      })
+      await bar.find('.add-filter').trigger('click')
+      await bar.findAll('.filter-field').find((b) => b.find('span').text() === 'Tag')?.trigger('click')
+      expect(bar.find('.filter-vsearch').exists()).toBe(false)
+    }
+  })
+
   it('a tag picked from a table cell past the top 32 still gets a row, with no count', async () => {
     const bar = await openList('Tag', { tag: ['1.0.2-v1.21.1'] })
     const rows = bar.findAll('.filter-menu .facet-row')

@@ -343,7 +343,9 @@ shows the 32 values with the most findings, from the `image_repo` and `tag` face
 past time. An Image value shows the full name of the image, for example
 `docker.io/library/wordpress`. Add filter and the panel settings of a dashboard show the two
 fields as lists of values with counts, as Namespace, not as typed boxes. A pasted list with
-commas does not add values to these two fields. A saved view and the filters text of a panel name
+commas does not add values to these two fields. When the facets read fails and a list with no
+fixed values has no values, Add filter shows a typed box for that field, with "Add tag…" (Q8 B,
+on built pictures). Enter adds the typed value, and a pasted list with commas adds each value. A saved view and the filters text of a panel name
 their values with no quotes, as Namespace (D2, on built pictures).
 > **RULED (A-1, 2026-07-07):** `negligible` IS its own muted bucket — Grype emits it; hiding it
 > breaks "counts sum". Display muted grey, never red.
@@ -722,7 +724,9 @@ must reproduce identical query params). The whole card is the link (issue 1004):
 the /findings address of the filters, so a ctrl click opens a new tab. A plain click applies the
 whole view first (columns, density, sort, time window). The footer ends in a quiet
 "Open in Findings ›", not a button. A view shows the columns that it saved. A view saved before
-the Paths column (issue 1205) thus hides Paths, and the Columns menu shows it again.
+the Paths column (issue 1205) thus hides Paths, and the Columns menu shows it again. Each column
+that the view hides goes after the column before it in the default order (issue 1317, Q7 B, on
+built pictures). So Tag, turned on after a view saved before it, comes after Image.
 
 **States:** empty ("save a filter set from Findings"); count-loading per card; degraded (counts
 show em-dash); 403 on mutating someone else's view (edit/delete affordances hidden unless owner

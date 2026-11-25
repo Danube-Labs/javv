@@ -211,6 +211,8 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-25 | Tag has a column of its own after Image, with the +/- of a table cell (Q3 yes, on built pictures). While the Tag column shows, the Image cell shows the image name with no tag. When the column is hidden, the cell shows the tag again (Q5 accepted). | 1317 |
 | 2026-11-25 | The Image and Tag values have no quotes on a saved-view card and in the filters text of a panel. The other lists have none either. A typed value keeps its quotes (D2, on built pictures). | 1317 |
 | 2026-11-25 | The Tag column shows at first. A user who stored hidden columns before also gets it, after Image (Q6, on built pictures). | 1317 |
+| 2026-11-25 | You apply a saved view. Each column that the view hides then goes after the column before it in the default order. So Tag, shown again after a view saved before it, comes after Image. The Columns menu then mixes the hidden columns with the columns of the view (Q7 B, on built pictures). This replaces the order of issue 1205, where the hidden columns came after the columns of the view. | 1317 |
+| 2026-11-25 | The facets read can fail while a list with no fixed values has no values. Add filter then shows a typed box for that list, as for a typed field. This applies to Namespace, Image, Tag, Assignee and Package type (Q8 B, on built pictures). | 1317 |
 | 2026-11-25 | Issue 1317 adds no other filter and no Digest column. First seen, Last scan, EPSS, Current, Paths and Affected images stay with no filter (Q2, as recommended). | 1317 |
 
 ## AI vulnerability research (alpha)

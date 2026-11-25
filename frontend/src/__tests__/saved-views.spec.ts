@@ -327,4 +327,11 @@ describe('saved views — several typed values (issue 949 PR C)', () => {
   it('an empty value in a stored list is skipped, not taken as no filter', () => {
     expect(presetToRouteQuery(FINDINGS_FIELDS, { package_name: ['', 'zlib'] } as never)).toEqual({ package: 'zlib' })
   })
+
+  // issue 1317: Image and Tag are lists now, and a list skips an empty value in the same way
+  it('an empty value in a stored Image or Tag list is skipped too', () => {
+    const stored = { image_repo: ['', 'web'], exclude_tag: [''] } as never
+    expect(presetToRouteQuery(FINDINGS_FIELDS, stored)).toEqual({ image: 'web' })
+    expect(presetSummary(FINDINGS_FIELDS, stored)).toBe('Image is web')
+  })
 })
