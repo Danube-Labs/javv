@@ -185,6 +185,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-24 | The strips of a band share one axis (D4 B, on built pictures). The axis has each bucket of the range up to now, with each count at its date. Scan ingest and Failed ingests changed with it. | 1292 |
 | 2026-11-24 | The New findings strip has one text for a filter that a past time refuses (D5). The text is "JAVV cannot count the new findings with these filters at a past time." | 1292 |
 | 2026-11-24 | The New findings strip is a dashboard panel in the Findings group, with panel filters and the scanner switch, as Top vulnerabilities (D3 B). It refuses "New in range", because the strip counts the findings first seen in its range already (Q1 B, on built pictures). A new panel takes both columns, as Scan ingest (Q2 A). | 1292 |
+| 2026-11-24 | Open in Findings of the New findings panel keeps the filters of the panel only, with no New in range. The docs say that Findings then shows all the findings under the filters, not only the new ones (comment 7132437124). | 1292 |
 | 2026-11-23 | On Image detail, Scan ingest shows only the scans of that image, for the two scanners. | 1293 |
 | 2026-11-23 | The Scan ingest panel of a dashboard takes panel filters, as the strip above a table. | 1293 |
 | 2026-11-24 | When the screen has a filter that a scan record does not hold, Scan ingest says so (Q1 A, on built pictures). Its line ends with "Only the namespace, image, tag, digest and scanner filters apply". | 1293 |
