@@ -135,7 +135,14 @@ def test_cursor_freezes_the_end_of_new_in_range() -> None:
     )
     *_, now = decode_cursor(cur)
     assert now == NOW_1291
-    for bad in ("not a time", "2026-11-20T11:30:00", 5):  # a naive time is not a time of the server
+    for bad in (
+        "not a time",
+        "2026-11-20T11:30:00",  # a naive time is not a time of the server
+        5,
+        "0001-01-01T00:00:00+00:00",  # the range of "new in range" overflows: a 422, not a 500
+        "0001-01-01T00:30:00+00:00",
+        "0001-01-01T00:00:00+05:00",
+    ):
         tampered = base64.urlsafe_b64encode(
             json.dumps({"p": "p", "a": [1], "s": "severity_rank", "o": "desc", "n": bad}).encode()
         ).decode()

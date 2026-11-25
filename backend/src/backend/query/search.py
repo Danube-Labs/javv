@@ -27,7 +27,7 @@ from opensearchpy.exceptions import NotFoundError, RequestError
 from pydantic import StringConstraints
 
 from backend.core.settings import get_settings
-from backend.query.trends import iso_ms, range_bounds, window_bounds
+from backend.query.trends import trend_window
 from backend.sla.overdue import HANDLED_STATES, overdue_cutoffs
 from backend.sla.policy import read_sla_policy
 from backend.tenancy.read_path import tenant_query
@@ -230,15 +230,12 @@ def _new_in_range(filters: SearchFilters, end: datetime) -> dict[str, str]:
     """The range of "new in range". It stops at the time of the request, as the New findings
     strip does (issue 1291, ruling of 2026-11-24): `first_seen_at` is the scanner's clock, and
     a clock that runs ahead gives a time after now, which is not new yet."""
-    if filters.new_within_seconds is not None:
-        if filters.new_within_days is not None:
-            raise ValueError("new_within_days and new_within_seconds are mutually exclusive")
-        gte, lte = range_bounds(filters.new_within_seconds, end)
-        return {"gte": gte, "lte": lte}
-    if filters.new_within_days is None:
+    if filters.new_within_seconds is not None and filters.new_within_days is not None:
+        raise ValueError("new_within_days and new_within_seconds are mutually exclusive")
+    if filters.new_within_seconds is None and filters.new_within_days is None:
         raise ValueError("new in range needs new_within_days or new_within_seconds")
-    gte, _upper = window_bounds(filters.new_within_days, end)
-    return {"gte": gte, "lte": iso_ms(end)}
+    w = trend_window(filters.new_within_days, filters.new_within_seconds, end)
+    return {"gte": w.gte, "lte": w.lte}
 
 
 def build_search_body(
@@ -399,6 +396,13 @@ def decode_cursor(
         raise ValueError("invalid cursor") from exc
     if now is not None and now.tzinfo is None:
         raise ValueError("invalid cursor")
+    if now is not None:
+        # a tampered time near the ends of the calendar overflows the range of "new in range"
+        # (OverflowError, a 500): the widest range is 365 days back from the day of `now`
+        try:
+            trend_window(365, None, now.astimezone(UTC))
+        except OverflowError as exc:
+            raise ValueError("invalid cursor") from exc
     # a base64/JSON-valid cursor can still carry tampered fields that would sail past decode and
     # blow up inside client.search (500) — type-check them here so a bad shape is a 422 (A-m1).
     # sort/order are re-validated by build_search_body against their whitelists (also → 422).
