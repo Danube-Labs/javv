@@ -4,7 +4,7 @@ import { buildFilterQuery } from '@/filters/buildFilterQuery'
 import { FINDINGS_FIELDS } from '@/filters/fields.config'
 import { hasUnrecordedFilter, refusedPair } from '@/findings/exportParams'
 import { FAILURE_COPY, failureKind, readFailureCopy } from '@/findings/failureCopy'
-import { clusterFromQuery, foreignQuery, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
+import { clusterFromQuery, foreignQuery, nowWindowLabel, ownQuery, ttFromQuery, ttToQuery } from '@/system/globalUrl'
 
 describe('accurate-error mapping (audit 343 rule 1)', () => {
   it('names the actual cause per status, rewound or not', () => {
@@ -109,6 +109,20 @@ describe('the global range ⇄ URL (audit 343 rule 4)', () => {
     expect(ttFromQuery({ t: 'garbage', win: '-5' })).toEqual({ t: null, win: 30 })
     expect(ttFromQuery({ win: '0.5' })).toEqual({ t: null, win: 0.5 })
     expect(ttFromQuery({ win: '9999' })).toEqual({ t: null, win: 365 })
+  })
+
+  it.each([
+    [30, 'Last 30 days'],
+    [1, 'Last 1 day'],
+    [3.4, 'Last 3.4 days'],
+    [2.0005, 'Last 2 days'], // a typed 2 days, to the second of now
+    [1.4167, 'Last 34 hours'], // an Exact range of 34 hours, in the 4 decimals of the URL (issue 1313)
+    [1.5, 'Last 36 hours'],
+    [0.0833, 'Last 2 hours'],
+    [0.0208, 'Last 30 minutes'],
+    [0.0007, 'Last 1 minute'],
+  ])('a URL range of %f days at now reads "%s" after a reload', (win, label) => {
+    expect(nowWindowLabel(win)).toBe(label)
   })
 
   it('foreignQuery/ownQuery split a screen query by OWNERSHIP, not a global allowlist', () => {
