@@ -360,8 +360,8 @@ const cellActive = (key: string, value: string): FilterMode | null =>
             :controls="pathsId(data)"
             @toggle="togglePaths(data)"
           />
-          <!-- `image` names itself "Image (all tags)": the cell reads `repo:tag` but the
-               filter is repo-only, so "+ nginx" also matches nginx:1.21.6 -->
+          <!-- `image` names itself "Image (all tags)": the filter is repo-only, so "+ nginx" also
+               matches nginx:1.21.6, and the cell reads `repo:tag` while the Tag column is hidden -->
           <ValueActions
             v-if="CELL_FILTER_FIELD[key] && cellValue(key, data)"
             class="val-act-reveal"
