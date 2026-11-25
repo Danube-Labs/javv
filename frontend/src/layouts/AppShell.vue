@@ -33,7 +33,7 @@ import { useTimeTravelStore } from '@/stores/timeTravel'
 import { isColdStart } from '@/system/coldStart'
 import { lastDataAt } from '@/system/freshness'
 import { pendingWork } from '@/system/pendingWork'
-import { clusterFromQuery, ttFromQuery } from '@/system/globalUrl'
+import { clusterFromQuery, nowWindowLabel, ttFromQuery } from '@/system/globalUrl'
 
 const auth = useAuthStore()
 const clusterStore = useClusterStore()
@@ -50,15 +50,7 @@ if (fromUrl) {
     timeTravel.rewindTo(fromUrl.t)
     timeTravel.setWindow(fromUrl.win, `→ ${lastDataAt(fromUrl.t)}`)
   } else {
-    // sub-hour windows label in minutes — rounding 30min to "0 hours" lied (operator catch)
-    const hours = fromUrl.win * 24
-    const label =
-      fromUrl.win >= 1
-        ? `Last ${fromUrl.win} day${fromUrl.win === 1 ? '' : 's'}`
-        : hours >= 1
-          ? `Last ${Math.round(hours)} hour${Math.round(hours) === 1 ? '' : 's'}`
-          : `Last ${Math.max(1, Math.round(hours * 60))} minutes`
-    timeTravel.setWindow(fromUrl.win, label)
+    timeTravel.setWindow(fromUrl.win, nowWindowLabel(fromUrl.win))
   }
 }
 // deep link's tenant (issue 433) — resolved against the registry once fetchClusters lands

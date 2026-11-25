@@ -31,6 +31,18 @@ export function ttFromQuery(query: LocationQuery): { t: string | null; win: numb
   return { t, win }
 }
 
+/** The label of a range that a URL restores at now (`win` in days). A whole number of days reads
+ * in days. A length under 2 days reads in hours, or in minutes under 1 hour: an Exact range that
+ * ends now has the length from its From time, which is rarely whole days (issue 1313). A longer
+ * length reads in days with one decimal. */
+export function nowWindowLabel(win: number): string {
+  const last = (n: number, unit: string) => `Last ${n} ${unit}${n === 1 ? '' : 's'}`
+  const hours = win * 24
+  if (hours < 1) return last(Math.max(1, Math.round(hours * 60)), 'minute')
+  if (hours < 48 && !Number.isInteger(win)) return last(Math.round(hours), 'hour')
+  return last(Math.round(win * 10) / 10, 'day')
+}
+
 /** The `cluster` key of a deep link, shape-checked only — whether the id EXISTS is the cluster
  * store's call (it owns the registry and the unknown-id fallback). */
 export function clusterFromQuery(query: LocationQuery): string | null {
