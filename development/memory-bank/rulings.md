@@ -200,7 +200,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-24 | The table of refused scans on Scanner status takes the exact range of the strip above it (Q1 A of PR 1). | 1291 |
 | 2026-11-24 | The Audit activity strip takes the exact range of 2 days or less, as the other strips (Q2 A of PR 1). | 1291 |
 | 2026-11-25 | The axis of the strips takes the clock of the backend, from the `Date` header of each API response. A wrong browser clock then draws the same hours (Q1 B of PR 2). This applies item 2 of 2026-11-23. | 1291 |
-| 2026-11-25 | PR 2 of issue 1291 is one PR of 36 files on the frontend, with a rule exception (Q2 B). | 1291 |
+| 2026-11-25 | PR 2 of issue 1291 is one PR of 36 files, 33 of them in the frontend, with a rule exception (Q2 B). | 1291 |
 
 ## AI vulnerability research (alpha)
 

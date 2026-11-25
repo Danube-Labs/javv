@@ -22,8 +22,8 @@ import GuideProse from './GuideProse.vue'
         <strong>A range of 2 days or less starts at the exact time.</strong> At 10:31,
         <span class="ui-name">Last 1 hour</span> starts at 09:31 and the strips show the bars of 09:00 and
         10:00. The first bar counts only from 09:31. A longer range starts at 00:00 UTC of its first day.
-        A range from <span class="ui-name">Exact range</span> is the exception: it counts in whole days,
-        and 1 day at least. When the end of the range is in the past, each bar is one day.
+        JAVV rounds the length of a range from <span class="ui-name">Exact range</span> to whole days, and
+        to 1 day at least. When the end of the range is in the past, each bar is one day.
       </li>
       <li>
         <strong>Move the end into the past to see history.</strong> The screens then show JAVV as the
