@@ -1576,7 +1576,8 @@ token, and how to connect Claude Code, Codex, VS Code or Cursor.</p>
   <code>cursor</code>. A new search with the same tool closes the cursor of your last search. Read all
   the pages that you need before you start the next search.</li>
 <li>An answer with a <code>cut</code> field does not have all the rows. Ask for fewer rows. When a tool
-  error tells you to ask for a smaller size, send a smaller <code>size</code>.</li>
+  error tells you to ask for a smaller size, send a smaller <code>size</code>. For <code>count_findings</code>, ask
+  for fewer <code>fields</code>.</li>
 <li>Each write tool has the hint <code>destructiveHint</code>. Ask the user before each write.</li>
 <li>When a tool error has the words "the tool made the change", do not call the tool again.</li>
 <li>A tool error with <code>403</code> tells you that the level of the token does not allow the tool. Tell
@@ -1801,7 +1802,7 @@ change the state of a finding with an accepted risk.</p>
 <tr>
 <td>An answer with a <code>cut</code> field</td>
 <td>The answer was longer than <code>JAVV_MCP_MAX_ANSWER_CHARS</code> (50,000 characters by default). JAVV kept the first rows, and <code>cut</code> gives the number.</td>
-<td>Ask for fewer rows.</td>
+<td>Ask for fewer rows. For <code>count_findings</code>, ask for fewer <code>fields</code>.</td>
 </tr>
 <tr>
 <td>A tool error: 410 <code>cursor closed</code></td>
