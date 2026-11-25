@@ -130,6 +130,7 @@ const COL_HEADER: Record<FindingsColumnKey, string> = {
   current: 'Current',
   fixed: 'Fixed',
   image: 'Image',
+  tag: 'Tag',
   namespace: 'Namespace',
   images: 'Affected',
   scanner: 'Scanner',
@@ -199,7 +200,10 @@ async function onColReorder(e: DataTableColumnReorderEvent) {
   syncPrimeOrder()
 }
 
-const shortImage = (r: FindingRow) => `${(r.image_repo ?? '').split('/').pop()}${r.tag ? ':' + r.tag : ''}`
+// while the Tag column shows, the Image cell names the image only (issue 1317)
+const tagShown = computed(() => !props.hidden.has('tag'))
+const shortImage = (r: FindingRow) =>
+  `${(r.image_repo ?? '').split('/').pop()}${r.tag && !tagShown.value ? ':' + r.tag : ''}`
 const nsLabel = (r: FindingRow): string => {
   const ns = Array.isArray(r.namespaces) ? (r.namespaces as string[]) : []
   if (ns.length === 0) return '-'
@@ -227,6 +231,7 @@ const CELL_FILTER_FIELD: Partial<Record<FindingsColumnKey | 'severity' | 'cve', 
   namespace: 'namespace',
   assignee: 'assignee',
   image: 'image',
+  tag: 'tag',
   cve: 'cve',
   package: 'package',
 }
@@ -237,6 +242,7 @@ function cellValue(key: string, r: FindingRow): string | null {
   if (key === 'scanner') return r.scanner ?? null
   if (key === 'assignee') return r.assignee || null
   if (key === 'image') return r.image_repo || null
+  if (key === 'tag') return r.tag || null
   if (key === 'cve') return r.cve_id || null
   // the cell shows package AND type; only the package name has a filter twin
   if (key === 'package') return r.package_name || null
@@ -332,6 +338,7 @@ const cellActive = (key: string, value: string): FilterMode | null =>
             <span v-else class="ver-none">no fix</span>
           </template>
           <span v-else-if="key === 'image'" class="mono-cell sm img-cell" :title="data.image_repo">{{ shortImage(data) }}</span>
+          <span v-else-if="key === 'tag'" class="mono-cell sm tag-cell" :title="data.tag ?? ''">{{ data.tag || '-' }}</span>
           <span
             v-else-if="key === 'namespace'"
             class="mono-cell sm ns-cell"
@@ -353,8 +360,8 @@ const cellActive = (key: string, value: string): FilterMode | null =>
             :controls="pathsId(data)"
             @toggle="togglePaths(data)"
           />
-          <!-- `image` names itself "Image (all tags)": the cell reads `repo:tag` but the
-               filter is repo-only, so "+ nginx" also matches nginx:1.21.6 -->
+          <!-- `image` names itself "Image (all tags)": the filter is repo-only, so "+ nginx" also
+               matches nginx:1.21.6, and the cell reads `repo:tag` while the Tag column is hidden -->
           <ValueActions
             v-if="CELL_FILTER_FIELD[key] && cellValue(key, data)"
             class="val-act-reveal"
@@ -407,7 +414,9 @@ const cellActive = (key: string, value: string): FilterMode | null =>
     transition: none;
   }
 }
-:deep(.img-cell) {
+/* a long tag (`1.0.2-v1.21.1.d20261125`) cuts as the image name does; its title has all of it */
+:deep(.img-cell),
+:deep(.tag-cell) {
   display: inline-block;
   max-width: 180px;
   overflow: hidden;

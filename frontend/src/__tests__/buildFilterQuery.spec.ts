@@ -52,12 +52,12 @@ describe('buildFilterQuery', () => {
   })
 
   it('trims text fields and drops blank ones', () => {
-    const q = buildFilterQuery(FINDINGS_FIELDS, sel({ image: ['  nginx  '] }), {
+    const q = buildFilterQuery(FINDINGS_FIELDS, sel({ package: ['  zlib  '] }), {
       cluster_id: CID,
     })
-    expect(q.image_repo).toEqual(['nginx']) // a list since issue 949 PR C
-    const blank = buildFilterQuery(FINDINGS_FIELDS, sel({ image: ['   '] }), { cluster_id: CID })
-    expect(blank).not.toHaveProperty('image_repo')
+    expect(q.package_name).toEqual(['zlib']) // a list since issue 949 PR C
+    const blank = buildFilterQuery(FINDINGS_FIELDS, sel({ package: ['   '] }), { cluster_id: CID })
+    expect(blank).not.toHaveProperty('package_name')
   })
 
   // issue 949: the three list facets take several values, so they always emit an array
@@ -132,17 +132,38 @@ describe('buildFilterQuery', () => {
     expect(q).not.toHaveProperty('namespace')
   })
 
-  /** `image_repo` is an exact `term` server-side and has an `exclude_image_repo` twin, so a
+  /** `package_name` is an exact `term` server-side and has an `exclude_package_name` twin, so a
    * TEXT field negates like a terms one — the input is the entry affordance, not the match. */
   it('negation reaches text fields that declare an exclude twin', () => {
     const q = buildFilterQuery(
       FINDINGS_FIELDS,
-      sel({ image: ['docker.io/library/nginx'] }),
+      sel({ package: ['openssl'] }),
       { cluster_id: CID },
-      { image: 'not' },
+      { package: 'not' },
     )
-    expect(q.exclude_image_repo).toEqual(['docker.io/library/nginx'])
-    expect(q).not.toHaveProperty('image_repo')
+    expect(q.exclude_package_name).toEqual(['openssl'])
+    expect(q).not.toHaveProperty('package_name')
+  })
+
+  // issue 1317: Image and Tag are lists now, and they keep the params of the typed fields
+  it('the Image and Tag lists send image_repo and tag as picked, in each mode', () => {
+    const inc = buildFilterQuery(
+      FINDINGS_FIELDS,
+      sel({ image: ['docker.io/library/postgres'], tag: ['13.4', 'ALP'] }),
+      { cluster_id: CID },
+    )
+    expect(inc.image_repo).toEqual(['docker.io/library/postgres'])
+    expect(inc.tag).toEqual(['13.4', 'ALP']) // no fixed list, so the case stays
+    const exc = buildFilterQuery(
+      FINDINGS_FIELDS,
+      sel({ image: ['docker.io/library/postgres'], tag: ['latest'] }),
+      { cluster_id: CID },
+      { image: 'not', tag: 'not' },
+    )
+    expect(exc.exclude_image_repo).toEqual(['docker.io/library/postgres'])
+    expect(exc.exclude_tag).toEqual(['latest'])
+    expect(exc).not.toHaveProperty('image_repo')
+    expect(exc).not.toHaveProperty('tag')
   })
 
   /** Issue 492 closed the negation family: `cve_id` and `package_name` are the last two, both
@@ -169,7 +190,7 @@ describe('buildFilterQuery', () => {
     expect(exc).not.toHaveProperty('package_name')
   })
 
-  // issue 1294: the tag of an image, a typed list with an exclude side, and a flag for no tag
+  // issue 1294: the tag of an image, a list with an exclude side, and a flag for no tag
   it('tag, exclude_tag and untagged go out as the API takes them', () => {
     const inc = buildFilterQuery(FINDINGS_FIELDS, sel({ image: ['shop/app'], tag: ['1.4.1', '1.4.2'] }), {
       cluster_id: CID,
@@ -183,10 +204,10 @@ describe('buildFilterQuery', () => {
     expect(flag).toEqual({ cluster_id: CID, untagged: true })
   })
 
-  // issue 949 PR C: Image, CVE and Package take several typed values
+  // issue 949 PR C: CVE and Package take several typed values (Image too, until issue 1317)
   it('typed values go out as one list, trimmed, blanks dropped, in both modes', () => {
-    const inc = buildFilterQuery(FINDINGS_FIELDS, sel({ image: [' api ', '   ', 'web'] }), { cluster_id: CID })
-    expect(inc.image_repo).toEqual(['api', 'web'])
+    const inc = buildFilterQuery(FINDINGS_FIELDS, sel({ package: [' zlib ', '   ', 'openssl'] }), { cluster_id: CID })
+    expect(inc.package_name).toEqual(['zlib', 'openssl'])
     const exc = buildFilterQuery(
       FINDINGS_FIELDS,
       sel({ cve: ['CVE-1', 'CVE-2'] }),

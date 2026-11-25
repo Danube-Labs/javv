@@ -20,8 +20,9 @@ import { useClusterStore } from '@/stores/cluster'
 import type { FindingRow } from '@/stores/findings'
 import { useTimeTravelStore } from '@/stores/timeTravel'
 
-/* image/affected-images are this screen's own context; scanner is fixed by the lens */
-const HIDDEN_COLUMNS: ReadonlySet<string> = new Set(['image', 'images', 'scanner'])
+/* image/tag/affected-images are this screen's own context (one digest); scanner is fixed by the
+   lens */
+const HIDDEN_COLUMNS: ReadonlySet<string> = new Set(['image', 'tag', 'images', 'scanner'])
 
 const props = defineProps<{ digest: string; scanner: 'trivy' | 'grype' }>()
 

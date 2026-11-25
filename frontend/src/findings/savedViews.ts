@@ -90,10 +90,11 @@ export function presetToRouteQuery(
 }
 
 // a stored terms filter is a list, or one string in a view saved before issue 949; an empty list
-// is no filter, as on the server
+// is no filter, as on the server. An empty value is no value: Image and Tag were typed fields
+// before issue 1317, and a list written through the API can hold ""
 function termValues(v: unknown): unknown[] {
   if (v === undefined || v === null) return []
-  return Array.isArray(v) ? v : [v]
+  return (Array.isArray(v) ? v : [v]).filter((x) => x !== '' && x !== null && x !== undefined)
 }
 
 // a stored text filter is a list (issue 949), or one string in a view saved before; a field that

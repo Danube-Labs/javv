@@ -17,6 +17,8 @@ export const FINDINGS_COLUMNS = [
   ['current', 'Current'],
   ['fixed', 'Fixed'],
   ['image', 'Image'],
+  // the tag of the image, with its own +/- (issue 1317); while it shows, the Image cell drops it
+  ['tag', 'Tag'],
   ['namespace', 'Namespace'],
   ['images', 'Affected images'],
   ['scanner', 'Scanner'],

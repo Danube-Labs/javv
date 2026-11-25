@@ -403,6 +403,20 @@ describe('a pair the API refuses together', () => {
     expect(again.selections.attr).toEqual(['untagged'])
   })
 
+  // issue 1317: Tag is a list now (no fixed values), and the pair rules stay the same
+  it('as a list, Tag keeps any value of a link, in its case, up to 32, and the pair still applies', () => {
+    const s = usePaired()
+    const many = Array.from({ length: 40 }, (_, i) => `v${i}`)
+    s.fromQuery({ tag: ['ALP', ...many].join(','), image: 'docker.io/library/postgres' })
+    expect(s.selections.tag).toHaveLength(32)
+    expect(s.selections.tag![0]).toBe('ALP')
+    expect(s.selections.image).toEqual(['docker.io/library/postgres'])
+    s.toggle('attr', 'untagged') // the rail click on No tag
+    expect(s.selections.tag).toEqual([])
+    s.toggle('tag', '13.4') // the rail click on a tag
+    expect(s.selections.attr).toEqual([])
+  })
+
   it('a store with no pairs keeps both (every other screen)', () => {
     const s = useStore()
     s.toggle('assignee', 'bob')

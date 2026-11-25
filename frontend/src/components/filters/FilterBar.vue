@@ -101,12 +101,24 @@ const editItems = computed(() => {
 // several typed values (issue 949): the field's values listed under its input
 const typedRows = computed((): ValueRow[] => {
   const field = editField.value
-  if (!field || !isMultiText(field)) return []
+  if (!field || !typesValues(field)) return []
   return (props.selections[field.key] ?? []).map((v) => ({ value: v, label: v, on: true, count: null }))
 })
 
 function isMultiText(field: FilterField): boolean {
   return field.type === 'text' && field.multi === true
+}
+/** Several typed values: a multi text field, or a list with no fixed values whose facets read
+ * failed, so it has no values to pick (Image and Tag were typed before issue 1317) */
+function typesValues(field: FilterField): boolean {
+  if (isMultiText(field)) return true
+  return (
+    props.countsUnknown === true &&
+    field.type === 'terms' &&
+    field.multi === true &&
+    field.values === undefined &&
+    (props.facets[field.facetKey ?? '']?.length ?? 0) === 0
+  )
 }
 const atCap = computed(
   () => props.maxValues !== undefined && (props.selections[editKey.value ?? ''] ?? []).length >= props.maxValues,
@@ -122,7 +134,7 @@ function openField(key: string) {
   valueQuery.value = ''
   const field = props.fields.find((f) => f.key === key)
   // a multi text field lists its values under the input, so the input starts empty
-  textDraft.value = field && isMultiText(field) ? '' : ((props.selections[key] ?? [])[0] ?? '')
+  textDraft.value = field && typesValues(field) ? '' : ((props.selections[key] ?? [])[0] ?? '')
   open.value = true
 }
 function close() {
@@ -137,7 +149,7 @@ function onClosed() {
 function applyText() {
   const field = editField.value
   if (!field) return
-  if (isMultiText(field)) {
+  if (typesValues(field)) {
     // each Enter adds and keeps the box open for the next (issue 949)
     // a value past the cap stays in the input, so a long pasted list loses nothing
     const { add, left } = typedValuesToAdd(textDraft.value, props.selections[field.key] ?? [], props.maxValues)
@@ -220,7 +232,7 @@ function onKeydown(e: KeyboardEvent) {
             />
           </div>
 
-          <template v-if="editItems">
+          <template v-if="editItems && !typesValues(editField)">
             <UiSearchBox
               v-if="editItems.length > 8 || valueQuery"
               v-model="valueQuery"
@@ -242,7 +254,7 @@ function onKeydown(e: KeyboardEvent) {
             <UiSearchBox
               v-model="textDraft"
               class="filter-vsearch"
-              :placeholder="isMultiText(editField) ? `Add ${inText(editField.label)}…` : `${editField.label}…`"
+              :placeholder="typesValues(editField) ? `Add ${inText(editField.label)}…` : `${editField.label}…`"
               @keydown.enter="applyText"
             />
             <FilterValueRows
