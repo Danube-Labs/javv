@@ -334,18 +334,28 @@ disagree) gets "JAVV cannot count the new findings with these filters at a past 
 **Facet rail** (top→bottom): Severity (critical/high/medium/low/**negligible**/unknown — muted
 treatment for negligible+unknown, never red) · Scanner (trivy/grype) · Attributes (KEV /
 Fix available / Scanners disagree / SLA breached / Unassigned / No tag / New in range) · State (**6**: open, acknowledged, not_affected,
-risk_accepted, resolved, stale) · Assignee (incl. Unassigned) · Namespace · **Package type**
+risk_accepted, resolved, stale) · Assignee (incl. Unassigned) · Namespace · Image · Tag · **Package type**
 (returns per B-1 ruling — buckets from the M8d `ptype` facet; hidden until M8d lands).
+
+**Image and Tag lists** (issue 1317, operator rulings 2026-11-25 on built pictures: Q1 yes, D1
+accepted, Q4 B). The filter list has an Image group and a Tag group after Namespace. Each group
+shows the 32 values with the most findings, from the `image_repo` and `tag` facets, now and at a
+past time. An Image value shows the full name of the image, for example
+`docker.io/library/wordpress`. Add filter and the panel settings of a dashboard show the two
+fields as lists of values with counts, as Namespace, not as typed boxes. A pasted list with
+commas does not add values to these two fields. A saved view and the filters text of a panel name
+their values with no quotes, as Namespace.
 > **RULED (A-1, 2026-07-07):** `negligible` IS its own muted bucket — Grype emits it; hiding it
 > breaks "counts sum". Display muted grey, never red.
 
-**Several values** (issue 949): Severity, State, Namespace, Package type and Assignee take more than
-one value. A second pick adds the value, and the filter bar reads "is one of". In exclude mode, the
+**Several values** (issue 949): Severity, State, Namespace, Image, Tag, Package type and Assignee
+take more than one value. A second pick adds the value, and the filter bar reads "is one of". In exclude mode, the
 bar reads "is none of", and the grid leaves out the rows with any of the values. Scanner takes one
 value.
 
-**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen). Four filters also take
-more than one value. They are Image, Tag, Vulnerability and Package. In the edit box of the filter
+**Typed values** (issue 949 PR C, ruled 2026-10-21 on a built specimen). Two filters also take
+more than one value. They are Vulnerability and Package. Before issue 1317, Image and Tag took
+typed values too. In the edit box of the filter
 bar, Enter adds the typed value to a list under the input. The box stays open for the next value. A
 click on a value in the list removes it.
 
@@ -362,8 +372,8 @@ the API accepts it. A link that holds both filters keeps both, and the grid show
 (see States). Only a pick of Unassigned or of an Assignee value then picks the winner. A click on
 another filter, or the removal of an Assignee value, keeps both.
 
-**Tag with No tag** (operator ruling 2026-11-23 on built pictures, issue 1294): the Tag filter is a
-typed field after Image, with "is" and "is not". "No tag" in Attribute keeps the findings of images
+**Tag with No tag** (operator ruling 2026-11-23 on built pictures, issue 1294): the Tag filter
+comes after Image, with "is" and "is not". It is a list since issue 1317. "No tag" in Attribute keeps the findings of images
 with no tag. An example is an image that a pod runs by its digest. Findings refuses Tag "is" with No
 tag, and the rules of Assignee with Unassigned apply:
 - The last pick wins.
@@ -381,8 +391,8 @@ Severity there, and stays on Severity back at now. The past-time text ("JAVV can
 Scanners disagree or New in range filter at a past time…") shows only when one of those filters is
 on. Any other refused read at a past time shows the text of refused filters.
 
-**Counts after a pick** (issue 949, ruling 2): the Namespace, Package type and Assignee lists count
-without the filter of their own field. After you pick a namespace, the other namespaces stay in
+**Counts after a pick** (issue 949, ruling 2): the Namespace, Image, Tag, Package type and
+Assignee lists count without the filter of their own field (Image and Tag since issue 1317). After you pick a namespace, the other namespaces stay in
 the list with their counts. An excluded value also stays in the list, with a line through it and
 its count. The Unassigned count leaves out the Assignee "is" values (issue 979), because a click
 on Unassigned clears them. Thus the count is the number of rows that the click shows. Assignee
@@ -399,7 +409,8 @@ counts use the filters of the list. The menu shows at most 32 values. When more 
 text, it says "More values match. Type more letters." When the search fails, the menu says "Could
 not search all values. The list shows the top 32." Then it filters the values that it has. The
 panel settings of a dashboard use the same menu, with the scanner that the panel counts. At a past
-time, the scan history has no Namespace or Assignee counts, so the menu does not ask for them.
+time, the scan history has no Namespace or Assignee counts, so the menu does not ask for them. It
+asks for Package type, Image and Tag (issue 1317).
 The filter list has the same search (operator ruling 2026-10-31, Q1 option B, on full-page
 pictures). A list at its cap has a search box under its title, "Find a namespace…". The box asks
 after 2 letters and a short pause, and shows the values that the server found, with their counts.
@@ -423,6 +434,13 @@ Fixed (`fixed_version`) · Scanner (+ `±` badge when `disagree=true`; tooltip s
 the sibling-scanner row, A-3) · Images (group agg, B-4) · SLA (server-computed deadline/overdue —
 B-5, **never client math**; field names verified at M9b kickoff) · State (6-state pill) ·
 Assignee.
+
+**Tag** (issue 1317, operator rulings 2026-11-25 on built pictures: Q3 yes, Q5 accepted): the
+column comes after Image and shows the tag of the row, or `-` for an image with no tag. Its cell
+has the +/- of a table cell, which picks the Tag filter. While the Tag column shows, the Image
+cell shows the image name with no tag, for example `postgres`. When the Tag column is hidden, the
+Image cell shows `postgres:13.4` again. A user who moved columns before gets Tag after Image. The
+image page hides the column, as it hides Image: the page shows one image.
 
 **Paths** (issue 1205, Q5 option B, operator 2026-11-14): the column comes after Package and
 shows by default. Its cell is the paths button of the image page (issue 1077), with the number

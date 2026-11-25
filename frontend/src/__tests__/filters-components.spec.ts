@@ -17,6 +17,8 @@ const FACETS: FacetsResponse = {
   ptype: [{ key: 'deb', count: 1783, by_scanner: { trivy: 900, grype: 883 } }],
   namespaces: [{ key: 'payments', count: 41, by_scanner: { trivy: 20, grype: 21 } }],
   assignee: [{ key: 'admin', count: 3, by_scanner: { trivy: 1, grype: 2 } }],
+  image_repo: [{ key: 'docker.io/library/postgres', count: 120, by_scanner: { trivy: 50, grype: 70 } }],
+  tag: [{ key: '13.4', count: 120, by_scanner: { trivy: 50, grype: 70 } }],
 }
 
 const mountBoth = (fields: readonly FilterField[]) => {
@@ -46,7 +48,6 @@ describe('one config drives both components (PLAN gate)', () => {
     for (const label of ['Severity', 'Scanner', 'Attribute', 'State', 'Package type', 'Namespace', 'Assignee']) {
       expect(rail.text()).toContain(label) // Namespace/Assignee are rail dims since slice 4
     }
-    expect(rail.text()).not.toContain('Image') // text field: no buckets, bar-only
     // issue 492: CVE and Package are bar-and-cell only. A rail dim over unbounded package
     // cardinality is not a browsing surface, and the server 422s them as facets. Asserted on
     // the rendered group titles, not on rail.text() — "Package" is a substring of the
@@ -55,6 +56,13 @@ describe('one config drives both components (PLAN gate)', () => {
     expect(railGroups).not.toContain('Vulnerability')
     expect(railGroups).not.toContain('Package')
     expect(railGroups).toContain('Package type')
+    // issue 1317: Image and Tag are lists of the top 32, after Namespace; Digest stays bar-only
+    expect(railGroups.slice(railGroups.indexOf('Namespace'), railGroups.indexOf('Namespace') + 3)).toEqual([
+      'Namespace',
+      'Image',
+      'Tag',
+    ])
+    expect(railGroups).not.toContain('Digest')
 
     await bar.find('.add-filter').trigger('click')
     const fieldItems = bar.findAll('.filter-field').map((b) => b.text())
@@ -208,37 +216,37 @@ describe('FilterBar in a popover', () => {
   })
 })
 
-/** Issue 949 PR C: Image, CVE and Package take several typed values (ruled 2026-10-21: the
- * values listed under the edit box). */
+/** Issue 949 PR C: CVE and Package take several typed values (ruled 2026-10-21: the values
+ * listed under the edit box). Image was one too, until issue 1317 made it a list. */
 describe('FilterBar several typed values', () => {
-  const openImage = async (image: string[]) => {
+  const openPackage = async (pkg: string[]) => {
     const bar = mount(FilterBar, {
       props: {
         fields: FINDINGS_FIELDS,
-        selections: { ...emptySelections(FINDINGS_FIELDS), image },
+        selections: { ...emptySelections(FINDINGS_FIELDS), package: pkg },
         facets: FACETS,
         maxValues: 32,
       },
     })
     await bar.find('.add-filter').trigger('click')
-    await bar.findAll('.filter-field').find((b) => b.text().includes('Image'))?.trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.find('span').text() === 'Package')?.trigger('click')
     return bar
   }
 
   it('Enter adds the typed value, empties the input and keeps the box open', async () => {
-    const bar = await openImage(['api'])
+    const bar = await openPackage(['api'])
     const input = bar.find('.filter-vsearch input')
     expect((input.element as HTMLInputElement).value).toBe('') // the values list below holds `api`
     await input.setValue('  web ')
     await input.trigger('keydown.enter')
-    expect(bar.emitted('toggle')?.[0]).toEqual(['image', 'web'])
+    expect(bar.emitted('toggle')?.[0]).toEqual(['package', 'web'])
     expect(bar.emitted('setText')).toBeUndefined()
     expect((input.element as HTMLInputElement).value).toBe('')
     expect(bar.find('.filter-menu').exists()).toBe(true)
   })
 
   it('a value already in the list or an empty input adds nothing', async () => {
-    const bar = await openImage(['api'])
+    const bar = await openPackage(['api'])
     const input = bar.find('.filter-vsearch input')
     await input.setValue('api')
     await input.trigger('keydown.enter')
@@ -248,28 +256,28 @@ describe('FilterBar several typed values', () => {
   })
 
   it('lists the values under the input; a click on one takes it out', async () => {
-    const bar = await openImage(['api', 'web'])
+    const bar = await openPackage(['api', 'web'])
     const rows = bar.findAll('.filter-menu .facet-row')
     expect(rows.map((r) => r.text())).toEqual(['api', 'web'])
     expect(rows.every((r) => r.classes('facet-on'))).toBe(true)
     expect(rows[1]!.attributes('title')).toBe('Remove web')
     await rows[1]!.trigger('click')
-    expect(bar.emitted('toggle')?.[0]).toEqual(['image', 'web'])
+    expect(bar.emitted('toggle')?.[0]).toEqual(['package', 'web'])
   })
 
   it('a pasted comma list adds each value', async () => {
-    const bar = await openImage([])
+    const bar = await openPackage([])
     const input = bar.find('.filter-vsearch input')
     await input.setValue('api, web')
     await input.trigger('keydown.enter')
     expect(bar.emitted('toggle')).toEqual([
-      ['image', 'api'],
-      ['image', 'web'],
+      ['package', 'api'],
+      ['package', 'web'],
     ])
   })
 
   it('at 32 values the box says so and Enter adds nothing', async () => {
-    const bar = await openImage(Array.from({ length: 32 }, (_, i) => `img-${i}`))
+    const bar = await openPackage(Array.from({ length: 32 }, (_, i) => `pkg-${i}`))
     expect(bar.find('.filter-note').text()).toBe('A filter takes at most 32 values.')
     const input = bar.find('.filter-vsearch input')
     expect(bar.find('.filter-note').attributes('role')).toBe('status')
@@ -353,6 +361,62 @@ describe('FilterBar several typed values', () => {
 
 /** Issue 1064: a list that stopped at the top 32 asks the server for the values that contain the
  * typed text. A list under the cap, or a bar with no search, filters the listed values. */
+/** Issue 1317 (D1, accepted on built pictures): Add filter shows Image and Tag as lists of
+ * values with counts, as Namespace, and a pasted comma list is no longer a way in. */
+describe('FilterBar Image and Tag lists', () => {
+  const openList = async (label: string, selected: Record<string, string[]> = {}) => {
+    const bar = mount(FilterBar, {
+      props: {
+        fields: FINDINGS_FIELDS,
+        selections: { ...emptySelections(FINDINGS_FIELDS), ...selected },
+        facets: FACETS,
+        maxValues: 32,
+      },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.find('span').text() === label)?.trigger('click')
+    return bar
+  }
+
+  it.each([
+    ['Image', 'image', 'docker.io/library/postgres'],
+    ['Tag', 'tag', '13.4'],
+  ])('%s lists the values of its facet with their counts, and a click picks one', async (label, key, value) => {
+    const bar = await openList(label)
+    const rows = bar.findAll('.filter-menu .facet-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.text()).toContain(value)
+    expect(rows[0]!.text()).toContain('120')
+    expect(bar.find('.filter-vsearch').exists()).toBe(false) // no typed box under 9 values
+    await rows[0]!.trigger('click')
+    expect(bar.emitted('toggle')?.[0]).toEqual([key, value])
+  })
+
+  it('past 8 values the box filters the rows, and a pasted comma list adds nothing', async () => {
+    const tag = Array.from({ length: 9 }, (_, i) => ({ key: `1.${i}`, count: 9 - i, by_scanner: { trivy: 9 - i } }))
+    const bar = mount(FilterBar, {
+      props: { fields: FINDINGS_FIELDS, selections: emptySelections(FINDINGS_FIELDS), facets: { ...FACETS, tag }, maxValues: 32 },
+    })
+    await bar.find('.add-filter').trigger('click')
+    await bar.findAll('.filter-field').find((b) => b.find('span').text() === 'Tag')?.trigger('click')
+    const input = bar.find('.filter-vsearch input')
+    expect(input.attributes('placeholder')).toBe('Filter values…')
+    await input.setValue('1.3, 1.4')
+    await input.trigger('keydown.enter')
+    expect(bar.emitted('toggle')).toBeUndefined()
+    expect(bar.findAll('.filter-menu .facet-row')).toHaveLength(0)
+    await input.setValue('1.3')
+    expect(bar.findAll('.filter-menu .facet-row').map((r) => r.text())).toEqual([expect.stringContaining('1.3')])
+  })
+
+  it('a tag picked from a table cell past the top 32 still gets a row, with no count', async () => {
+    const bar = await openList('Tag', { tag: ['1.0.2-v1.21.1'] })
+    const rows = bar.findAll('.filter-menu .facet-row')
+    expect(rows.map((r) => r.text().trim())).toEqual(['13.4120', '1.0.2-v1.21.1'])
+    expect(rows[1]!.classes('facet-on')).toBe(true)
+  })
+})
+
 describe('FilterBar value search', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())

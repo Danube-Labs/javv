@@ -126,3 +126,42 @@ describe('a list that stopped at its cap (issue 1064)', () => {
     ])
   })
 })
+
+/** Issue 1317: Image and Tag are lists of the top 32 by count, read from the `image_repo` and
+ * `tag` facets of the server. Each counts without its own filter (issue 949). */
+describe('the Image and Tag lists (issue 1317)', () => {
+  const IMAGE = field(FINDINGS_FIELDS, 'image')
+  const TAG = field(FINDINGS_FIELDS, 'tag')
+
+  it('each list takes the buckets of its own facet, in server order, with the full image name', () => {
+    const facets: FacetsResponse = {
+      image_repo: [b('docker.io/library/postgres', 120), b('docker.io/library/wordpress', 80)],
+      tag: [b('13.4', 120), b('latest', 80)],
+    }
+    expect(facetItems(IMAGE, facets)!.map((i) => [i.label, i.count])).toEqual([
+      ['docker.io/library/postgres', 120],
+      ['docker.io/library/wordpress', 80],
+    ])
+    expect(facetItems(TAG, facets)!.map((i) => [i.label, i.count])).toEqual([
+      ['13.4', 120],
+      ['latest', 80],
+    ])
+  })
+
+  it('an excluded tag that the server still lists keeps its count; one it does not list stays, with none', () => {
+    // the tag list counts without its own filter, so "Tag is not latest" leaves latest in it
+    const items = facetItems(TAG, { tag: [b('13.4', 120), b('latest', 80)] }, ['latest', '1.0.2'])!
+    expect(countsOf(items)).toEqual({ '13.4': 120, latest: 80, '1.0.2': null })
+  })
+
+  it(`each list stops at ${FACET_CAP}, so the search box asks the server for the rest`, () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => b(`v${i}`, 100 - i))
+    expect(stoppedAtCap(IMAGE, { image_repo: many(FACET_CAP) })).toBe(true)
+    expect(stoppedAtCap(TAG, { tag: many(FACET_CAP) })).toBe(true)
+    expect(stoppedAtCap(TAG, { tag: many(FACET_CAP - 1) })).toBe(false)
+  })
+
+  it('Digest stays a typed field with no list', () => {
+    expect(facetItems(field(FINDINGS_FIELDS, 'digest'), { image_digest: [b('sha256:1', 1)] })).toBeNull()
+  })
+})

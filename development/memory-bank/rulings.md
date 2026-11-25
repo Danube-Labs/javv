@@ -205,6 +205,11 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-25 | A range from Exact range of the time picker that ends now starts at its From time. Its length is now less From, on the clock of the backend. A length of 2 days or less is exact, as for Quick select (Q1 A). | 1313 |
 | 2026-11-25 | A range from Exact range that ends in the past does not change. JAVV goes to the To time and counts whole days, rounded to the nearest day (Q2 A). | 1313 |
 | 2026-11-25 | A range from Exact range of more than 2 days that ends now rounds up to whole days, as Quick select does (Q3 A). | 1313 |
+| 2026-11-25 | The filter list of Findings has an Image group and a Tag group after Namespace. Each shows the 32 values with the most findings, now and at a past time, and counts without its own filter (Q1 yes). | 1317 |
+| 2026-11-25 | Add filter and the panel settings show Image and Tag as lists of values with counts. They have no typed box, so a pasted list with commas stops for them (D1 accepted, on built pictures). | 1317 |
+| 2026-11-25 | In the filter list and in Add filter, an Image value shows the full name, for example `docker.io/library/wordpress` (Q4 B, on built pictures). | 1317 |
+| 2026-11-25 | Tag has a column of its own after Image, with the +/- of a table cell (Q3 yes, on built pictures). While the Tag column shows, the Image cell shows the image name with no tag. When the column is hidden, the cell shows the tag again (Q5 accepted). | 1317 |
+| 2026-11-25 | Issue 1317 adds no other filter and no Digest column. First seen, Last scan, EPSS, Current, Paths and Affected images stay with no filter (Q2, as recommended). | 1317 |
 
 ## AI vulnerability research (alpha)
 

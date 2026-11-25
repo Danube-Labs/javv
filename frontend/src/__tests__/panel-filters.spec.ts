@@ -156,6 +156,27 @@ describe('the fields of the Filters field in the panel settings', () => {
   })
 })
 
+/** Issue 1317 (D1, accepted on built pictures): the panel settings show Image and Tag as lists
+ * with counts, from the facets read of the settings, as Namespace. */
+describe('Image and Tag in the panel settings', () => {
+  it.each(['findings-by-namespace', 'scan-ingest'])('are lists of the facets read on %s', (id) => {
+    const fields = panelFilterFields(panelById(id)!)
+    for (const [key, facetKey, param] of [
+      ['image', 'image_repo', 'image_repo'],
+      ['tag', 'tag', 'tag'],
+    ] as const) {
+      const f = fields.find((x) => x.key === key)
+      expect(f).toMatchObject({ type: 'terms', facetKey, param, multi: true, negatable: true })
+    }
+  })
+
+  it('say their values as a list does, with no quotes', () => {
+    expect(
+      panelFilterParts(stored({ image_repo: ['docker.io/library/postgres'], exclude_tag: ['latest', '13.4'] })),
+    ).toEqual(['Image is docker.io/library/postgres', 'Tag is none of latest, 13.4'])
+  })
+})
+
 describe('the audit filters of Triage activity (issue 1063)', () => {
   const triageBase = { cluster_id: 'c-k3d-0001', entity_type: ['finding', 'decision'] }
 

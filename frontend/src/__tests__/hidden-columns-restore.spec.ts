@@ -128,6 +128,22 @@ describe('Findings: the Paths column (issue 1205)', () => {
     expect(table[table.indexOf('package') + 1]).toBe('paths')
   })
 
+  // issue 1317: the Tag column of a first visit, and of a user with an order stored before it
+  it('Tag shows after Image on a first visit, and after Image in an order stored before it', async () => {
+    const first = await mountRouted(FindingsView)
+    expect(hiddenOf(first, FindingsTable)).not.toContain('tag')
+    const t1 = findingsOrder(first).table
+    expect(t1[t1.indexOf('image') + 1]).toBe('tag')
+    first.unmount()
+    localStorage.setItem('javv.findings.hidden_cols', MAIN_HIDDEN)
+    localStorage.setItem('javv.findings.col_order', MAIN_ORDER)
+    const w = await mountRouted(FindingsView)
+    expect(hiddenOf(w, FindingsTable)).not.toContain('tag')
+    const { table, menu } = findingsOrder(w)
+    expect(table[table.indexOf('image') + 1]).toBe('tag')
+    expect(menu).toEqual(table)
+  })
+
   it('a refused page 2 holds no rows: a hide reads nothing, a show reads the page again with its cursor', async () => {
     const w = await mountRouted(FindingsView)
     expect(lastFindingsQuery().locations).toBe(true)

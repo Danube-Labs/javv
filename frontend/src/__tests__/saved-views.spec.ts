@@ -163,17 +163,16 @@ describe('saved views — several values in one field (issue 949)', () => {
 })
 
 /**
- * A negated TEXT field (issue 349 §2): `image` is the one text field with an exclude twin
- * (`image_repo` is an exact `term` server-side). Same golden discipline — a preset that
- * captures `exclude_image_repo` but restores it as an include would misfilter under a pill
- * that reads correctly.
+ * A negated Image filter (issue 349 §2), a list since issue 1317 (`image_repo` is an exact
+ * `term` server-side). Same golden discipline — a preset that captures `exclude_image_repo` but
+ * restores it as an include would misfilter under a pill that reads correctly.
  */
-describe('saved views — negated text field round-trip', () => {
+describe('saved views — negated Image round-trip', () => {
   const REPO = 'docker.io/library/nginx'
   const SEL = { ...emptySelections(FINDINGS_FIELDS), image: [REPO] }
   const NOT_IMAGE = { image: 'not' } as const
 
-  it('capture: a negated text selection lands on the exclude param', () => {
+  it('capture: a negated Image selection lands on the exclude param', () => {
     expect(captureLens(FINDINGS_FIELDS, SEL, NOT_IMAGE, 30)).toEqual({ exclude_image_repo: [REPO] })
     // and the include side still captures plain — the mode is what flips it
     expect(captureLens(FINDINGS_FIELDS, SEL, {}, 30)).toEqual({ image_repo: [REPO] })
@@ -187,15 +186,17 @@ describe('saved views — negated text field round-trip', () => {
 
   it('round-trip: the applied URL re-emits exclude_image_repo EXACTLY', () => {
     setActivePinia(createPinia())
-    const store = makeFiltersStore('golden-text-not', FINDINGS_FIELDS)()
+    const store = makeFiltersStore('golden-image-not', FINDINGS_FIELDS)()
     store.fromQuery({ image: `!${REPO}` })
     const body = buildFilterQuery(FINDINGS_FIELDS, store.selections, { cluster_id: CID }, store.modes)
     expect(body).toEqual({ cluster_id: CID, exclude_image_repo: [REPO] })
   })
 
+  // a list value, as Namespace: no quotes, which mark a typed text (issue 1317)
   it('summary speaks the negation, not just the value', () => {
-    expect(presetSummary(FINDINGS_FIELDS, { exclude_image_repo: REPO } as never)).toBe(
-      `Image is not "${REPO}"`,
+    expect(presetSummary(FINDINGS_FIELDS, { exclude_image_repo: REPO } as never)).toBe(`Image is not ${REPO}`)
+    expect(presetSummary(FINDINGS_FIELDS, { exclude_tag: ['latest', '13.4'] } as never)).toBe(
+      'Tag is none of latest, 13.4',
     )
   })
 })
@@ -249,11 +250,11 @@ describe('saved views — cve + package round-trip (issue 492)', () => {
 describe('saved views — the stored text filters are one-value lists (issue 949)', () => {
   // the server reads the one string the screen sends as a list and stores the list; a view
   // read back must apply and describe the same filter the user saved
-  const STORED = { image_repo: ['registry.local/api'], exclude_cve_id: ['CVE-2021-3711'] }
+  const STORED = { package_name: ['zlib'], exclude_cve_id: ['CVE-2021-3711'] }
 
   it('apply: a stored one-value list restores the text filter', () => {
     expect(presetToRouteQuery(FINDINGS_FIELDS, STORED as never)).toEqual({
-      image: 'registry.local/api',
+      package: 'zlib',
       cve: '!CVE-2021-3711',
     })
     expect(
@@ -263,12 +264,12 @@ describe('saved views — the stored text filters are one-value lists (issue 949
 
   it('summary: the card names the stored text filters', () => {
     expect(presetSummary(FINDINGS_FIELDS, STORED as never)).toBe(
-      'Image "registry.local/api" · Vulnerability is not "CVE-2021-3711"',
+      'Vulnerability is not "CVE-2021-3711" · Package "zlib"',
     )
   })
 
   it('an empty stored list is no filter', () => {
-    expect(presetToRouteQuery(FINDINGS_FIELDS, { image_repo: [] } as never)).toEqual({})
+    expect(presetToRouteQuery(FINDINGS_FIELDS, { package_name: [] } as never)).toEqual({})
   })
 })
 
@@ -298,13 +299,13 @@ describe('saved views — the case of a picked value', () => {
 })
 
 describe('saved views — several typed values (issue 949 PR C)', () => {
-  const SEL = { ...emptySelections(FINDINGS_FIELDS), image: ['api', 'web'], package: ['zlib'] }
+  const SEL = { ...emptySelections(FINDINGS_FIELDS), cve: ['CVE-1', 'CVE-2'], package: ['zlib'] }
 
   it('capture, apply and the URL keep every typed value', () => {
-    const preset = captureLens(FINDINGS_FIELDS, SEL, { image: 'not' }, 30)
-    expect(preset).toEqual({ exclude_image_repo: ['api', 'web'], package_name: ['zlib'] })
+    const preset = captureLens(FINDINGS_FIELDS, SEL, { cve: 'not' }, 30)
+    expect(preset).toEqual({ exclude_cve_id: ['CVE-1', 'CVE-2'], package_name: ['zlib'] })
     const route = presetToRouteQuery(FINDINGS_FIELDS, preset as never)
-    expect(route).toEqual({ image: '!api,!web', package: 'zlib' })
+    expect(route).toEqual({ cve: '!CVE-1,!CVE-2', package: 'zlib' })
     setActivePinia(createPinia())
     const store = makeFiltersStore('golden-949c', FINDINGS_FIELDS)()
     store.fromQuery(route)
@@ -315,13 +316,15 @@ describe('saved views — several typed values (issue 949 PR C)', () => {
   })
 
   it('the card names every typed value', () => {
-    expect(presetSummary(FINDINGS_FIELDS, { image_repo: ['api', 'web'] } as never)).toBe('Image is one of "api", "web"')
+    expect(presetSummary(FINDINGS_FIELDS, { package_name: ['zlib', 'openssl'] } as never)).toBe(
+      'Package is one of "zlib", "openssl"',
+    )
     expect(presetSummary(FINDINGS_FIELDS, { exclude_cve_id: ['CVE-1', 'CVE-2'] } as never)).toBe(
       'Vulnerability is none of "CVE-1", "CVE-2"',
     )
   })
 
   it('an empty value in a stored list is skipped, not taken as no filter', () => {
-    expect(presetToRouteQuery(FINDINGS_FIELDS, { image_repo: ['', 'web'] } as never)).toEqual({ image: 'web' })
+    expect(presetToRouteQuery(FINDINGS_FIELDS, { package_name: ['', 'zlib'] } as never)).toEqual({ package: 'zlib' })
   })
 })

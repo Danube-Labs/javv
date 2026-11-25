@@ -1,8 +1,8 @@
 /**
  * The one `fields` config that drives BOTH FacetRail and FilterBar (PLAN gate: adding a field
  * here surfaces it in both with no component edits). Shape mirrors the backend contract, not
- * the prototype: `severity`, `state`, `ptype`, `namespace` and `assignee` take several values,
- * and so do the text fields `image`, `tag`, `cve` and `package` (issues 949 and 1294); `scanner` and the other text
+ * the prototype: `severity`, `state`, `ptype`, `namespace`, `image`, `tag` and `assignee` take several
+ * values, and so do the text fields `cve` and `package` (issues 949, 1294 and 1317); `scanner` and the other text
  * fields send one; KEV / fix-available / disagree are boolean flags (grouped as one "Attribute"
  * facet, as in the prototype).
  */
@@ -18,8 +18,15 @@ interface BaseField {
   label: string
 }
 
+/** A short note on the pill while none of `offWith` is on (issue 1294): the Image filter
+ * matches every tag of the image until a Tag filter or No tag narrows it. An entry is a field
+ * key, or `field:value` for one value of a field (a flag). */
+interface PillNote {
+  note?: { text: string; offWith: readonly string[] }
+}
+
 /** Enumerated values → one query param. `multi` only where the backend accepts an array. */
-export interface TermsField extends BaseField {
+export interface TermsField extends BaseField, PillNote {
   type: 'terms'
   param: string
   multi?: boolean
@@ -56,7 +63,7 @@ export interface FlagsField extends BaseField {
 
 /** Free-text param (no facet buckets), one value unless `multi`. `minLength` mirrors the API's own
  * validation — a keystroke must never emit a known-invalid query (contract-guard, audit 343). */
-export interface TextField extends BaseField {
+export interface TextField extends BaseField, PillNote {
   type: 'text'
   param: string
   minLength?: number
@@ -67,10 +74,6 @@ export interface TextField extends BaseField {
   /** The param takes several values (issue 949): each Enter in the filter bar adds one, and a
    * second pick from a table cell adds rather than replaces. Off by default. */
   multi?: boolean
-  /** A short note on the pill while none of `offWith` is on (issue 1294): the Image filter
-   * matches every tag of the image until a Tag filter or No tag narrows it. An entry is a field
-   * key, or `field:value` for one value of a field (a flag). */
-  note?: { text: string; offWith: readonly string[] }
 }
 
 export type FilterField = TermsField | FlagsField | TextField
@@ -89,9 +92,9 @@ export function valueLabel(field: FilterField, value: string): string {
 export const isNegatable = (field: FilterField): boolean =>
   field.type !== 'flags' && field.negatable === true
 
-/** The note of a field's pill, or null: see `TextField.note`. */
+/** The note of a field's pill, or null: see `PillNote`. */
 export function pillNote(field: FilterField, selections: Selections): string | null {
-  if (field.type !== 'text' || !field.note || (selections[field.key] ?? []).length === 0) return null
+  if (field.type === 'flags' || !field.note || (selections[field.key] ?? []).length === 0) return null
   const on = (entry: string) => {
     const [key, value] = entry.split(':')
     const picked = selections[key!] ?? []
@@ -192,25 +195,27 @@ export const FINDINGS_FIELDS: readonly FilterField[] = [
   // reaches anything the rail's cap hides
   { key: 'namespace', label: 'Namespace', type: 'terms', param: 'namespace', multi: true, facetKey: 'namespaces', negatable: true },
   // `image_repo` is an exact `term` server-side, so the grid's image cell can filter on the
-  // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2)
+  // row's FULL repo — and negate it, since `exclude_image_repo` exists (issue 349 §2). A list
+  // of the top 32 by count since issue 1317, as Namespace is
   {
     key: 'image',
     label: 'Image',
-    type: 'text',
+    type: 'terms',
     param: 'image_repo',
     multi: true,
+    facetKey: 'image_repo',
     negatable: true,
     note: { text: 'all tags', offWith: ['tag', 'attr:untagged'] },
   },
-  // issue 1294: an exact `term` on the tag of the image, with `exclude_tag`. The API has no tag
-  // facet, so it is a typed field, as Image is
-  { key: 'tag', label: 'Tag', type: 'text', param: 'tag', multi: true, negatable: true },
+  // issue 1294: an exact `term` on the tag of the image, with `exclude_tag`; a list since
+  // issue 1317, and the Tag column picks its values
+  { key: 'tag', label: 'Tag', type: 'terms', param: 'tag', multi: true, facetKey: 'tag', negatable: true },
   // one exact image (issue 1140): the image page opens Findings on its digest. The API takes one
   // `image_digest` and has no exclude side, so the field is single and not negatable
   { key: 'digest', label: 'Digest', type: 'text', param: 'image_digest', multi: false },
   // issue 492 completes the negation family. Both are exact `term`s server-side and neither
   // is a facet — package cardinality is unbounded, and one CVE per bucket is not a rail dim —
-  // so they are bar-and-cell fields, like `image` above.
+  // so they are bar-and-cell fields.
   { key: 'cve', label: 'Vulnerability', type: 'text', param: 'cve_id', multi: true, negatable: true },
   { key: 'package', label: 'Package', type: 'text', param: 'package_name', multi: true, negatable: true },
   { key: 'assignee', label: 'Assignee', type: 'terms', param: 'assignee', multi: true, facetKey: 'assignee', negatable: true },
