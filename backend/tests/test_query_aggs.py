@@ -60,7 +60,8 @@ def test_facets_reject_non_whitelisted_fields() -> None:
         build_facets_body(SearchFilters(), fields=["package_name"])  # unbounded cardinality
     with pytest.raises(ValueError):
         build_facets_body(SearchFilters(), fields=["title"])  # never aggregate on text (NFR-1)
-    assert "severity" in FACET_FIELDS and "image_repo" not in FACET_FIELDS
+    # the image and the tag are top-32 lists since issue 1317; a CVE per bucket never is
+    assert "severity" in FACET_FIELDS and "cve_id" not in FACET_FIELDS
 
 
 _CUTOFFS = {
@@ -126,6 +127,17 @@ def test_rail_dims_are_facetable_top_n() -> None:
     assert body["aggs"]["namespaces"]["terms"]["field"] == "namespaces"
     assert body["aggs"]["assignee"]["terms"]["field"] == "assignee"
     assert body["aggs"]["namespaces"]["terms"]["size"] == 32
+
+
+def test_the_image_and_tag_lists_are_top_n_facets() -> None:
+    """Issue 1317: the Findings filter list shows the top 32 images and tags, as it shows the
+    top 32 namespaces, and a value search reaches the others."""
+    assert {"image_repo", "tag"} <= set(FACET_FIELDS)
+    assert {"image_repo", "tag"} <= set(SEARCHABLE_FACETS)
+    body = build_facets_body(SearchFilters(), fields=["image_repo", "tag"])
+    for name in ("image_repo", "tag"):
+        assert body["aggs"][name]["terms"] == {"field": name, "size": 32}
+        assert body["aggs"][name]["aggs"]["by_scanner"]["terms"]["field"] == "scanner"
 
 
 def test_top_components_body_is_per_scanner_cardinality_only() -> None:
@@ -309,7 +321,13 @@ def test_top_images_body_needs_the_cutoffs_for_an_overdue_filter() -> None:
 # of their OWN field, so a picked value does not hide the others from the list. Every other
 # facet keeps the full filter context: the saved-view card count sums the severity facet
 # under the view's filters, so severity must stay exactly as it is.
-_OWN_FILTER_FREE = (("namespaces", "namespace"), ("ptype", "ptype"), ("assignee", "assignee"))
+_OWN_FILTER_FREE = (
+    ("namespaces", "namespace"),
+    ("ptype", "ptype"),
+    ("assignee", "assignee"),
+    ("image_repo", "image_repo"),
+    ("tag", "tag"),
+)
 
 
 def _query_of(agg: dict[str, Any]) -> str:
