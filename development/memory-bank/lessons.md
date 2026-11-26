@@ -54,7 +54,7 @@ looks like when it happens again. A number is a GitHub issue or PR.
 | 2026-07-16 (384): a view grew to 721 lines over design passes before anyone measured it | After a design pass, count the lines of each view that the PR changed. Near 500, move parts into panels. |
 | 2026-11-06 (1110, 1113): Claude Code sends 5 requests when it connects. A low MCP rate limit refused it, and the 429 reply had no detail. | The docs give 30 requests a minute as the lowest useful limit, and the 429 reply tells the reason. |
 | 2026-11-14 (1205): a text rewrite renamed the legend item "Fixed" to "Resolved". Only a person sets Resolved. A finding that a scan no longer reports gets `present=false`. | Before a rename of a state or a term, read its meaning in the backend. |
-| 2026-11-25 (1318): a deployment log showed three reads at a past time of 6.7 to 7.2 s. The request line had only the total time. So the log did not show the slow step, and a probe on the dev store had to find it. | A read or a job that can take more than about one second logs the time of its steps at `info` (`.claude/rules/logging.md`). |
+| 2026-11-25 (1318): a deployment log showed three reads of 6.7 to 7.2 s, at a past time. The request line had only the total time. So the log did not show the slow step, and a probe on the dev store had to find it. | A read or a job that can take more than about one second logs the time of its steps at `info` (`.claude/rules/logging.md`). |
 
 ## Docs
 

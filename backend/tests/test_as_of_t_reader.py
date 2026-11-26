@@ -1513,3 +1513,97 @@ async def test_a_refused_past_read_logs_no_line(monkeypatch: pytest.MonkeyPatch)
             cast(Any, None), filters=SearchFilters(), fields=["epss"], **base
         )
     assert capture.entries == []
+
+
+@requires_opensearch
+async def test_each_step_time_holds_the_work_of_its_step(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1318, review round 1: a delay in the work of each step shows in the field of that
+    step, so a timer around the wrong code fails. The page read times its own paging as well as
+    the filters of the snapshot, so its `filter_ms` holds two delays."""
+    import time
+
+    import backend.query.as_of_t as as_of_t
+
+    client, prefix = real_os
+    seeded = await _seed(client, prefix)
+    capture = _capture(monkeypatch)
+    delay = 0.05
+    once = {"build": True}
+
+    def _slow(fn: Any) -> Any:
+        async def wrapper(*a: Any, **kw: Any) -> Any:
+            await asyncio.sleep(delay)
+            return await fn(*a, **kw)
+
+        return wrapper
+
+    def _slow_row(raw: dict[str, Any], human: dict[str, Any]) -> dict[str, Any]:
+        if once["build"]:
+            once["build"] = False
+            time.sleep(delay)
+        return _finding_row(raw, human)
+
+    real_filters = AsOfTQuery._apply_filters
+    real_encode = as_of_t._encode
+
+    def _slow_filters(rows: list[dict[str, Any]], f: SearchFilters) -> list[dict[str, Any]]:
+        if rows:  # the input check before the work passes no rows
+            time.sleep(delay)
+        return real_filters(rows, f)
+
+    def _slow_encode(payload: dict[str, Any]) -> str:
+        time.sleep(delay)
+        return real_encode(payload)
+
+    monkeypatch.setattr(AsOfTQuery, "_committed_asc", _slow(AsOfTQuery._committed_asc))
+    monkeypatch.setattr(as_of_t, "_last_rows_per_key", _slow(as_of_t._last_rows_per_key))
+    monkeypatch.setattr(as_of_t, "finding_states_at", _slow(as_of_t.finding_states_at))
+    monkeypatch.setattr(as_of_t, "decisions_active_at", _slow(as_of_t.decisions_active_at))
+    monkeypatch.setattr(AsOfTQuery, "_decorate_overdue", _slow(AsOfTQuery._decorate_overdue))
+    monkeypatch.setattr(as_of_t, "_finding_row", _slow_row)
+    monkeypatch.setattr(AsOfTQuery, "_apply_filters", staticmethod(_slow_filters))
+    monkeypatch.setattr(as_of_t, "_encode", _slow_encode)
+
+    page = await READER.findings_page(
+        client,
+        cluster_id=CLUSTER,
+        t=seeded["t2"],
+        filters=SearchFilters(),
+        sort="severity_rank",
+        order="desc",
+        size=5,
+        cursor=None,
+        prefix=prefix,
+    )
+    assert page["next_cursor"] is not None  # the paging step ran its encode
+    (line,) = capture.entries
+    floor = delay * 1000 * 0.9  # a sleep can wake a little early on a coarse clock
+    for step in ("runs_ms", "history_ms", "replay_ms", "decisions_ms", "build_ms", "sla_ms"):
+        assert line[step] >= floor, step
+    assert line["filter_ms"] >= 2 * floor
+
+
+@requires_opensearch
+async def test_a_past_read_of_a_cluster_with_no_scan_has_no_history_step(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1318: a cluster with no scan at T has no pair, so the history step does not run."""
+    client, prefix = real_os
+    capture = _capture(monkeypatch)
+    cluster = f"c-empty-{datetime.now(UTC).timestamp():.0f}"
+    await READER.findings_page(
+        client,
+        cluster_id=cluster,
+        t=datetime.now(UTC),
+        filters=SearchFilters(),
+        sort="severity_rank",
+        order="desc",
+        size=5,
+        cursor=None,
+        prefix=prefix,
+    )
+    (line,) = capture.entries
+    assert set(line) == _LINE_FIELDS | (_REBUILD_STEPS - {"history_ms"})
+    assert (line["rows"], line["pairs"]) == (0, 0)

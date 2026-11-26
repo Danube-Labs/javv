@@ -575,8 +575,8 @@ class AsOfTQuery:
     ) -> list[dict[str, Any]]:
         """Every filtered row at T in walk order, from ONE reconstruction — the export
         path's source (audit F-09: paging findings_page re-reconstructed the whole cluster
-        per page; a sweep holds the same list one page already materialized, once). The page
-        read passes its own `steps`, so that one read writes one line."""
+        per page; a sweep holds the same list one page already materialized, once). Only the
+        page read passes `steps` (a private type): its own, so that one read writes one line."""
         # re-validate EVERYTHING before reconstructing — a bad input must cost a 422, not a
         # cluster-wide reconstruction (and never reach an evaluation, per the seam contract)
         if sort not in _SORT_FIELDS:
