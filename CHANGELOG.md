@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.15](https://github.com/Danube-Labs/javv/compare/v0.9.14...v0.9.15) (2026-11-26)
+
+
+### Features
+
+* each read at a past time logs the time of each of its steps ([#1324](https://github.com/Danube-Labs/javv/issues/1324)) ([3de09dd](https://github.com/Danube-Labs/javv/commit/3de09dd56ca60647be48cc7fceaa82d40607edea))
+* findings lists the image and the tag in its filters, and the tag gets a column ([#1322](https://github.com/Danube-Labs/javv/issues/1322)) ([ffd1d52](https://github.com/Danube-Labs/javv/commit/ffd1d5217f06896f244e104c9c7c7309df5c4f34))
+* the findings facets count the image and the tag, now and at a past time ([#1320](https://github.com/Danube-Labs/javv/issues/1320)) ([abd2afe](https://github.com/Danube-Labs/javv/commit/abd2afea1ada21db71b06528bc1462413a1f34db))
+
+
+### Bug Fixes
+
+* the tag and assignee lists leave out the empty value, and a long count keeps each list ([#1323](https://github.com/Danube-Labs/javv/issues/1323)) ([c6dcb56](https://github.com/Danube-Labs/javv/commit/c6dcb5699300645ff914f9005da6f2ef57e1fcc8))
+
 ## [0.9.14](https://github.com/Danube-Labs/javv/compare/v0.9.13...v0.9.14) (2026-11-25)
 
 
