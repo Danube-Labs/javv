@@ -571,38 +571,12 @@ class AsOfTQuery:
         order: str,
         prefix: str = "",
         locations: bool = False,
+        steps: _Steps | None = None,
     ) -> list[dict[str, Any]]:
         """Every filtered row at T in walk order, from ONE reconstruction — the export
         path's source (audit F-09: paging findings_page re-reconstructed the whole cluster
-        per page; a sweep holds the same list one page already materialized, once)."""
-        steps = _Steps("findings_snapshot", cluster_id, t)
-        rows = await self._snapshot(
-            client,
-            cluster_id=cluster_id,
-            t=t,
-            filters=filters,
-            sort=sort,
-            order=order,
-            steps=steps,
-            prefix=prefix,
-            locations=locations,
-        )
-        steps.done()
-        return rows
-
-    async def _snapshot(
-        self,
-        client: AsyncOpenSearch,
-        *,
-        cluster_id: str,
-        t: datetime,
-        filters: SearchFilters,
-        sort: str,
-        order: str,
-        steps: _Steps,
-        prefix: str,
-        locations: bool,
-    ) -> list[dict[str, Any]]:
+        per page; a sweep holds the same list one page already materialized, once). The page
+        read passes its own `steps`, so that one read writes one line."""
         # re-validate EVERYTHING before reconstructing — a bad input must cost a 422, not a
         # cluster-wide reconstruction (and never reach an evaluation, per the seam contract)
         if sort not in _SORT_FIELDS:
@@ -610,6 +584,9 @@ class AsOfTQuery:
         if order not in ("asc", "desc"):
             raise ValueError("order must be asc or desc")
         self._apply_filters([], filters)  # filter re-validation, before any work
+        own = steps is None
+        if steps is None:
+            steps = _Steps("findings_snapshot", cluster_id, t)
         reconstructed = await self._reconstruct(
             client, cluster_id, t, steps=steps, prefix=prefix, locations=locations
         )
@@ -623,6 +600,8 @@ class AsOfTQuery:
 
             rows.sort(key=lambda r: r["finding_key"])
             rows.sort(key=_key, reverse=desc)
+        if own:
+            steps.done()
         return rows
 
     async def findings_page(
@@ -642,7 +621,7 @@ class AsOfTQuery:
         if cursor is not None:
             _decode(cursor)  # shape check before any reconstruction work
         steps = _Steps("findings_page", cluster_id, t)
-        rows = await self._snapshot(
+        rows = await self.findings_snapshot(
             client,
             cluster_id=cluster_id,
             t=t,
