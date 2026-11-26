@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+import structlog
 from opensearchpy import AsyncOpenSearch
 
 from backend.decisions.lifecycle import DecisionPayload, DecisionScope, create_decision
@@ -1413,3 +1414,102 @@ async def test_past_t_value_search_reaches_a_tag_past_the_cap(monkeypatch) -> No
     )
     assert [b["key"] for b in out["facets"]["tag"]] == [f"t3{i}" for i in range(10)]
     assert out["more"] is False
+
+
+# issue 1318: the steps of a read that rebuilds the rows, and of the trend that reads only history
+_REBUILD_STEPS = {
+    "runs_ms",
+    "history_ms",
+    "replay_ms",
+    "decisions_ms",
+    "build_ms",
+    "sla_ms",
+    "filter_ms",
+}
+_HISTORY_STEPS = {"runs_ms", "history_ms", "filter_ms"}
+_LINE_FIELDS = {"event", "log_level", "read", "cluster_id", "as_of", "rows", "pairs", "total_ms"}
+
+
+def _capture(monkeypatch: pytest.MonkeyPatch) -> structlog.testing.LogCapture:
+    import backend.query.as_of_t as as_of_t
+
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(as_of_t, "log", structlog.wrap_logger(None, processors=[capture]))
+    return capture
+
+
+@requires_opensearch
+async def test_each_past_read_logs_one_line_with_the_time_of_each_step(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1318: each read at a past T writes one `past-time read` line at info. The line
+    names the read, and gives the rows, the pairs and the time of each step that ran. The
+    steps fit in the total."""
+    client, prefix = real_os
+    seeded = await _seed(client, prefix)
+    t = seeded["t2"]
+    capture = _capture(monkeypatch)
+    base: dict[str, Any] = {"cluster_id": CLUSTER, "t": t, "prefix": prefix}
+    f = SearchFilters()
+    reads: dict[str, Any] = {
+        "findings_page": lambda: READER.findings_page(
+            client, filters=f, sort="severity_rank", order="desc", size=5, cursor=None, **base
+        ),
+        "findings_snapshot": lambda: READER.findings_snapshot(
+            client, filters=f, sort="severity_rank", order="desc", **base
+        ),
+        "findings_facets": lambda: READER.findings_facets(client, filters=f, fields=None, **base),
+        "findings_groups": lambda: READER.findings_groups(
+            client, filters=f, by="cve_id", size=5, cursor=None, **base
+        ),
+        "findings_top_images": lambda: READER.findings_top_images(
+            client, filters=f, digests=[DIGEST], **base
+        ),
+        "trends_new_findings": lambda: READER.trends_new_findings(
+            client, days=30, filters=f, **base
+        ),
+        "trends_findings": lambda: READER.trends_findings(client, days=30, **base),
+    }
+    for read, call in reads.items():
+        capture.entries.clear()
+        await call()
+        assert len(capture.entries) == 1, read
+        (line,) = capture.entries
+        steps = _HISTORY_STEPS if read == "trends_findings" else _REBUILD_STEPS
+        assert set(line) == _LINE_FIELDS | steps, read
+        assert line["event"] == "past-time read"
+        assert line["log_level"] == "info"
+        assert line["read"] == read
+        assert line["cluster_id"] == CLUSTER
+        assert line["as_of"] == t.isoformat()
+        # the rescan dropped some findings: the rows are the present ones and the tombstones
+        assert line["rows"] == len(set(seeded["fks"]))
+        assert line["pairs"] == 1  # one scanner and one image
+        assert all(line[s] >= 0 for s in steps)
+        assert sum(line[s] for s in steps) <= line["total_ms"] + 0.1 * len(steps), read
+
+
+async def test_a_refused_past_read_logs_no_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Issue 1318: an input that the reader refuses before any work writes no line."""
+    capture = _capture(monkeypatch)
+
+    async def _never(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        raise AssertionError("rebuilt before the input check")
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _never)
+    base: dict[str, Any] = {"cluster_id": "c", "t": datetime(2026, 1, 1, tzinfo=UTC)}
+    with pytest.raises(ValueError, match="sort"):
+        await AsOfTQuery().findings_page(
+            cast(Any, None),
+            filters=SearchFilters(),
+            sort="epss",
+            order="desc",
+            size=5,
+            cursor=None,
+            **base,
+        )
+    with pytest.raises(ValueError, match="not facetable"):
+        await AsOfTQuery().findings_facets(
+            cast(Any, None), filters=SearchFilters(), fields=["epss"], **base
+        )
+    assert capture.entries == []

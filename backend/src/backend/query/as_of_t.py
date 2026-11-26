@@ -30,9 +30,13 @@ the MVP read path; measure before optimizing (#134 bench).
 import base64
 import json
 import string
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta
 from typing import Any
 
+import structlog
 from opensearchpy import AsyncOpenSearch, NotFoundError
 
 from backend.decisions.projection import project
@@ -52,6 +56,8 @@ from backend.query.search import SearchFilters
 from backend.query.trends import ScanFilters
 from backend.sla.overdue import compute_overdue
 from backend.sla.policy import read_sla_policy
+
+log = structlog.get_logger()
 
 _PAGE = 1_000
 # whitelists at past T — the reconstructable subset of the current-state vocabularies
@@ -104,6 +110,43 @@ def _day_axis(
         ]
         for key, buckets in sorted(per_key.items())
     }
+
+
+class _Steps:
+    """The step times of one read at a past T, for its `past-time read` line (issue 1318). The
+    request line has only the total, and a deployment's log must name the slow step. A time is
+    wall time, so it also holds the wait for the event loop while other reads of the screen run."""
+
+    def __init__(self, read: str, cluster_id: str, t: datetime) -> None:
+        self.read = read
+        self.cluster_id = cluster_id
+        self.t = t
+        self.started = time.perf_counter()
+        self.ms: dict[
+            str, float
+        ] = {}  # only the steps that ran, so a missing field means "not run"
+        self.pairs = 0
+        self.rows = 0
+
+    @contextmanager
+    def step(self, name: str) -> Iterator[None]:
+        started = time.perf_counter()
+        try:
+            yield
+        finally:
+            self.ms[name] = self.ms.get(name, 0.0) + (time.perf_counter() - started) * 1000
+
+    def done(self) -> None:
+        log.info(
+            "past-time read",
+            read=self.read,
+            cluster_id=self.cluster_id,
+            as_of=self.t.isoformat(),
+            rows=self.rows,
+            pairs=self.pairs,
+            total_ms=round((time.perf_counter() - self.started) * 1000, 1),
+            **{f"{name}_ms": round(ms, 1) for name, ms in self.ms.items()},
+        )
 
 
 def _unrecorded(name: str) -> ValueError:
@@ -272,6 +315,7 @@ class AsOfTQuery:
         cluster_id: str,
         t: datetime,
         *,
+        steps: _Steps,
         prefix: str = "",
         locations: bool = False,
         image_digest: str | None = None,
@@ -280,26 +324,31 @@ class AsOfTQuery:
         — shared by the findings reconstruction and the findings-trend derivation. An
         `image_digest` reads that image only: the SLA group clock is per (cve, digest), so the
         overdue verdict of its rows does not change."""
-        runs = await latest_committed_runs(
-            client, cluster_id, t, image_digest=image_digest, prefix=prefix
-        )
+        with steps.step("runs"):
+            runs = await latest_committed_runs(
+                client, cluster_id, t, image_digest=image_digest, prefix=prefix
+            )
         by_digest: dict[tuple[str, str], list[dict[str, Any]]] = {}
         for r in runs:
             by_digest.setdefault((r["scanner"], r["image_digest"]), []).append(r)
+        steps.pairs = len(by_digest)
 
         raws: list[dict[str, Any]] = []
         for (scanner, digest), latest_only in sorted(by_digest.items()):
             # committed runs ≤ T for the digest (ascending) — resolved_at needs the successor
-            committed = await self._committed_asc(
-                client, cluster_id, t, scanner, digest, prefix=prefix
-            )
+            with steps.step("runs"):
+                committed = await self._committed_asc(
+                    client, cluster_id, t, scanner, digest, prefix=prefix
+                )
             if not committed:
                 committed = latest_only
-            raws.extend(
-                await _last_rows_per_key(
-                    client, cluster_id, scanner, digest, committed, prefix, locations
+            with steps.step("history"):
+                raws.extend(
+                    await _last_rows_per_key(
+                        client, cluster_id, scanner, digest, committed, prefix, locations
+                    )
                 )
-            )
+        steps.rows = len(raws)
         return raws
 
     async def _reconstruct(
@@ -308,6 +357,7 @@ class AsOfTQuery:
         cluster_id: str,
         t: datetime,
         *,
+        steps: _Steps,
         prefix: str = "",
         locations: bool = False,
         image_digest: str | None = None,
@@ -315,33 +365,45 @@ class AsOfTQuery:
         """Every finding row of the cluster as it stood at T (present AND tombstones) —
         filters/facets/groups are applied over this one reconstruction."""
         raws = await self._raws(
-            client, cluster_id, t, prefix=prefix, locations=locations, image_digest=image_digest
+            client,
+            cluster_id,
+            t,
+            steps=steps,
+            prefix=prefix,
+            locations=locations,
+            image_digest=image_digest,
         )
         keys = [r["occurrence"]["finding_key"] for r in raws]
-        humans = await finding_states_at(client, cluster_id, t, finding_keys=keys, prefix=prefix)
-        decisions = await decisions_active_at(client, cluster_id, t, prefix=prefix)
+        with steps.step("replay"):
+            humans = await finding_states_at(
+                client, cluster_id, t, finding_keys=keys, prefix=prefix
+            )
+        with steps.step("decisions"):
+            decisions = await decisions_active_at(client, cluster_id, t, prefix=prefix)
         iso = t.isoformat()
 
         rows: list[dict[str, Any]] = []
-        for raw in raws:
-            fk = raw["occurrence"]["finding_key"]
-            human = dict(humans[fk])
-            human["state_decision_id"] = None
-            row = _finding_row(raw, human)
-            # ownership at T mirrors reproject._target_for: a direct human state ≠ open owns
-            # the finding; an un-owned one takes the winning active decision's projection
-            if row["state"] == "open" and decisions:
-                won = project(row, decisions, at=iso)
-                if won is not None:
-                    row["state"] = won.state
-                    row["vex_justification"] = won.vex_justification
-                    row["state_decision_id"] = won.decision_id
-            rows.append(row)
+        with steps.step("build"):
+            for raw in raws:
+                fk = raw["occurrence"]["finding_key"]
+                human = dict(humans[fk])
+                human["state_decision_id"] = None
+                row = _finding_row(raw, human)
+                # ownership at T mirrors reproject._target_for: a direct human state ≠ open owns
+                # the finding; an un-owned one takes the winning active decision's projection
+                if row["state"] == "open" and decisions:
+                    won = project(row, decisions, at=iso)
+                    if won is not None:
+                        row["state"] = won.state
+                        row["vex_justification"] = won.vex_justification
+                        row["state_decision_id"] = won.decision_id
+                rows.append(row)
 
         # the deadline judges KEV as the scan recorded it (issue 1000); a history row written
         # before mapping v20 has no value, so that finding gets the deadline of its severity
-        kev = {r["occurrence"]["finding_key"]: bool(r["occurrence"].get("kev")) for r in raws}
-        await self._decorate_overdue(client, rows, t, kev=kev, prefix=prefix)
+        with steps.step("sla"):
+            kev = {r["occurrence"]["finding_key"]: bool(r["occurrence"].get("kev")) for r in raws}
+            await self._decorate_overdue(client, rows, t, kev=kev, prefix=prefix)
         return rows
 
     async def _committed_asc(
@@ -513,6 +575,34 @@ class AsOfTQuery:
         """Every filtered row at T in walk order, from ONE reconstruction — the export
         path's source (audit F-09: paging findings_page re-reconstructed the whole cluster
         per page; a sweep holds the same list one page already materialized, once)."""
+        steps = _Steps("findings_snapshot", cluster_id, t)
+        rows = await self._snapshot(
+            client,
+            cluster_id=cluster_id,
+            t=t,
+            filters=filters,
+            sort=sort,
+            order=order,
+            steps=steps,
+            prefix=prefix,
+            locations=locations,
+        )
+        steps.done()
+        return rows
+
+    async def _snapshot(
+        self,
+        client: AsyncOpenSearch,
+        *,
+        cluster_id: str,
+        t: datetime,
+        filters: SearchFilters,
+        sort: str,
+        order: str,
+        steps: _Steps,
+        prefix: str,
+        locations: bool,
+    ) -> list[dict[str, Any]]:
         # re-validate EVERYTHING before reconstructing — a bad input must cost a 422, not a
         # cluster-wide reconstruction (and never reach an evaluation, per the seam contract)
         if sort not in _SORT_FIELDS:
@@ -520,18 +610,19 @@ class AsOfTQuery:
         if order not in ("asc", "desc"):
             raise ValueError("order must be asc or desc")
         self._apply_filters([], filters)  # filter re-validation, before any work
-        rows = self._apply_filters(
-            await self._reconstruct(client, cluster_id, t, prefix=prefix, locations=locations),
-            filters,
+        reconstructed = await self._reconstruct(
+            client, cluster_id, t, steps=steps, prefix=prefix, locations=locations
         )
-        desc = order == "desc"
+        with steps.step("filter"):
+            rows = self._apply_filters(reconstructed, filters)
+            desc = order == "desc"
 
-        def _key(r: dict[str, Any]) -> Any:
-            v = r.get(sort)
-            return (v is None, v)  # nulls last on asc; stable + comparable
+            def _key(r: dict[str, Any]) -> Any:
+                v = r.get(sort)
+                return (v is None, v)  # nulls last on asc; stable + comparable
 
-        rows.sort(key=lambda r: r["finding_key"])
-        rows.sort(key=_key, reverse=desc)
+            rows.sort(key=lambda r: r["finding_key"])
+            rows.sort(key=_key, reverse=desc)
         return rows
 
     async def findings_page(
@@ -550,33 +641,37 @@ class AsOfTQuery:
     ) -> dict[str, Any]:
         if cursor is not None:
             _decode(cursor)  # shape check before any reconstruction work
-        rows = await self.findings_snapshot(
+        steps = _Steps("findings_page", cluster_id, t)
+        rows = await self._snapshot(
             client,
             cluster_id=cluster_id,
             t=t,
             filters=filters,
             sort=sort,
             order=order,
+            steps=steps,
             prefix=prefix,
             locations=locations,
         )
-        if cursor is not None:
-            c = _decode(cursor)
-            if c.get("s") != sort or c.get("o") != order:
-                raise ValueError("invalid cursor")  # a cursor is bound to its walk's ordering
-            last_key = c.get("k")
-            idx = next((i for i, r in enumerate(rows) if r["finding_key"] == last_key), None)
-            rows_after = rows[idx + 1 :] if idx is not None else rows
-        else:
-            rows_after = rows
-        page = rows_after[:size]
-        if not locations:  # the live rule: the paths only on request (issue 1077, D5)
-            page = [{k: v for k, v in r.items() if k != "locations"} for r in page]
-        next_cursor = (
-            _encode({"k": page[-1]["finding_key"], "s": sort, "o": order})
-            if len(rows_after) > size
-            else None
-        )
+        with steps.step("filter"):
+            if cursor is not None:
+                c = _decode(cursor)
+                if c.get("s") != sort or c.get("o") != order:
+                    raise ValueError("invalid cursor")  # a cursor is bound to its walk's ordering
+                last_key = c.get("k")
+                idx = next((i for i, r in enumerate(rows) if r["finding_key"] == last_key), None)
+                rows_after = rows[idx + 1 :] if idx is not None else rows
+            else:
+                rows_after = rows
+            page = rows_after[:size]
+            if not locations:  # the live rule: the paths only on request (issue 1077, D5)
+                page = [{k: v for k, v in r.items() if k != "locations"} for r in page]
+            next_cursor = (
+                _encode({"k": page[-1]["finding_key"], "s": sort, "o": order})
+                if len(rows_after) > size
+                else None
+            )
+        steps.done()
         return {
             "data": page,
             "next_cursor": next_cursor,
@@ -595,7 +690,7 @@ class AsOfTQuery:
         all_filters: bool = False,
         contains: str | None = None,
     ) -> dict[str, Any]:
-        chosen = list(fields) if fields is not None else list(_FACET_FIELDS)
+        chosen: list[str] = list(fields) if fields is not None else list(_FACET_FIELDS)
         bad = [f for f in chosen if f not in _FACET_FIELDS]
         if bad:
             raise ValueError(f"not facetable (whitelist {_FACET_FIELDS}): {bad}")
@@ -603,7 +698,21 @@ class AsOfTQuery:
         # searchable lists only the package type, the image and the tag get here.
         if contains is not None and (len(chosen) != 1 or chosen[0] not in SEARCHABLE_FACETS):
             raise ValueError(f"contains needs exactly one field of {SEARCHABLE_FACETS}")
-        reconstructed = await self._reconstruct(client, cluster_id, t, prefix=prefix)
+        steps = _Steps("findings_facets", cluster_id, t)
+        reconstructed = await self._reconstruct(client, cluster_id, t, steps=steps, prefix=prefix)
+        with steps.step("filter"):
+            out = self._count_facets(reconstructed, filters, chosen, all_filters, contains)
+        steps.done()
+        return out
+
+    def _count_facets(
+        self,
+        reconstructed: list[dict[str, Any]],
+        filters: SearchFilters,
+        chosen: list[str],
+        all_filters: bool,
+        contains: str | None,
+    ) -> dict[str, Any]:
         rows = self._apply_filters(reconstructed, filters)
         facets: dict[str, list[dict[str, Any]]] = {}
         for field in chosen:
@@ -664,28 +773,29 @@ class AsOfTQuery:
     ) -> dict[str, Any]:
         if by not in _GROUP_FIELDS:
             raise ValueError(f"not groupable at a past as_of (whitelist {_GROUP_FIELDS}): {by!r}")
+        steps = _Steps("findings_groups", cluster_id, t)
         # one image (Image detail) rebuilds that image only, not the whole cluster
-        rows = self._apply_filters(
-            await self._reconstruct(
-                client, cluster_id, t, prefix=prefix, image_digest=filters.image_digest
-            ),
-            filters,
+        reconstructed = await self._reconstruct(
+            client, cluster_id, t, steps=steps, prefix=prefix, image_digest=filters.image_digest
         )
-        buckets: dict[str, dict[str, Any]] = {}
-        for r in rows:
-            keys = r[by] if by == "namespaces" else [r[by]]
-            for key in keys or []:
-                if key is None:
-                    continue
-                b = buckets.setdefault(key, {"key": key, "count": 0, "by_scanner": {}})
-                b["count"] += 1
-                b["by_scanner"][r["scanner"]] = b["by_scanner"].get(r["scanner"], 0) + 1
-        ordered = sorted(buckets.values(), key=lambda b: b["key"])  # composite order: key asc
-        if cursor is not None:
-            after = _decode(cursor).get("a")
-            ordered = [b for b in ordered if b["key"] > after]
-        page = ordered[:size]
-        next_cursor = _encode({"a": page[-1]["key"]}) if len(ordered) > size else None
+        with steps.step("filter"):
+            rows = self._apply_filters(reconstructed, filters)
+            buckets: dict[str, dict[str, Any]] = {}
+            for r in rows:
+                keys = r[by] if by == "namespaces" else [r[by]]
+                for key in keys or []:
+                    if key is None:
+                        continue
+                    b = buckets.setdefault(key, {"key": key, "count": 0, "by_scanner": {}})
+                    b["count"] += 1
+                    b["by_scanner"][r["scanner"]] = b["by_scanner"].get(r["scanner"], 0) + 1
+            ordered = sorted(buckets.values(), key=lambda b: b["key"])  # composite order: key asc
+            if cursor is not None:
+                after = _decode(cursor).get("a")
+                ordered = [b for b in ordered if b["key"] > after]
+            page = ordered[:size]
+            next_cursor = _encode({"a": page[-1]["key"]}) if len(ordered) > size else None
+        steps.done()
         return {"data": page, "next_cursor": next_cursor}
 
     async def findings_top_images(
@@ -705,30 +815,31 @@ class AsOfTQuery:
         self._apply_filters([], filters)  # an unrecorded filter is a 422 before any work
         if not digests:
             return {"images": []}
+        steps = _Steps("findings_top_images", cluster_id, t)
         # one image (Image detail) rebuilds that image only, not the whole cluster
-        rows = self._apply_filters(
-            await self._reconstruct(
-                client, cluster_id, t, prefix=prefix, image_digest=filters.image_digest
-            ),
-            filters,
+        reconstructed = await self._reconstruct(
+            client, cluster_id, t, steps=steps, prefix=prefix, image_digest=filters.image_digest
         )
-        running = set(digests)
-        counts: dict[str, dict[str, dict[str, int]]] = {}
-        for r in rows:
-            if r["image_digest"] not in running:
-                continue
-            per = counts.setdefault(r["image_digest"], {}).setdefault(r["scanner"], {})
-            per[r["severity_canonical"]] = per.get(r["severity_canonical"], 0) + 1
-        images = [
-            {
-                "image_digest": digest,
-                "severity_by_scanner": {s: severity_buckets(c) for s, c in by_scanner.items()},
-            }
-            for digest, by_scanner in counts.items()
-        ]
-        ranked = [i for i in images if any(top_images_rank(i["severity_by_scanner"]))]
-        ranked.sort(key=lambda i: i["image_digest"])
-        ranked.sort(key=lambda i: top_images_rank(i["severity_by_scanner"]), reverse=True)
+        with steps.step("filter"):
+            rows = self._apply_filters(reconstructed, filters)
+            running = set(digests)
+            counts: dict[str, dict[str, dict[str, int]]] = {}
+            for r in rows:
+                if r["image_digest"] not in running:
+                    continue
+                per = counts.setdefault(r["image_digest"], {}).setdefault(r["scanner"], {})
+                per[r["severity_canonical"]] = per.get(r["severity_canonical"], 0) + 1
+            images = [
+                {
+                    "image_digest": digest,
+                    "severity_by_scanner": {s: severity_buckets(c) for s, c in by_scanner.items()},
+                }
+                for digest, by_scanner in counts.items()
+            ]
+            ranked = [i for i in images if any(top_images_rank(i["severity_by_scanner"]))]
+            ranked.sort(key=lambda i: i["image_digest"])
+            ranked.sort(key=lambda i: top_images_rank(i["severity_by_scanner"]), reverse=True)
+        steps.done()
         return {"images": ranked[:TOP_IMAGES_SIZE]}
 
     # --- trends + contributors at T (slice 4) ---------------------------------
@@ -777,7 +888,8 @@ class AsOfTQuery:
     ) -> dict[str, Any]:
         if not 1 <= days <= 365:
             raise ValueError("days must be 1..365")
-        raws = await self._raws(client, cluster_id, t, prefix=prefix)
+        steps = _Steps("trends_findings", cluster_id, t)
+        raws = await self._raws(client, cluster_id, t, steps=steps, prefix=prefix)
         start = t.date() - timedelta(days=days)
         end = t.date()
 
@@ -788,16 +900,18 @@ class AsOfTQuery:
 
         new: dict[str, dict[date, int]] = {}
         resolved: dict[str, dict[date, int]] = {}
-        for raw in raws:
-            scanner = raw["occurrence"]["scanner"]
-            first = _day(raw["first_seen_at"])
-            if first is not None and start <= first <= end:
-                bucket = new.setdefault(scanner, {})
-                bucket[first] = bucket.get(first, 0) + 1
-            gone = _day(raw["resolved_at"])
-            if gone is not None and start <= gone <= end:
-                bucket = resolved.setdefault(scanner, {})
-                bucket[gone] = bucket.get(gone, 0) + 1
+        with steps.step("filter"):
+            for raw in raws:
+                scanner = raw["occurrence"]["scanner"]
+                first = _day(raw["first_seen_at"])
+                if first is not None and start <= first <= end:
+                    bucket = new.setdefault(scanner, {})
+                    bucket[first] = bucket.get(first, 0) + 1
+                gone = _day(raw["resolved_at"])
+                if gone is not None and start <= gone <= end:
+                    bucket = resolved.setdefault(scanner, {})
+                    bucket[gone] = bucket.get(gone, 0) + 1
+        steps.done()
 
         return {
             "new": _day_axis(new, start, end),
@@ -822,23 +936,23 @@ class AsOfTQuery:
         if not 1 <= days <= 365:
             raise ValueError("days must be 1..365")
         self._apply_filters([], filters)  # filter re-validation, before any work
+        steps = _Steps("trends_new_findings", cluster_id, t)
         # one image (Image detail) rebuilds that image only, not the whole cluster
-        rows = self._apply_filters(
-            await self._reconstruct(
-                client, cluster_id, t, prefix=prefix, image_digest=filters.image_digest
-            ),
-            filters,
+        reconstructed = await self._reconstruct(
+            client, cluster_id, t, steps=steps, prefix=prefix, image_digest=filters.image_digest
         )
         start = t.date() - timedelta(days=days)
         end = t.date()
         per_severity: dict[str, dict[date, int]] = {}
-        for row in rows:
-            if row["first_seen_at"] is None:
-                continue
-            first = datetime.fromisoformat(row["first_seen_at"]).date()
-            if start <= first <= end:
-                bucket = per_severity.setdefault(row["severity_canonical"], {})
-                bucket[first] = bucket.get(first, 0) + 1
+        with steps.step("filter"):
+            for row in self._apply_filters(reconstructed, filters):
+                if row["first_seen_at"] is None:
+                    continue
+                first = datetime.fromisoformat(row["first_seen_at"]).date()
+                if start <= first <= end:
+                    bucket = per_severity.setdefault(row["severity_canonical"], {})
+                    bucket[first] = bucket.get(first, 0) + 1
+        steps.done()
         return {"series": _day_axis(per_severity, start, end), "days": days, "interval": "day"}
 
     async def contributors(
