@@ -1610,3 +1610,45 @@ async def test_a_past_read_of_a_cluster_with_no_scan_has_no_history_step(
     (line,) = capture.entries
     assert set(line) == _LINE_FIELDS | (_REBUILD_STEPS - {"history_ms"})
     assert (line["rows"], line["pairs"]) == (0, 0)
+
+
+async def test_past_t_groups_refuse_a_bad_cursor_before_any_work(monkeypatch) -> None:
+    """Issue 1318: a groups cursor that does not decode, or that has no string key, is a 422
+    before the rebuild. A cursor with no key was compared with the keys: a TypeError, so a 500."""
+    from backend.query.as_of_t import _encode
+
+    async def _never(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        raise AssertionError("rebuilt before the cursor check")
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _never)
+    base: dict[str, Any] = {"cluster_id": "c", "t": datetime(2026, 1, 1, tzinfo=UTC)}
+    for cursor in ("not-a-cursor!", _encode({}), _encode({"a": 1}), _encode({"a": None})):
+        with pytest.raises(ValueError, match="invalid cursor"):
+            await AsOfTQuery().findings_groups(
+                cast(Any, None), filters=SearchFilters(), by="cve_id", size=5, cursor=cursor, **base
+            )
+
+
+async def test_past_t_groups_page_on_after_a_good_cursor(monkeypatch) -> None:
+    """Issue 1318: a cursor with a string key still pages on after that key."""
+    from backend.query.as_of_t import _encode
+
+    rows = [
+        {**_image_row("sha256:a", "trivy", "high"), "cve_id": cve}
+        for cve in ("CVE-1", "CVE-2", "CVE-3")
+    ]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_groups(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(),
+        by="cve_id",
+        size=5,
+        cursor=_encode({"a": "CVE-1"}),
+    )
+    assert [b["key"] for b in out["data"]] == ["CVE-2", "CVE-3"]

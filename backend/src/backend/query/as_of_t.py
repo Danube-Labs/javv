@@ -752,6 +752,11 @@ class AsOfTQuery:
     ) -> dict[str, Any]:
         if by not in _GROUP_FIELDS:
             raise ValueError(f"not groupable at a past as_of (whitelist {_GROUP_FIELDS}): {by!r}")
+        # the cursor before any work: each group key is a string, so a cursor with no string key
+        # is refused (a 422), never compared with the keys (a TypeError, so a 500)
+        after = _decode(cursor).get("a") if cursor is not None else None
+        if cursor is not None and not isinstance(after, str):
+            raise ValueError("invalid cursor")
         steps = _Steps("findings_groups", cluster_id, t)
         # one image (Image detail) rebuilds that image only, not the whole cluster
         reconstructed = await self._reconstruct(
@@ -769,8 +774,7 @@ class AsOfTQuery:
                     b["count"] += 1
                     b["by_scanner"][r["scanner"]] = b["by_scanner"].get(r["scanner"], 0) + 1
             ordered = sorted(buckets.values(), key=lambda b: b["key"])  # composite order: key asc
-            if cursor is not None:
-                after = _decode(cursor).get("a")
+            if after is not None:
                 ordered = [b for b in ordered if b["key"] > after]
             page = ordered[:size]
             next_cursor = _encode({"a": page[-1]["key"]}) if len(ordered) > size else None
