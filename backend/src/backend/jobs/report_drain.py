@@ -186,6 +186,13 @@ async def _ring_bell(client: AsyncOpenSearch, job: ClaimedJob, *, prefix: str = 
 
 async def run_job(client: AsyncOpenSearch, job: ClaimedJob, *, prefix: str = "") -> bool:
     """Execute one claimed job to a terminal state. Returns True when OUR publish landed."""
+    # the reader logs its `past-time read` line through its own logger: bound here, that line
+    # names the report too, and the binding ends with the job (issue 1318)
+    with structlog.contextvars.bound_contextvars(report_id=job.report_id):
+        return await _run_job(client, job, prefix=prefix)
+
+
+async def _run_job(client: AsyncOpenSearch, job: ClaimedJob, *, prefix: str) -> bool:
     settings = get_settings()
     doc = job.doc
     boundlog = log.bind(report_id=job.report_id, kind=doc.get("kind"))

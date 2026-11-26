@@ -214,6 +214,7 @@ for rulings on a built specimen, section 9 for the ruled exceptions) and in
 | 2026-11-25 | You apply a saved view. Each column that the view hides then goes after the column before it in the default order. So Tag, shown again after a view saved before it, comes after Image. The Columns menu then mixes the hidden columns with the columns of the view (Q7 B, on built pictures). This replaces the order of issue 1205, where the hidden columns came after the columns of the view. | 1317 |
 | 2026-11-25 | The facets read can fail while a list with no fixed values has no values. Add filter then shows a typed box for that list, as for a typed field. This applies to Namespace, Image, Tag, Assignee and Package type (Q8 B, on built pictures). | 1317 |
 | 2026-11-25 | Issue 1317 adds no other filter and no Digest column. First seen, Last scan, EPSS, Current, Paths and Affected images stay with no filter (Q2, as recommended). | 1317 |
+| 2026-11-26 | Each read at a past time writes one `past-time read` line at `info`, with the time of each step (Q3). | 1318 |
 
 ## AI vulnerability research (alpha)
 
@@ -251,3 +252,5 @@ The plan of the agent skill is in issue 1193. The issue body has the current sta
 | standing | No tool attribution and no session links in commits, PRs or issues. | `development/standards/git-workflow.md` |
 | 2026-11-06 | The docs and the issues can name an agent client that a user connects to JAVV, for example Claude Code, Codex, VS Code or Cursor. They still name no model, and no tool as the author or the reviewer of the work. | 1110 |
 | 2026-11-19 | Each new image build gets a test of the old and the new images side by side. The test covers function, logs, speed and the rest. The rig is `development/e2e/image-ab.sh`, run by hand for now. Its report goes in the PR body. | 1263 |
+| 2026-11-26 | A change that makes a read faster starts with research: how databases and other tools do it, and probes on the store. Then an A/B test compares the old and the new read on the same store, with CSV results before and after. Each case must give the same answer. | 1318 |
+| 2026-11-26 | A read or a job that can take more than about one second logs the time of its steps at `info`. The rule covers the exports and the reads of a dashboard too, when you add or change them. It is in `.claude/rules/logging.md`. | 1318 |

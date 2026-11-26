@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+import structlog
 from opensearchpy import AsyncOpenSearch
 
 from backend.decisions.lifecycle import DecisionPayload, DecisionScope, create_decision
@@ -1413,3 +1414,241 @@ async def test_past_t_value_search_reaches_a_tag_past_the_cap(monkeypatch) -> No
     )
     assert [b["key"] for b in out["facets"]["tag"]] == [f"t3{i}" for i in range(10)]
     assert out["more"] is False
+
+
+# issue 1318: the steps of a read that rebuilds the rows, and of the trend that reads only history
+_REBUILD_STEPS = {
+    "runs_ms",
+    "history_ms",
+    "replay_ms",
+    "decisions_ms",
+    "build_ms",
+    "sla_ms",
+    "filter_ms",
+}
+_HISTORY_STEPS = {"runs_ms", "history_ms", "filter_ms"}
+_LINE_FIELDS = {"event", "log_level", "read", "cluster_id", "as_of", "rows", "pairs", "total_ms"}
+
+
+def _capture(monkeypatch: pytest.MonkeyPatch) -> structlog.testing.LogCapture:
+    import backend.query.as_of_t as as_of_t
+
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(as_of_t, "log", structlog.wrap_logger(None, processors=[capture]))
+    return capture
+
+
+@requires_opensearch
+async def test_each_past_read_logs_one_line_with_the_time_of_each_step(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1318: each read at a past T writes one `past-time read` line at info. The line
+    names the read, and gives the rows, the pairs and the time of each step that ran. The
+    steps fit in the total."""
+    client, prefix = real_os
+    seeded = await _seed(client, prefix)
+    t = seeded["t2"]
+    capture = _capture(monkeypatch)
+    base: dict[str, Any] = {"cluster_id": CLUSTER, "t": t, "prefix": prefix}
+    f = SearchFilters()
+    reads: dict[str, Any] = {
+        "findings_page": lambda: READER.findings_page(
+            client, filters=f, sort="severity_rank", order="desc", size=5, cursor=None, **base
+        ),
+        "findings_snapshot": lambda: READER.findings_snapshot(
+            client, filters=f, sort="severity_rank", order="desc", **base
+        ),
+        "findings_facets": lambda: READER.findings_facets(client, filters=f, fields=None, **base),
+        "findings_groups": lambda: READER.findings_groups(
+            client, filters=f, by="cve_id", size=5, cursor=None, **base
+        ),
+        "findings_top_images": lambda: READER.findings_top_images(
+            client, filters=f, digests=[DIGEST], **base
+        ),
+        "trends_new_findings": lambda: READER.trends_new_findings(
+            client, days=30, filters=f, **base
+        ),
+        "trends_findings": lambda: READER.trends_findings(client, days=30, **base),
+    }
+    for read, call in reads.items():
+        capture.entries.clear()
+        await call()
+        assert len(capture.entries) == 1, read
+        (line,) = capture.entries
+        steps = _HISTORY_STEPS if read == "trends_findings" else _REBUILD_STEPS
+        assert set(line) == _LINE_FIELDS | steps, read
+        assert line["event"] == "past-time read"
+        assert line["log_level"] == "info"
+        assert line["read"] == read
+        assert line["cluster_id"] == CLUSTER
+        assert line["as_of"] == t.isoformat()
+        # the rescan dropped some findings: the rows are the present ones and the tombstones
+        assert line["rows"] == len(set(seeded["fks"]))
+        assert line["pairs"] == 1  # one scanner and one image
+        assert all(line[s] >= 0 for s in steps)
+        assert sum(line[s] for s in steps) <= line["total_ms"] + 0.1 * len(steps), read
+
+
+async def test_a_refused_past_read_logs_no_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Issue 1318: an input that the reader refuses before any work writes no line."""
+    capture = _capture(monkeypatch)
+
+    async def _never(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        raise AssertionError("rebuilt before the input check")
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _never)
+    base: dict[str, Any] = {"cluster_id": "c", "t": datetime(2026, 1, 1, tzinfo=UTC)}
+    with pytest.raises(ValueError, match="sort"):
+        await AsOfTQuery().findings_page(
+            cast(Any, None),
+            filters=SearchFilters(),
+            sort="epss",
+            order="desc",
+            size=5,
+            cursor=None,
+            **base,
+        )
+    with pytest.raises(ValueError, match="not facetable"):
+        await AsOfTQuery().findings_facets(
+            cast(Any, None), filters=SearchFilters(), fields=["epss"], **base
+        )
+    assert capture.entries == []
+
+
+@requires_opensearch
+async def test_each_step_time_holds_the_work_of_its_step(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1318: a delay in the work of each step shows in the field of that step, so a timer
+    around the wrong code fails. The steps still fit in the total, so a timer that is too wide
+    fails too. The page read times its own paging as well as the filters of the snapshot, so its
+    `filter_ms` holds two delays."""
+    import time
+
+    import backend.query.as_of_t as as_of_t
+
+    client, prefix = real_os
+    seeded = await _seed(client, prefix)
+    capture = _capture(monkeypatch)
+    delay = 0.05
+    once = {"build": True}
+
+    def _slow(fn: Any) -> Any:
+        async def wrapper(*a: Any, **kw: Any) -> Any:
+            await asyncio.sleep(delay)
+            return await fn(*a, **kw)
+
+        return wrapper
+
+    def _slow_row(raw: dict[str, Any], human: dict[str, Any]) -> dict[str, Any]:
+        if once["build"]:
+            once["build"] = False
+            time.sleep(delay)
+        return _finding_row(raw, human)
+
+    real_filters = AsOfTQuery._apply_filters
+    real_encode = as_of_t._encode
+
+    def _slow_filters(rows: list[dict[str, Any]], f: SearchFilters) -> list[dict[str, Any]]:
+        if rows:  # the input check before the work passes no rows
+            time.sleep(delay)
+        return real_filters(rows, f)
+
+    def _slow_encode(payload: dict[str, Any]) -> str:
+        time.sleep(delay)
+        return real_encode(payload)
+
+    monkeypatch.setattr(AsOfTQuery, "_committed_asc", _slow(AsOfTQuery._committed_asc))
+    monkeypatch.setattr(as_of_t, "_last_rows_per_key", _slow(as_of_t._last_rows_per_key))
+    monkeypatch.setattr(as_of_t, "finding_states_at", _slow(as_of_t.finding_states_at))
+    monkeypatch.setattr(as_of_t, "decisions_active_at", _slow(as_of_t.decisions_active_at))
+    monkeypatch.setattr(AsOfTQuery, "_decorate_overdue", _slow(AsOfTQuery._decorate_overdue))
+    monkeypatch.setattr(as_of_t, "_finding_row", _slow_row)
+    monkeypatch.setattr(AsOfTQuery, "_apply_filters", staticmethod(_slow_filters))
+    monkeypatch.setattr(as_of_t, "_encode", _slow_encode)
+
+    page = await READER.findings_page(
+        client,
+        cluster_id=CLUSTER,
+        t=seeded["t2"],
+        filters=SearchFilters(),
+        sort="severity_rank",
+        order="desc",
+        size=5,
+        cursor=None,
+        prefix=prefix,
+    )
+    assert page["next_cursor"] is not None  # the paging step ran its encode
+    (line,) = capture.entries
+    floor = delay * 1000 * 0.9  # a sleep can wake a little early on a coarse clock
+    for step in ("runs_ms", "history_ms", "replay_ms", "decisions_ms", "build_ms", "sla_ms"):
+        assert line[step] >= floor, step
+    assert line["filter_ms"] >= 2 * floor
+    steps = sum(line[s] for s in _REBUILD_STEPS)
+    assert steps <= line["total_ms"] + 0.1 * len(_REBUILD_STEPS)
+
+
+@requires_opensearch
+async def test_a_past_read_of_a_cluster_with_no_scan_has_no_history_step(
+    real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue 1318: a cluster with no scan at T has no pair, so the history step does not run."""
+    client, prefix = real_os
+    capture = _capture(monkeypatch)
+    cluster = f"c-empty-{datetime.now(UTC).timestamp():.0f}"
+    await READER.findings_page(
+        client,
+        cluster_id=cluster,
+        t=datetime.now(UTC),
+        filters=SearchFilters(),
+        sort="severity_rank",
+        order="desc",
+        size=5,
+        cursor=None,
+        prefix=prefix,
+    )
+    (line,) = capture.entries
+    assert set(line) == _LINE_FIELDS | (_REBUILD_STEPS - {"history_ms"})
+    assert (line["rows"], line["pairs"]) == (0, 0)
+
+
+async def test_past_t_groups_refuse_a_bad_cursor_before_any_work(monkeypatch) -> None:
+    """Issue 1318: a groups cursor that does not decode, or that has no string key, is a 422
+    before the rebuild. A cursor with no key was compared with the keys: a TypeError, so a 500."""
+    from backend.query.as_of_t import _encode
+
+    async def _never(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        raise AssertionError("rebuilt before the cursor check")
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _never)
+    base: dict[str, Any] = {"cluster_id": "c", "t": datetime(2026, 1, 1, tzinfo=UTC)}
+    for cursor in ("not-a-cursor!", _encode({}), _encode({"a": 1}), _encode({"a": None})):
+        with pytest.raises(ValueError, match="invalid cursor"):
+            await AsOfTQuery().findings_groups(
+                cast(Any, None), filters=SearchFilters(), by="cve_id", size=5, cursor=cursor, **base
+            )
+
+
+async def test_past_t_groups_page_on_after_a_good_cursor(monkeypatch) -> None:
+    """Issue 1318: a cursor with a string key still pages on after that key."""
+    from backend.query.as_of_t import _encode
+
+    rows = [
+        {**_image_row("sha256:a", "trivy", "high"), "cve_id": cve}
+        for cve in ("CVE-1", "CVE-2", "CVE-3")
+    ]
+
+    async def _fake(self: Any, *_a: Any, **_kw: Any) -> list[dict[str, Any]]:
+        return [dict(r) for r in rows]
+
+    monkeypatch.setattr(AsOfTQuery, "_reconstruct", _fake)
+    out = await AsOfTQuery().findings_groups(
+        cast(Any, None),
+        cluster_id="c",
+        t=datetime(2026, 1, 1, tzinfo=UTC),
+        filters=SearchFilters(),
+        by="cve_id",
+        size=5,
+        cursor=_encode({"a": "CVE-1"}),
+    )
+    assert [b["key"] for b in out["data"]] == ["CVE-2", "CVE-3"]

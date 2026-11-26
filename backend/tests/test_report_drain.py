@@ -213,6 +213,42 @@ async def test_as_of_t_export_reconstructs_history(client) -> None:
     assert "CVE-2005-2541" in csv_text  # a golden CVE made it through the reconstruction
 
 
+async def test_the_step_line_of_a_past_time_export_names_its_report(client, monkeypatch) -> None:
+    """Issue 1318: the reader writes `past-time read` through its own logger. The drain binds the
+    report, so the line names it, and the binding ends with the job."""
+    import json as _json
+    from pathlib import Path
+
+    import structlog
+
+    import backend.query.as_of_t as as_of_t
+    from backend.models.envelope import IngestEnvelope
+    from backend.services.ingest import ingest_envelope
+
+    golden = _json.loads(
+        (Path(__file__).parent / "fixtures/envelope-trivy-golden.json").read_text()
+    )
+    cluster_id = f"c-drainline-{uuid.uuid4().hex[:8]}"
+    golden["cluster_id"] = cluster_id
+    await ingest_envelope(client, IngestEnvelope.model_validate(golden))
+    for index in (f"javv-scan-events-{cluster_id}-*", "javv-finding-occurrences-*"):
+        await client.indices.refresh(index=index, params={"ignore_unavailable": "true"})
+    capture = structlog.testing.LogCapture()
+    monkeypatch.setattr(
+        as_of_t,
+        "log",
+        structlog.wrap_logger(None, processors=[structlog.contextvars.merge_contextvars, capture]),
+    )
+
+    report_id = await _enqueue(client, cluster_id, as_of_t=datetime.now(UTC).isoformat())
+    job = await claim_next(client, worker="w-drain", report_id=report_id)
+    assert job is not None
+    assert await run_job(client, job) is True
+    (line,) = [e for e in capture.entries if e["event"] == "past-time read"]
+    assert (line["read"], line["report_id"]) == ("findings_snapshot", report_id)
+    assert "report_id" not in structlog.contextvars.get_contextvars()
+
+
 async def _drained_csv(client, report_id: str) -> list[list[str]]:
     import csv as _csv
     import io as _io
