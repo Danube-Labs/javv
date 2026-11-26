@@ -1519,9 +1519,10 @@ async def test_a_refused_past_read_logs_no_line(monkeypatch: pytest.MonkeyPatch)
 async def test_each_step_time_holds_the_work_of_its_step(
     real_os: tuple[AsyncOpenSearch, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Issue 1318, review round 1: a delay in the work of each step shows in the field of that
-    step, so a timer around the wrong code fails. The page read times its own paging as well as
-    the filters of the snapshot, so its `filter_ms` holds two delays."""
+    """Issue 1318: a delay in the work of each step shows in the field of that step, so a timer
+    around the wrong code fails. The steps still fit in the total, so a timer that is too wide
+    fails too. The page read times its own paging as well as the filters of the snapshot, so its
+    `filter_ms` holds two delays."""
     import time
 
     import backend.query.as_of_t as as_of_t
@@ -1583,6 +1584,8 @@ async def test_each_step_time_holds_the_work_of_its_step(
     for step in ("runs_ms", "history_ms", "replay_ms", "decisions_ms", "build_ms", "sla_ms"):
         assert line[step] >= floor, step
     assert line["filter_ms"] >= 2 * floor
+    steps = sum(line[s] for s in _REBUILD_STEPS)
+    assert steps <= line["total_ms"] + 0.1 * len(_REBUILD_STEPS)
 
 
 @requires_opensearch
