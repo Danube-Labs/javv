@@ -2590,7 +2590,7 @@ description.</p>
 <tr>
 <td><code>JAVV_LOG_LEVEL</code></td>
 <td><code>info</code></td>
-<td>The log level: <code>debug</code>, <code>info</code>, <code>warning</code> or <code>error</code>. A different value stops the start. At <code>debug</code>, the log also shows one line for each OpenSearch request, with its method, path, status and time. The log never shows the body of a request or a reply. All lines go to one JSON stream, with the same redaction.</td>
+<td>The log level: <code>debug</code>, <code>info</code>, <code>warning</code> or <code>error</code>. A different value stops the start. At <code>debug</code>, the log also shows one line for each OpenSearch request, with its method, path, status and time. The log never shows the body of a request or a reply. At <code>info</code>, a read at a past time that reads the scan history of the findings also writes one <code>past-time read</code> line. The scans trend and the contributors board at a past time do not write it. The line gives <code>read</code>, <code>cluster_id</code>, <code>as_of</code>, <code>rows</code>, <code>pairs</code> and <code>total_ms</code>. It also gives the time of each step that ran, in milliseconds. The steps are <code>runs_ms</code> (the scan records), <code>history_ms</code> (the scan history) and <code>replay_ms</code> (the triage changes). They are also <code>decisions_ms</code> (the decisions), <code>build_ms</code> (the rows), <code>sla_ms</code> (the SLA deadlines) and <code>filter_ms</code> (the filters, the counts and the page). All lines go to one JSON stream, with the same redaction.</td>
 </tr>
 <tr>
 <td><code>JAVV_SECRET_KEY</code></td>
