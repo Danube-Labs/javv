@@ -48,6 +48,14 @@ in a line (`serve.spec.ts` greps the server for it). Its 502 falls under the exc
 `warning` *and* bumps its metric; a streaming export counts rows and bytes in the stream's `finally`,
 so a client disconnect still records what left the building.
 
+**A slow read logs the time of its steps (issue 1318).**
+
+- A read or a job that can take more than about one second writes one line at `info` when it ends.
+- The line gives the time of each step and the size of the work, for example the rows.
+- The request line gives only the total time. Without the step times, the log of a deployment cannot show the slow step.
+- The rule also covers the exports and the reads of a dashboard. Add the line when you add or change such a path.
+- The past-time reads write `past-time read` (`query/as_of_t.py`).
+
 **One exception: a rejection an unauthenticated sender can repeat with no budget is metric-only**,
 because a line per request would let the sender choose our log volume. Today that is ingest's 401,
 decided before any token is known. A rejection with a budget but an attacker-chosen key logs at most
